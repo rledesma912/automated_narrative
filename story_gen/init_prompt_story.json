@@ -1,7 +1,7 @@
 {
   "model": "mistral:latest",
-  "prompt": "{{ $json.prompt }}",
   "system": "{{ $json.system }}",
+  "prompt": "{{ $json.prompt }}",
   "stream": false,
   "options": {
     "temperature": 0.81,
