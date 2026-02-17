@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Enviar prompt a Ollama via n8n</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    textarea { width: 100%; height: 300px; padding: 12px; font-size: 16px; }
+    button { padding: 12px 24px; font-size: 18px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Ingresa tu prompt para el LLM</h2>
+  <form action="https://n8n.local/webhook/feca0dcf-b524-41f3-9ff4-b7877c1ad6ea" method="POST">
+    <textarea name="pregunta" placeholder="Escribe o pega tu prompt aquí... puede ser muy largo, con saltos de línea, código, etc." required></textarea>
+    <br>
+    <button type="submit">Enviar a Ollama →</button>
+  </form>
+
+  <!-- Opcional: mostrar respuesta -->
+  <div id="respuesta"></div>
+
+  <script>
+    // Opcional: mostrar loading o respuesta (si usas Respond to Webhook con texto)
+  </script>
+</body>
+</html>
