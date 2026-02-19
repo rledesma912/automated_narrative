@@ -1,3 +1,6 @@
 #Todos los archivos que no deben subirse al repositorio
 
 node_modules
+
+# Archivos de historia generadas
+story_gen_strategy_two/historias

@@ -1,0 +1,226 @@
+{
+  "name": "Creación_de_historia",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.completeJson }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        -80
+      ],
+      "id": "b5db8831-b53f-41a7-91ae-681e4881e1c1",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        -176
+      ],
+      "id": "b14855d5-6a4e-456b-8b94-da2d65aaa52f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/prompts/system_prompt.md",
+        "options": {
+          "dataPropertyName": "system_prompt"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        -144
+      ],
+      "id": "025b1e3e-437a-4423-ab00-8f9a6ef1b72c",
+      "name": "Read/Write Files from Disk1",
+      "notesInFlow": true,
+      "notes": "SYSTEM PROMPT"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -32,
+        -64
+      ],
+      "id": "f6857308-c291-4a8b-a06d-a270880fe5e4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/prompts/story_prompt_n8n_acto1.md",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        112
+      ],
+      "id": "ee6ae33d-b248-4dd7-aa8e-7bdac4a2c486",
+      "name": "Read/Write Files from Disk",
+      "alwaysOutputData": false,
+      "notesInFlow": true,
+      "notes": "STORY PROMPT"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "story_prompt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        112
+      ],
+      "id": "259ae698-3fbf-496a-b5ba-5b8a02cd5c2d",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "system_prompt",
+        "destinationKey": "system_prompt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        -144
+      ],
+      "id": "d8b7c44f-3b70-4b00-ac61-fa939f8c9be8",
+      "name": "Extract from File2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Función para limpiar texto agresivamente\nfunction deepCleanText(text) {\n  if (!text) return '';\n  \n  return text\n    // Eliminar completamente los puntos suspensivos Unicode\n    .replace(/…/g, '')\n    .replace(/\\.\\.\\./g, ' ')\n    \n    // Convertir todos los tipos de guiones a guion normal\n    .replace(/–/g, '-')    // Guion largo\n    .replace(/—/g, '-')    // Guion aún más largo\n    .replace(/−/g, '-')     // Guion menos\n    \n    // Eliminar todos los caracteres de control excepto espacios\n    .replace(/[\\x00-\\x1F\\x7F-\\x9F]/g, ' ')\n    \n    // Manejar saltos de línea y espacios\n    .replace(/\\n/g, ' ')\n    .replace(/\\r/g, ' ')\n    .replace(/\\t/g, ' ')\n    .replace(/\\s+/g, ' ')\n    \n    // Eliminar caracteres problemáticos adicionales\n    .replace(/\"/g, '')     // Eliminar comillas dobles\n    .replace(/'/g, '')     // Eliminar comillas simples\n    .replace(/\\\\/g, '')    // Eliminar backslashes\n    \n    .trim();\n}\n\n// Obtener los datos del input\nconst inputData = $input.all();\n\n// Extraer y limpiar los prompts\nlet systemPrompt = '';\nlet storyPrompt = '';\n\nif (inputData[0] && inputData[0].json.system_prompt) {\n  systemPrompt = deepCleanText(inputData[0].json.system_prompt);\n}\n\nif (inputData[1] && inputData[1].json.story_prompt) {\n  storyPrompt = deepCleanText(inputData[1].json.story_prompt);\n}\n\n// Construir el JSON completo como string para evitar problemas\nconst completeJson = JSON.stringify({\n  model: \"llama3.1:8b\",  // Reemplaza con tu modelo\n  system: systemPrompt,\n  prompt: storyPrompt,\n  stream: false,\n  options: {\n    \"temperature\": 0.81,\n    \"top_p\": 0.92,\n    \"num_predict\": 3600\n  }\n});\n\nreturn [{completeJson}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        -64
+      ],
+      "id": "2782f3d8-ac37-4c20-88a8-c815bfe83fe4",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
+  },
+  "versionId": "389edb02-98bf-4e05-b540-60a97dc6049f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
+  },
+  "id": "vkF8Pf3oxIMWqroHnV-TO",
+  "tags": []
+}

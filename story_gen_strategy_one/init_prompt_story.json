@@ -1,11 +1,11 @@
 {
-  "model": "mistral:latest",
+  "model": "llama3.1:8b",
   "system": "{{ $json.system }}",
   "prompt": "{{ $json.prompt }}",
   "stream": false,
   "options": {
     "temperature": 0.81,
     "top_p": 0.92,
-    "num_predict": 2600
+    "num_predict": 3600
   }
 }

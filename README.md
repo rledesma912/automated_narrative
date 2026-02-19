@@ -1,151 +1,176 @@
-# 📖 Relato de Terror – Plantilla de Trabajo
+# 🎬 Motor Narrativo Multi‑Actos con n8n (Open Source)
+
+Guía oficial para generar relatos de terror por actos utilizando **persistencia en archivos `.md`** como estado narrativo.
 
 ---
 
-## 🧠 Meta del Relato
+# 🧠 Concepto Central
 
-```markdown
-- **Título:**  
-- **Sinopsis base:**  
-- **Tono:** Terror paranormal en primera persona  
-- **Audiencia:**  
-- **Duración objetivo:** ~10 minutos (~2000 palabras)
-- **Fecha de inicio:**  
+En lugar de generar una historia completa en una sola llamada al modelo (limitación de contexto), el sistema funciona como una:
+
+> ⚙️ Máquina de estado narrativo incremental
+
+Cada acto:
+
+* Se genera
+* Se guarda en `.md`
+* Se resume técnicamente
+* El resumen se usa como contexto para el siguiente acto
+
+---
+
+# 📂 Estructura de Carpetas
+
+```mermaid
+flowchart TD
+    A[/historias/] --> B[historia_001]
+    B --> C[story_config.md]
+    B --> D[acto_1.md]
+    B --> E[acto_1_resumen.md]
+    B --> F[acto_2.md]
+    B --> G[acto_2_resumen.md]
+    B --> H[acto_3.md]
+    B --> I[acto_3_resumen.md]
 ```
 
 ---
 
-## 📋 🧩 Estrategia de Generación (Resumen)
+# 📘 Archivos Necesarios
 
-1. ✍️ Generar fragmentos con tu modelo local por acto
-2. 📎 Guardar cada fragmento en este Markdown
-3. 🔍 Revisar manualmente y ajustar si hace falta
-4. 🚀 Enviar todo a un LLM en la nube para **validación y unificación final**
-5. 📌 Resultado: **guion final de relato listo para narración**
+## 1️⃣ system_prompt.md
+
+Define reglas de estilo obligatorias.
+
+## 2️⃣ story_config.md
+
+Contiene:
+
+* Título
+* Sinopsis completa
+* Decisiones narrativas
+* Tono
+* Público
+
+⚠ Este archivo se inyecta en todos los actos.
+
+## 3️⃣ story_prompt_actoX.md
+
+Define el objetivo específico de cada acto.
 
 ---
 
-## 📌 🗂️ Notas Iniciales
+# 🔁 Arquitectura del Workflow
 
-```markdown
-### 🔎 Referencias Personales del Narrador
--  
--  
--  
-
-### 🧠 Decisiones Narrativas Clave
--  
--  
+```mermaid
+flowchart LR
+    A[Manual Trigger] --> B[Set Config]
+    B --> C[Generar Lista Actos]
+    C --> D[Leer story_config.md]
+    D --> E[Leer resumen anterior]
+    E --> F[Construir Prompt]
+    F --> G[HTTP Request - Generar Acto]
+    G --> H[Guardar acto_X.md]
+    H --> I[HTTP Request - Generar Resumen]
+    I --> J[Guardar acto_X_resumen.md]
 ```
 
 ---
 
-## 🧱 👣 Actos del Relato
+# 🔄 Lógica de Iteración
 
----
+```mermaid
+sequenceDiagram
+    participant WF as Workflow
+    participant FS as FileSystem
+    participant LLM as Modelo
 
-### 🟢 Acto 1 — Introducción (Borrador)
-
-```markdown
-<👻 Texto generado por tu modelo local aquí>
+    WF->>FS: Leer story_config.md
+    WF->>FS: Leer acto_n-1_resumen.md
+    WF->>LLM: Generar Acto n
+    LLM-->>WF: Texto Acto
+    WF->>FS: Guardar acto_n.md
+    WF->>LLM: Generar Resumen Técnico
+    LLM-->>WF: Resumen
+    WF->>FS: Guardar acto_n_resumen.md
 ```
 
 ---
 
-### 🟡 Acto 2 — Desarrollo 1 (Borrador)
+# 🧩 JSON BASE DEL WORKFLOW
 
-```markdown
-<👻 Texto generado por tu modelo local aquí>
+Importar en n8n como nuevo workflow.
+
+```json
+{
+  "name": "Creacion_de_historia_multi_actos",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual_trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-800, 0]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "story_id", "value": "historia_001" }
+          ],
+          "number": [
+            { "name": "actos_totales", "value": 3 }
+          ]
+        }
+      },
+      "id": "set_config",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [-600, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const actos = $json.actos_totales; let items = []; for (let i = 1; i <= actos; i++) { items.push({ acto_numero: i, story_id: $json.story_id }); } return items;"
+      },
+      "id": "generate_act_list",
+      "name": "Generar Lista Actos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-400, 0]
+    }
+  ]
+}
 ```
 
 ---
 
-### 🔵 Acto 3 — Desarrollo 2 (Borrador)
+# ⚠ Buenas Prácticas
 
-```markdown
-<👻 Texto generado por tu modelo local aquí>
-```
-
----
-
-### 🟣 Acto 4 — Clímax (Borrador)
-
-```markdown
-<👻 Texto generado por tu modelo local aquí>
-```
+✅ No concatenar actos anteriores completos
+✅ Siempre usar resumen técnico estructurado
+✅ Separar configuración global de objetivo por acto
+✅ Escalar número de actos cambiando solo una variable
 
 ---
 
-### 🔴 Acto 5 — Desenlace (Borrador)
+# 🚀 Resultado Final
 
-```markdown
-<👻 Texto generado por tu modelo local aquí>
-```
-
----
-
-## 🧠 ✍️ Notas de Edición (Manual)
-
-```markdown
-- Cambios que quiero aplicar:
-  -  
-  -  
-
-- Transiciones que quiero mejorar:
-  -  
-  -  
-
-- Repeticiones que quiero eliminar:
-  -  
-  -  
-```
+🎭 Historias largas coherentes
+📁 Persistencia en archivos
+🔁 Flujo reutilizable
+⚙️ Arquitectura escalable sin base de datos
 
 ---
 
-## 🚀 📤 Preparar para Validación Final
+# 📈 Escalabilidad Futura
 
-Cuando ya tengas los actos escritos y alineados con tu visión, copia todo lo anterior y pégalo en el prompt de un LLM en la nube:
-
-📌 **Ejemplo de Prompt de Unificación:**
-
-```
-Toma este documento Markdown con los borradores de cada acto de un relato de terror narrado en primera persona.
-
-Tu tarea:
-1. Unificar los actos en un único texto narrativo.
-2. Mantener coherencia, tono e identidad del narrador.
-3. Corregir ortografía y estilo.
-4. Ajustar las transiciones naturales entre actos.
-5. Producir un relato de ~2000 palabras.
-
-Aquí está el documento:
-
-<<<
-{contenido completo del Markdown}
->>>
-
-Responde SOLO con el relato final completo.
+```mermaid
+flowchart TD
+    A[MVP Filesystem] --> B[Agregar estado_narrativo.json]
+    B --> C[Control intensidad paranormal]
+    C --> D[Control arco psicológico]
+    D --> E[Persistencia en Base de Datos]
 ```
 
----
-
-## ✔️ Checklist Final
-
-```markdown
-✅ Título definido  
-✅ Borradores por acto generados  
-✅ Cada acto revisado manualmente  
-✅ Notas de edición aplicadas  
-✅ Prompt de unificación ejecutado  
-✅ Relato final obtenido
-```
-
----
-
-## 📎 Versionado
-
-```markdown
-📌 Versión Relato:  
-📌 Fecha de unificación:  
-📌 Comentarios finales:  
-```
+Como MVP, este sistema es sólido, modular y profesional.

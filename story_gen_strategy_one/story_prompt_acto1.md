@@ -14,9 +14,8 @@ persona exceptica que no cree en lo paranormal pero luego se convence
 DECISIONES NARRATIVAS CLAVE
 la casa es antigua pero remodelada a nuevo por eso la compraron
 
-
 INDICACIONES ADICIONALES
-El Acto 1 debe tener ~350–400 palabras.
+El Acto 1 debe tener ~450–500 palabras.
 Establece al narrador, el entorno y el primer indicio de lo paranormal.
 
 GENERA SOLO EL ACTO 1 COMPLETO AHORA:
