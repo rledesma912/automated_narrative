@@ -1,119 +1,193 @@
-# 🧟 Guía Pro: Generador de Relatos de Terror (n8n + Ollama + SQLite)
 
-Esta guía detalla la arquitectura para generar historias de +2000 palabras de forma coherente, utilizando una estrategia de **Memoria Segmentada** para no saturar la VRAM de la GPU (RTX 3060).
+# 🧟 Guía Pro v2: Generador de Relatos con Memoria Dual (n8n + Ollama + Postgres)
 
-## 🏗️ Arquitectura del Flujo (End-to-End)
+## 🎯 Objetivo
+
+Generar relatos largos (+2000 palabras) en múltiples actos sin:
+
+* Reinicios narrativos
+* Repeticiones del inicio
+* Hardcoding de contexto
+* Pérdida de coherencia
+
+La solución se basa en un patrón de **Estado Narrativo Incremental con Memoria Dual**.
+
+---
+
+# 🏗️ Arquitectura Final Limpia
+
+## Principios de Diseño
+
+1. El estado vive en variables, no en el prompt.
+2. La narrativa acumulada y la memoria estructurada son entidades separadas.
+3. Cada iteración agrega contexto, nunca lo reemplaza.
+4. El loop es puramente controlado por `acto_actual`.
+
+---
+
+## 📐 Diagrama Oficial (Mermaid)
 
 ```mermaid
 graph TD
-    %% Inicio y Carga
-    Start([🚀 Inicio del Proceso]) --> LoadMD[📂 Leer sistema.md e historia_base.md]
-    LoadMD --> InitVar[🔢 Inicializar Acto=1]
 
-    %% Bucle de Generación
-    subgraph Bucle_Narrativo [Iteración por Actos 1-5]
-        DB_Read[📥 Leer Resumen Acto Anterior de SQLite]
-        JS_Extract[🔍 JS: Extraer instrucción del Acto desde MD]
-        Ollama[🤖 Ollama: Generar Narrativa con num_ctx 16k]
-        JS_Process[🧹 JS: Limpiar texto y crear nuevo Resumen]
-        DB_Write[📤 Guardar Acto y Resumen en SQLite]
-    end
+    %% Inicio
+    A([Start]) --> B[Leer sistema.md + historia_base.md]
+    B --> C[init_story_state<br/>acto_actual=1<br/>resumen_narrativo=""<br/>memoria_estructurada=""]
 
-    InitVar --> DB_Read
-    DB_Write --> CheckAct{¿Es Acto 5?}
-    CheckAct -- No --> NextAct[➕ Incrementar Acto]
-    NextAct --> DB_Read
+    %% Loop principal
+    C --> D[get_current_act<br/>Extraer misión del acto]
+    D --> E[LLM Narrativa<br/>Usa:<br/>- sistema<br/>- historia_base<br/>- resumen acumulado<br/>- memoria estructurada]
+    
+    E --> F[Persistir Acto en DB]
 
-    %% Finalización
-    CheckAct -- Sí --> DB_Full[📖 SELECT All Actos de SQLite]
-    DB_Full --> FinalJS[拼接 JS: Consolidar Markdown Final]
-    FinalJS --> SaveFile[💾 Escribir relato_final.md]
-    SaveFile --> End([🎬 Guion Listo para YouTube])
+    F --> G[LLM Memoria Estructurada<br/>Resume SOLO hechos del acto]
+    
+    G --> H[update_state_and_loop<br/>- acto_actual++<br/>- acumular narrativa<br/>- acumular memoria]
 
-    %% Estilo de colores
-    style Ollama fill:#f96,stroke:#333,stroke-width:2px
-    style DB_Read fill:#69f,stroke:#333
-    style DB_Write fill:#69f,stroke:#333
+    H --> I{¿acto_actual <= total_actos?}
 
+    I -- Sí --> D
+    I -- No --> J[SELECT todos los actos]
+    J --> K[agregador_final<br/>Unir actos en orden]
+    K --> L[Convert to File]
+    L --> M([Fin])
+
+    %% Estilos
+    style E fill:#f96,stroke:#333,stroke-width:2px
+    style G fill:#f96,stroke:#333,stroke-width:2px
+    style F fill:#69f,stroke:#333
+    style J fill:#69f,stroke:#333
 ```
 
 ---
 
-## 🛠️ Configuración de Componentes
+# 🧠 Arquitectura de Estado Correcta
 
-### 1. 📂 Archivos Fuente (VS Code / Git)
+## Estructura Interna del Estado
 
-Usa los volúmenes montados en tu Docker para que n8n lea estos archivos:
-
-* `sistema.md`: Define que la IA es un escritor de terror en 1ª persona y pasado pretérito.
-* `historia_base.md`: Contiene la escaleta con los 5 actos definidos.
-
-### 2. 🗄️ Base de Datos (SQLite)
-
-Como el nodo nativo de SQLite puede ser esquivo en la versión OSS, usaremos **Postgres** (recomendado por estabilidad) o el nodo **Execute Command** de SQLite.
-
-* **Ruta de la DB:** `/home/node/.n8n/narrativa.db`
-* **Misión:** Evitar que el flujo crezca visualmente y mantener la persistencia ante errores.
-
-### 3. 🧠 Inteligencia Artificial (Ollama)
-
-* **Modelo Sugerido:** `llama3.1:8b` (Excelente balance para tu RTX 3060).
-* **Parámetros Críticos:**
-* `num_ctx`: **16384** (Suficiente para ~12,000 palabras de contexto).
-* `temperature`: **0.8** (Para mayor creatividad en terror).
-
-
-
----
-
-## 📝 Snippets de Código Clave
-
-### A. Extracción del Acto (Nodo JS)
-
-Este script "lee" tu mente desde el archivo Markdown:
-
-```javascript
-const textoMD = items[0].json.historia_base;
-const acto = items[0].json.acto_actual;
-const regex = new RegExp(`\\*\\*Acto ${acto} \\(.*?\\)\\*\\*: (.*?)(?=\\n|$)`, 'i');
-const match = textoMD.match(regex);
-return [{ json: { mision: match ? match[1] : "Sigue el terror." } }];
-
-```
-
-### B. Consolidación Final (Nodo JS)
-
-Para unir los trozos de la base de datos antes de guardar el archivo:
-
-```javascript
-const relatoCompleto = items.map(i => `## ${i.json.acto_num}\n${i.json.contenido}`).join('\n\n');
-return [{ json: { final_text: relatoCompleto, fileName: "guion_terror.md" } }];
-
+```json
+{
+  "acto_actual": 2,
+  "total_actos": 5,
+  "resumen_narrativo_acumulado": "...texto narrativo completo hasta ahora...",
+  "memoria_estructurada_acumulada": "...hechos estructurados de actos anteriores...",
+  "mision_del_acto": "...extraída dinámicamente..."
+}
 ```
 
 ---
 
-## 🚀 Pasos para Ejecutar el MVP
+# 🔄 Flujo Narrativo Real
 
-1. **Levantar Docker:** Ejecuta `docker-compose up -d`.
-2. **Permisos:** Asegúrate de que `chown -R 1000:1000` esté aplicado a tu carpeta de proyecto.
-3. **Configurar n8n:**
-* Crea el loop con un nodo **Wait** o **Split in Batches**.
-* Usa el nodo **HTTP Request** para hablar con Ollama (vía `host.docker.internal:11434`).
+## Qué recibe el LLM narrativo
 
+```
+SISTEMA
+HISTORIA BASE
+RESUMEN NARRATIVO ACUMULADO
+MEMORIA ESTRUCTURADA
+MISIÓN DEL ACTO ACTUAL
+```
 
-4. **Verificación:** Abre la base de datos con la extensión **SQLite Viewer** en VS Code para ver cómo la IA escribe mientras tú tomas café. ☕️
+## Qué NO recibe
 
----
-
-## 🎬 Próximo Nivel: Post-Procesamiento
-
-Una vez tengas el `relato_final.md`, activa el **Segundo Flujo** para:
-
-1. 🔍 **Corrección:** Revisar que todos los verbos estén en pasado.
-2. 🎧 **Sound Design:** Insertar etiquetas `[SFX: Grito lejano]` automáticamente.
-3. 🎤 **Voz:** Enviar el texto a una API de TTS (Text-to-Speech).
+* Texto hardcodeado
+* Introducciones fijas
+* Resúmenes reemplazados
+* Solo memoria estructurada aislada
 
 ---
 
-**Desarrollado para:** Rick | **Hardware:** RTX 3060 12GB + Ryzen 5700 + 64GB RAM.
+# 🧩 Separación de Responsabilidades
+
+| Componente      | Responsabilidad                      |
+| --------------- | ------------------------------------ |
+| LLM 1           | Generar acto narrativo               |
+| DB              | Persistencia transaccional           |
+| LLM 2           | Generar memoria estructurada factual |
+| update_state    | Acumulación incremental              |
+| IF              | Control de loop                      |
+| agregador_final | Consolidación final                  |
+
+---
+
+# 🛑 Errores que esta arquitectura elimina
+
+* Reinicio del Acto 1 en actos posteriores
+* Reintroducción repetida de personajes
+* Pérdida de continuidad emocional
+* Loop infinito
+* Dependencia de texto fijo
+
+---
+
+# 🧮 Patrón Técnico: Memoria Dual Incremental
+
+### 1️⃣ Narrativa acumulada
+
+Mantiene tono, progresión y tensión.
+
+### 2️⃣ Memoria estructurada
+
+Mantiene coherencia factual.
+
+Ambas crecen progresivamente.
+
+Nunca se reemplazan.
+
+---
+
+# ⚙️ Configuración Recomendada (RTX 3060)
+
+Modelo:
+
+```
+llama3.1:8b
+```
+
+Parámetros:
+
+```
+num_ctx: 16384
+temperature narrativa: 0.7
+temperature memoria: 0.3
+repeat_penalty: 1.15
+```
+
+---
+
+# 🏁 Resultado Esperado
+
+* Acto 2 continúa Acto 1
+* Acto 3 escala conflicto
+* Acto 4 profundiza tensión
+* Acto 5 resuelve
+
+Sin reinicios.
+
+---
+
+# 🔬 Arquitectura Mental del Sistema
+
+Este sistema ya no es un simple loop.
+
+Es un **motor narrativo determinístico con memoria incremental controlada**.
+
+Puede escalar a:
+
+* 10 actos
+* 20 actos
+* Historias seriadas
+* Universos compartidos
+
+Sin modificar lógica central.
+
+---
+
+Si quieres, el siguiente paso lógico es:
+
+* Convertir esto en patrón reutilizable multi-historia
+* O migrarlo a arquitectura orientada a eventos (más robusta)
+* O agregar sistema de control de continuidad automática
+
+Indica cuál quieres diseñar ahora.
