@@ -6,7 +6,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -624,
+        -752,
         -160
       ],
       "id": "69105124-d5c1-4b39-aeb7-ec29ac27d805",
@@ -22,8 +22,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        -416,
-        -368
+        -464,
+        -448
       ],
       "id": "8a6e9390-743f-4009-8ab8-d660b63dd207",
       "name": "Read/Write Files from Disk",
@@ -38,8 +38,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        -192,
-        -368
+        -144,
+        -448
       ],
       "id": "83095e2f-68d2-41b0-8631-821218b72b3f",
       "name": "Extract from File"
@@ -51,8 +51,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -288,
-        -48
+        -480,
+        -160
       ],
       "id": "9cf8bd54-6892-4286-87e0-82f1de590155",
       "name": "init_story_state"
@@ -64,8 +64,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -16,
-        -48
+        -256,
+        -80
       ],
       "id": "561699b2-6d6c-4116-97ef-0abfa2f7e8c4",
       "name": "get_current_act"
@@ -86,8 +86,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        208,
-        -144
+        -96,
+        -80
       ],
       "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
       "name": "Basic LLM Chain"
@@ -107,8 +107,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        208,
-        64
+        -96,
+        112
       ],
       "id": "3cc72519-c324-4bb0-94d1-646421f16687",
       "name": "Ollama Chat Model",
@@ -126,8 +126,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1152,
-        -144
+        496,
+        -80
       ],
       "id": "4e934d38-b9e7-4075-8e87-0b65a90b0022",
       "name": "update_state_and_loop"
@@ -159,8 +159,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1344,
-        48
+        624,
+        96
       ],
       "id": "72b52684-8d89-49d9-871b-75ccc73b803a",
       "name": "If"
@@ -176,8 +176,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        2224,
-        32
+        1152,
+        -80
       ],
       "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
       "name": "Read/Write Files from Disk1"
@@ -189,8 +189,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1872,
-        32
+        960,
+        -80
       ],
       "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
       "name": "agregador_final"
@@ -206,8 +206,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        2064,
-        -192
+        1072,
+        -320
       ],
       "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
       "name": "Convert to File"
@@ -284,8 +284,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        544,
-        -144
+        144,
+        -288
       ],
       "id": "751b9dac-486a-4838-bea3-2ef3646a4b2b",
       "name": "Insert rows in a table",
@@ -305,8 +305,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1680,
-        32
+        768,
+        -80
       ],
       "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
       "name": "Execute a SQL query",
@@ -326,8 +326,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        768,
-        -144
+        208,
+        -80
       ],
       "id": "905a4ded-f2a7-4b94-8792-a6dcbe4fa49a",
       "name": "generate_structured_memory"
@@ -343,8 +343,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        768,
-        64
+        208,
+        112
       ],
       "id": "5c4895e9-7067-4802-8920-36e0b0bca35e",
       "name": "Ollama Chat Model1",
@@ -537,7 +537,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "8e745857-68c2-4908-a887-ef863c5daf3b",
+  "versionId": "96cf523d-eb03-42e6-976c-28dfdf5e628c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"

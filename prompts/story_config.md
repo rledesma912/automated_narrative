@@ -17,13 +17,13 @@ Con mucho miedo intenta salir del hospital pero las llaves maestran no abren las
 
 1. **Acto 1 (Introducción)**: Adrián llega a su turno. Los últimos médicos se van. Describe la soledad extrema. Adrián se sienta en el búnker de seguridad. Mira la cámara 4 (pasillo de oncología) y ve una mancha humana que no debería estar ahí. Al parpadear, la figura se mueve. No hay diálogos, solo el zumbido de los monitores.
 
-2. **Acto 2 (Incidente)**: Adrían vuelve a ver la sombra y sale en su búsqueda tres veces sin encontrar a nadie. Piensa que es alguien que le esta jugando una broma pero luego comienza a ponerse nervioso.
+2. **Acto 2 (Incidente)**: Adrían vuelve a ver la sombra y sale en su búsqueda dos veces sin encontrar a nadie. Piensa que es alguien que le esta jugando una broma pero luego comienza a ponerse nervioso.
 
 3. **Acto 3 (Clímax medio)**: La luz se corta. Pero el monitor no y vuelve a ver a la figura, sale con la linterna pero llegando al lugar se le apaga, prueba con el celular y logra ver una figura en el lugar, del miedo vuelve a la sala de monitores.
 
 4. **Acto 4 (Caída)**: Vuelve la luz y vuelve a ver a la figura en el monitor, toma coraje y va corriendo a la sala donde la vió.Al llegar se vuelve a cortar la luz por completo y percibe una presencia por lo que se asusta y cansado de la situación busca abandonar el hospital en pena pelumbra.
 
-5. **Acto 5 (Final)**: La huida o el giro trágico. Adrían no encuentra la salida y se encuentra con muchas puertas que no abren a pesar de que tiene llaves maestras. El terror crece pero finalmente logra salir del lugar. Jura nunca volver y renuncia.
+5. **Acto 5 (Final)**: La huida o el giro trágico. Adrían no encuentra la salida y se encuentra con muchas puertas que no abren a pesar de que tiene llaves maestras. El terror crece pero finalmente una puerta cede y logra salir del lugar. Jura nunca volver y renuncia.
 
 # ELEMENTOS CLAVE (Lore)
 - El olor a ozono y desinfectante podrido.
