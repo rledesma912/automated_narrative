@@ -1,0 +1,486 @@
+{
+  "name": "long_distance_narrative",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -144
+      ],
+      "id": "69105124-d5c1-4b39-aeb7-ec29ac27d805",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/archivos/prompts/*.md",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -320
+      ],
+      "id": "8a6e9390-743f-4009-8ab8-d660b63dd207",
+      "name": "Read/Write Files from Disk",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        -320
+      ],
+      "id": "83095e2f-68d2-41b0-8631-821218b72b3f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtenemos los dos ítems que vienen del nodo Extract From File\nconst items = $input.all();\n\n// 2. Buscamos cuál es el sistema y cuál es la historia basándonos en palabras clave del contenido\n// (Como no tenemos el fileName aquí, buscamos por texto interno)\nconst sistemaItem = items.find(i => i.json.data.includes(\"# ROLE\") || i.json.data.includes(\"STYLE RULES\"));\nconst historiaItem = items.find(i => i.json.data.includes(\"# CONCEPTO\") || i.json.data.includes(\"ESTRUCTURA\"));\n\nconst sistema = sistemaItem ? sistemaItem.json.data : \"Error: No se encontró el System Prompt\";\nconst historia = historiaItem ? historiaItem.json.data : \"Error: No se encontró la Historia Base\";\n\n// 3. Inicializamos todo para el Acto 1\nreturn [{\n  json: {\n    acto_actual: 1,\n    total_actos: 5,\n    sistema_text: sistema,\n    historia_base_text: historia,\n    resumen_acumulado: \"La historia comienza con Adrián llegando a su puesto de guardia en el hospital abandonado. Aún no ha ocurrido nada paranormal.\",\n    story_id: \"terror_\" + Date.now(),\n    // Esta variable ayudará a extraer la misión del acto más adelante\n    mision_del_acto: \"\" \n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "9cf8bd54-6892-4286-87e0-82f1de590155",
+      "name": "init_story_state"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperamos los datos del nodo de Setup (o del loop)\nconst input = $input.item.json;\nconst historiaCompleta = input.historia_base_text;\nconst actoNum = input.acto_actual;\n\n// Regex para encontrar el Acto X y capturar su descripción\n// Busca patrones como \"1. **Acto 1 (Introducción)**: Texto...\"\nconst regex = new RegExp(`${actoNum}\\\\.\\\\s+\\\\*\\\\*Acto\\\\s+${actoNum}\\\\s+\\\\(.*?\\\\)\\\\*\\\\*:\\\\s+(.*?)(?=\\\\n\\\\d+\\\\.|$)`, 'is');\nconst match = historiaCompleta.match(regex);\n\n// Extraemos la instrucción. Si no la encuentra, da un mensaje de error claro.\nconst misionExtraida = match ? match[1].trim() : \"No se encontró instrucción específica para este acto.\";\n\n// Retornamos todo lo anterior MAS la misión específica de esta vuelta\nreturn {\n  ...input,\n  mision_del_acto: misionExtraida\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -48
+      ],
+      "id": "561699b2-6d6c-4116-97ef-0abfa2f7e8c4",
+      "name": "get_current_act"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.sistema_text }}\n\n### TU MISIÓN ACTUAL\nEstás escribiendo ÚNICAMENTE el **Acto {{ $json.acto_actual }}** de un total de 5.\nMisión específica de este acto: {{ $json.mision_del_acto }}\n\n### LO QUE PASÓ JUSTO ANTES (Contexto)\n{{ $json.resumen_acumulado }}\n\n---\n### REGLAS CRÍTICAS:\n1. **NO saltes al final**: No escribas el desenlace a menos que estés en el Acto 5.\n2. **Extensión**: Escribe un relato largo (mínimo 500 palabras). Sé descriptivo con los olores, sonidos y el miedo de Adrián.\n3. **Pausas**: Usa puntos seguidos para crear tensión.\n4. **Final del Acto**: Termina este acto en un momento de suspenso (cliffhanger).\n5. **Sin Metatexto**: No digas \"Aquí tienes el acto\" ni \"Continuará\". Empieza directo con la acción.\n\nTermina este acto en un momento de máxima tensión, SIN concluir la historia general. Prohibido usar frases como 'Continuará' o 'En el próximo acto'.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $json.sistema_text }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        176,
+        -144
+      ],
+      "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1:8b",
+        "options": {
+          "temperature": 0.7,
+          "lowVram": false,
+          "numCtx": 8192,
+          "numPredict": 2048,
+          "repeatPenalty": 1.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        160,
+        64
+      ],
+      "id": "3cc72519-c324-4bb0-94d1-646421f16687",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "pme8Qn9prOFIVslx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Recogemos lo que escribió Ollama (en este nodo es .text)\n// Usamos el operador ? para evitar que el flujo explote si viene vacío\nconst storyText = $node[\"Basic LLM Chain\"].json.text || \"\"; \n\n// 2. Traemos el estado que venía del paso anterior al LLM\nconst currentState = $node[\"get_current_act\"].json;\n\n// 3. Incrementamos el acto\nconst nextAct = currentState.acto_actual + 1;\n\n// 4. Retornamos el nuevo estado actualizado\nreturn [{\n  json: {\n    ...currentState,\n    acto_actual: nextAct,\n    // Guardamos el final de lo que escribió como resumen para el siguiente acto\n    resumen_acumulado: \"Anteriormente: \" + storyText.substring(Math.max(0, storyText.length - 800)),\n    ultimo_relato: storyText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        64
+      ],
+      "id": "4e934d38-b9e7-4075-8e87-0b65a90b0022",
+      "name": "update_state_and_loop"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f93481cf-4983-4f20-811e-be430c7faccc",
+              "leftValue": "={{ $json.acto_actual }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        128
+      ],
+      "id": "72b52684-8d89-49d9-871b-75ccc73b803a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/archivos/historias_generadas/{{ $binary.data.fileName }}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        16
+      ],
+      "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aquí recibimos el array de filas de la base de datos\nconst filas = $input.all();\n\nif (filas.length === 0) {\n    throw new Error(\"No se encontraron actos en la base de datos para este ID.\");\n}\n\n// Unimos los textos\nconst historiaCompleta = filas.map((fila, index) => {\n  return `## ACTO ${index + 1}\\n\\n${fila.json.contenido}`;\n}).join(\"\\n\\n---\\n\\n\");\n\nreturn [{\n  json: {\n    historia_final: \"# RELATO COMPLETO\\n\\n\" + historiaCompleta,\n    nombre_archivo: `relato_final_${Date.now()}.md`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        16
+      ],
+      "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
+      "name": "agregador_final"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "historia_final",
+        "options": {
+          "fileName": "={{ $json.nombre_archivo }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        -208
+      ],
+      "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "relatos_vivos",
+          "mode": "list",
+          "cachedResultName": "relatos_vivos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "acto_numero": "={{ $node[\"get_current_act\"].json.acto_actual }}",
+            "id_story": "={{ $node[\"init_story_state\"].json.story_id }}",
+            "contenido": "={{ $json.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_story",
+              "displayName": "id_story",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "acto_numero",
+              "displayName": "acto_numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "contenido",
+              "displayName": "contenido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fecha_creacion",
+              "displayName": "fecha_creacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        528,
+        -144
+      ],
+      "id": "751b9dac-486a-4838-bea3-2ef3646a4b2b",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "9PNsceb890e5B4Zn",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT contenido \nFROM relatos_vivos \nWHERE id_story = '{{ $node[\"init_story_state\"].json.story_id }}' \nORDER BY acto_numero ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        16
+      ],
+      "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "9PNsceb890e5B4Zn",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "init_story_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "init_story_state": {
+      "main": [
+        [
+          {
+            "node": "get_current_act",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_current_act": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_state_and_loop": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "get_current_act",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agregador_final": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "update_state_and_loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "agregador_final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b9790261-bcae-40c0-8f4b-c86b667ad365",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
+  },
+  "id": "vcQvJWHIqjNsEdZ3",
+  "tags": []
+}

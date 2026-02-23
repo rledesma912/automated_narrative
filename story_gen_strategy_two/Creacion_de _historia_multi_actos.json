@@ -24,7 +24,7 @@
           "number": [
             {
               "name": "actos_totales",
-              "value": 3
+              "value": 5
             }
           ]
         },
@@ -108,7 +108,7 @@
     },
     {
       "parameters": {
-        "jsCode": "let system_prompt = '';\nlet story_config = '';\nlet previous_summary = '';\n\n// Recorrer todos los items del Merge (Append)\nfor (const item of $input.all()) {\n\n  const data = item.json.data;       // para system y config\n  const content = item.json.content; // para resumen\n\n  if (data) {\n    // Detectar cuál es cuál por contenido\n    if (data.includes('REGLAS OBLIGATORIAS')) {\n      system_prompt = data;\n    } else if (data.includes('# CONFIGURACIÓN GLOBAL')) {\n      story_config = data;\n    }\n  }\n\n  if (content !== undefined) {\n    previous_summary = content;\n  }\n}\n\n// Obtener datos del Split\nconst splitItem = $items(\"Split In Batches\")[0].json;\nconst acto_numero = splitItem.acto_numero;\nconst story_id = splitItem.story_id;\n\n// Construcción del prompt\nlet prompt = `\n${story_config}\n`;\n\nif (previous_summary) {\n  prompt += `\nResumen del acto anterior:\n${previous_summary}\n`;\n}\n\nprompt += `\nGenera el Acto ${acto_numero}.\nNo resuelvas la historia si no es el último acto.\n`;\n\nreturn [{\n  json: {\n    acto_numero,\n    story_id,\n    prompt,\n    system_prompt\n  }\n}];\n"
+        "jsCode": "let system_prompt = '';\nlet story_config = '';\nlet previous_summary = '';\n\n// Recorrer todos los items del Merge (Append)\nfor (const item of $input.all()) {\n\n  const data = item.json.data;       // para system y config\n  const content = item.json.content; // para resumen\n\n  if (data) {\n    // Detectar cuál es cuál por contenido\n    if (data.includes('REGLAS OBLIGATORIAS')) {\n      system_prompt = data;\n    } else if (data.includes('# CONFIGURACIÓN GLOBAL')) {\n      story_config = data;\n    }\n  }\n\n  if (content !== undefined) {\n    previous_summary = content;\n  }\n}\n\n// Obtener datos del Split\nconst splitItem = $items(\"Split In Batches\")[0].json;\nconst acto_numero = splitItem.acto_numero;\nconst story_id = splitItem.story_id;\n\n// Construcción del prompt\nlet prompt = `\n${story_config}\n`;\n\nif (previous_summary) {\n  prompt += `\n==============================\nESTADO ACTUAL DE LA HISTORIA\n==============================\n${previous_summary}\n\nREGLAS ESTRICTAS:\n- No cambies nombres ni edades.\n- No introduzcas nuevos protagonistas.\n- No redescubras eventos ya ocurridos.\n- No contradigas eventos acumulados.\n- Si la tumba ya fue descubierta, no puede volver a descubrirse.\n- Continúa exactamente desde el estado actual.\n`;\n}\n\nprompt += `\n==============================\nINSTRUCCIÓN\n==============================\nGenera el Acto ${acto_numero}.\nNo resuelvas la historia si no es el último acto.\nEscala la tensión progresivamente.\n`;\n\nreturn [{\n  json: {\n    acto_numero,\n    story_id,\n    prompt,\n    system_prompt\n  }\n}];\n"
       },
       "id": "4605c7e9-8a87-4235-8a0e-ab8d9f89ab57",
       "name": "Build Prompt",
@@ -125,7 +125,7 @@
         "url": "http://host.docker.internal:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: \"llama3.1:8b\", system: $json.system_prompt, prompt: $json.prompt, stream: false } }}",
+        "jsonBody": "={{ { model: \"llama3.1:8b\", \n  system: $json.system_prompt, \n  prompt: $json.prompt, \n  stream: false,\n  temperature: 0.6\n} }}",
         "options": {}
       },
       "id": "76b83429-582c-48a9-91d4-e998b2d536a8",
@@ -164,61 +164,6 @@
       ],
       "id": "228304b7-fb0a-434c-876f-609db3e88f36",
       "name": "Merge"
-    },
-    {
-      "parameters": {
-        "jsCode": "const text = $json.response || '';\n\n// Recuperar datos del nodo Build Prompt\nconst buildData = $items(\"Build Prompt\")[0].json;\n\nconst acto_numero = buildData.acto_numero;\nconst story_id = buildData.story_id;\n\nreturn [{\n  json: {\n    acto_numero,\n    story_id\n  },\n  binary: {\n    data: {\n      data: Buffer.from(text, 'utf8').toString('base64'),\n      mimeType: 'text/markdown',\n      fileName: `acto_${acto_numero}.md`\n    }\n  }\n}];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2016,
-        352
-      ],
-      "id": "53e0180e-ff12-4276-8aca-0eef838b4755",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "operation": "text",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1.1,
-      "position": [
-        1024,
-        32
-      ],
-      "id": "a56f5b92-4d04-42f8-8ddd-6a5b15b287d6",
-      "name": "Extract from File"
-    },
-    {
-      "parameters": {
-        "operation": "text",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1.1,
-      "position": [
-        1024,
-        256
-      ],
-      "id": "dff1f731-894b-45e5-ae1a-e9490d3f202f",
-      "name": "Extract from File1"
-    },
-    {
-      "parameters": {
-        "operation": "text",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1.1,
-      "position": [
-        1216,
-        432
-      ],
-      "id": "6efacc74-100e-4bdf-af02-7497435ac685",
-      "name": "Extract from File2"
     },
     {
       "parameters": {
@@ -303,6 +248,101 @@
     },
     {
       "parameters": {
+        "jsCode": "const split = $items(\"Split In Batches\")[0].json;\nconst story_config = $items(\"Story_prompt\")[0].json.data;\nconst system_prompt = $items(\"System_prompt\")[0].json.data;\n\nconst acto = String($json.data || '');\nconst previous_summary =\n  $items(\"Read Previous Summary\")[0]?.json?.data || '';\n\nconst body = {\n  model: \"llama3.1:8b\",\n  stream: false,\n  system: system_prompt,\n  prompt: `\n${story_config}\n\n==============================\nESTADO ANTERIOR (NO MODIFICAR IDENTIDAD)\n==============================\n${previous_summary}\n\n==============================\nINSTRUCCIONES OBLIGATORIAS\n==============================\n1. NO cambies nombres.\n2. NO cambies edades.\n3. NO elimines personajes existentes.\n4. NO re-narres actos anteriores.\n5. NO borres eventos previos.\n6. SOLO actualiza el estado agregando lo ocurrido en este acto.\n\nSi modificas identidad fija, el resultado es inválido.\n\nDevuelve SOLO esta estructura:\n\nIDENTIDAD FIJA:\n(listado exacto)\n\nEVENTOS ACUMULADOS:\n(lista numerada acumulativa)\n\nESTADO ACTUAL DEL PROTAGONISTA:\n(descripción breve)\n\n==============================\nACTO NUEVO\n==============================\n${acto}\n`\n};\n\nreturn [{\n  json: {\n    acto_numero: split.acto_numero,\n    story_id: split.story_id,\n    ...body\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2624,
+        496
+      ],
+      "id": "1e8a4533-7e99-4fb5-b42d-e7baec4a91e7",
+      "name": "Build Summary prompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.response || '';\n\n// Recuperar datos del nodo Build Prompt\nconst buildData = $items(\"Build Prompt\")[0].json;\n\nconst acto_numero = buildData.acto_numero;\nconst story_id = buildData.story_id;\n\nreturn [{\n  json: {\n    acto_numero,\n    story_id\n  },\n  binary: {\n    data: {\n      data: Buffer.from(text, 'utf8').toString('base64'),\n      mimeType: 'text/markdown',\n      fileName: `acto_${acto_numero}.md`\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        352
+      ],
+      "id": "53e0180e-ff12-4276-8aca-0eef838b4755",
+      "name": "Write file acto md"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.response || '';\n\n// Traemos datos desde el nodo anterior al HTTP\nconst previous = $items(\"Build Prompt\")[0].json;\n\nconst acto_numero = previous.acto_numero;\nconst story_id = previous.story_id;\n\nreturn [{\n  json: {  \n    acto_numero,\n    story_id\n  },\n  binary: {\n    data: {\n      data: Buffer.from(text, 'utf8').toString('base64'),\n      mimeType: 'text/markdown',\n      fileName: `acto_${acto_numero}_resumen.md`\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        576
+      ],
+      "id": "e09aec0e-db20-46d3-8efe-5e76b737665b",
+      "name": "Write file summary md"
+    },
+    {
+      "parameters": {
+        "fileName": "=/home/node/.n8n-files/prompts/historias/{{$json.story_id}}/summary_{{$json.acto_numero}}.md",
+        "options": {}
+      },
+      "id": "ee91b612-d8a5-489d-a64d-43f5cde293eb",
+      "name": "Save Summary",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        32
+      ],
+      "id": "a56f5b92-4d04-42f8-8ddd-6a5b15b287d6",
+      "name": "System_prompt"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        256
+      ],
+      "id": "dff1f731-894b-45e5-ae1a-e9490d3f202f",
+      "name": "Story_prompt"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        416
+      ],
+      "id": "6efacc74-100e-4bdf-af02-7497435ac685",
+      "name": "Summery_data"
+    },
+    {
+      "parameters": {
         "operation": "text",
         "options": {}
       },
@@ -313,33 +353,7 @@
         448
       ],
       "id": "7296050e-d047-4f3d-968d-288fe2f48611",
-      "name": "Extract from File3"
-    },
-    {
-      "parameters": {
-        "jsCode": "const text = $json.response || '';\n\n// Traemos datos desde el nodo anterior al HTTP\nconst previous = $items(\"Build Summary prompt\")[0].json;\n\nconst acto_numero = previous.acto_numero;\nconst story_id = previous.story_id;\n\nreturn [{\n  json: {  \n    acto_numero,\n    story_id\n  },\n  binary: {\n    data: {\n      data: Buffer.from(text, 'utf8').toString('base64'),\n      mimeType: 'text/markdown',\n      fileName: `acto_${acto_numero}_resumen.md`\n    }\n  }\n}];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3040,
-        576
-      ],
-      "id": "e09aec0e-db20-46d3-8efe-5e76b737665b",
-      "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
-        "jsCode": "const acto = $json.data || '';\n\nconst body = {\n  model: \"llama3.1:8b\",\n  stream: false,\n  system: \"Eres un asistente que resume textos narrativos manteniendo continuidad estricta de personajes y eventos.\",\n  prompt: `Resume el siguiente acto en máximo 200 palabras.\n\nIMPORTANTE:\n- Mantén exactamente los nombres de los personajes.\n- No inventes personajes nuevos.\n- No agregues eventos que no estén presentes.\n\nEstructura el resumen así:\n\nPERSONAJES:\n-\n\nEVENTOS OCURRIDOS:\n-\n\nESTADO DEL PROTAGONISTA:\n-\n\nTEXTO DEL ACTO:\n\n${acto}`\n};\n\nreturn [{\n  json: body\n}];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2624,
-        496
-      ],
-      "id": "1e8a4533-7e99-4fb5-b42d-e7baec4a91e7",
-      "name": "Build Summary prompt"
+      "name": "Acto_data"
     }
   ],
   "pinData": {},
@@ -402,7 +416,7 @@
       "main": [
         [
           {
-            "node": "Extract from File",
+            "node": "System_prompt",
             "type": "main",
             "index": 0
           }
@@ -413,7 +427,7 @@
       "main": [
         [
           {
-            "node": "Extract from File1",
+            "node": "Story_prompt",
             "type": "main",
             "index": 0
           }
@@ -446,7 +460,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Write file acto md",
             "type": "main",
             "index": 0
           }
@@ -464,55 +478,11 @@
         ]
       ]
     },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Save Act",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract from File": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract from File1": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Extract from File2": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
     "If": {
       "main": [
         [
           {
-            "node": "Extract from File2",
+            "node": "Summery_data",
             "type": "main",
             "index": 0
           }
@@ -541,18 +511,7 @@
       "main": [
         [
           {
-            "node": "Extract from File3",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract from File3": {
-      "main": [
-        [
-          {
-            "node": "Build Summary prompt",
+            "node": "Acto_data",
             "type": "main",
             "index": 0
           }
@@ -563,7 +522,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "Write file summary md",
             "type": "main",
             "index": 0
           }
@@ -580,6 +539,83 @@
           }
         ]
       ]
+    },
+    "Write file acto md": {
+      "main": [
+        [
+          {
+            "node": "Save Act",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write file summary md": {
+      "main": [
+        [
+          {
+            "node": "Save Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Summary": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System_prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Summery_data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Acto_data": {
+      "main": [
+        [
+          {
+            "node": "Build Summary prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -588,7 +624,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "f7f87693-97f8-4de0-a3ce-cbf731807db6",
+  "versionId": "581dc414-b7c0-4d96-8e21-aaf046490dd8",
   "meta": {
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
   },
