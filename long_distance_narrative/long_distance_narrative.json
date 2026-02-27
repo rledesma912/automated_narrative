@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "fileSelector": "/home/node/.n8n-files/archivos/prompts/*.md",
+        "fileSelector": "/home/node/.n8n-files/archivos/prompts_generacion/*.md",
         "options": {
           "dataPropertyName": "data"
         }
@@ -46,7 +46,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1. Obtenemos los dos ítems que vienen del nodo Extract From File\nconst items = $input.all();\n\n// 2. Buscamos cuál es el sistema y cuál es la historia basándonos en palabras clave del contenido\n// (Como no tenemos el fileName aquí, buscamos por texto interno)\nconst sistemaItem = items.find(i => i.json.data.includes(\"# ROLE\") || i.json.data.includes(\"STYLE RULES\"));\nconst historiaItem = items.find(i => i.json.data.includes(\"# CONCEPTO\") || i.json.data.includes(\"ESTRUCTURA\"));\n\nconst sistema = sistemaItem ? sistemaItem.json.data : \"Error: No se encontró el System Prompt\";\nconst historia = historiaItem ? historiaItem.json.data : \"Error: No se encontró la Historia Base\";\n\n// 3. Inicializamos todo para el Acto 1\nreturn [{\n  json: {\n    acto_actual: 1,\n    total_actos: 5,\n    sistema_text: sistema,\n    historia_base_text: historia,\n    resumen_narrativo_acumulado: \"\",\n    memoria_estructurada_acumulada: \"\",\n    story_id: \"terror_\" + Date.now(),\n    // Esta variable ayudará a extraer la misión del acto más adelante\n    mision_del_acto: \"\" \n  }\n}];"
+        "jsCode": "// 1. Obtenemos los dos ítems que vienen del nodo Extract From File\nconst items = $input.all();\n\n// 2. Buscamos cuál es el sistema y cuál es la historia basándonos en palabras clave del contenido\n// (Como no tenemos el fileName aquí, buscamos por texto interno)\nconst sistemaItem = items.find(i => i.json.data.includes(\"# ROL\") || i.json.data.includes(\"STYLE RULES\"));\nconst historiaItem = items.find(i => i.json.data.includes(\"# CONCEPTO\") || i.json.data.includes(\"ESTRUCTURA\"));\n\nconst sistema = sistemaItem ? sistemaItem.json.data : \"Error: No se encontró el System Prompt\";\nconst historia = historiaItem ? historiaItem.json.data : \"Error: No se encontró la Historia Base\";\n\n// 3. Inicializamos todo para el Acto 1\nreturn [{\n  json: {\n    acto_actual: 1,\n    total_actos: 5,\n    sistema_text: sistema,\n    historia_base_text: historia,\n    resumen_narrativo_acumulado: \"\",\n    memoria_estructurada_acumulada: \"\",\n    story_id: \"terror_\" + Date.now(),\n    // Esta variable ayudará a extraer la misión del acto más adelante\n    mision_del_acto: \"\" \n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -72,35 +72,16 @@
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.sistema_text }}\n\n---\n\nCONTEXTO FIJO DE LA HISTORIA:\n{{ $json.historia_base_text }}\n\n---\nRESUMEN NARRATIVO ACUMULADO:\n{{ $json.resumen_narrativo_acumulado }}\n\n---\n\nMEMORIA ESTRUCTURADA:\n{{ $json.memoria_estructurada_acumulada }}\n\n---\n\nMISIÓN ESPECÍFICA DEL ACTO {{ $json.acto_actual }}:\n{{ $json.mision_del_acto }}\n\n---\n\nINSTRUCCIONES FINALES (OBLIGATORIAS):\n\n1. Escribe entre 450 y 550 palabras.\n2. Solo relato continuo.\n3. No incluyas títulos, reglas ni comentarios.\n4. No agregues personajes nuevos.\n5. Respeta estrictamente los hechos confirmados.\n6. No expliques nada fuera de la narración.\n7. No repitas información literal del resumen.",
-        "messages": {
-          "messageValues": [
-            {
-              "message": "={{ $json.sistema_text }}"
-            }
-          ]
-        },
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.9,
-      "position": [
-        -96,
-        -80
-      ],
-      "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
-      "name": "Basic LLM Chain"
-    },
-    {
-      "parameters": {
-        "model": "gemma2:9b",
+        "model": "qwen2.5:32b-instruct-q3_K_M",
         "options": {
-          "temperature": 0.7,
+          "temperature": 0.6,
           "topP": 0.9,
+          "keepAlive": "30m",
           "lowVram": false,
-          "numCtx": 8192,
+          "numCtx": 4096,
+          "numGpu": -1,
           "numPredict": 1200,
+          "numThread": 6,
           "repeatPenalty": 1.15
         }
       },
@@ -121,13 +102,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const previousState = $node[\"get_current_act\"].json;\n\n// Texto narrativo del acto recién generado\nconst textoActo = $node[\"Basic LLM Chain\"].json.text;\n\n// Memoria estructurada generada\nconst memoriaEstructurada = $node[\"generate_structured_memory\"].json.text;\n\nconst nextAct = previousState.acto_actual + 1;\n\nreturn [{\n  json: {\n    ...previousState,\n    acto_actual: nextAct,\n\n    // ACUMULACIÓN REAL NARRATIVA\n    resumen_narrativo_acumulado: \n      (previousState.resumen_narrativo_acumulado || \"\") \n      + \"\\n\\n\" \n      + textoActo,\n\n    // ACUMULACIÓN DE MEMORIA ESTRUCTURADA\n    memoria_estructurada_acumulada:\n      (previousState.memoria_estructurada_acumulada || \"\")\n      + \"\\n\\n---\\n\\n\"\n      + memoriaEstructurada\n  }\n}];"
+        "jsCode": "const previousState = $node[\"get_current_act\"].json;\n\n// Texto narrativo del acto recién generado (ya no lo usamos para acumular)\nconst textoActo = $node[\"generar_acto_del_relato\"].json.text;\n\n// Ahora usamos el resumen generado por el nuevo nodo\nconst resumenCorto = $node[\"summarize_act\"].json.text;  // Ajusta \"summarize_act\" al nombre que le pusiste\n\n// Memoria estructurada generada\nconst memoriaEstructurada = $node[\"generate_structured_memory\"].json.text;\n\nconst nextAct = previousState.acto_actual + 1;\n\nreturn [{\n  json: {\n    ...previousState,\n    acto_actual: nextAct,\n\n    // ACUMULACIÓN DE RESUMEN NARRATIVO CORTO\n    resumen_narrativo_acumulado: \n    (previousState.resumen_narrativo_acumulado || \"\") \n    + \"\\n\\nActo \" + previousState.acto_actual + \" (resumen clave – enlaza y varía en próximo, mantén flujo coherente): \" + resumenCorto,\n    \n    // ACUMULACIÓN DE MEMORIA ESTRUCTURADA (sin cambios)\n    memoria_estructurada_acumulada:\n      (previousState.memoria_estructurada_acumulada || \"\")\n      + \"\\n\\n---\\n\\n\"\n      + memoriaEstructurada\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        496,
-        -80
+        1008,
+        -48
       ],
       "id": "4e934d38-b9e7-4075-8e87-0b65a90b0022",
       "name": "update_state_and_loop"
@@ -145,7 +126,7 @@
             {
               "id": "f93481cf-4983-4f20-811e-be430c7faccc",
               "leftValue": "={{ $json.acto_actual }}",
-              "rightValue": 5,
+              "rightValue": "={{ $json.total_actos }}",
               "operator": {
                 "type": "number",
                 "operation": "lte"
@@ -159,8 +140,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        624,
-        96
+        1168,
+        144
       ],
       "id": "72b52684-8d89-49d9-871b-75ccc73b803a",
       "name": "If"
@@ -168,7 +149,7 @@
     {
       "parameters": {
         "operation": "write",
-        "fileName": "=/home/node/.n8n-files/archivos/historias_generadas/{{ $binary.data.fileName }}",
+        "fileName": "=/home/node/.n8n-files/archivos/historias_generadas/{{$binary.data.fileName}}",
         "options": {
           "append": false
         }
@@ -176,21 +157,21 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        1152,
-        -80
+        2112,
+        -64
       ],
       "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
       "name": "Read/Write Files from Disk1"
     },
     {
       "parameters": {
-        "jsCode": "// Aquí recibimos el array de filas de la base de datos\nconst filas = $input.all();\n\nif (filas.length === 0) {\n    throw new Error(\"No se encontraron actos en la base de datos para este ID.\");\n}\n\n// Unimos los textos\nconst historiaCompleta = filas.map((fila, index) => {\n  return `## ACTO ${index + 1}\\n\\n${fila.json.contenido}`;\n}).join(\"\\n\\n---\\n\\n\");\n\nreturn [{\n  json: {\n    historia_final: \"# RELATO COMPLETO\\n\\n\" + historiaCompleta,\n    nombre_archivo: `relato_final_${Date.now()}.md`\n  }\n}];"
+        "jsCode": "const items = $input.all();  // Rows de SQL\n\nconst storyId = $node[\"init_story_state\"].json.story_id;\n\nlet md = \"# RELATO COMPLETO\\n\\n\";\n\nitems.forEach(item => {\n  md += \"## ACTO \" + item.json.acto_numero + \"\\n\\n\";\n  md += item.json.contenido + \"\\n\\n---\\n\\n\";\n});\n\nreturn [{\n  json: {\n    md_text: md,\n    story_id: storyId,\n    nombre_archivo: storyId + \"_relato_completo.md\"\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
-        -80
+        1648,
+        208
       ],
       "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
       "name": "agregador_final"
@@ -198,7 +179,7 @@
     {
       "parameters": {
         "operation": "toText",
-        "sourceProperty": "historia_final",
+        "sourceProperty": "md_text",
         "options": {
           "fileName": "={{ $json.nombre_archivo }}"
         }
@@ -206,8 +187,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1072,
-        -320
+        1872,
+        0
       ],
       "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
       "name": "Convert to File"
@@ -284,8 +265,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        144,
-        -288
+        176,
+        -304
       ],
       "id": "751b9dac-486a-4838-bea3-2ef3646a4b2b",
       "name": "Insert rows in a table",
@@ -299,14 +280,14 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT contenido \nFROM relatos_vivos \nWHERE id_story = '{{ $node[\"init_story_state\"].json.story_id }}' \nORDER BY acto_numero ASC;",
+        "query": "SELECT acto_numero, contenido\nFROM relatos_vivos \nWHERE id_story = '{{ $node[\"init_story_state\"].json.story_id }}' \nORDER BY acto_numero ASC;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        768,
-        -80
+        1424,
+        192
       ],
       "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
       "name": "Execute a SQL query",
@@ -320,21 +301,21 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Genera memoria estructurada del siguiente acto narrativo.\n\nReglas:\n- Máximo 180 palabras.\n- No escribir como relato.\n- No usar estilo literario.\n- No agregar nada nuevo.\n- Solo hechos confirmados en el texto.\n- Si algún campo no aplica, escribir: NINGUNO.\n\nFormato obligatorio:\n\nUBICACIÓN ACTUAL:\nPERSONAJES PRESENTES:\nHECHOS IMPORTANTES:\nOBJETOS RELEVANTES:\nCAMBIOS EN EL ENTORNO:\nESTADO EMOCIONAL DEL PROTAGONISTA:\n\nACTO:\n{{ $node[\"Basic LLM Chain\"].json.text }}",
+        "text": "=Reglas:\n- Máximo 180 palabras.\n- No escribir como relato.\n- No usar estilo literario.\n- No agregar nada nuevo.\n- Solo hechos confirmados en el texto.\n\nFormato obligatorio:\nUBICACIÓN ACTUAL:\nPERSONAJES PRESENTES:\nHECHOS IMPORTANTES:\nOBJETOS RELEVANTES:\nCAMBIOS EN EL ENTORNO:\nESTADO EMOCIONAL DEL PROTAGONISTA:\n\nACTO:\n{{ $node[\"generar_acto_del_relato\"].json.text }}",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        208,
-        -80
+        688,
+        -96
       ],
       "id": "905a4ded-f2a7-4b94-8792-a6dcbe4fa49a",
       "name": "generate_structured_memory"
     },
     {
       "parameters": {
-        "model": "llama3.1:8b",
+        "model": "gemma2:9b",
         "options": {
           "temperature": 0.3,
           "topP": 0.8
@@ -343,11 +324,82 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        208,
-        112
+        720,
+        128
       ],
       "id": "5c4895e9-7067-4802-8920-36e0b0bca35e",
       "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "pme8Qn9prOFIVslx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ \n(() => {\n\n  const resumen = ($json.resumen_narrativo_acumulado || \"\").trim();\n  const memoria = ($json.memoria_estructurada_acumulada || \"\").trim();\n  const esPrimerActo = !resumen && !memoria;\n\n  const bloqueResumen = esPrimerActo\n    ? \"SIN ACTOS PREVIOS.\"\n    : resumen;\n\n  const bloqueMemoria = esPrimerActo\n    ? \"SIN MEMORIA PREVIA.\"\n    : memoria;\n\n  const instruccionInicio = esPrimerActo\n    ? \"Este es el inicio absoluto del relato.\"\n    : \"Continúa orgánicamente desde el estado acumulado.\";\n\nreturn `\nCONTEXTO FIJO DE LA HISTORIA:\n${$json.historia_base_text}\n\n---\n\nESTADO NARRATIVO ACUMULADO:\n\nRESUMEN CLAVE:\n${bloqueResumen}\n\nMEMORIA ESTRUCTURADA:\n${bloqueMemoria}\n\n---\n\nACTO ACTUAL: ${$json.acto_actual}\n\nMISIÓN ESPECÍFICA DEL ACTO:\n${$json.mision_del_acto}\n\n---\n\nINSTRUCCIÓN DE CONTINUIDAD:\n${instruccionInicio}\n\n`;\n})()\n}}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $json.sistema_text }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -96,
+        -80
+      ],
+      "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
+      "name": "generar_acto_del_relato"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Resumir el siguiente acto en 80-120 palabras como párrafo coherente en tercera persona. Enfócate SOLO en:\n\n- Escenarios clave: Describe brevemente lugares y cambios en el entorno (e.g., \"pasillo oscuro del tercer piso, luces parpadeando\").\n- Sucesos clave: Eventos principales y progresión (e.g., \"protagonista investiga, ve la sombra de cerca\").\n- Emociones y estado del protagonista: Evolución escéptica (e.g., \"pasa de duda a pánico sutil\").\n- Pendientes/cliffhanger: Elementos sin resolver para el próximo acto (e.g., \"puertas cerradas, presencia acechando\").\n\nReglas obligatorias:\n- Varía lenguaje: Usa sinónimos y frases nuevas; no repitas palabras del texto original (e.g., en vez de \"sombra borrosa\", di \"figura nebulosa\").\n- No agregues ni interpretes; condensa lo existente.\n- Alinea con arco en W: Resalta picos/bajadas de tensión y cómo avanza el terror.\n- Mantén tono neutral y objetivo, sin metáforas.\n- Incluye transiciones clave: Resalta cómo termina el acto y qué pendiente deja para el siguiente (e.g., \"termina con el protagonista decidiendo investigar, dejando pendiente la puerta cerrada\").\n\nTEXTO DEL ACTO A RESUMIR:\n{{ $node[\"generar_acto_del_relato\"].json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $json.sistema_text }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        336,
+        -96
+      ],
+      "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
+      "name": "summarize_act"
+    },
+    {
+      "parameters": {
+        "model": "mistral:latest",
+        "options": {
+          "temperature": 0.5,
+          "topP": 0.9,
+          "lowVram": false,
+          "numCtx": 8192,
+          "numPredict": 1200,
+          "repeatPenalty": 1.15
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        304,
+        112
+      ],
+      "id": "3a4e58af-f7bd-414a-950a-80f91262670f",
+      "name": "Ollama Chat Model2",
       "credentials": {
         "ollamaApi": {
           "id": "pme8Qn9prOFIVslx",
@@ -406,7 +458,7 @@
       "main": [
         [
           {
-            "node": "Basic LLM Chain",
+            "node": "generar_acto_del_relato",
             "type": "main",
             "index": 0
           }
@@ -417,19 +469,8 @@
       "ai_languageModel": [
         [
           {
-            "node": "Basic LLM Chain",
+            "node": "generar_acto_del_relato",
             "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Basic LLM Chain": {
-      "main": [
-        [
-          {
-            "node": "Insert rows in a table",
-            "type": "main",
             "index": 0
           }
         ]
@@ -490,7 +531,7 @@
       "main": [
         [
           {
-            "node": "generate_structured_memory",
+            "node": "summarize_act",
             "type": "main",
             "index": 0
           }
@@ -529,6 +570,39 @@
           }
         ]
       ]
+    },
+    "generar_acto_del_relato": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "summarize_act",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summarize_act": {
+      "main": [
+        [
+          {
+            "node": "generate_structured_memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -537,7 +611,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "96cf523d-eb03-42e6-976c-28dfdf5e628c",
+  "versionId": "cb549a0b-3dcd-4274-97e3-1f73c7c279a3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
