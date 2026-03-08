@@ -1,0 +1,750 @@
+{
+  "name": "long_distance_narrative",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        -336
+      ],
+      "id": "69105124-d5c1-4b39-aeb7-ec29ac27d805",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "model": "gemma2:9b",
+        "options": {
+          "temperature": 0.6,
+          "topP": 0.9,
+          "keepAlive": "30m",
+          "lowVram": false,
+          "numCtx": 4096,
+          "numGpu": -1,
+          "numPredict": 1200,
+          "numThread": 6,
+          "repeatPenalty": 1.15
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        272
+      ],
+      "id": "3cc72519-c324-4bb0-94d1-646421f16687",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "pme8Qn9prOFIVslx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/archivos/historias_generadas/{{$binary.data.fileName}}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        96
+      ],
+      "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();  // Rows de SQL\n\nconst storyId = $node[\"prepare_items\"].json.story_id;\n\nlet md = \"# RELATO COMPLETO\\n\\n\";\n\nitems.forEach(item => {\n  md += \"## ACTO \" + item.json.acto_numero + \"\\n\\n\";\n  md += item.json.contenido + \"\\n\\n---\\n\\n\";\n});\n\nreturn [{\n  json: {\n    md_text: md,\n    story_id: storyId,\n    nombre_archivo: \"relato_\" + storyId + \".md\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -416
+      ],
+      "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
+      "name": "agregador_final"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "md_text",
+        "options": {
+          "fileName": "={{ $json.nombre_archivo }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        -160
+      ],
+      "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "model": "gemma2:9b",
+        "options": {
+          "temperature": 0.3,
+          "topP": 0.8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        416,
+        272
+      ],
+      "id": "5c4895e9-7067-4802-8920-36e0b0bca35e",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "pme8Qn9prOFIVslx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Resumir el siguiente acto en 80-120 palabras como párrafo coherente en tercera persona. Enfócate SOLO en:\n\n- Escenarios clave: Describe brevemente lugares y cambios en el entorno (e.g., \"pasillo oscuro del tercer piso, luces parpadeando\").\n- Sucesos clave: Eventos principales y progresión (e.g., \"protagonista investiga, ve la sombra de cerca\").\n- Emociones y estado del protagonista: Evolución escéptica (e.g., \"pasa de duda a pánico sutil\").\n- Pendientes/cliffhanger: Elementos sin resolver para el próximo acto (e.g., \"puertas cerradas, presencia acechando\").\n\nReglas obligatorias:\n- Varía lenguaje: Usa sinónimos y frases nuevas; no repitas palabras del texto original (e.g., en vez de \"sombra borrosa\", di \"figura nebulosa\").\n- No agregues ni interpretes; condensa lo existente.\n- Alinea con arco en W: Resalta picos/bajadas de tensión y cómo avanza el terror.\n- Mantén tono neutral y objetivo, sin metáforas.\n- Incluye transiciones clave: Resalta cómo termina el acto y qué pendiente deja para el siguiente (e.g., \"termina con el protagonista decidiendo investigar, dejando pendiente la puerta cerrada\").\n\nTEXTO DEL ACTO A RESUMIR:\n{{ $json.contenido }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        160,
+        80
+      ],
+      "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
+      "name": "summarize_act"
+    },
+    {
+      "parameters": {
+        "model": "mistral:latest",
+        "options": {
+          "temperature": 0.5,
+          "topP": 0.9,
+          "lowVram": false,
+          "numCtx": 8192,
+          "numPredict": 1200,
+          "repeatPenalty": 1.15
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        160,
+        272
+      ],
+      "id": "3a4e58af-f7bd-414a-950a-80f91262670f",
+      "name": "Ollama Chat Model2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "pme8Qn9prOFIVslx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0023fa46-b45b-4045-b297-de49b660774e",
+              "name": "story_name",
+              "value": "El otro barrio",
+              "type": "string"
+            },
+            {
+              "id": "359e925c-4f48-4118-b2f8-cd4b81f1abb3",
+              "name": "total_actos",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "c4be4d13-a2d5-486c-9675-3ada10fc3b9d",
+              "name": "story_file",
+              "value": "story_20260304_001.md",
+              "type": "string"
+            },
+            {
+              "id": "0b0590f5-154b-4edc-be7c-96423749e534",
+              "name": "system_prompt_file",
+              "value": "system_prompt.md",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -608,
+        -336
+      ],
+      "id": "74dd07f1-73b2-40f7-b42e-5393b350da8f",
+      "name": "valores_manuales"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3c975e67-1f65-420f-aafc-ec924b34a44f",
+              "name": "story_id",
+              "value": "={{ $json.story_name.toLowerCase().replace(/[^a-z0-9]/gi, \"_\")  + \"_\" + Date.now()}}",
+              "type": "string"
+            },
+            {
+              "id": "593763ab-397f-4da8-95ee-21b787371da5",
+              "name": "story_filename",
+              "value": "={{ $json.story_name.toLowerCase().replace(/ /g, \"_\") + \".md\" }}",
+              "type": "string"
+            },
+            {
+              "id": "05a98127-b4b0-418d-b618-a44ffd23e331",
+              "name": "total_actos",
+              "value": "={{ $json.total_actos }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -416,
+        -272
+      ],
+      "id": "5c7c00c0-cd9c-48f8-9331-62fff57498c0",
+      "name": "valores_calculados"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        -288
+      ],
+      "id": "d0785344-319f-491c-9cf1-f287c911dddf",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/home/node/.n8n-files/archivos/prompts_generacion/{{ $json.system_prompt_file }}",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        -544
+      ],
+      "id": "8a6e9390-743f-4009-8ab8-d660b63dd207",
+      "name": "read_system_prompt",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/home/node/.n8n-files/archivos/prompts_generacion/{{ $json.story_filename }}",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        -400
+      ],
+      "id": "4fcae822-2fa5-48d9-950e-9d2f0cd93175",
+      "name": "read_story_prompt",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "relatos_vivos",
+          "mode": "list",
+          "cachedResultName": "relatos_vivos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "acto_numero": "={{ $runIndex + 1 }}",
+            "id_story": "={{ $node[\"prepare_items\"].json.story_id }}",
+            "contenido": "={{ $json.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_story",
+              "displayName": "id_story",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "acto_numero",
+              "displayName": "acto_numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "contenido",
+              "displayName": "contenido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fecha_creacion",
+              "displayName": "fecha_creacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        16,
+        80
+      ],
+      "id": "751b9dac-486a-4838-bea3-2ef3646a4b2b",
+      "name": "insert_act_in_table",
+      "credentials": {
+        "postgres": {
+          "id": "9PNsceb890e5B4Zn",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.prompt_text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -256,
+        80
+      ],
+      "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
+      "name": "gen_act"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Reglas:\n- Máximo 180 palabras.\n- No escribir como relato.\n- No usar estilo literario.\n- No agregar nada nuevo.\n- Solo hechos confirmados en el texto.\n\nFormato obligatorio:\nUBICACIÓN ACTUAL:\nPERSONAJES PRESENTES:\nHECHOS IMPORTANTES:\nOBJETOS RELEVANTES:\nCAMBIOS EN EL ENTORNO:\nESTADO EMOCIONAL DEL PROTAGONISTA:\n\nACTO:\n{{ $('insert_act_in_table').item.json.contenido }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        432,
+        80
+      ],
+      "id": "905a4ded-f2a7-4b94-8792-a6dcbe4fa49a",
+      "name": "gen_memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const state = $input.first().json;\n\nconst resumen = (state.resumen_narrativo_acumulado || \"\").trim();\nconst memoria = (state.memoria_estructurada_acumulada || \"\").trim();\nconst esPrimerActo = !resumen && !memoria;\n\nreturn [{\n  json: {\n    ...state,\n    prompt_text: `\nCONTEXTO FIJO DE LA HISTORIA:\n${state.historia_base_text}\n\n---\n\nESTADO NARRATIVO ACUMULADO:\n\nRESUMEN CLAVE:\n${esPrimerActo ? \"SIN ACTOS PREVIOS.\" : resumen}\n\nMEMORIA ESTRUCTURADA:\n${esPrimerActo ? \"SIN MEMORIA PREVIA.\" : memoria}\n\n---\n\nACTO ACTUAL: ${state.acto_numero}\n\nMISIÓN ESPECÍFICA DEL ACTO:\n${state.mision_del_acto}\n\n---\n\nINSTRUCCIÓN DE CONTINUIDAD:\n${esPrimerActo ? \"Este es el inicio absoluto del relato.\" : \"Continúa orgánicamente desde el estado acumulado.\"}\n`.trim()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        80
+      ],
+      "id": "9f9a2b3f-3d85-4c42-9da3-83126d04c62a",
+      "name": "build_prompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $input.first().json;\n\n// Verificación rápida\nif (!base.sistema_text) {\n  throw new Error(\"sistema_text vacío — init_story_state no pasó los datos correctamente\");\n}\n\nconst actos = [];\nfor (let i = 1; i <= base.total_actos; i++) {\n  actos.push({\n    json: {\n      acto_numero: i,\n      total_actos: base.total_actos,\n      sistema_text: base.sistema_text,\n      historia_base_text: base.historia_base_text,\n      story_id: base.story_id,\n      mision_del_acto: base.mision_del_acto,\n      resumen_narrativo_acumulado: \"\",\n      memoria_estructurada_acumulada: \"\"\n    }\n  });\n}\n\nreturn actos;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        224
+      ],
+      "id": "9cf8bd54-6892-4286-87e0-82f1de590155",
+      "name": "prepare_items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet sistema = \"\";\nlet historia = \"\";\nlet config = {};\n\n// recorrer items\nfor (let i = 0; i < items.length; i++) {\n\n  const item = items[i];\n\n  // detectar item de configuración\n  if (item.json && item.json.total_actos) {\n    config = item.json;\n  }\n\n  // leer binarios\n  if (item.binary && item.binary.data) {\n\n    const fileName = item.binary.data.fileName || \"\";\n\n    const buffer = await this.helpers.getBinaryDataBuffer(i, \"data\");\n    const text = buffer.toString(\"utf8\").trim();\n\n    if (fileName.includes(\"system_prompt\")) {\n      sistema = text;\n    }\n\n    if (fileName.includes(config.story_filename || \"\")) {\n      historia = text;\n    }\n  }\n}\n\nreturn [{\n  json: {\n    total_actos: config.total_actos,\n    sistema_text: sistema,\n    historia_base_text: historia,\n    resumen_narrativo_acumulado: \"\",\n    memoria_estructurada_acumulada: \"\",\n    story_id: config.story_id,\n    mision_del_acto: \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -32
+      ],
+      "id": "c91c7ec0-a5fa-4b3c-8f31-f7dce16c8f26",
+      "name": "init_story_state"
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -592,
+        -16
+      ],
+      "id": "8781aa37-60d7-41ee-86d6-e40028e791da",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $input.first().json; // viene de gen_memory con .text = memoria\nconst summarized = $node[\"summarize_act\"].json; // tiene resumen en .text\nconst inserted = $node[\"insert_act_in_table\"].json; // tiene acto_numero, story_id\n\n// Acumular resumen (reemplaza por el nuevo — es el resumen del acto actual)\nconst resumenNuevo = (summarized.text || \"\").trim();\n\n// Acumular memoria (concatena con la anterior)\nconst memoriaAnterior = (inserted.memoria_estructurada_acumulada || \"\").trim();\nconst memoriaActual = \"ACTO \" + inserted.acto_numero + \":\\n\" + (base.text || \"\").trim();\nconst memoriaAcumulada = memoriaAnterior\n  ? memoriaAnterior + \"\\n\\n\" + memoriaActual\n  : memoriaActual;\n\nreturn [{\n  json: {\n    ...inserted,\n    resumen_narrativo_acumulado: resumenNuevo,\n    memoria_estructurada_acumulada: memoriaAcumulada\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        240
+      ],
+      "id": "17f223f2-b369-43f7-83aa-e0d2904a01a0",
+      "name": "merge_loop_state"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT  id_story, acto_numero, contenido\nFROM relatos_vivos \nWHERE id_story = '{{ $json.id_story }}' \nORDER BY acto_numero ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        720,
+        -80
+      ],
+      "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
+      "name": "select_all_acts",
+      "credentials": {
+        "postgres": {
+          "id": "9PNsceb890e5B4Zn",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "valores_manuales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "gen_act",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agregador_final": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "gen_memory",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "summarize_act",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summarize_act": {
+      "main": [
+        [
+          {
+            "node": "gen_memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "valores_manuales": {
+      "main": [
+        [
+          {
+            "node": "valores_calculados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "valores_calculados": {
+      "main": [
+        [
+          {
+            "node": "read_system_prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "read_story_prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "read_system_prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "read_story_prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "init_story_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insert_act_in_table": {
+      "main": [
+        [
+          {
+            "node": "summarize_act",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gen_act": {
+      "main": [
+        [
+          {
+            "node": "insert_act_in_table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gen_memory": {
+      "main": [
+        [
+          {
+            "node": "merge_loop_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build_prompt": {
+      "main": [
+        [
+          {
+            "node": "gen_act",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare_items": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "init_story_state": {
+      "main": [
+        [
+          {
+            "node": "prepare_items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "select_all_acts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "build_prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge_loop_state": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "select_all_acts": {
+      "main": [
+        [
+          {
+            "node": "agregador_final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9762da5c-8510-4f6f-91ec-a6a4d79ce40d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
+  },
+  "id": "vcQvJWHIqjNsEdZ3",
+  "tags": []
+}

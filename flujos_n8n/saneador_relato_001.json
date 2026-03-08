@@ -1,0 +1,248 @@
+{
+  "name": "saneador_relato_001",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "426ca7be-d971-4a72-bad2-cd14f955e67a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "relato_raw",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        -192
+      ],
+      "id": "a5a1d815-29a5-430c-a602-b562fd08bc89",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/archivos/historias_generadas/terror_1772154752469_relato_completo.md",
+        "options": {
+          "dataPropertyName": "relato_raw"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        -192
+      ],
+      "id": "b84cd475-da46-4fb3-a5a1-37d60635031a",
+      "name": "leer_relato"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    relato_texto: $input.item.json.data.trim(),\n    story_id: \"saneado_\" + Date.now()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        48
+      ],
+      "id": "a14c0da9-44ff-4e32-afb3-a788f21bebf7",
+      "name": "preparar_relato"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un editor profesional de relatos de terror. Tu tarea es revisar este relato completo generado automáticamente y producir una versión saneada y mejorada.\n\nREGLAS GENERALES:\n- Mantén narración en PRIMERA PERSONA, pasado pretérito simple.\n- Elimina cualquier texto que no sea parte del relato (resúmenes, memorias estructuradas, headers como **MEMORIA ESTRUCTURADA**, **Resumen Acto X**, etc.).\n- Corrige saltos abruptos: agrega transiciones suaves y contexto cuando falte.\n- Haz el lenguaje más conversacional y directo (evita formalismos y metáforas excesivas).\n- Varía descripciones y sensaciones para evitar repeticiones.\n- Asegura progresión lógica y escalada de terror (arco en W).\n- Respeta la longitud aproximada por acto (450-550 palabras).\n- No agregues elementos nuevos; solo corrige y pule lo existente.\n\nRELATO ORIGINAL A SANEAR:\n{{ $json.relato_texto }}\n\nResponde SOLO con el relato saneado completo, en formato Markdown limpio:\n# RELATO SANEADO\n\n## ACTO 1\n[texto corregido]\n\n## ACTO 2\n[texto corregido]\n\n...",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        624,
+        48
+      ],
+      "id": "a09a496f-ad20-42f6-87a6-915652ac31b2",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "gemma2:9b",
+        "options": {
+          "temperature": 0.7,
+          "numCtx": 8192,
+          "numPredict": 5000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        592,
+        240
+      ],
+      "id": "f93d5af9-6f99-4f17-a69a-83b86f2a34cc",
+      "name": "analizar_y_sanear",
+      "credentials": {
+        "ollamaApi": {
+          "id": "pme8Qn9prOFIVslx",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const saneado = $input.item.json.text; // El output del LLM Chain\n\nreturn [{\n  json: {\n      data: saneado,\n      fileName: `relato_saneado_${Date.now()}.md`,\n      mimeType: 'text/markdown'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        48
+      ],
+      "id": "af1543a2-751a-4108-bc18-d5dbdd149524",
+      "name": "guardar_saneado"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "data",
+        "options": {
+          "fileName": "={{ $json.fileName }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        48
+      ],
+      "id": "5666a43f-0581-421b-9039-1788a932bf66",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/archivos/historias_saneadas/{{ $binary.data.fileName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        48
+      ],
+      "id": "d95f4c9c-e839-47ba-be79-932d7aa16a61",
+      "name": "Read/Write Files from Disk"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "leer_relato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "leer_relato": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "preparar_relato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "analizar_y_sanear": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "preparar_relato": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "guardar_saneado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "guardar_saneado": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "69b8e53e-5a4f-448a-b56f-e41a3740593b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
+  },
+  "id": "nja1gk8iOUFA7ztK",
+  "tags": []
+}
