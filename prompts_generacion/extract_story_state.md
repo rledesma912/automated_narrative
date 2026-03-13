@@ -6,7 +6,6 @@ TAREA: Analizar el capítulo y generar DOS salidas:
 REGLAS GENERALES
 - No inventar información
 - Solo usar hechos del texto
-- Máximo 180 palabras por sección
 - No escribir como relato
 
 FORMATO OBLIGATORIO JSON
@@ -17,7 +16,7 @@ FORMATO OBLIGATORIO JSON
 }
 
 SUMMARY
-Resumen del acto en 80-100 palabras.
+Resumen del acto en 200-250 palabras.
 Enfocarse en:
 - escenarios
 - sucesos

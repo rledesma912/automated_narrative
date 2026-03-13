@@ -3,8 +3,14 @@
 **Género**: Terror. Viaje a otra dimension, falla en la realidad.
 **Protagonistas**: Tadeo es el hermano mayor que NARRA EL RELATO, es protector y valiente. Su hermano menor es Valentino, ingenuo, temeroso.
 **Escenarios**: Casa de campo cercana al centro del pueblo. Caminos de tierra iluminados por espaciados faroles altos rodeados de altos pastizales. Centro de pueblo pequeño apenas iluminado al anochecer. Almacen obscuro y tenebroso con objetos aberrantes.
-**Sinopsis**
-    Los hermanos deben ir al peublo por un mandado de su madre. Está anocheciendo. Deciden tomar un atajo por el campo y al salir del pastizal notan que ese no es su pueblo, sino una versión alterna y peligrosa de él. Pronto notan un pueblo desolado y tenebroso. En un almacén se encuentran con un extraño almacenero que les provoca miedo y salen corriendo. Sombras de aquél pueblo desconocido y el almacenero los persiguen. Escapan del pueblo y atraviesan un campo de altos pastizales, al salir del campo parecen haber vuelto a su realidad o dimensión. A salvo en casa y le cuentan las historia a sus padres pero estos no les creen.
+**Sinopsis**: Dos hermanos van al pueblo al anochecer, terminan en una dimensión alterna siniestra, escapan atravesando el campo de pastizales y vuelven a casa sanos pero sin ser creídos por sus padres.
+
+## Las reglas de la historia
+- Valentino siempre tiene miedo, nunca actúa con valentía
+- Tadeo nunca muestra miedo abiertamente delante de su hermano
+- El campo de pastizales es el único portal de entrada y salida al pueblo alterno
+- Los padres no creen la historia al final
+- El almacenero solo aparece a partir del Acto 3
 
 ---
 
@@ -24,7 +30,7 @@ Ambos corren aterrados tratando de escapar de ese pueblo siniestro. Sombras los 
 
 **Acto 5 (Clímax - Resolución final)**
 Mientras corren por los pastos altos que cubren toda la visión oyen ruidos similares a aullidos. Ya no ven al almacenero pero lo escuchan muy cerca. Valentino tiene mucho miedo y va gritando pero Tadeo le exige que se caye.
-Siguen corriendo como si no hubiera un mañana mientras perciben que los están por cazar. Luego de un salen del otro lado del campo de pastizales y todo se calma. Ya no escuchan que los sigan ni aullidos, reconocen el camino que los lleva a su casa, parece que todo hubiera vuelto a la normalidad.
+Siguen corriendo como si no hubiera un mañana mientras perciben que los están por cazar. Luego de un salen del otro lado del pastizal y todo se calma. Ya no escuchan que los sigan ni aullidos, reconocen el camino que los lleva a su casa, parece que todo hubiera vuelto a la normalidad.
 Llegan a su casa muertos de miedo y les cuentan a sus padres su travesía. Ellos no les creen, se burlan y les dicen que fue algo que imaginaron.
 Valentino cuenta que nunca volvió a desviarse del camino para tomar atajos.
 

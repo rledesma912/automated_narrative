@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "model": "gemma2:9b",
+        "model": "qwen2.5:32b-instruct-q3_K_M",
         "options": {
           "temperature": 0.6,
           "topP": 0.9,
@@ -30,8 +30,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        304,
-        336
+        256,
+        384
       ],
       "id": "3cc72519-c324-4bb0-94d1-646421f16687",
       "name": "Ollama Chat Model",
@@ -53,8 +53,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        1664,
-        -80
+        1344,
+        -32
       ],
       "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
       "name": "Read/Write Files from Disk1"
@@ -70,8 +70,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1488,
-        -80
+        1168,
+        -32
       ],
       "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
       "name": "Convert to File"
@@ -91,8 +91,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        864,
-        320
+        816,
+        368
       ],
       "id": "3a4e58af-f7bd-414a-950a-80f91262670f",
       "name": "Ollama Chat Model2",
@@ -108,13 +108,13 @@
         "assignments": {
           "assignments": [
             {
-              "id": "0023fa46-b45b-4045-b297-de49b660774e",
-              "name": "story_name",
-              "value": "El otro pueblo",
+              "id": "69495e37-5ef3-4aa0-bbd1-ecce27e70256",
+              "name": "story_prompt_file",
+              "value": "el_otro_pueblo.md",
               "type": "string"
             },
             {
-              "id": "359e925c-4f48-4118-b2f8-cd4b81f1abb3",
+              "id": "908f88ca-74be-465e-9fd4-8a6ed99ca177",
               "name": "total_acts",
               "value": 5,
               "type": "number"
@@ -123,12 +123,6 @@
               "id": "0b0590f5-154b-4edc-be7c-96423749e534",
               "name": "system_prompt_file",
               "value": "system_prompt.md",
-              "type": "string"
-            },
-            {
-              "id": "69495e37-5ef3-4aa0-bbd1-ecce27e70256",
-              "name": "story_prompt_file",
-              "value": "el_otro_pueblo.md",
               "type": "string"
             },
             {
@@ -202,8 +196,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        320,
-        144
+        272,
+        192
       ],
       "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
       "name": "gen_act"
@@ -215,8 +209,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        144,
-        144
+        96,
+        192
       ],
       "id": "9f9a2b3f-3d85-4c42-9da3-83126d04c62a",
       "name": "build_prompt"
@@ -260,8 +254,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1088,
-        -80
+        768,
+        -32
       ],
       "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
       "name": "select_all_acts",
@@ -279,8 +273,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1296,
-        -80
+        976,
+        -32
       ],
       "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
       "name": "persiste_cinco_capitulos"
@@ -307,8 +301,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1264,
-        320
+        1216,
+        368
       ],
       "id": "95be0635-fcef-455a-a68a-2a9a4e87d45f",
       "name": "save_act",
@@ -328,8 +322,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -288,
-        256
+        -336,
+        304
       ],
       "id": "f50857c2-bf25-4981-8288-558f41e71941",
       "name": "get_story_state",
@@ -368,7 +362,13 @@
             {
               "id": "687219c9-fcdb-44f9-8943-80ae03c23575",
               "name": "id_story",
-              "value": "={{ $json.story_name.toLowerCase().replaceAll(\" \",\"_\") + \"_\" + Date.now() }}",
+              "value": "={{ $json.story_prompt_file.toLowerCase().replaceAll(\" \",\"_\").replace(/\\.md$/, \"\") + \"_\" + Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "300888c4-14d2-4529-afdf-f03eb0baf3bd",
+              "name": "story_name",
+              "value": "=={{ \n  $json.story_prompt_file\n    .replace('.md','')\n    .replaceAll('_',' ')\n    .replace(/^./, c => c.toUpperCase())\n}}",
               "type": "string"
             }
           ]
@@ -390,8 +390,8 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        912,
-        -80
+        592,
+        -32
       ],
       "id": "5aecbed2-624b-40f7-b4a8-42e33e44d08e",
       "name": "Limit1"
@@ -445,8 +445,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        -48,
-        144
+        -96,
+        192
       ],
       "id": "6a0457d7-7980-42f4-a856-d3fa6992b8e3",
       "name": "Merge"
@@ -461,8 +461,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        896,
-        144
+        848,
+        192
       ],
       "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
       "name": "extract_story_state"
@@ -492,8 +492,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        144
+        624,
+        192
       ],
       "id": "2e1b024e-87e2-4ef1-9383-d69d9cd001bb",
       "name": "build_extract_prompt"
@@ -820,7 +820,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "e9e80b3c-68fd-4c0a-a1aa-460167bda18f",
+  "versionId": "fa4c12d2-b9d5-4911-834a-e52926c3a0a6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"

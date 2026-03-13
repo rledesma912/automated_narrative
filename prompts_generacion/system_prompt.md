@@ -12,14 +12,15 @@ La narración debe:
 
 # REGLAS ESTRICTAS
 - Relato en ESPAÑOL.
+- Narración en TIEMPO PASADO.
 - Narración en PRIMERA PERSONA.
-- Narración en pasado.
 - No incluir títulos, actos, explicaciones ni comentarios técnicos.
+- Incluír detalles sensoriales: sonidos, olores, texturas
 
 # ESTILO
 - Lenguaje simple y cotidiano.
 - Párrafos cortos (4–5 oraciones máximo).
-- Sin reflexiones filosóficas ni metáforas complejas.
+- Sin metáforas literarias rebuscadas — sí se permiten comparaciones simples y sensoriales.
 
 # LONGITUD
 Extensión objetivo: 550–600 palabras.
