@@ -1,5 +1,5 @@
 {
-  "name": "long_distance_narrative",
+  "name": "short_distance_narrative",
   "nodes": [
     {
       "parameters": {},
@@ -80,44 +80,6 @@
       "parameters": {
         "model": "gemma2:9b",
         "options": {
-          "temperature": 0.3,
-          "topP": 0.8
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        976,
-        336
-      ],
-      "id": "5c4895e9-7067-4802-8920-36e0b0bca35e",
-      "name": "Ollama Chat Model1",
-      "credentials": {
-        "ollamaApi": {
-          "id": "pme8Qn9prOFIVslx",
-          "name": "Ollama account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Resumir el siguiente acto en 80-100 palabras como párrafo coherente en tercera persona. Enfócate SOLO en:\n\n- Escenarios clave: Describe brevemente lugares y cambios en el entorno (e.g., \"pasillo oscuro del tercer piso, luces parpadeando\").\n- Sucesos clave: Eventos principales y progresión (e.g., \"protagonista investiga, ve la sombra de cerca\").\n- Emociones y estado del protagonista: Evolución escéptica (e.g., \"pasa de duda a pánico sutil\").\n- Pendientes/cliffhanger: Elementos sin resolver para el próximo acto (e.g., \"puertas cerradas, presencia acechando\").\n\nReglas obligatorias:\n- Varía lenguaje: Usa sinónimos y frases nuevas; no repitas palabras del texto original (e.g., en vez de \"sombra borrosa\", di \"figura nebulosa\").\n- No agregues ni interpretes; condensa lo existente.\n- Alinea con arco en W: Resalta picos/bajadas de tensión y cómo avanza el terror.\n- Mantén tono neutral y objetivo, sin metáforas.\n- Incluye transiciones clave: Resalta cómo termina el acto y qué pendiente deja para el siguiente (e.g., \"termina con el protagonista decidiendo investigar, dejando pendiente la puerta cerrada\").\n\nCONTEXTO DE LA HISTORIA:\n{{ $('build_prompt').item.json.story_context }}\nTEXTO DEL ACTO A RESUMIR:\n{{ $json.text }}",
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.9,
-      "position": [
-        656,
-        144
-      ],
-      "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
-      "name": "summarize_act"
-    },
-    {
-      "parameters": {
-        "model": "mistral:latest",
-        "options": {
           "temperature": 0.5,
           "topP": 0.9,
           "lowVram": false,
@@ -129,8 +91,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        640,
-        336
+        864,
+        320
       ],
       "id": "3a4e58af-f7bd-414a-950a-80f91262670f",
       "name": "Ollama Chat Model2",
@@ -168,6 +130,12 @@
               "name": "story_prompt_file",
               "value": "el_otro_pueblo.md",
               "type": "string"
+            },
+            {
+              "id": "0c767c02-590a-47ce-acc1-cf80330febf4",
+              "name": "extract_prompt_file",
+              "value": "extract_story_state.md",
+              "type": "string"
             }
           ]
         },
@@ -193,7 +161,7 @@
       "typeVersion": 1.1,
       "position": [
         16,
-        -576
+        -704
       ],
       "id": "8a6e9390-743f-4009-8ab8-d660b63dd207",
       "name": "read_system_prompt",
@@ -210,8 +178,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        16,
-        -400
+        0,
+        -544
       ],
       "id": "4fcae822-2fa5-48d9-950e-9d2f0cd93175",
       "name": "read_story_prompt",
@@ -222,6 +190,13 @@
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.prompt }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $('Loop Over Items').item.json.system_prompt }}"
+            }
+          ]
+        },
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -235,22 +210,7 @@
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "=Reglas:\n- Máximo 180 palabras.\n- No escribir como relato.\n- No usar estilo literario.\n- No agregar nada nuevo.\n- Solo hechos confirmados en el texto.\n\nFormato obligatorio:\nUBICACIÓN ACTUAL:\nPERSONAJES PRESENTES:\nHECHOS IMPORTANTES:\nOBJETOS RELEVANTES:\nCAMBIOS EN EL ENTORNO:\nESTADO EMOCIONAL DEL PROTAGONISTA:\n\nACTO:\n{{ $('gen_act').item.json.text }}",
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.9,
-      "position": [
-        992,
-        144
-      ],
-      "id": "905a4ded-f2a7-4b94-8792-a6dcbe4fa49a",
-      "name": "gen_memory"
-    },
-    {
-      "parameters": {
-        "jsCode": "//const item = $input.first().json;\nconst data = $json;\n\nconst context = data.story_context;\nconst mission = data.act_mission;\nconst act_number = data.act_number;\nconst arcPhase = data.arc_phase;\n\nconst memory = data.accumulated_memory || \"\";\nconst summary = data.accumulated_summary|| \"\";\n\nlet prompt = \"\";\n\nprompt += \"CONTEXTO DEL RELATO\\n\";\nprompt += context + \"\\n\\n\";\n\n// resumen solo si existe\nif (summary) {\n  prompt += \"RESUMEN DEL ACTO ANTERIOR\\n\";\n  prompt += summary + \"\\n\\n\";\n}\n\n// memoria solo si existe\nif (memory) {\n  prompt += \"MEMORIA NARRATIVA\\n\";\n  prompt += memory + \"\\n\\n\";\n}\n\nprompt += \"FASE DEL ARCO NARRATIVO\\n\";\nprompt += arcPhase + \"\\n\\n\";\n\nprompt += \"MISIÓN DEL ACTO\\n\";\nprompt += mission + \"\\n\\n\";\n\nif (act_number > 1) {\n  // aquí agregamos la regla crítica del pipeline\n  prompt += `REGLAS DE CONTINUIDAD\\n\n 1. Usa el RESUMEN DEL ACTO ANTERIOR como punto de partida narrativo.\\n\n 2. El capítulo debe comenzar inmediatamente después de ese momento.\\n\n 3. Respeta la MEMORIA NARRATIVA: contiene hechos, personajes y lugares ya  establecidos.\\n\n 4. No contradigas ni cambies información almacenada en la memoria.\\n\n 5. No reinicies la historia ni repitas escenas ya narradas.\\n\n 6. Avanza el relato desde la última situación descrita en el resumen.\\n\n  `;\n}\n\nif (act_number === 1) {\n  prompt += `\nINICIO DE LA HISTORIA\\n\nEste es el primer capítulo.\\n\nNo existe un acto anterior.\\n\nComienza la narración desde el contexto inicial descrito arriba.\\n\n`;\n}\n\nprompt += \"Escribe el capítulo siguiendo todas las instrucciones anteriores.\";\n\nreturn [\n  {\n    json: {\n      prompt\n    }\n  }\n];\n"
+        "jsCode": "//const item = $input.first().json;\nconst data = $json;\n\nconst context = data.story_context;\nconst mission = data.act_mission;\nconst act_number = data.act_number;\nconst arcPhase = data.arc_phase;\n\nconst memory = data.accumulated_memory || \"\";\nconst summary = data.accumulated_summary|| \"\";\n\nlet prompt = \"\";\n\nprompt += \"CONTEXTO DEL RELATO\\n\";\nprompt += context + \"\\n\\n\";\n\n// resumen solo si existe\nif (summary) {\n  prompt += \"RESUMEN DEL ACTO ANTERIOR\\n\";\n  prompt += summary + \"\\n\\n\";\n}\n\n// memoria solo si existe\nif (memory) {\n  prompt += \"MEMORIA NARRATIVA\\n\";\n  prompt += memory + \"\\n\\n\";\n}\n\nprompt += \"FASE DEL ARCO NARRATIVO\\n\";\nprompt += arcPhase + \"\\n\\n\";\n\nprompt += \"MISIÓN DEL ACTO\\n\";\nprompt += mission + \"\\n\\n\";\n\nif (act_number > 1) {\n  // aquí agregamos la regla crítica del pipeline\n  prompt += `REGLAS DE CONTINUIDAD\\n\n 1. Usa el RESUMEN DEL ACTO ANTERIOR como punto de partida narrativo.\\n\n 2. El capítulo debe comenzar inmediatamente después de ese momento.\\n\n 3. Respeta la MEMORIA NARRATIVA: contiene hechos, personajes y lugares ya  establecidos.\\n\n 4. No contradigas ni cambies información almacenada en la memoria.\\n\n 5. No reinicies la historia ni repitas escenas ya narradas.\\n\n 6. Avanza el relato desde la última situación descrita en el resumen.\\n\n  `;\n}\n\nif (act_number === 1) {\n  prompt += `\nINICIO DE LA HISTORIA\\n\nEste es el primer capítulo.\\n\nNo existe un acto anterior.\\n\nComienza la narración desde el contexto inicial descrito arriba.\\n\n`;\n}\n\nprompt += \"Escribe el capítulo siguiendo todas las instrucciones anteriores.\";\n\nreturn [\n  {\n    json: {\n      ...data,\n      prompt\n    }\n  }\n];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -263,7 +223,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n\n  const base = item.json.base_context;\n\n  return {\n    json: {\n      id_story: base.id_story,\n      story_name: base.story_name,\n\n      total_acts: base.total_acts,\n      act_number: item.json.act_number,\n      arc_phase: item.json.arc_phase,\n\n      act_mission: item.json.act_mission,\n\n      system_prompt: base.system_prompt,\n      story_context: base.story_context,\n\n      accumulated_summary: \"\",\n      accumulated_memory: \"\"\n    }\n  };\n\n});"
+        "jsCode": "const items = $input.all();\nconst estado = $('build_data_items').first().json.extract_prompt;\n\nreturn items.map(item => {\n\n  const base = item.json.base_context;\n\n  return {\n    json: {\n      id_story: base.id_story,\n      story_name: base.story_name,\n\n      total_acts: base.total_acts,\n      act_number: item.json.act_number,\n      arc_phase: item.json.arc_phase,\n\n      act_mission: item.json.act_mission,\n\n      system_prompt: base.system_prompt,\n      extract_prompt: estado,\n      story_context: base.story_context,\n\n      accumulated_summary: \"\",\n      accumulated_memory: \"\"\n    }\n  };\n\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -341,13 +301,13 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO story_acts\n(\nid_story,\nact_number,\narc_phase,\nchapter,\nsummary,\nmemory\n)\nVALUES\n(\n'{{ $('Merge').item.json.id_story }}',\n{{ $('Merge').item.json.act_number }},\n'{{ $('Merge').item.json.arc_phase }}',\n'{{$node[\"gen_act\"].json.text}}',\n'{{$node[\"summarize_act\"].json.text}}',\n'{{$node[\"gen_memory\"].json.text}}'\n);",
+        "query": "INSERT INTO story_acts\n(\nid_story,\nact_number,\narc_phase,\nchapter,\nsummary,\nmemory\n)\nVALUES\n(\n'{{ $('build_extract_prompt').item.json.id_story }}',\n{{ $('build_extract_prompt').item.json.act_number }},\n'{{ $('build_extract_prompt').item.json.arc_phase }}',\n'{{$node[\"gen_act\"].json.text}}',\n'{{ JSON.parse($node[\"extract_story_state\"].json.text).summary }}',\n'{{ JSON.stringify(JSON.parse($node[\"extract_story_state\"].json.text).memory) }}'\n);",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1312,
+        1264,
         320
       ],
       "id": "95be0635-fcef-455a-a68a-2a9a4e87d45f",
@@ -362,7 +322,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  COALESCE(a.id_story, '') AS id_story,\n  COALESCE(a.summary, '') AS accumulated_summary,\n  COALESCE(a.memory, '') AS accumulated_memory\nFROM stories s\nLEFT JOIN (\n  SELECT\n    id_story,\n    summary,\n    memory\n  FROM story_acts\n  WHERE id_story = '{{ $json.id_story }}'\n  ORDER BY act_number DESC\n  LIMIT 1\n) a\nON s.id_story = a.id_story\nWHERE s.id_story = '{{ $json.id_story }}'\nLIMIT 1;",
+        "query": "SELECT\n  s.id_story,\n  COALESCE(a.summary, '') AS accumulated_summary,\n  COALESCE(a.memory, '') AS accumulated_memory\nFROM stories s\nLEFT JOIN (\n  SELECT\n    id_story,\n    summary,\n    memory\n  FROM story_acts\n  WHERE id_story = '{{ $json.id_story }}'\n  ORDER BY act_number DESC\n  LIMIT 1\n) a\nON s.id_story = a.id_story\nWHERE s.id_story = '{{ $json.id_story }}'\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -438,13 +398,13 @@
     },
     {
       "parameters": {
-        "numberInputs": 3
+        "numberInputs": 4
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        304,
-        -304
+        320,
+        -336
       ],
       "id": "d0785344-319f-491c-9cf1-f287c911dddf",
       "name": "Merge_001",
@@ -452,7 +412,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nlet sistema = \"\";\nlet historia = \"\";\nlet config = {};\n\nfor (let i = 0; i < items.length; i++) {\n\n  const item = items[i];\n\n  // configuración proveniente de valores_calculados\n  if (item.json && item.json.total_acts) {\n    config = item.json;\n  }\n\n  // lectura de archivos binarios\n  if (item.binary && item.binary.data) {\n\n    const fileName = item.binary.data.fileName || \"\";\n    const buffer = await this.helpers.getBinaryDataBuffer(i, \"data\");\n    const text = buffer.toString(\"utf8\").trim();\n\n    if (fileName.includes(\"system_prompt\")) {\n      sistema = text;\n    }\n\n    if (fileName.includes(\".md\") && !fileName.includes(\"story_prompt\")) {\n      historia = text;\n    }\n  }\n}\n\nreturn [{\n  json: {\n    id_story: config.id_story,\n    story_name: config.story_name,\n    total_acts: config.total_acts,\n    system_prompt: sistema,\n    story_prompt: historia,\n    accumulated_summary: \"\",\n    accumulated_memory: \"\"\n  }\n}];"
+        "jsCode": "const items = $input.all();\n\nlet sistema = \"\";\nlet historia = \"\";\nlet estados = \"\";\nlet config = {};\n\n// 1️⃣ obtener configuración primero\nfor (const item of items) {\n  if (item.json && item.json.total_acts) {\n    config = item.json;\n    break;\n  }\n}\n\n// 2️⃣ procesar archivos binarios\nfor (let i = 0; i < items.length; i++) {\n\n  const item = items[i];\n\n  if (item.binary && item.binary.data) {\n\n    const fileName = item.binary.data.fileName || \"\";\n\n    const buffer = await this.helpers.getBinaryDataBuffer(i, \"data\");\n    const text = buffer.toString(\"utf8\").trim();\n\n    if (fileName === config.system_prompt_file) {\n      sistema = text;\n      continue;\n    }\n\n    if (fileName === config.story_prompt_file) {\n      historia = text;\n      continue;\n    }\n\n    if (fileName === config.extract_prompt_file) {\n      estados = text;\n      continue;\n    }\n\n  }\n}\n\nreturn [{\n  json: {\n    id_story: config.id_story,\n    story_name: config.story_name,\n    total_acts: config.total_acts,\n    system_prompt: sistema,\n    story_prompt: historia,\n    extract_prompt: estados,\n    accumulated_summary: \"\",\n    accumulated_memory: \"\"\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -490,6 +450,53 @@
       ],
       "id": "6a0457d7-7980-42f4-a856-d3fa6992b8e3",
       "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.extract_prompt}}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        896,
+        144
+      ],
+      "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
+      "name": "extract_story_state"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/home/node/.n8n-files/archivos/prompts_generacion/{{ $json.extract_prompt_file }}",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        -384
+      ],
+      "id": "89b63a7d-6e65-46da-b679-39f9fad617b3",
+      "name": "read_extract_prompt",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "//const template = $json.extract_prompt || \"\";\nconst template = $('build_prompt').first().json;\n\nconst chapter = $node[\"gen_act\"].json.text || \"\";\n\nconst context = $json.story_context || \"\";\n\nconst prompt = template.extract_prompt\n  .replace(\"{{story_context}}\", context)\n  .replace(\"{{chapter}}\", chapter);\n\nreturn [\n{\n  json: {\n    ...template,\n    extract_prompt: prompt\n  }\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        144
+      ],
+      "id": "2e1b024e-87e2-4ef1-9383-d69d9cd001bb",
+      "name": "build_extract_prompt"
     }
   ],
   "pinData": {},
@@ -527,34 +534,12 @@
         ]
       ]
     },
-    "Ollama Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "gen_memory",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Ollama Chat Model2": {
       "ai_languageModel": [
         [
           {
-            "node": "summarize_act",
+            "node": "extract_story_state",
             "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "summarize_act": {
-      "main": [
-        [
-          {
-            "node": "gen_memory",
-            "type": "main",
             "index": 0
           }
         ]
@@ -597,18 +582,7 @@
       "main": [
         [
           {
-            "node": "summarize_act",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "gen_memory": {
-      "main": [
-        [
-          {
-            "node": "save_act",
+            "node": "build_extract_prompt",
             "type": "main",
             "index": 0
           }
@@ -739,9 +713,14 @@
             "index": 0
           },
           {
+            "node": "read_extract_prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Merge_001",
             "type": "main",
-            "index": 2
+            "index": 3
           }
         ]
       ]
@@ -800,6 +779,39 @@
           }
         ]
       ]
+    },
+    "extract_story_state": {
+      "main": [
+        [
+          {
+            "node": "save_act",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "read_extract_prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge_001",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "build_extract_prompt": {
+      "main": [
+        [
+          {
+            "node": "extract_story_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -808,7 +820,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "8ae56d5f-3ea1-4c94-9951-8ab8f6808997",
+  "versionId": "e9e80b3c-68fd-4c0a-a1aa-460167bda18f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
