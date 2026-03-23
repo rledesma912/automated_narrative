@@ -22,3 +22,13 @@ CREATE INDEX idx_story_acts_story
 ON story_acts (id_story, act_number);
 
 
+CREATE TABLE story_sanitized (
+  id SERIAL PRIMARY KEY,
+  id_story TEXT,
+  version INTEGER,
+  sanitized_text TEXT,
+  issues JSONB,
+  is_valid BOOLEAN,
+  created_at TIMESTAMP DEFAULT now()
+);
+

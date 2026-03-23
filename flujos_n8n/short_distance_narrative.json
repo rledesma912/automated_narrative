@@ -110,7 +110,7 @@
             {
               "id": "69495e37-5ef3-4aa0-bbd1-ecce27e70256",
               "name": "story_prompt_file",
-              "value": "el_otro_pueblo.md",
+              "value": "calles_peligrosas.md",
               "type": "string"
             },
             {
@@ -128,7 +128,7 @@
             {
               "id": "0c767c02-590a-47ce-acc1-cf80330febf4",
               "name": "extract_prompt_file",
-              "value": "extract_story_state.md",
+              "value": "state_prompt.md",
               "type": "string"
             }
           ]
@@ -281,7 +281,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const base = $input.first().json;\nconst text = base.story_prompt;\n\n// 1 separar contexto y actos\nconst [contextPart, actsPart] = text.split(/\\n---\\n/);\n\n// 2 dividir actos por encabezado\nconst sections = actsPart.split(/^\\s*\\*\\*Acto\\s+/gm).slice(1);\n\nconst actos = sections.map(section => {\n\n  // extraer numero de acto\n  const numMatch = section.match(/^(\\d+)/);\n  const act_number = numMatch ? Number(numMatch[1]) : null;\n\n  // extraer fase narrativa entre parentesis\n  const phaseMatch = section.match(/\\((.*?)\\)/);\n  const arc_phase = phaseMatch ? phaseMatch[1].trim() : null;\n\n  // remover encabezado\n  const content = section\n    .replace(/^\\d+[^\\n]*\\n?/, \"\")\n    .trim();\n\n  return {\n    json: {\n      act_number,\n      arc_phase,\n      act_mission: content,\n      base_context: {\n        id_story: base.id_story,\n        story_name: base.story_name,\n        total_acts: base.total_acts,\n        system_prompt: base.system_prompt,\n        story_context: contextPart.trim()\n      }\n    }\n  };\n\n});\n\nreturn actos;"
+        "jsCode": "const base = $input.first().json;\n\n// ← reemplazá 'story_prompt' por el nombre real del campo\nconst text = base.story_prompt || base.text || base.content || base.data;\n\nif (!text) {\n  throw new Error('Campo de texto no encontrado. Campos disponibles: ' + Object.keys(base).join(', '));\n}\n\n// 1. Separar contexto: todo lo que está ANTES del primer \"**Acto\"\nconst firstActIndex = text.search(/\\*\\*Acto\\s+\\d+/);\nconst contextPart = text.substring(0, firstActIndex).trim();\n\n// 2. Separar actos por encabezado **Acto N\nconst sections = text.substring(firstActIndex).split(/(?=\\*\\*Acto\\s+\\d+)/).filter(s => s.trim());\n\nconst actos = sections.map(section => {\n  const numMatch   = section.match(/\\*\\*Acto\\s+(\\d+)/);\n  const phaseMatch = section.match(/\\(([^)]+)\\)/);\n  \n  const act_number = numMatch  ? Number(numMatch[1])      : null;\n  const arc_phase  = phaseMatch ? phaseMatch[1].trim()    : null;\n  \n  // Eliminar la línea del encabezado y limpiar\n  const content = section\n    .replace(/^\\*\\*Acto[^\\n]*\\n?/, '')\n    .trim();\n\n  return {\n    json: {\n      act_number,\n      arc_phase,\n      act_mission: content,\n      base_context: {\n        id_story:     base.id_story,\n        story_name:   base.story_name,\n        total_acts:   base.total_acts,\n        system_prompt: base.system_prompt,\n        story_context: contextPart\n      }\n    }\n  };\n});\n\nreturn actos;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -368,7 +368,7 @@
             {
               "id": "300888c4-14d2-4529-afdf-f03eb0baf3bd",
               "name": "story_name",
-              "value": "=={{ \n  $json.story_prompt_file\n    .replace('.md','')\n    .replaceAll('_',' ')\n    .replace(/^./, c => c.toUpperCase())\n}}",
+              "value": "={{ \n  $json.story_prompt_file\n    .replace('.md','')\n    .replaceAll('_',' ')\n    .replace(/^./, c => c.toUpperCase())\n}}",
               "type": "string"
             }
           ]
@@ -469,6 +469,19 @@
     },
     {
       "parameters": {
+        "jsCode": "//const template = $json.extract_prompt || \"\";\nconst template = $('build_prompt').first().json;\n\nconst chapter = $node[\"gen_act\"].json.text || \"\";\n\nconst context = $json.story_context || \"\";\n\nconst prompt = template.extract_prompt\n  .replace(\"{{story_context}}\", context)\n  .replace(\"{{chapter}}\", chapter);\n\nreturn [\n{\n  json: {\n    ...template,\n    extract_prompt: prompt\n  }\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        192
+      ],
+      "id": "2e1b024e-87e2-4ef1-9383-d69d9cd001bb",
+      "name": "build_extract_prompt"
+    },
+    {
+      "parameters": {
         "fileSelector": "=/home/node/.n8n-files/archivos/prompts_generacion/{{ $json.extract_prompt_file }}",
         "options": {
           "dataPropertyName": "data"
@@ -481,22 +494,9 @@
         -384
       ],
       "id": "89b63a7d-6e65-46da-b679-39f9fad617b3",
-      "name": "read_extract_prompt",
+      "name": "read_state_prompt",
       "alwaysOutputData": false,
       "executeOnce": false
-    },
-    {
-      "parameters": {
-        "jsCode": "//const template = $json.extract_prompt || \"\";\nconst template = $('build_prompt').first().json;\n\nconst chapter = $node[\"gen_act\"].json.text || \"\";\n\nconst context = $json.story_context || \"\";\n\nconst prompt = template.extract_prompt\n  .replace(\"{{story_context}}\", context)\n  .replace(\"{{chapter}}\", chapter);\n\nreturn [\n{\n  json: {\n    ...template,\n    extract_prompt: prompt\n  }\n}\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        624,
-        192
-      ],
-      "id": "2e1b024e-87e2-4ef1-9383-d69d9cd001bb",
-      "name": "build_extract_prompt"
     }
   ],
   "pinData": {},
@@ -713,7 +713,7 @@
             "index": 0
           },
           {
-            "node": "read_extract_prompt",
+            "node": "read_state_prompt",
             "type": "main",
             "index": 0
           },
@@ -791,17 +791,6 @@
         ]
       ]
     },
-    "read_extract_prompt": {
-      "main": [
-        [
-          {
-            "node": "Merge_001",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
     "build_extract_prompt": {
       "main": [
         [
@@ -809,6 +798,17 @@
             "node": "extract_story_state",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "read_state_prompt": {
+      "main": [
+        [
+          {
+            "node": "Merge_001",
+            "type": "main",
+            "index": 2
           }
         ]
       ]
@@ -820,7 +820,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "fa4c12d2-b9d5-4911-834a-e52926c3a0a6",
+  "versionId": "be916f14-7435-412a-8353-25c38914db5c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"

@@ -1,304 +1,715 @@
-# Blueprint – Flujo n8n: saneador_relato_gpt
+# 🧹 Flujo n8n: Sanitización de Relatos
 
-## Objetivo General
+## 1. Objetivo
 
-Crear un pipeline secuencial por fases con iteración condicional limitada para:
+Diseñar un flujo independiente que procese un relato ya generado (desde PostgreSQL o archivo .md) para:
 
-1. Corregir ortografía y gramática.
-2. Detectar inconsistencias narrativas.
-3. Reescribir solo si es necesario.
-4. Optimizar el texto para narración en YouTube (TTS y ritmo oral).
-5. Garantizar estabilidad antes del flujo de guión técnico.
+* Corregir ortografía y gramática
+* Detectar inconsistencias narrativas
+* Resolver incoherencias de continuidad
+* Mejorar claridad sin alterar estilo
+* Mantener memoria narrativa consistente
 
 ---
 
-# DIAGRAMA LÓGICO DEL FLUJO
+## 2. Estrategia General
+
+El flujo será un **post-procesador** del pipeline actual:
+
+```
+Generación → Persistencia → Sanitización → Export final limpio
+```
+
+Se puede ejecutar:
+
+* Automáticamente al terminar el flujo principal
+* Manualmente sobre un `id_story`
+
+---
+
+## 3. Fuentes de Entrada
+
+### Opción A — Base de datos (recomendada)
+
+Tabla: `story_acts`
+
+* chapter
+* summary
+* memory
+
+Ventajas:
+
+* Permite coherencia global
+* Acceso estructurado por actos
+
+### Opción B — Markdown
+
+Archivo completo generado
+
+Desventaja:
+
+* Pierde estructura semántica (memoria / summary)
+
+👉 Recomendación: usar PostgreSQL como fuente primaria.
+
+---
+
+## 4. Arquitectura del Flujo
+
+### 4.1 Entrada
+
+* Manual Trigger o Webhook
+* Input: `id_story`
+
+---
+
+### 4.2 Recuperación de Datos
+
+Nodo: PostgreSQL
+
+Query:
+
+```sql
+SELECT act_number, chapter, summary, memory
+FROM story_acts
+WHERE id_story = {{$json.id_story}}
+ORDER BY act_number ASC;
+```
+
+---
+
+### 4.3 Normalización
+
+Nodo: Code
+
+Objetivo:
+
+* Ordenar actos
+* Unificar estructura
+* Preparar contexto global
+
+Salida esperada:
+
+```json
+{
+  "acts": [...],
+  "full_text": "...",
+  "global_memory": "..."
+}
+```
+
+---
+
+### 4.4 Fase 1 — Corrección Lingüística
+
+Nodo: LLM (modelo liviano, ej. gemma2)
+
+Prompt:
+
+* Corregir ortografía
+* Mejorar puntuación
+* Mantener estilo
+* NO cambiar contenido narrativo
+
+Salida:
+
+```json
+{
+  "corrected_text": "..."
+}
+```
+
+---
+
+### 4.5 Fase 2 — Detección de Inconsistencias
+
+Nodo: LLM (análisis)
+
+Debe detectar:
+
+* Cambios de nombre de personajes
+* Incoherencias temporales
+* Contradicciones de hechos
+* Problemas de POV
+
+Salida estructurada:
+
+```json
+{
+  "issues": [
+    {
+      "type": "continuidad",
+      "description": "...",
+      "location": "acto 3"
+    }
+  ]
+}
+```
+
+---
+
+### 4.6 Fase 3 — Resolución
+
+Nodo: LLM
+
+Input:
+
+* Texto corregido
+* Lista de issues
+
+Instrucciones:
+
+* Resolver inconsistencias
+* No introducir nuevas
+* Mantener tono original
+
+Salida:
+
+```json
+{
+  "sanitized_text": "..."
+}
+```
+
+---
+
+### 4.7 Fase 4 — Validación Final
+
+Nodo: LLM (opcional pero recomendado)
+
+Checklist:
+
+* Coherencia global
+* Consistencia de personajes
+* Fluidez narrativa
+
+Salida:
+
+```json
+{
+  "is_valid": true,
+  "notes": "..."
+}
+```
+
+---
+
+### 4.8 Persistencia
+
+Opciones:
+
+#### A — Nueva tabla
+
+`story_sanitized`
+
+#### B — Sobrescribir
+
+Actualizar `story_acts`
+
+#### C — Archivo
+
+Guardar:
+
+```
+relato_<id>_sanitized.md
+```
+
+👉 Recomendación: A + archivo
+
+---
+
+## 5. Diseño de Prompts (clave)
+
+### Prompt Corrección
+
+* Rol: editor lingüístico
+* Restricción fuerte: no alterar contenido
+
+---
+
+### Prompt Detección
+
+* Rol: auditor narrativo
+* Salida estructurada JSON
+
+---
+
+### Prompt Resolución
+
+* Rol: editor narrativo senior
+* Input dual: texto + issues
+
+---
+
+## 6. Decisiones Críticas
+
+### 6.1 Granularidad
+
+**Opción 1:** Procesar relato completo
+
+* * Mejor coherencia
+* * Mayor consumo VRAM
+
+**Opción 2:** Por acto
+
+* * Más eficiente
+* * Riesgo de incoherencias cruzadas
+
+👉 Recomendado: híbrido
+
+* Corrección → por acto
+* Coherencia → global
+
+---
+
+### 6.2 Modelos
+
+* Corrección: modelo chico (gemma2)
+* Coherencia: modelo grande (qwen2.5)
+
+---
+
+### 6.3 Idempotencia
+
+El flujo debe poder ejecutarse múltiples veces sin degradar el texto.
+
+---
+
+## 7. Prompts del Sistema (listos para .md)
+
+A continuación se definen los tres prompts principales para incorporar como archivos en `archivos/prompts_generacion/`.
+
+---
+
+### 🧾 7.1 `sanitize_correction_prompt.md`
+
+**Rol:** Corrector lingüístico profesional
+
+```
+Sos un editor lingüístico experto en narrativa de terror.
+
+Tu tarea es corregir el texto respetando estrictamente el contenido original.
+
+OBJETIVOS:
+- Corregir ortografía
+- Corregir gramática
+- Mejorar puntuación
+- Mejorar fluidez de frases
+
+REGLAS CRÍTICAS:
+- NO cambiar hechos de la historia
+- NO agregar contenido nuevo
+- NO eliminar información relevante
+- NO modificar nombres propios
+- NO alterar el estilo narrativo
+
+ENTRADA:
+{{text}}
+
+SALIDA (JSON):
+{
+  "corrected_text": "texto corregido"
+}
+```
+
+---
+
+### 🔍 7.2 `sanitize_detection_prompt.md`
+
+**Rol:** Auditor narrativo
+
+```
+Sos un auditor narrativo especializado en consistencia de historias de terror.
+
+Analizá el siguiente relato completo y detectá inconsistencias.
+
+TIPOS DE PROBLEMAS A DETECTAR:
+- Continuidad (eventos que se contradicen)
+- Personajes (nombres, rasgos, roles inconsistentes)
+- Temporalidad (saltos o incoherencias de tiempo)
+- Espacio (lugares contradictorios)
+- POV (cambios incorrectos de punto de vista)
+- Clichés de terror (lugares comunes previsibles)
+
+REGLAS:
+- No inventes problemas
+- Sé específico y preciso
+- Referenciá por acto o fragmento
+
+ENTRADA:
+{{text}}
+
+SALIDA (JSON):
+{
+  "issues": [
+    {
+      "type": "continuidad",
+      "description": "descripción clara del problema",
+      "location": "acto X",
+      "severity": "media"
+    }
+  ]
+}
+```
+
+---
+
+### 🛠️ 7.3 `sanitize_resolution_prompt.md`
+
+**Rol:** Editor narrativo senior
+
+```
+Sos un editor narrativo senior especializado en historias de terror.
+
+Tu tarea es mejorar el texto resolviendo los problemas detectados.
+
+INPUT:
+
+TEXTO:
+{{text}}
+
+PROBLEMAS:
+{{issues}}
+
+OBJETIVOS:
+- Resolver inconsistencias
+- Mantener coherencia global
+- Mejorar claridad narrativa
+- Eliminar clichés de terror reemplazándolos por recursos más originales
+
+REGLAS CRÍTICAS:
+- No introducir nuevas contradicciones
+- Mantener tono y estilo original
+- No reducir significativamente la longitud
+- No simplificar excesivamente la narrativa
+
+SALIDA (JSON):
+{
+  "sanitized_text": "texto final corregido y coherente"
+}
+```
+
+---
+
+### ✅ 7.4 `sanitize_validation_prompt.md` (opcional pero recomendado)
+
+**Rol:** Revisor final
+
+```
+Sos un revisor final de calidad narrativa.
+
+Evaluá el siguiente texto:
+
+{{text}}
+
+CHECKLIST:
+- Coherencia global
+- Consistencia de personajes
+- Fluidez narrativa
+- Ausencia de contradicciones
+
+SALIDA (JSON):
+{
+  "is_valid": true,
+  "notes": "comentarios breves"
+}
+```
+
+---
+
+## 8. Ajustes derivados de tus decisiones
+
+Se integran los siguientes criterios:
+
+* ✔ Versionado: generar `relato_<id>_v2_sanitized.md`
+* ✔ Post-proceso: flujo independiente
+* ✔ Nivel: moderado
+* ✔ Eliminación de clichés incluida en resolución
+* ✔ Estrategia híbrida (acto + global)
+
+---
+
+## 9. Diagrama del Flujo (Mermaid) — Versión Simplificada y Correcta
+
+Este diagrama está reorganizado para evitar pérdida de contexto de prompts.
+La clave es: **todos los prompts se leen una sola vez al inicio** y luego se distribuyen.
 
 ```mermaid
 flowchart TD
 
-A[Trigger] --> B[Postgres: Obtener relato completo]
-B --> C[Code: Unificar actos]
-C --> D[Fase 1: Corrección lingüística]
-D --> E[Fase 2: Diagnóstico de consistencia]
-E --> F{¿Hay inconsistencias graves?}
+A[Manual Trigger] --> B[Set id_story y prompts]
 
-F -- Sí --> G[Fase 3: Reescritura dirigida]
-G --> H[Validación]
-H --> I{¿Aprobado?}
-I -- No --> G
-I -- Sí --> J[Fase 4: Optimización TTS]
+B --> C1[Read correction prompt]
+B --> C2[Read detection prompt]
+B --> C3[Read resolution prompt]
+B --> C4[Read validation prompt]
 
-F -- No --> J
+C1 --> D[Merge prompts]
+C2 --> D
+C3 --> D
+C4 --> D
 
-J --> K[Guardar versión saneada]
+D --> E[Code build_prompt_bundle]
+
+E --> F[Postgres select_all_acts]
+F --> G[Code normalize_acts]
+G --> H[Code expand_acts]
+
+H --> I[SplitInBatches]
+
+I --> J[Code build_correction_prompt]
+J --> K[LLM Gemma2 correction]
+K --> L[Code parse_correction]
+
+L --> M[Merge corrected acts]
+M --> I
+
+M --> N[Code build_full_text]
+
+N --> O[Code build_detection_prompt]
+O --> P[LLM Qwen detection]
+P --> Q[Code parse_issues]
+
+Q --> R[Code build_resolution_prompt]
+R --> S[LLM Qwen resolution]
+S --> T[Code parse_sanitized]
+
+T --> U[Code build_validation_prompt]
+U --> V[LLM Gemma2 validation]
+V --> W[Code parse_validation]
+
+W --> X{is_valid}
+
+X -->|true| Y[Postgres version y save]
+Y --> Z[Write file final]
+
+X -->|false| ERR[Log y guardar issues]
 ```
 
-Iteración máxima recomendada: 2 ciclos.
-
 ---
 
-# IMPLEMENTACIÓN EN n8n – PASO A PASO
+## 🔑 Idea central del rediseño
 
-## 1️⃣ Nodo: Trigger
+Antes (incorrecto):
 
-Tipo: Manual Trigger o Webhook
-Función: Iniciar el flujo con un story_id.
-Salida esperada:
+* Cada fase leía su prompt → ❌ pérdida de contexto + caos de merges
+
+Ahora (correcto):
+
+* Todos los prompts se leen UNA vez
+* Se construye un objeto:
+
+```json
 {
-"story_id": "terror_123456"
+  "correction_prompt": "...",
+  "detection_prompt": "...",
+  "resolution_prompt": "...",
+  "validation_prompt": "..."
 }
+```
+
+👉 Ese objeto viaja por todo el flujo
 
 ---
 
-## 2️⃣ Nodo: Obtener relato
+## 🧠 Ventajas de este enfoque
 
-Tipo: Postgres (Execute Query)
-Nombre sugerido: get_full_story
-Query:
-SELECT acto_numero, contenido
-FROM relatos_vivos
-WHERE id_story = '{{ $json.story_id }}'
-ORDER BY acto_numero ASC;
-
-Función: Trae todos los actos ordenados.
+* No se pierden prompts
+* Menos nodos `read file`
+* Menos `merge` frágiles
+* Más parecido a tu nodo `build_data_items`
+* Flujo determinístico
 
 ---
 
-## 3️⃣ Nodo: Unificar texto
+## ⚠️ Regla operativa clave
 
-Tipo: Code
-Nombre sugerido: merge_story
-Función: Unir actos en un solo string.
+Todos los nodos `build_*_prompt` deben usar:
 
-Código:
+```js
+$json.correction_prompt
+$json.detection_prompt
+$json.resolution_prompt
+$json.validation_prompt
+```
 
-const items = $input.all();
-let texto = "";
-items.forEach(i => {
-texto += i.json.contenido + "\n\n";
-});
-
-return [{ json: { texto_original: texto } }];
+Nunca volver a leer archivos en medio del flujo.
 
 ---
 
-# FASE 1 – CORRECCIÓN LINGÜÍSTICA
+## 10. Próximo paso recomendado
 
-## 4️⃣ Nodo: LLM Corrección Técnica
+Ahora sí, con este diseño estable:
 
-Tipo: Ollama Chat Model
-Modelo recomendado: llama3.1:8b
-Temperatura: 0.2
-Nombre sugerido: fase1_correccion
+➡️ Implementar `build_prompt_bundle` (crítico)
 
-Prompt técnico:
+Ese nodo reemplaza todo el caos de merges de prompts.
 
-INSTRUCCIÓN:
-Corrige exclusivamente ortografía, puntuación, concordancia gramatical y tiempos verbales.
+Si querés, en el siguiente paso te lo doy listo para copiar.
 
-REGLAS:
+````mermaid
+flowchart TD
 
-* No cambies estilo.
-* No alteres estructura narrativa.
-* No agregues ni elimines contenido.
-* No embellezcas el texto.
-* Mantén exactamente la misma historia.
+%% =====================
+%% INPUT
+%% =====================
+A[Manual Trigger] --> B[Set: id_story]
 
-TEXTO:
-{{ $json.texto_original }}
+%% =====================
+%% FETCH DATA
+%% =====================
+B --> C[Postgres: select_all_acts
+SELECT act_number, chapter]
+C --> D[Code: normalize_acts
+- ordenar
+- asegurar estructura]
 
-Salida: texto_corregido
+%% =====================
+%% CORRECCIÓN POR ACTO
+%% =====================
+D --> E[SplitInBatches: 1 acto]
 
----
+E --> F[Code: build_correction_prompt
+- inject {{text}}]
+F --> G[LLM Gemma2
+(sanitize_correction_prompt)]
+G --> H[Code: parse_json
+corrected_text]
 
-# FASE 2 – DIAGNÓSTICO DE CONSISTENCIA
+H --> I[Merge: collect_corrected]
+I --> E
 
-## 5️⃣ Nodo: LLM Diagnóstico
+%% =====================
+%% BUILD TEXTO GLOBAL
+%% =====================
+I --> J[Code: build_full_text
+- concat actos corregidos]
 
-Tipo: Ollama Chat Model
-Modelo: llama3.1:8b
-Temperatura: 0.3
-Nombre: fase2_diagnostico
+%% =====================
+%% DETECCIÓN GLOBAL
+%% =====================
+J --> K[Code: build_detection_prompt]
+K --> L[LLM Qwen2.5
+(sanitize_detection_prompt)]
+L --> M[Code: parse_issues_json]
 
-Prompt técnico:
+%% =====================
+%% RESOLUCIÓN GLOBAL
+%% =====================
+M --> N[Code: build_resolution_prompt
+- inject text + issues]
+N --> O[LLM Qwen2.5
+(sanitize_resolution_prompt)]
+O --> P[Code: parse_sanitized_text]
 
-Analiza el siguiente relato y genera un reporte estructurado.
+%% =====================
+%% VALIDACIÓN
+%% =====================
+P --> Q[Code: build_validation_prompt]
+Q --> R[LLM Gemma2
+(sanitize_validation_prompt)]
+R --> S[Code: parse_validation]
 
-Evalúa exclusivamente:
+%% =====================
+%% DECISIÓN
+%% =====================
+S --> T{is_valid?}
 
-* Inconsistencias temporales.
-* Cambios de punto de vista.
-* Objetos que aparecen/desaparecen.
-* Personajes que cambian rasgos.
-* Problemas espaciales.
-* Contradicciones lógicas.
+%% =====================
+%% VERSIONADO
+%% =====================
+T -->|true| U[Postgres: get_next_version
+SELECT MAX(version)+1]
+U --> V[Postgres: insert story_sanitized
+(text + issues + version)]
 
-Formato obligatorio:
+%% =====================
+%% EXPORT
+%% =====================
+V --> W[Code: build_md_file]
+W --> X[Write File
+relato_<id>_v<version>.md]
 
-INCONSISTENCIAS_GRAVES:
+%% =====================
+%% ERROR PATH
+%% =====================
+T -->|false| Y[Code: log_error
++ persist issues]
 
-* ...
+```mermaid
+flowchart TD
 
-INCONSISTENCIAS_MENORES:
+A[Manual Trigger
+(id_story)] --> B[Postgres: select_all_acts]
+B --> C[Code: normalize_acts]
 
-* ...
+C --> D[Split In Batches
+(acto por acto)]
+D --> E[LLM Gemma2
+Corrección]
+E --> F[Merge corrected acts]
 
-CAMBIOS_DE_POV:
+F --> G[Code: build_full_text]
+G --> H[LLM Qwen
+Detección de issues]
+H --> I[LLM Qwen
+Resolución]
+I --> J[LLM Gemma
+Validación]
 
-* ...
+J --> K{is_valid?}
+K -->|true| L[Postgres: save story_sanitized]
+K -->|true| M[Write File
+relato_v2]
 
-PROBLEMAS_DE_CONTINUIDAD:
-
-* ...
-
-Si no hay problemas en una categoría, escribir: NINGUNA.
-
-TEXTO:
-{{ $json.text }}
-
----
-
-## 6️⃣ Nodo: Evaluar gravedad
-
-Tipo: IF
-Nombre: if_problemas_graves
-Condición:
-Si INCONSISTENCIAS_GRAVES contiene algo distinto de "NINGUNA"
-
----
-
-# FASE 3 – REESCRITURA DIRIGIDA (solo si necesario)
-
-## 7️⃣ Nodo: LLM Reescritura Correctiva
-
-Tipo: Ollama Chat Model
-Modelo: llama3.1:8b
-Temperatura: 0.4
-Nombre: fase3_reescritura
-
-Prompt técnico:
-
-Corrige el relato usando exclusivamente el siguiente reporte de inconsistencias.
-
-REGLAS:
-
-* Corrige solo lo indicado.
-* No cambies estilo general.
-* No agregues escenas nuevas.
-* No elimines escenas completas.
-* Mantén coherencia interna.
-
-REPORTE:
-{{ $node["fase2_diagnostico"].json.text }}
-
-RELATO:
-{{ $node["fase1_correccion"].json.text }}
-
----
-
-# VALIDACIÓN POST-REESCRITURA
-
-## 8️⃣ Nodo: LLM Validación
-
-Tipo: Ollama Chat Model
-Temperatura: 0.2
-Nombre: fase3_validacion
-
-Prompt:
-
-Evalúa si el siguiente relato contiene inconsistencias graves.
-Responde únicamente:
-APROBADO
-
-O
-
-REQUIERE_CORRECCION
-
-TEXTO:
-{{ $json.text }}
+K -->|false| N[Log / revisión manual]
+````
 
 ---
 
-## 9️⃣ Nodo: IF Validación
+## 10. Estructura de Base de Datos
 
-Tipo: IF
-Nombre: if_validacion
-Condición:
-Si respuesta == REQUIERE_CORRECCION
-→ volver a fase3_reescritura (máximo 1 iteración adicional)
+### Tabla: `story_sanitized`
+
+```sql
+CREATE TABLE story_sanitized (
+  id SERIAL PRIMARY KEY,
+  id_story TEXT,
+  version INTEGER,
+  sanitized_text TEXT,
+  issues JSONB,
+  is_valid BOOLEAN,
+  created_at TIMESTAMP DEFAULT now()
+);
+```
+---
+
+## 12. Cambios clave respecto al flujo original
+
+* ❌ Eliminado uso de Markdown como entrada
+* ✔ Fuente única: PostgreSQL (`story_acts`)
+* ✔ Corrección por acto (batch)
+* ✔ Coherencia global posterior
+* ✔ Nueva tabla `story_sanitized`
+* ✔ Persistencia de `issues`
+* ✔ Versionado explícito
+* ✔ Prompts en `/prompts_saneadores`
 
 ---
 
-# FASE 4 – OPTIMIZACIÓN PARA YOUTUBE / TTS
+## 13. Siguiente iteración recomendada
 
-## 🔟 Nodo: LLM Optimización Oral
+Afinar implementación real:
 
-Tipo: Ollama Chat Model
-Modelo: llama3.1:8b
-Temperatura: 0.5
-Nombre: fase4_tts
+1. Nodo de lectura de prompts desde `/prompts_saneadores`
+2. Code nodes para:
 
-Prompt técnico:
-
-Optimiza el siguiente relato para narración en YouTube.
-
-Objetivos:
-
-* Mejorar ritmo oral.
-* Ajustar longitud de frases.
-* Favorecer pausas naturales.
-* Evitar redundancias auditivas.
-* Mantener tensión progresiva.
-
-Restricciones:
-
-* No cambiar hechos.
-* No alterar estructura narrativa.
-* No agregar contenido nuevo.
-
-TEXTO:
-{{ $json.text }}
+   * armar `{{text}}`
+   * parsear JSON de LLM
+3. Manejo de errores (JSON inválido)
+4. Estrategia de versionado automático (v2, v3, etc.)
 
 ---
 
-# GUARDADO FINAL
-
-## 1️⃣1️⃣ Nodo: Postgres Insert
-
-Nombre: save_sanitized_version
-Tabla sugerida: relatos_saneados
-
-Campos:
-
-* id_story
-* version
-* contenido_saneado
-* fecha
-
----
-
-# ESTRATEGIA DE ITERACIÓN LIMITADA
-
-* Máximo 2 ciclos de reescritura.
-* Nunca reinyectar optimización TTS en corrección técnica.
-* Separar claramente fases para evitar degradación estilística.
-
----
-
-# POR QUÉ ESTA ESTRUCTURA ES ÓPTIMA PARA TU CASO
-
-1. Reduce alucinaciones.
-2. Minimiza drift creativo.
-3. Mantiene control narrativo.
-4. Estabiliza el texto antes de generar guión técnico.
-5. Optimiza para narración futura (YouTube + diseño sonoro).
-
----
-
-Si deseas iterar este blueprint, podemos:
-
-* Añadir scoring automático.
-* Integrar métricas de legibilidad.
-* Incorporar análisis de densidad emocional.
-* Dividir por bloques largos para mayor precisión.
+Cuando quieras, en la próxima iteración:
+➡️ Te construyo el JSON completo listo para importar con todos los nodos cableados exactamente como tu flujo actual.
