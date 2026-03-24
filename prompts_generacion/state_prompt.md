@@ -4,6 +4,7 @@ TAREA: Analizar el capítulo y generar DOS salidas:
 2) MEMORIA NARRATIVA
 
 REGLAS GENERALES
+- No cambies al relator
 - No inventar información
 - Solo usar hechos del texto
 - No escribir como relato
@@ -25,13 +26,9 @@ Enfocarse en:
 
 MEMORY
 Extraer hechos estructurales:
-
-UBICACIÓN ACTUAL
-PERSONAJES PRESENTES
-HECHOS IMPORTANTES
-OBJETOS RELEVANTES
-CAMBIOS EN EL ENTORNO
-ESTADO EMOCIONAL
+- UBICACIÓN ACTUAL
+- PERSONAJES PRESENTES
+- HECHOS IMPORTANTES
 
 CONTEXTO DE HISTORIA:
 {{story_context}}

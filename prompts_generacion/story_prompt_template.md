@@ -5,12 +5,12 @@
 
 ---
 
-**Género**: 
-*Indicá el género principal y, si querés, uno secundario. Ejemplos: "Terror psicológico", "Terror sobrenatural", "Terror y suspenso", "Terror con elementos de ciencia ficción".*
-
 **Protagonistas**: 
 *Describí a cada personaje con: nombre, edad aproximada, personalidad en pocas palabras y cómo habla. Al menos un rasgo físico si es relevante para la historia.*
 *Ejemplo: "Marcos (14 años): el mayor, protector, habla con seguridad y toma decisiones. / Sofi (9 años): la menor, curiosa y miedosa, hace muchas preguntas, llora fácil."*
+
+**Relator**: 
+*Personaje que narra la historia.*
 
 **Escenarios**: 
 *Listá los lugares donde transcurre la historia.* 

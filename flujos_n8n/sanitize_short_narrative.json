@@ -1,5 +1,5 @@
 {
-  "name": "sanitize_narrative",
+  "name": "sanitize_short_narrative",
   "nodes": [
     {
       "parameters": {},
@@ -91,7 +91,7 @@
             {
               "id": "6b0da875-47cb-47df-87ac-bee431b90a0f",
               "name": "id_story",
-              "value": "calles_peligrosas_1773427335285",
+              "value": "calles_peligrosas_1774375957614",
               "type": "string"
             },
             {
@@ -514,14 +514,14 @@
     },
     {
       "parameters": {
-        "content": "# Evalúa si el resultado final es bueno",
+        "content": "# Evalúa validando el resultado final con la historia buscada",
         "height": 80,
-        "width": 656
+        "width": 1056
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3328,
+        3248,
         640
       ],
       "id": "59d3cf21-ac0b-4433-a757-0dc14859cec3",
@@ -590,19 +590,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// ---------------------------------------------------------\n// 1. OBTENER DATOS\n// ---------------------------------------------------------\nconst data = $json;\n\nconst idStory = data.id_story || \"sin_id\";\n\n// ---------------------------------------------------------\n// 2. GESTIÓN DE VERSIÓN (Auto-incremental simulado)\n// ---------------------------------------------------------\n// Como el nodo Code no recuerda ejecuciones pasadas, necesitamos\n// que la versión venga de un nodo \"Postgres: get_next_version\".\n//\n// Si existe el campo 'version' en el input, úsalo. Si no, asume v1.\nconst version = data.version || 1;\n\n// ---------------------------------------------------------\n// 3. CONTENIDO DEL ARCHIVO\n// ---------------------------------------------------------\n// Usamos directamente el texto sanitizado completo, sin separar en actos.\nconst storyContent = data.sanitized_text || \"\";\n\n// ---------------------------------------------------------\n// 4. NOMBRE DE ARCHIVO Y SALIDA\n// ---------------------------------------------------------\n// Formato solicitado: id_story + _saneado_version_X.md\nconst fileName = `${idStory}_saneado_version_${version}.md`;\n\n// Retornamos el objeto listo para el nodo \"Convert to File\" o \"Write File\"\nreturn {\n  json: {\n    file_name: fileName,\n    markdown_content: storyContent\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4336,
-        208
-      ],
-      "id": "8b321a2e-f9a1-46a6-b8f2-f8ceb8e508a6",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
         "operation": "toText",
         "sourceProperty": "markdown_content",
         "options": {
@@ -632,6 +619,19 @@
       ],
       "id": "c6914a91-6352-451e-b090-54047ff41570",
       "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---------------------------------------------------------\n// 1. OBTENER DATOS\n// ---------------------------------------------------------\nconst data = $json;\n\nconst idStory = data.id_story || \"sin_id\";\n\n// ---------------------------------------------------------\n// 2. GESTIÓN DE VERSIÓN (Auto-incremental simulado)\n// ---------------------------------------------------------\n// Como el nodo Code no recuerda ejecuciones pasadas, necesitamos\n// que la versión venga de un nodo \"Postgres: get_next_version\".\n//\n// Si existe el campo 'version' en el input, úsalo. Si no, asume v1.\nconst version = data.version || 1;\n\n// ---------------------------------------------------------\n// 3. CONTENIDO DEL ARCHIVO\n// ---------------------------------------------------------\n// Usamos directamente el texto sanitizado completo, sin separar en actos.\nconst storyContent = data.sanitized_text || \"\";\n\n// ---------------------------------------------------------\n// 4. NOMBRE DE ARCHIVO Y SALIDA\n// ---------------------------------------------------------\n// Formato solicitado: id_story + _saneado_version_X.md\nconst fileName = `${idStory}_saneado_version_${version}.md`;\n\n// Retornamos el objeto listo para el nodo \"Convert to File\" o \"Write File\"\nreturn {\n  json: {\n    file_name: fileName,\n    markdown_content: storyContent\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4336,
+        208
+      ],
+      "id": "8b321a2e-f9a1-46a6-b8f2-f8ceb8e508a6",
+      "name": "build_story_output"
     }
   ],
   "pinData": {},
@@ -942,7 +942,7 @@
             "index": 0
           },
           {
-            "node": "Code in JavaScript",
+            "node": "build_story_output",
             "type": "main",
             "index": 0
           }
@@ -996,18 +996,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Convert to File",
+            "node": "build_story_output",
             "type": "main",
             "index": 0
           }
@@ -1024,6 +1013,17 @@
           }
         ]
       ]
+    },
+    "build_story_output": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -1032,7 +1032,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "215d35a3-26e4-4b5c-9ca2-d9bc731d5e13",
+  "versionId": "bedb68db-e02e-4f89-9a1d-ecc8513f4d1c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"

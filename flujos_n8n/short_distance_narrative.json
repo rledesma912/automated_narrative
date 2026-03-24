@@ -31,7 +31,7 @@
       "typeVersion": 1,
       "position": [
         256,
-        384
+        448
       ],
       "id": "3cc72519-c324-4bb0-94d1-646421f16687",
       "name": "Ollama Chat Model",
@@ -53,8 +53,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        1344,
-        -32
+        1200,
+        0
       ],
       "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
       "name": "Read/Write Files from Disk1"
@@ -70,8 +70,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1168,
-        -32
+        1024,
+        0
       ],
       "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
       "name": "Convert to File"
@@ -92,7 +92,7 @@
       "typeVersion": 1,
       "position": [
         816,
-        368
+        432
       ],
       "id": "3a4e58af-f7bd-414a-950a-80f91262670f",
       "name": "Ollama Chat Model2",
@@ -164,7 +164,7 @@
     },
     {
       "parameters": {
-        "fileSelector": "=/home/node/.n8n-files/archivos/prompts_generacion/{{ $json.story_prompt_file }}",
+        "fileSelector": "=/home/node/.n8n-files/archivos/prompts_historias/{{ $json.story_prompt_file }}",
         "options": {
           "dataPropertyName": "data"
         }
@@ -197,7 +197,7 @@
       "typeVersion": 1.9,
       "position": [
         272,
-        192
+        256
       ],
       "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
       "name": "gen_act"
@@ -210,14 +210,14 @@
       "typeVersion": 2,
       "position": [
         96,
-        192
+        256
       ],
       "id": "9f9a2b3f-3d85-4c42-9da3-83126d04c62a",
       "name": "build_prompt"
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst estado = $('build_data_items').first().json.extract_prompt;\n\nreturn items.map(item => {\n\n  const base = item.json.base_context;\n\n  return {\n    json: {\n      id_story: base.id_story,\n      story_name: base.story_name,\n\n      total_acts: base.total_acts,\n      act_number: item.json.act_number,\n      arc_phase: item.json.arc_phase,\n\n      act_mission: item.json.act_mission,\n\n      system_prompt: base.system_prompt,\n      extract_prompt: estado,\n      story_context: base.story_context,\n\n      accumulated_summary: \"\",\n      accumulated_memory: \"\"\n    }\n  };\n\n});"
+        "jsCode": "const items = $input.all();\nconst estado = $('build_data_items').first().json.extract_prompt;\n\nreturn items.map(item => {\n\n  const base = item.json.base_context;\n\n  return {\n    json: {\n      id_story: base.id_story,\n      story_name: base.story_name,\n\n      total_acts: base.total_acts,\n      relator: base.relator,\n      act_number: item.json.act_number,\n      arc_phase: item.json.arc_phase,\n\n      act_mission: item.json.act_mission,\n\n      system_prompt: base.system_prompt,\n      extract_prompt: estado,\n      story_context: base.story_context,\n\n      accumulated_summary: \"\",\n      accumulated_memory: \"\"\n    }\n  };\n\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -254,8 +254,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        768,
-        -32
+        624,
+        0
       ],
       "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
       "name": "select_all_acts",
@@ -273,15 +273,15 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        976,
-        -32
+        832,
+        0
       ],
       "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
       "name": "persiste_cinco_capitulos"
     },
     {
       "parameters": {
-        "jsCode": "const base = $input.first().json;\n\n// ← reemplazá 'story_prompt' por el nombre real del campo\nconst text = base.story_prompt || base.text || base.content || base.data;\n\nif (!text) {\n  throw new Error('Campo de texto no encontrado. Campos disponibles: ' + Object.keys(base).join(', '));\n}\n\n// 1. Separar contexto: todo lo que está ANTES del primer \"**Acto\"\nconst firstActIndex = text.search(/\\*\\*Acto\\s+\\d+/);\nconst contextPart = text.substring(0, firstActIndex).trim();\n\n// 2. Separar actos por encabezado **Acto N\nconst sections = text.substring(firstActIndex).split(/(?=\\*\\*Acto\\s+\\d+)/).filter(s => s.trim());\n\nconst actos = sections.map(section => {\n  const numMatch   = section.match(/\\*\\*Acto\\s+(\\d+)/);\n  const phaseMatch = section.match(/\\(([^)]+)\\)/);\n  \n  const act_number = numMatch  ? Number(numMatch[1])      : null;\n  const arc_phase  = phaseMatch ? phaseMatch[1].trim()    : null;\n  \n  // Eliminar la línea del encabezado y limpiar\n  const content = section\n    .replace(/^\\*\\*Acto[^\\n]*\\n?/, '')\n    .trim();\n\n  return {\n    json: {\n      act_number,\n      arc_phase,\n      act_mission: content,\n      base_context: {\n        id_story:     base.id_story,\n        story_name:   base.story_name,\n        total_acts:   base.total_acts,\n        system_prompt: base.system_prompt,\n        story_context: contextPart\n      }\n    }\n  };\n});\n\nreturn actos;"
+        "jsCode": "const base = $input.first().json;\n\n// ← reemplazá 'story_prompt' por el nombre real del campo\nconst text = base.story_prompt || base.text || base.content || base.data;\n\nif (!text) {\n  throw new Error('Campo de texto no encontrado. Campos disponibles: ' + Object.keys(base).join(', '));\n}\n\n// 1. Separar contexto: todo lo que está ANTES del primer \"**Acto\"\nconst firstActIndex = text.search(/\\*\\*Acto\\s+\\d+/);\nconst contextPart = text.substring(0, firstActIndex).trim();\n\nconst relatorMatch = text.match(/\\*\\*Relator\\*\\*:\\s*(.+)/i);\nconst relator = relatorMatch ? relatorMatch[1].trim() : \"\";\n\n// 2. Separar actos por encabezado **Acto N\nconst sections = text.substring(firstActIndex).split(/(?=\\*\\*Acto\\s+\\d+)/).filter(s => s.trim());\n\nconst actos = sections.map(section => {\n  const numMatch   = section.match(/\\*\\*Acto\\s+(\\d+)/);\n  const phaseMatch = section.match(/\\(([^)]+)\\)/);\n  \n  const act_number = numMatch  ? Number(numMatch[1])      : null;\n  const arc_phase  = phaseMatch ? phaseMatch[1].trim()    : null;\n  \n  // Eliminar la línea del encabezado y limpiar\n  const content = section\n    .replace(/^\\*\\*Acto[^\\n]*\\n?/, '')\n    .trim();\n\n  return {\n    json: {\n      act_number,\n      arc_phase,\n      act_mission: content,\n      base_context: {\n        id_story:     base.id_story,\n        story_name:   base.story_name,\n        total_acts:   base.total_acts,\n        relator: relator,\n        system_prompt: base.system_prompt,\n        story_context: contextPart\n      }\n    }\n  };\n});\n\nreturn actos;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -302,7 +302,7 @@
       "typeVersion": 2.6,
       "position": [
         1216,
-        368
+        432
       ],
       "id": "95be0635-fcef-455a-a68a-2a9a4e87d45f",
       "name": "save_act",
@@ -323,7 +323,7 @@
       "typeVersion": 2.6,
       "position": [
         -336,
-        304
+        368
       ],
       "id": "f50857c2-bf25-4981-8288-558f41e71941",
       "name": "get_story_state",
@@ -390,8 +390,8 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        592,
-        -32
+        448,
+        0
       ],
       "id": "5aecbed2-624b-40f7-b4a8-42e33e44d08e",
       "name": "Limit1"
@@ -446,7 +446,7 @@
       "typeVersion": 3.2,
       "position": [
         -96,
-        192
+        256
       ],
       "id": "6a0457d7-7980-42f4-a856-d3fa6992b8e3",
       "name": "Merge"
@@ -462,7 +462,7 @@
       "typeVersion": 1.9,
       "position": [
         848,
-        192
+        256
       ],
       "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
       "name": "extract_story_state"
@@ -475,7 +475,7 @@
       "typeVersion": 2,
       "position": [
         624,
-        192
+        256
       ],
       "id": "2e1b024e-87e2-4ef1-9383-d69d9cd001bb",
       "name": "build_extract_prompt"
@@ -820,7 +820,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "be916f14-7435-412a-8353-25c38914db5c",
+  "versionId": "21d2052e-5355-4560-a591-9e4c482a5fe2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
