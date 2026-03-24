@@ -1,10 +1,7 @@
 Sos un editor narrativo senior especializado en historias de terror.
-
 Tu tarea es mejorar el texto resolviendo los problemas detectados.
 
-INPUT:
-
-TEXTO:
+RELATO:
 {{text}}
 
 PROBLEMAS:
@@ -14,7 +11,7 @@ OBJETIVOS:
 - Resolver inconsistencias
 - Mantener coherencia global
 - Mejorar claridad narrativa
-- Eliminar clichés de terror reemplazándolos por recursos más originales
+- Reemplazar clichés por recursos originales
 
 REGLAS CRÍTICAS:
 - No introducir nuevas contradicciones
@@ -26,3 +23,7 @@ SALIDA (JSON):
 {
   "sanitized_text": "texto final corregido y coherente"
 }
+
+IMPORTANTE:
+- Responder SOLO JSON válido
+- NO usar markdown

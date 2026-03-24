@@ -15,7 +15,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT act_number, chapter, summary, memory\nFROM story_acts\nWHERE id_story = '{{$json.id_story}}'\nORDER BY act_number ASC;",
+        "query": "SELECT act_number, chapter\nFROM story_acts\nWHERE id_story = '{{$json.id_story}}'\nORDER BY act_number ASC;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -35,13 +35,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\n// Separar bundle y actos\nconst bundleItem = items.find(i => i.json.correction_prompt);\nconst actItems = items.filter(i => i.json.act_number !== undefined);\n\nif (!bundleItem) {\n  throw new Error(\"No se encontró prompt_bundle\");\n}\n\nif (actItems.length === 0) {\n  throw new Error(\"No hay actos\");\n}\n\nconst bundle = bundleItem.json;\n\n// Fan-out manual (equivalente a multiplex)\nreturn actItems.map(act => {\n  return {\n    json: {\n      ...act.json,\n      correction_prompt: bundle.correction_prompt,\n      detection_prompt: bundle.detection_prompt,\n      resolution_prompt: bundle.resolution_prompt,\n      validation_prompt: bundle.validation_prompt\n    }\n  };\n});"
+        "jsCode": "const items = $input.all();\n\n// Separar bundle y actos\nconst bundleItem = items.find(i => i.json.correction_prompt);\nconst actItems = items.filter(i => i.json.act_number !== undefined);\n\nif (!bundleItem) {\n  throw new Error(\"No se encontró prompt_bundle\");\n}\n\nif (actItems.length === 0) {\n  throw new Error(\"No hay actos\");\n}\n\nconst bundle = bundleItem.json;\n\n// Fan-out manual (equivalente a multiplex)\nreturn actItems.map(act => {\n  return {\n    json: {\n      ...act.json,\n      correction_prompt: bundle.correction_prompt,\n    }\n  };\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         -496,
-        368
+        240
       ],
       "id": "55fc5e0b-4e33-458f-91bd-cf245b499395",
       "name": "normalized_acts"
@@ -54,7 +54,7 @@
       "typeVersion": 3,
       "position": [
         -288,
-        544
+        336
       ],
       "id": "817174ac-ddb1-4340-9153-84ca784888dc",
       "name": "Loop Over Items"
@@ -72,8 +72,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        144,
-        784
+        80,
+        640
       ],
       "id": "403af589-bfe4-4e6e-9876-7c8f76842c5c",
       "name": "Ollama Chat Model",
@@ -159,19 +159,6 @@
       "name": "Merge1"
     },
     {
-      "parameters": {
-        "jsCode": "const items = $input.all();\n\nlet correction = \"\";\nlet detection = \"\";\nlet resolution = \"\";\nlet validation = \"\";\n\n// Config (último item)\nconst config = items.find(i => i.json.id_story)?.json;\n\nif (!config) {\n  throw new Error(\"No se encontró config con id_story\");\n}\n\nfor (let i = 0; i < items.length; i++) {\n\n  const item = items[i];\n\n  if (!item.binary || !item.binary.data) {\n    continue;\n  }\n\n  const fileName = item.binary.data.fileName;\n\n  const buffer = await this.helpers.getBinaryDataBuffer(i, \"data\");\n  const text = buffer.toString(\"utf8\").trim();\n\n  if (fileName === config.correction_prompt_file) {\n    correction = text;\n    continue;\n  }\n\n  if (fileName === config.detection_prompt_file) {\n    detection = text;\n    continue;\n  }\n\n  if (fileName === config.resolution_prompt_file) {\n    resolution = text;\n    continue;\n  }\n\n  if (fileName === config.validation_prompt_file) {\n    validation = text;\n    continue;\n  }\n}\n\n// Validación\nif (!correction || !detection || !resolution || !validation) {\n  throw new Error(\"Faltan prompts. Revisar nodo Read Files\");\n}\n\nreturn [\n  {\n    json: {\n      id_story: config.id_story,\n      correction_prompt: correction,\n      detection_prompt: detection,\n      resolution_prompt: resolution,\n      validation_prompt: validation\n    }\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        368,
-        -128
-      ],
-      "id": "cdfdb1db-6c62-4406-afb4-fa2119a8bf26",
-      "name": "build_prompt_bundle"
-    },
-    {
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
@@ -190,66 +177,36 @@
       "typeVersion": 2,
       "position": [
         -80,
-        608
+        448
       ],
       "id": "49c81cbb-b20a-4ed1-87cc-b3c50371cb8b",
       "name": "build_correction_prompt"
     },
     {
       "parameters": {
-        "jsCode": "const raw = $json.response || $json.text || $json.output || \"\";\n\nif (!raw) {\n  throw new Error(\"Respuesta vacía del LLM\");\n}\n\n// 1. Limpiar markdown\nlet cleaned = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// --------\n// Helper: extraer JSON balanceado\n// --------\nfunction extractBalancedJSON(text) {\n  let start = text.indexOf(\"{\");\n  if (start === -1) return null;\n\n  let depth = 0;\n\n  for (let i = start; i < text.length; i++) {\n    if (text[i] === \"{\") depth++;\n    if (text[i] === \"}\") depth--;\n\n    if (depth === 0) {\n      return text.slice(start, i + 1);\n    }\n  }\n\n  return null;\n}\n\n// --------\n// Helper: intentar des-escape de string JSON\n// --------\nfunction tryParseEscapedJSON(text) {\n  try {\n    // Caso: \"{ \\\"corrected_text\\\": \\\"...\\\" }\"\n    const unescaped = JSON.parse(text);\n    if (typeof unescaped === \"string\") {\n      return JSON.parse(unescaped);\n    }\n    return unescaped;\n  } catch {\n    return null;\n  }\n}\n\nlet parsed = null;\n\n// 2. Intento directo\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (_) {}\n\n// 3. Intento des-escape\nif (!parsed) {\n  parsed = tryParseEscapedJSON(cleaned);\n}\n\n// 4. Intento extracción balanceada\nif (!parsed) {\n  const jsonString = extractBalancedJSON(cleaned);\n\n  if (jsonString) {\n    try {\n      parsed = JSON.parse(jsonString);\n    } catch (_) {\n      parsed = tryParseEscapedJSON(jsonString);\n    }\n  }\n}\n\n// 5. Validación final\nif (!parsed || !parsed.corrected_text) {\n  throw new Error(\"No se pudo obtener corrected_text del LLM\");\n}\n\n// 6. Output limpio\nreturn [\n  {\n    json: {\n      id_story: $json.id_story,\n      act_number: $json.act_number,\n      corrected_text: parsed.corrected_text\n    }\n  }\n];"
+        "jsCode": "// Función principal robusta para extraer JSON\nfunction extractJSON(rawText) {\n  if (!rawText || typeof rawText !== 'string') return null;\n\n  // 1. Limpieza inicial: Eliminar bloques de markdown ```json ... ```\n  let text = rawText.replace(/```json/g, '').replace(/```/g, '');\n\n  // 2. Estrategia A: Intento directo (si el modelo se portó bien)\n  try {\n    return JSON.parse(text);\n  } catch (e) {\n    // Falló, pasamos a la estrategia B\n  }\n\n  // 3. Estrategia B: Extracción forzada por balance de llaves {}\n  // Buscamos el primer { y contamos hasta cerrar el objeto, ignorando el texto conversacional alrededor.\n  const firstOpen = text.indexOf('{');\n  if (firstOpen !== -1) {\n    let depth = 0;\n    let inString = false;\n    let escape = false;\n    let jsonEnd = -1;\n\n    for (let i = firstOpen; i < text.length; i++) {\n      const char = text[i];\n\n      if (escape) {\n        escape = false;\n        continue;\n      }\n      if (char === '\\\\') {\n        escape = true;\n        continue;\n      }\n      if (char === '\"') {\n        inString = !inString;\n        continue;\n      }\n      if (!inString) {\n        if (char === '{') depth++;\n        if (char === '}') depth--;\n        \n        if (depth === 0) {\n          jsonEnd = i;\n          break;\n        }\n      }\n    }\n\n    if (jsonEnd !== -1) {\n      const jsonString = text.slice(firstOpen, jsonEnd + 1);\n      \n      // 4. Estrategia C: Corrección de errores comunes antes de parsear\n      // Muchos LLMs ponen comas al final de los últimos objetos { \"a\": 1, } -> esto es inválido en JSON estándar\n      const fixedJson = jsonString.replace(/,(\\s*[}\\]])/g, '$1');\n\n      try {\n        return JSON.parse(fixedJson);\n      } catch (e) {\n        // Si falla incluso con la corrección, intentamos parsearlo como 'JSON suelto'\n        // a veces el modelo devuelve: \"corrected_text\": \"...\" sin las llaves externas\n        try {\n           // Intento desesperado: buscar el valor directamente si es un string simple\n           const match = jsonString.match(/\"corrected_text\"\\s*:\\s*\"([^\"]*(?:\\\\.[^\"]*)*)\"/);\n           if (match && match[1]) {\n             // Restaurar saltos de línea escapados \\n -> reales, si es necesario, \n             // pero normalmente JSON.parse lo maneja. Aquí devolvemos un objeto mock.\n             return { corrected_text: JSON.parse(`\"${match[1]}\"`) }; \n           }\n        } catch(err) {}\n      }\n    }\n  }\n\n  return null;\n}\n\n// --- LÓGICA PRINCIPAL DEL NODO ---\n\n// 1. Obtenemos la entrada. Puede venir en $json.output, $json.text o $json.response\nconst rawInput = $json.output || $json.text || $json.response || \"\";\n\n// 2. Ejecutamos el extractor robusto\nlet parsedData = extractJSON(rawInput);\n\n// 3. Si falla TODO, intentamos ver si el input crudo ya es el objeto (caso raro de doble parseo)\nif (!parsedData && typeof rawInput === 'object') {\n    parsedData = rawInput;\n}\n\n// 4. Validación y manejo de errores\nif (!parsedData || !parsedData.corrected_text) {\n  // Opción A: Lanzar error (detiene el flujo)\n  // throw new Error(\"No se pudo parsear el JSON del LLM. Input: \" + rawInput.substring(0, 100));\n  \n  // Opción B: Devolver el texto crudo en un campo 'fallback' para que el flujo no se detenga\n  // ¡Útil si no quieres perder el progreso de los 5 actos por uno fallido!\n  return [\n    {\n      json: {\n        id_story: $json.id_story,\n        act_number: $json.act_number,\n        corrected_text: rawInput, // Usamos el texto sucio como último recurso\n        parsing_error: true\n      }\n    }\n  ];\n}\n\n// 5. Éxito: Retornamos el objeto limpio\nreturn [\n  {\n    json: {\n      id_story: $json.id_story,\n      act_number: $json.act_number,\n      corrected_text: parsedData.corrected_text\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        512,
-        752
+        496,
+        608
       ],
       "id": "20c1d4df-6d8a-4a6c-8014-f4f4c9750b5f",
       "name": "parse_correction"
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nif (items.length === 0) {\n  throw new Error(\"No hay actos corregidos\");\n}\n\n// Validar y mapear\nconst acts = items.map(item => {\n\n  if (!item.json.corrected_text) {\n    throw new Error(`Falta corrected_text en act_number ${item.json.act_number}`);\n  }\n\n  return {\n    act_number: item.json.act_number,\n    corrected_text: item.json.corrected_text\n  };\n});\n\n// Ordenar\nacts.sort((a, b) => a.act_number - b.act_number);\n\n// id_story\nconst id_story = items[0].json.id_story;\n\nreturn [\n  {\n    json: {\n      id_story,\n      total_acts: acts.length,\n      acts\n    }\n  }\n];"
+        "jsCode": "// 1. Recuperamos todos los items que llegan a este nodo\n// En un nodo Code de n8n, 'items' es el array que contiene todos los elementos entrantes.\nconst allItems = items;\n\n// 2. Ordenamos los items por 'act_number' para mantener el orden narrativo\n// Esto es crucial porque a veces los procesos asíncronos pueden desordenar la llegada.\nconst sortedItems = allItems.sort((a, b) => {\n  const numA = a.json.act_number || 0;\n  const numB = b.json.act_number || 0;\n  return numA - numB;\n});\n\n// 3. Extraemos los textos y los unimos\n// Usamos .map() para obtener solo el texto de cada item\n// Usamos .join(\"\\n\\n\") para pegarlos con un salto de línea entre actos\nconst fullStory = sortedItems\n  .map(item => item.json.corrected_text || \"\")\n  .join(\"\\n\\n\");\n\n// 4. Retornamos el array con un único objeto con la estructura deseada\nreturn [\n  {\n    json: {\n      relato: fullStory\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        640,
-        528
-      ],
-      "id": "8285221d-ec9c-4ebf-b258-430bfdbf0832",
-      "name": "merge_corrected_acts"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $json;\n\nif (!data.acts || data.acts.length === 0) {\n  throw new Error(\"No hay actos para construir full_text\");\n}\n\n// Orden defensivo (por si acaso)\nconst acts = data.acts.sort((a, b) => a.act_number - b.act_number);\n\n// Construcción eficiente\nconst full_text = acts\n  .map(a => {\n    if (!a.corrected_text) {\n      throw new Error(`Sin corrected_text`);\n    }\n\n    return `RELATO:\\n${a.corrected_text.trim()}`;\n  })\n  .join(\"\\n\\n\");\n\n// Output mínimo\nreturn [\n  {\n    json: {   \n      id_story: data.id_story,\n      full_text\n    }\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        896,
-        528
+        496,
+        320
       ],
       "id": "d36f7add-dd6a-4ebc-8f84-6a0799e06c10",
       "name": "build_full_text"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true
-        }
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        448,
-        384
-      ],
-      "id": "e32ffef6-f801-4226-9c72-5513166dd046",
-      "name": "Merge"
     },
     {
       "parameters": {
@@ -264,8 +221,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1472,
-        816
+        1200,
+        496
       ],
       "id": "889760df-9e6a-4cc5-8883-f14c59cb15a3",
       "name": "Ollama Chat Model1",
@@ -285,8 +242,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1520,
-        640
+        1216,
+        320
       ],
       "id": "36352f13-5d9c-49c2-99ff-34224ff704ea",
       "name": "detection"
@@ -295,27 +252,26 @@
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.prompt }}",
-        "hasOutputParser": true,
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        176,
-        608
+        96,
+        448
       ],
       "id": "97e90790-4935-4a38-bf37-b91ad112500e",
       "name": "correction"
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\n// Validaciones\nif (!data.full_text) {\n  throw new Error(\"Falta full_text\");\n}\n\nif (!data.detection_prompt) {\n  throw new Error(\"Falta detection_prompt\");\n}\n\n// Inyección\nlet prompt = data.detection_prompt.replace(/{{text}}/g, data.full_text.trim());\n\n// Hardening (clave)\nprompt += \"\\n\\nRESPONDER SOLO JSON VALIDO. NO usar markdown. NO agregar explicaciones.\";\n\n// Output mínimo\nreturn [\n  {\n    json: {\n      id_story: data.id_story,\n      prompt\n    }\n  }\n];"
+        "jsCode": "const data = $json;\n\n// Validaciones\nif (!data.relato) {\n  throw new Error(\"Falta full_text\");\n}\n\nif (!data.detection_prompt) {\n  throw new Error(\"Falta detection_prompt\");\n}\n\n// Inyección\nlet prompt = data.detection_prompt.replace(/{{text}}/g, data.relato.trim());\n\n// Output mínimo\nreturn [\n  {\n    json: {\n      prompt\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1312,
-        624
+        1024,
+        320
       ],
       "id": "446c648a-359b-45f3-8089-a06c41120293",
       "name": "build_detection_prompt"
@@ -329,24 +285,11 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1120,
-        384
+        832,
+        176
       ],
       "id": "7c314c76-f72c-4823-b49f-0eb811075143",
       "name": "Merge3"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1856,
-        656
-      ],
-      "id": "b97b352d-deca-4146-b541-01c7fd6695a9",
-      "name": "parse_detection"
     },
     {
       "parameters": {
@@ -355,21 +298,21 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2064,
-        672
+        1552,
+        320
       ],
       "id": "c2a99a75-977a-46db-8ac2-b8850aac566e",
       "name": "normalize_detection"
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\n// Validaciones duras\nif (!data.full_text) {\n  throw new Error(\"Falta full_text\");\n}\n\nif (!data.issues) {\n  throw new Error(\"Faltan issues\");\n}\n\nif (!data.resolution_prompt) {\n  throw new Error(\"Falta resolution_prompt\");\n}\n\n// Serializar issues (clave para el LLM)\nconst issuesString = JSON.stringify(data.issues, null, 2);\n\n// Inyección en template\nlet prompt = data.resolution_prompt\n  .replace(/{{text}}/g, data.full_text.trim())\n  .replace(/{{issues}}/g, issuesString);\n\n// Hardening fuerte (más importante que en correction)\nprompt += `\n  \nIMPORTANTE:\n- Responder SOLO JSON válido\n- NO usar markdown\n- NO agregar explicaciones\n- NO incluir texto fuera del JSON\n`;\n\n// Output mínimo y limpio\nreturn [\n  {\n    json: {\n      id_story: data.id_story,\n      prompt\n    }\n  }\n];"
+        "jsCode": "const data = $json;\n\n// Validaciones duras\nif (!data.relato) {\n  throw new Error(\"Falta el relato\");\n}\n\nif (!data.issues) {\n  throw new Error(\"Faltan issues\");\n}\n\nif (!data.resolution_prompt) {\n  throw new Error(\"Falta resolution_prompt\");\n}\n\n// Serializar issues (clave para el LLM)\nconst issuesString = JSON.stringify(data.issues, null, 2);\n\n// Inyección en template\nlet prompt = data.resolution_prompt\n  .replace(/{{text}}/g, data.relato.trim())\n  .replace(/{{issues}}/g, issuesString);\n\n// Output mínimo y limpio\nreturn [\n  {\n    json: {\n      id_story: data.id_story,\n      prompt\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2544,
-        672
+        2096,
+        336
       ],
       "id": "bfdd29c1-eab8-47fd-8877-ef496d5c7f9e",
       "name": "build_resolution_prompt"
@@ -383,8 +326,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2320,
-        464
+        1856,
+        192
       ],
       "id": "be5f8214-559d-4d89-9b7a-e9096720d890",
       "name": "Merge4"
@@ -402,8 +345,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        2720,
-        832
+        2400,
+        512
       ],
       "id": "53099804-0683-42b5-9656-8c0a0fc135a0",
       "name": "Ollama Chat Model2",
@@ -423,41 +366,41 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        2784,
-        672
+        2400,
+        336
       ],
       "id": "722f721c-2789-4fd8-9332-a80fc4280570",
       "name": "resolution"
     },
     {
       "parameters": {
-        "jsCode": "const raw = $json.response || $json.text || $json.output || \"\";\n\n// 1. Sanitización básica\nlet cleaned = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// 2. Intento de parse directo\nlet parsed;\n\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n\n  // 3. Extraer bloque JSON (greedy pero controlado)\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n\n  if (!match) {\n    return [\n      {\n        json: {\n          id_story: $json.id_story,\n          sanitized_text: \"\",\n          warning: \"No se encontró JSON en respuesta del LLM\"\n        }\n      }\n    ];\n  }\n\n  try {\n    parsed = JSON.parse(match[0]);\n  } catch (e2) {\n    return [\n      {\n        json: {\n          id_story: $json.id_story,\n          sanitized_text: \"\",\n          warning: \"JSON inválido en respuesta del LLM\"\n        }\n      }\n    ];\n  }\n}\n\n// 4. Validación clave\nif (!parsed.sanitized_text) {\n  return [\n    {\n      json: {\n        id_story: $json.id_story,\n        sanitized_text: \"\",\n        warning: \"No existe sanitized_text en la respuesta\"\n      }\n    }\n  ];\n}\n\n// 5. Limpieza final (defensiva)\nlet sanitized = parsed.sanitized_text.trim();\n\n// eliminar posibles restos raros\nsanitized = sanitized\n  .replace(/^\"+|\"+$/g, \"\")        // comillas envolventes\n  .replace(/\\\\n/g, \"\\n\")          // saltos de línea escapados\n  .trim();\n\n// 6. Output final\nreturn [\n  {\n    json: {\n      id_story: $json.id_story,\n      sanitized_text: sanitized\n    }\n  }\n];"
+        "jsCode": "// ---------------------------------------------------------\n// FUNCIÓN AUXILIAR: Reparar comillas no escapadas (Crucial para diálogos)\n// ---------------------------------------------------------\nfunction fixJsonString(jsonStr) {\n  const key = 'sanitized_text';\n  // Buscamos la clave \"sanitized_text\":\n  const keyPattern = `\"${key}\"\\\\s*:\\\\s*\"`;\n  const matchStart = jsonStr.search(keyPattern);\n\n  if (matchStart !== -1) {\n    // Calculamos dónde empieza el contenido del texto (después de las comillas)\n    const valueStartIndex = matchStart + jsonStr.match(keyPattern)[0].length;\n    \n    // Buscamos el cierre REAL del valor (una comilla seguida de , o })\n    for (let i = valueStartIndex; i < jsonStr.length; i++) {\n      if (jsonStr[i] === '\"') {\n        const remainder = jsonStr.substring(i + 1).trim();\n        if (remainder.startsWith(',') || remainder.startsWith('}')) {\n          // Extraemos solo el relato\n          const rawContent = jsonStr.substring(valueStartIndex, i);\n          \n          // 1. Escapamos comillas internas \" -> \\\"\n          // 2. Escapamos barras invertidas \\ -> \\\\\n          const fixedContent = rawContent\n          .replace(/\\\\/g, '\\\\\\\\')\n          .replace(/(?<!\\\\)\"/g, '\\\\\"');\n          \n          // Reconstruimos el JSON limpio\n          const before = jsonStr.substring(0, valueStartIndex);\n          const after = jsonStr.substring(i);\n          \n          return before + fixedContent + after;\n        }\n      }\n    }\n  }\n  return jsonStr;\n}\n\n// ---------------------------------------------------------\n// LÓGICA PRINCIPAL\n// ---------------------------------------------------------\n\n// 1. EXTRACCIÓN DIRECTA\n// Tu estructura es [{\"text\": \"...\"}], así que accedemos a $json.text\nconst raw = $json.text;\n\nif (!raw) {\n  return [{ json: { sanitized_text: \"\", warning: \"Input 'text' vacío\" }}];\n}\n\n// 2. LIMPIEZA DE MARKDOWN\n// Quitamos los ```json y ``` del principio y final\nlet cleaned = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet parsed;\n\n// 3. PARSEO ROBUSTO (Intento directo -> Reparación -> Último recurso)\ntry {\n  // Intento A: El JSON está bien formado\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  // Intento B: El JSON tiene comillas sin escapar (diálogos), lo arreglamos\n  const fixedJson = fixJsonString(cleaned);\n  \n  try {\n    parsed = JSON.parse(fixedJson);\n  } catch (e2) {\n    // Intento C: Usar 'new Function' como último desesperado\n    try {\n      parsed = new Function('return ' + fixedJson)();\n    } catch (e3) {\n      return [{ json: { sanitized_text: \"\", warning: \"Error crítico: No se pudo parsear el JSON\" }}];\n    }\n  }\n}\n\n// 4. SALIDA FINAL\n// Devolvemos exactamente el formato que pediste: [{\"sanitized_text\": \"...\"}]\nreturn [{\n  json: {\n    sanitized_text: parsed.sanitized_text || \"\"\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3136,
-        688
+        2784,
+        336
       ],
       "id": "a2f2eb88-7f37-4f4a-b1ae-9631aeb7cc8e",
       "name": "parse_resolution"
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\n// Validaciones duras\nif (!data.sanitized_text) {\n  throw new Error(\"Falta sanitized_text\");\n}\n\nif (!data.validation_prompt) {\n  throw new Error(\"Falta validation_prompt\");\n}\n\n// Inyección\nlet prompt = data.validation_prompt\n  .replace(/{{text}}/g, data.sanitized_text.trim());\n\n// Hardening (estricto pero más liviano que resolution)\nprompt += `\n\nIMPORTANTE:\n- Responder SOLO JSON válido\n- NO usar markdown\n- NO agregar explicaciones\n`;\n\n// Output limpio\nreturn [\n  {\n    json: {\n      id_story: data.id_story,\n      prompt\n    }\n  }\n];"
+        "jsCode": "const data = $json;\n\n// Validaciones duras\nif (!data.sanitized_text) {\n  throw new Error(\"Falta sanitized_text\");\n}\n\nif (!data.validation_prompt) {\n  throw new Error(\"Falta validation_prompt\");\n}\n\n// Inyección\nlet prompt = data.validation_prompt\n  .replace(/{{text}}/g, data.sanitized_text.trim());\n\n// Output limpio\nreturn [\n  {\n    json: {\n      prompt\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3616,
-        672
+        3312,
+        336
       ],
       "id": "368af559-b3e2-4250-9f81-5a29d2999c7d",
       "name": "build_validation"
     },
     {
       "parameters": {
-        "model": "gemma2:9b",
+        "model": "qwen2.5:32b-instruct-q3_K_M",
         "options": {
           "temperature": 0.3,
           "topK": 40,
@@ -468,8 +411,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        3840,
-        848
+        3536,
+        512
       ],
       "id": "00ce5f56-c5e9-4726-a472-f113d57b2f16",
       "name": "Ollama Chat Model3",
@@ -482,13 +425,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+        "jsCode": "// ---------------------------------------------------------\n// 1. EXTRACCIÓN\n// ---------------------------------------------------------\n// Obtenemos la respuesta. Normalmente vendrá en $json.output si usaste Output Parser,\n// o en $json.text si es respuesta cruda.\nconst raw = $json.output || $json.text || \"\";\n\nif (!raw) {\n  return [{ json: { is_valid: false, notes: \"Error: No se recibió respuesta del validador.\" } }];\n}\n\n// ---------------------------------------------------------\n// 2. LIMPIEZA DE MARKDOWN\n// ---------------------------------------------------------\nlet cleaned = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// ---------------------------------------------------------\n// 3. EXTRACCIÓN DEL JSON\n// ---------------------------------------------------------\n// Buscamos el objeto JSON completo entre las llaves { ... }\nconst match = cleaned.match(/\\{[\\s\\S]*\\}/);\n\nif (!match) {\n  return [{ json: { is_valid: false, notes: \"Error: Formato JSON no encontrado en validación.\" } }];\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(match[0]);\n} catch (e) {\n  // Si falla el parseo, asumimos lo peor para no pasar un relato corrupto\n  return [{ json: { is_valid: false, notes: \"Error: JSON inválido en respuesta de validación.\" } }];\n}\n\n// ---------------------------------------------------------\n// 4. NORMALIZACIÓN DE DATOS\n// ---------------------------------------------------------\n// Aseguramos que is_valid sea un booleano real, no un string \"true\"/\"false\"\nlet isValid = parsed.is_valid;\n\nif (typeof isValid === 'string') {\n  isValid = isValid.toLowerCase() === 'true';\n}\n\n// Aseguramos que existan las notas\nlet notes = parsed.notes || \"\";\n\n// ---------------------------------------------------------\n// 5. OUTPUT\n// ---------------------------------------------------------\n// Mantenemos el id_story para los siguientes pasos de Persistencia\nreturn [\n  {\n    json: {\n      id_story: $json.id_story, // Preservamos el ID\n      is_valid: isValid,        // Será TRUE o FALSE (booleano)\n      notes: notes\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4176,
-        672
+        3872,
+        336
       ],
       "id": "22ad7954-d65e-443c-a114-6df484a5c2e2",
       "name": "parse_validation"
@@ -502,8 +445,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        3376,
-        544
+        3088,
+        208
       ],
       "id": "3f35d5a3-64bf-433c-9fc1-0b47e5b997ef",
       "name": "Merge5"
@@ -518,8 +461,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        3856,
-        672
+        3536,
+        336
       ],
       "id": "a0b59df5-cc64-4da6-b838-17fe5088a5ea",
       "name": "validation"
@@ -533,8 +476,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1264,
-        944
+        880,
+        624
       ],
       "id": "3a9f73ea-caed-4aec-a345-5d9fe801b405",
       "name": "Sticky Note"
@@ -548,8 +491,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -352,
-        992
+        -336,
+        832
       ],
       "id": "ed665803-199d-4ad5-be00-50d87a803ee1",
       "name": "Sticky Note1"
@@ -563,8 +506,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2384,
-        944
+        1968,
+        640
       ],
       "id": "8d64dccb-199e-439c-a7c7-7a20e3ade553",
       "name": "Sticky Note2"
@@ -578,8 +521,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3632,
-        976
+        3328,
+        640
       ],
       "id": "59d3cf21-ac0b-4433-a757-0dc14859cec3",
       "name": "Sticky Note3"
@@ -598,6 +541,97 @@
       ],
       "id": "36a5a690-975b-4e7c-9d6b-83730fa8ad16",
       "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet correction = \"\";\nlet detection = \"\";\nlet resolution = \"\";\nlet validation = \"\";\n\n// Config (último item)\nconst config = items.find(i => i.json.id_story)?.json;\n\nif (!config) {\n  throw new Error(\"No se encontró config con id_story\");\n}\n\nfor (let i = 0; i < items.length; i++) {\n\n  const item = items[i];\n\n  if (!item.binary || !item.binary.data) {\n    continue;\n  }\n\n  const fileName = item.binary.data.fileName;\n\n  const buffer = await this.helpers.getBinaryDataBuffer(i, \"data\");\n  const text = buffer.toString(\"utf8\").trim();\n\n  if (fileName === config.correction_prompt_file) {\n    correction = text;\n    continue;\n  }\n\n  if (fileName === config.detection_prompt_file) {\n    detection = text;\n    continue;\n  }\n\n  if (fileName === config.resolution_prompt_file) {\n    resolution = text;\n    continue;\n  }\n\n  if (fileName === config.validation_prompt_file) {\n    validation = text;\n    continue;\n  }\n}\n\n// Validación\nif (!correction || !detection || !resolution || !validation) {\n  throw new Error(\"Faltan prompts. Revisar nodo Read Files\");\n}\n\nreturn [\n  {\n    json: {\n      id_story: config.id_story,\n      correction_prompt: correction,\n      detection_prompt: detection,\n      resolution_prompt: resolution,\n      validation_prompt: validation\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -128
+      ],
+      "id": "cdfdb1db-6c62-4406-afb4-fa2119a8bf26",
+      "name": "build_process_prompts"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d8952d2d-7368-4fca-a22d-f4ecc8215444",
+              "leftValue": "={{ $json.is_valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4080,
+        336
+      ],
+      "id": "9c831e58-ec90-4759-9be0-ca8c7cd4565d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---------------------------------------------------------\n// 1. OBTENER DATOS\n// ---------------------------------------------------------\nconst data = $json;\n\nconst idStory = data.id_story || \"sin_id\";\n\n// ---------------------------------------------------------\n// 2. GESTIÓN DE VERSIÓN (Auto-incremental simulado)\n// ---------------------------------------------------------\n// Como el nodo Code no recuerda ejecuciones pasadas, necesitamos\n// que la versión venga de un nodo \"Postgres: get_next_version\".\n//\n// Si existe el campo 'version' en el input, úsalo. Si no, asume v1.\nconst version = data.version || 1;\n\n// ---------------------------------------------------------\n// 3. CONTENIDO DEL ARCHIVO\n// ---------------------------------------------------------\n// Usamos directamente el texto sanitizado completo, sin separar en actos.\nconst storyContent = data.sanitized_text || \"\";\n\n// ---------------------------------------------------------\n// 4. NOMBRE DE ARCHIVO Y SALIDA\n// ---------------------------------------------------------\n// Formato solicitado: id_story + _saneado_version_X.md\nconst fileName = `${idStory}_saneado_version_${version}.md`;\n\n// Retornamos el objeto listo para el nodo \"Convert to File\" o \"Write File\"\nreturn {\n  json: {\n    file_name: fileName,\n    markdown_content: storyContent\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4336,
+        208
+      ],
+      "id": "8b321a2e-f9a1-46a6-b8f2-f8ceb8e508a6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "markdown_content",
+        "options": {
+          "fileName": "={{ $json.file_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        4544,
+        208
+      ],
+      "id": "db5a5989-a0d0-4324-84dc-92d409384337",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/archivos/historias_saneadas/{{$binary.data.fileName}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        4752,
+        208
+      ],
+      "id": "c6914a91-6352-451e-b090-54047ff41570",
+      "name": "Read/Write Files from Disk1"
     }
   ],
   "pinData": {},
@@ -631,11 +665,6 @@
             "node": "Loop Over Items",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -644,9 +673,9 @@
       "main": [
         [
           {
-            "node": "Merge",
+            "node": "build_full_text",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ],
         [
@@ -700,30 +729,9 @@
       "main": [
         [
           {
-            "node": "build_prompt_bundle",
+            "node": "build_process_prompts",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "build_prompt_bundle": {
-      "main": [
-        [
-          {
-            "node": "Execute a SQL query",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge2",
-            "type": "main",
-            "index": 1
-          },
-          {
-            "node": "Merge3",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -761,35 +769,13 @@
         ]
       ]
     },
-    "merge_corrected_acts": {
-      "main": [
-        [
-          {
-            "node": "build_full_text",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "merge_corrected_acts",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "build_full_text": {
       "main": [
         [
           {
             "node": "Merge3",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -844,17 +830,6 @@
       ]
     },
     "detection": {
-      "main": [
-        [
-          {
-            "node": "parse_detection",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "parse_detection": {
       "main": [
         [
           {
@@ -965,6 +940,11 @@
             "node": "build_validation",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -979,6 +959,71 @@
           }
         ]
       ]
+    },
+    "build_process_prompts": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse_validation": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -987,7 +1032,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "a42d8d64-52fa-4083-8692-13a5a07348c1",
+  "versionId": "215d35a3-26e4-4b5c-9ca2-d9bc731d5e13",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"

@@ -29,3 +29,9 @@ SALIDA (JSON):
     }
   ]
 }
+
+IMPORTANTE:
+- Responder SOLO JSON válido
+- NO usar markdown
+- NO agregar explicaciones
+- NO incluir texto fuera del JSON
