@@ -1,0 +1,21 @@
+services:
+  story-form:
+    build:
+      context: ./story-form
+      dockerfile: Dockerfile
+    container_name: story-form-app
+    restart: always
+    ports:
+      - "${PORT:-3100}:3100"
+    environment:
+      - NODE_ENV=production
+      - PORT=3100
+      - SITE_TITLE=${SITE_TITLE:-Narrative Builder}
+      - OUTPUT_DIR=/app/output_stories
+      - DEFAULT_TOTAL_ACTS=${DEFAULT_TOTAL_ACTS:-5}
+    volumes:
+      - ./story-form/output_stories:/app/output_stories
+      - ./prompts_generacion:/app/prompts_generacion:ro
+      - ./prompts_historias:/app/prompts_historias:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

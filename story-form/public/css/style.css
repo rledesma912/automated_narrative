@@ -2,21 +2,21 @@
    VARIABLES & RESET
 ═══════════════════════════════════════════════════════ */
 :root {
-  --bg:          #0c0b0a;
-  --bg-2:        #131210;
-  --bg-3:        #1a1814;
-  --bg-4:        #211f1b;
-  --border:      #2a2620;
-  --border-2:    #3a362e;
-  --gold:        #c9a86c;
-  --gold-dim:    #8a6e3e;
-  --gold-glow:   rgba(201,168,108,0.12);
-  --text:        #e8dfd0;
-  --text-2:      #a89880;
-  --text-3:      #6a5e4e;
-  --red:         #8b3a3a;
-  --red-light:   #c86e6e;
-  --success:     #3a6b4a;
+  --bg:          #ffffff;
+  --bg-2:        #f8f7f5;
+  --bg-3:        #ede5d7;
+  --bg-4:        #e5dfd3;
+  --border:      #d4cdc0;
+  --border-2:    #c4bdb0;
+  --gold:        #996633;
+  --gold-dim:    #7a5c3a;
+  --gold-glow:   rgba(153,102,51,0.12);
+  --text:        #2a2420;
+  --text-2:      #5a5a5a;
+  --text-3:      #8a8a80;
+  --red:         #d9534f;
+  --red-light:   #e67474;
+  --success:     #5cb85c;
   --radius:      6px;
   --sidebar-w:   240px;
   --transition:  0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -46,7 +46,7 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 100;
-  opacity: 0.025;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-size: 128px 128px;
 }

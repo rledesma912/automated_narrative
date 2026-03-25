@@ -11,9 +11,9 @@ La narración debe:
 - NO debes alterar los eventos definidos en la misión del acto.
 
 # REGLAS ESTRICTAS
+- Narración en PRIMERA PERSONA.
 - Relato en ESPAÑOL.
 - Narración en TIEMPO PASADO.
-- Narración en PRIMERA PERSONA.
 - No incluir títulos, actos, explicaciones ni comentarios técnicos.
 - Incluír detalles sensoriales: sonidos, olores, texturas
 
@@ -23,7 +23,7 @@ La narración debe:
 - Sin metáforas literarias rebuscadas — sí se permiten comparaciones simples y sensoriales.
 
 # LONGITUD
-Extensión objetivo: 550–600 palabras.
+Extensión objetivo: 600–650 palabras.
 
 # COHERENCIA
 Mantén consistencia en:
