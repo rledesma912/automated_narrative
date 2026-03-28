@@ -167,7 +167,8 @@ document.querySelectorAll('.act-header').forEach(header => {
 
 // ─── DYNAMIC RULES ────────────────────────────────────
 
-let ruleCount = 4;
+// Initialize ruleCount based on existing rules
+let ruleCount = document.querySelectorAll('.rule-row').length || 4;
 
 document.getElementById('addRuleBtn')?.addEventListener('click', () => {
   ruleCount++;

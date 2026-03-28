@@ -24,6 +24,9 @@
 
     <!-- Desktop: step nav visible inline -->
     <nav class="step-nav">
+      <a href="/list" class="nav-link-list" style="display: block; margin-bottom: 16px; padding: 10px 12px; color: var(--text-2); text-decoration: none; border-radius: 4px; font-size: 1.5rem; transition: all var(--transition); text-align: center; border: 1px solid var(--border);">
+        📖 Mis historias
+      </a>
       <button class="step-btn active" data-step="1">
         <span class="step-num">01</span>
         <span class="step-label">La historia</span>
@@ -61,10 +64,13 @@
   <div class="drawer-overlay" id="drawerOverlay"></div>
   <nav class="step-drawer" id="stepDrawer">
     <div class="drawer-header">
-      <h3>Pasos</h3>
+      <h3>Menú</h3>
       <button class="drawer-close" id="drawerClose" aria-label="Cerrar menú">×</button>
     </div>
     <div class="drawer-nav">
+      <a href="/list" class="nav-link-list" style="display: block; margin-bottom: 8px; padding: 12px; color: var(--text-2); text-decoration: none; border-radius: 4px; font-size: 1.5rem; transition: all var(--transition); text-align: center; border: 1px solid var(--border); margin-left: 0; margin-right: 0;">
+        📖 Mis historias
+      </a>
       <button class="step-btn active" data-step="1">
         <span class="step-num">01</span>
         <span class="step-label">La historia</span>
@@ -94,7 +100,10 @@
       <h1 class="success-title">Historia guardada</h1>
       <p class="success-path"><%= saved.filename %></p>
       <pre class="success-preview"><%= preview %></pre>
-      <a href="/" class="btn-primary">Crear otra historia</a>
+      <div style="display: flex; gap: 12px;">
+        <a href="/" class="btn-primary">Crear otra historia</a>
+        <a href="/list" class="btn-secondary" style="text-decoration: none; color: var(--text-2); border: 1px solid var(--border-2); padding: 11px 24px; border-radius: 6px; display: inline-block;">Ver mis historias</a>
+      </div>
     </div>
     <% } else { %>
 
@@ -109,6 +118,11 @@
     <% } %>
 
     <form id="storyForm" action="/save" method="POST">
+
+      <!-- Campo oculto para story_id cuando se edita -->
+      <% if (typeof formData !== 'undefined' && formData.story_id) { %>
+        <input type="hidden" name="story_id" value="<%= formData.story_id %>">
+      <% } %>
 
       <!-- ═══════════════════════════════════════
            PASO 1 — La historia
@@ -203,26 +217,17 @@
           <p class="rules-desc">Son los hechos que <strong>nunca pueden cambiar</strong> sin importar lo que pase en cada capítulo. Agregá entre 4 y 6 reglas — son la columna vertebral que la IA respeta en todos los actos.</p>
 
           <div class="rules-container" id="rulesContainer">
-            <div class="rule-row">
-              <span class="rule-num">1</span>
-              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Valentino nunca actúa con valentía" value="">
-              <button type="button" class="rule-remove" title="Eliminar">×</button>
-            </div>
-            <div class="rule-row">
-              <span class="rule-num">2</span>
-              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: El campo de pastizales es el único portal de entrada y salida" value="">
-              <button type="button" class="rule-remove" title="Eliminar">×</button>
-            </div>
-            <div class="rule-row">
-              <span class="rule-num">3</span>
-              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: El villano no aparece hasta el Acto 3" value="">
-              <button type="button" class="rule-remove" title="Eliminar">×</button>
-            </div>
-            <div class="rule-row">
-              <span class="rule-num">4</span>
-              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Al final los adultos no creen lo que les cuentan" value="">
-              <button type="button" class="rule-remove" title="Eliminar">×</button>
-            </div>
+            <% 
+              const reglas = typeof formData !== 'undefined' && formData.reglas ? (Array.isArray(formData.reglas) ? formData.reglas : [formData.reglas]) : [];
+              const defaultCount = Math.max(4, reglas.length);
+              for (let i = 0; i < defaultCount; i++) {
+            %>
+              <div class="rule-row">
+                <span class="rule-num"><%= i + 1 %></span>
+                <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Valentino nunca actúa con valentía" value="<%= reglas[i] ? reglas[i].replace(/"/g, '&quot;') : '' %>">
+                <button type="button" class="rule-remove" title="Eliminar">×</button>
+              </div>
+            <% } %>
           </div>
 
           <button type="button" class="btn-add-rule" id="addRuleBtn">
@@ -387,10 +392,13 @@
 
         <div class="save-row">
           <button type="button" class="btn-secondary prev-btn" data-prev="3">← Anterior</button>
-          <button type="submit" class="btn-save">
-            <span class="save-icon">✦</span>
-            Guardar historia
-          </button>
+          <div class="save-actions">
+            <button type="submit" class="btn-save">
+              <span class="save-icon">✦</span>
+              Guardar historia
+            </button>
+            <a href="/list" class="btn-secondary-outline">📖 Ver mis historias</a>
+          </div>
         </div>
       </section>
 
