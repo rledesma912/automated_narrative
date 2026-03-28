@@ -4,10 +4,10 @@
  */
 function generateMarkdown(data) {
   const {
-    genero,
     protagonistas,
-    escenarios,
+    relator,
     sinopsis,
+    escenarios,
     reglas,
     acto1, acto2, acto3, acto4, acto5
   } = data;
@@ -21,10 +21,15 @@ function generateMarkdown(data) {
 
   return `# Contexto del relato
 
-**Género**: ${genero}
 **Protagonistas**: ${protagonistas}
-**Escenarios**: ${escenarios}
+**Relator**: ${relator}
 **Sinopsis**: ${sinopsis}
+
+---
+
+## Escenarios
+
+${escenarios}
 
 ---
 

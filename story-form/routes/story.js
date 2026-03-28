@@ -23,10 +23,10 @@ router.post('/preview', (req, res) => {
 // POST — guardar archivo
 const validators = [
   body('story_name').trim().notEmpty().withMessage('El nombre de la historia es obligatorio.'),
-  body('genero').trim().notEmpty().withMessage('El género es obligatorio.'),
   body('protagonistas').trim().notEmpty().withMessage('Describí los protagonistas.'),
-  body('escenarios').trim().notEmpty().withMessage('Describí los escenarios.'),
+  body('relator').trim().notEmpty().withMessage('Describí el relator.'),
   body('sinopsis').trim().notEmpty().withMessage('La sinopsis es obligatoria.'),
+  body('escenarios').trim().notEmpty().withMessage('Describí los escenarios.'),
   body('acto1').trim().notEmpty().withMessage('El Acto 1 no puede estar vacío.'),
   body('acto2').trim().notEmpty().withMessage('El Acto 2 no puede estar vacío.'),
   body('acto3').trim().notEmpty().withMessage('El Acto 3 no puede estar vacío.'),

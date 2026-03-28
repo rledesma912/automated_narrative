@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Constructor de Historia</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Crimson+Pro:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
@@ -14,13 +15,14 @@
 
 <div class="app-shell">
 
-  <!-- SIDEBAR -->
+  <!-- SIDEBAR / HEADER -->
   <aside class="sidebar">
     <div class="sidebar-brand">
       <span class="brand-icon">✦</span>
       <span class="brand-name">Narrative<br>Builder</span>
     </div>
 
+    <!-- Desktop: step nav visible inline -->
     <nav class="step-nav">
       <button class="step-btn active" data-step="1">
         <span class="step-num">01</span>
@@ -28,29 +30,59 @@
       </button>
       <button class="step-btn" data-step="2">
         <span class="step-num">02</span>
-        <span class="step-label">El mundo</span>
+        <span class="step-label">Escenarios y reglas</span>
       </button>
       <button class="step-btn" data-step="3">
         <span class="step-num">03</span>
-        <span class="step-label">Las reglas</span>
+        <span class="step-label">Título y actos</span>
       </button>
       <button class="step-btn" data-step="4">
         <span class="step-num">04</span>
-        <span class="step-label">Los actos</span>
-      </button>
-      <button class="step-btn" data-step="5">
-        <span class="step-num">05</span>
-        <span class="step-label">Guardar</span>
+        <span class="step-label">Vista previa</span>
       </button>
     </nav>
+
+    <!-- Mobile: hamburger button -->
+    <button class="hamburger-toggle" id="hamburgerToggle" aria-label="Menú de pasos">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
 
     <div class="sidebar-progress">
       <div class="progress-bar">
         <div class="progress-fill" id="progressFill"></div>
       </div>
-      <span class="progress-label" id="progressLabel">Paso 1 de 5</span>
+      <span class="progress-label" id="progressLabel">Paso 1 de 4</span>
     </div>
   </aside>
+
+  <!-- Mobile: Step Nav Drawer -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <nav class="step-drawer" id="stepDrawer">
+    <div class="drawer-header">
+      <h3>Pasos</h3>
+      <button class="drawer-close" id="drawerClose" aria-label="Cerrar menú">×</button>
+    </div>
+    <div class="drawer-nav">
+      <button class="step-btn active" data-step="1">
+        <span class="step-num">01</span>
+        <span class="step-label">La historia</span>
+      </button>
+      <button class="step-btn" data-step="2">
+        <span class="step-num">02</span>
+        <span class="step-label">Escenarios y reglas</span>
+      </button>
+      <button class="step-btn" data-step="3">
+        <span class="step-num">03</span>
+        <span class="step-label">Título y actos</span>
+      </button>
+      <button class="step-btn" data-step="4">
+        <span class="step-num">04</span>
+        <span class="step-label">Vista previa</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- MAIN CONTENT -->
   <main class="main-content">
@@ -85,64 +117,7 @@
         <div class="panel-header">
           <span class="panel-num">01</span>
           <h2 class="panel-title">La historia</h2>
-          <p class="panel-desc">Empezá por lo básico: cómo se llama y de qué trata.</p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="story_name">
-            Nombre de la historia
-            <span class="field-hint">Este nombre se usa para generar el nombre del archivo</span>
-          </label>
-          <input
-            type="text"
-            id="story_name"
-            name="story_name"
-            class="field-input"
-            placeholder="Ej: El otro pueblo"
-            value="<%= typeof formData !== 'undefined' && formData.story_name ? formData.story_name : '' %>"
-            autocomplete="off"
-          >
-          <span class="filename-preview" id="filenamePreview"></span>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="genero">
-            Género
-            <span class="field-hint">El género principal y, si querés, uno secundario</span>
-          </label>
-          <input
-            type="text"
-            id="genero"
-            name="genero"
-            class="field-input"
-            placeholder="Ej: Terror sobrenatural. Viaje a otra dimensión."
-            value="<%= typeof formData !== 'undefined' && formData.genero ? formData.genero : '' %>"
-          >
-          <div class="genre-chips">
-            <button type="button" class="chip" data-target="genero" data-val="Terror psicológico">Terror psicológico</button>
-            <button type="button" class="chip" data-target="genero" data-val="Terror sobrenatural">Terror sobrenatural</button>
-            <button type="button" class="chip" data-target="genero" data-val="Suspenso y terror">Suspenso y terror</button>
-            <button type="button" class="chip" data-target="genero" data-val="Terror y ciencia ficción">Terror y sci-fi</button>
-            <button type="button" class="chip" data-target="genero" data-val="Terror folclórico">Terror folclórico</button>
-          </div>
-        </div>
-
-        <div class="step-nav-btns">
-          <div></div>
-          <button type="button" class="btn-primary next-btn" data-next="2">
-            Siguiente <span>→</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════
-           PASO 2 — El mundo
-      ═══════════════════════════════════════ -->
-      <section class="step-panel" data-panel="2">
-        <div class="panel-header">
-          <span class="panel-num">02</span>
-          <h2 class="panel-title">El mundo</h2>
-          <p class="panel-desc">Los personajes, los lugares y el argumento completo.</p>
+          <p class="panel-desc">Los protagonistas, el relator y la sinopsis de tu relato.</p>
         </div>
 
         <div class="field-group">
@@ -161,18 +136,18 @@
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="escenarios">
-            Escenarios
-            <span class="field-hint">Listá los lugares con una descripción del ambiente y sensación de cada uno</span>
+          <label class="field-label" for="relator">
+            Relator
+            <span class="field-hint">El personaje que narra la historia</span>
           </label>
           <textarea
-            id="escenarios"
-            name="escenarios"
+            id="relator"
+            name="relator"
             class="field-textarea"
-            rows="4"
-            placeholder="Ej: Casa de campo cálida y familiar. Camino de tierra entre pastizales altos al anochecer. Centro de pueblo desierto con faroles que apenas alumbran."
-          ><%= typeof formData !== 'undefined' && formData.escenarios ? formData.escenarios : '' %></textarea>
-          <div class="char-counter"><span id="cc-escenarios">0</span> palabras</div>
+            rows="3"
+            placeholder="Ej: La historia es narrada por un anciano que presenció los hechos"
+          ><%= typeof formData !== 'undefined' && formData.relator ? formData.relator : '' %></textarea>
+          <div class="char-counter"><span id="cc-relator">0</span> palabras</div>
         </div>
 
         <div class="field-group">
@@ -191,173 +166,214 @@
         </div>
 
         <div class="step-nav-btns">
+          <div></div>
+          <button type="button" class="btn-primary next-btn" data-next="2">
+            Siguiente <span>→</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+           PASO 2 — Escenarios y Reglas
+      ═══════════════════════════════════════ -->
+      <section class="step-panel" data-panel="2">
+        <div class="panel-header">
+          <span class="panel-num">02</span>
+          <h2 class="panel-title">Escenarios y Reglas</h2>
+          <p class="panel-desc">Los lugares donde ocurre la historia y sus leyes inmutables.</p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="escenarios">
+            Escenarios
+            <span class="field-hint">Listá los lugares con una descripción del ambiente y sensación de cada uno</span>
+          </label>
+          <textarea
+            id="escenarios"
+            name="escenarios"
+            class="field-textarea"
+            rows="4"
+            placeholder="Ej: Casa de campo cálida y familiar. Camino de tierra entre pastizales altos al anochecer. Centro de pueblo desierto con faroles que apenas alumbran."
+          ><%= typeof formData !== 'undefined' && formData.escenarios ? formData.escenarios : '' %></textarea>
+          <div class="char-counter"><span id="cc-escenarios">0</span> palabras</div>
+        </div>
+
+        <div class="rules-section">
+          <h3 class="rules-title">Las reglas de la historia</h3>
+          <p class="rules-desc">Son los hechos que <strong>nunca pueden cambiar</strong> sin importar lo que pase en cada capítulo. Agregá entre 4 y 6 reglas — son la columna vertebral que la IA respeta en todos los actos.</p>
+
+          <div class="rules-container" id="rulesContainer">
+            <div class="rule-row">
+              <span class="rule-num">1</span>
+              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Valentino nunca actúa con valentía" value="">
+              <button type="button" class="rule-remove" title="Eliminar">×</button>
+            </div>
+            <div class="rule-row">
+              <span class="rule-num">2</span>
+              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: El campo de pastizales es el único portal de entrada y salida" value="">
+              <button type="button" class="rule-remove" title="Eliminar">×</button>
+            </div>
+            <div class="rule-row">
+              <span class="rule-num">3</span>
+              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: El villano no aparece hasta el Acto 3" value="">
+              <button type="button" class="rule-remove" title="Eliminar">×</button>
+            </div>
+            <div class="rule-row">
+              <span class="rule-num">4</span>
+              <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Al final los adultos no creen lo que les cuentan" value="">
+              <button type="button" class="rule-remove" title="Eliminar">×</button>
+            </div>
+          </div>
+
+          <button type="button" class="btn-add-rule" id="addRuleBtn">
+            + Agregar regla
+          </button>
+        </div>
+
+        <div class="step-nav-btns">
           <button type="button" class="btn-secondary prev-btn" data-prev="1">← Anterior</button>
           <button type="button" class="btn-primary next-btn" data-next="3">Siguiente →</button>
         </div>
       </section>
 
       <!-- ═══════════════════════════════════════
-           PASO 3 — Las reglas
+           PASO 3 — Título y Actos
       ═══════════════════════════════════════ -->
       <section class="step-panel" data-panel="3">
         <div class="panel-header">
           <span class="panel-num">03</span>
-          <h2 class="panel-title">Las reglas de la historia</h2>
-          <p class="panel-desc">
-            Son los hechos que <strong>nunca pueden cambiar</strong> sin importar lo que pase en cada capítulo.<br>
-            Agregá entre 4 y 6 reglas. Son la columna vertebral que la IA respeta en todos los actos.
+          <h2 class="panel-title">Título y Actos</h2>
+          <p class="panel-desc">El nombre de tu relato y cómo se desarrolla en cinco actos.</p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="story_name">
+            Título del relato
+            <span class="field-hint">Este nombre se usa para generar el nombre del archivo</span>
+          </label>
+          <input
+            type="text"
+            id="story_name"
+            name="story_name"
+            class="field-input"
+            placeholder="Ej: El otro pueblo"
+            value="<%= typeof formData !== 'undefined' && formData.story_name ? formData.story_name : '' %>"
+            autocomplete="off"
+          >
+          <span class="filename-preview" id="filenamePreview"></span>
+        </div>
+
+        <div class="acts-section">
+          <h3 class="acts-title">Los actos</h3>
+          <p class="acts-desc">
+            Describí qué pasa en cada capítulo. No necesitás escribirlo como un relato —<br>
+            con oraciones directas y concretas alcanza. La IA lo convierte en narrativa.
           </p>
-        </div>
 
-        <div class="rules-container" id="rulesContainer">
-          <div class="rule-row">
-            <span class="rule-num">1</span>
-            <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Valentino nunca actúa con valentía" value="">
-            <button type="button" class="rule-remove" title="Eliminar">×</button>
+          <!-- Acto 1 -->
+          <div class="act-block" data-act="1">
+            <div class="act-header" data-toggle="1">
+              <div class="act-meta">
+                <span class="act-tag">Acto 1</span>
+                <span class="act-name">Situación inicial</span>
+              </div>
+              <span class="act-hint">Tono cotidiano — sin horror todavía. Presentá el mundo normal de los protagonistas.</span>
+              <span class="act-arrow">▾</span>
+            </div>
+            <div class="act-body open">
+              <textarea name="acto1" class="field-textarea act-textarea" rows="6"
+                placeholder="¿Dónde están? ¿Qué tienen que hacer? ¿Cómo es la relación entre los personajes? Establecé la calma antes de la tormenta."
+              ><%= typeof formData !== 'undefined' && formData.acto1 ? formData.acto1 : '' %></textarea>
+              <div class="char-counter"><span class="cc-act">0</span> palabras</div>
+            </div>
           </div>
-          <div class="rule-row">
-            <span class="rule-num">2</span>
-            <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: El campo de pastizales es el único portal de entrada y salida" value="">
-            <button type="button" class="rule-remove" title="Eliminar">×</button>
+
+          <!-- Acto 2 -->
+          <div class="act-block" data-act="2">
+            <div class="act-header" data-toggle="2">
+              <div class="act-meta">
+                <span class="act-tag">Acto 2</span>
+                <span class="act-name">Conflicto inicial</span>
+              </div>
+              <span class="act-hint">Algo empieza a estar mal. El miedo comienza, pero todavía hay dudas.</span>
+              <span class="act-arrow">▾</span>
+            </div>
+            <div class="act-body">
+              <textarea name="acto2" class="field-textarea act-textarea" rows="6"
+                placeholder="¿Qué primeros signos extraños notan los personajes? ¿Qué los hace dudar o asustarse? ¿Qué deciden hacer?"
+              ><%= typeof formData !== 'undefined' && formData.acto2 ? formData.acto2 : '' %></textarea>
+              <div class="char-counter"><span class="cc-act">0</span> palabras</div>
+            </div>
           </div>
-          <div class="rule-row">
-            <span class="rule-num">3</span>
-            <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: El villano no aparece hasta el Acto 3" value="">
-            <button type="button" class="rule-remove" title="Eliminar">×</button>
+
+          <!-- Acto 3 -->
+          <div class="act-block" data-act="3">
+            <div class="act-header" data-toggle="3">
+              <div class="act-meta">
+                <span class="act-tag">Acto 3</span>
+                <span class="act-name">Falsa calma</span>
+              </div>
+              <span class="act-hint">Creen que pueden controlarlo — pero algo los contradice. El peligro se vuelve concreto.</span>
+              <span class="act-arrow">▾</span>
+            </div>
+            <div class="act-body">
+              <textarea name="acto3" class="field-textarea act-textarea" rows="6"
+                placeholder="¿Qué momento de alivio tienen? ¿Qué lo rompe? ¿Cuál es la primera amenaza real y concreta?"
+              ><%= typeof formData !== 'undefined' && formData.acto3 ? formData.acto3 : '' %></textarea>
+              <div class="char-counter"><span class="cc-act">0</span> palabras</div>
+            </div>
           </div>
-          <div class="rule-row">
-            <span class="rule-num">4</span>
-            <input type="text" name="reglas" class="field-input rule-input" placeholder="Ej: Al final los adultos no creen lo que les cuentan" value="">
-            <button type="button" class="rule-remove" title="Eliminar">×</button>
+
+          <!-- Acto 4 -->
+          <div class="act-block" data-act="4">
+            <div class="act-header" data-toggle="4">
+              <div class="act-meta">
+                <span class="act-tag">Acto 4</span>
+                <span class="act-name">Crisis mayor</span>
+              </div>
+              <span class="act-hint">Todo se descontrola. Mayor tensión y movimiento. El obstáculo que parece insuperable.</span>
+              <span class="act-arrow">▾</span>
+            </div>
+            <div class="act-body">
+              <textarea name="acto4" class="field-textarea act-textarea" rows="6"
+                placeholder="¿Qué los pone en peligro real? ¿Qué deben hacer para sobrevivir? ¿Quién o qué los amenaza directamente?"
+              ><%= typeof formData !== 'undefined' && formData.acto4 ? formData.acto4 : '' %></textarea>
+              <div class="char-counter"><span class="cc-act">0</span> palabras</div>
+            </div>
+          </div>
+
+          <!-- Acto 5 -->
+          <div class="act-block" data-act="5">
+            <div class="act-header" data-toggle="5">
+              <div class="act-meta">
+                <span class="act-tag">Acto 5</span>
+                <span class="act-name">Clímax y resolución</span>
+              </div>
+              <span class="act-hint">El punto más alto y el cierre. Respetá las reglas de la historia.</span>
+              <span class="act-arrow">▾</span>
+            </div>
+            <div class="act-body">
+              <textarea name="acto5" class="field-textarea act-textarea" rows="6"
+                placeholder="¿Cómo escapan o superan el peligro? ¿Qué pasa después? ¿Hay consecuencias? Cerrá todos los hilos abiertos."
+              ><%= typeof formData !== 'undefined' && formData.acto5 ? formData.acto5 : '' %></textarea>
+              <div class="char-counter"><span class="cc-act">0</span> palabras</div>
+            </div>
           </div>
         </div>
-
-        <button type="button" class="btn-add-rule" id="addRuleBtn">
-          + Agregar regla
-        </button>
 
         <div class="step-nav-btns">
           <button type="button" class="btn-secondary prev-btn" data-prev="2">← Anterior</button>
-          <button type="button" class="btn-primary next-btn" data-next="4">Siguiente →</button>
+          <button type="button" class="btn-primary next-btn" data-next="4">Revisar →</button>
         </div>
       </section>
 
       <!-- ═══════════════════════════════════════
-           PASO 4 — Los actos
+           PASO 4 — Vista previa y Guardar
       ═══════════════════════════════════════ -->
       <section class="step-panel" data-panel="4">
         <div class="panel-header">
           <span class="panel-num">04</span>
-          <h2 class="panel-title">Los actos</h2>
-          <p class="panel-desc">
-            Describí qué pasa en cada capítulo. No necesitás escribirlo como un relato —<br>
-            con oraciones directas y concretas alcanza. La IA lo convierte en narrativa.
-          </p>
-        </div>
-
-        <!-- Acto 1 -->
-        <div class="act-block" data-act="1">
-          <div class="act-header" data-toggle="1">
-            <div class="act-meta">
-              <span class="act-tag">Acto 1</span>
-              <span class="act-name">Situación inicial</span>
-            </div>
-            <span class="act-hint">Tono cotidiano — sin horror todavía. Presentá el mundo normal de los protagonistas.</span>
-            <span class="act-arrow">▾</span>
-          </div>
-          <div class="act-body open">
-            <textarea name="acto1" class="field-textarea act-textarea" rows="6"
-              placeholder="¿Dónde están? ¿Qué tienen que hacer? ¿Cómo es la relación entre los personajes? Establecé la calma antes de la tormenta."
-            ><%= typeof formData !== 'undefined' && formData.acto1 ? formData.acto1 : '' %></textarea>
-            <div class="char-counter"><span class="cc-act">0</span> palabras</div>
-          </div>
-        </div>
-
-        <!-- Acto 2 -->
-        <div class="act-block" data-act="2">
-          <div class="act-header" data-toggle="2">
-            <div class="act-meta">
-              <span class="act-tag">Acto 2</span>
-              <span class="act-name">Conflicto inicial</span>
-            </div>
-            <span class="act-hint">Algo empieza a estar mal. El miedo comienza, pero todavía hay dudas.</span>
-            <span class="act-arrow">▾</span>
-          </div>
-          <div class="act-body">
-            <textarea name="acto2" class="field-textarea act-textarea" rows="6"
-              placeholder="¿Qué primeros signos extraños notan los personajes? ¿Qué los hace dudar o asustarse? ¿Qué deciden hacer?"
-            ><%= typeof formData !== 'undefined' && formData.acto2 ? formData.acto2 : '' %></textarea>
-            <div class="char-counter"><span class="cc-act">0</span> palabras</div>
-          </div>
-        </div>
-
-        <!-- Acto 3 -->
-        <div class="act-block" data-act="3">
-          <div class="act-header" data-toggle="3">
-            <div class="act-meta">
-              <span class="act-tag">Acto 3</span>
-              <span class="act-name">Falsa calma</span>
-            </div>
-            <span class="act-hint">Creen que pueden controlarlo — pero algo los contradice. El peligro se vuelve concreto.</span>
-            <span class="act-arrow">▾</span>
-          </div>
-          <div class="act-body">
-            <textarea name="acto3" class="field-textarea act-textarea" rows="6"
-              placeholder="¿Qué momento de alivio tienen? ¿Qué lo rompe? ¿Cuál es la primera amenaza real y concreta?"
-            ><%= typeof formData !== 'undefined' && formData.acto3 ? formData.acto3 : '' %></textarea>
-            <div class="char-counter"><span class="cc-act">0</span> palabras</div>
-          </div>
-        </div>
-
-        <!-- Acto 4 -->
-        <div class="act-block" data-act="4">
-          <div class="act-header" data-toggle="4">
-            <div class="act-meta">
-              <span class="act-tag">Acto 4</span>
-              <span class="act-name">Crisis mayor</span>
-            </div>
-            <span class="act-hint">Todo se descontrola. Mayor tensión y movimiento. El obstáculo que parece insuperable.</span>
-            <span class="act-arrow">▾</span>
-          </div>
-          <div class="act-body">
-            <textarea name="acto4" class="field-textarea act-textarea" rows="6"
-              placeholder="¿Qué los pone en peligro real? ¿Qué deben hacer para sobrevivir? ¿Quién o qué los amenaza directamente?"
-            ><%= typeof formData !== 'undefined' && formData.acto4 ? formData.acto4 : '' %></textarea>
-            <div class="char-counter"><span class="cc-act">0</span> palabras</div>
-          </div>
-        </div>
-
-        <!-- Acto 5 -->
-        <div class="act-block" data-act="5">
-          <div class="act-header" data-toggle="5">
-            <div class="act-meta">
-              <span class="act-tag">Acto 5</span>
-              <span class="act-name">Clímax y resolución</span>
-            </div>
-            <span class="act-hint">El punto más alto y el cierre. Respetá las reglas de la historia.</span>
-            <span class="act-arrow">▾</span>
-          </div>
-          <div class="act-body">
-            <textarea name="acto5" class="field-textarea act-textarea" rows="6"
-              placeholder="¿Cómo escapan o superan el peligro? ¿Qué pasa después? ¿Hay consecuencias? Cerrá todos los hilos abiertos."
-            ><%= typeof formData !== 'undefined' && formData.acto5 ? formData.acto5 : '' %></textarea>
-            <div class="char-counter"><span class="cc-act">0</span> palabras</div>
-          </div>
-        </div>
-
-        <div class="step-nav-btns">
-          <button type="button" class="btn-secondary prev-btn" data-prev="3">← Anterior</button>
-          <button type="button" class="btn-primary next-btn" data-next="5">Revisar →</button>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════
-           PASO 5 — Guardar
-      ═══════════════════════════════════════ -->
-      <section class="step-panel" data-panel="5">
-        <div class="panel-header">
-          <span class="panel-num">05</span>
-          <h2 class="panel-title">Guardar historia</h2>
+          <h2 class="panel-title">Vista previa y Guardar</h2>
           <p class="panel-desc">Revisá el archivo que se va a generar y guardalo cuando estés conforme.</p>
         </div>
 
@@ -370,7 +386,7 @@
         </div>
 
         <div class="save-row">
-          <button type="button" class="btn-secondary prev-btn" data-prev="4">← Anterior</button>
+          <button type="button" class="btn-secondary prev-btn" data-prev="3">← Anterior</button>
           <button type="submit" class="btn-save">
             <span class="save-icon">✦</span>
             Guardar historia

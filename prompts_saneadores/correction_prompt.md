@@ -17,10 +17,11 @@ ACTO:
 
 SALIDA (JSON):
 {
-  corrected_text: texto corregido
+  "corrected_text": "texto corregido"
 }
 
-IMPORTANTE
-RESPONDER SOLO JSON VALIDO.
-NO usar markdown.
-NO agregar texto fuera del JSON.
+IMPORTANTE:
+- RESPONDER SOLO JSON VALIDO
+- USAR COMILLAS DOBLES
+- NO usar markdown
+- NO agregar texto fuera del JSON

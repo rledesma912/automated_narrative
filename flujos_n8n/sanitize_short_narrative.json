@@ -91,7 +91,7 @@
             {
               "id": "6b0da875-47cb-47df-87ac-bee431b90a0f",
               "name": "id_story",
-              "value": "calles_peligrosas_1774375957614",
+              "value": "el_monte_prohibido_1774527249041",
               "type": "string"
             },
             {
@@ -1032,7 +1032,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "bedb68db-e02e-4f89-9a1d-ecc8513f4d1c",
+  "versionId": "795ef25e-32ab-4142-b27d-cabf47ced59f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"

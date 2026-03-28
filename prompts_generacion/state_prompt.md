@@ -7,7 +7,6 @@ REGLAS GENERALES
 - No cambies al relator
 - No inventar información
 - Solo usar hechos del texto
-- No escribir como relato
 
 FORMATO OBLIGATORIO JSON
 
@@ -26,7 +25,7 @@ Enfocarse en:
 
 MEMORY
 Extraer hechos estructurales:
-- UBICACIÓN ACTUAL
+- ULTIMA UBICACIÓN
 - PERSONAJES PRESENTES
 - HECHOS IMPORTANTES
 
@@ -39,3 +38,4 @@ ACTO:
 IMPORTANTE
 Responde SOLO con JSON válido.
 No agregues texto antes ni después.
+No utilices comillas simples

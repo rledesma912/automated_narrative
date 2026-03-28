@@ -2,7 +2,7 @@
    STORY FORM — CLIENT SIDE
 ═══════════════════════════════════════════════════════ */
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 let currentStep = 1;
 
 // ─── UTILIDADES ──────────────────────────────────────
@@ -45,11 +45,48 @@ function goToStep(n) {
 
   currentStep = n;
 
-  // Auto-load preview on step 5
-  if (n === 5) loadPreview();
+  // Auto-load preview on step 4
+  if (n === 4) loadPreview();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Close drawer on mobile when step is selected
+  closeDrawer();
 }
+
+// ─── DRAWER MANAGEMENT (MOBILE) ──────────────────────
+
+function openDrawer() {
+  document.getElementById('stepDrawer').classList.add('active');
+  document.getElementById('drawerOverlay').classList.add('active');
+  document.getElementById('hamburgerToggle').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+  document.getElementById('stepDrawer').classList.remove('active');
+  document.getElementById('drawerOverlay').classList.remove('active');
+  document.getElementById('hamburgerToggle').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Hamburger toggle
+document.getElementById('hamburgerToggle')?.addEventListener('click', () => {
+  const drawer = document.getElementById('stepDrawer');
+  if (drawer.classList.contains('active')) {
+    closeDrawer();
+  } else {
+    openDrawer();
+  }
+});
+
+// Close drawer on overlay click
+document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
+
+// Close drawer button
+document.getElementById('drawerClose')?.addEventListener('click', closeDrawer);
+
+// Original next/prev continues below
 
 // Next / Prev buttons
 document.querySelectorAll('.next-btn').forEach(btn => {
@@ -100,6 +137,7 @@ function attachCounter(textareaId, counterId) {
 }
 
 attachCounter('protagonistas', 'cc-protagonistas');
+attachCounter('relator',       'cc-relator');
 attachCounter('escenarios',    'cc-escenarios');
 attachCounter('sinopsis',      'cc-sinopsis');
 
