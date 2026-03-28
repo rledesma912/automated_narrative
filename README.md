@@ -1,94 +1,94 @@
-# 🧟 Generador de Relatos con IA Local
+# 🧟 Ecosistema de Narrativa Automatizada con IA Local
 
-Una automatización que escribe historias de terror por capítulos usando inteligencia artificial instalada localmente en tu computadora. No depende de servicios externos ni cobra por uso: todo corre en tu máquina.
-
----
-
-## 🎯 ¿Qué hace esta automatización?
-
-Esta automatización genera una historia completa dividida en capítulos (actos). Cada vez que la ejecutás, el sistema:
-
-• Lee los archivos de configuración de la historia (personajes, contexto, misión de cada acto).
-• Genera cada capítulo usando una IA de escritura creativa (Qwen 2.5).
-• Guarda lo que pasó en cada capítulo para que el siguiente no repita ni olvide nada.
-• Al terminar todos los actos, une todo y guarda el relato completo como un archivo Markdown.
-
-El resultado es una historia coherente de múltiples capítulos, sin cortes ni contradicciones.
+Este proyecto es una plataforma integral para la generación, gestión y perfeccionamiento de relatos narrativos (especialmente de terror y suspense) utilizando modelos de lenguaje de gran tamaño (LLM) ejecutados localmente. Combina una interfaz web amigable, potentes flujos de automatización en n8n y un sistema de "saneamiento" para garantizar coherencia y calidad literaria.
 
 ---
 
-## 🔄 Cómo funciona, paso a paso
+## 🏗️ Arquitectura del Sistema
 
-### 1. Configuración inicial
-Se definen el nombre de la historia, la cantidad de capítulos y los archivos de instrucciones. Es el único lugar donde hay que tocar algo antes de ejecutar.
+El ecosistema se divide en tres componentes principales que trabajan en conjunto:
 
-### 2. Lectura de instrucciones
-El sistema lee tres archivos desde el disco: el estilo de escritura general, el argumento de la historia y las instrucciones para extraer memoria de cada capítulo.
+### 1. 🖥️ Story Form (Interfaz Web)
+Una aplicación **Node.js/Express** que sirve como centro de control. Permite:
+- Gestionar y previsualizar los prompts de generación.
+- Visualizar el listado de historias generadas en formato Markdown.
+- Administrar la configuración de los capítulos y actos.
+- **Tecnologías:** Node.js, EJS, SQLite (para metadatos locales), Docker.
 
-### 3. Preparación de los actos
-El flujo genera un "paquete" por cada capítulo a escribir, con toda la información necesaria: contexto, misión y el estado narrativo acumulado hasta ese momento.
+### 2. 🔄 Motores de Generación (n8n)
+Flujos de trabajo avanzados que orquestan la inteligencia artificial:
+- **Generador de Relatos:** Divide la historia en actos, mantiene una "memoria narrativa" en PostgreSQL y utiliza **Ollama** con modelos como `qwen2.5:32b` para la prosa y `gemma2:9b` para la extracción de estados.
+- **Saneador de Narrativa:** Un proceso de post-producción que detecta inconsistencias, corrige errores de estilo y valida la calidad del texto final.
 
-### 4. Bucle de escritura (un capítulo a la vez)
-Para cada capítulo, la IA recibe todo el contexto acumulado y escribe el texto del acto. Usa el modelo Qwen 2.5 (32B) para escritura narrativa y Gemma 2 (9B) para extraer y guardar los hechos importantes que deben recordarse.
-
-### 5. Guardado en base de datos
-Cada capítulo terminado se guarda en PostgreSQL junto con un resumen y la "memoria" de hechos relevantes. Así, el próximo capítulo siempre sabe qué pasó antes.
-
-### 6. Exportación del relato completo
-Cuando todos los capítulos están listos, el sistema los une en orden y guarda el relato completo como un archivo .md (Markdown) en la carpeta de historias generadas.
-
----
-
-## ⚙️ Qué necesitás para usarlo
-
-- 🤖 n8n (self-hosted, versión comunitaria)
-- 🧠 Ollama con modelos `qwen2.5:32b` y `gemma2:9b`
-- 🗄️ PostgreSQL para guardar el progreso
-- 💻 GPU con al menos 12 GB VRAM (RTX 3060 o similar)
-- 📁 Carpeta de prompts con los 3 archivos de instrucciones
-- 🐳 Docker Compose para orquestar los servicios
-
-Los modelos de IA se descargan automáticamente con Ollama la primera vez. El flujo n8n se importa desde el archivo .json incluido en este repositorio. Ver el README técnico para la configuración detallada de Docker.
+### 3. 🧠 IA Local (Ollama)
+Toda la inteligencia reside en tu propia máquina. No hay costes por API ni dependencia de la nube.
+- **Modelos recomendados:** `qwen2.5:32b` (Escritura creativa), `gemma2:9b` (Análisis y Resumen).
 
 ---
 
-## 📂 Archivos del proyecto
+## 📂 Estructura del Proyecto
 
-```
-archivos/
-├── prompts_generacion/
-│   ├── system_prompt.md          → Estilo y voz del narrador
-│   ├── el_nuevo_hogar.md         → Argumento y actos de la historia
-│   └── extract_story_state.md    → Instrucciones para extraer memoria
-└── historias_generadas/
-    └── relato_*.md               → Los relatos terminados (se generan al correr el flujo)
-
-short_distance_narrative.json     → El flujo de n8n, para importar directamente
+```bash
+/mnt/LLM/apps/automated_narrative/
+├── 🌐 story-form/            # Aplicación web (Frontend/Gestión)
+├── 🔗 flujos_n8n/             # Archivos JSON para importar en n8n
+├── 📝 prompts_generacion/     # Plantillas de sistema y memoria
+├── 🖋️ prompts_historias/      # Argumentos y estructuras de relatos específicos
+├── 🧹 prompts_saneadores/     # Reglas para el refinamiento de textos
+├── 📖 output_stories/         # Relatos terminados en Markdown
+├── 🗄️ scripts_db/             # Scripts SQL para inicializar PostgreSQL (n8n)
+└── 🐳 docker-compose.yml      # Orquestación de la interfaz web
 ```
 
 ---
 
-## ▶️ Cómo ejecutar
+## 🚀 Guía de Inicio Rápido
 
-1. Importá el archivo `short_distance_narrative.json` en tu instancia de n8n.
-2. Abrí el nodo `valores_manuales` y configurá:
-   - `story_name`: el nombre de tu historia
-   - `total_acts`: cuántos capítulos querés generar (ej. 5)
-   - `story_prompt_file`: el nombre del archivo .md con el argumento
-3. Asegurate de que Ollama esté corriendo con los modelos descargados.
-4. Hacé clic en "Execute workflow".
-5. Esperá — cada capítulo tarda entre 2 y 5 minutos dependiendo del hardware.
-6. El relato terminado aparecerá en `historias_generadas/` como un archivo Markdown.
+### 1. Requisitos Previos
+- **Docker & Docker Compose**
+- **Ollama** instalado y corriendo con los modelos: `ollama pull qwen2.5:32b` y `ollama pull gemma2:9b`.
+- **n8n** (self-hosted) con acceso a una base de datos **PostgreSQL**.
 
----
+### 2. Levantar la Interfaz Web (Story Form)
+```bash
+docker-compose up -d
+```
+Accede a la gestión de historias en `http://localhost:3100`.
 
-## ⚠️ Limitaciones conocidas
-
-• El flujo tarda bastante: en una RTX 3060 cada capítulo puede llevar de 2 a 8 minutos.
-• No tiene interfaz visual de progreso — hay que mirar la ejecución en n8n.
-• El modelo qwen2.5:32b requiere bastante VRAM; con menos de 12 GB puede no correr bien.
-• Si se interrumpe a mitad, los capítulos ya guardados en la base de datos no se borran, pero el archivo final no se genera.
+### 3. Configurar la Generación (n8n)
+1. Importa el flujo `flujos_n8n/short_distance_narrative.json` en n8n.
+2. Ejecuta los scripts de `scripts_db/scripts_dbs.pgsql` en tu base de datos PostgreSQL para crear las tablas necesarias.
+3. Configura las credenciales de Ollama y Postgres en n8n.
 
 ---
 
-*Generado con n8n · Ollama · PostgreSQL · todo local, sin costos de API.*
+## 🔄 El Proceso de Creación
+
+1. **Definición:** Creas o editas un archivo en `prompts_historias/` con la premisa y los actos.
+2. **Lanzamiento:** Inicias el flujo en n8n (puedes dispararlo manualmente o vía webhook).
+3. **Escritura Iterativa:** La IA escribe capítulo por capítulo, consultando la base de datos para no perder el hilo narrativo.
+4. **Saneamiento:** El flujo de saneamiento revisa el texto generado buscando "alucinaciones" o inconsistencias.
+5. **Lectura:** El resultado final se guarda en `output_stories/` y se puede leer desde la interfaz web.
+
+---
+
+## 🛠️ Detalles de los Componentes
+
+### Saneador de Narrativa (`flujo_saneador.md`)
+Este componente es crucial para la calidad. Utiliza un proceso de 4 pasos:
+- **Detección:** Identifica problemas (nombres cambiados, objetos que desaparecen).
+- **Resolución:** Propone correcciones basadas en el contexto previo.
+- **Corrección:** Aplica los cambios al texto original.
+- **Validación:** Asegura que el texto corregido sea superior al original.
+
+### Base de Datos de Memoria
+A diferencia de otros generadores, este sistema usa **PostgreSQL** para almacenar el "Estado Narrativo". Esto permite que la IA sepa exactamente qué ha ocurrido en capítulos anteriores, evitando contradicciones en historias largas.
+
+---
+
+## ⚠️ Consideraciones de Hardware
+- **VRAM:** Se recomienda una GPU con al menos **12GB o 16GB de VRAM** para ejecutar `qwen2.5:32b` con fluidez.
+- **Almacenamiento:** Los modelos de IA y la base de datos pueden ocupar bastante espacio (aprox. 30GB+ en total).
+
+---
+*Desarrollado con pasión por la narrativa y la soberanía tecnológica.*
