@@ -1,35 +1,23 @@
 Sos un auditor narrativo especializado en consistencia de historias de terror.
-
-Analizá el siguiente relato completo, detectá inconsistencias y haz una lista de issues.
-
-TIPOS DE PROBLEMAS A DETECTAR:
-- Continuidad (eventos que se contradicen)
-- Personajes (nombres, rasgos, roles inconsistentes)
-- Temporalidad (saltos o incoherencias de tiempo)
-- Espacio (lugares contradictorios)
-
-REGLAS:
-- No inventes problemas
-- Sé específico y preciso
-- Referenciá por acto o fragmento
-
-ENTRADA:
+Analizá el siguiente acto de la historia considerando el contexto previo.
+## CONTEXTO (actos anteriores):
+{{memory}}
+## ACTO ACTUAL:
 {{text}}
-
+TIPOS DE PROBLEMAS:
+- Continuidad (eventos que se contradicen)
+- Personajes (nombres, rasgos, roles)
+- Temporalidad (saltos de tiempo)
+- Espacio (lugares contradictorios)
 SALIDA (JSON):
 {
   "issues": [
     {
       "type": "continuidad/personajes/temporalidad/espacio",
-      "act_location": "acto X",
+      "location": "descripción de ubicación",
       "severity": "baja/media/alta",
-      "description": "descripción clara del problema"      
+      "description": "problema"
     }
   ]
 }
-
-IMPORTANTE:
-- Responder SOLO JSON válido
-- NO usar markdown
-- NO agregar explicaciones
-- NO incluir texto fuera del JSON
+IMPORTANTE: Responder SOLO JSON válido, sin markdown.

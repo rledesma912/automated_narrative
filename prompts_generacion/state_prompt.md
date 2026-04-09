@@ -1,41 +1,35 @@
-TAREA: Analizar el capítulo y generar DOS salidas:
+MEMORY
+Extraer el estado narrativo ACTUAL en formato estructurado.
 
-1) RESUMEN DEL ACTO
-2) MEMORIA NARRATIVA
-
-REGLAS GENERALES
-- No cambies al relator
-- No inventar información
-- Solo usar hechos del texto
-
-FORMATO OBLIGATORIO JSON
+Debes generar EXACTAMENTE este objeto:
 
 {
- "summary": "...",
- "memory": "..."
+  "location": "...",
+  "characters": ["..."],
+  "situation": "...",
+  "active_threat": "...",
+  "goal": "...",
+  "last_action": "..."
 }
 
-SUMMARY
-Resumen del acto en 200-250 palabras.
-Enfocarse en:
-- escenarios
-- sucesos
-- evolución emocional
-- cliffhanger
+DEFINICIONES:
 
-MEMORY
-Extraer hechos estructurales:
-- ULTIMA UBICACIÓN
-- PERSONAJES PRESENTES
-- HECHOS IMPORTANTES
+- location: lugar físico actual donde ocurre la escena
+- characters: personajes presentes en la escena (solo nombres)
+- situation: qué está ocurriendo en este momento
+- active_threat: peligro inmediato o elemento perturbador activo
+- goal: objetivo inmediato del protagonista
+- last_action: última acción concreta realizada por el protagonista justo antes de terminar el capítulo
 
-CONTEXTO DE HISTORIA:
-{{story_context}}
+REGLAS:
+- No inventar información
+- last_action debe ser una acción física o decisión clara (no emociones)
+- Debe representar el último momento narrativo del capítulo
 
-ACTO:
-{{chapter}}
+---
 
-IMPORTANTE
-Responde SOLO con JSON válido.
-No agregues texto antes ni después.
-No utilices comillas simples
+CAPÍTULO A ANALIZAR:
+
+{{chapter_text}}
+
+---
