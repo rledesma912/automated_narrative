@@ -15,10 +15,8 @@ REGLAS CRÍTICAS:
 ACTO:
 {{text}}
 
-SALIDA (JSON):
-{
-  "corrected_text": "texto corregido"
-}
+SALIDA:
+"corrected_text": "texto corregido"
 
 IMPORTANTE:
 - RESPONDER SOLO JSON VALIDO

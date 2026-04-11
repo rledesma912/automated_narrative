@@ -25,5 +25,6 @@ SALIDA (JSON):
 }
 
 IMPORTANTE:
-- Responder SOLO JSON válido
-- NO usar markdown
+Responder SOLO con JSON válido.
+No usar markdown.
+No agregar texto fuera del JSON.
