@@ -1,0 +1,22 @@
+# Reglas de limpieza de LLM (The "Clean" Pipeline)
+sanitization:
+  thinking_tags:
+    - "think"
+    - "thought"
+    - "reasoning"
+  
+  noise_patterns:
+    - "^Aquí tienes el relato.*:"
+    - "^Espero que te guste.*"
+    - "---"
+  
+  markdown_extraction:
+    enabled: true
+    priority_tags: ["markdown", "text"]
+
+  # Configuración por modelo para ajustar la agresividad de la limpieza
+  model_overrides:
+    deepseek-r1:
+      strip_thinking: true
+    qwen2.5:
+      strip_thinking: false
