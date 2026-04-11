@@ -3,8 +3,14 @@ from uuid import UUID
 from .models import Story, GeneratedAct, NarrativeState
 
 class LLMProvider(Protocol):
-    """Interfaz para comunicación con modelos de lenguaje (Ollama, OpenAI, Mock)."""
-    async def generate(self, prompt: str, temperature: float = 0.7) -> str:
+    """Interfaz para comunicación con modelos de lenguaje."""
+    async def generate(
+        self, 
+        prompt: str, 
+        system_prompt: Optional[str] = None, 
+        model: Optional[str] = None, 
+        temperature: float = 0.7
+    ) -> str:
         ...
 
 class StoryRepository(Protocol):
@@ -26,5 +32,9 @@ class StoryRepository(Protocol):
 
 class StateExtractor(Protocol):
     """Interfaz para la extracción de estado narrativo."""
-    async def extract_state(self, act_content: str, previous_state: Optional[NarrativeState] = None) -> NarrativeState:
+    async def extract_state(
+        self, 
+        act_content: str, 
+        previous_state: Optional[NarrativeState] = None
+    ) -> NarrativeState:
         ...
