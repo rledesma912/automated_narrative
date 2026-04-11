@@ -15,7 +15,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT act_number, chapter, summary, memory\nFROM story_acts\nWHERE id_story = '{{$json.id_story}}'\nORDER BY act_number ASC;",
+        "query": "SELECT act_number, arc_phase, chapter, summary, memory\nFROM story_acts\nWHERE id_story = '{{$json.id_story}}'\nORDER BY act_number ASC;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -61,7 +61,7 @@
     },
     {
       "parameters": {
-        "model": "gemma2:9b",
+        "model": "qwen2.5:32b",
         "options": {
           "temperature": 0.2,
           "topK": 20,
@@ -91,7 +91,7 @@
             {
               "id": "6b0da875-47cb-47df-87ac-bee431b90a0f",
               "name": "id_story",
-              "value": "el_monte_prohibido_1774527249041",
+              "value": "the_long_horse_1775860423857",
               "type": "string"
             },
             {
@@ -193,11 +193,12 @@
         608
       ],
       "id": "20c1d4df-6d8a-4a6c-8014-f4f4c9750b5f",
-      "name": "parse_correction"
+      "name": "parse_correction",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
-        "model": "qwen2.5:32b-instruct-q3_K_M",
+        "model": "qwen3.5:9b",
         "options": {
           "temperature": 0.3,
           "topK": 40,
@@ -208,8 +209,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1344,
-        592
+        1536,
+        608
       ],
       "id": "889760df-9e6a-4cc5-8883-f14c59cb15a3",
       "name": "Ollama Chat Model1",
@@ -230,8 +231,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1344,
-        448
+        1536,
+        464
       ],
       "id": "36352f13-5d9c-49c2-99ff-34224ff704ea",
       "name": "detection"
@@ -253,13 +254,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $json;\n\n// Validaciones\nif (!data.relato) {\n  throw new Error(\"Falta full_text\");\n}\n\nif (!data.detection_prompt) {\n  throw new Error(\"Falta detection_prompt\");\n}\n\n// Inyección\nlet prompt = data.detection_prompt.replace(/{{text}}/g, data.relato.trim());\n\n// Output mínimo\nreturn [\n  {\n    json: {\n      prompt\n    }\n  }\n];"
+        "jsCode": "const data = $json;\n// Validación - el campo se llama current_act, no chapter\nif (!data.current_act) {\n  throw new Error(\"Falta current_act en el acto\");\n}\n// Usar context_window como memoria previa\nconst memory = data.context_window || \"\";\n// Construir prompt\nconst prompt = data.detection_prompt\n  .replace(/{{text}}/g, data.current_act)\n  .replace(/{{memory}}/g, memory);\nreturn [{\n  json: {\n    id_story: data.id_story,\n    act_number: data.act_number,\n    prompt\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1136,
-        384
+        1328,
+        400
       ],
       "id": "446c648a-359b-45f3-8089-a06c41120293",
       "name": "build_detection_prompt"
@@ -282,8 +283,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1952,
-        352
+        2288,
+        464
       ],
       "id": "c2a99a75-977a-46db-8ac2-b8850aac566e",
       "name": "normalize_detection"
@@ -295,8 +296,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2176,
-        352
+        2512,
+        464
       ],
       "id": "bfdd29c1-eab8-47fd-8877-ef496d5c7f9e",
       "name": "build_resolution_prompt"
@@ -310,15 +311,15 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1712,
-        192
+        2048,
+        304
       ],
       "id": "be5f8214-559d-4d89-9b7a-e9096720d890",
       "name": "Merge4"
     },
     {
       "parameters": {
-        "model": "qwen2.5:32b-instruct-q3_K_M",
+        "model": "qwen3.5:9b",
         "options": {
           "temperature": 0.3,
           "topK": 40,
@@ -329,8 +330,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        2384,
-        528
+        2720,
+        640
       ],
       "id": "53099804-0683-42b5-9656-8c0a0fc135a0",
       "name": "Ollama Chat Model2",
@@ -350,8 +351,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        2384,
-        352
+        2720,
+        464
       ],
       "id": "722f721c-2789-4fd8-9332-a80fc4280570",
       "name": "resolution"
@@ -363,8 +364,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2704,
-        352
+        3040,
+        464
       ],
       "id": "a2f2eb88-7f37-4f4a-b1ae-9631aeb7cc8e",
       "name": "parse_resolution"
@@ -376,15 +377,15 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3120,
-        368
+        3456,
+        480
       ],
       "id": "368af559-b3e2-4250-9f81-5a29d2999c7d",
       "name": "build_validation"
     },
     {
       "parameters": {
-        "model": "qwen2.5:32b-instruct-q3_K_M",
+        "model": "qwen3.5:9b",
         "options": {
           "temperature": 0.3,
           "topK": 40,
@@ -395,8 +396,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        3376,
-        544
+        3712,
+        656
       ],
       "id": "00ce5f56-c5e9-4726-a472-f113d57b2f16",
       "name": "Ollama Chat Model3",
@@ -414,8 +415,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3712,
-        368
+        4048,
+        480
       ],
       "id": "22ad7954-d65e-443c-a114-6df484a5c2e2",
       "name": "parse_validation"
@@ -429,8 +430,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        3376,
-        368
+        3712,
+        480
       ],
       "id": "a0b59df5-cc64-4da6-b838-17fe5088a5ea",
       "name": "validation"
@@ -444,8 +445,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        816,
-        736
+        1056,
+        816
       ],
       "id": "3a9f73ea-caed-4aec-a345-5d9fe801b405",
       "name": "Sticky Note"
@@ -474,8 +475,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1872,
-        656
+        2208,
+        768
       ],
       "id": "8d64dccb-199e-439c-a7c7-7a20e3ade553",
       "name": "Sticky Note2"
@@ -489,8 +490,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3056,
-        672
+        3392,
+        784
       ],
       "id": "59d3cf21-ac0b-4433-a757-0dc14859cec3",
       "name": "Sticky Note3"
@@ -550,8 +551,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3936,
-        352
+        4272,
+        464
       ],
       "id": "9c831e58-ec90-4759-9be0-ca8c7cd4565d",
       "name": "If"
@@ -567,8 +568,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        4432,
-        208
+        4768,
+        320
       ],
       "id": "db5a5989-a0d0-4324-84dc-92d409384337",
       "name": "Convert to File"
@@ -582,8 +583,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        4656,
-        208
+        4992,
+        320
       ],
       "id": "c6914a91-6352-451e-b090-54047ff41570",
       "name": "Read/Write Files from Disk1"
@@ -595,8 +596,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4224,
-        208
+        4560,
+        320
       ],
       "id": "8b321a2e-f9a1-46a6-b8f2-f8ceb8e508a6",
       "name": "build_story_output"
@@ -608,8 +609,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3936,
-        128
+        4272,
+        240
       ],
       "id": "7fe73405-1c16-4632-be46-e34886c21437",
       "name": "aggregate_acts"
@@ -621,8 +622,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2912,
-        208
+        3248,
+        320
       ],
       "id": "a96a3ca5-5ada-44e0-8524-5c04ee49bc08",
       "name": "merge_and_aggregate2"
@@ -647,11 +648,37 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        928,
+        896,
         176
       ],
       "id": "93ceb41f-a452-4624-920a-ffdb4de08219",
       "name": "build_detection_windows"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1104,
+        320
+      ],
+      "id": "0a0d41c1-a0e3-4cf0-b107-3bbc99a663e7",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.text || \"\";\nconst cleaned = raw\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch {\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    try {\n      parsed = JSON.parse(match[0]);\n    } catch {\n      return [{\n        json: {\n          id_story: $json.id_story,\n          act_number: $json.act_number,\n          issues: [],\n          warning: \"No se pudo parsear JSON de detection\"\n        }\n      }];\n    }\n  }\n}\nconst issues = parsed?.issues || [];\nreturn [{\n  json: {\n    id_story: $json.id_story,\n    act_number: $json.act_number,\n    issues: issues\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        576
+      ],
+      "id": "d71ebdb9-e4c0-47d3-83a9-916ba23ac0e6",
+      "name": "parse_detection"
     }
   ],
   "pinData": {},
@@ -840,6 +867,11 @@
             "node": "Merge4",
             "type": "main",
             "index": 1
+          },
+          {
+            "node": "parse_detection",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1045,12 +1077,36 @@
       "main": [
         [
           {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "build_detection_prompt",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "parse_detection": {
+      "main": [
+        [
           {
-            "node": "Merge4",
+            "node": "Loop Over Items2",
             "type": "main",
             "index": 0
           }
@@ -1064,7 +1120,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "dc0140d3-83dc-4572-877f-a8d3946c20cc",
+  "versionId": "2b42fa85-818f-4da1-9e7e-dfbda31d7888",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
