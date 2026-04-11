@@ -1,7 +1,7 @@
 # Contexto del relato
 
-**Protagonistas**: Violeta (18 años) hermana mayor, protectora, responsable y juguetona. Luca (6 años) hermano pequeño, pícaro, medio rebelde. Estela (6 años), gemela de Luca, más tímida, juguetona, miedosa.
-**Relator**: La historia es narrada por Violeta.
+**Protagonistas**: Violeta (22 años) hermana mayor, protectora, responsable y juguetona. Luca (6 años) hermano pequeño, pícaro, medio rebelde. Estela (6 años), gemela de Luca, más tímida, juguetona, miedosa.
+**Relator**: Violeta
 **Sinopsis**: Los tres hermanos se ponen a jugar a las escondidas en el estacionamiento de su edificio. A la mayor le toca buscarlos, pero mientras cuenta, se siente mareada y tiene una visión de un caballo espectral. Esto la aterroriza y hace que busque rápido a sus hermanitos gemelos. El caballo se le aparece varias veces haciendo que ella corra en dirección contraria. Cuando los encuentra, van rápido para la casa. Minutos más tarde se escucha una explosión pequeña en el estacionamiento por una fuga de gas. Violeta cree que el caballo les advirtió de lo que iba a pasar.
 
 ---

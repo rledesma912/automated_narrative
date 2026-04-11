@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "model": "gemma4:e4b",
+        "model": "qwen2.5:32b",
         "options": {
           "temperature": 0.6,
           "topP": 0.9,
@@ -30,8 +30,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1024,
-        416
+        1008,
+        368
       ],
       "id": "3cc72519-c324-4bb0-94d1-646421f16687",
       "name": "Ollama Chat Model",
@@ -53,8 +53,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        1296,
-        -16
+        1280,
+        -64
       ],
       "id": "07ccfc69-35e3-4066-a1aa-187da97d274e",
       "name": "Read/Write Files from Disk1"
@@ -70,8 +70,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1120,
-        -16
+        1104,
+        -64
       ],
       "id": "69729537-f84c-4df4-8e19-b35a1ffbba68",
       "name": "Convert to File"
@@ -91,8 +91,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1712,
-        400
+        1888,
+        352
       ],
       "id": "3a4e58af-f7bd-414a-950a-80f91262670f",
       "name": "Ollama Chat Model2",
@@ -196,8 +196,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1024,
-        224
+        1008,
+        176
       ],
       "id": "01ff7003-fed4-461f-8a28-1b16bff6c0a2",
       "name": "gen_act"
@@ -209,8 +209,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        832,
-        224
+        816,
+        176
       ],
       "id": "9f9a2b3f-3d85-4c42-9da3-83126d04c62a",
       "name": "build_prompt"
@@ -222,8 +222,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -704,
-        48
+        -720,
+        0
       ],
       "id": "9cf8bd54-6892-4286-87e0-82f1de590155",
       "name": "prepare_items"
@@ -238,8 +238,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -448,
-        48
+        -464,
+        0
       ],
       "id": "8781aa37-60d7-41ee-86d6-e40028e791da",
       "name": "Loop Over Items",
@@ -254,8 +254,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        720,
-        -16
+        704,
+        -64
       ],
       "id": "22020e60-8d58-4a3e-91f6-895ec83fce1a",
       "name": "select_all_acts",
@@ -268,13 +268,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nconst storyId = items[0].json.id_story;\n\nlet md = \"# RELATO COMPLETO\\n\\n\";\n\nitems\n  .sort((a,b) => a.json.act_number - b.json.act_number)\n  .forEach(item => {\n\n    md += \"## ACTO \" + item.json.act_number + \"\\n\\n\";\n    md += item.json.chapter + \"\\n\\n---\\n\\n\";\n\n});\n\nreturn [{\n  json: {\n    md_text: md,\n    story_id: storyId,\n    nombre_archivo: \"relato_\" + storyId + \".md\"\n  }\n}];"
+        "jsCode": "const items = $input.all();\nconst storyId = items[0].json.id_story;\nlet md = \"# RELATO COMPLETO\\n\\n\";\n\nfunction extractChapter(raw) {\n  if (!raw) return \"[ERROR: capítulo vacío]\";\n\n  // Si ya es un string limpio (no contiene JSON), devolverlo directo\n  if (!raw.includes('\"chapter\"')) return raw.trim();\n\n  // Buscar el bloque JSON y extraer el campo \"chapter\"\n  const jsonMatch = raw.match(/\\{[\\s\\S]*?\"chapter\"\\s*:\\s*\"([\\s\\S]*?)\"\\s*\\}(?:\\s*)$/);\n  if (jsonMatch) {\n    return jsonMatch[1]\n      .replace(/\\\\n/g, '\\n')\n      .replace(/\\\\\"/g, '\"')\n      .replace(/\\\\\\\\/g, '\\\\')\n      .trim();\n  }\n\n  // Fallback: intentar JSON.parse sobre la última aparición de {...}\n  const jsonBlocks = raw.match(/\\{[\\s\\S]*?\"chapter\"[\\s\\S]*?\\}/g);\n  if (jsonBlocks) {\n    try {\n      const parsed = JSON.parse(jsonBlocks[jsonBlocks.length - 1]);\n      if (parsed.chapter) return parsed.chapter.trim();\n    } catch (_) {}\n  }\n\n  // Si todo falla, devolver el raw para no perder contenido\n  return raw.trim();\n}\n\nitems\n  .sort((a, b) => a.json.act_number - b.json.act_number)\n  .forEach(item => {\n    const chapterText = extractChapter(item.json.chapter);\n    md += \"## ACTO \" + item.json.act_number + \"\\n\\n\";\n    md += chapterText + \"\\n\\n---\\n\\n\";\n  });\n\nreturn [{\n  json: {\n    md_text: md,\n    story_id: storyId,\n    nombre_archivo: \"relato_\" + storyId + \".md\"\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        928,
-        -16
+        912,
+        -64
       ],
       "id": "eb35c902-32ed-4266-8ea7-2f0309886ae8",
       "name": "persiste_cinco_capitulos"
@@ -301,8 +301,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2624,
-        384
+        2976,
+        336
       ],
       "id": "95be0635-fcef-455a-a68a-2a9a4e87d45f",
       "name": "save_act",
@@ -348,8 +348,8 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        544,
-        -16
+        528,
+        -64
       ],
       "id": "5aecbed2-624b-40f7-b4a8-42e33e44d08e",
       "name": "Limit1"
@@ -390,8 +390,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1712,
-        224
+        1888,
+        176
       ],
       "id": "d3cfb4d1-9f3c-46d2-a05a-e55b7f601352",
       "name": "extract_story_state"
@@ -403,8 +403,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1536,
-        224
+        1712,
+        176
       ],
       "id": "2e1b024e-87e2-4ef1-9383-d69d9cd001bb",
       "name": "build_extract_prompt"
@@ -434,8 +434,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2208,
-        224
+        2560,
+        176
       ],
       "id": "23310524-d9e8-434b-82df-4adf6caff7aa",
       "name": "sanitize_sql_strings"
@@ -447,8 +447,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        624,
-        224
+        608,
+        176
       ],
       "id": "ee3199e9-1549-43d2-9c91-940aa0460ea2",
       "name": "inject_state"
@@ -460,8 +460,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2400,
-        224
+        2752,
+        176
       ],
       "id": "be52957f-7a53-41cc-8a77-f6fda4a17d02",
       "name": "update_state"
@@ -473,8 +473,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2032,
-        224
+        2384,
+        176
       ],
       "id": "b2451b4b-675f-4642-b6e4-9130324d7654",
       "name": "carry_forward_003"
@@ -486,8 +486,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1344,
-        224
+        1520,
+        176
       ],
       "id": "3523404c-3794-410b-906c-01a15917b8a1",
       "name": "carry_forward_002"
@@ -501,8 +501,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        0,
-        96
+        -16,
+        80
       ],
       "id": "03f0535f-551b-4e37-973d-3667ebd0c159",
       "name": "init_story",
@@ -542,8 +542,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -224,
-        256
+        -240,
+        208
       ],
       "id": "642fcf75-fd08-490f-a11e-314bb60a4a69",
       "name": "If"
@@ -553,8 +553,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        432,
-        224
+        416,
+        176
       ],
       "id": "7624323d-2da5-4472-8326-7cda4078f6ad",
       "name": "Merge"
@@ -566,11 +566,37 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        192,
-        96
+        176,
+        80
       ],
       "id": "0df4d6ac-622f-42c7-b8bf-cbc0e0724f02",
       "name": "restore_input"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json.response ?? $input.item.json.text ?? $input.item.json.output ?? \"\";\n\nconst jsonMatch = raw.match(/\\{[\\s\\S]*?\"chapter\"\\s*:\\s*\"([\\s\\S]*?)\"\\s*\\}(?:\\s*)$/);\n\nif (jsonMatch) {\n  const chapterText = jsonMatch[1]\n    .replace(/\\\\n/g, '\\n')\n    .replace(/\\\\\"/g, '\"')\n    .replace(/\\\\\\\\/g, '\\\\')\n    .trim();\n  return [{ json: { ...($input.item.json), chapter: chapterText } }];\n}\n\n// Fallback: JSON.parse sobre el último bloque\nconst jsonBlocks = raw.match(/\\{[\\s\\S]*?\"chapter\"[\\s\\S]*?\\}/g);\nif (jsonBlocks) {\n  try {\n    const parsed = JSON.parse(jsonBlocks[jsonBlocks.length - 1]);\n    if (parsed.chapter) {\n      return [{ json: { ...($input.item.json), chapter: parsed.chapter.trim() } }];\n    }\n  } catch (_) {}\n}\n\nreturn [{ json: { ...($input.item.json), chapter: raw.trim(), parse_error: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        176
+      ],
+      "id": "9aed2527-9fc6-419e-aab3-3122645972d0",
+      "name": "code_interpreter_001"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json.response ?? $input.item.json.text ?? $input.item.json.output ?? \"\";\n\n// Buscar el último bloque JSON que contenga \"location\" (el estado narrativo)\nconst jsonBlocks = raw.match(/\\{[\\s\\S]*?\"location\"[\\s\\S]*?\\}/g);\nif (jsonBlocks) {\n  try {\n    const state = JSON.parse(jsonBlocks[jsonBlocks.length - 1]);\n    return [{ json: { ...($input.item.json), narrative_state: state } }];\n  } catch (_) {}\n}\n\n// Fallback: regex campo por campo\nconst extract = (key) => {\n  const m = raw.match(new RegExp(`\"${key}\"\\\\s*:\\\\s*\"([^\"]*?)\"`));\n  return m ? m[1] : \"\";\n};\nconst extractArray = (key) => {\n  const m = raw.match(new RegExp(`\"${key}\"\\\\s*:\\\\s*\\\\[([^\\\\]]*?)\\\\]`));\n  if (!m) return [];\n  return m[1].match(/\"([^\"]+)\"/g)?.map(s => s.replace(/\"/g, '')) ?? [];\n};\n\nreturn [{\n  json: {\n    ...($input.item.json),\n    narrative_state: {\n      location:      extract(\"location\"),\n      characters:    extractArray(\"characters\"),\n      situation:     extract(\"situation\"),\n      active_threat: extract(\"active_threat\"),\n      goal:          extract(\"goal\"),\n      last_action:   extract(\"last_action\"),\n    },\n    parse_error: true\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        176
+      ],
+      "id": "7faa4dd4-f5c2-4d4b-b4b9-e6316878f046",
+      "name": "code_interpreter_002"
     }
   ],
   "pinData": {},
@@ -656,7 +682,7 @@
       "main": [
         [
           {
-            "node": "carry_forward_002",
+            "node": "code_interpreter_001",
             "type": "main",
             "index": 0
           }
@@ -810,7 +836,7 @@
       "main": [
         [
           {
-            "node": "carry_forward_003",
+            "node": "code_interpreter_002",
             "type": "main",
             "index": 0
           }
@@ -944,6 +970,28 @@
           }
         ]
       ]
+    },
+    "code_interpreter_001": {
+      "main": [
+        [
+          {
+            "node": "carry_forward_002",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "code_interpreter_002": {
+      "main": [
+        [
+          {
+            "node": "carry_forward_003",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -952,7 +1000,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "24646b4f-d74c-4b43-9e89-f64df4e2f6f2",
+  "versionId": "726dc590-cac5-4897-8fbf-c5a5684afc35",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1a272ffd7ba91a5e4b195eedad20bb200dae7e71c15e5f43a3efc2f9e36224ac"
