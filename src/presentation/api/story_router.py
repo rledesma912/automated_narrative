@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from uuid import UUID, uuid4
-from src.presentation.schemas.story_schemas import GenerateStoryRequest, StoryResponse
-from src.domain.models import Story, ActInput, StoryStatus
-from src.infrastructure.database.repository import SQLiteStoryRepository
-from src.infrastructure.adapters.ollama_adapter import OllamaAdapter
-from src.infrastructure.adapters.state_extractor import OllamaStateExtractor
-from src.infrastructure.normalizers.response_normalizer import LLMResponseNormalizer
+
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+
 from src.application.use_cases.generate_story import GenerateStoryUseCase
 from src.config import settings
+from src.domain.models import ActInput, Story
+from src.infrastructure.adapters.ollama_adapter import OllamaAdapter
+from src.infrastructure.adapters.state_extractor import OllamaStateExtractor
+from src.infrastructure.database.repository import SQLiteStoryRepository
+from src.infrastructure.normalizers.response_normalizer import LLMResponseNormalizer
+from src.presentation.schemas.story_schemas import GenerateStoryRequest, StoryResponse
 
 router = APIRouter()
 

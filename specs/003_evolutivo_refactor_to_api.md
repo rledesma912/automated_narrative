@@ -437,26 +437,30 @@ Para garantizar una migración ordenada desde n8n, el desarrollo se dividirá en
 - [x] Desarrollo del orquestador de actos (Pipeline de Generación).
 - [x] Implementación de la persistencia inicial en SQLite.
 
-#### ☐ Hito 2: Pipeline de Normalización y Calidad (The "Normalizer")
+#### [x] Hito 2: Pipeline de Normalización y Calidad (The "Normalizer")
 *Objetivo: Normalizar el ruido técnico del LLM y extraer el estado narrativo.*
 - [x] Implementación de la estrategia *Config-driven* (lectura de `sanitization.yaml`).
 - [x] Desarrollo del `LLMResponseNormalizer` y sus estrategias (`ThoughtTagStripper`, `RegexCleaners`).
-- [ ] Implementación de validadores de calidad (conteo de palabras, detección de residuos).
-- [ ] Implementación del `StateExtractor` (Uso de `gemma4:e4b` para extraer estado).
-- [ ] Creación de tests unitarios para el normalizador con casos reales.
+- [x] Implementación de validadores de calidad (conteo de palabras, detección de residuos).
+- [x] Implementación del `StateExtractor` (Uso de `gemma4:e4b` para extraer estado).
+- [x] Creación de tests unitarios para el normalizador con casos reales.
 
-#### ☐ Hito 3: Capa de Presentación (The "API & Real-time")
+#### [x] Hito 3: Capa de Presentación (The "API & Real-time")
 *Objetivo: Exponer la funcionalidad mediante endpoints REST y comunicación WebSocket.*
-- [ ] Definición de Pydantic Schemas para Input/Output.
-- [ ] Implementación de los endpoints de FastAPI (`/generate`, `/retry`, etc.).
-- [ ] Desarrollo del WebSocket para el reporte de progreso de actos en tiempo real.
-- [ ] Integración de la inyección de dependencias con `pydantic-settings`.
+- [x] Definición de Pydantic Schemas para Input/Output.
+- [x] Implementación de los endpoints de FastAPI (`/generate`, `/retry`, etc.).
+- [x] Desarrollo del WebSocket para el reporte de progreso de actos en tiempo real.
+- [x] Integración de la inyección de dependencias con `pydantic-settings`.
 
 #### ☐ Hito 4: Integración Legacy y Migración
 *Objetivo: Conectar el Wizard actual con la nueva API y validar el flujo completo.*
 - [ ] Modificación de `story-form` (Node.js) para que consuma la API de FastAPI en lugar de n8n.
 - [ ] Pruebas de integración "End-to-End" (E2E).
 - [ ] Documentación final de operación (Docker deployment).
+
+---
+
+**Resultado de Tests (11/04/2026):** `19 passed, 0 failed`
 
 ### 13. Protocolo de Pruebas y Validación (Quality Gates)
 

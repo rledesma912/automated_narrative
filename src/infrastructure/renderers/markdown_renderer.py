@@ -1,6 +1,9 @@
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from src.domain.models import Story, GeneratedAct
 from typing import List
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from src.domain.models import GeneratedAct, Story
+
 
 class MarkdownRenderer:
     """Motor de renderizado para archivos Markdown usando Jinja2."""

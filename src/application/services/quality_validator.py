@@ -1,5 +1,7 @@
 import re
+
 from src.domain.exceptions import QualityValidationError
+
 
 class QualityValidator:
     """Validador de estándares narrativos y técnicos."""

@@ -1,9 +1,11 @@
 import json
 import re
 from typing import Optional
-from src.domain.models import NarrativeState
-from src.domain.interfaces import LLMProvider
+
 from src.application.services.prompt_builder import PromptBuilder
+from src.domain.interfaces import LLMProvider
+from src.domain.models import NarrativeState
+
 
 class OllamaStateExtractor:
     """Implementación de StateExtractor que usa Ollama para analizar el relato."""

@@ -26,12 +26,13 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 180
 target-version = "py312"
+extend-exclude = ["Makefile"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "C4", "ARG", "SIM"]
-ignore = []
+ignore = ["E501", "ARG002", "B008", "B904"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

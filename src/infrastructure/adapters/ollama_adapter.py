@@ -1,7 +1,9 @@
-import httpx
-import json
 from typing import Optional
+
+import httpx
+
 from src.config import settings
+
 
 class OllamaAdapter:
     """Implementación de LLMProvider para Ollama local."""

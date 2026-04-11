@@ -1,8 +1,10 @@
+import uuid
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
-from pydantic import BaseModel, Field, UUID4
-import uuid
+
+from pydantic import UUID4, BaseModel, Field
+
 
 class StoryStatus(str, Enum):
     PENDING = "pending"

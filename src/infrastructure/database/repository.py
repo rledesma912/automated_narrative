@@ -1,10 +1,11 @@
-import aiosqlite
-import json
-from uuid import UUID
-from typing import List, Optional
 from datetime import datetime
-from src.domain.models import Story, ActInput, GeneratedAct, NarrativeState, StoryStatus
-from src.domain.interfaces import StoryRepository
+from typing import Optional
+from uuid import UUID
+
+import aiosqlite
+
+from src.domain.models import ActInput, GeneratedAct, Story, StoryStatus
+
 
 class SQLiteStoryRepository:
     """Implementación de persistencia en SQLite usando aiosqlite."""

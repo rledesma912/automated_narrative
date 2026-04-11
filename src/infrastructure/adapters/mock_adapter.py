@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class MockLLMAdapter:
     """Implementación de LLMProvider para tests que devuelve respuestas predefinidas."""
     

@@ -1,6 +1,8 @@
-from typing import Protocol, List, Optional
+from typing import List, Optional, Protocol
 from uuid import UUID
-from .models import Story, GeneratedAct, NarrativeState
+
+from .models import GeneratedAct, NarrativeState, Story
+
 
 class LLMProvider(Protocol):
     """Interfaz para comunicación con modelos de lenguaje."""

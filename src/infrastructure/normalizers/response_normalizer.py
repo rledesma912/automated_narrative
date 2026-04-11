@@ -1,6 +1,8 @@
 import re
 from typing import List, Protocol
+
 from src.config import settings
+
 
 class NormalizationStrategy(Protocol):
     """Interfaz para estrategias de normalización de respuestas de LLM."""

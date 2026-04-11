@@ -1,10 +1,12 @@
+from typing import Optional
 from uuid import UUID
-from typing import Optional, List
-from src.domain.models import Story, GeneratedAct, NarrativeState, StoryStatus
-from src.domain.interfaces import LLMProvider, StoryRepository, StateExtractor
+
 from src.application.services.prompt_builder import PromptBuilder
-from src.infrastructure.normalizers.response_normalizer import LLMResponseNormalizer
 from src.application.services.quality_validator import QualityValidator
+from src.domain.interfaces import LLMProvider, StateExtractor, StoryRepository
+from src.domain.models import GeneratedAct, NarrativeState
+from src.infrastructure.normalizers.response_normalizer import LLMResponseNormalizer
+
 
 class GenerateStoryUseCase:
     """Orquestador (Pipeline) de generación de historias acto por acto."""

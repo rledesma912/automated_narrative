@@ -1,5 +1,7 @@
-from typing import Optional, List
-from src.domain.models import Story, ActInput, NarrativeState
+from typing import Optional
+
+from src.domain.models import ActInput, NarrativeState, Story
+
 
 class PromptBuilder:
     """Servicio encargado de construir los prompts para el LLM."""
