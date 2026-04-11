@@ -430,19 +430,20 @@ El sistema utilizará una clase `Settings` (basada en `pydantic-settings`) para 
 
 Para garantizar una migración ordenada desde n8n, el desarrollo se dividirá en cuatro grandes bloques modulares:
 
-#### ☐ Hito 1: Motor de Generación Narrativa (The "Forge")
+#### [x] Hito 1: Motor de Generación Narrativa (The "Forge")
 *Objetivo: Lograr que el sistema genere el relato completo de principio a fin, manteniendo el estado.*
-- [ ] Implementación de Entidades de Dominio (`Story`, `Act`, `State`).
-- [ ] Creación del `OllamaAdapter` para comunicación base.
-- [ ] Desarrollo del orquestador de actos (Pipeline de Generación).
-- [ ] Implementación de la persistencia inicial en SQLite.
+- [x] Implementación de Entidades de Dominio (`Story`, `Act`, `State`).
+- [x] Creación del `OllamaAdapter` para comunicación base.
+- [x] Desarrollo del orquestador de actos (Pipeline de Generación).
+- [x] Implementación de la persistencia inicial en SQLite.
 
-#### ☐ Hito 2: Pipeline de Saneamiento y Calidad (The "Sanitizer")
-*Objetivo: Limpiar el ruido del LLM y validar que el resultado cumpla los estándares narrativos.*
-- [ ] Implementación de la estrategia *Config-driven* (lectura de `sanitization.yaml`).
-- [ ] Desarrollo del `LLMResponseProcessor` y sus estrategias (`ThoughtTagStripper`, `RegexCleaners`).
-- [ ] Implementación de validadores de calidad (conteo de palabras, detección de residuos JSON).
-- [ ] Creación de tests unitarios para el saneamiento con casos de prueba reales (ej. outputs de DeepSeek-R1).
+#### ☐ Hito 2: Pipeline de Normalización y Calidad (The "Normalizer")
+*Objetivo: Normalizar el ruido técnico del LLM y extraer el estado narrativo.*
+- [x] Implementación de la estrategia *Config-driven* (lectura de `sanitization.yaml`).
+- [x] Desarrollo del `LLMResponseNormalizer` y sus estrategias (`ThoughtTagStripper`, `RegexCleaners`).
+- [ ] Implementación de validadores de calidad (conteo de palabras, detección de residuos).
+- [ ] Implementación del `StateExtractor` (Uso de `gemma4:e4b` para extraer estado).
+- [ ] Creación de tests unitarios para el normalizador con casos reales.
 
 #### ☐ Hito 3: Capa de Presentación (The "API & Real-time")
 *Objetivo: Exponer la funcionalidad mediante endpoints REST y comunicación WebSocket.*

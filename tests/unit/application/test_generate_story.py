@@ -27,8 +27,8 @@ async def test_generate_act_orchestration():
     repo.get_story.return_value = mock_story
     repo.save_act = AsyncMock()
     
-    # Mock de LLM con respuesta "sucia"
-    raw_response = "<think>Pensamiento...</think>Relato puro."
+    # Mock de LLM con respuesta "sucia" y longitud suficiente (300+ palabras)
+    raw_response = "<think>Pensamiento...</think>" + ("Había una vez un bosque oscuro. " * 50)
     llm = MockLLMAdapter(response_to_return=raw_response)
     
     # Normalizador real
@@ -46,7 +46,8 @@ async def test_generate_act_orchestration():
     
     # 4. Validar
     assert generated_act.number == 1
-    assert generated_act.content == "Relato puro."  # Validamos que se normalizó
+    assert "think" not in generated_act.content
+    assert "Había una vez" in generated_act.content
     assert generated_act.raw_output == raw_response
     
     # Verificar que el repositorio fue llamado para guardar

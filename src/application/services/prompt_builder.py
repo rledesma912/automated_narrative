@@ -49,3 +49,23 @@ INSTRUCCIONES:
 - No incluyas introducciones ni despedidas, solo el relato narrativo.
 - No uses formato JSON.
 """
+
+    @staticmethod
+    def build_state_extraction_prompt(content: str) -> str:
+        return f"""Analiza el siguiente fragmento de un relato de terror y extrae el estado narrativo actual en formato JSON.
+
+FRAGMENTO:
+\"\"\"
+{content}
+\"\"\"
+
+Responde ÚNICAMENTE con un objeto JSON con esta estructura exacta:
+{{
+  "location": "Lugar actual de la escena",
+  "characters": "Personajes presentes y su estado",
+  "situation": "Breve resumen de lo que está pasando",
+  "active_threat": "Peligro o amenaza inmediata (si hay)",
+  "goal": "Qué intentan lograr los personajes ahora",
+  "last_action": "La última acción importante que cerró el fragmento"
+}}
+"""
