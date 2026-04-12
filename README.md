@@ -52,14 +52,14 @@ Al definir una nueva historia, es crucial alimentar bien el motor:
 
 ```bash
 /mnt/LLM/apps/automated_narrative/
-├── 🌐 story-form/            # Aplicación web (Frontend/Gestión)
-├── 🔗 flujos_n8n/             # Archivos JSON para importar en n8n
-├── 📝 prompts_generacion/     # Plantillas de sistema y memoria (system_prompt.md)
-├── 🖋️ prompts_historias/      # Argumentos y estructuras de relatos específicos (prompt_story.md)
-├── 🧹 prompts_saneadores/     # Reglas para el refinamiento de textos
-├── 📖 output_stories/         # Relatos terminados en Markdown
-├── 🗄️ scripts_db/             # Scripts SQL para inicializar PostgreSQL (n8n)
-└── 🐳 docker-compose.yml      # Orquestación de la interfaz web
+├── 🌐 frontend/                # Aplicación web Node.js
+├── 🔧 src/                     # Backend Python (FastAPI)
+├── 📝 prompt_generacion/       # Prompts para generación de relatos
+├── 🧹 prompts_saneadores/      # Prompts para refinamiento/saneado
+├── 📖 output_stories/          # Relatos terminados
+├── 📋 specs/                   # Documentación técnica
+├── ⚙️ config/                  # Configuración YAML
+└── 🐳 docker-compose.yml       # Orquestación de contenedores
 ```
 
 ---

@@ -8,7 +8,7 @@
 
 ## 1. Objetivo del Proyecto
 
-Plataforma para generar relatos de terror automáticamente usando LLMs locales (Ollama), con flujos de n8n para orquestación y un sistema de saneado (post-procesamiento) para garantizar calidad narrativa.
+Plataforma para generar relatos de terror automáticamente usando LLMs locales (Ollama) con FastAPI como backend y un sistema de saneado (post-procesamiento) para garantizar calidad narrativa.
 
 ## 2. Estado Actual
 
@@ -16,25 +16,23 @@ Plataforma para generar relatos de terror automáticamente usando LLMs locales (
 
 | Componente | Tech Stack | Estado |
 |------------|------------|--------|
-| Interfaz Web (Story Form) | Node.js, Express, EJS, SQLite | ✅ Funcional |
-| Flujos n8n - Generación | JSON workflows | ✅ Implementado |
-| Flujos n8n - Saneado | JSON workflows | ✅ Implementado |
-| Base de datos | PostgreSQL | ✅ Esquema listo |
-| Modelos IA | Ollama (qwen2.5:32b, gemma2:9b) | ✅ Configurado |
+| Backend API | Python, FastAPI, SQLite | ✅ Funcional |
+| Frontend Web | Node.js, Express, EJS | ✅ Funcional |
+| Motor de Generación | Ollama (qwen2.5:32b, gemma2:9b) | ✅ Funcional |
+| Pipeline de Saneado | Ollama + prompt-based | ✅ Funcional |
 
 ### Estructura de Archivos
 
 ```
 /
-├── story-form/              # App web
-├── flujos_n8n/              # Workflows JSON
-├── prompts_historias/       # Templates de historias
-├── prompts_generacion/     # System prompts
-├── prompts_saneadores/     # Prompts de saneado
-├── output_stories/         # Relatos generados
-├── historias_saneadas/     # Relatos corregidos
-├── scripts_db/             # SQL PostgreSQL
-└── docker-compose.yml     # Contenedor web
+├── src/                       # Backend Python (FastAPI)
+├── frontend/                 # Frontend Node.js
+├── prompt_generacion/        # Prompts generación
+├── prompts_saneadores/       # Prompts saneado
+├── output_stories/           # Relatos generados
+├── specs/                    # Documentación técnica
+├── config/                   # Configuración
+└── docker-compose.yml        # Contenedores
 ```
 
 ## 3. Requerimientos Funcionales
@@ -70,10 +68,9 @@ Pipeline de 4 fases:
 
 ## 5. Tech Stack
 
+- **Backend:** Python, FastAPI, SQLite
+- **Frontend:** Node.js, Express, EJS
 - **IA:** Ollama + modelos qwen2.5:32b, gemma2:9b
-- **Orquestación:** n8n (self-hosted)
-- **Web:** Node.js, Express, EJS
-- **Datos:** SQLite (metadatos), PostgreSQL (memoria narrativa)
 - **Contenedores:** Docker + Docker Compose
 
 ## 7. n8n Best Practices (Aplicados)

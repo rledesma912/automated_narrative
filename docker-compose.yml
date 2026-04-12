@@ -1,9 +1,9 @@
 services:
-  story-form:
+  frontend:
     build:
-      context: ./story-form
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: story-form-app
+    container_name: frontend-app
     restart: always
     ports:
       - "${PORT:-3100}:3100"
@@ -14,8 +14,8 @@ services:
       - OUTPUT_DIR=/app/output_stories
       - DEFAULT_TOTAL_ACTS=${DEFAULT_TOTAL_ACTS:-5}
     volumes:
-      - ./story-form/output_stories:/app/output_stories
-      - ./prompts_generacion:/app/prompts_generacion:ro
-      - ./prompts_historias:/app/prompts_historias:ro
+      - ./frontend/output_stories:/app/output_stories
+      - ./prompt_generacion:/app/prompt_generacion:ro
+      - ./prompts_saneadores:/app/prompts_saneadores:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -2,17 +2,15 @@ from typing import List
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from src.config import settings
 from src.domain.models import GeneratedAct, Story
 
 
 class MarkdownRenderer:
     """Motor de renderizado para archivos Markdown usando Jinja2."""
-    
-    def __init__(self, template_dir: str = "templates"):
-        self.env = Environment(
-            loader=FileSystemLoader(template_dir),
-            autoescape=select_autoescape()
-        )
+
+    def __init__(self, template_dir: str = None):
+        self.env = Environment(loader=FileSystemLoader(template_dir or settings.template_dir), autoescape=select_autoescape())
 
     def render_story(self, story: Story, acts: List[GeneratedAct]) -> str:
         """Genera el contenido Markdown final inyectando los datos en la plantilla."""

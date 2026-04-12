@@ -82,15 +82,17 @@ Antes de cada commit:
 ## Important Files
 
 ```
-src/
-├── domain/models.py          # Entidades (Story, Act, State)
-├── application/use_cases/   # Lógica de negocio
-├── infrastructure/          # Adapters, DB, Normalizers
-├── presentation/api/        # FastAPI routes
+src/                       # Backend Python (FastAPI)
+frontend/                  # Frontend Node.js
+├── domain/models.py      # Entidades (Story, Act, State)
+├── application/use_cases/# Lógica de negocio
+├── infrastructure/       # Adapters, DB, Normalizers
+├── presentation/api/     # FastAPI routes
 config/
-├── sanitization.yaml       # Reglas de limpieza LLM
-.env                        # API_HOST, OLLAMA_HOST
-Makefile                    # dev, test, lint, clean
+├── llm_response_filters.yaml # Reglas de limpieza LLM
+├── prompts/                  # Prompts para el LLM
+.env                     # API_HOST, OLLAMA_HOST
+Makefile                 # dev, test, lint, clean
 ```
 
 ## Commands Útiles

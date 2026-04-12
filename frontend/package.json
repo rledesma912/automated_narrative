@@ -1,7 +1,7 @@
 {
-  "name": "story-form",
+  "name": "narrative-frontend",
   "version": "1.0.0",
-  "description": "Formulario para generar prompts de historias para n8n",
+  "description": "Frontend para NarrativeForge - Generación automática de relatos de terror",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",

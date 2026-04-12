@@ -1,5 +1,5 @@
-# Reglas de limpieza de LLM (The "Clean" Pipeline)
-sanitization:
+# Reglas de limpieza de respuestas LLM (The "Clean" Pipeline)
+llm_response_filters:
   thinking_tags:
     - "think"
     - "thought"

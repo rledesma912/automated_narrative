@@ -217,7 +217,7 @@ sequenceDiagram
 
     P->>S: 3. process(raw_response)
     S->>Y: 4. load_rules()
-    Y-->>S: 5. sanitization_specs
+    Y-->>S: 5. llm_response_filters_specs
     S->>S: 6. apply_regex_stripping()
     S-->>P: 7. clean_text
 
@@ -247,7 +247,7 @@ Aísla la librería específica (Ollama SDK, OpenAI, etc.) del resto de la aplic
 Transforma la respuesta "sucia" del LLM en una entidad de dominio válida (`StoryAct`).
 
 **Estrategia de Sanitización Data-Driven:**
-El proceso de limpieza no tendrá valores "hardcoded". Utilizará un archivo de especificación (`sanitization.yaml`) para definir qué elementos eliminar:
+El proceso de limpieza no tendrá valores "hardcoded". Utilizará un archivo de especificación (`llm_response_filters.yaml`) para definir qué elementos eliminar:
 1.  **`ThoughtTagStripper`:** Lee las etiquetas (`<think>`, `<thought>`, etc.) desde el manifiesto de configuración.
 2.  **`PatternMatcher`:** Utiliza expresiones regulares externas para limpiar frases introductorias o ruido repetitivo.
 3.  **`ModelContext`:** Ajusta dinámicamente la agresividad de la limpieza según el modelo en uso definido en la configuración.
@@ -258,7 +258,7 @@ El proceso de limpieza no tendrá valores "hardcoded". Utilizará un archivo de 
 classDiagram
     class Settings {
         +env: str
-        +sanitization_rules: dict
+        +llm_response_filters_rules: dict
         +load_config()
     }
 
@@ -361,7 +361,7 @@ Para transformar los actos dispersos en la DB en el archivo `.md` final, se apli
 ```
 .
 ├── config/                 # Manifiestos YAML (Data-driven Specs)
-│   ├── sanitization.yaml   # Reglas de limpieza de LLM
+│   ├── llm_response_filters.yaml   # Reglas de limpieza de LLM
 │   ├── models.yaml         # Configuración de Ollama/Modelos
 │   └── prompts.yaml        # System prompts centralizados
 ├── src/
@@ -418,7 +418,7 @@ El sistema utilizará una clase `Settings` (basada en `pydantic-settings`) para 
 3. **Manifiestos YAML (`config/*.yaml`):** Para reglas de negocio dinámicas (sanitización, modelos, prompts).
 
 **Componentes del Manifiesto:**
-- **`config/sanitization.yaml`:** Define etiquetas de pensamiento (`<think>`, etc.), patrones de ruido y reglas de extracción de Markdown.
+- **`config/llm_response_filters.yaml`:** Define etiquetas de pensamiento (`<think>`, etc.), patrones de ruido y reglas de extracción de Markdown.
 - **`config/models.yaml`:** Parámetros técnicos por modelo y flags de limpieza.
 - **`config/prompts.yaml`:** Centralización de system prompts.
 
@@ -439,7 +439,7 @@ Para garantizar una migración ordenada desde n8n, el desarrollo se dividirá en
 
 #### [x] Hito 2: Pipeline de Normalización y Calidad (The "Normalizer")
 *Objetivo: Normalizar el ruido técnico del LLM y extraer el estado narrativo.*
-- [x] Implementación de la estrategia *Config-driven* (lectura de `sanitization.yaml`).
+- [x] Implementación de la estrategia *Config-driven* (lectura de `llm_response_filters.yaml`).
 - [x] Desarrollo del `LLMResponseNormalizer` y sus estrategias (`ThoughtTagStripper`, `RegexCleaners`).
 - [x] Implementación de validadores de calidad (conteo de palabras, detección de residuos).
 - [x] Implementación del `StateExtractor` (Uso de `gemma4:e4b` para extraer estado).
@@ -454,7 +454,7 @@ Para garantizar una migración ordenada desde n8n, el desarrollo se dividirá en
 
 #### ☐ Hito 4: Integración Legacy y Migración
 *Objetivo: Conectar el Wizard actual con la nueva API y validar el flujo completo.*
-- [ ] Modificación de `story-form` (Node.js) para que consuma la API de FastAPI en lugar de n8n.
+- [ ] Modificación de `frontend/` (Node.js) para que consuma la API de FastAPI en lugar de n8n.
 - [ ] Pruebas de integración "End-to-End" (E2E).
 - [ ] Documentación final de operación (Docker deployment).
 
