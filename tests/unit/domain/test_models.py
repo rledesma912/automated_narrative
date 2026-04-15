@@ -1,54 +1,87 @@
+"""Tests for domain models."""
+
 import pytest
 from uuid import UUID
-from datetime import datetime
-from src.domain.models import Story, ActInput, StoryStatus, NarrativeState
 
-def test_create_story_success():
-    """Valida que una historia se cree con los datos mínimos y genere sus defaults."""
-    story_data = {
-        "title": "El Monte Prohibido",
-        "protagonistas": "Marcos y Sofía",
-        "relator": "Marcos (1ra persona)",
-        "escenarios": "Bosque oscuro",
-        "sinopsis": "Dos hermanos se pierden en un bosque maldito.",
-        "atmosfera": "Horror opresivo",
-        "reglas": ["No mirar atrás", "No hablar con extraños"],
-        "actos_input": [
-            {"number": 1, "title": "La llegada", "mission": "Llegar al claro del bosque"}
-        ]
-    }
-    
-    story = Story(**story_data)
-    
-    assert isinstance(story.id, UUID)
-    assert story.title == "El Monte Prohibido"
-    assert story.status == StoryStatus.PENDING
-    assert isinstance(story.created_at, datetime)
-    assert len(story.reglas) == 2
-    assert len(story.actos_input) == 1
-    assert story.actos_input[0].title == "La llegada"
+from src.domain.models import Story, Beat, StoryStatus, NarrativeJournal
 
-def test_narrative_state_defaults():
-    """Valida que el estado narrativo inicie vacío y limpio."""
-    state = NarrativeState()
-    assert state.location == ""
-    assert state.characters == ""
-    assert state.situation == ""
-    assert state.active_threat == ""
-    assert state.goal == ""
-    assert state.last_action == ""
 
-def test_story_invalid_status():
-    """Valida que Pydantic rechace estados no definidos en el Enum."""
-    from pydantic import ValidationError
-    
-    with pytest.raises(ValidationError):
-        Story(
-            title="Test",
-            protagonistas="...",
-            relator="...",
-            escenarios="...",
-            sinopsis="...",
-            atmosfera="...",
-            status="estado_inventado"
+class TestStory:
+    """Tests for Story model."""
+
+    def test_create_story(self):
+        """Test creating a story."""
+        story = Story(
+            title="Test Story",
+            protagonista="Protagonist",
+            relator="tercera_persona",
+            escenarios="Location",
+            sinopsis="Synopsis",
+            atmosfera="terror",
         )
+
+        assert story.title == "Test Story"
+        assert story.status == StoryStatus.PENDING
+        assert story.id is not None
+
+    def test_story_default_values(self):
+        """Test default values."""
+        story = Story(
+            title="Test",
+            protagonista="P",
+            relator="R",
+            escenarios="E",
+            sinopsis="S",
+            atmosfera="A",
+        )
+
+        assert story.beats == []
+        assert story.journal is not None
+        assert story.reglas == []
+
+
+class TestBeat:
+    """Tests for Beat model."""
+
+    def test_create_beat(self):
+        """Test creating a beat."""
+        beat = Beat(number=1, summary="Test beat")
+
+        assert beat.number == 1
+        assert beat.summary == "Test beat"
+        assert beat.status == "pending"
+        assert beat.content == ""
+
+    def test_beat_with_content(self):
+        """Test beat with content."""
+        beat = Beat(
+            number=1,
+            summary="Test summary",
+            content="Generated content",
+            status="completed",
+        )
+
+        assert beat.content == "Generated content"
+        assert beat.status == "completed"
+
+
+class TestNarrativeJournal:
+    """Tests for NarrativeJournal model."""
+
+    def test_create_empty_journal(self):
+        """Test creating an empty journal."""
+        journal = NarrativeJournal()
+
+        assert journal.last_events == ""
+        assert journal.unresolved_mysteries == ""
+        assert journal.physical_emotional_state == ""
+
+    def test_create_journal_with_data(self):
+        """Test journal with data."""
+        journal = NarrativeJournal(
+            last_events="Event occurred",
+            unresolved_mysteries="Mystery question",
+            emotional_state="Character is scared",
+        )
+
+        assert journal.last_events == "Event occurred"

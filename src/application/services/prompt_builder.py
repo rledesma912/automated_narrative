@@ -1,98 +1,119 @@
+"""PromptBuilder - construye los prompts para el LLM."""
+
 from pathlib import Path
-from typing import Optional
 
 from src.config import settings
-from src.domain.models import ActInput, NarrativeState, Story
+from src.domain.models import Story, Beat
 
 
 class PromptBuilder:
-    """Servicio encargado de construir los prompts para el LLM."""
+    """Servicio para construir prompts."""
 
-    def __init__(self, prompts_dir: str = None):
+    def __init__(self, prompts_dir: str | None = None):
         self.prompts_dir = Path(prompts_dir or settings.prompts_dir)
         self._system_template = None
-        self._state_template = None
+        self._planner_template = None
 
     def _load_prompt(self, filename: str) -> str:
-        """Carga un prompt desde un archivo externo."""
+        """Carga una plantilla de prompt."""
         file_path = self.prompts_dir / filename
         if file_path.exists():
             return file_path.read_text(encoding="utf-8").strip()
         return ""
 
-    @property
-    def system_template(self) -> str:
-        if self._system_template is None:
-            self._system_template = self._load_prompt("system_prompt.md")
-        return self._system_template
-
-    @property
-    def state_template(self) -> str:
-        if self._state_template is None:
-            self._state_template = self._load_prompt("state_prompt.md")
-        return self._state_template
-
     def build_system_prompt(self, story: Story) -> str:
-        template = self.system_template
-        if template:
-            if "{{" in template:
-                reglas_str = "\n".join([f"- {r}" for r in story.reglas])
-                return template.format(
-                    atmosfera=story.atmosfera, relator=story.relator, reglas=reglas_str, protagonistas=story.protagonistas, escenarios=story.escenarios, sinopsis=story.sinopsis
-                )
-            return template
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas])
-        return f"""Eres un experto escritor de relatos de terror y suspenso en español.
-Tu estilo es {story.atmosfera}.
-El relato es narrado por: {story.relator}.
+        """Build el system prompt base."""
+        if self._system_template is None:
+            self._system_template = self._load_prompt("system.md")
 
-REGLAS INMUTABLES QUE DEBES RESPETAR:
+        reglas_str = (
+            "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        )
+
+        if self._system_template:
+            return self._system_template.format(
+                atmosfera=story.atmosfera,
+                relator=story.relator,
+                reglas=reglas_str,
+                protagonistas=story.protagonista,
+                escenarios=story.escenarios,
+                sinopsis=story.sinopsis,
+            )
+
+        return f"""Eres un experto escritor de relatos de terror en español.
+Tu estilo es: {story.atmosfera}
+El relator es: {story.relator}
+
+REGLAS:
 {reglas_str}
 
-CONTEXTO GENERAL:
-Protagonistas: {story.protagonistas}
+Protagonistas: {story.protagonista}
 Escenarios: {story.escenarios}
 Sinopsis: {story.sinopsis}
 """
 
-    def build_act_prompt(self, story: Story, act: ActInput, previous_state: Optional[NarrativeState] = None) -> str:
-        state_str = ""
-        if previous_state:
-            state_str = f"""
-ESTADO NARRATIVO ACTUAL (Continuidad):
-- Ubicación: {previous_state.location}
-- Personajes presentes: {previous_state.characters}
-- Situación: {previous_state.situation}
-- Amenaza activa: {previous_state.active_threat}
-- Objetivo actual: {previous_state.goal}
-- Última acción importante: {previous_state.last_action}
+    def build_planner_prompt(self, story: Story, num_beats: int = 8) -> str:
+        """Build el prompt del Director para generar la escaleta."""
+        if self._planner_template is None:
+            self._planner_template = self._load_prompt("planner.md")
+
+        if self._planner_template:
+            return self._planner_template.format(
+                title=story.title,
+                protagonistas=story.protagonista,
+                escenarios=story.escenarios,
+                sinopsis=story.sinopsis,
+                atmosfera=story.atmosfera,
+                num_beats=num_beats,
+            )
+
+        return f"""Crea una escaleta de {num_beats} beats para esta historia de terror:
+
+Título: {story.title}
+Protagonistas: {story.protagonista}
+Escenarios: {story.escenarios}
+Sinopsis: {story.sinopsis}
+Atmósfera: {story.atmosfera}
+
+Cada beat debe ser un momento clave de la historia.
+Responde solo con una lista numerada de beats, cada uno en una línea.
 """
 
-        return f"""{state_str}
+    def build_beat_prompt(
+        self, story: Story, beat: Beat, previous_content: str = ""
+    ) -> str:
+        """Build el prompt para narrar un beat."""
+        base = f"""NARRA EL BEAT #{beat.number}:
+{beat.summary}
 
-MISIÓN DEL ACTO {act.number} — "{act.title}":
-{act.mission}
+Contexto:
+- Protagonistas: {story.protagonista}
+- Escenario: {story.escenarios}
+- Atmósfera: {story.atmosfera}
 
-INSTRUCCIONES:
-- Escribe un capítulo inmersivo de al menos 400 palabras.
-- Mantén el tono de terror y la atmósfera {story.atmosfera}.
-- No incluyas introducciones ni despedidas, solo el relato narrativo.
-- No uses formato JSON.
-"""
+Extiende este momento (150-300 palabras)."""
 
-    def build_state_extraction_prompt(self, content: str) -> str:
-        template = self.state_template
-        if template:
-            return template.replace("{{chapter_text}}", content)
-        return (
-            "Analiza el siguiente fragmento de un relato de terror y extrae "
-            "el estado narrativo actual en formato JSON.\n\n"
-            'FRAGMENTO:\n"""\n' + content + '\n"""\n\n'
-            "Responde ÚNICAMENTE con un objeto JSON con esta estructura exacta:\n"
-            '{"location": "Lugar actual de la escena",\n'
-            '"characters": "Personajes presentes y su estado",\n'
-            '"situation": "Breve resumen de lo que está pasando",\n'
-            '"active_threat": "Peligro o amenaza inmediata (si hay)",\n'
-            '"goal": "Qué intentan lograr los personajes ahora",\n'
-            '"last_action": "La última acción importante que cerró el fragmento"}\n'
+        if previous_content:
+            base += f"\n\nLo que pasó antes:\n{previous_content}"
+
+        return base
+
+    def build_voice_prompt(self, story: Story) -> str:
+        """Build el system prompt para la Voz."""
+        reglas_str = (
+            "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         )
+
+        return f"""Eres la Voz narrativa de una historia de terror.
+Tu estilo: {story.atmosfera}
+El relator: {story.relator}
+
+REGLAS:
+{reglas_str}
+
+Instrucciones:
+- Escribe en primera persona
+- Usa lenguaje natural, no formal
+- Extiende cada momento (150-300 palabras)
+- Siente los detalles: sonidos, olores, texturas
+- Mantén la tensión y el misterio"""

@@ -1,18 +1,27 @@
-from typing import List
+"""Markdown renderer."""
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
-from src.config import settings
-from src.domain.models import GeneratedAct, Story
+from src.domain.models import Story
 
 
 class MarkdownRenderer:
-    """Motor de renderizado para archivos Markdown usando Jinja2."""
+    """Renders story to Markdown."""
 
-    def __init__(self, template_dir: str = None):
-        self.env = Environment(loader=FileSystemLoader(template_dir or settings.template_dir), autoescape=select_autoescape())
+    def render(self, story: Story) -> str:
+        """Render story to Markdown."""
+        md = f"# {story.title}\n\n"
 
-    def render_story(self, story: Story, acts: List[GeneratedAct]) -> str:
-        """Genera el contenido Markdown final inyectando los datos en la plantilla."""
-        template = self.env.get_template("story_output.md.j2")
-        return template.render(story=story, acts=acts)
+        md += f"**Protagonistas:** {story.protagonista}\n"
+        md += f"**Relator:** {story.relator}\n"
+        md += f"**Escenario:** {story.escenarios}\n"
+        md += f"**Atmósfera:** {story.atmosfera}\n\n"
+
+        md += f"_{story.sinopsis}_\n\n"
+        md += "---\n\n"
+
+        sorted_beats = sorted(story.beats, key=lambda b: b.number)
+
+        for beat in sorted_beats:
+            md += f"## {beat.number}. {beat.summary}\n\n"
+            md += beat.content + "\n\n"
+
+        return md

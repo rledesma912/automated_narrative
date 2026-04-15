@@ -1,47 +1,62 @@
-import uuid
+"""Domain entities."""
+
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import UUID4, BaseModel, Field
+import uuid
 
 
 class StoryStatus(str, Enum):
+    """Estado de una historia."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
 
-class ActInput(BaseModel):
-    number: int
-    title: str
-    mission: str
 
-class NarrativeState(BaseModel):
-    location: str = ""
-    characters: str = ""
-    situation: str = ""
-    active_threat: str = ""
-    goal: str = ""
-    last_action: str = ""
+class Beat(BaseModel):
+    """Unidad mínima de narración."""
 
-class GeneratedAct(BaseModel):
     number: int
-    content: str
-    raw_output: str
-    word_count: int
-    state_after: Optional[NarrativeState] = None
+    summary: str
+    content: str = ""
+    status: str = "pending"
+    technical_context: Optional[list[int]] = None
     created_at: datetime = Field(default_factory=datetime.now)
 
+
+class NarrativeJournal(BaseModel):
+    """Memoria narrativa para coherencia."""
+
+    last_events: str = ""
+    unresolved_mysteries: str = ""
+    physical_emotional_state: str = ""
+
+
+class StoryPlan(BaseModel):
+    """Plan maestro de la historia."""
+
+    story_id: UUID4
+    title: str
+    beats: list[Beat] = []
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
 class Story(BaseModel):
+    """Historia base."""
+
     id: UUID4 = Field(default_factory=uuid.uuid4)
     title: str
-    protagonistas: str
+    protagonista: str
     relator: str
     escenarios: str
     sinopsis: str
     atmosfera: str
-    reglas: List[str] = []
-    actos_input: List[ActInput] = []
+    reglas: list[str] = []
+    beats: list[Beat] = []
+    journal: NarrativeJournal = Field(default_factory=NarrativeJournal)
     status: StoryStatus = StoryStatus.PENDING
     created_at: datetime = Field(default_factory=datetime.now)

@@ -2,103 +2,82 @@
 
 ## Project Context
 
-NarrativeForge es una API REST + WebSocket en Python/FastAPI para generación automática de relatos de terror usando Ollama (LLMs locales).
+FastAPI + WebSocket API for automated horror narrative generation using Ollama (local LLM).
 
-**Stack:** Python 3.12, FastAPI, SQLite, Ollama, Clean Architecture
+**Stack:** Python 3.12, FastAPI, aiosqlite, Ollama, Clean Architecture
+
+## Specs Reference (OBLIGATORIO)
+
+> **ANTES de codificar:** Leer los specs correspondientes
+
+| Spec | Scope | Cuando |
+|------|-------|--------|
+| [`specs/granular_beat_spec.md`](./specs/granular_beat_spec.md) | Backend | Desarrollo API, Use Cases, Domain |
+| [`specs/ui_granular_spec.md`](./specs/ui_granular_spec.md) | Frontend | Desarrollo UI, Vistas, JS |
+| [`specs/marco_sdd.md`](./specs/marco_sdd.md) | Marco SDD | Definiciones obligatorias |
+
+## Definiciones Críticas (SDD)
+
+| Definición | Valor | Ubicación |
+|-----------|-------|-----------|
+| **Arquitectura** | Clean Architecture | granular_beat_spec.md §Class Diagram |
+| **Naming Python** | PascalCase/clases, snake_case/funciones | granular_beat_spec.md §Code Style |
+| **Naming JS** | camelCase/vars, kebab-case/archivos | ui_granular_spec.md §JS Code Style |
+| **Naming DB** | singular, snake_case | granular_beat_spec.md §Database Naming |
+| **Testing** | pytest-asyncio, coverage >80% | granular_beat_spec.md §Testing Strategy |
+| **Linting** | ruff (ignora E501, ARG002, B008, B904) | granular_beat_spec.md §Linting Rules |
+| **Puerto API** | 8010 | granular_beat_spec.md §Assumptions |
+| **Puerto UI** | 3010 | ui_granular_spec.md §Assumptions |
+| **API Base** | http://localhost:8010 | ui_granular_spec.md §Assumptions |
 
 ## Skills
 
-Referencia los skills del directorio `.opencode/skills/` para cada fase:
+Reference `.opencode/skills/` for each phase:
+- Define → spec-driven-development
+- Plan → planning-and-task-breakdown
+- Build → incremental-implementation
+- Verify → debugging-and-error-recovery
+- Review → code-review-and-quality
+- Ship → git-workflow-and-versioning
 
-```markdown
-# Phase → Skill
-Define      → .opencode/skills/spec-driven-development
-Plan        → .opencode/skills/planning-and-task-breakdown  
-Build      → .opencode/skills/incremental-implementation
-Build      → .opencode/skills/test-driven-development
-Build      → .opencode/skills/api-and-interface-design
-Verify     → .opencode/skills/debugging-and-error-recovery
-Review     → .opencode/skills/code-review-and-quality
-Review     → .opencode/skills/security-and-hardening
-Ship       → .opencode/skills/git-workflow-and-versioning
-```
-
-## Core Operating Behaviors
-
-### 1. Surface Assumptions
-Antes de implementar algo no-trivial, declarar explícitamente:
-```
-ASSUMPTIONS:
-1. [suposición sobre requirements]
-2. [suposición sobre arquitectura]
-→ Corrígeme ahora o procedo con estas.
-```
-
-### 2. Manage Confusion
-Cuando hay inconsistencias o requisitos confusos:
-1. **STOP.** No proceedas con un guess.
-2. Nombrar la confusión específica.
-3. Presentar el tradeoff o pregunta.
-4. Esperar resolución antes de continuar.
-
-### 3. Push Back When Warranted
-No sos un yes-machine. Cuando un enfoque tiene problemas claros:
-- Point out the issue directly
-- Explicar el downside concreto
-- Proponer alternativa
-- Aceptar la decisión del humano si override con info completa
-
-### 4. Enforce Simplicity
-Resistir la sobreingeniería. Antes de terminar:
-- ¿Puede hacerse en menos líneas?
-- ¿Las abstracciones merecen su complejidad?
-- ¿Un staff engineer diría "por qué no simplemente..."?
-
-### 5. Verify, Don't Assume
-Cada skill incluye verification step. "Seems right" ≠ suficiente.
-Debe haber evidencia: passing tests, build output, runtime data.
-
-## Development Workflow
-
-Para este proyecto, seguir esta secuencia:
-
-```markdown
-1. .opencode/skills/spec-driven-development  → PRD antes de código
-2. .opencode/skills/planning-and-task-breakdown → Tasks verificables
-3. .opencode/skills/incremental-implementation  → Thin slices
-4. .opencode/skills/test-driven-development    → Tests primero
-5. .opencode/skills/code-review-and-quality    → Review antes de commit
-6. .opencode/skills/git-workflow-and-versioning → Commits atómicos
-```
-
-## Quality Gates
-
-Antes de cada commit:
-- [ ] Tests passing (`make test`)
-- [ ] Lint passing (`make lint`)
-- [ ] Code reviewed
-- [ ] Changes < ~100 líneas por commit
-
-## Important Files
-
-```
-src/                       # Backend Python (FastAPI)
-frontend/                  # Frontend Node.js
-├── domain/models.py      # Entidades (Story, Act, State)
-├── application/use_cases/# Lógica de negocio
-├── infrastructure/       # Adapters, DB, Normalizers
-├── presentation/api/     # FastAPI routes
-config/
-├── llm_response_filters.yaml # Reglas de limpieza LLM
-├── prompts/                  # Prompts para el LLM
-.env                     # API_HOST, OLLAMA_HOST
-Makefile                 # dev, test, lint, clean
-```
-
-## Commands Útiles
+## Dev Commands
 
 ```bash
-make dev          # Levanta API con hot-reload
-make test         # Run tests con coverage
-make lint         # Ruff check + format
+make install    # uv sync
+make dev       # uvicorn with hot-reload (uses API_HOST var)
+make test      # pytest -v --cov=src
+make lint      # ruff check . && ruff format .
+make clean     # remove __pycache__, .pytest_cache, .ruff_cache
 ```
+
+**Single test:** `pytest tests/unit/test_x.py -v`
+
+**Order:** `make lint` → `make test` → review
+
+## Architecture (Backend)
+
+```
+src/
+├── main.py           # FastAPI entrypoint
+├── config.py         # Env config (pydantic-settings)
+├── domain/          # Entities + Interfaces
+│   ├── models.py    # Story, Beat, NarrativeJournal
+│   ├── interfaces.py  # Protocols (LLMProvider, Repository)
+│   └── exceptions.py   # Domain exceptions
+├── application/     # Use Cases
+│   ├── use_cases/  # CreateStory, NarrateBeat, etc.
+│   └── services/  # PromptBuilder, MemoryJournalist
+├── infrastructure/  # Adapters
+│   ├── adapters/  # OllamaAdapter
+│   ├── database/  # SQL repositories
+│   └── normalizers/  # ResponseCleaner
+└── presentation/   # API
+    └── routers/   # REST endpoints
+```
+
+## Important Notes
+
+- **Env vars:** Read from `.env` via pydantic-settings in `src/config.py`
+- **DB:** SQLite at `stories.db` (aiosqlite async driver)
+- **Ollama:** Must be running locally; models configured per-request
+- **Linting:** Ruff ignores E501, ARG002, B008, B904

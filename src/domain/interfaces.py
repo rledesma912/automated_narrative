@@ -1,42 +1,85 @@
-from typing import List, Optional, Protocol
+"""Ports (interfaces) for the domain."""
+
+from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from .models import GeneratedAct, NarrativeState, Story
+from src.domain.models import Story, Beat
 
 
+class LLMResponse:
+    """Response from LLM."""
+
+    def __init__(self, text: str, context: list[int] | None = None):
+        self.text = text
+        self.context = context
+        self.word_count = len(text.split())
+
+
+@runtime_checkable
 class LLMProvider(Protocol):
-    """Interfaz para comunicación con modelos de lenguaje."""
+    """Protocol for LLM providers."""
+
     async def generate(
-        self, 
-        prompt: str, 
-        system_prompt: Optional[str] = None, 
-        model: Optional[str] = None, 
-        temperature: float = 0.7
-    ) -> str:
+        self,
+        prompt: str,
+        *,
+        system_prompt: str | None = None,
+        model: str = "qwen3.5:9b",
+        temperature: float = 0.6,
+    ) -> LLMResponse:
+        """Generate text with LLM."""
         ...
+
+    async def close(self) -> None:
+        """Close connection."""
+        ...
+
 
 class StoryRepository(Protocol):
-    """Interfaz para la persistencia de historias y actos."""
-    async def save_story(self, story: Story) -> None:
-        ...
-    
-    async def get_story(self, story_id: UUID) -> Optional[Story]:
-        ...
-    
-    async def save_act(self, story_id: UUID, act: GeneratedAct) -> None:
-        ...
-    
-    async def get_acts(self, story_id: UUID) -> List[GeneratedAct]:
-        ...
-    
-    async def update_status(self, story_id: UUID, status: str) -> None:
+    """Protocol for Story repositories."""
+
+    async def save(self, story: Story) -> Story:
+        """Save a story."""
         ...
 
-class StateExtractor(Protocol):
-    """Interfaz para la extracción de estado narrativo."""
-    async def extract_state(
-        self, 
-        act_content: str, 
-        previous_state: Optional[NarrativeState] = None
-    ) -> NarrativeState:
+    async def get_by_id(self, story_id: UUID) -> Story | None:
+        """Get story by ID."""
+        ...
+
+    async def update(self, story: Story) -> Story:
+        """Update a story."""
+        ...
+
+    async def delete(self, story_id: UUID) -> None:
+        """Delete a story."""
+        ...
+
+    async def list_all(self) -> list[Story]:
+        """List all stories."""
+        ...
+
+
+class BeatRepository(Protocol):
+    """Protocol for Beat repositories."""
+
+    async def save(self, beat: Beat) -> Beat:
+        """Save a beat."""
+        ...
+
+    async def get_by_story(self, story_id: UUID) -> list[Beat]:
+        """Get all beats for a story."""
+        ...
+
+    async def get_by_number(self, story_id: UUID, number: int) -> Beat | None:
+        """Get beat by number."""
+        ...
+        """Get beat by number."""
+        ...
+
+    async def update(self, beat: Beat) -> Beat:
+        """Update a beat."""
+        ...
+
+    async def save_batch(self, beats: list[Beat]) -> list[Beat]:
+        """Save multiple beats."""
         ...

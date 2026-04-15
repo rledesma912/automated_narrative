@@ -1,49 +1,69 @@
-from typing import Optional
+"""Ollama adapter for LLM."""
+
+import json
 
 import httpx
 
 from src.config import settings
+from src.domain.interfaces import LLMResponse
 
 
 class OllamaAdapter:
-    """Implementación de LLMProvider para Ollama local."""
-    
-    def __init__(self, host: str = settings.ollama_host):
-        self.base_url = f"{host}/api/chat"
-        # Timeout largo para generaciones de relatos largos
-        self.timeout = httpx.Timeout(300.0, connect=10.0)
+    """Adapter for Ollama API."""
+
+    def __init__(self, host: str | None = None):
+        self.base_url = (host or settings.ollama_host).rstrip("/") + "/api/generate"
+        self.timeout = httpx.Timeout(1200.0, connect=10.0)
 
     async def generate(
-        self, 
-        prompt: str, 
-        system_prompt: Optional[str] = None, 
-        model: Optional[str] = "qwen2.5:32b", 
-        temperature: float = 0.7
-    ) -> str:
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
+        self,
+        prompt: str,
+        *,
+        system_prompt: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+    ) -> LLMResponse:
+        """Generate text with Ollama."""
+        model_name = model or settings.llm_model
+        temp = temperature or settings.llm_model_temperature
 
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "temperature": temperature,
-                "num_ctx": 16384  # Ventana de contexto amplia para historias
-            }
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+
+        options = {
+            "temperature": temp,
+            "top_p": 0.9,
+            "repeat_penalty": 1.15,
+            "num_ctx": 4096,
+            "num_predict": 4000,
         }
 
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(self.base_url, json=payload)
+        payload = {
+            "model": model_name,
+            "prompt": full_prompt,
+            "stream": True,
+            "options": options,
+            "keep_alive": "30m",
+        }
+
+        content = ""
+        final_context = None
+
+        async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
+            async with client.stream("POST", self.base_url, json=payload) as response:
                 response.raise_for_status()
-                
-                result = response.json()
-                return result.get("message", {}).get("content", "")
-        except httpx.HTTPError as e:
-            # En producción esto se loguearía, aquí relanzamos para que el orquestador maneje el retry
-            raise ConnectionError(f"Error al conectar con Ollama: {e}")
-        except Exception as e:
-            raise RuntimeError(f"Error inesperado en el adaptador de Ollama: {e}")
+
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    if content_part := data.get("response"):
+                        content += content_part
+                    if data.get("done"):
+                        final_context = data.get("context")
+                        break
+
+        return LLMResponse(text=content, context=final_context)
+
+    async def close(self) -> None:
+        """Close connection (no-op for Ollama)."""
+        pass

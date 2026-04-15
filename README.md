@@ -1,127 +1,165 @@
+# NarrativeForge
 
-# 🧟 Ecosistema de Narrativa Automatizada con IA Local
-
-Este proyecto es una plataforma integral para la generación, gestión y perfeccionamiento de relatos narrativos de alto impacto (especialmente de terror, suspense y horror cosífico). Utiliza modelos de lenguaje de gran tamaño (LLM) ejecutados localmente, combinados con una técnica de prompting avanzada para evitar narraciones simplistas y lograr una inmersión adulta y sensorial.
-
-El sistema combina una interfaz web amigable, potentes flujos de automatización en n8n y un sistema de "saneamiento" para garantizar coherencia y calidad literaria.
+> Sistema de generación granular de relatos de terror con IA local (Ollama).
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## 🚀 Inicio Rápido
 
-El ecosistema se divide en tres componentes principales que trabajan en conjunto:
+### Requisitos
 
-### 1. 🖥️ Story Form (Interfaz Web)
-Una aplicación **Node.js/Express** que sirve como centro de control. Permite:
-- Gestionar y previsualizar los prompts de generación.
-- Visualizar el listado de historias generadas en formato Markdown.
-- Administrar la configuración de los capítulos y actos.
-- **Tecnologías:** Node.js, EJS, SQLite (para metadatos locales), Docker.
+- Python 3.12+
+- [uv](https://github.com/astral-sh/uv) (gestor de paquetes)
+- [Ollama](https://ollama.com) ejecutarándose con modelo `qwen3.5:9b`
 
-### 2. 🔄 Motores de Generación (n8n)
-Flujos de trabajo avanzados que orquestan la inteligencia artificial:
-- **Generador de Relatos:** Divide la historia en actos, mantiene una "memoria narrativa" en PostgreSQL y utiliza **Ollama** con modelos como `qwen2.5:32b` para la prosa inmersiva y `gemma2:9b` para la extracción y análisis de estados.
-- **Saneador de Narrativa:** Un proceso de post-producción que detecta inconsistencias, corrige errores de estilo y valida la calidad del texto final.
-
-### 3. 🧠 IA Local (Ollama)
-Toda la inteligencia reside en tu propia máquina. No hay costes por API ni dependencia de la nube.
-- **Modelo Principal (Prosas):** `qwen2.5:32b` (Optimizado para escritura creativa compleja y estilo adulto).
-- **Modelo Secundario (Análisis):** `gemma2:9b` (Ágil para resumen y extracción de datos).
-
----
-
-## 🎨 Estrategia de Narrativa y Calidad Literaria
-
-Para elevar la calidad de los relatos y solucionar problemas comunes como el tono infantil ("naif") o la falta de descripción, el sistema implementa una **arquitectura de prompting estricta**:
-
-### Principios Rectores en el System Prompt
-El `system_prompt.md` ha sido diseñado para forzar un estilo profesional e inmersivo:
-1.  **Show, Don't Tell (Mostrar, no contar):** Se prohíben descripciones vagas de emociones (ej. "tenía miedo"). En su lugar, se obliga a la IA a describir reacciones fisiológicas y sensoriales (ej. "un frío ácido me recorrió la espalda", "mis manos temblaban").
-2.  **Densidad Sensorial:** Cada párrafo debe contener al menos dos elementos sensoriales (olores, texturas, sonidos ambientales) para anclar la narración en la realidad.
-3.  **Voz Adulta y Testimonial:** La narración se configura en primera persona desde una perspectiva madura y reflexiva, evitando vocabulario simplificado.
-4.  **Atmósfera Opresiva:** Se prioriza la construcción de escenarios detallados y climatológicos sobre la acción pura.
-
-### Uso de la Plantilla de Historia (`prompt_story.md`)
-Al definir una nueva historia, es crucial alimentar bien el motor:
-- **Relator:** Definir no solo quién narra, sino *cómo* lo hace (ej. "desde la adultez, con tono de remordimiento").
-- **Input de Actos:** Escribir instrucciones densas para la IA en lugar de resúmenes simples. Incluir detalles del entorno (luces, olores) en la definición del acto.
-
----
-
-## 📂 Estructura del Proyecto
+### Instalar y Ejecutar
 
 ```bash
-/mnt/LLM/apps/automated_narrative/
-├── 🌐 frontend/                # Aplicación web Node.js
-├── 🔧 src/                     # Backend Python (FastAPI)
-├── 📝 prompt_generacion/       # Prompts para generación de relatos
-├── 🧹 prompts_saneadores/      # Prompts para refinamiento/saneado
-├── 📖 output_stories/          # Relatos terminados
-├── 📋 specs/                   # Documentación técnica
-├── ⚙️ config/                  # Configuración YAML
-└── 🐳 docker-compose.yml       # Orquestación de contenedores
+# Instalar dependencias (aisla con uv virtual env)
+make install
+
+# Iniciar API con hot-reload
+make dev
+
+# La API está disponible en http://localhost:8010
+```
+
+### Comandos Disponibles
+
+| Comando | Descripción |
+|---------|-----------|
+| `make install` | Instala dependencias con `uv sync` |
+| `make dev` | Levanta API en `0.0.0.0:8010` |
+| `make test` | Ejecuta tests con coverage |
+| `make lint` | Lint + formato con ruff |
+| `make clean` | Limpia cache |
+
+---
+
+## 🏗️ Arquitectura (Clean Architecture)
+
+```
+src/
+├── main.py                    # FastAPI entrypoint
+├── config.py                  # Settings (pydantic-settings)
+├── domain/
+│   ├── models.py            # Story, Beat, StoryPlan, NarrativeJournal
+│   ├── interfaces.py       # Protocols (LLMProvider, Repository)
+│   └── exceptions.py       # Domain exceptions
+├── application/
+│   ├── dto/               # Data Transfer Objects
+│   ├── use_cases/          # CreateStory, NarrateBeat, etc.
+│   └── services/           # PromptBuilder, MemoryJournalist
+├── infrastructure/
+│   ├── adapters/         # OllamaAdapter, MockLLMAdapter
+│   ├── database/          # SQLite repositories
+│   └── normalizers/       # ResponseCleaner
+└── presentation/
+    └── routers/           # REST endpoints
+```
+
+### Flujo de Generación (8 Beats)
+
+```
+1. Usuario crea historia → POST /api/v1/stories
+2. Director genera escaleta (8 beats) → POST /api/v1/stories/{id}/plan
+3. Para cada beat:
+   a. Voz genera prosa (150-300 palabras)
+   b. Journal actualiza coherencia
+4. Exportar a Markdown → GET /api/v1/stories/{id}/export
 ```
 
 ---
 
-## 🚀 Guía de Inicio Rápido
+## 🔌 API Endpoints
 
-### 1. Requisitos Previos
-- **Hardware Recomendado (Basado en perfil actual):**
-  - **GPU:** NVIDIA GeForce RTX 3060 (12GB VRAM) o superior.
-  - **CPU:** AMD Ryzen 5 5600G o equivalente.
-  - **RAM:** 32GB+ (Sistema actual: 64GB).
-- **Software:**
-  - **Docker & Docker Compose**
-  - **Ollama** instalado y corriendo.
-- **Modelos IA:**
-  - `ollama pull qwen2.5:32b` (Para escritura principal).
-  - `ollama pull gemma2:9b` (Para tareas auxiliares).
-- **n8n** (self-hosted) con acceso a una base de datos **PostgreSQL**.
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `POST` | `/api/v1/stories` | Crear historia |
+| `GET` | `/api/v1/stories` | Listar historias |
+| `GET` | `/api/v1/stories/{id}` | Ver historia |
+| `POST` | `/api/v1/stories/{id}/plan` | Generar escaleta (8 beats) |
+| `GET` | `/api/v1/stories/{id}/beats` | Listar beats |
+| `POST` | `/api/v1/stories/{id}/beats/{n}` | Generar beat específico |
+| `GET` | `/api/v1/stories/{id}/export` | Exportar Markdown |
 
-### 2. Levantar la Interfaz Web (Story Form)
-```bash
-docker-compose up -d
+---
+
+## 📋 Roles del LLM
+
+| Rol | Función | Temperatura |
+|-----|---------|--------------|
+| **Director** | Generar escaleta de beats | 0.4 |
+| **Voz** | Generar prosa de cada beat | 0.6 |
+| **Journalist** | Mantener coherencia narrativa | 0.3 |
+
+---
+
+## 📂 Estructura de Proyecto
+
 ```
-Accede a la gestión de historias en `http://localhost:3100`.
-
-### 3. Configurar la Generación (n8n)
-1. Importa el flujo `flujos_n8n/short_distance_narrative.json` en n8n.
-2. Ejecuta los scripts de `scripts_db/scripts_dbs.pgsql` en tu base de datos PostgreSQL para crear las tablas necesarias.
-3. Configura las credenciales de Ollama y Postgres en n8n. Asegúrate de que el nodo de Ollama apunte a tu modelo `qwen2.5:32b`.
-
----
-
-## 🔄 El Proceso de Creación
-
-1.  **Definición:** Creas o editas un archivo en `prompts_historias/` aplicando las reglas de "Densidad Sensorial". Defines la premisa, los personajes con profundidad y los actos con detalles ambientales.
-2.  **Lanzamiento:** Inicias el flujo en n8n (vía webhook o manualmente).
-3.  **Escritura Iterativa:** La IA (`qwen2.5`) escribe capítulo por capítulo. El System Prompt asegura que use un tono adulto y descriptivo. Consulta la base de datos para mantener la coherencia (memoria narrativa).
-4.  **Saneamiento:** El flujo de saneamiento revisa el texto generado buscando "alucinaciones" o inconsistencias lógicas.
-5.  **Lectura:** El resultado final se guarda en `output_stories/` y se puede leer desde la interfaz web.
-
----
-
-## 🛠️ Detalles de los Componentes
-
-### Saneador de Narrativa (`flujo_saneador.md`)
-Este componente es crucial para la calidad en relatos largos. Utiliza un proceso de 4 pasos:
-- **Detección:** Identifica problemas (nombres cambiados, objetos que desaparecen, cambios bruscos de tono).
-- **Resolución:** Propone correcciones basadas en el contexto previo almacenado en DB.
-- **Corrección:** Aplica los cambios al texto original.
-- **Validación:** Asegura que el texto corregido sea superior al original y mantenga el estilo literario.
-
-### Base de Datos de Memoria
-A diferencia de otros generadores simples, este sistema usa **PostgreSQL** para almacenar el "Estado Narrativo". Esto permite que la IA sepa exactamente qué ha ocurrido en capítulos anteriores, evitando contradicciones y permitiendo que el miedo o las heridas de los personajes evolucionen con el tiempo.
+narrative-forge/
+├── src/                    # Backend Python
+├── tests/                  # Tests pytest
+├── config/
+│   └── prompts/           # Plantillas de prompts
+├── scripts/              # Scripts auxiliares
+├── specs/                 # Documentación técnica
+│   ├── granular_beat_spec.md   # Spec principal (Backend)
+│   ├── ui_granular_spec.md     # Spec Frontend
+│   └── marco_sdd.md          # Marco SDD
+├── .env                   # Variables locales
+├── .env.example           # Template
+├── pyproject.toml        # Dependencias
+└── Makefile              # Comandos
+```
 
 ---
 
-## ⚙️ Configuración de Hardware y Optimización
+## 🧪 Tests
 
-El sistema está optimizado para funcionar en el siguiente perfil de hardware detectado:
-- **Host:** Ubuntu 24.04.4 LTS
-- **GPU:** NVIDIA RTX 3060 (12GB VRAM). *Nota: Para modelos de 32B (Qwen), se recomienda ajustar el contexto o usar cuantización si la VRAM se llena.*
-- **RAM:** 64GB DDR4.
-- **Almacenamiento:** Se recomienda un disco SSD dedicado para los modelos de IA y la base de datos (aprox. 30GB+ en total).
+```bash
+# Ejecutar todos los tests
+make test
+
+# Test específico
+pytest tests/unit/domain/test_models.py -v
+
+# Con coverage
+pytest tests -v --cov=src --cov-report=html
+```
 
 ---
+
+## ⚙️ Variables de Entorno
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `API_HOST` | `0.0.0.0:8010` | Host de la API |
+| `OLLAMA_HOST` | `http://localhost:11434` | URL de Ollama |
+| `LLM_MODEL` | `qwen3.5:9b` | Modelo principal |
+| `DATABASE_URL` | `sqlite+aiosqlite:///stories.db` | SQLite |
+
+---
+
+## 📚 Specs
+
+| Spec | Descripción |
+|------|-------------|
+| [`specs/granular_beat_spec.md`](specs/granular_beat_spec.md) | Spec principal (Backend) |
+| [`specs/ui_granular_spec.md`](specs/ui_granular_spec.md) | Spec Frontend |
+| [`specs/marco_sdd.md`](specs/marco_sdd.md) | Marco SDD |
+| [`AGENTS.md`](AGENTS.md) | Configuración del agente |
+
+---
+
+## 🐛 debugging
+
+```bash
+# Ver errores en desarrollo
+uv run uvicorn src.main:app --reload --log-level debug
+```
+
+## 📄 Licencia
+
+MIT

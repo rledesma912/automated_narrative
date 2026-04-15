@@ -1,26 +1,34 @@
+"""FastAPI application entrypoint."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.presentation.api import story_router
+from src.presentation.routers import story_router, beat_router, export_router
 
 app = FastAPI(
     title="NarrativeForge API",
-    version="0.1.0",
-    description="Motor de generación de relatos de terror con Ollama"
+    version="1.0.0",
+    description="Sistema de generación granular de relatos de terror",
 )
 
-# Configuración de CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # En producción se debe restringir a los dominios del wizard
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Inclusión de Routers
-app.include_router(story_router.router, prefix="/api/v1", tags=["Stories"])
+app.include_router(story_router, prefix="/api/v1")
+app.include_router(beat_router, prefix="/api/v1")
+app.include_router(export_router, prefix="/api/v1")
+
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "service": "NarrativeForge API"}
+    return {"status": "ok", "service": "NarrativeForge"}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}

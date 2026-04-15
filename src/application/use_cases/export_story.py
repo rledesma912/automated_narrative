@@ -1,44 +1,27 @@
-from pathlib import Path
-from uuid import UUID
+"""ExportStoryUseCase - exporta la historia a Markdown."""
 
-from src.config import settings
 from src.domain.interfaces import StoryRepository
-from src.infrastructure.renderers.markdown_renderer import MarkdownRenderer
 
 
 class ExportStoryUseCase:
-    """Caso de uso encargado de ensamblar y guardar el relato final."""
+    """Caso de uso para exportar una historia."""
 
-    def __init__(self, repository: StoryRepository, renderer: MarkdownRenderer):
-        self.repository = repository
-        self.renderer = renderer
-        self.output_dir = Path(settings.output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+    def __init__(self, story_repository: StoryRepository):
+        self.story_repository = story_repository
 
-    async def execute(self, story_id: UUID) -> str:
-        """Ensambla el relato y devuelve el path del archivo generado."""
+    async def execute(self, story_id) -> str:
+        """Exporta la historia a Markdown."""
+        story = await self.story_repository.get_by_id(story_id)
 
-        # 1. Obtener datos de la DB
-        story = await self.repository.get_story(story_id)
         if not story:
-            raise ValueError(f"Historia {story_id} no encontrada.")
+            from src.domain.exceptions import StoryNotFoundError
 
-        acts = await self.repository.get_acts(story_id)
-        if not acts:
-            raise ValueError(f"La historia {story_id} no tiene actos generados.")
+            raise StoryNotFoundError(str(story_id))
 
-        # Ordenar actos por número por si acaso
-        acts.sort(key=lambda x: x.number)
+        md = f"# {story.title}\n\n"
 
-        # 2. Renderizar Markdown
-        md_content = self.renderer.render_story(story, acts)
+        for beat in sorted(story.beats, key=lambda b: b.number):
+            md += f"## {beat.number}. {beat.summary}\n\n"
+            md += beat.content + "\n\n"
 
-        # 3. Guardar archivo físico
-        # Usamos el título para el nombre del archivo (limpiando caracteres raros)
-        safe_title = "".join([c if c.isalnum() else "_" for c in story.title]).strip("_")
-        file_path = self.output_dir / f"{safe_title}_{str(story_id)[:8]}.md"
-
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(md_content)
-
-        return str(file_path)
+        return md
