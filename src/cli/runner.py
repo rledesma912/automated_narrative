@@ -23,19 +23,22 @@ def main() -> None:
         "generate",
         help="Generar historia completa (plan + beats narrados)",
     )
-    generate_parser.add_argument("--title", required=True, help="Título de la historia")
-    generate_parser.add_argument("--protagonist", required=True, help="Protagonista")
+    generate_parser.add_argument(
+        "--story-id",
+        help="ID de historia existente en DB (formato: nombre_timestamp)",
+    )
+    generate_parser.add_argument("--title", help="Título de la historia")
+    generate_parser.add_argument("--protagonist", help="Protagonista")
     generate_parser.add_argument(
         "--relator",
         default="tercera_persona",
         choices=["primera_persona", "tercera_persona"],
         help="Tipo de relator",
     )
-    generate_parser.add_argument("--escenarios", required=True, help="Escenario(s)")
-    generate_parser.add_argument("--sinopsis", required=True, help="Sinopsis de la historia")
+    generate_parser.add_argument("--escenarios", help="Escenario(s)")
+    generate_parser.add_argument("--sinopsis", help="Sinopsis de la historia")
     generate_parser.add_argument(
         "--atmosfera",
-        required=True,
         help="Atmósfera de la historia",
     )
     generate_parser.add_argument("--beats", type=int, default=10, help="Cantidad de beats")
@@ -88,17 +91,24 @@ def main() -> None:
 
     try:
         if args.command == "generate":
-            commands.generate(
-                title=args.title,
-                protagonista=args.protagonist,
-                relator=args.relator,
-                escenarios=args.escenarios,
-                sinopsis=args.sinopsis,
-                atmosfera=args.atmosfera,
-                num_beats=args.beats,
-                use_mock=not args.real,
-                output_dir=args.output,
-            )
+            if args.story_id:
+                commands.generate_from_db(
+                    story_id=args.story_id,
+                    use_mock=not args.real,
+                    output_dir=args.output,
+                )
+            else:
+                commands.generate(
+                    title=args.title,
+                    protagonista=args.protagonist,
+                    relator=args.relator,
+                    escenarios=args.escenarios,
+                    sinopsis=args.sinopsis,
+                    atmosfera=args.atmosfera,
+                    num_beats=args.beats,
+                    use_mock=not args.real,
+                    output_dir=args.output,
+                )
         elif args.command == "plan":
             commands.plan(
                 title=args.title,

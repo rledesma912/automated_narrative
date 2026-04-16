@@ -52,6 +52,23 @@ class SQLStoryRepository:
 
         return self._row_to_story(row)
 
+    async def get_by_string_id(self, story_id: str) -> Story | None:
+        """Get story by string ID (e.g., 'el_monte_prohibido_1744742400')."""
+        conn = await get_connection()
+
+        cursor = await conn.execute(
+            "SELECT * FROM story WHERE id = ?",
+            (story_id,),
+        )
+
+        row = await cursor.fetchone()
+        await conn.close()
+
+        if not row:
+            return None
+
+        return self._row_to_story(row)
+
     async def update(self, story: Story) -> Story:
         """Update a story."""
         return await self.save(story)

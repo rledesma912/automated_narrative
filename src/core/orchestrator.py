@@ -66,6 +66,16 @@ class StoryRunner:
 
         return story
 
+    async def run_from_story(self, story: Story) -> Story:
+        """Ejecuta la narración de beats existentes en DB (no genera nuevo plan)."""
+        logger.info(f"[RUN_FROM_STORY] Starting: {story.title}", module="orchestrator", line=1)
+
+        await self._run_narrate_all(story)
+
+        logger.info(f"[RUN_FROM_STORY] Completed: {story.title}", module="orchestrator", line=1)
+
+        return story
+
     async def _run_plan(self, story: Story, num_beats: int) -> list[Beat]:
         """Genera el plan de beats."""
         logger.info(f"[_RUN_PLAN] Generating {num_beats} beats", module="orchestrator", line=1)

@@ -274,3 +274,55 @@ async def _export_async(
     output_path = renderer.render(story, beats, output_dir)
 
     logger.info(f"Exported to: {output_path}", module="commands", line=1)
+
+
+def generate_from_db(
+    story_id: str,
+    use_mock: bool,
+    output_dir: Path,
+) -> None:
+    """Generate story from existing DB entry."""
+    logger.info(f"Starting story generation from DB: {story_id}", module="commands", line=1)
+
+    try:
+        import asyncio
+
+        asyncio.run(_generate_from_db_async(story_id, use_mock, output_dir))
+    except StoryNotFoundError:
+        raise
+    except OllamaConnectionError:
+        raise
+    except Exception as e:
+        logger.error(f"Generation from DB failed: {e}", module="commands", line=1)
+        raise GenerationError(str(e))
+
+    logger.info(f"Story generation from DB completed: {story_id}", module="commands", line=1)
+
+
+async def _generate_from_db_async(
+    story_id: str,
+    use_mock: bool,
+    output_dir: Path,
+) -> None:
+    """Async implementation of generate_from_db."""
+    await _init_database()
+
+    story_repo = SQLStoryRepository()
+    story = await story_repo.get_by_string_id(story_id)
+
+    if not story:
+        raise StoryNotFoundError(story_id)
+
+    llm = _get_llm_adapter(use_mock)
+    beat_repo = SQLBeatRepository()
+    prompt_builder = PromptBuilder()
+
+    runner = StoryRunner(
+        llm_adapter=llm,
+        story_repo=story_repo,
+        beat_repo=beat_repo,
+        prompt_builder=prompt_builder,
+        output_dir=output_dir,
+    )
+
+    await runner.run_from_story(story)
