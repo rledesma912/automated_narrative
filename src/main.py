@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.presentation.routers import story_router, beat_router, export_router
+from src.presentation.routers import beat_router, export_router, story_router
 
 app = FastAPI(
     title="NarrativeForge API",

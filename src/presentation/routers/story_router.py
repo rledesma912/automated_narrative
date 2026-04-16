@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from src.presentation.schemas.request import StoryCreateRequest
 from src.presentation.schemas.response import StoryResponse
@@ -65,9 +65,7 @@ async def get_story(story_id: str):
     story = await repo.get_by_id(UUID(story_id))
 
     if not story:
-        raise HTTPException(
-            status_code=404, detail=f"Historia no encontrada: {story_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     return StoryResponse(
         id=str(story.id),

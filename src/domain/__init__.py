@@ -1,21 +1,21 @@
 """Domain layer - Entities and business rules."""
 
-from src.domain.models import (
-    Story,
-    Beat,
-    StoryPlan,
-    NarrativeJournal,
-    StoryStatus,
-)
-from src.domain.interfaces import (
-    LLMProvider,
-    StoryRepository,
-    BeatRepository,
-)
 from src.domain.exceptions import (
+    BeatNotFoundError,
     NarrativeError,
     StoryNotFoundError,
-    BeatNotFoundError,
+)
+from src.domain.interfaces import (
+    BeatRepository,
+    LLMProvider,
+    StoryRepository,
+)
+from src.domain.models import (
+    Beat,
+    NarrativeJournal,
+    Story,
+    StoryPlan,
+    StoryStatus,
 )
 
 __all__ = [

@@ -4,8 +4,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
-from src.presentation.schemas.response import BeatResponse
 from src.presentation.schemas.request import BeatUpdateRequest
+from src.presentation.schemas.response import BeatResponse
 
 router = APIRouter(tags=["Beats"])
 
@@ -38,9 +38,7 @@ async def update_beat(story_id: str, beat_number: int, request: BeatUpdateReques
     beat = await repo.get_by_number(UUID(story_id), beat_number)
 
     if not beat:
-        raise HTTPException(
-            status_code=404, detail=f"Beat no encontrado: {beat_number}"
-        )
+        raise HTTPException(status_code=404, detail=f"Beat no encontrado: {beat_number}")
 
     beat.summary = request.summary
     await repo.update(beat, UUID(story_id))
@@ -51,12 +49,12 @@ async def update_beat(story_id: str, beat_number: int, request: BeatUpdateReques
 @router.post("/stories/{story_id}/beats/{beat_number}", response_model=BeatResponse)
 async def generate_beat(story_id: str, beat_number: int):
     """Generate content for a beat."""
-    from src.infrastructure.database.repositories import (
-        SQLStoryRepository,
-        SQLBeatRepository,
-    )
-    from src.infrastructure.adapters import OllamaAdapter
     from src.application.use_cases.narrate_beat import NarrateBeatUseCase
+    from src.infrastructure.adapters import OllamaAdapter
+    from src.infrastructure.database.repositories import (
+        SQLBeatRepository,
+        SQLStoryRepository,
+    )
 
     story_repo = SQLStoryRepository()
     beat_repo = SQLBeatRepository()
@@ -64,15 +62,11 @@ async def generate_beat(story_id: str, beat_number: int):
 
     story = await story_repo.get_by_id(UUID(story_id))
     if not story:
-        raise HTTPException(
-            status_code=404, detail=f"Historia no encontrada: {story_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     beat = await beat_repo.get_by_number(UUID(story_id), beat_number)
     if not beat:
-        raise HTTPException(
-            status_code=404, detail=f"Beat no encontrado: {beat_number}"
-        )
+        raise HTTPException(status_code=404, detail=f"Beat no encontrado: {beat_number}")
 
     use_case = NarrateBeatUseCase(llm)
     generated_beat, _ = await use_case.execute(story, beat)

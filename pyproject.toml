@@ -38,8 +38,11 @@ headed = false
 
 [tool.ruff]
 line-length = 100
-ignore = ["E501", "ARG002", "B008", "B904"]
 target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["E501", "ARG002", "B008", "B904"]
+select = ["E", "F", "W", "I", "N", "ARG", "B"]
 
 [tool.mypy]
 pythonversion = "312"

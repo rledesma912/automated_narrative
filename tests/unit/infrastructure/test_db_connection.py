@@ -1,0 +1,117 @@
+"""Tests for database connection."""
+
+import os
+import tempfile
+
+import pytest
+
+from src.config import settings
+from src.infrastructure.database.connection import get_connection, init_db
+
+
+class TestDbConnection:
+    """Tests for database connection."""
+
+    @pytest.fixture
+    def temp_db_path(self, monkeypatch):
+        """Create temporary database path."""
+        fd, path = tempfile.mkstemp(suffix=".db")
+        os.close(fd)
+        monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{path}")
+        yield path
+        if os.path.exists(path):
+            os.remove(path)
+
+    @pytest.fixture
+    async def setup_db(self, temp_db_path):
+        """Initialize database."""
+        await init_db()
+
+    @pytest.mark.asyncio
+    async def test_init_db_creates_tables(self, temp_db_path, setup_db):
+        """Test that init_db creates required tables."""
+        conn = await get_connection()
+
+        cursor = await conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        )
+        rows = await cursor.fetchall()
+        table_names = [row["name"] for row in rows]
+        await conn.close()
+
+        assert "story" in table_names
+        assert "beat" in table_names
+        assert "narrative_journal" in table_names
+
+    @pytest.mark.asyncio
+    async def test_get_connection_returns_connection(self, temp_db_path):
+        """Test that get_connection returns a valid connection."""
+        conn = await get_connection()
+
+        assert conn is not None
+
+        await conn.close()
+
+    @pytest.mark.asyncio
+    async def test_story_table_has_correct_columns(self, temp_db_path, setup_db):
+        """Test that story table has all required columns."""
+        conn = await get_connection()
+
+        cursor = await conn.execute("PRAGMA table_info(story)")
+        rows = await cursor.fetchall()
+        columns = {row["name"] for row in rows}
+        await conn.close()
+
+        required = {
+            "id",
+            "title",
+            "protagonista",
+            "relator",
+            "escenarios",
+            "sinopsis",
+            "atmosfera",
+            "status",
+            "created_at",
+        }
+        assert required.issubset(columns), f"Missing: {required - columns}"
+
+    @pytest.mark.asyncio
+    async def test_beat_table_has_correct_columns(self, temp_db_path, setup_db):
+        """Test that beat table has all required columns."""
+        conn = await get_connection()
+
+        cursor = await conn.execute("PRAGMA table_info(beat)")
+        rows = await cursor.fetchall()
+        columns = {row["name"] for row in rows}
+        await conn.close()
+
+        required = {
+            "id",
+            "story_id",
+            "number",
+            "summary",
+            "content",
+            "status",
+            "technical_context",
+            "created_at",
+        }
+        assert required.issubset(columns), f"Missing: {required - columns}"
+
+    @pytest.mark.asyncio
+    async def test_narrative_journal_table_has_correct_columns(self, temp_db_path, setup_db):
+        """Test that narrative_journal table has all required columns."""
+        conn = await get_connection()
+
+        cursor = await conn.execute("PRAGMA table_info(narrative_journal)")
+        rows = await cursor.fetchall()
+        columns = {row["name"] for row in rows}
+        await conn.close()
+
+        required = {
+            "id",
+            "story_id",
+            "last_events",
+            "unresolved_mysteries",
+            "physical_emotional_state",
+        }
+        assert required.issubset(columns), f"Missing: {required - columns}"

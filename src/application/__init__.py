@@ -1,18 +1,20 @@
 """Application layer - Use cases and services."""
 
-from src.application.dto import StoryDTO, BeatDTO
+from src.application.dto import BeatCreateDTO, BeatResponseDTO, StoryCreateDTO, StoryResponseDTO
+from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.use_cases import (
-    CreateStoryUseCase,
     CreateStoryPlanUseCase,
-    NarrateBeatUseCase,
-    NarrateBatchUseCase,
+    CreateStoryUseCase,
     ExportStoryUseCase,
+    NarrateBatchUseCase,
+    NarrateBeatUseCase,
 )
-from src.application.services import PromptBuilder, MemoryJournalist
 
 __all__ = [
-    "StoryDTO",
-    "BeatDTO",
+    "StoryCreateDTO",
+    "StoryResponseDTO",
+    "BeatCreateDTO",
+    "BeatResponseDTO",
     "CreateStoryUseCase",
     "CreateStoryPlanUseCase",
     "NarrateBeatUseCase",

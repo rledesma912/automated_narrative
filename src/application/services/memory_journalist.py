@@ -3,8 +3,8 @@
 import json
 from typing import Optional
 
-from src.domain.models import Beat, NarrativeJournal, Story
 from src.domain.interfaces import LLMProvider
+from src.domain.models import Beat, NarrativeJournal, Story
 
 
 class MemoryJournalist:
@@ -53,12 +53,8 @@ class MemoryJournalist:
     ) -> str:
         """Build el prompt para actualizar el journal."""
         prev_events = previous_journal.last_events if previous_journal else ""
-        prev_mysteries = (
-            previous_journal.unresolved_mysteries if previous_journal else ""
-        )
-        prev_state = (
-            previous_journal.physical_emotional_state if previous_journal else ""
-        )
+        prev_mysteries = previous_journal.unresolved_mysteries if previous_journal else ""
+        prev_state = previous_journal.physical_emotional_state if previous_journal else ""
 
         return f"""Eres el diario de memoria de una historia de terror. Registras lo que ocurre.
 
@@ -79,9 +75,7 @@ Responde SOLO con este JSON exacto:
 }}
 """
 
-    def _parse_journal(
-        self, text: str, previous: Optional[NarrativeJournal]
-    ) -> NarrativeJournal:
+    def _parse_journal(self, text: str, previous: Optional[NarrativeJournal]) -> NarrativeJournal:
         """Parsea la respuesta del LLM en journal."""
         try:
             data = json.loads(text.strip())

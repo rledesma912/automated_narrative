@@ -14,7 +14,7 @@ class SQLBeatRepository:
         conn = await get_connection()
 
         await conn.execute(
-            """INSERT OR REPLACE INTO beat 
+            """INSERT OR REPLACE INTO beat
             (story_id, number, summary, content, status, technical_context, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (

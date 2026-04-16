@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from src.domain.models import Story, Beat, StoryStatus, NarrativeJournal
+from src.domain.models import Beat, NarrativeJournal, Story, StoryStatus
 
 
 def create_sample_story() -> Story:

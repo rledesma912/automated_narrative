@@ -1,9 +1,9 @@
 """Infrastructure layer - adapters and external services."""
 
-from src.infrastructure.adapters import OllamaAdapter, MockLLMAdapter
+from src.infrastructure.adapters import MockLLMAdapter, OllamaAdapter
 from src.infrastructure.database.repositories import (
-    SQLStoryRepository,
     SQLBeatRepository,
+    SQLStoryRepository,
 )
 from src.infrastructure.normalizers import ResponseNormalizer
 from src.infrastructure.renderers import MarkdownRenderer

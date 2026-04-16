@@ -20,14 +20,10 @@ async def export_story(story_id: str) -> PlainTextResponse:
     try:
         story = await story_repo.get_by_id(UUID(story_id))
     except Exception:
-        raise HTTPException(
-            status_code=404, detail=f"Historia no encontrada: {story_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     if not story:
-        raise HTTPException(
-            status_code=404, detail=f"Historia no encontrada: {story_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     from src.infrastructure.database.repositories import SQLBeatRepository
 

@@ -1,11 +1,11 @@
 """Domain entities."""
 
+import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from pydantic import UUID4, BaseModel, Field
-import uuid
 
 
 class StoryStatus(str, Enum):

@@ -3,7 +3,7 @@
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from src.domain.models import Story, Beat
+from src.domain.models import Beat, Story
 
 
 class LLMResponse:

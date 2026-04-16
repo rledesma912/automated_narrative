@@ -44,10 +44,10 @@ clean:
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null
 
 db:
-	@chmod +x scripts/init_db.sh && ./scripts/init_db.sh
+	@chmod +x scripts/bash/init_db.sh && ./scripts/bash/init_db.sh
 
 list:
-	@chmod +x scripts/list.sh && ./scripts/list.sh
+	@chmod +x scripts/bash/list_stories.sh && ./scripts/bash/list_stories.sh
 
 status:
 	@chmod +x scripts/status.sh && ./scripts/status.sh $(ARG)

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from src.config import settings
-from src.domain.models import Story, Beat
+from src.domain.models import Beat, Story
 
 
 class PromptBuilder:
@@ -26,9 +26,7 @@ class PromptBuilder:
         if self._system_template is None:
             self._system_template = self._load_prompt("system.md")
 
-        reglas_str = (
-            "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        )
+        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
         if self._system_template:
             return self._system_template.format(
@@ -79,9 +77,7 @@ Cada beat debe ser un momento clave de la historia.
 Responde solo con una lista numerada de beats, cada uno en una línea.
 """
 
-    def build_beat_prompt(
-        self, story: Story, beat: Beat, previous_content: str = ""
-    ) -> str:
+    def build_beat_prompt(self, story: Story, beat: Beat, previous_content: str = "") -> str:
         """Build el prompt para narrar un beat."""
         base = f"""NARRA EL BEAT #{beat.number}:
 {beat.summary}
@@ -100,9 +96,7 @@ Extiende este momento (150-300 palabras)."""
 
     def build_voice_prompt(self, story: Story) -> str:
         """Build el system prompt para la Voz."""
-        reglas_str = (
-            "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        )
+        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
         return f"""Eres la Voz narrativa de una historia de terror.
 Tu estilo: {story.atmosfera}

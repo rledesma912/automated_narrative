@@ -12,9 +12,10 @@ FastAPI + WebSocket API for automated horror narrative generation using Ollama (
 
 | Spec | Scope | Cuando |
 |------|-------|--------|
-| [`specs/granular_beat_spec.md`](./specs/granular_beat_spec.md) | Backend | Desarrollo API, Use Cases, Domain |
-| [`specs/ui_granular_spec.md`](./specs/ui_granular_spec.md) | Frontend | Desarrollo UI, Vistas, JS |
-| [`specs/marco_sdd.md`](./specs/marco_sdd.md) | Marco SDD | Definiciones obligatorias |
+| [`specs/001_marco_sdd.md`](./specs/001_marco_sdd.md) | Marco SDD | Definiciones obligatorias |
+| [`specs/002_granular_beat_spec.md`](./specs/002_granular_beat_spec.md) | Backend | Uso Cases, Domain |
+| [`specs/004_cli_robust_spec.md`](./specs/004_cli_robust_spec.md) | CLI | desarrollo de CLI |
+| [`specs/003_ui_granular_spec.md`](./specs/003_ui_granular_spec.md) | Frontend | Desarrollo UI |
 
 ## Definiciones Críticas (SDD)
 
@@ -54,12 +55,53 @@ make clean     # remove __pycache__, .pytest_cache, .ruff_cache
 
 **Order:** `make lint` → `make test` → review
 
+## CLI Commands (Core Python)
+
+```bash
+# Generación completa (Mock - desarrollo)
+python -m src generate \
+  --title "La Casa Abandonada" \
+  --protagonist "María" \
+  --relator tercera_persona \
+  --escenarios "Casa embrujada" \
+  --sinopsis "Una historia de terror" \
+  --atmosfera terror \
+  --beats 10
+
+# Generación completa (Ollama real)
+python -m src generate \
+  --title "La Casa Abandonada" \
+  --protagonist "María" \
+  --escenarios "Casa embrujada" \
+  --sinopsis "Una historia" \
+  --atmosfera terror \
+  --real
+
+# Solo plan (beats)
+python -m src plan --title "Historia" --beats 8
+
+# Narrar beats específicos
+python -m src narrate --story-id <UUID> --beats 1,2,3
+
+# Exportar historia
+python -m src export --story-id <UUID> --format markdown
+```
+
 ## Architecture (Backend)
 
 ```
 src/
+├── __main__.py           # Entry point: python -m src
 ├── main.py           # FastAPI entrypoint
 ├── config.py         # Env config (pydantic-settings)
+├── cli/              # CLI (Core Python - sin API)
+│   ├── __init__.py
+│   ├── commands.py   # generate, plan, narrate, export
+│   ├── exceptions.py # CLIError, ValidationError, etc.
+│   ├── logger.py    # Logging robusto (logs/)
+│   └── runner.py    # CLI runner (argparse)
+├── core/             # Orchestrator (flujo completo)
+│   └── orchestrator.py
 ├── domain/          # Entities + Interfaces
 │   ├── models.py    # Story, Beat, NarrativeJournal
 │   ├── interfaces.py  # Protocols (LLMProvider, Repository)
@@ -68,10 +110,10 @@ src/
 │   ├── use_cases/  # CreateStory, NarrateBeat, etc.
 │   └── services/  # PromptBuilder, MemoryJournalist
 ├── infrastructure/  # Adapters
-│   ├── adapters/  # OllamaAdapter
+│   ├── adapters/  # OllamaAdapter, MockLLMAdapter
 │   ├── database/  # SQL repositories
-│   └── normalizers/  # ResponseCleaner
-└── presentation/   # API
+│   └── renderers/  # MarkdownRenderer
+└── presentation/   # API (REST)
     └── routers/   # REST endpoints
 ```
 
@@ -81,3 +123,6 @@ src/
 - **DB:** SQLite at `stories.db` (aiosqlite async driver)
 - **Ollama:** Must be running locally; models configured per-request
 - **Linting:** Ruff ignores E501, ARG002, B008, B904
+- **CLI Entry:** Use `python -m src <command>` (no API requerida)
+- **Logs:** Se generan en `logs/narrative-{YYYYMMDD}.log`
+- **Desarrollo:** Por defecto usa MockLLMAdapter (usar `--real` para Ollama)

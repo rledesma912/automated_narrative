@@ -2,10 +2,10 @@
 
 from typing import Optional
 
-from src.config import settings
-from src.domain.models import Beat, NarrativeJournal, Story
-from src.domain.interfaces import LLMProvider
 from src.application.services import MemoryJournalist, PromptBuilder
+from src.config import settings
+from src.domain.interfaces import LLMProvider
+from src.domain.models import Beat, NarrativeJournal, Story
 
 
 class NarrateBeatUseCase:
@@ -51,9 +51,7 @@ class NarrateBeatUseCase:
         beat.content = response.text.strip()
         beat.status = "completed"
 
-        updated_journal = await self.memory_journalist.update_journal(
-            story, beat, journal
-        )
+        updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
 
         return beat, updated_journal
 

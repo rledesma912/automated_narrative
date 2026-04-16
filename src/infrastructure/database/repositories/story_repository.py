@@ -14,7 +14,7 @@ class SQLStoryRepository:
         conn = await get_connection()
 
         await conn.execute(
-            """INSERT OR REPLACE INTO story 
+            """INSERT OR REPLACE INTO story
             (id, title, protagonista, relator, escenarios, sinopsis, atmosfera, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
@@ -62,9 +62,7 @@ class SQLStoryRepository:
 
         await conn.execute("DELETE FROM beat WHERE story_id = ?", (str(story_id),))
         await conn.execute("DELETE FROM story WHERE id = ?", (str(story_id),))
-        await conn.execute(
-            "DELETE FROM narrative_journal WHERE story_id = ?", (str(story_id),)
-        )
+        await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (str(story_id),))
 
         await conn.commit()
         await conn.close()

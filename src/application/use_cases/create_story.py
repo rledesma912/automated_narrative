@@ -1,8 +1,8 @@
 """CreateStoryUseCase - crea una nueva historia."""
 
-from src.domain.models import Story, StoryStatus
-from src.domain.interfaces import StoryRepository
 from src.application.dto import StoryCreateDTO
+from src.domain.interfaces import StoryRepository
+from src.domain.models import Story, StoryStatus
 
 
 class CreateStoryUseCase:

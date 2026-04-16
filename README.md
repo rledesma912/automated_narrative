@@ -10,29 +10,73 @@
 
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) (gestor de paquetes)
-- [Ollama](https://ollama.com) ejecutarándose con modelo `qwen3.5:9b`
+- [Ollama](https://ollama.com) ejecutándose con modelo `qwen3.5:9b` (opcional para desarrollo)
 
-### Instalar y Ejecutar
+### Instalar
 
 ```bash
 # Instalar dependencias (aisla con uv virtual env)
 make install
-
-# Iniciar API con hot-reload
-make dev
-
-# La API está disponible en http://localhost:8010
 ```
 
-### Comandos Disponibles
+---
+
+## 🧪 Validación del Sistema (Mi Machete)
+
+```bash
+# 1. Lint + Tests
+make lint && make test
+
+# 2. Inicializar DB
+make db
+# o
+./scripts/bash/init_db.sh
+```
+
+---
+
+## 🔧 Comandos CLI (Core Python - Sin API)
+
+```bash
+# Generar historia completa (Mock - desarrollo)
+./scripts/bash/run_generate.sh \
+  --title "La Casa Abandonada" \
+  --protagonist "María" \
+  --escenarios "Casa embrujada" \
+  --sinopsis "Una historia de terror" \
+  --atmosfera terror \
+  --beats 8
+
+# Generar historia (Ollama real - producción)
+./scripts/bash/run_generate.sh \
+  --title "La Casa" --protagonist "María" \
+  --escenarios "Casa" --sinopsis "Historia" \
+  --atmosfera terror --real
+
+# Generar solo plan (beats)
+./scripts/bash/run_plan.sh "Mi Historia" 8
+
+# Listar historias
+./scripts/bash/list_stories.sh
+
+# Exportar a Markdown
+./scripts/bash/run_export.sh <story-id> [output-dir]
+
+# Narrar beats específicos
+./scripts/bash/run_narrate.sh <story-id> 1,2,3
+```
+
+### Alternativa: make commands
 
 | Comando | Descripción |
 |---------|-----------|
-| `make install` | Instala dependencias con `uv sync` |
-| `make dev` | Levanta API en `0.0.0.0:8010` |
 | `make test` | Ejecuta tests con coverage |
 | `make lint` | Lint + formato con ruff |
+| `make db` | Inicializa la base de datos |
+| `make list` | Lista todas las historias |
 | `make clean` | Limpia cache |
+| `make dev` | Levanta API (requiere Ollama) |
+| `make install` | Instala dependencias con `uv sync` |
 
 ---
 
@@ -40,8 +84,16 @@ make dev
 
 ```
 src/
+├── __main__.py                 # Entry point: python -m src
 ├── main.py                    # FastAPI entrypoint
 ├── config.py                  # Settings (pydantic-settings)
+├── cli/                       # CLI (Core Python - sin API)
+│   ├── commands.py           # generate, plan, narrate, export
+│   ├── exceptions.py         # CLIError, ValidationError, etc.
+│   ├── logger.py             # Logging robusto (logs/)
+│   └── runner.py             # CLI runner (argparse)
+├── core/                      # Orchestrator (flujo completo)
+│   └── orchestrator.py
 ├── domain/
 │   ├── models.py            # Story, Beat, StoryPlan, NarrativeJournal
 │   ├── interfaces.py       # Protocols (LLMProvider, Repository)
@@ -53,7 +105,7 @@ src/
 ├── infrastructure/
 │   ├── adapters/         # OllamaAdapter, MockLLMAdapter
 │   ├── database/          # SQLite repositories
-│   └── normalizers/       # ResponseCleaner
+│   └── renderers/         # MarkdownRenderer
 └── presentation/
     └── routers/           # REST endpoints
 ```

@@ -1,7 +1,7 @@
 """NarrateBatchUseCase - genera todos los beats."""
 
-from src.domain.models import Beat, Story
 from src.application.use_cases.narrate_beat import NarrateBeatUseCase
+from src.domain.models import Beat, Story
 
 
 class NarrateBatchUseCase:

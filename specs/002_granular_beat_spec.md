@@ -1513,15 +1513,46 @@ tests/
 - [x] Implementar `MemoryJournalist` (continuidad narrativa)
 - [x] Tests: `tests/unit/application/test_narrate_beat.py`
 
-### ⏳ Hito 3: Persistencia y Ensamblaje
+### ✅ Hito 3: Persistencia y Ensamblaje
 
-- [ ] Implementar migración DB (tablas `beats`, `story_plans`, `narrative_journal`)
-- [ ] Implementar exportador de beats consolidado (`beat_document.py`)
-- [ ] Endpoint `GET /api/v1/stories/{id}/export`
-- [ ] CLI: `python cli_granular.py --export`
+- [x] Implementar migración DB (tablas `beats`, `story_plans`, `narrative_journal`)
+- [x] Tests de persistencia SQLite
+- [x] Implementar exportador (MarkdownRenderer)
 
-### ⏳ Hito 4: API y WebSocket
+### ⏳ Hito CLI-1: CLI Entry Point + Logger
 
+- [ ] Crear `src/__main__.py` (entry point)
+- [ ] Crear `src/cli/logger.py` (logging robusto)
+- [ ] Crear `src/cli/exceptions.py` (excepciones CLI)
+- [ ] Tests: `tests/unit/cli/test_logger.py`
+
+### ⏳ Hito CLI-2: Comandos CLI
+
+- [ ] Crear `src/cli/runner.py` (argparse)
+- [ ] Crear `src/cli/commands.py` (comandos)
+- [ ] Implementar comando `generate`
+- [ ] Implementar comando `plan`
+- [ ] Implementar comando `narrate`
+- [ ] Implementar comando `export`
+- [ ] Tests: `tests/unit/cli/test_commands.py`
+
+### ⏳ Hito CLI-3: Core Orchestrator
+
+- [ ] Crear `src/core/orchestrator.py`
+- [ ] Integrar Use Cases existentes
+- [ ] Integrar DB repositories
+- [ ] Tests: `tests/unit/core/test_orchestrator.py`
+
+### ⏳ Hito CLI-4: Scripts Bash + Testing E2E
+
+- [ ] Scripts bash en `scripts/`
+- [ ] Testing end-to-end
+- [ ] Validar Spec completo
+
+### ⏳ Hito 4: API y WebSocket (POSTERIOL)
+
+- [ ] Ver [CLI Robust Spec](./004_cli_robust_spec.md) para implementación CLI primero
+- [ ] Una vez completado CLI, implementar API REST
 - [ ] Endpoint: `POST /api/v1/stories` (crear historia)
 - [ ] Endpoint: `POST /api/v1/stories/{id}/plan` (generar beats)
 - [ ] Endpoint: `POST /api/v1/stories/{id}/beats/{n}` (generar beat)

@@ -1,8 +1,8 @@
 """CreateStoryPlanUseCase - genera la escaleta de beats."""
 
-from src.domain.models import Story, Beat, StoryPlan
-from src.domain.interfaces import LLMProvider
 from src.application.services import PromptBuilder
+from src.domain.interfaces import LLMProvider
+from src.domain.models import Beat, Story, StoryPlan
 
 
 class CreateStoryPlanUseCase:
@@ -56,8 +56,7 @@ class CreateStoryPlanUseCase:
 
         if not beats:
             beats = [
-                Beat(number=i, summary="Beat generated", status="pending")
-                for i in range(1, 9)
+                Beat(number=i, summary="Beat generated", status="pending") for i in range(1, 9)
             ]
 
         return beats

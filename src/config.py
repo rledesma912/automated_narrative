@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     llm_model_temperature: float = 0.6
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///stories.db"
+    database_url: str = "sqlite+aiosqlite://stories.db"
 
     # Paths
     output_dir: str = "output_stories"

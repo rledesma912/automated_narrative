@@ -1,9 +1,6 @@
 """Tests for domain models."""
 
-import pytest
-from uuid import UUID
-
-from src.domain.models import Story, Beat, StoryStatus, NarrativeJournal
+from src.domain.models import Beat, NarrativeJournal, Story, StoryStatus
 
 
 class TestStory:
