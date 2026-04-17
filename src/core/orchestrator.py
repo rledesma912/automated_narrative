@@ -119,7 +119,7 @@ class StoryRunner:
 
         narrate_beat = VozUseCase(self.llm)
         completed_beats = []
-        journal: NarrativeJournal | None = None
+        journal: NarrativeJournal | None = await self.story_repo.get_journal(story.id)
 
         for i, beat in enumerate(pending_beats):
             logger.info(
@@ -136,6 +136,8 @@ class StoryRunner:
             )
 
             await self.beat_repo.save(generated_beat, story.id)
+            if journal:
+                await self.story_repo.save_journal(story.id, journal)
             completed_beats.append(generated_beat)
 
             logger.info(

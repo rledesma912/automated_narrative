@@ -41,8 +41,8 @@ class MemoryJournalist:
         response = await self.llm.generate(
             prompt=prompt,
             system_prompt=self._get_system_prompt(),
-            model=settings.llm_model,
-            temperature=0.3,
+            model=settings.state_extractor_model,
+            temperature=settings.state_extractor_temperature,
         )
 
         return self._parse_journal(response.text, previous_journal)

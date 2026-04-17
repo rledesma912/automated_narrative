@@ -1012,33 +1012,38 @@ flowchart LR
         A[Formulario: Contexto] --> B[Formulario: Sinopsis]
         B --> C[Formulario: Revisar]
     end
-    
+
     subgraph "Pipeline IA"
         C --> D[🎬 Director]
         D --> E[📋 Plan: 8-10 Beats]
-        
+
         E --> F{Usuario_edita?}
         F -->|Sí| E
         F -->|No| G[🗣️ Voz]
-        
+
         G --> H[📄 Beat 150-300 palabras]
-        H --> I[📔 Journal]
+        H --> I[📔 Journalist]
+        I --> J[💾 DB: save_journal]
         I --> G
     end
-    
+
     subgraph "Salida"
-        H --> J[📖 Relato Completo]
-        J --> K[📥 Export Markdown]
+        H --> K[📖 Relato Completo]
+        K --> L[📥 Export Markdown]
     end
 ```
 
+> **Persistência:** El `NarrativeJournal` se guarda en SQLite (`narrative_journal` table) después de cada beat, permitiendo reanudar historias.
+
 ### Roles del LLM
 
-| Rol | Función | Input | Output | Temperatura |
-|-----|--------|-------|-------|-----------|
-| **Director** | Planificar estructura | Contexto + Sinopsis | 8-10 Beats (escaleta) | 0.4 |
-| **Voz** | Generar prosa | Beat + Contexto anterior + Journal | 150-300 palabras | 0.6 |
-| **Journalist** | Mantener coherencia | Beat generado | NarrativeJournal | 0.3 |
+| Rol | Uso LLM | Modelo | Temp Variable | Temperatura | Función | Input | Output |
+|-----|---------|--------|--------------|------------|---------|-------|--------|
+| **Director** | ✅ | `LLM_MODEL` | `DIRECTOR_TEMPERATURE` | 0.4 | Planificar estructura | Contexto + Sinopsis | 8-10 Beats (escaleta) |
+| **Voz** | ✅ | `LLM_MODEL` | `VOZ_TEMPERATURE` | 0.6 | Generar prosa | Beat + Contexto + Journal | 150-300 palabras |
+| **Journalist** | ✅ | `STATE_EXTRACTOR_MODEL` | `STATE_EXTRACTOR_TEMPERATURE` | 0.3 | Extraer estado narrativo | Beat generado | NarrativeJournal (JSON) |
+
+> **Nota:** `STATE_EXTRACTOR_MODEL` se usa en `MemoryJournalist.update_journal()` para extraer estado del beat. El journal **se persiste en DB** después de cada beat.
 
 ### Diagrama de Secuencia
 

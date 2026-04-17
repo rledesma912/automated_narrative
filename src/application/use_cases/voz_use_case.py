@@ -33,7 +33,7 @@ class VozUseCase:
     ) -> tuple[Beat, NarrativeJournal]:
         """Ejecuta el caso de uso."""
         model = settings.llm_model
-        temp = settings.llm_model_temperature
+        temp = settings.voz_temperature
 
         previous_content = self._build_previous_context(previous_beats)
 

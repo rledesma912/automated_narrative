@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     llm_model: str = "mistral:latest"
     llm_model_temperature: float = 0.6
+    state_extractor_model: str = "mistral:latest"
+    state_extractor_temperature: float = 0.3
+    director_temperature: float = 0.4
+    voz_temperature: float = 0.6
     # Gemini CLI
     gemini_cli_command: str = "gemini"
     gemini_model_name: str = "gemini-1.5-pro-latest"

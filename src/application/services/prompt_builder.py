@@ -59,6 +59,8 @@ Sinopsis: {story.sinopsis}
                 "planner"
             )  # Fallback uses dynamic generation
 
+        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+
         if self._planner_template:
             return self._planner_template.format(
                 title=story.title,
@@ -67,6 +69,7 @@ Sinopsis: {story.sinopsis}
                 sinopsis=story.sinopsis,
                 atmosfera=story.atmosfera,
                 num_beats=num_beats,
+                reglas=reglas_str,
             )
 
         return f"""Crea exactamente {num_beats} beats para esta historia de terror:
@@ -77,7 +80,11 @@ Escenarios: {story.escenarios}
 Sinopsis: {story.sinopsis}
 Atmósfera: {story.atmosfera}
 
+REGLAS DE LA HISTORIA:
+{reglas_str}
+
 REGLAS OBLIGATORIAS:
+- CADA beat debe respetar las reglas arriba.
 - Genera EXACTAMENTE {num_beats} beats
 - Cada beat debe ser una línea que empieza con el número: "1.", "2.", etc
 - No generes más de {num_beats} beats

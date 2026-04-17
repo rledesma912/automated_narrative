@@ -29,7 +29,8 @@ class MarkdownStoryParser:
 
     def parse(self, filename: str) -> MarkdownStoryData:
         """Parsea un archivo markdown y extrae los datos."""
-        file_path = self.input_dir / filename
+        clean_filename = Path(filename).name
+        file_path = self.input_dir / clean_filename
 
         if not file_path.exists():
             raise FileNotFoundError(f"Archivo no encontrado: {file_path}")

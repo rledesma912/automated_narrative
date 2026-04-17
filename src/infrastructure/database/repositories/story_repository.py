@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from src.domain.models import Story, StoryStatus
+from src.domain.models import NarrativeJournal, Story, StoryStatus
 from src.infrastructure.database.connection import get_connection
 
 
@@ -93,6 +93,46 @@ class SQLStoryRepository:
         await conn.close()
 
         return [self._row_to_story(row) for row in rows]
+
+    async def save_journal(self, story_id: UUID, journal: NarrativeJournal) -> None:
+        """Save or update the narrative journal for a story."""
+        conn = await get_connection()
+
+        await conn.execute(
+            """INSERT OR REPLACE INTO narrative_journal
+            (story_id, last_events, unresolved_mysteries, physical_emotional_state)
+            VALUES (?, ?, ?, ?)""",
+            (
+                str(story_id),
+                journal.last_events,
+                journal.unresolved_mysteries,
+                journal.physical_emotional_state,
+            ),
+        )
+
+        await conn.commit()
+        await conn.close()
+
+    async def get_journal(self, story_id: UUID) -> NarrativeJournal | None:
+        """Get the narrative journal for a story."""
+        conn = await get_connection()
+
+        cursor = await conn.execute(
+            "SELECT * FROM narrative_journal WHERE story_id = ?",
+            (str(story_id),),
+        )
+
+        row = await cursor.fetchone()
+        await conn.close()
+
+        if not row:
+            return None
+
+        return NarrativeJournal(
+            last_events=row["last_events"],
+            unresolved_mysteries=row["unresolved_mysteries"],
+            physical_emotional_state=row["physical_emotional_state"],
+        )
 
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""

@@ -3,6 +3,7 @@
 import re
 
 from src.application.services import PromptBuilder
+from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, Story, StoryPlan
 
@@ -31,7 +32,7 @@ class DirectorUseCase:
             prompt=prompt,
             system_prompt=system_prompt,
             model=None,
-            temperature=0.4,
+            temperature=settings.director_temperature,
         )
 
         beats = self._parse_beats(response.text, story.id, num_beats)
