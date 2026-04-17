@@ -1,0 +1,118 @@
+[2026-04-16 08:36:33] [ERROR] Generation failed: 4 validation errors for StoryCreateDTO
+protagonista
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+escenarios
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+sinopsis
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+atmosfera
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+[2026-04-16 08:36:33] [ERROR] [CLI] Generation error: 4 validation errors for StoryCreateDTO
+protagonista
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+escenarios
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+sinopsis
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+atmosfera
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_type
+[2026-04-16 13:34:06] [ERROR] [COMANDOS] Error en la exportación: MarkdownRenderer.render() takes 2 positional arguments but 4 were given
+[2026-04-16 13:34:06] [ERROR] [CLI] Error en la exportación: MarkdownRenderer.render() takes 2 positional arguments but 4 were given
+[2026-04-16 13:34:26] [ERROR] [COMANDOS] Error en la exportación: MarkdownRenderer.render() takes 2 positional arguments but 3 were given
+[2026-04-16 13:34:26] [ERROR] [CLI] Error en la exportación: MarkdownRenderer.render() takes 2 positional arguments but 3 were given
+[2026-04-16 20:15:38] [ERROR] [GEMINI-CLI] Error de ejecución (code 1): Error when talking to Gemini API Full report available at: /tmp/gemini-client-error-Turn.run-sendMessageStream-2026-04-16T23-15-38-002Z.json ModelNotFoundError: Requested entity was not found.
+    at classifyGoogleError (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:274421:12)
+    at retryWithBackoff (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:275105:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310999:28)
+    at async GeminiChat.streamWithRetries (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310837:29)
+    at async Turn.run (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:311329:24)
+    at async GeminiClient.processTurn (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315405:22)
+    at async GeminiClient.sendMessageStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315518:14)
+    at async file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:10168:26
+    at async main (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:15201:5) {
+  code: 404
+}
+An unexpected critical error occurred:[object Object]
+[2026-04-16 20:15:38] [ERROR] [GEMINI-CLI] Error inesperado: Error de Gemini CLI: Error when talking to Gemini API Full report available at: /tmp/gemini-client-error-Turn.run-sendMessageStream-2026-04-16T23-15-38-002Z.json ModelNotFoundError: Requested entity was not found.
+    at classifyGoogleError (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:274421:12)
+    at retryWithBackoff (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:275105:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310999:28)
+    at async GeminiChat.streamWithRetries (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310837:29)
+    at async Turn.run (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:311329:24)
+    at async GeminiClient.processTurn (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315405:22)
+    at async GeminiClient.sendMessageStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315518:14)
+    at async file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:10168:26
+    at async main (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:15201:5) {
+  code: 404
+}
+An unexpected critical error occurred:[object Object]
+[2026-04-16 20:15:38] [ERROR] [COMANDOS] Error en la generación: Error de Gemini CLI: Error when talking to Gemini API Full report available at: /tmp/gemini-client-error-Turn.run-sendMessageStream-2026-04-16T23-15-38-002Z.json ModelNotFoundError: Requested entity was not found.
+    at classifyGoogleError (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:274421:12)
+    at retryWithBackoff (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:275105:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310999:28)
+    at async GeminiChat.streamWithRetries (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310837:29)
+    at async Turn.run (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:311329:24)
+    at async GeminiClient.processTurn (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315405:22)
+    at async GeminiClient.sendMessageStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315518:14)
+    at async file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:10168:26
+    at async main (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:15201:5) {
+  code: 404
+}
+An unexpected critical error occurred:[object Object]
+[2026-04-16 20:15:38] [ERROR] [CLI] Error en la generación: Error de Gemini CLI: Error when talking to Gemini API Full report available at: /tmp/gemini-client-error-Turn.run-sendMessageStream-2026-04-16T23-15-38-002Z.json ModelNotFoundError: Requested entity was not found.
+    at classifyGoogleError (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:274421:12)
+    at retryWithBackoff (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:275105:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310999:28)
+    at async GeminiChat.streamWithRetries (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310837:29)
+    at async Turn.run (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:311329:24)
+    at async GeminiClient.processTurn (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315405:22)
+    at async GeminiClient.sendMessageStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315518:14)
+    at async file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:10168:26
+    at async main (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:15201:5) {
+  code: 404
+}
+An unexpected critical error occurred:[object Object]
+[2026-04-16 20:19:38] [ERROR] [COMANDOS] Error en la generación: Error de Gemini CLI: Error when talking to Gemini API Full report available at: /tmp/gemini-client-error-Turn.run-sendMessageStream-2026-04-16T23-19-38-379Z.json ModelNotFoundError: Requested entity was not found.
+    at classifyGoogleError (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:274421:12)
+    at retryWithBackoff (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:275105:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310999:28)
+    at async GeminiChat.streamWithRetries (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310837:29)
+    at async Turn.run (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:311329:24)
+    at async GeminiClient.processTurn (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315405:22)
+    at async GeminiClient.sendMessageStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315518:14)
+    at async file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:10168:26
+    at async main (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:15201:5) {
+  code: 404
+}
+An unexpected critical error occurred:[object Object]
+[2026-04-16 20:19:38] [ERROR] [CLI] Error en la generación: Error de Gemini CLI: Error when talking to Gemini API Full report available at: /tmp/gemini-client-error-Turn.run-sendMessageStream-2026-04-16T23-19-38-379Z.json ModelNotFoundError: Requested entity was not found.
+    at classifyGoogleError (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:274421:12)
+    at retryWithBackoff (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:275105:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GeminiChat.makeApiCallAndProcessStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310999:28)
+    at async GeminiChat.streamWithRetries (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:310837:29)
+    at async Turn.run (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:311329:24)
+    at async GeminiClient.processTurn (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315405:22)
+    at async GeminiClient.sendMessageStream (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/chunk-ZTFHMKKJ.js:315518:14)
+    at async file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:10168:26
+    at async main (file:///mnt/LLM/apps/node/.nvm/versions/node/v22.22.1/lib/node_modules/@google/gemini-cli/bundle/gemini.js:15201:5) {
+  code: 404
+}
+An unexpected critical error occurred:[object Object]
+[2026-04-16 22:08:58] [ERROR] [COMANDOS] Error en la generación: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+[2026-04-16 22:08:58] [ERROR] [CLI] Error en la generación: Client error '404 Not Found' for url 'http://127.0.0.1:11434/api/generate'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404

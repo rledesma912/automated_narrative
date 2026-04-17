@@ -1,14 +1,14 @@
-"""NarrateBatchUseCase - genera todos los beats."""
+"""VozBatchUseCase - genera todos los beats."""
 
-from src.application.use_cases.narrate_beat import NarrateBeatUseCase
+from src.application.use_cases.voz_use_case import VozUseCase
 from src.domain.models import Beat, Story
 
 
-class NarrateBatchUseCase:
-    """Caso de uso para narrar múltiples beats."""
+class VozBatchUseCase:
+    """Caso de uso para narrar múltiples beats (Voz)."""
 
-    def __init__(self, narrate_beat_use_case: NarrateBeatUseCase):
-        self.narrate_beat = narrate_beat_use_case
+    def __init__(self, voz_use_case: VozUseCase):
+        self.voz = voz_use_case
 
     async def execute(
         self,
@@ -24,7 +24,7 @@ class NarrateBatchUseCase:
                 completed_beats.append(beat)
                 continue
 
-            generated_beat, journal = await self.narrate_beat.execute(
+            generated_beat, journal = await self.voz.execute(
                 story=story,
                 beat=beat,
                 previous_beats=completed_beats,
@@ -34,3 +34,7 @@ class NarrateBatchUseCase:
             completed_beats.append(generated_beat)
 
         return completed_beats
+
+
+# Alias para backwards compatibility
+NarrateBatchUseCase = VozBatchUseCase

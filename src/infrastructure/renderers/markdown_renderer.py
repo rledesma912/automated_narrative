@@ -20,8 +20,14 @@ class MarkdownRenderer:
 
         sorted_beats = sorted(story.beats, key=lambda b: b.number)
 
+        seen_numbers = set()
         for beat in sorted_beats:
+            if beat.number in seen_numbers:
+                continue
+            seen_numbers.add(beat.number)
+
             md += f"## {beat.number}. {beat.summary}\n\n"
-            md += beat.content + "\n\n"
+            if beat.content:
+                md += beat.content + "\n\n"
 
         return md

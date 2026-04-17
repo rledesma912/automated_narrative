@@ -49,7 +49,7 @@ async def update_beat(story_id: str, beat_number: int, request: BeatUpdateReques
 @router.post("/stories/{story_id}/beats/{beat_number}", response_model=BeatResponse)
 async def generate_beat(story_id: str, beat_number: int):
     """Generate content for a beat."""
-    from src.application.use_cases.narrate_beat import NarrateBeatUseCase
+    from src.application.use_cases.voz_use_case import VozUseCase
     from src.infrastructure.adapters import OllamaAdapter
     from src.infrastructure.database.repositories import (
         SQLBeatRepository,
@@ -68,7 +68,7 @@ async def generate_beat(story_id: str, beat_number: int):
     if not beat:
         raise HTTPException(status_code=404, detail=f"Beat no encontrado: {beat_number}")
 
-    use_case = NarrateBeatUseCase(llm)
+    use_case = VozUseCase(llm)
     generated_beat, _ = await use_case.execute(story, beat)
 
     await beat_repo.update(generated_beat, UUID(story_id))

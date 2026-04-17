@@ -1,0 +1,1 @@
+Narra el beat en primera persona (100-200 palabras).

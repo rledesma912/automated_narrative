@@ -60,3 +60,8 @@ class Story(BaseModel):
     journal: NarrativeJournal = Field(default_factory=NarrativeJournal)
     status: StoryStatus = StoryStatus.PENDING
     created_at: datetime = Field(default_factory=datetime.now)
+
+    protagonist: str = ""  # English mapping
+    atmosphere: str = ""  # English mapping
+    scenarios: str = ""  # English mapping
+    synopsis: str = ""  # English mapping

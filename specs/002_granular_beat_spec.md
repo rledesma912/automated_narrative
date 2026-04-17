@@ -38,16 +38,13 @@
 
 ---
 
-## 📌 ASSUMPTIONS (A Clarificar)
+## 📌 ASSUMPTIONS (Referencia SSoT: [Marco SDD](./001_marco_sdd.md))
 
-> ASUMAMOS los siguientes puntos. CORREGIR antes de proceder si está incorrecto:
-
-1. **Backend:** Python 3.12 con FastAPI
-2. **LLM:** Ollama con modelos locales (qwen3.5:9b, gemma4:e4b)
-3. **DB:** SQLite con aiosqlite (archivo único `stories.db`)
+1. **Backend:** Python 3.12 con FastAPI (Puerto 8010)
+2. **LLM:** Ollama con modelos locales (`qwen3.5:9b`, `gemma4:e4b`)
+3. **DB:** SQLite con aiosqlite (`stories.db`)
 4. **Frontend:** Node.js + Express separado en puerto 3010
-5. **Puerto API:** 8010 (no 8000)
-6. **Gestión de paquetes:** uv + pyproject.toml | npm package.json
+5. **Roles:** Director (Planificación), Voz (Narración), Journalist (Coherencia)
 
 ---
 
@@ -81,15 +78,9 @@ Sistema de generación automatizada de relatos de terror en español usando IA l
 | Componente | Tecnología | Versión | Justificación |
 |-----------|-------------|--------|---------------|
 | **Lenguaje** | Python | >=3.12 | Async nativo, typing completo |
-| **Framework** | FastAPI | >=0.110.0 | Rendimiento, validación automática |
-| **Server** | uvicorn[standard] | >=0.27.0 | ASGI server con hot-reload |
-| **Validación** | pydantic | >=2.6.0 | Modelos tipados |
-| **Settings** | pydantic-settings | >=2.2.0 | Variables de entorno |
-| **HTTP Client** | httpx | >=0.27.0 | Llamadas async a Ollama |
-| **DB** | aiosqlite | >=0.20.0 | SQLite asíncrono |
-| **Templating** | jinja2 | >=3.1.3 | Templates prompts |
-| **Email** | aiosmtplib | >=0.0.1 | Notificaciones SMTP |
-| **Multi-part** | python-multipart | >=0.0.9 | Form uploads |
+| **Framework** | FastAPI | >=0.115.0 | Rendimiento, REST API |
+| **Server** | uvicorn[standard] | >=0.32.0 | ASGI server |
+| **LLM** | Ollama | - | `qwen3.5:9b` (Director/Voz), `gemma4:e4b` (Journalist) |
 
 ### Componentes de Desarrollo
 
@@ -726,32 +717,12 @@ sequenceDiagram
 
 ### Dependency Rule
 
-```
-┌─────────────────────────────────────────────┐
-│              PRESENTATION                    │
-│   (Routers, Schemas, Dependencies)         │
-└─────────────────┬───────────────────────────┘
-                  │ depends on
-                  ▼
-┌─────────────────────────────────────────────┐
-│              APPLICATION                    │
-│   (Use Cases, Services, DTOs)              │
-└─────────────────┬───────────────────────────┘
-                  │ depends on
-                  ▼
-┌─────────────────────────────────────────────┐
-│                 DOMAIN                     │
-│   (Models, Interfaces, Exceptions)         │
-└─────────────────────────────────────────────┘
-                  
-┌─────────────────────────────────────────────┐
-│              INFRASTRUCTURE                  │
-│   (Adapters, Repositories, Normalizers)     │
-└─────────────────┬───────────────────────────┘
-                  ▲
-       implements
-                  │
-└─────────────────┴───────────────────────────┘
+```mermaid
+graph TD
+    Presentation[Presentation Layer] --> Application[Application Layer]
+    Application --> Domain[Domain Layer]
+    Infrastructure[Infrastructure Layer] -.-> Domain
+    Infrastructure -.-> Application
 ```
 
 ### Ports and Adapters Pattern
@@ -1498,76 +1469,13 @@ tests/
 
 ---
 
-## 🎯 MILESTONES (SDD)
+## 🎯 MILESTONES (Referencia: [Marco SDD](./001_marco_sdd.md))
 
-### ✅ Hito 1: El Esqueleto (The Planner)
+Los hitos de implementación se gestionan de forma centralizada en el Marco SDD para evitar duplicidad. Los roles del sistema son:
 
-- [x] Definir modelos `Beat` y `StoryPlan` en `domain/models.py`
-- [x] Implementar `CreateStoryPlanUseCase` (Director)
-- [x] Crear prompt del Director para generar escaleta
-- [x] Tests: `tests/unit/application/test_planner.py`
-
-### ✅ Hito 2: La Voz y el Diario
-
-- [x] Implementar `NarrateBeatUseCase` (Voz)
-- [x] Implementar `MemoryJournalist` (continuidad narrativa)
-- [x] Tests: `tests/unit/application/test_narrate_beat.py`
-
-### ✅ Hito 3: Persistencia y Ensamblaje
-
-- [x] Implementar migración DB (tablas `beats`, `story_plans`, `narrative_journal`)
-- [x] Tests de persistencia SQLite
-- [x] Implementar exportador (MarkdownRenderer)
-
-### ⏳ Hito CLI-1: CLI Entry Point + Logger
-
-- [ ] Crear `src/__main__.py` (entry point)
-- [ ] Crear `src/cli/logger.py` (logging robusto)
-- [ ] Crear `src/cli/exceptions.py` (excepciones CLI)
-- [ ] Tests: `tests/unit/cli/test_logger.py`
-
-### ⏳ Hito CLI-2: Comandos CLI
-
-- [ ] Crear `src/cli/runner.py` (argparse)
-- [ ] Crear `src/cli/commands.py` (comandos)
-- [ ] Implementar comando `generate`
-- [ ] Implementar comando `plan`
-- [ ] Implementar comando `narrate`
-- [ ] Implementar comando `export`
-- [ ] Tests: `tests/unit/cli/test_commands.py`
-
-### ⏳ Hito CLI-3: Core Orchestrator
-
-- [ ] Crear `src/core/orchestrator.py`
-- [ ] Integrar Use Cases existentes
-- [ ] Integrar DB repositories
-- [ ] Tests: `tests/unit/core/test_orchestrator.py`
-
-### ⏳ Hito CLI-4: Scripts Bash + Testing E2E
-
-- [ ] Scripts bash en `scripts/`
-- [ ] Testing end-to-end
-- [ ] Validar Spec completo
-
-### ⏳ Hito 4: API y WebSocket (POSTERIOL)
-
-- [ ] Ver [CLI Robust Spec](./004_cli_robust_spec.md) para implementación CLI primero
-- [ ] Una vez completado CLI, implementar API REST
-- [ ] Endpoint: `POST /api/v1/stories` (crear historia)
-- [ ] Endpoint: `POST /api/v1/stories/{id}/plan` (generar beats)
-- [ ] Endpoint: `POST /api/v1/stories/{id}/beats/{n}` (generar beat)
-- [ ] WebSocket: Eventos `beat_started`, `beat_completed`, `plan_generated`
-
-### ⏳ Hito 5: UI (Referirse a UI Granular Spec)
-
-- Ver [UI Granular Spec](./ui_granular_spec.md) para implementación de frontend
-
-### ⏳ Hito 6: Limpieza y Deprecación
-
-- [ ] Identificar componentes legacy para eliminación
-- [ ] Implementar aliases de API para backward compat
-- [ ] Documentar plan de eliminación
-- [ ] Ejecutar limpieza
+1. **Director** (`CreateStoryPlanUseCase`): Genera la escaleta de beats.
+2. **Voz** (`NarrateBeatUseCase`): Transforma beats en prosa.
+3. **Journalist** (`MemoryJournalist`): Mantiene la coherencia narrativa.
 
 ---
 

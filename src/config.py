@@ -13,9 +13,13 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0:8010"
 
     # LLM
+    llm_provider: str = "ollama"  # ollama | gemini
     ollama_host: str = "http://localhost:11434"
-    llm_model: str = "qwen3.5:9b"
+    llm_model: str = "mistral:latest"
     llm_model_temperature: float = 0.6
+    # Gemini CLI
+    gemini_cli_command: str = "gemini"
+    gemini_model_name: str = "gemini-1.5-pro-latest"
 
     # Database
     database_url: str = "sqlite+aiosqlite://stories.db"

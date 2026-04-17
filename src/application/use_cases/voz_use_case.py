@@ -1,4 +1,4 @@
-"""NarrateBeatUseCase - genera prosa para un beat."""
+"""VozUseCase - genera prosa para un beat."""
 
 from typing import Optional
 
@@ -8,8 +8,11 @@ from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story
 
 
-class NarrateBeatUseCase:
-    """Caso de uso para narrar un beat (Voz)."""
+class VozUseCase:
+    """Caso de uso para narrar un beat (Voz).
+
+    Ejecución narrativa. Transforma el beat en prosa rica y atmosférica.
+    """
 
     def __init__(
         self,
@@ -81,3 +84,7 @@ class NarrateBeatUseCase:
 - Estado: {journal.physical_emotional_state}
 """
         )
+
+
+# Alias para backwards compatibility
+NarrateBeatUseCase = VozUseCase

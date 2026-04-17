@@ -41,7 +41,8 @@ async def init_db() -> None:
             status TEXT DEFAULT 'pending',
             technical_context TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (story_id) REFERENCES story(id)
+            FOREIGN KEY (story_id) REFERENCES story(id),
+            UNIQUE(story_id, number)
         )
     """)
 

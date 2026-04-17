@@ -36,10 +36,12 @@ class MemoryJournalist:
         """Actualiza el journal después de un beat."""
         prompt = self.prompt_builder.build_journal_prompt(story, beat, previous_journal)
 
+        from src.config import settings
+
         response = await self.llm.generate(
             prompt=prompt,
             system_prompt=self._get_system_prompt(),
-            model="qwen3.5:9b",
+            model=settings.llm_model,
             temperature=0.3,
         )
 

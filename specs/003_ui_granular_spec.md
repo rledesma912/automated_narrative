@@ -34,13 +34,11 @@
 
 ---
 
-## 📌 ASSUMPTIONS
+## 📌 ASSUMPTIONS (Referencia SSoT: [001 Marco SDD](./001_marco_sdd.md))
 
-1. **Frontend:** Node.js + Express.js + EJS
-2. **Puerto:** 3010
-3. **API:** Backend en puerto 8010
-4. **Template Engine:** EJS
-5. **Styling:** CSS vanilla con variables CSS
+1. **Frontend:** Node.js + Express.js + EJS (Puerto 3010)
+2. **API:** Backend en puerto 8010 (REST API)
+3. **WebSockets:** Implementación en fase posterior (Roadmap)
 
 ---
 

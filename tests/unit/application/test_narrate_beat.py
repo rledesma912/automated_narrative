@@ -1,14 +1,14 @@
-"""Tests for NarrateBeatUseCase."""
+"""Tests for VozUseCase."""
 
 import pytest
 
-from src.application.use_cases import NarrateBeatUseCase
+from src.application.use_cases import VozUseCase
 from src.domain.models import Beat, NarrativeJournal, Story
 from src.infrastructure.adapters import MockLLMAdapter
 
 
-class TestNarrateBeatUseCase:
-    """Tests for NarrateBeatUseCase."""
+class TestVozUseCase:
+    """Tests for VozUseCase."""
 
     @pytest.mark.asyncio
     async def test_execute_returns_beat_and_journal(self):
@@ -26,7 +26,7 @@ class TestNarrateBeatUseCase:
 
         mock_llm = MockLLMAdapter(fixed_response="Contenido generado")
 
-        use_case = NarrateBeatUseCase(mock_llm)
+        use_case = VozUseCase(mock_llm)
 
         result_beat, result_journal = await use_case.execute(story, beat)
 
@@ -50,7 +50,7 @@ class TestNarrateBeatUseCase:
         beat = Beat(number=1, summary="El protagonista entra", status="pending")
 
         mock_llm = MockLLMAdapter(fixed_response="El jeep se detuvo en la entrada...")
-        use_case = NarrateBeatUseCase(mock_llm)
+        use_case = VozUseCase(mock_llm)
 
         result_beat, _ = await use_case.execute(story, beat)
 
@@ -77,7 +77,7 @@ class TestNarrateBeatUseCase:
         beat = Beat(number=3, summary="Beat 3", status="pending")
 
         mock_llm = MockLLMAdapter(fixed_response="Contenido nuevo")
-        use_case = NarrateBeatUseCase(mock_llm)
+        use_case = VozUseCase(mock_llm)
 
         result_beat, _ = await use_case.execute(story, beat, previous_beats=previous_beats)
 
@@ -98,14 +98,45 @@ class TestNarrateBeatUseCase:
         beat = Beat(number=1, summary="Beat 1", status="pending")
 
         journal = NarrativeJournal(
-            last_events="El protagonista Entró a la casa",
+            last_events="El protagonista entró a la casa",
             unresolved_mysteries="¿Por qué está abandonada?",
             physical_emotional_state="Nervioso",
         )
 
         mock_llm = MockLLMAdapter(fixed_response="Contenido")
-        use_case = NarrateBeatUseCase(mock_llm)
+        use_case = VozUseCase(mock_llm)
 
         result_beat, result_journal = await use_case.execute(story, beat, journal=journal)
 
         assert isinstance(result_journal, NarrativeJournal)
+
+    @pytest.mark.asyncio
+    async def test_narrate_all_6_beats_sequentially(self):
+        """Test narrating all 6 beats in sequence maintains context."""
+        story = Story(
+            title="Test",
+            protagonista="Familia",
+            relator="primera_persona",
+            escenarios="Casa de campo",
+            sinopsis="Historia de terror",
+            atmosfera="terror psicológico",
+        )
+
+        beats = [Beat(number=i, summary=f"Beat {i}", status="pending") for i in range(1, 7)]
+
+        completed = []
+        journal = None
+
+        mock_llm = MockLLMAdapter(fixed_response="Contenido narrado")
+        use_case = VozUseCase(mock_llm)
+
+        for beat in beats:
+            result_beat, result_journal = await use_case.execute(
+                story, beat, previous_beats=completed, journal=journal
+            )
+            completed.append(result_beat)
+            journal = result_journal
+
+        assert len(completed) == 6
+        assert all(b.status == "completed" for b in completed)
+        assert all(b.content == "Contenido narrado" for b in completed)

@@ -54,6 +54,9 @@ Sinopsis: {story.sinopsis}
 
     def build_planner_prompt(self, story: Story, num_beats: int = 8) -> str:
         """Build el prompt del Director para generar la escaleta."""
+        if num_beats == 6:
+            return self._build_narrative_planner_prompt(story)
+
         if self._planner_template is None:
             self._planner_template = self._load_prompt("planner.md")
 
@@ -78,6 +81,26 @@ Atmósfera: {story.atmosfera}
 Cada beat debe ser un momento clave de la historia.
 Responde solo con una lista numerada de beats, cada uno en una línea.
 """
+
+    def _build_narrative_planner_prompt(self, story: Story) -> str:
+        """Build el prompt del Director para 6 beats narrativos."""
+        narrative_template = self._load_prompt("planner_prompt_narrative.md")
+
+        if narrative_template:
+            return narrative_template.format(
+                sinopsis=story.sinopsis[:200],  # Limit sinopsis length
+                protagonista=story.protagonista[:100],  # Limit protagonista
+            )
+
+        return f"""Responde solo con 6 líneas numeradas:
+1. Apertura: ...
+2. Incidente: ...
+3. Subida: ...
+4. Crisis: ...
+5. Cumbre: ...
+6. Desenlace: ...
+
+Historia: {story.sinopsis[:200]}"""
 
     def build_beat_prompt(self, story: Story, beat: Beat, previous_content: str = "") -> str:
         """Build el prompt para narrar un beat (usa voice.md o fallback)."""
