@@ -80,3 +80,37 @@
 [2026-04-17 17:41:24] [INFO] [COMANDOS] Iniciando exportación para historia: cf2355eb-14a3-4f5f-8dc8-52b588e4bdef
 [2026-04-17 17:41:24] [INFO] [COMANDOS] Historia exportada a: output_stories/El_Monte_Prohibido_17042026174124.md
 [2026-04-17 17:41:24] [INFO] [COMANDOS] Exportación completada para historia: cf2355eb-14a3-4f5f-8dc8-52b588e4bdef
+[2026-04-17 18:50:43] [INFO] [COMANDOS] Cargando historia desde: input_stories/el_monte_prohibido.md
+[2026-04-17 18:50:43] [INFO] [COMANDOS] Iniciando generación de historia: El Monte Prohibido
+[2026-04-17 18:50:43] [INFO] [FACTORY] Instanciando proveedor Ollama (Tohur/natsumura-storytelling-rp-llama-3.1:8b)
+[2026-04-17 18:50:43] [INFO] [ORQUESTADOR] Iniciando generación completa: El Monte Prohibido
+[2026-04-17 18:50:43] [INFO] [ORQUESTADOR] Historia creada en BD con ID: dbdfcbd1-8581-47ae-9334-c87b413e8fe4
+[2026-04-17 18:50:43] [INFO] [DIRECTOR] Planificando 10 beats
+[2026-04-17 18:50:55] [INFO] [DIRECTOR] Plan guardado: 10 beats generados
+[2026-04-17 18:50:55] [INFO] [VOZ] Iniciando narración de beats pendientes
+[2026-04-17 18:50:55] [INFO] [VOZ] Narrando Beat #1 (1/10)
+[2026-04-17 18:51:35] [INFO] [VOZ] Beat #1 completado y guardado
+[2026-04-17 18:51:35] [INFO] [VOZ] Narrando Beat #2 (2/10)
+[2026-04-17 18:52:50] [INFO] [VOZ] Beat #2 completado y guardado
+[2026-04-17 18:52:50] [INFO] [VOZ] Narrando Beat #3 (3/10)
+[2026-04-17 18:53:31] [INFO] [VOZ] Beat #3 completado y guardado
+[2026-04-17 18:53:31] [INFO] [VOZ] Narrando Beat #4 (4/10)
+[2026-04-17 18:54:11] [INFO] [VOZ] Beat #4 completado y guardado
+[2026-04-17 18:54:11] [INFO] [VOZ] Narrando Beat #5 (5/10)
+[2026-04-17 18:54:49] [INFO] [VOZ] Beat #5 completado y guardado
+[2026-04-17 18:54:49] [INFO] [VOZ] Narrando Beat #6 (6/10)
+[2026-04-17 18:55:27] [INFO] [VOZ] Beat #6 completado y guardado
+[2026-04-17 18:55:27] [INFO] [VOZ] Narrando Beat #7 (7/10)
+[2026-04-17 18:56:06] [INFO] [VOZ] Beat #7 completado y guardado
+[2026-04-17 18:56:06] [INFO] [VOZ] Narrando Beat #8 (8/10)
+[2026-04-17 18:56:45] [INFO] [VOZ] Beat #8 completado y guardado
+[2026-04-17 18:56:45] [INFO] [VOZ] Narrando Beat #9 (9/10)
+[2026-04-17 18:57:24] [INFO] [VOZ] Beat #9 completado y guardado
+[2026-04-17 18:57:24] [INFO] [VOZ] Narrando Beat #10 (10/10)
+[2026-04-17 18:58:03] [INFO] [VOZ] Beat #10 completado y guardado
+[2026-04-17 18:58:03] [INFO] [VOZ] Todos los beats han sido narrados con éxito
+[2026-04-17 18:58:03] [INFO] [ORQUESTADOR] Proceso finalizado con éxito: El Monte Prohibido
+[2026-04-17 18:58:03] [INFO] [COMANDOS] Generación de historia completada: El Monte Prohibido
+[2026-04-17 18:58:14] [INFO] [COMANDOS] Iniciando exportación para historia: cf2355eb-14a3-4f5f-8dc8-52b588e4bdef
+[2026-04-17 18:58:14] [INFO] [COMANDOS] Historia exportada a: output_stories/El_Monte_Prohibido_17042026185814.md
+[2026-04-17 18:58:14] [INFO] [COMANDOS] Exportación completada para historia: cf2355eb-14a3-4f5f-8dc8-52b588e4bdef

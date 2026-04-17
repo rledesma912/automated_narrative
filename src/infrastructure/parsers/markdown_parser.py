@@ -113,15 +113,24 @@ class MarkdownStoryParser:
         return [item.strip() for item in items]
 
     def _normalize_relator(self, relator: str) -> str:
-        """Normaliza relator a valores válidos."""
+        """Normaliza relator a valores válidos.
+
+        Mantiene nombres de personajes específicos (Irene, Ricardo, etc.)
+        que no sean valores estándar.
+        """
         relator_lower = str(relator).lower().strip()
+
         if "tercera" in relator_lower or "3" in relator_lower:
             return "tercera_persona"
         if "primera" in relator_lower or "1" in relator_lower:
             return "primera_persona"
         if "segunda" in relator_lower or "2" in relator_lower:
             return "segunda_persona"
-        return "primera_persona"
+
+        if relator_lower in ("primera_persona", "tercera_persona", "segunda_persona"):
+            return relator_lower
+
+        return relator.strip()
 
     # Alias for backwards compatibility
     _extract_data = _extract_data_via_regex

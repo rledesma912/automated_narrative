@@ -35,12 +35,19 @@ class VozUseCase:
         model = settings.llm_model
         temp = settings.voz_temperature
 
-        previous_content = self._build_previous_context(previous_beats)
+        previous_beats = previous_beats or []
+        if journal is None:
+            journal = NarrativeJournal()
 
-        prompt = self.prompt_builder.build_beat_prompt(story, beat, previous_content)
+        total_beats = len(story.beats) if story.beats else 10
 
-        if journal and journal.last_events:
-            prompt = self._inject_journal(prompt, journal)
+        prompt = self.prompt_builder.build_beat_prompt(
+            story=story,
+            beat=beat,
+            previous_beats=previous_beats,
+            journal=journal,
+            total_beats=total_beats,
+        )
 
         system_prompt = self.prompt_builder.build_voice_prompt(story)
 

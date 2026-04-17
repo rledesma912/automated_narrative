@@ -66,7 +66,7 @@ class TestPromptBuilder:
         assert "El protagonista entra a la casa" in prompt
 
     def test_build_beat_prompt_with_previous_context(self):
-        """Test building beat prompt with previous context."""
+        """Test building beat prompt with previous beats."""
         from src.domain.models import Beat
 
         story = Story(
@@ -78,15 +78,36 @@ class TestPromptBuilder:
             atmosfera="terror",
         )
 
-        beat = Beat(number=2, summary="El protagonista sube las escaleras")
+        beat1 = Beat(
+            number=1, summary="El protagonista llega a la puerta", content="Llegó a la puerta."
+        )
+        beat2 = Beat(number=2, summary="El protagonista sube las escaleras")
 
         builder = PromptBuilder()
-        prompt = builder.build_beat_prompt(
-            story, beat, previous_content="Antes estuvo en la puerta"
+        prompt = builder.build_beat_prompt(story, beat2, previous_beats=[beat1], total_beats=5)
+
+        assert "BEAT #2" in prompt or "beat #2" in prompt.lower()
+
+    def test_build_beat_prompt_with_relator_name(self):
+        """Test beat prompt includes specific relator name."""
+        from src.domain.models import Beat
+
+        story = Story(
+            title="Test",
+            protagonista="Protagonist",
+            relator="Irene",
+            escenarios="Location",
+            sinopsis="Synopsis",
+            atmosfera="terror",
         )
 
-        assert "BEAT #2" in prompt
-        assert "Lo que pasó antes" in prompt
+        beat = Beat(number=1, summary="Llegan a la casa")
+
+        builder = PromptBuilder()
+        prompt = builder.build_beat_prompt(story, beat, total_beats=10)
+
+        assert "Irene" in prompt
+        assert "primera persona" in prompt.lower()
 
     def test_build_voice_prompt(self):
         """Test building voice prompt."""

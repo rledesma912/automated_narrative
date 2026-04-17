@@ -30,7 +30,13 @@ class TestMarkdownStoryParser:
         assert parser._normalize_relator("primera_persona") == "primera_persona"
         assert parser._normalize_relator("primera") == "primera_persona"
         assert parser._normalize_relator("1ra") == "primera_persona"
-        assert parser._normalize_relator("Irene") == "primera_persona"  # Default: unknown = primera
+        assert parser._normalize_relator("Irene") == "Irene"  # Mantiene nombre específico
+
+    def test_normalize_relator_specific_name(self, parser):
+        """Mantiene nombres de personajes específicos."""
+        assert parser._normalize_relator("Irene") == "Irene"
+        assert parser._normalize_relator("Ricardo") == "Ricardo"
+        assert parser._normalize_relator("Mariano") == "Mariano"
 
     def test_normalize_relator_tercera(self, parser):
         """Normaliza relator tercera persona."""
@@ -83,7 +89,7 @@ Contenido del acto
 
         assert data.title == "el_monte_prohibido"
         assert "Ricardo" in data.protagonista
-        assert data.relator == "primera_persona"  # Default since "Irene" is not a standard value
+        assert data.relator == "Irene"  # Mantiene nombre específico
         assert "casa" in data.escenarios.lower()
         assert "familia" in data.sinopsis.lower()
         assert "No matar" in data.reglas[0]
