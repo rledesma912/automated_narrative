@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-import shlex
+
 from src.config import settings
 from src.domain.interfaces import LLMResponse
 

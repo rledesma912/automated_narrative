@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # Paths
     output_dir: str = "output_stories"
     prompts_dir: str = "config/prompts"
+    input_dir: str = "input_stories"
+
+    # Prompt filenames
+    prompt_file_voice: str = "voice.md"
+    prompt_file_system: str = "system.md"
+    prompt_file_journal: str = "journal.md"
 
     @property
     def api_host_port(self) -> tuple[str, int]:

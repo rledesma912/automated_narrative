@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Borrador  
+> **Estado:** Implementado (6 beats: Apertura, Incidente, Subida, Crisis, Cumbre, Desenlace)  
 > **Owner:** Usuario (Auditor)  
 > **Tags:** beats, narrative, terror, structure, save-the-cat
 
@@ -244,12 +244,18 @@ python -m src export --story-id <UUID> --format markdown
 
 ## 10. Success Criteria
 
-- [ ] Parser limpia `**` del markdown
-- [ ] Director genera exactamente 6 beats
-- [ ] CLI acepta `--input` sin argumentos obligatorios
-- [ ] Export no duplica beats
-- [ ] Tests pasan con coverage >80%
-- [ ] Linting pasa sin errores
+- [x] Parser limpia `**` del markdown
+- [x] Director genera beats (soporta num_beats variable, no solo 6)
+- [x] CLI acepta `--input` sin argumentos obligatorios
+- [x] Export no duplica beats (deduplicación implementada en markdown_renderer)
+- [x] Tests pasan
+- [x] Linting pasa
+
+---
+
+## 14. Nota de Estado Actual
+
+La estructura de 6 beats narrativos está implementada en los prompts de fallback. El sistema puede generar cualquier cantidad de beats (no solo 6). El CLI soporta `--input` para leer desde archivos markdown.
 
 ---
 

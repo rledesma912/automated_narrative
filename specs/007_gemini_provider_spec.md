@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Draft  
+> **Estado:** Implementado (adapter existe, no usado en producción)  
 > **Owner:** Arquitecto de Software  
 > **Tags:** infrastructure, llm, gemini, ports-and-adapters
 
@@ -118,7 +118,13 @@ class LLMFactory:
 
 ---
 
-## 9. Preguntas Abiertas
+## 9. Nota de Estado Actual
+
+El adapter `GeminiCLIAdapter` está implementado en `src/infrastructure/adapters/gemini_cli_adapter.py`. El sistema soporta `--provider gemini` desde CLI. Sin embargo, el provider default es Ollama.
+
+---
+
+## 10. Preguntas Abiertas
 
 1. ¿Deseamos que el comando CLI acepte un flag `--provider gemini` para sobrescribir el `.env` en tiempo de ejecución?
 2. ¿Cómo manejamos el `context` (memoria interna de Ollama) en Gemini? (Gemini usa historial de mensajes, no un vector de ints).

@@ -1,0 +1,45 @@
+[2026-04-17 01:32:39] [INFO] [COMANDOS] Cargando historia desde: el_monte_prohibido.md
+[2026-04-17 01:32:39] [INFO] [COMANDOS] Iniciando generación de historia: El Monte Prohibido
+[2026-04-17 01:32:39] [INFO] [FACTORY] Instanciando proveedor Ollama (Tohur/natsumura-storytelling-rp-llama-3.1:8b)
+[2026-04-17 01:32:39] [INFO] [ORQUESTADOR] Iniciando generación completa: El Monte Prohibido
+[2026-04-17 01:32:39] [INFO] [ORQUESTADOR] Historia creada en BD con ID: 51af52e2-f253-476e-9784-34e95b504922
+[2026-04-17 01:32:39] [INFO] [DIRECTOR] Planificando 3 beats
+[2026-04-17 01:32:48] [INFO] [DIRECTOR] Plan guardado: 3 beats generados
+[2026-04-17 01:32:48] [INFO] [VOZ] Iniciando narración de beats pendientes
+[2026-04-17 01:32:48] [INFO] [VOZ] Narrando Beat #1 (1/3)
+[2026-04-17 01:33:28] [INFO] [VOZ] Beat #1 completado y guardado
+[2026-04-17 01:33:28] [INFO] [VOZ] Narrando Beat #2 (2/3)
+[2026-04-17 01:34:10] [INFO] [VOZ] Beat #2 completado y guardado
+[2026-04-17 01:34:10] [INFO] [VOZ] Narrando Beat #3 (3/3)
+[2026-04-17 01:34:49] [INFO] [COMANDOS] Cargando historia desde: el_monte_prohibido.md
+[2026-04-17 01:34:49] [INFO] [COMANDOS] Iniciando generación de historia: El Monte Prohibido
+[2026-04-17 01:34:49] [INFO] [FACTORY] Usando proveedor Mock (Simulado)
+[2026-04-17 01:34:49] [INFO] [ORQUESTADOR] Iniciando generación completa: El Monte Prohibido
+[2026-04-17 01:34:49] [INFO] [ORQUESTADOR] Historia creada en BD con ID: 388a0364-cbbf-4730-b297-271812bbda2a
+[2026-04-17 01:34:49] [INFO] [DIRECTOR] Planificando 2 beats
+[2026-04-17 01:34:49] [INFO] [DIRECTOR] Plan guardado: 2 beats generados
+[2026-04-17 01:34:49] [INFO] [VOZ] Iniciando narración de beats pendientes
+[2026-04-17 01:34:49] [INFO] [VOZ] Narrando Beat #1 (1/2)
+[2026-04-17 01:34:49] [INFO] [VOZ] Beat #1 completado y guardado
+[2026-04-17 01:34:49] [INFO] [VOZ] Narrando Beat #2 (2/2)
+[2026-04-17 01:34:49] [INFO] [VOZ] Beat #2 completado y guardado
+[2026-04-17 01:34:49] [INFO] [VOZ] Todos los beats han sido narrados con éxito
+[2026-04-17 01:34:49] [INFO] [ORQUESTADOR] Proceso finalizado con éxito: El Monte Prohibido
+[2026-04-17 01:34:49] [INFO] [COMANDOS] Generación de historia completada: El Monte Prohibido
+[2026-04-17 01:43:28] [INFO] [COMANDOS] Cargando historia desde: el_monte_prohibido.md
+[2026-04-17 01:43:28] [INFO] [COMANDOS] Iniciando generación de historia: El Monte Prohibido
+[2026-04-17 01:43:28] [INFO] [FACTORY] Usando proveedor Mock (Simulado)
+[2026-04-17 01:43:28] [INFO] [ORQUESTADOR] Iniciando generación completa: El Monte Prohibido
+[2026-04-17 01:43:28] [INFO] [ORQUESTADOR] Historia creada en BD con ID: 0cefcf9b-7830-410d-bd1f-9c7464532113
+[2026-04-17 01:43:28] [INFO] [DIRECTOR] Planificando 3 beats
+[2026-04-17 01:43:28] [INFO] [DIRECTOR] Plan guardado: 3 beats generados
+[2026-04-17 01:43:28] [INFO] [VOZ] Iniciando narración de beats pendientes
+[2026-04-17 01:43:28] [INFO] [VOZ] Narrando Beat #1 (1/3)
+[2026-04-17 01:43:28] [INFO] [VOZ] Beat #1 completado y guardado
+[2026-04-17 01:43:28] [INFO] [VOZ] Narrando Beat #2 (2/3)
+[2026-04-17 01:43:29] [INFO] [VOZ] Beat #2 completado y guardado
+[2026-04-17 01:43:29] [INFO] [VOZ] Narrando Beat #3 (3/3)
+[2026-04-17 01:43:29] [INFO] [VOZ] Beat #3 completado y guardado
+[2026-04-17 01:43:29] [INFO] [VOZ] Todos los beats han sido narrados con éxito
+[2026-04-17 01:43:29] [INFO] [ORQUESTADOR] Proceso finalizado con éxito: El Monte Prohibido
+[2026-04-17 01:43:29] [INFO] [COMANDOS] Generación de historia completada: El Monte Prohibido

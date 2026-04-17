@@ -2,7 +2,8 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Borrador  
+> **Estado:** Implementado (sin uso en flow actual)  
+
 > **Owner:** Usuario (Auditor)  
 > **Tags:** infrastructure, mapper, i18n
 
@@ -191,12 +192,12 @@ def test_map_unknown_relator():
 - **Cómo:** Añadir campos paralelos al modelo existente, mantener backwards-compatibility
 
 **Tasks:**
-- [ ] T.1.1: Agregar campos inglés a Story en `domain/models.py`
-- [ ] T.1.2: Crear test unitario para nuevos campos
+- [x] T.1.1: Agregar campos inglés a Story en `domain/models.py`
+- [x] T.1.2: Crear test unitario para nuevos campos
 
 **Criteria:**
-- [ ] Story tiene campos `protagonist`, `atmosphere`, `scenarios`, `synopsis`
-- [ ] Tests pasan
+- [x] Story tiene campos `protagonist`, `atmosphere`, `scenarios`, `synopsis`
+- [x] Tests pasan
 
 ### Hito 2: TemplateMapper
 
@@ -205,16 +206,28 @@ def test_map_unknown_relator():
 - **Cómo:** Implementar adapter en `infrastructure/mappers/template_mapper.py`
 
 **Tasks:**
-- [ ] T.2.1: Crear directorio `infrastructure/mappers/`
-- [ ] T.2.2: Implementar `TemplateInput` dataclass
-- [ ] T.2.3: Implementar `TemplateMapper.map()`
-- [ ] T.2.4: Implementar `_map_relator()`
-- [ ] T.2.5: Crear tests unitarios
+- [x] T.2.1: Crear directorio `infrastructure/mappers/`
+- [x] T.2.2: Implementar `TemplateInput` dataclass
+- [x] T.2.3: Implementar `TemplateMapper.map()`
+- [x] T.2.4: Implementar `_map_relator()`
+- [x] T.2.5: Crear tests unitarios
 
 **Criteria:**
-- [ ] Mapper traduce todos los campos correctamente
-- [ ] Tests unitarios pasan
-- [ ] Linting pasa
+- [x] Mapper traduce todos los campos correctamente
+- [x] Tests unitarios pasan
+- [x] Linting pasa
+
+---
+
+## 11. Nota de Estado Actual
+
+**El componente está implementado pero NO se usa en el flow actual.**
+
+El flujo actual de generación (`generate` → `plan` → `narrate`) usa:
+- `MarkdownStoryParser` para parsear archivos input
+- `PromptBuilder` para construir prompts directamente
+
+El `TemplateMapper` quedó como implementación de referencia pero no está integrado en el flow principal. Se mantiene por si futuras implementaciones lo necesitan.
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Borrador  
+> **Estado:** Corregido (implementado en spec 011)  
 > **Owner:** Usuario (Auditor)  
 > **Tags:** bugfix, testing, exceptions
 
@@ -178,12 +178,12 @@ tests/
 - **Cómo:** Modificar firma del método y llamada en `execute`
 
 **Tasks:**
-- [ ] T.1.1: Modificar `_parse_beats` para recibir `num_beats`
-- [ ] T.1.2: Actualizar llamada en `execute`
-- [ ] T.1.3: Verificar que tests pasan
+- [x] T.1.1: Modificar `_parse_beats` para recibir `num_beats`
+- [x] T.1.2: Actualizar llamada en `execute`
+- [x] T.1.3: Verificar que tests pasan
 
 **Criteria:**
-- [ ] `test_execute_returns_default_beats_on_parse_failure` pasa
+- [x] `test_execute_returns_default_beats_on_parse_failure` pasa
 
 ### Hito 2: Corregir Bug #2 (tests de exceptions)
 
@@ -192,13 +192,22 @@ tests/
 - **Cómo:** Cambiar assertions para verificar mensajes en español
 
 **Tasks:**
-- [ ] T.2.1: Corregir `test_validation_error_message`
-- [ ] T.2.2: Corregir `test_generation_error_message`
-- [ ] T.2.3: Corregir `test_export_error_message`
-- [ ] T.2.4: Verificar que tests pasan
+- [x] T.2.1: Corregir `test_validation_error_message`
+- [x] T.2.2: Corregir `test_generation_error_message`
+- [x] T.2.3: Corregir `test_export_error_message`
+- [x] T.2.4: Verificar que tests pasan
 
 **Criteria:**
-- [ ] Los 3 tests de exceptions pasan
+- [x] Los 3 tests de exceptions pasan
+
+---
+
+## 11. Nota de Estado Actual
+
+**Ambos bugs fueron corregidos:**
+
+- **Bug #1:** Corregido en spec 011 (`beat_parsing_spec.md`)
+- **Bug #2:** Tests ya estaban correctos (verifican comportamiento en español)
 
 ---
 

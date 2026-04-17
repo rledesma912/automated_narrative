@@ -26,7 +26,7 @@ class PromptBuilder:
     def build_system_prompt(self, story: Story) -> str:
         """Build el system prompt base."""
         if self._system_template is None:
-            self._system_template = self._load_prompt("system.md")
+            self._system_template = self._load_prompt(settings.prompt_file_system)
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
@@ -54,11 +54,10 @@ Sinopsis: {story.sinopsis}
 
     def build_planner_prompt(self, story: Story, num_beats: int = 8) -> str:
         """Build el prompt del Director para generar la escaleta."""
-        if num_beats == 6:
-            return self._build_narrative_planner_prompt(story)
-
         if self._planner_template is None:
-            self._planner_template = self._load_prompt("planner.md")
+            self._planner_template = self._load_prompt(
+                "planner"
+            )  # Fallback uses dynamic generation
 
         if self._planner_template:
             return self._planner_template.format(
@@ -70,7 +69,7 @@ Sinopsis: {story.sinopsis}
                 num_beats=num_beats,
             )
 
-        return f"""Crea una escaleta de {num_beats} beats para esta historia de terror:
+        return f"""Crea exactamente {num_beats} beats para esta historia de terror:
 
 Título: {story.title}
 Protagonistas: {story.protagonista}
@@ -78,9 +77,13 @@ Escenarios: {story.escenarios}
 Sinopsis: {story.sinopsis}
 Atmósfera: {story.atmosfera}
 
-Cada beat debe ser un momento clave de la historia.
-Responde solo con una lista numerada de beats, cada uno en una línea.
-"""
+REGLAS OBLIGATORIAS:
+- Genera EXACTAMENTE {num_beats} beats
+- Cada beat debe ser una línea que empieza con el número: "1.", "2.", etc
+- No generes más de {num_beats} beats
+- Formato: "n. Título del beat" (una línea por beat)
+
+Responde solo con {num_beats} líneas numeradas."""
 
     def _build_narrative_planner_prompt(self, story: Story) -> str:
         """Build el prompt del Director para 6 beats narrativos."""
@@ -105,23 +108,10 @@ Historia: {story.sinopsis[:200]}"""
     def build_beat_prompt(self, story: Story, beat: Beat, previous_content: str = "") -> str:
         """Build el prompt para narrar un beat (usa voice.md o fallback)."""
         if self._voice_template is None:
-            self._voice_template = self._load_prompt("voice.md")
+            self._voice_template = self._load_prompt(settings.prompt_file_voice)
 
         if self._voice_template:
-            previous_context = (
-                f"Lo que pasó antes:\n{previous_content}"
-                if previous_content
-                else "[Sin contexto anterior]"
-            )
-
             return self._voice_template.format(
-                relator=story.relator,
-                protagonistas=story.protagonista,
-                escenarios=story.escenarios,
-                atmosfera=story.atmosfera,
-                sinopsis=story.sinopsis,
-                previous_context=previous_context,
-                beat_number=beat.number,
                 beat_summary=beat.summary,
             )
 
@@ -143,7 +133,7 @@ Extiende este momento (150-400 palabras)."""
     def build_voice_prompt(self, story: Story) -> str:
         """Build el system prompt para la Voz (usa voice.md o fallback)."""
         if self._voice_template is None:
-            self._voice_template = self._load_prompt("voice.md")
+            self._voice_template = self._load_prompt(settings.prompt_file_voice)
 
         if self._voice_template:
             reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
@@ -182,7 +172,7 @@ Instrucciones:
     ) -> str:
         """Build el prompt para actualizar el journal (usa journal.md o fallback)."""
         if self._journal_template is None:
-            self._journal_template = self._load_prompt("journal.md")
+            self._journal_template = self._load_prompt(settings.prompt_file_journal)
 
         prev_last_events = (
             previous_journal.last_events if previous_journal else "Sin eventos registrados"

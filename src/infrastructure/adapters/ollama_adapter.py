@@ -1,7 +1,5 @@
 """Ollama adapter for LLM."""
 
-import json
-
 import httpx
 
 from src.config import settings

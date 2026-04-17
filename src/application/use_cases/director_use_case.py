@@ -1,5 +1,7 @@
 """DirectorUseCase - genera la escaleta de beats."""
 
+import re
+
 from src.application.services import PromptBuilder
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, Story, StoryPlan
@@ -45,14 +47,18 @@ class DirectorUseCase:
         beats = []
         lines = text.strip().split("\n")
 
-        for i, line in enumerate(lines, 1):
+        for line in lines:
             line = line.strip()
-            if line and line[0].isdigit():
-                summary = line.split(".", 1)[-1].strip() if "." in line else line
+            # Extraer el número del beat (puede ser "1." o "1" al inicio)
+            match = re.match(r"^(\d+)", line)
+            if match:
+                beat_number = int(match.group(1))
+                # Extraer el contenido después del número
+                summary = line[len(match.group(0)) :].strip(".- ").strip()
                 if summary:
                     beats.append(
                         Beat(
-                            number=i,
+                            number=beat_number,
                             summary=summary,
                             status="pending",
                         )

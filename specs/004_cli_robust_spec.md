@@ -72,16 +72,16 @@ erDiagram
 | Hito | Descripción | Estado |
 |------|-------------|--------|
 | **CLI-1** | Entry Point + Logger | ✅ |
-| **CLI-2** | Comandos base (generate, plan, narrate) | ✅ |
+| **CLI-2** | Comandos base (generate, plan, narrate, export) | ✅ |
 | **CLI-3** | Orchestrator funcional | ✅ |
 | **CLI-4** | Scripts Bash de apoyo | ✅ |
-| **CLI-5** | Refactorización del PromptBuilder (SRP) | 🔄 Pendiente |
-| **CLI-6** | Inyección de Dependencias (Factories) | 🔄 Pendiente |
-| **CLI-7** | Tipado de Dominio (StrEnum para Status) | 🔄 Pendiente |
-| **CLI-8** | Integración de Checklists de Calidad | 🔄 Pendiente |
-| **CLI-9** | **Refactor de Nomenclatura de Roles** | 🔄 Nuevo |
-| **CLI-10** | **Hispanización Total (Logs y Errores)** | 🔄 Nuevo |
-| **CLI-11** | **File-Driven Generation (Input Strategy)** | 🔄 Nuevo |
+| **CLI-5** | Refactorización del PromptBuilder (SRP) | ✅ |
+| **CLI-6** | Inyección de Dependencias (Factories) | ✅ |
+| **CLI-7** | Tipado de Dominio (StrEnum para Status) | ✅ |
+| **CLI-8** | Integración de Checklists de Calidad | ✅ (usa opencode skills) |
+| **CLI-9** | **Refactor de Nomenclatura de Roles** | ✅ |
+| **CLI-10** | **Hispanización Total (Logs y Errores)** | ✅ |
+| **CLI-11** | **File-Driven Generation (Input Strategy)** | ✅ |
 
 ### Detalle Hito CLI-11: File-Driven Generation
 Refactorizar el flujo de entrada para desacoplar la captura de datos (CLI flags) de la lógica de creación de la historia.

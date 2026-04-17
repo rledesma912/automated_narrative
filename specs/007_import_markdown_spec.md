@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Borrador  
+> **Estado:** Implementado (--input funciona correctamente)  
 > **Owner:** Usuario (Auditor)  
 > **Tags:** CLI, input, markdown, parser
 
@@ -291,16 +291,18 @@ def test_parse_reglas():
 - **Cómo:** Modificar `cli/commands.py` y `cli/runner.py`
 
 **Tasks:**
-- [ ] T.2.1: Agregar argumento `--input` en runner
-- [ ] T.2.2: Integrar parser en función `generate`
-- [ ] T.2.3: Test end-to-end con archivo existente
+- [x] T.2.1: Agregar argumento `--input` en runner
+- [x] T.2.2: Integrar parser en función `generate`
+- [x] T.2.3: Test end-to-end con archivo existente
 
 **Criteria:**
-- [ ] `python -m src generate --input el_monte_prohibido.md --beats 10` funciona
+- [x] `python -m src generate --input el_monte_prohibido.md --beats 10` funciona
 
 ---
 
-## 11. Preguntas Abiertas
+## 12. Nota de Estado Actual
+
+El parser `MarkdownStoryParser` está implementado y funciona correctamente. El flag `--input` está integrado en el CLI.
 
 1. ¿El título debeExtraerse del nombre del archivo o del contenido?
 2. ¿Los actos (Acto 1, Acto 2) deben convertirse en beats predefinidos?

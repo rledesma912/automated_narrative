@@ -44,7 +44,7 @@ class VozUseCase:
 
         system_prompt = self.prompt_builder.build_voice_prompt(story)
 
-        response = await self.llm.generate(
+        response = await self._generate_with_retry(
             prompt=prompt,
             system_prompt=system_prompt,
             model=model,
@@ -57,6 +57,45 @@ class VozUseCase:
         updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
 
         return beat, updated_journal
+
+    async def _generate_with_retry(
+        self,
+        prompt: str,
+        system_prompt: str,
+        model: str,
+        temperature: float,
+        max_retries: int = 2,
+    ):
+        """Genera contenido con retry para manejar refusals."""
+        refusal_indicators = ["lo siento", "no puedo", "no puedo cumplir", "no es apropiado"]
+
+        for attempt in range(max_retries + 1):
+            response = await self.llm.generate(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                model=model,
+                temperature=temperature,
+            )
+
+            content_lower = response.text.lower().strip()
+            is_refusal = any(indicator in content_lower for indicator in refusal_indicators)
+
+            if not is_refusal:
+                return response
+
+            if attempt < max_retries:
+                prompt = self._rephrase_prompt(prompt)
+
+        return response
+
+    def _rephrase_prompt(self, original_prompt: str) -> str:
+        """Rephrase prompt to avoid refusal."""
+        rephrase_hint = """
+
+ATTENTION: Write naturally as a first-person horror story. Don't refuse or apologize.
+Just tell the story directly in a casual, conversational tone as if telling a friend about a paranormal experience.
+"""
+        return original_prompt + rephrase_hint
 
     def _build_previous_context(self, previous_beats: list[Beat] | None) -> str:
         """Construye contexto de beats anteriores."""

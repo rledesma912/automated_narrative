@@ -4,7 +4,7 @@ import pytest
 
 from src.application.services import PromptBuilder
 from src.application.use_cases import DirectorUseCase, VozUseCase
-from src.domain.models import Beat, Story
+from src.domain.models import Story
 from src.infrastructure.adapters import MockLLMAdapter
 from src.infrastructure.parsers import MarkdownStoryParser
 

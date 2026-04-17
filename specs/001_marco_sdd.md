@@ -48,8 +48,8 @@ Cada nueva funcionalidad debe definirse bajo estos puntos:
 ## 4. Modelos de Referencia (Ollama)
 
 El sistema está optimizado para los siguientes modelos locales:
-- **Principal (Voz/Director):** `qwen3.5:9b`
-- **Alternativo/Ligero:** `gemma4:e4b`
+- **Principal (Voz/Director):** `Tohur/natsumura-storytelling-rp-llama-3.1:8b` (storytelling) o `llama3.1:8b` (más rápido)
+- **Alternativo/Ligero:** `mistral:latest`
 - **Codificación:** `qwen2.5-coder:7b-instruct`
 
 ## 5. Modelo de Datos (ERD)
@@ -94,8 +94,7 @@ El desarrollo en **NarrativeForge** debe seguir estos principios irrenunciables:
 | **GEN-1** | Core | Implementación de Director, Voz y Journalist | ✅ |
 | **GEN-2** | Infra | Persistencia en SQLite y Repositorios | ✅ |
 | **CLI-1** | Interfaz | CLI funcional con comandos generate/plan/export | ✅ |
-| **REF-1** | Refactor | **Hito de Hispanización y Nomenclatura:** Cambiar todos los logs y excepciones a español. Renombrar casos de uso a Director/Voz. | 🔄 Pendiente |
-| **CLI-2** | Interfaz | **File-Driven Generation:** Refactor del core para permitir input desde archivos `.md` en `input_stories/`. | 🔄 Pendiente |
+| **CLI-2** | Interfaz | **File-Driven Generation:** Refactor del core para permitir input desde archivos `.md` en `input_stories/`. | ✅ |
 | **API-1** | Red | Implementación de API REST funcional | 🔄 Pendiente |
 | **UI-1** | Frontend | Interfaz visual en Express/EJS | 🔄 Pendiente |
 

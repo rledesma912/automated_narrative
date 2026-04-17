@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Draft  
+> **Estado:** Implementado (GeminiCLIAdapter funciona)  
 > **Owner:** Arquitecto de Software  
 > **Tags:** infrastructure, llm, gemini, cli, subprocess
 

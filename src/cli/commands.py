@@ -19,9 +19,9 @@ from src.cli.exceptions import (
 )
 from src.cli.logger import logger
 from src.core.orchestrator import StoryRunner
-from src.infrastructure.factories import LLMFactory
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
+from src.infrastructure.factories import LLMFactory
 from src.infrastructure.renderers import MarkdownRenderer
 
 

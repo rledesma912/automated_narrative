@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2026-04-16  
-> **Estado:** Borrador  
+> **Estado:** Implementado (aliases existen para backwards-compatibility)  
 > **Owner:** Usuario (Auditor)  
 > **Tags:** refactor, naming, roles, clean-architecture
 
@@ -166,11 +166,11 @@ src/application/use_cases/
 
 ## 9. Success Criteria
 
-- [ ] Clases renombradas: `DirectorUseCase`, `VozUseCase`, `VozBatchUseCase`
-- [ ] Todos los imports actualizados
-- [ ] Tests pasan: `make test` sin errores
-- [ ] Linting pasa: `make lint` sin errores
-- [ ] Spec 001 actualizado con nuevos nombres
+- [x] Clases renombradas: `DirectorUseCase`, `VozUseCase`, `VozBatchUseCase`
+- [x] Todos los imports actualizados
+- [x] Tests pasan: `make test` sin errores
+- [x] Linting pasa: `make lint` sin errores
+- [x] Spec 001 actualizado con nuevos nombres
 
 ---
 

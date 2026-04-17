@@ -1,9 +1,12 @@
 """MarkdownStoryParser - parser para archivos de historia markdown con soporte Frontmatter."""
 
 import re
-import yaml
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import yaml
+
+from src.config import settings
 
 
 @dataclass
@@ -22,7 +25,7 @@ class MarkdownStoryParser:
     """Parser para archivos de historia markdown con soporte para YAML Frontmatter."""
 
     def __init__(self, input_dir: Path | None = None):
-        self.input_dir = input_dir or Path("input_stories")
+        self.input_dir = input_dir or Path(settings.input_dir)
 
     def parse(self, filename: str) -> MarkdownStoryData:
         """Parsea un archivo markdown y extrae los datos."""
@@ -40,10 +43,11 @@ class MarkdownStoryParser:
         if frontmatter_match:
             try:
                 data = yaml.safe_load(frontmatter_match.group(1))
+                storyteller = data.get("storyteller") or data.get("relator", "")
                 return MarkdownStoryData(
                     title=data.get("title", file_path.stem),
                     protagonista=data.get("protagonist") or data.get("protagonista", ""),
-                    relator=self._normalize_relator(data.get("relator", "tercera_persona")),
+                    relator=self._normalize_relator(storyteller),
                     escenarios=data.get("escenarios") or data.get("scenarios", ""),
                     sinopsis=data.get("sinopsis") or data.get("synopsis", ""),
                     reglas=data.get("reglas") or data.get("rules", []),

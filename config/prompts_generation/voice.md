@@ -1,1 +1,3 @@
-Narra el beat en primera persona (100-200 palabras).
+Escena: {beat_summary}
+
+Contá esto en primera persona, como si me lo cuentes a un amigo. 直 接o, sin explicaciones.
