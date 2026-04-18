@@ -485,3 +485,9 @@ Hito 1 (YAML base)
 | `CLAUDE.md` | 7.1 | Actualizar |
 | `specs/001_marco_sdd.md` | 7.2 | Actualizar |
 | `config/llm_response_filters.yaml` | 7.3 | Deprecar |
+
+---
+
+## Nota — Evolución posterior (Spec 027)
+
+El shape descripto en este spec (`provider:` + `roles:` a nivel top) fue **reemplazado** por un shape de perfiles pre-configurados. Ver `specs/027_llm_profiles_spec.md` para el formato actual: `active_profile:` + `profiles:` con múltiples perfiles autocontenidos (cada uno con provider + roles completos) y override por `LLM_PROFILE`. Los mecanismos de este spec (normalizer pipeline, context_strategy, DI en use cases, response_filters con model_overrides) siguen vigentes sin cambios — el nuevo shape solo reorganiza cómo se expresa la config de provider/roles.

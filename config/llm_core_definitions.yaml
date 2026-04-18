@@ -29,7 +29,7 @@ profiles:
     ollama: { host: "http://localhost:11434" }
     roles:
       director:
-        model: Tohur/natsumura-storytelling-rp-llama-3.1:8b
+        model: mistral:latest
         temperature: 0.4
         num_ctx: 4096
         num_predict: 512
@@ -111,35 +111,19 @@ profiles:
         model: claude-sonnet-4-6
         temperature: 0.3
 
-  gemini-pro:
+  gemini-cli:
     provider: gemini
-    gemini: { cli_command: gemini, model: gemini-1.5-pro-latest }
+    gemini: { cli_command: gemini, model: gemini-2.5-flash }
     roles:
       director:
-        model: gemini-1.5-pro-latest
+        model: gemini-2.5-flash
         temperature: 0.4
       voz:
-        model: gemini-1.5-pro-latest
+        model: gemini-2.5-flash
         temperature: 0.6
         context_strategy: full
       journal:
-        model: gemini-1.5-pro-latest
-        temperature: 0.3
-
-  gemini-mixto:
-    # Pro para narrativa (calidad), Flash para journal (coste/velocidad)
-    provider: gemini
-    gemini: { cli_command: gemini, model: gemini-1.5-pro-latest }
-    roles:
-      director:
-        model: gemini-1.5-pro-latest
-        temperature: 0.4
-      voz:
-        model: gemini-1.5-pro-latest
-        temperature: 0.6
-        context_strategy: full
-      journal:
-        model: gemini-1.5-flash-latest
+        model: gemini-2.5-flash
         temperature: 0.3
 
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
