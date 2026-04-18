@@ -112,6 +112,39 @@ class TestVozUseCase:
         assert isinstance(result_journal, NarrativeJournal)
 
     @pytest.mark.asyncio
+    async def test_voz_uses_injected_normalizer(self):
+        """El normalizer inyectado limpia el texto raw antes de asignarlo al beat."""
+        story = Story(
+            title="Test",
+            protagonista="P",
+            relator="primera_persona",
+            escenarios="L",
+            sinopsis="S",
+            atmosfera="terror",
+        )
+
+        class SpyNormalizer:
+            def __init__(self):
+                self.calls: list[tuple[str, str]] = []
+
+            def normalize(self, text: str, model_name: str = "") -> str:
+                self.calls.append((text, model_name))
+                return "CONTENIDO LIMPIO"
+
+        raw = "## Encabezado feo\n\nTexto original."
+        mock_llm = MockLLMAdapter(fixed_response=raw)
+        spy = SpyNormalizer()
+
+        beat = Beat(number=1, summary="algo", status="pending")
+        use_case = VozUseCase(mock_llm, normalizer=spy)
+
+        result_beat, _, _ = await use_case.execute(story, beat)
+
+        assert spy.calls, "Normalizer no fue invocado"
+        assert spy.calls[0][0] == raw
+        assert result_beat.content == "CONTENIDO LIMPIO"
+
+    @pytest.mark.asyncio
     async def test_narrate_all_6_beats_sequentially(self):
         """Test narrating all 6 beats in sequence maintains context."""
         story = Story(

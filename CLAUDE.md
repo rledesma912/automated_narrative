@@ -69,12 +69,43 @@ API/CLI → CreateStoryUseCase → DB (story record)
 
 ## LLM Provider Abstraction
 
-All LLM calls go through `src/domain/interfaces/llm_provider.py`. Three adapters exist:
-- **OllamaAdapter** — default local LLM (`OLLAMA_HOST`, `LLM_MODEL` env vars)
-- **GeminiAdapter** — Google Gemini fallback
-- **MockLLMAdapter** — deterministic responses for tests
+All LLM calls go through the `LLMProvider` protocol (`src/domain/interfaces.py`). Cuatro adapters:
+- **OllamaAdapter** — LLM local por defecto. Lee `ollama.host` del YAML.
+- **AnthropicAdapter** — API remota. Lee `anthropic.model` del YAML y `ANTHROPIC_API_KEY` del `.env`.
+- **GeminiCLIAdapter** — Gemini vía CLI. Lee `gemini.cli_command` y `gemini.model` del YAML.
+- **MockLLMAdapter** — respuestas deterministas para tests.
 
-Switch providers via `LLM_PROVIDER` env var or by injecting adapters in `StoryRunner`.
+El proveedor activo se define en el YAML (`provider: ollama|anthropic|gemini|mock`). Puede sobreescribirse con la variable de entorno `LLM_PROVIDER` solo para casos de emergencia.
+
+## LLM Configuration (Spec 026 + 027)
+
+**Fuente de verdad: `config/llm_core_definitions.yaml`.** Ese archivo contiene perfiles pre-configurados (provider + roles completos), filtros de respuesta y overrides por modelo. El `.env` se usa **solo** para secretos (`ANTHROPIC_API_KEY`), paths y el override opcional `LLM_PROFILE`.
+
+### Perfiles (Spec 027)
+
+El YAML define múltiples perfiles bajo `profiles:`. Cada perfil es autocontenido: trae su `provider`, bloque adapter-specific (`ollama`/`anthropic`/`gemini`) y los 3 roles (`director`, `voz`, `journal`) con todos sus params. Se activa uno con `active_profile:` en el YAML o con la env `LLM_PROFILE` (override).
+
+Perfiles incluidos: `ollama-natsumura`, `ollama-llama31`, `ollama-mistral`, `anthropic-sonnet`, `gemini-pro`, `gemini-mixto`.
+
+Para agregar un perfil nuevo: copiar un bloque existente bajo `profiles:`, renombrarlo, cambiar modelos/params y activarlo con `active_profile:` o `LLM_PROFILE=<nombre>`.
+
+Precedencia de resolución: `env LLM_PROFILE` → `active_profile:` YAML → fallback `ollama-natsumura`. El resolver está en `src/config.py::_resolve_active_profile`.
+
+**Convención model-por-rol**: el `model` que se envía al LLM vive en `profiles.<perfil>.roles.<rol>.model`. Los bloques adapter (`ollama.host`, `anthropic.model`, `gemini.model`) solo aportan transporte / fallback. Esto permite mezclar modelos dentro del mismo perfil (ej. `gemini-mixto`: Pro para narrativa, Flash para journal).
+
+Campos por rol (`director`, `voz`, `journal`):
+- `model`, `temperature`, `num_ctx`, `num_predict`, `stop` (lista de tokens de corte).
+- `context_strategy` (solo rol `voz`): `full` | `beat_slice` | `none`. Controla qué parte de la sinopsis se inyecta al LLM por beat para evitar anticipaciones en modelos pequeños.
+
+Filtros (`response_filters`):
+- `thinking_tags` — bloques `<think>...</think>` que elimina `ResponseNormalizer`.
+- `strip_line_patterns` — regex por línea a descartar (encabezados markdown, separadores, preámbulos).
+- `preserve_paragraph_breaks: true` — conserva saltos `\n\n` y colapsa 3+ a 2.
+- `model_overrides` — parches extra por substring del nombre del modelo (ej: `natsumura` añade filtros para headers `### Apertura/Desarrollo/Cierre`).
+
+`ResponseNormalizer` (`src/infrastructure/normalizers/response_normalizer.py`) se inyecta en `DirectorUseCase` y `VozUseCase` desde `StoryRunner`. Siempre normaliza el texto raw del LLM antes de persistir.
+
+El archivo `config/llm_response_filters.yaml` está **deprecado** y ya no se lee — su contenido migró a la sección `response_filters` del nuevo YAML.
 
 ## Prompt System
 
@@ -88,16 +119,15 @@ Prompts live in `config/prompts_generation/` as Markdown templates:
 
 ## Key Environment Variables
 
+El `.env` solo contiene secretos y paths. Toda la config LLM vive en `config/llm_core_definitions.yaml`.
+
 ```
-OLLAMA_HOST=http://127.0.0.1:11434
-LLM_MODEL=Tohur/natsumura-storytelling-rp-llama-3.1:8b
+ANTHROPIC_API_KEY=...                               # solo si el perfil activo usa AnthropicAdapter
 DATABASE_URL=sqlite+aiosqlite:///stories.db
 PROMPTS_DIR=./config/prompts_generation
 OUTPUT_DIR=./output_stories
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
-DIRECTOR_TEMPERATURE=0.4
-VOZ_TEMPERATURE=0.6
-STATE_EXTRACTOR_TEMPERATURE=0.3
+# LLM_PROFILE=ollama-llama31                        # opcional: pisa active_profile del YAML
 ```
 
 ## Specs-Driven Development
@@ -107,6 +137,8 @@ The `specs/` directory contains the authoritative specs for all features:
 - `specs/002_granular_beat_spec.md` — Backend use cases and domain model details
 - `specs/003_ui_granular_spec.md` — Frontend spec
 - `specs/004_cli_robust_spec.md` — CLI implementation guide
+- `specs/026_llm_core_definitions_spec.md` — unified YAML-driven LLM config, context_strategy, normalizer pipeline
+- `specs/027_llm_profiles_spec.md` — pre-configured profiles (active_profile + LLM_PROFILE override)
 
 All new features must follow the naming conventions and layering rules in `001_marco_sdd.md`.
 

@@ -147,6 +147,48 @@ class TestPromptBuilder:
 
         assert "Sinopsis única de prueba para verificar fallback." in prompt
 
+    def test_resolve_sinopsis_full_strategy(self):
+        """full: retorna la sinopsis completa sin recortar."""
+        builder = PromptBuilder()
+        sinopsis = "Párrafo 1.\n\nPárrafo 2.\n\nPárrafo 3.\n\nPárrafo 4.\n\nPárrafo 5."
+        result = builder._resolve_sinopsis(sinopsis, beat_number=1, total_beats=5, strategy="full")
+        assert result == sinopsis
+
+    def test_resolve_sinopsis_none_strategy(self):
+        """none: retorna string vacío."""
+        builder = PromptBuilder()
+        result = builder._resolve_sinopsis("algo", beat_number=1, total_beats=5, strategy="none")
+        assert result == ""
+
+    def test_resolve_sinopsis_beat_slice_strategy_long_sinopsis(self):
+        """beat_slice con sinopsis larga: cada beat recibe su segmento proporcional."""
+        builder = PromptBuilder()
+        sinopsis = "\n\n".join([f"Párrafo {i}." for i in range(1, 6)])  # 5 párrafos
+
+        s1 = builder._resolve_sinopsis(sinopsis, 1, 5, "beat_slice")
+        s5 = builder._resolve_sinopsis(sinopsis, 5, 5, "beat_slice")
+
+        assert "Párrafo 1." in s1
+        assert "Párrafo 5." not in s1  # no espoilea el final
+        assert "Párrafo 5." in s5
+
+    def test_resolve_sinopsis_beat_slice_short_sinopsis_falls_back_to_two_sentences(self):
+        """beat_slice con sinopsis corta: devuelve primeras 2 oraciones como contexto general."""
+        builder = PromptBuilder()
+        sinopsis = "Primera oración. Segunda oración. Tercera oración que espoilea el final."
+        result = builder._resolve_sinopsis(sinopsis, beat_number=1, total_beats=5, strategy="beat_slice")
+
+        assert "Primera oración." in result
+        assert "Segunda oración." in result
+        assert "Tercera oración que espoilea el final." not in result
+
+    def test_resolve_sinopsis_unknown_strategy_defaults_to_beat_slice(self):
+        """Estrategia desconocida cae al comportamiento por defecto (beat_slice)."""
+        builder = PromptBuilder()
+        sinopsis = "Solo una oración."
+        result = builder._resolve_sinopsis(sinopsis, 1, 5, "cualquier_cosa")
+        assert "Solo una oración." in result
+
     def test_build_voice_prompt(self):
         """Test building voice prompt."""
         story = Story(

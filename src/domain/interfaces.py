@@ -27,8 +27,9 @@ class LLMProvider(Protocol):
         system_prompt: str | None = None,
         model: str = "mistral:latest",
         temperature: float = 0.6,
+        role: str | None = None,
     ) -> LLMResponse:
-        """Generate text with LLM."""
+        """Generate text with LLM. `role` permite al adapter leer config específica del rol."""
         ...
 
     async def close(self) -> None:

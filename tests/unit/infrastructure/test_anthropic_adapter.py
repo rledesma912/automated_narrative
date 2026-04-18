@@ -26,9 +26,10 @@ class TestAnthropicAdapterInit:
                 AnthropicAdapter()
 
     def test_con_api_key_parametro_no_lanza(self):
+        from src.config import settings
         with patch("src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"):
             adapter = AnthropicAdapter(api_key="test-key")
-            assert adapter.default_model == "claude-opus-4-7"
+            assert adapter.default_model == settings.anthropic_model
 
     def test_default_model_override(self):
         with patch("src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"):

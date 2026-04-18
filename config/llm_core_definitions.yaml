@@ -1,0 +1,175 @@
+version: "1.1"
+
+# ── Perfil activo ────────────────────────────────────────────────────────────
+#
+# Override: variable de entorno LLM_PROFILE pisa este valor.
+# Precedencia: env LLM_PROFILE → active_profile (YAML) → fallback ollama-natsumura.
+#
+# Para cambiar de modelo basta con editar esta línea o exportar LLM_PROFILE.
+# Cada perfil trae su provider y sus 3 roles completamente definidos.
+
+active_profile: ollama-natsumura
+
+# ── Perfiles pre-configurados ────────────────────────────────────────────────
+#
+# Convención: el `model` que se envía al LLM vive SIEMPRE en
+# `profiles.<perfil>.roles.<rol>.model`. Los bloques `ollama`/`anthropic`/`gemini`
+# solo aportan settings de transporte (host, cli_command) y un default de
+# fallback por adapter.
+#
+# context_strategy (solo aplica al rol voz):
+#   full       → sinopsis completa en cada beat (modelos potentes)
+#   beat_slice → segmento proporcional al beat actual (modelos locales/pequeños)
+#   none       → sin sinopsis (solo beat_summary + previous_context + journal)
+
+profiles:
+
+  ollama-natsumura:
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      director:
+        model: Tohur/natsumura-storytelling-rp-llama-3.1:8b
+        temperature: 0.4
+        num_ctx: 4096
+        num_predict: 512
+        stop: ["###", "---\n", "```"]
+      voz:
+        model: Tohur/natsumura-storytelling-rp-llama-3.1:8b
+        temperature: 0.6
+        num_ctx: 4096
+        num_predict: 800
+        stop: ["###", "---\n", "```", "## ", "INSTRUCCIONES"]
+        context_strategy: beat_slice
+      journal:
+        model: mistral:latest
+        temperature: 0.3
+        num_ctx: 2048
+        num_predict: 256
+        stop: []
+
+  ollama-llama31:
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      director:
+        model: llama3.1:8b
+        temperature: 0.4
+        num_ctx: 4096
+        num_predict: 512
+        stop: ["###", "---\n"]
+      voz:
+        model: llama3.1:8b
+        temperature: 0.6
+        num_ctx: 4096
+        num_predict: 800
+        stop: ["###", "---\n"]
+        context_strategy: full
+      journal:
+        model: mistral:latest
+        temperature: 0.3
+        num_ctx: 2048
+        num_predict: 256
+        stop: []
+
+  ollama-mistral:
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      director:
+        model: mistral:latest
+        temperature: 0.4
+        num_ctx: 4096
+        num_predict: 512
+        stop: []
+      voz:
+        model: mistral:latest
+        temperature: 0.6
+        num_ctx: 4096
+        num_predict: 800
+        stop: []
+        context_strategy: full
+      journal:
+        model: mistral:latest
+        temperature: 0.3
+        num_ctx: 2048
+        num_predict: 256
+        stop: []
+
+  anthropic-sonnet:
+    provider: anthropic
+    anthropic: { model: claude-sonnet-4-6 }
+    roles:
+      director:
+        model: claude-sonnet-4-6
+        temperature: 0.4
+      voz:
+        model: claude-sonnet-4-6
+        temperature: 0.6
+        context_strategy: full
+      journal:
+        model: claude-sonnet-4-6
+        temperature: 0.3
+
+  gemini-pro:
+    provider: gemini
+    gemini: { cli_command: gemini, model: gemini-1.5-pro-latest }
+    roles:
+      director:
+        model: gemini-1.5-pro-latest
+        temperature: 0.4
+      voz:
+        model: gemini-1.5-pro-latest
+        temperature: 0.6
+        context_strategy: full
+      journal:
+        model: gemini-1.5-pro-latest
+        temperature: 0.3
+
+  gemini-mixto:
+    # Pro para narrativa (calidad), Flash para journal (coste/velocidad)
+    provider: gemini
+    gemini: { cli_command: gemini, model: gemini-1.5-pro-latest }
+    roles:
+      director:
+        model: gemini-1.5-pro-latest
+        temperature: 0.4
+      voz:
+        model: gemini-1.5-pro-latest
+        temperature: 0.6
+        context_strategy: full
+      journal:
+        model: gemini-1.5-flash-latest
+        temperature: 0.3
+
+# ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
+
+response_filters:
+  thinking_tags:
+    - think
+    - thought
+    - reasoning
+
+  strip_line_patterns:
+    - "^#{1,6}\\s"            # headers markdown: # ## ### etc.
+    - "^---+\\s*$"            # separadores horizontales
+    - "^```"                  # bloques de código
+    - "^Aquí tienes"
+    - "^Espero que te guste"
+    - "^Por supuesto"
+    - "^Claro[,!.]"
+    - "^INSTRUCCIONES"
+
+  preserve_paragraph_breaks: true
+
+  model_overrides:
+    deepseek-r1:
+      strip_thinking: true
+    qwen2.5:
+      strip_thinking: false
+    natsumura:
+      strip_thinking: false
+      strip_line_patterns_extra:
+        - "^### "
+        - "^## "
+        - "^# "

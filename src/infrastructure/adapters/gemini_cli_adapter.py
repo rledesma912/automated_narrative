@@ -23,6 +23,7 @@ class GeminiCLIAdapter:
         system_prompt: str | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        role: str | None = None,
     ) -> LLMResponse:
         """
         Genera texto ejecutando el comando CLI de Gemini.

@@ -39,8 +39,8 @@ class TestWriteMarkdown:
     def test_nombre_contiene_titulo_y_timestamp(self, tmp_path):
         story = _make_story_with_beats()
         path = _write_markdown(story, tmp_path)
-        assert "El_Monte_Prohibido" in path.name
-        assert re.search(r"\d{14}", path.name)
+        assert "el_monte_prohibido" in path.name
+        assert re.search(r"\d{12}", path.name)
 
     def test_contenido_tiene_titulo(self, tmp_path):
         story = _make_story_with_beats()
@@ -71,4 +71,4 @@ class TestWriteMarkdown:
         story = _make_story_with_beats()
         story.title = "Mi Historia De Terror"
         path = _write_markdown(story, tmp_path)
-        assert "Mi_Historia_De_Terror" in path.name
+        assert "mi_historia_de_terror" in path.name

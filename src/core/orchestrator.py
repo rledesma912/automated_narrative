@@ -16,6 +16,7 @@ from src.cli.progress import SilentReporter
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
+from src.infrastructure.normalizers import ResponseNormalizer
 
 if TYPE_CHECKING:
     from src.cli.progress import ProgressReporter
@@ -39,6 +40,7 @@ class StoryRunner:
         self.prompt_builder = prompt_builder
         self.output_dir = output_dir
         self.reporter = reporter or SilentReporter()
+        self.normalizer = ResponseNormalizer()
 
     async def run_full(
         self,
@@ -99,7 +101,7 @@ class StoryRunner:
 
     async def _run_plan(self, story: Story) -> list[Beat]:
         """Genera el plan de beats. La cantidad viene del YAML via PromptBuilder."""
-        create_plan = DirectorUseCase(self.llm, self.prompt_builder)
+        create_plan = DirectorUseCase(self.llm, self.prompt_builder, normalizer=self.normalizer)
         t0 = time.perf_counter()
         plan = await create_plan.execute(story)
         elapsed = time.perf_counter() - t0
@@ -128,7 +130,11 @@ class StoryRunner:
             logger.info("[VOZ] No hay beats pendientes por narrar", module="orchestrator", line=1)
             return beats
 
-        narrate_beat = VozUseCase(self.llm)
+        narrate_beat = VozUseCase(
+            self.llm,
+            prompt_builder=self.prompt_builder,
+            normalizer=self.normalizer,
+        )
         completed_beats = []
         journal: NarrativeJournal | None = await self.story_repo.get_journal(story.id)
         total = len(pending_beats)

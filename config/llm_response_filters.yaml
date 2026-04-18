@@ -1,20 +1,25 @@
-# Reglas de limpieza de respuestas LLM (The "Clean" Pipeline)
+# DEPRECATED — archivo reemplazado por config/llm_core_definitions.yaml (Spec 026).
+#
+# La configuración de filtros de respuesta ahora vive en la sección
+# `response_filters` de `llm_core_definitions.yaml`, junto con el resto de
+# la configuración LLM (proveedor, roles, modelos, temperaturas, etc).
+#
+# Este archivo ya NO es leído por el código. Se conserva solo como referencia
+# histórica y puede eliminarse en una próxima limpieza.
+#
+# --- contenido legacy (solo referencia) ---
 llm_response_filters:
   thinking_tags:
     - "think"
     - "thought"
     - "reasoning"
-  
   noise_patterns:
     - "^Aquí tienes el relato.*:"
     - "^Espero que te guste.*"
     - "---"
-  
   markdown_extraction:
     enabled: true
     priority_tags: ["markdown", "text"]
-
-  # Configuración por modelo para ajustar la agresividad de la limpieza
   model_overrides:
     deepseek-r1:
       strip_thinking: true

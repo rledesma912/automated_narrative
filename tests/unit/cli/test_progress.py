@@ -13,9 +13,9 @@ class TestProgressReporter:
         assert "NarrativeForge" in out
         assert "El Monte Prohibido" in out
 
-    def test_start_imprime_separador(self, capsys):
+    def test_config_summary_imprime_separador(self, capsys):
         r = ProgressReporter()
-        r.start("X")
+        r.config_summary("model", 0.4, 0.6, 0.3)
         out = capsys.readouterr().out
         assert "─" in out
 
@@ -51,7 +51,7 @@ class TestProgressReporter:
         r.done(82.4, Path("output_stories/El_Monte_82.md"))
         out = capsys.readouterr().out
         assert "✅" in out
-        assert "82.4s" in out
+        assert "1:22" in out
         assert "📁" in out
         assert "El_Monte_82.md" in out
 
