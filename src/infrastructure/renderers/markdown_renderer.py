@@ -16,12 +16,25 @@ class MarkdownRenderer:
         md += f"**Atmósfera:** {story.atmosfera}\n\n"
 
         md += f"_{story.sinopsis}_\n\n"
+
+        if story.reglas:
+            md += "**Reglas:**\n"
+            for regla in story.reglas:
+                md += f"- {regla}\n"
+            md += "\n"
+
         md += "---\n\n"
 
         sorted_beats = sorted(story.beats, key=lambda b: b.number)
 
+        seen_numbers = set()
         for beat in sorted_beats:
+            if beat.number in seen_numbers:
+                continue
+            seen_numbers.add(beat.number)
+
             md += f"## {beat.number}. {beat.summary}\n\n"
-            md += beat.content + "\n\n"
+            if beat.content:
+                md += beat.content + "\n\n"
 
         return md

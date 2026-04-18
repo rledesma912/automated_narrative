@@ -1,11 +1,13 @@
 """Ollama adapter for LLM."""
 
-import json
+import logging
 
 import httpx
 
 from src.config import settings
 from src.domain.interfaces import LLMResponse
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaAdapter:
@@ -34,35 +36,31 @@ class OllamaAdapter:
             "top_p": 0.9,
             "repeat_penalty": 1.15,
             "num_ctx": 4096,
-            "num_predict": 4000,
+            "num_predict": 2048,  # Increased
         }
 
         payload = {
             "model": model_name,
             "prompt": full_prompt,
-            "stream": True,
+            "stream": False,  # Non-streaming for reliability
             "options": options,
             "keep_alive": "30m",
         }
 
+        logger.debug(f"[OLLAMA] model={model_name}, temp={temp}")
+        logger.debug(f"[OLLAMA] prompt to model (first 1000 chars):\n{full_prompt[:1000]}")
+
         content = ""
-        final_context = None
 
-        async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
-            async with client.stream("POST", self.base_url, json=payload) as response:
-                response.raise_for_status()
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+            response = await client.post(self.base_url, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            content = data.get("response", "")
 
-                async for line in response.aiter_lines():
-                    if not line:
-                        continue
-                    data = json.loads(line)
-                    if content_part := data.get("response"):
-                        content += content_part
-                    if data.get("done"):
-                        final_context = data.get("context")
-                        break
+        logger.debug(f"[OLLAMA] response (first 500 chars):\n{content[:500]}")
 
-        return LLMResponse(text=content, context=final_context)
+        return LLMResponse(text=content)
 
     async def close(self) -> None:
         """Close connection (no-op for Ollama)."""

@@ -36,7 +36,7 @@ class TestValidationError:
     def test_validation_error_message(self):
         """Test validation error message."""
         err = ValidationError("Invalid input")
-        assert "Validation error" in err.message
+        assert "validación" in err.message.lower()
         assert "Invalid input" in err.message
         assert err.exit_code == 2
 
@@ -72,7 +72,7 @@ class TestGenerationError:
     def test_generation_error_message(self):
         """Test generation error message."""
         err = GenerationError("Failed to generate")
-        assert "Generation error" in err.message
+        assert "generación" in err.message.lower()
         assert "Failed to generate" in err.message
         assert err.exit_code == 5
 
@@ -83,5 +83,6 @@ class TestExportError:
     def test_export_error_message(self):
         """Test export error message."""
         err = ExportError("File not found")
-        assert "Export error" in err.message
+        assert "exportación" in err.message.lower()
+        assert "File not found" in err.message
         assert err.exit_code == 6

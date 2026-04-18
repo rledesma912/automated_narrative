@@ -3,12 +3,17 @@
 from src.application.dto import BeatCreateDTO, BeatResponseDTO, StoryCreateDTO, StoryResponseDTO
 from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.use_cases import (
-    CreateStoryPlanUseCase,
     CreateStoryUseCase,
+    DirectorUseCase,
     ExportStoryUseCase,
-    NarrateBatchUseCase,
-    NarrateBeatUseCase,
+    VozBatchUseCase,
+    VozUseCase,
 )
+
+# Alias para backwards compatibility
+CreateStoryPlanUseCase = DirectorUseCase
+NarrateBatchUseCase = VozBatchUseCase
+NarrateBeatUseCase = VozUseCase
 
 __all__ = [
     "StoryCreateDTO",
@@ -16,10 +21,14 @@ __all__ = [
     "BeatCreateDTO",
     "BeatResponseDTO",
     "CreateStoryUseCase",
-    "CreateStoryPlanUseCase",
-    "NarrateBeatUseCase",
-    "NarrateBatchUseCase",
+    "DirectorUseCase",
+    "VozUseCase",
+    "VozBatchUseCase",
     "ExportStoryUseCase",
     "PromptBuilder",
     "MemoryJournalist",
+    # Alias (backwards compatibility)
+    "CreateStoryPlanUseCase",
+    "NarrateBeatUseCase",
+    "NarrateBatchUseCase",
 ]

@@ -24,7 +24,7 @@ class LLMProvider(Protocol):
         prompt: str,
         *,
         system_prompt: str | None = None,
-        model: str = "qwen3.5:9b",
+        model: str = "mistral:latest",
         temperature: float = 0.6,
     ) -> LLMResponse:
         """Generate text with LLM."""

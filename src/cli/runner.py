@@ -17,26 +17,45 @@ def main() -> None:
         epilog="Usa --help después de un comando para ver más detalles.",
     )
 
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("output_stories/"),
+        help="Directorio de output",
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["ollama", "gemini", "mock"],
+        help="Proveedor de LLM a utilizar (sobrescribe .env)",
+    )
+
     subparsers = parser.add_subparsers(dest="command", help="Comandos disponibles")
 
     generate_parser = subparsers.add_parser(
         "generate",
         help="Generar historia completa (plan + beats narrados)",
     )
-    generate_parser.add_argument("--title", required=True, help="Título de la historia")
-    generate_parser.add_argument("--protagonist", required=True, help="Protagonista")
+    generate_parser.add_argument(
+        "--story-id",
+        help="ID de historia existente en DB (formato: nombre_timestamp)",
+    )
+    generate_parser.add_argument("--title", help="Título de la historia")
+    generate_parser.add_argument("--protagonist", help="Protagonista")
     generate_parser.add_argument(
         "--relator",
         default="tercera_persona",
         choices=["primera_persona", "tercera_persona"],
         help="Tipo de relator",
     )
-    generate_parser.add_argument("--escenarios", required=True, help="Escenario(s)")
-    generate_parser.add_argument("--sinopsis", required=True, help="Sinopsis de la historia")
+    generate_parser.add_argument("--escenarios", help="Escenario(s)")
+    generate_parser.add_argument("--sinopsis", help="Sinopsis de la historia")
     generate_parser.add_argument(
         "--atmosfera",
-        required=True,
         help="Atmósfera de la historia",
+    )
+    generate_parser.add_argument(
+        "--input",
+        help="Archivo markdown de input (en input_stories/)",
     )
     generate_parser.add_argument("--beats", type=int, default=10, help="Cantidad de beats")
     generate_parser.add_argument("--real", action="store_true", help="Usar Ollama real (no Mock)")
@@ -88,17 +107,81 @@ def main() -> None:
 
     try:
         if args.command == "generate":
-            commands.generate(
-                title=args.title,
-                protagonista=args.protagonist,
-                relator=args.relator,
-                escenarios=args.escenarios,
-                sinopsis=args.sinopsis,
-                atmosfera=args.atmosfera,
-                num_beats=args.beats,
-                use_mock=not args.real,
-                output_dir=args.output,
-            )
+            if args.story_id:
+                commands.generate_from_db(
+                    story_id=args.story_id,
+                    use_mock=not args.real,
+                    output_dir=args.output,
+                    provider=args.provider,
+                )
+            elif args.input:
+                # Si hay --input, usar el parser de markdown
+                commands.generate(
+                    title="",
+                    protagonista="",
+                    relator="",
+                    escenarios="",
+                    sinopsis="",
+                    atmosfera="",
+                    num_beats=args.beats,
+                    use_mock=not args.real,
+                    output_dir=args.output,
+                    provider=args.provider,
+                    input_file=args.input,
+                )
+            elif args.input:
+                # Si hay --input, usar el parser de markdown (no requiere campos)
+                commands.generate(
+                    title="",
+                    protagonista="",
+                    relator="",
+                    escenarios="",
+                    sinopsis="",
+                    atmosfera="",
+                    num_beats=args.beats,
+                    use_mock=not args.real,
+                    output_dir=args.output,
+                    provider=args.provider,
+                    input_file=args.input,
+                )
+            else:
+                # Validación de campos obligatorios para nueva historia SIN --input
+                campos_faltantes = []
+                if not args.title:
+                    campos_faltantes.append("--title")
+                if not args.protagonist:
+                    campos_faltantes.append("--protagonist")
+                if not args.escenarios:
+                    campos_faltantes.append("--escenarios")
+                if not args.sinopsis:
+                    campos_faltantes.append("--sinopsis")
+                if not args.atmosfera:
+                    campos_faltantes.append("--atmosfera")
+
+                if campos_faltantes:
+                    print(
+                        f"Error: Faltan argumentos obligatorios: {', '.join(campos_faltantes)}",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "Usa --help para ver todos los parámetros o provee --story-id.",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+
+                commands.generate(
+                    title=args.title,
+                    protagonista=args.protagonist,
+                    relator=args.relator or "tercera_persona",
+                    escenarios=args.escenarios,
+                    sinopsis=args.sinopsis,
+                    atmosfera=args.atmosfera,
+                    num_beats=args.beats,
+                    use_mock=not args.real,
+                    output_dir=args.output,
+                    provider=args.provider,
+                    input_file=args.input,
+                )
         elif args.command == "plan":
             commands.plan(
                 title=args.title,
@@ -123,7 +206,7 @@ def main() -> None:
         print(f"Error: {e.message}", file=sys.stderr)
         sys.exit(e.exit_code)
     except Exception as e:
-        logger.error(f"[UNEXPECTED] {str(e)}", module="runner", line=1)
+        logger.error(f"[ERROR_INESPERADO] {str(e)}", module="runner", line=1)
         print(f"Error inesperado: {str(e)}", file=sys.stderr)
         sys.exit(1)
 

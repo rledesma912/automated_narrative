@@ -6,3 +6,19 @@ node_modules
 historias_generadas
 historias_saneadas
 
+# Carpeta de entrada (mantener carpeta, ignorar archivos)
+input_stories/*
+!input_stories/.gitkeep
+
+# Logs (mantener carpeta, ignorar archivos)
+logs/*
+!logs/.gitkeep
+
+# Carpeta de salida raíz (mantener carpeta, ignorar archivos)
+output_stories/*
+!output_stories/.gitkeep
+
+# Carpeta de salida frontend (mantener carpeta, ignorar archivos)
+frontend/output_stories/*
+!frontend/output_stories/.gitkeep
+

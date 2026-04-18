@@ -1,4 +1,4 @@
-.PHONY: dev test lint format clean install help db list status export generate init
+.PHONY: dev test lint format clean install help db db-clean list status export generate init
 
 API_HOST ?= 0.0.0.0:8010
 
@@ -11,6 +11,7 @@ help:
 	@echo "  make clean      Limpia archivos temporales y cache"
 	@echo ""
 	@echo "  make db          Inicializa la base de datos"
+	@echo "  make db-clean    Limpia todos los registros (story, beat, journal)"
 	@echo "  make list       Lista todas las historias"
 	@echo ""
 	@echo "  Scripts (uso directo):"
@@ -45,6 +46,9 @@ clean:
 
 db:
 	@chmod +x scripts/bash/init_db.sh && ./scripts/bash/init_db.sh
+
+db-clean:
+	@chmod +x scripts/bash/db_clean.sh && ./scripts/bash/db_clean.sh
 
 list:
 	@chmod +x scripts/bash/list_stories.sh && ./scripts/bash/list_stories.sh
