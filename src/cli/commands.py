@@ -59,6 +59,7 @@ def generate(
         relator = story_data.relator
         escenarios = story_data.escenarios
         sinopsis = story_data.sinopsis
+        atmosfera = story_data.atmosfera
 
         logger.info(f"[COMANDOS] Cargando historia desde: {input_file}", module="commands", line=1)
 

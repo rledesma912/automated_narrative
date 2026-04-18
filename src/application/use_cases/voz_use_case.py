@@ -1,11 +1,14 @@
 """VozUseCase - genera prosa para un beat."""
 
+import logging
 from typing import Optional
 
 from src.application.services import MemoryJournalist, PromptBuilder
 from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story
+
+logger = logging.getLogger(__name__)
 
 
 class VozUseCase:
@@ -41,6 +44,8 @@ class VozUseCase:
 
         total_beats = len(story.beats) if story.beats else 10
 
+        logger.debug(f"[VOZ] beat #{beat.number}/{total_beats}, relator={story.relator}")
+
         prompt = self.prompt_builder.build_beat_prompt(
             story=story,
             beat=beat,
@@ -50,6 +55,9 @@ class VozUseCase:
         )
 
         system_prompt = self.prompt_builder.build_voice_prompt(story)
+
+        logger.debug(f"[VOZ] system_prompt:\n{system_prompt[:500]}")
+        logger.debug(f"[VOZ] prompt to LLM:\n{prompt[:800]}")
 
         response = await self._generate_with_retry(
             prompt=prompt,

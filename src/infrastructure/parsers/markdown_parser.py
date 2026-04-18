@@ -18,6 +18,7 @@ class MarkdownStoryData:
     relator: str
     escenarios: str
     sinopsis: str
+    atmosfera: str = ""
     reglas: list[str] = field(default_factory=list)
 
 
@@ -51,6 +52,7 @@ class MarkdownStoryParser:
                     relator=self._normalize_relator(storyteller),
                     escenarios=data.get("escenarios") or data.get("scenarios", ""),
                     sinopsis=data.get("sinopsis") or data.get("synopsis", ""),
+                    atmosfera=data.get("atmosphere") or data.get("atmosfera", ""),
                     reglas=data.get("reglas") or data.get("rules", []),
                 )
             except yaml.YAMLError:

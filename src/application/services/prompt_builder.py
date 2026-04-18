@@ -1,9 +1,12 @@
 """PromptBuilder - construye los prompts para el LLM."""
 
+import logging
 from pathlib import Path
 
 from src.config import settings
 from src.domain.models import Beat, NarrativeJournal, Story
+
+logger = logging.getLogger(__name__)
 
 
 class PromptBuilder:
@@ -192,8 +195,15 @@ Historia: {story.sinopsis[:200]}"""
         persona = self._get_persona_gramatical(story.relator)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
+        logger.debug(
+            f"[PB] relator={story.relator}, persona={persona}, beat={beat.number}/{total_beats}"
+        )
+        logger.debug(
+            f"[PB] prev_beats={len(previous_beats) if previous_beats else 0}, journal={'yes' if journal else 'None'}"
+        )
+
         if self._voice_template:
-            return self._voice_template.format(
+            prompt = self._voice_template.format(
                 title=story.title,
                 relator=story.relator,
                 persona_gramatical=persona,
@@ -207,6 +217,8 @@ Historia: {story.sinopsis[:200]}"""
                 journal_context=journal_context,
                 reglas=reglas_str,
             )
+            logger.debug(f"[PB] prompt (first 800 chars):\n{prompt[:800]}")
+            return prompt
 
         base = f"""NARRA EL BEAT #{beat.number} de {total_beats}:
 {beat.summary}

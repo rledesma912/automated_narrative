@@ -315,6 +315,7 @@ python -m src generate --story-id "el_monte_prohibido_1744742400" --real
 | `make test` | Ejecuta tests con coverage |
 | `make lint` | Lint + formato con ruff |
 | `make db` | Inicializa la base de datos |
+| `make db-clean` | Limpia todos los registros de la DB (Historias, Beats, Journal) |
 | `make list` | Lista todas las historias |
 | `make clean` | Limpia cache |
 | `make dev` | Levanta API (requiere Ollama) |

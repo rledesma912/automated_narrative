@@ -1,9 +1,13 @@
 """Ollama adapter for LLM."""
 
+import logging
+
 import httpx
 
 from src.config import settings
 from src.domain.interfaces import LLMResponse
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaAdapter:
@@ -43,6 +47,9 @@ class OllamaAdapter:
             "keep_alive": "30m",
         }
 
+        logger.debug(f"[OLLAMA] model={model_name}, temp={temp}")
+        logger.debug(f"[OLLAMA] prompt to model (first 1000 chars):\n{full_prompt[:1000]}")
+
         content = ""
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
@@ -50,6 +57,8 @@ class OllamaAdapter:
             response.raise_for_status()
             data = response.json()
             content = data.get("response", "")
+
+        logger.debug(f"[OLLAMA] response (first 500 chars):\n{content[:500]}")
 
         return LLMResponse(text=content)
 
