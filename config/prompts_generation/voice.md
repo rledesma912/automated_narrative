@@ -7,6 +7,7 @@
 - Atmósfera: {atmosphere}
 - Protagonistas: {protagonistas}
 - Escenarios: {escenarios}
+- Sinopsis: {sinopsis}
 
 ## BEAT ACTUAL
 - Numero: {beat_number} de {total_beats}
@@ -22,6 +23,9 @@
 {reglas}
 
 ## INSTRUCCIONES OBLIGATORIAS
+
+### Idioma
+- ESCRIBE SIEMPRE EN ESPAÑOL. Nunca uses otro idioma.
 
 ### Voz y Persona
 - Eres {relator}, narrando la historia

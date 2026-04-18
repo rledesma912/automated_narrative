@@ -3,6 +3,8 @@
 import logging
 from pathlib import Path
 
+import yaml
+
 from src.config import settings
 from src.domain.models import Beat, NarrativeJournal, Story
 
@@ -18,6 +20,39 @@ class PromptBuilder:
         self._planner_template = None
         self._voice_template = None
         self._journal_template = None
+        self._beats_spec: list[dict] = self._load_beats_definition()
+        self.num_beats: int = len(self._beats_spec)
+
+    def _load_beats_definition(self) -> list[dict]:
+        """Carga el spec de beats desde el YAML. El YAML es la fuente de verdad."""
+        path = Path(settings.beats_definition_file)
+        if not path.exists():
+            logger.warning(f"[PB] beats_definition_file no encontrado: {path}. Usando 5 beats vacíos.")
+            return [{"id": i, "name": f"beat_{i}"} for i in range(1, 6)]
+        with path.open(encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        return data.get("beats_spec", {}).get("beats", [])
+
+    def _format_beats_spec(self) -> str:
+        """Serializa los beats del YAML a bloque legible para el LLM."""
+        lines = []
+        for beat in self._beats_spec:
+            lines.append(f"Beat {beat['id']} — {beat['name']}")
+            lines.append(f"  Intent: {beat.get('intent', '')}")
+            must = beat.get("must", [])
+            if must:
+                lines.append(f"  Debe incluir: {' / '.join(must)}")
+            must_not = beat.get("must_not", [])
+            if must_not:
+                lines.append(f"  No debe incluir: {' / '.join(must_not)}")
+            sc = beat.get("state_change", {})
+            if sc:
+                lines.append(f"  Cambio de estado: {sc.get('from', '')} → {sc.get('to', '')}")
+            success = beat.get("success_signal", [])
+            if success:
+                lines.append(f"  Señal de éxito: {success[0]}")
+            lines.append("")
+        return "\n".join(lines).strip()
 
     def _load_prompt(self, filename: str) -> str:
         """Carga una plantilla de prompt."""
@@ -34,9 +69,13 @@ class PromptBuilder:
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
         if self._system_template:
+            persona = self._get_persona_gramatical(story.relator)
             return self._system_template.format(
+                title=story.title,
                 atmosfera=story.atmosfera,
+                atmosphere=story.atmosfera,
                 relator=story.relator,
+                persona_gramatical=persona,
                 reglas=reglas_str,
                 protagonistas=story.protagonista,
                 escenarios=story.escenarios,
@@ -55,14 +94,13 @@ Escenarios: {story.escenarios}
 Sinopsis: {story.sinopsis}
 """
 
-    def build_planner_prompt(self, story: Story, num_beats: int = 8) -> str:
-        """Build el prompt del Director para generar la escaleta."""
+    def build_planner_prompt(self, story: Story) -> str:
+        """Build el prompt del Director. num_beats y estructura vienen del YAML."""
         if self._planner_template is None:
-            self._planner_template = self._load_prompt(
-                "planner"
-            )  # Fallback uses dynamic generation
+            self._planner_template = self._load_prompt("planner.md")
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        beats_spec = self._format_beats_spec()
 
         if self._planner_template:
             return self._planner_template.format(
@@ -71,11 +109,13 @@ Sinopsis: {story.sinopsis}
                 escenarios=story.escenarios,
                 sinopsis=story.sinopsis,
                 atmosfera=story.atmosfera,
-                num_beats=num_beats,
+                num_beats=self.num_beats,
                 reglas=reglas_str,
+                beats_spec=beats_spec,
             )
 
-        return f"""Crea exactamente {num_beats} beats para esta historia de terror:
+        # Fallback inline si no existe planner.md
+        return f"""Crea exactamente {self.num_beats} beats para esta historia de terror siguiendo la estructura definida:
 
 Título: {story.title}
 Protagonistas: {story.protagonista}
@@ -86,14 +126,15 @@ Atmósfera: {story.atmosfera}
 REGLAS DE LA HISTORIA:
 {reglas_str}
 
-REGLAS OBLIGATORIAS:
-- CADA beat debe respetar las reglas arriba.
-- Genera EXACTAMENTE {num_beats} beats
-- Cada beat debe ser una línea que empieza con el número: "1.", "2.", etc
-- No generes más de {num_beats} beats
-- Formato: "n. Título del beat" (una línea por beat)
+ESTRUCTURA DE ACTOS (obligatoria):
+{beats_spec}
 
-Responde solo con {num_beats} líneas numeradas."""
+INSTRUCCIONES:
+- Genera EXACTAMENTE {self.num_beats} beats, uno por acto
+- Cada beat: una línea numerada "N. [summary del acto]"
+- El summary debe ser específico a esta historia y respetar el intent del acto
+
+Responde solo con {self.num_beats} líneas numeradas."""
 
     def _build_narrative_planner_prompt(self, story: Story) -> str:
         """Build el prompt del Director para 6 beats narrativos."""
@@ -184,12 +225,13 @@ Historia: {story.sinopsis[:200]}"""
         beat: Beat,
         previous_beats: list[Beat] | None = None,
         journal: NarrativeJournal | None = None,
-        total_beats: int = 10,
+        total_beats: int | None = None,
     ) -> str:
         """Build el prompt para narrar un beat con contexto completo."""
         if self._voice_template is None:
             self._voice_template = self._load_prompt(settings.prompt_file_voice)
 
+        total_beats = total_beats if total_beats is not None else self.num_beats
         previous_context = self._build_previous_context(previous_beats)
         journal_context = self._build_journal_context(journal)
         persona = self._get_persona_gramatical(story.relator)
@@ -210,6 +252,7 @@ Historia: {story.sinopsis[:200]}"""
                 atmosphere=story.atmosfera,
                 protagonistas=story.protagonista,
                 escenarios=story.escenarios,
+                sinopsis=story.sinopsis,
                 beat_number=beat.number,
                 total_beats=total_beats,
                 beat_summary=beat.summary,
@@ -229,6 +272,7 @@ Contexto:
 - Escenario: {story.escenarios}
 - Atmósfera: {story.atmosfera}
 - Relator: {story.relator} ({persona})
+- Sinopsis: {story.sinopsis}
 
 Extiende este momento (150-400 palabras)."""
 
@@ -302,7 +346,7 @@ Instrucciones:
         if self._journal_template:
             return self._journal_template.format(
                 title=story.title,
-                protagonists=story.protagonista,
+                protagonistas=story.protagonista,
                 atmosfera=story.atmosfera,
                 prev_last_events=prev_last_events,
                 prev_unresolved_mysteries=prev_unresolved,

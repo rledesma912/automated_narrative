@@ -33,7 +33,7 @@ class VozUseCase:
         beat: Beat,
         previous_beats: list[Beat] | None = None,
         journal: Optional[NarrativeJournal] = None,
-    ) -> tuple[Beat, NarrativeJournal]:
+    ) -> tuple[Beat, NarrativeJournal, float]:
         """Ejecuta el caso de uso."""
         model = settings.llm_model
         temp = settings.voz_temperature
@@ -42,7 +42,7 @@ class VozUseCase:
         if journal is None:
             journal = NarrativeJournal()
 
-        total_beats = len(story.beats) if story.beats else 10
+        total_beats = len(story.beats) if story.beats else self.prompt_builder.num_beats
 
         logger.debug(f"[VOZ] beat #{beat.number}/{total_beats}, relator={story.relator}")
 
@@ -71,7 +71,7 @@ class VozUseCase:
 
         updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
 
-        return beat, updated_journal
+        return beat, updated_journal, response.elapsed_s
 
     async def _generate_with_retry(
         self,

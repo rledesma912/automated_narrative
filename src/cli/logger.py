@@ -40,17 +40,17 @@ class NarrativeLogger:
         file_handler.setFormatter(formatter)
         self._logger.addHandler(file_handler)
 
-        # Handler para consola con DEBUG (para ver en tiempo real)
+        # Handler para consola: solo WARNING+ para no ensuciar la salida del usuario
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(logging.DEBUG)
+        console_handler.setLevel(logging.WARNING)
         console_handler.setFormatter(formatter)
         self._logger.addHandler(console_handler)
 
-        # Configurar root logger para que capture todos los logs
+        # Root logger: solo al archivo (evita que libs internas como httpx/aiosqlite
+        # vuelquen sus logs de debug a consola)
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(file_handler)
-        root_logger.addHandler(console_handler)
 
         self._error_logger = logging.getLogger(f"{self.name}-error")
         self._error_logger.setLevel(logging.ERROR)

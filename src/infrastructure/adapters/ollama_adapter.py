@@ -1,6 +1,7 @@
 """Ollama adapter for LLM."""
 
 import logging
+import time
 
 import httpx
 
@@ -51,6 +52,7 @@ class OllamaAdapter:
         logger.debug(f"[OLLAMA] prompt to model (first 1000 chars):\n{full_prompt[:1000]}")
 
         content = ""
+        t0 = time.perf_counter()
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             response = await client.post(self.base_url, json=payload)
@@ -58,9 +60,11 @@ class OllamaAdapter:
             data = response.json()
             content = data.get("response", "")
 
+        elapsed = time.perf_counter() - t0
         logger.debug(f"[OLLAMA] response (first 500 chars):\n{content[:500]}")
+        logger.debug(f"[OLLAMA] elapsed={elapsed:.2f}s")
 
-        return LLMResponse(text=content)
+        return LLMResponse(text=content, elapsed_s=elapsed)
 
     async def close(self) -> None:
         """Close connection (no-op for Ollama)."""

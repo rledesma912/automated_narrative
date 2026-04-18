@@ -28,12 +28,13 @@ class TestVozUseCase:
 
         use_case = VozUseCase(mock_llm)
 
-        result_beat, result_journal = await use_case.execute(story, beat)
+        result_beat, result_journal, llm_elapsed = await use_case.execute(story, beat)
 
         assert isinstance(result_beat, Beat)
         assert result_beat.content == "Contenido generado"
         assert result_beat.status == "completed"
         assert isinstance(result_journal, NarrativeJournal)
+        assert isinstance(llm_elapsed, float)
 
     @pytest.mark.asyncio
     async def test_execute_updates_beat_content(self):
@@ -52,7 +53,7 @@ class TestVozUseCase:
         mock_llm = MockLLMAdapter(fixed_response="El jeep se detuvo en la entrada...")
         use_case = VozUseCase(mock_llm)
 
-        result_beat, _ = await use_case.execute(story, beat)
+        result_beat, _, _ = await use_case.execute(story, beat)
 
         assert result_beat.content == "El jeep se detuvo en la entrada..."
         assert result_beat.status == "completed"
@@ -79,7 +80,7 @@ class TestVozUseCase:
         mock_llm = MockLLMAdapter(fixed_response="Contenido nuevo")
         use_case = VozUseCase(mock_llm)
 
-        result_beat, _ = await use_case.execute(story, beat, previous_beats=previous_beats)
+        result_beat, _, _ = await use_case.execute(story, beat, previous_beats=previous_beats)
 
         assert mock_llm.call_count >= 1
 
@@ -106,7 +107,7 @@ class TestVozUseCase:
         mock_llm = MockLLMAdapter(fixed_response="Contenido")
         use_case = VozUseCase(mock_llm)
 
-        result_beat, result_journal = await use_case.execute(story, beat, journal=journal)
+        result_beat, result_journal, _ = await use_case.execute(story, beat, journal=journal)
 
         assert isinstance(result_journal, NarrativeJournal)
 
@@ -131,7 +132,7 @@ class TestVozUseCase:
         use_case = VozUseCase(mock_llm)
 
         for beat in beats:
-            result_beat, result_journal = await use_case.execute(
+            result_beat, result_journal, _ = await use_case.execute(
                 story, beat, previous_beats=completed, journal=journal
             )
             completed.append(result_beat)

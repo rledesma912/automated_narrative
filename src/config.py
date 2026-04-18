@@ -25,13 +25,18 @@ class Settings(BaseSettings):
     gemini_cli_command: str = "gemini"
     gemini_model_name: str = "gemini-1.5-pro-latest"
 
+    # Anthropic
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-opus-4-7"
+
     # Database
     database_url: str = "sqlite+aiosqlite://stories.db"
 
     # Paths
     output_dir: str = "output_stories"
-    prompts_dir: str = "config/prompts"
+    prompts_dir: str = "config/prompts_generation"
     input_dir: str = "input_stories"
+    beats_definition_file: str = "config/llm_beats_definition.yaml"
 
     # Prompt filenames
     prompt_file_voice: str = "voice.md"

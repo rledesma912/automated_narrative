@@ -22,3 +22,40 @@ output_stories/*
 frontend/output_stories/*
 !frontend/output_stories/.gitkeep
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+ENV/
+
+# Databases
+*.db
+!input_stories/.gitkeep
+
+# Testing & Linting
+.coverage
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Distribution / Build
+dist/
+build/
+*.egg-info/
+
+# Logs & Temp
+*.log
+*.tmp
+*.bak
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production

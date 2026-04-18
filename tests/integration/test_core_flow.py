@@ -60,7 +60,7 @@ class TestCoreFlowWithMocks:
         prompt_builder = PromptBuilder()
         director = DirectorUseCase(mock_llm, prompt_builder)
 
-        plan = await director.execute(story, num_beats=6)
+        plan = await director.execute(story)
 
         assert len(plan.beats) == 6
         assert plan.beats[0].summary.startswith("Apertura")
@@ -82,7 +82,7 @@ class TestCoreFlowWithMocks:
         prompt_builder = PromptBuilder()
 
         director = DirectorUseCase(mock_llm, prompt_builder)
-        plan = await director.execute(story, num_beats=3)
+        plan = await director.execute(story)
 
         assert len(plan.beats) == 3
 
@@ -141,7 +141,7 @@ class TestCoreFlowWithMocks:
         prompt_builder = PromptBuilder()
         director = DirectorUseCase(mock_director, prompt_builder)
 
-        plan = await director.execute(story, num_beats=6)
+        plan = await director.execute(story)
 
         assert len(plan.beats) == 6
 
@@ -180,7 +180,7 @@ class TestCoreFlowWithMocks:
         prompt_builder = PromptBuilder()
         director = DirectorUseCase(mock_llm, prompt_builder)
 
-        plan = await director.execute(story, num_beats=6)
+        plan = await director.execute(story)
 
         beats = plan.beats
 

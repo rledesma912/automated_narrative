@@ -1,5 +1,6 @@
 """CLI Commands for NarrativeForge."""
 
+import time
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
@@ -18,11 +19,29 @@ from src.cli.exceptions import (
     ValidationError,
 )
 from src.cli.logger import logger
+from src.cli.progress import ProgressReporter
 from src.core.orchestrator import StoryRunner
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
 from src.infrastructure.renderers import MarkdownRenderer
+
+
+def _write_markdown(story, output_dir: Path) -> Path:
+    """Renderiza la historia a Markdown y la escribe en output_dir. Retorna la ruta."""
+    renderer = MarkdownRenderer()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    md_content = renderer.render(story)
+    timestamp = datetime.now().strftime("%d%m%Y%H%M%S")
+    safe_title = (
+        "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
+        .strip()
+        .replace(" ", "_")
+    )
+    output_path = output_dir / f"{safe_title}_{timestamp}.md"
+    output_path.write_text(md_content, encoding="utf-8")
+    return output_path
 
 
 async def _init_database() -> None:
@@ -40,13 +59,13 @@ def generate(
     escenarios: str,
     sinopsis: str,
     atmosfera: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,
     input_file: str | None = None,
     provider: str | None = None,
 ) -> None:
     """Generate complete story with plan and narrated beats."""
+    reglas: list[str] = []
 
     if input_file:
         from src.infrastructure.parsers import MarkdownStoryParser
@@ -60,6 +79,7 @@ def generate(
         escenarios = story_data.escenarios
         sinopsis = story_data.sinopsis
         atmosfera = story_data.atmosfera
+        reglas = story_data.reglas
 
         logger.info(f"[COMANDOS] Cargando historia desde: {input_file}", module="commands", line=1)
 
@@ -76,10 +96,10 @@ def generate(
                 escenarios,
                 sinopsis,
                 atmosfera,
-                num_beats,
                 use_mock,
                 output_dir,
                 provider,
+                reglas,
             )
         )
     except OllamaConnectionError:
@@ -98,10 +118,10 @@ async def _generate_async(
     escenarios: str,
     sinopsis: str,
     atmosfera: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
+    reglas: list[str] | None = None,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
@@ -110,6 +130,10 @@ async def _generate_async(
     story_repo = SQLStoryRepository()
     beat_repo = SQLBeatRepository()
     prompt_builder = PromptBuilder()
+    reporter = ProgressReporter()
+
+    reporter.start(title)
+    t_total = time.perf_counter()
 
     runner = StoryRunner(
         llm_adapter=llm,
@@ -117,22 +141,29 @@ async def _generate_async(
         beat_repo=beat_repo,
         prompt_builder=prompt_builder,
         output_dir=output_dir,
+        reporter=reporter,
     )
 
-    await runner.run_full(
+    story = await runner.run_full(
         title=title,
         protagonista=protagonista,
         relator=relator,
         escenarios=escenarios,
         sinopsis=sinopsis,
         atmosfera=atmosfera,
-        num_beats=num_beats,
+        reglas=reglas or [],
     )
+
+    t_export = time.perf_counter()
+    output_path = _write_markdown(story, output_dir)
+    reporter.export_done(time.perf_counter() - t_export)
+
+    reporter.done(time.perf_counter() - t_total, output_path)
+    logger.info(f"[COMANDOS] Historia exportada a: {output_path}", module="commands", line=1)
 
 
 def plan(
     title: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
@@ -143,7 +174,7 @@ def plan(
     try:
         import asyncio
 
-        asyncio.run(_plan_async(title, num_beats, use_mock, output_dir, provider))
+        asyncio.run(_plan_async(title, use_mock, output_dir, provider))
     except Exception as e:
         logger.error(f"[COMANDOS] Error al generar el plan: {e}", module="commands", line=1)
         raise GenerationError(str(e))
@@ -153,7 +184,6 @@ def plan(
 
 async def _plan_async(
     title: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,  # noqa: ARG001
     provider: str | None = None,
@@ -177,7 +207,7 @@ async def _plan_async(
         atmosfera="",
     )
 
-    plan = await create_plan.execute(story, num_beats=num_beats)
+    plan = await create_plan.execute(story)
     logger.info(f"[COMANDOS] Se han generado {len(plan.beats)} beats", module="commands", line=1)
 
 
@@ -243,7 +273,7 @@ async def _narrate_async(
 
     for beat in beats_to_narrate:
         logger.info(f"[COMANDOS] Narrando beat #{beat.number}", module="commands", line=1)
-        generated_beat, _ = await narrate_beat.execute(story, beat)
+        generated_beat, _, _ = await narrate_beat.execute(story, beat)
         await beat_repo.save(generated_beat, story_uuid)
         logger.info(f"[COMANDOS] Beat #{beat.number} completado", module="commands", line=1)
 
@@ -294,6 +324,10 @@ async def _generate_from_db_async(
     llm = LLMFactory.get_provider(use_mock=use_mock, provider=provider)
     beat_repo = SQLBeatRepository()
     prompt_builder = PromptBuilder()
+    reporter = ProgressReporter()
+
+    reporter.start(story.title)
+    t_total = time.perf_counter()
 
     runner = StoryRunner(
         llm_adapter=llm,
@@ -301,9 +335,17 @@ async def _generate_from_db_async(
         beat_repo=beat_repo,
         prompt_builder=prompt_builder,
         output_dir=output_dir,
+        reporter=reporter,
     )
 
-    await runner.run_from_story(story)
+    story = await runner.run_from_story(story)
+
+    t_export = time.perf_counter()
+    output_path = _write_markdown(story, output_dir)
+    reporter.export_done(time.perf_counter() - t_export)
+
+    reporter.done(time.perf_counter() - t_total, output_path)
+    logger.info(f"[COMANDOS] Historia exportada a: {output_path}", module="commands", line=1)
 
 
 def export_(
@@ -354,18 +396,6 @@ async def _export_async(
 
     beats = await beat_repo.get_by_story(story_uuid)
 
-    renderer = MarkdownRenderer()
-    story.beats = beats  # Asignar beats al story
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    md_content = renderer.render(story)
-    timestamp = datetime.now().strftime("%d%m%Y%H%M%S")
-    safe_title = (
-        "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
-        .strip()
-        .replace(" ", "_")
-    )
-    output_path = output_dir / f"{safe_title}_{timestamp}.md"
-    output_path.write_text(md_content, encoding="utf-8")
-
+    story.beats = beats
+    output_path = _write_markdown(story, output_dir)
     logger.info(f"[COMANDOS] Historia exportada a: {output_path}", module="commands", line=1)

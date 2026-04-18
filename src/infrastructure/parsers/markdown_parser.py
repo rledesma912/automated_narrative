@@ -1,5 +1,6 @@
 """MarkdownStoryParser - parser para archivos de historia markdown con soporte Frontmatter."""
 
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -7,6 +8,8 @@ from pathlib import Path
 import yaml
 
 from src.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,9 +47,10 @@ class MarkdownStoryParser:
 
         if frontmatter_match:
             try:
-                data = yaml.safe_load(frontmatter_match.group(1))
+                raw_frontmatter = self._sanitize_frontmatter(frontmatter_match.group(1))
+                data = yaml.safe_load(raw_frontmatter)
                 storyteller = data.get("storyteller") or data.get("relator", "")
-                return MarkdownStoryData(
+                result = MarkdownStoryData(
                     title=data.get("title", file_path.stem),
                     protagonista=data.get("protagonist") or data.get("protagonista", ""),
                     relator=self._normalize_relator(storyteller),
@@ -55,10 +59,24 @@ class MarkdownStoryParser:
                     atmosfera=data.get("atmosphere") or data.get("atmosfera", ""),
                     reglas=data.get("reglas") or data.get("rules", []),
                 )
-            except yaml.YAMLError:
-                pass
+                logger.debug(
+                    "[Parser] YAML frontmatter extraído: title=%r, relator=%r, "
+                    "protagonista=%r, atmosfera=%r, sinopsis=%r..., reglas=%d",
+                    result.title, result.relator, result.protagonista[:40],
+                    result.atmosfera[:40], result.sinopsis[:60], len(result.reglas),
+                )
+                self._validate(result, file_path.name)
+                return result
+            except yaml.YAMLError as e:
+                logger.warning(
+                    "[Parser] YAML inválido en frontmatter de '%s': %s. "
+                    "Usando fallback regex. Verificar formato del archivo.",
+                    file_path.name, e,
+                )
 
-        return self._extract_data_via_regex(content, file_path.stem)
+        result = self._extract_data_via_regex(content, file_path.stem)
+        self._validate(result, file_path.name)
+        return result
 
     def _extract_data_via_regex(self, content: str, default_title: str) -> MarkdownStoryData:
         """Extrae los campos del contenido usando expresiones regulares."""
@@ -133,6 +151,34 @@ class MarkdownStoryParser:
             return relator_lower
 
         return relator.strip()
+
+    def _sanitize_frontmatter(self, raw: str) -> str:
+        """Convierte 'key: | texto en misma línea' a bloque YAML válido."""
+        lines = raw.split("\n")
+        result = []
+        for line in lines:
+            match = re.match(r'^(\s*[\w][\w\s]*?):\s*[|>]\s+(.+)$', line)
+            if match:
+                result.append(f"{match.group(1)}: |")
+                result.append(f"  {match.group(2)}")
+            else:
+                result.append(line)
+        return "\n".join(result)
+
+    def _validate(self, data: "MarkdownStoryData", source: str) -> None:
+        """Lanza ValueError si faltan campos obligatorios tras el parseo."""
+        missing = []
+        if not data.title:
+            missing.append("title")
+        if not data.protagonista:
+            missing.append("protagonist / protagonista")
+        if not data.sinopsis:
+            missing.append("synopsis / sinopsis")
+        if missing:
+            raise ValueError(
+                f"[Parser] Campos obligatorios faltantes en '{source}': "
+                f"{', '.join(missing)}. Verificar formato del archivo de input."
+            )
 
     # Alias for backwards compatibility
     _extract_data = _extract_data_via_regex

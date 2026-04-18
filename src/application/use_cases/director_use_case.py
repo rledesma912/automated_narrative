@@ -22,12 +22,12 @@ class DirectorUseCase:
         self.llm = llm
         self.prompt_builder = prompt_builder
 
-    async def execute(self, story: Story, num_beats: int = 8) -> StoryPlan:
-        """Genera la escaleta de beats."""
-        prompt = self.prompt_builder.build_planner_prompt(story, num_beats)
+    async def execute(self, story: Story) -> StoryPlan:
+        """Genera la escaleta de beats. num_beats viene del YAML via PromptBuilder."""
+        num_beats = self.prompt_builder.num_beats
+        prompt = self.prompt_builder.build_planner_prompt(story)
         system_prompt = self.prompt_builder.build_system_prompt(story)
 
-        # Usar modelo None para que el adapter use su valor por defecto
         response = await self.llm.generate(
             prompt=prompt,
             system_prompt=system_prompt,

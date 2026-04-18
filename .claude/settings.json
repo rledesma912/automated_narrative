@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -n --arg ctx \"$(printf 'SPECS EN specs/:\\n'; ls specs/*.md 2>/dev/null | xargs -I{} basename {} | sed 's/^/  - /'; printf '\\nMETODOLOGÍA: SDD activa. Antes de implementar cualquier cambio:\\n1. Verificar spec relevante en specs/\\n2. Si no existe: crear uno siguiendo .opencode/skills/spec-driven-development/SKILL.md\\n3. Flujo: SPECIFY → PLAN → TASKS → IMPLEMENT\\n4. No avanzar fase sin OK del usuario')\" '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":$ctx}}'",
+            "statusMessage": "Cargando contexto SDD..."
+          }
+        ]
+      }
+    ]
+  }
+}

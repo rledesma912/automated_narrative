@@ -10,21 +10,6 @@ class MarkdownRenderer:
         """Render story to Markdown."""
         md = f"# {story.title}\n\n"
 
-        md += f"**Protagonistas:** {story.protagonista}\n"
-        md += f"**Relator:** {story.relator}\n"
-        md += f"**Escenario:** {story.escenarios}\n"
-        md += f"**Atmósfera:** {story.atmosfera}\n\n"
-
-        md += f"_{story.sinopsis}_\n\n"
-
-        if story.reglas:
-            md += "**Reglas:**\n"
-            for regla in story.reglas:
-                md += f"- {regla}\n"
-            md += "\n"
-
-        md += "---\n\n"
-
         sorted_beats = sorted(story.beats, key=lambda b: b.number)
 
         seen_numbers = set()
@@ -33,7 +18,7 @@ class MarkdownRenderer:
                 continue
             seen_numbers.add(beat.number)
 
-            md += f"## {beat.number}. {beat.summary}\n\n"
+            md += f"## Acto {beat.number}\n\n"
             if beat.content:
                 md += beat.content + "\n\n"
 

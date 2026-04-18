@@ -1,6 +1,8 @@
 """Core Orchestrator - Orquesta el flujo completo de generación."""
 
+import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from src.application.dto import StoryCreateDTO
 from src.application.services import PromptBuilder
@@ -10,9 +12,13 @@ from src.application.use_cases import (
     VozUseCase,
 )
 from src.cli.logger import logger
+from src.cli.progress import SilentReporter
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
+
+if TYPE_CHECKING:
+    from src.cli.progress import ProgressReporter
 
 
 class StoryRunner:
@@ -25,12 +31,14 @@ class StoryRunner:
         beat_repo: SQLBeatRepository,
         prompt_builder: PromptBuilder,
         output_dir: Path,
+        reporter: "ProgressReporter | SilentReporter | None" = None,
     ):
         self.llm = llm_adapter
         self.story_repo = story_repo
         self.beat_repo = beat_repo
         self.prompt_builder = prompt_builder
         self.output_dir = output_dir
+        self.reporter = reporter or SilentReporter()
 
     async def run_full(
         self,
@@ -40,7 +48,7 @@ class StoryRunner:
         escenarios: str,
         sinopsis: str,
         atmosfera: str,
-        num_beats: int = 10,
+        reglas: list[str] | None = None,
     ) -> Story:
         """Ejecuta el flujo completo: crear story + plan + narrar todos los beats."""
         logger.info(
@@ -55,6 +63,7 @@ class StoryRunner:
             escenarios=escenarios,
             sinopsis=sinopsis,
             atmosfera=atmosfera,
+            reglas=reglas or [],
         )
         story = await create_story.execute(dto)
 
@@ -62,7 +71,7 @@ class StoryRunner:
             f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}", module="orchestrator", line=1
         )
 
-        await self._run_plan(story, num_beats)
+        await self._run_plan(story)
 
         await self._run_narrate_all(story)
 
@@ -88,18 +97,20 @@ class StoryRunner:
 
         return story
 
-    async def _run_plan(self, story: Story, num_beats: int) -> list[Beat]:
-        """Genera el plan de beats."""
-        logger.info(f"[DIRECTOR] Planificando {num_beats} beats", module="orchestrator", line=1)
-
+    async def _run_plan(self, story: Story) -> list[Beat]:
+        """Genera el plan de beats. La cantidad viene del YAML via PromptBuilder."""
         create_plan = DirectorUseCase(self.llm, self.prompt_builder)
-        plan = await create_plan.execute(story, num_beats=num_beats)
+        t0 = time.perf_counter()
+        plan = await create_plan.execute(story)
+        elapsed = time.perf_counter() - t0
 
         for beat in plan.beats:
             await self.beat_repo.save(beat, story.id)
 
+        num_beats = len(plan.beats)
+        self.reporter.plan_done(num_beats, elapsed)
         logger.info(
-            f"[DIRECTOR] Plan guardado: {len(plan.beats)} beats generados",
+            f"[DIRECTOR] Plan guardado: {num_beats} beats generados",
             module="orchestrator",
             line=1,
         )
@@ -120,29 +131,35 @@ class StoryRunner:
         narrate_beat = VozUseCase(self.llm)
         completed_beats = []
         journal: NarrativeJournal | None = await self.story_repo.get_journal(story.id)
+        total = len(pending_beats)
 
         for i, beat in enumerate(pending_beats):
             logger.info(
-                f"[VOZ] Narrando Beat #{beat.number} ({i + 1}/{len(pending_beats)})",
+                f"[VOZ] Narrando Beat #{beat.number} ({i + 1}/{total})",
                 module="orchestrator",
                 line=1,
             )
 
-            generated_beat, journal = await narrate_beat.execute(
+            t0 = time.perf_counter()
+            generated_beat, journal, llm_elapsed = await narrate_beat.execute(
                 story=story,
                 beat=beat,
                 previous_beats=completed_beats,
                 journal=journal,
             )
+            step_elapsed = time.perf_counter() - t0
 
             await self.beat_repo.save(generated_beat, story.id)
             if journal:
                 await self.story_repo.save_journal(story.id, journal)
             completed_beats.append(generated_beat)
 
+            self.reporter.beat_done(i + 1, total, step_elapsed, llm_elapsed)
             logger.info(
                 f"[VOZ] Beat #{beat.number} completado y guardado", module="orchestrator", line=1
             )
+
+        story.beats = completed_beats
 
         logger.info(
             "[VOZ] Todos los beats han sido narrados con éxito", module="orchestrator", line=1

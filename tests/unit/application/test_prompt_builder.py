@@ -23,8 +23,8 @@ class TestPromptBuilder:
         prompt = builder.build_system_prompt(story)
 
         assert "terror" in prompt
-        assert "tercera_persona" in prompt
         assert "Protagonist" in prompt
+        assert "Location" in prompt
 
     def test_build_planner_prompt(self):
         """Test building planner prompt."""
@@ -38,7 +38,7 @@ class TestPromptBuilder:
         )
 
         builder = PromptBuilder()
-        prompt = builder.build_planner_prompt(story, num_beats=5)
+        prompt = builder.build_planner_prompt(story)
 
         assert "Test Story" in prompt
         assert "5" in prompt
@@ -62,8 +62,8 @@ class TestPromptBuilder:
         builder = PromptBuilder()
         prompt = builder.build_beat_prompt(story, beat)
 
-        assert "BEAT #1" in prompt
         assert "El protagonista entra a la casa" in prompt
+        assert "terror" in prompt
 
     def test_build_beat_prompt_with_previous_context(self):
         """Test building beat prompt with previous beats."""
@@ -84,9 +84,9 @@ class TestPromptBuilder:
         beat2 = Beat(number=2, summary="El protagonista sube las escaleras")
 
         builder = PromptBuilder()
-        prompt = builder.build_beat_prompt(story, beat2, previous_beats=[beat1], total_beats=5)
+        prompt = builder.build_beat_prompt(story, beat2, previous_beats=[beat1])
 
-        assert "BEAT #2" in prompt or "beat #2" in prompt.lower()
+        assert "2" in prompt and "El protagonista sube las escaleras" in prompt
 
     def test_build_beat_prompt_with_relator_name(self):
         """Test beat prompt includes specific relator name."""
@@ -104,10 +104,48 @@ class TestPromptBuilder:
         beat = Beat(number=1, summary="Llegan a la casa")
 
         builder = PromptBuilder()
-        prompt = builder.build_beat_prompt(story, beat, total_beats=10)
+        prompt = builder.build_beat_prompt(story, beat)
 
         assert "Irene" in prompt
         assert "primera persona" in prompt.lower()
+
+    def test_build_beat_prompt_includes_sinopsis(self):
+        """La sinopsis debe aparecer en el prompt del beat (tarea 3.4 spec 017)."""
+        from src.domain.models import Beat
+
+        story = Story(
+            title="El Monte Prohibido",
+            protagonista="Ricardo, Irene",
+            relator="Irene",
+            escenarios="El monte",
+            sinopsis="Una familia enfrenta el terror del monte prohibido.",
+            atmosfera="terror folclórico",
+        )
+        beat = Beat(number=1, summary="La advertencia de la abuela")
+
+        builder = PromptBuilder()
+        prompt = builder.build_beat_prompt(story, beat)
+
+        assert "Una familia enfrenta el terror del monte prohibido." in prompt
+
+    def test_build_beat_prompt_fallback_includes_sinopsis(self):
+        """El fallback (sin template) también debe incluir la sinopsis."""
+        from src.domain.models import Beat
+
+        story = Story(
+            title="Test",
+            protagonista="Protagonist",
+            relator="primera_persona",
+            escenarios="Location",
+            sinopsis="Sinopsis única de prueba para verificar fallback.",
+            atmosfera="terror",
+        )
+        beat = Beat(number=1, summary="Inicio")
+
+        builder = PromptBuilder(prompts_dir="/ruta/que/no/existe")
+        prompt = builder.build_beat_prompt(story, beat)
+
+        assert "Sinopsis única de prueba para verificar fallback." in prompt
 
     def test_build_voice_prompt(self):
         """Test building voice prompt."""

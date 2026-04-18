@@ -55,6 +55,9 @@ Interfaz de usuario para el sistema de generación granular de relatos de terror
 | 3 | Usuario | Editar beats antes de narrar | Controlar dirección |
 | 4 | Usuario | Ver progreso en tiempo real | Saber qué se genera |
 | 5 | Usuario | Descargar relato en Markdown | Leer/compartir offline |
+| 6 | Usuario | Revisar y editar el análisis narrativo previo (narrative brief) antes de que el Director genere los beats | Corregir la interpretación del LLM sobre mi historia antes de que impacte en la planificación |
+
+> **Nota (2026-04-18):** La User Story 6 depende del Spec 023 (Expansor de Sinopsis). El `narrative_brief` debe persistirse en DB para que la UI pueda leerlo y el usuario editarlo antes de ejecutar la Fase 2 del Director. Ver Spec 023 §3 para el modelo de datos.
 
 ---
 

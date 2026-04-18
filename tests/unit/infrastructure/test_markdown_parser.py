@@ -94,6 +94,26 @@ Contenido del acto
         assert "familia" in data.sinopsis.lower()
         assert "No matar" in data.reglas[0]
 
+    def test_parse_el_monte_prohibido_completo(self):
+        """Verifica que el archivo real mapea correctamente todos los campos (tarea 4.2 spec 017)."""
+        from pathlib import Path
+        parser = MarkdownStoryParser(input_dir=Path("input_stories"))
+        data = parser.parse("el_monte_prohibido.md")
+
+        assert data.title == "El Monte Prohibido"
+        assert "Ricardo" in data.protagonista
+        assert "Irene" in data.protagonista
+        assert "Mariano" in data.protagonista
+        assert data.relator == "Irene"
+        assert "monte" in data.escenarios.lower()
+        assert len(data.sinopsis) > 100
+        assert "Monte de los Espinillos" in data.sinopsis
+        assert len(data.reglas) == 5
+        assert any("Ricardo" in r for r in data.reglas)
+        assert any("Irene" in r for r in data.reglas)
+        assert data.atmosfera != ""
+        assert "terror" in data.atmosfera.lower()
+
     def test_parse_file_not_found(self, parser):
         """Maneja archivo no encontrado."""
         with pytest.raises(FileNotFoundError):
