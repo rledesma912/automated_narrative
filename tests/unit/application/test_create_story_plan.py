@@ -113,6 +113,37 @@ class TestDirectorUseCase:
         assert result.beats[4].summary.startswith("Cumbre")
         assert result.beats[5].summary.startswith("Desenlace")
 
+    @pytest.mark.asyncio
+    async def test_director_uses_injected_normalizer(self):
+        """El normalizer inyectado debe ser llamado con el texto raw del LLM."""
+        story = Story(
+            title="Test",
+            protagonista="P",
+            relator="tercera",
+            escenarios="E",
+            sinopsis="S",
+            atmosfera="terror",
+        )
+
+        class SpyNormalizer:
+            def __init__(self):
+                self.calls: list[tuple[str, str]] = []
+
+            def normalize(self, text: str, model_name: str = "") -> str:
+                self.calls.append((text, model_name))
+                return "1. Beat limpio\n2. Otro beat"
+
+        raw = "## Título que debe ser limpiado\n1. Algo sucio\n2. Otro sucio"
+        mock_llm = MockLLMAdapter(fixed_response=raw)
+        spy = SpyNormalizer()
+
+        use_case = DirectorUseCase(mock_llm, PromptBuilder(), normalizer=spy)
+        result = await use_case.execute(story)
+
+        assert len(spy.calls) == 1
+        assert spy.calls[0][0] == raw
+        assert result.beats[0].summary == "Beat limpio"
+
     def test_parse_beats_formats_correctly(self):
         """Test _parse_beats parses different formats."""
         story = Story(

@@ -10,13 +10,13 @@ Eres el Director de la historia. Tu única tarea es generar exactamente {num_bea
 - Atmósfera: {atmosfera}
 - Sinopsis: {sinopsis}
 
-## Reglas de la historia
-
-{reglas}
-
 ## Estructura de Actos (obligatoria)
 
 {beats_spec}
+
+## Reglas de la historia
+
+{reglas}
 
 ## Instrucciones de salida
 

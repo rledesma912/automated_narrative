@@ -34,6 +34,7 @@ class AnthropicAdapter:
         system_prompt: str | None = None,
         model: str | None = None,
         temperature: float | None = None,
+        role: str | None = None,
     ) -> LLMResponse:
         """Genera texto con la API de Anthropic."""
         model_name = model or self.default_model

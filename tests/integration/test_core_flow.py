@@ -91,7 +91,7 @@ class TestCoreFlowWithMocks:
 
         completed_beats = []
         for beat in plan.beats:
-            narrated_beat, journal = await voz.execute(story, beat)
+            narrated_beat, journal, _ = await voz.execute(story, beat)
             completed_beats.append(narrated_beat)
 
         assert len(completed_beats) == 3
@@ -149,7 +149,7 @@ class TestCoreFlowWithMocks:
         completed = []
 
         for beat in plan.beats:
-            narrated, _ = await voz.execute(story, beat)
+            narrated, _, __ = await voz.execute(story, beat)
             completed.append(narrated)
 
         assert len(completed) == 6

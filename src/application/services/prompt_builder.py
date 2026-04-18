@@ -1,6 +1,7 @@
 """PromptBuilder - construye los prompts para el LLM."""
 
 import logging
+import re
 from pathlib import Path
 
 import yaml
@@ -97,7 +98,7 @@ Sinopsis: {story.sinopsis}
     def build_planner_prompt(self, story: Story) -> str:
         """Build el prompt del Director. num_beats y estructura vienen del YAML."""
         if self._planner_template is None:
-            self._planner_template = self._load_prompt("planner.md")
+            self._planner_template = self._load_prompt(settings.prompt_file_planner)
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         beats_spec = self._format_beats_spec()
@@ -227,7 +228,13 @@ Historia: {story.sinopsis[:200]}"""
         journal: NarrativeJournal | None = None,
         total_beats: int | None = None,
     ) -> str:
-        """Build el prompt para narrar un beat con contexto completo."""
+        """Build el prompt para narrar un beat con contexto completo.
+
+        La sinopsis se inyecta según context_strategy del rol voz en llm_core_definitions.yaml:
+          full       → sinopsis completa
+          beat_slice → segmento proporcional al beat actual
+          none       → sin sinopsis
+        """
         if self._voice_template is None:
             self._voice_template = self._load_prompt(settings.prompt_file_voice)
 
@@ -237,11 +244,12 @@ Historia: {story.sinopsis[:200]}"""
         persona = self._get_persona_gramatical(story.relator)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
+        strategy = settings.role_config("voz").get("context_strategy", "beat_slice")
+        sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, strategy)
+
         logger.debug(
-            f"[PB] relator={story.relator}, persona={persona}, beat={beat.number}/{total_beats}"
-        )
-        logger.debug(
-            f"[PB] prev_beats={len(previous_beats) if previous_beats else 0}, journal={'yes' if journal else 'None'}"
+            f"[PB] relator={story.relator}, persona={persona}, beat={beat.number}/{total_beats}, "
+            f"context_strategy={strategy}"
         )
 
         if self._voice_template:
@@ -252,7 +260,7 @@ Historia: {story.sinopsis[:200]}"""
                 atmosphere=story.atmosfera,
                 protagonistas=story.protagonista,
                 escenarios=story.escenarios,
-                sinopsis=story.sinopsis,
+                sinopsis=sinopsis,
                 beat_number=beat.number,
                 total_beats=total_beats,
                 beat_summary=beat.summary,
@@ -272,7 +280,7 @@ Contexto:
 - Escenario: {story.escenarios}
 - Atmósfera: {story.atmosfera}
 - Relator: {story.relator} ({persona})
-- Sinopsis: {story.sinopsis}
+- Sinopsis: {sinopsis}
 
 Extiende este momento (150-400 palabras)."""
 
@@ -283,6 +291,39 @@ Extiende este momento (150-400 palabras)."""
             base += f"\n\nMemoria narrativa:\n{journal_context}"
 
         return base
+
+    def _resolve_sinopsis(
+        self, sinopsis: str, beat_number: int, total_beats: int, strategy: str
+    ) -> str:
+        """Resuelve qué fragmento de sinopsis inyectar según la estrategia configurada."""
+        if strategy == "none":
+            return ""
+        if strategy == "full":
+            return sinopsis
+        # beat_slice (default): segmento proporcional al beat actual
+        return self._get_beat_sinopsis_hint(sinopsis, beat_number, total_beats)
+
+    def _get_beat_sinopsis_hint(
+        self, sinopsis: str, beat_number: int, total_beats: int
+    ) -> str:
+        """Divide la sinopsis en segmentos por párrafos y retorna el del beat actual.
+
+        Si la sinopsis tiene menos párrafos que beats, retorna las primeras 2 oraciones
+        como contexto general (no espoilea nada).
+        """
+        paragraphs = [p.strip() for p in sinopsis.split("\n\n") if p.strip()]
+
+        if len(paragraphs) < total_beats:
+            # Sinopsis corta: extraer primeras 2 oraciones como contexto general
+            sentences = re.split(r"(?<=[.!?])\s+", sinopsis.strip())
+            return " ".join(sentences[:2]) if sentences else sinopsis
+
+        # Distribuir párrafos en total_beats segmentos; retornar el del beat actual
+        segment_size = len(paragraphs) / total_beats
+        start = int((beat_number - 1) * segment_size)
+        end = int(beat_number * segment_size)
+        end = max(end, start + 1)
+        return "\n\n".join(paragraphs[start:end])
 
     def _load_system_prompt(self) -> str:
         """Carga el template de system prompt."""

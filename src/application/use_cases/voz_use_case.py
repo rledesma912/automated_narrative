@@ -7,6 +7,7 @@ from src.application.services import MemoryJournalist, PromptBuilder
 from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story
+from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +23,12 @@ class VozUseCase:
         llm: LLMProvider,
         memory_journalist: Optional[MemoryJournalist] = None,
         prompt_builder: Optional[PromptBuilder] = None,
+        normalizer: ResponseNormalizer | None = None,
     ):
         self.llm = llm
         self.memory_journalist = memory_journalist or MemoryJournalist(llm)
         self.prompt_builder = prompt_builder or PromptBuilder()
+        self.normalizer = normalizer or ResponseNormalizer()
 
     async def execute(
         self,
@@ -35,7 +38,8 @@ class VozUseCase:
         journal: Optional[NarrativeJournal] = None,
     ) -> tuple[Beat, NarrativeJournal, float]:
         """Ejecuta el caso de uso."""
-        model = settings.llm_model
+        role_cfg = settings.role_config("voz")
+        model = role_cfg.get("model") or settings.llm_model
         temp = settings.voz_temperature
 
         previous_beats = previous_beats or []
@@ -56,8 +60,8 @@ class VozUseCase:
 
         system_prompt = self.prompt_builder.build_voice_prompt(story)
 
-        logger.debug(f"[VOZ] system_prompt:\n{system_prompt[:500]}")
-        logger.debug(f"[VOZ] prompt to LLM:\n{prompt[:800]}")
+        logger.debug(f"[VOZ] ===SYSTEM_PROMPT===\n{system_prompt}\n===END===")
+        logger.debug(f"[VOZ] ===BEAT_PROMPT===\n{prompt}\n===END===")
 
         response = await self._generate_with_retry(
             prompt=prompt,
@@ -66,7 +70,10 @@ class VozUseCase:
             temperature=temp,
         )
 
-        beat.content = response.text.strip()
+        logger.debug(f"[VOZ] ===RAW_RESPONSE beat#{beat.number}===\n{response.text}\n===END===")
+
+        clean_text = self.normalizer.normalize(response.text, model_name=model)
+        beat.content = clean_text
         beat.status = "completed"
 
         updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
@@ -90,6 +97,7 @@ class VozUseCase:
                 system_prompt=system_prompt,
                 model=model,
                 temperature=temperature,
+                role="voz",
             )
 
             content_lower = response.text.lower().strip()
@@ -104,40 +112,11 @@ class VozUseCase:
         return response
 
     def _rephrase_prompt(self, original_prompt: str) -> str:
-        """Rephrase prompt to avoid refusal."""
-        rephrase_hint = """
-
-ATTENTION: Write naturally as a first-person horror story. Don't refuse or apologize.
-Just tell the story directly in a casual, conversational tone as if telling a friend about a paranormal experience.
-"""
-        return original_prompt + rephrase_hint
-
-    def _build_previous_context(self, previous_beats: list[Beat] | None) -> str:
-        """Construye contexto de beats anteriores."""
-        if not previous_beats:
-            return ""
-
-        completed = [b for b in (previous_beats or []) if b.status == "completed"]
-        if not completed:
-            return ""
-
-        last_3 = completed[-3:]
-        return "\n\n".join(f"Beat {b.number}: {b.content[:200]}..." for b in last_3)
-
-    def _inject_journal(self, prompt: str, journal: NarrativeJournal) -> str:
-        """Inyecta contexto del journal."""
-        return (
-            prompt
-            + f"""
-
----
-
-📔 MEMORIA:
-- Lo que ha pasado: {journal.last_events}
-- Misterios sin resolver: {journal.unresolved_mysteries}
-- Estado: {journal.physical_emotional_state}
-"""
+        rephrase_hint = (
+            "\n\nATTENTION: Write naturally as a first-person horror story. "
+            "Don't refuse or apologize. Just tell the story directly."
         )
+        return original_prompt + rephrase_hint
 
 
 # Alias para backwards compatibility

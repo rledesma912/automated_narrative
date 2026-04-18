@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 from src.application.services import PromptBuilder
+from src.config import settings
 from src.application.use_cases import (
     CreateStoryUseCase,
     DirectorUseCase,
@@ -33,11 +34,12 @@ def _write_markdown(story, output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     md_content = renderer.render(story)
-    timestamp = datetime.now().strftime("%d%m%Y%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
     safe_title = (
         "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
         .strip()
         .replace(" ", "_")
+        .lower()
     )
     output_path = output_dir / f"{safe_title}_{timestamp}.md"
     output_path.write_text(md_content, encoding="utf-8")
@@ -133,6 +135,12 @@ async def _generate_async(
     reporter = ProgressReporter()
 
     reporter.start(title)
+    reporter.config_summary(
+        model=settings.llm_model,
+        director_t=settings.director_temperature,
+        voz_t=settings.voz_temperature,
+        journal_t=settings.state_extractor_temperature,
+    )
     t_total = time.perf_counter()
 
     runner = StoryRunner(
