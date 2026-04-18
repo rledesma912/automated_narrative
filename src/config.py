@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     gemini_cli_command: str = "gemini"
     gemini_model_name: str = "gemini-1.5-pro-latest"
 
+    # Anthropic
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-opus-4-7"
+
     # Database
     database_url: str = "sqlite+aiosqlite://stories.db"
 

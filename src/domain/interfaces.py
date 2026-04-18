@@ -9,9 +9,10 @@ from src.domain.models import Beat, Story
 class LLMResponse:
     """Response from LLM."""
 
-    def __init__(self, text: str, context: list[int] | None = None):
+    def __init__(self, text: str, context: list[int] | None = None, elapsed_s: float = 0.0):
         self.text = text
         self.context = context
+        self.elapsed_s = elapsed_s
         self.word_count = len(text.split())
 
 

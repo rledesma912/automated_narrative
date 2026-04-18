@@ -1,5 +1,6 @@
 """MarkdownStoryParser - parser para archivos de historia markdown con soporte Frontmatter."""
 
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -7,6 +8,8 @@ from pathlib import Path
 import yaml
 
 from src.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -46,7 +49,7 @@ class MarkdownStoryParser:
             try:
                 data = yaml.safe_load(frontmatter_match.group(1))
                 storyteller = data.get("storyteller") or data.get("relator", "")
-                return MarkdownStoryData(
+                result = MarkdownStoryData(
                     title=data.get("title", file_path.stem),
                     protagonista=data.get("protagonist") or data.get("protagonista", ""),
                     relator=self._normalize_relator(storyteller),
@@ -55,6 +58,13 @@ class MarkdownStoryParser:
                     atmosfera=data.get("atmosphere") or data.get("atmosfera", ""),
                     reglas=data.get("reglas") or data.get("rules", []),
                 )
+                logger.debug(
+                    "[Parser] YAML frontmatter extraído: title=%r, relator=%r, "
+                    "protagonista=%r, atmosfera=%r, sinopsis=%r..., reglas=%d",
+                    result.title, result.relator, result.protagonista[:40],
+                    result.atmosfera[:40], result.sinopsis[:60], len(result.reglas),
+                )
+                return result
             except yaml.YAMLError:
                 pass
 

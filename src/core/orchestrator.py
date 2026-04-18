@@ -1,6 +1,8 @@
 """Core Orchestrator - Orquesta el flujo completo de generación."""
 
+import time
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from src.application.dto import StoryCreateDTO
 from src.application.services import PromptBuilder
@@ -10,9 +12,13 @@ from src.application.use_cases import (
     VozUseCase,
 )
 from src.cli.logger import logger
+from src.cli.progress import SilentReporter
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
+
+if TYPE_CHECKING:
+    from src.cli.progress import ProgressReporter
 
 
 class StoryRunner:
@@ -25,12 +31,14 @@ class StoryRunner:
         beat_repo: SQLBeatRepository,
         prompt_builder: PromptBuilder,
         output_dir: Path,
+        reporter: "ProgressReporter | SilentReporter | None" = None,
     ):
         self.llm = llm_adapter
         self.story_repo = story_repo
         self.beat_repo = beat_repo
         self.prompt_builder = prompt_builder
         self.output_dir = output_dir
+        self.reporter = reporter or SilentReporter()
 
     async def run_full(
         self,
@@ -40,6 +48,7 @@ class StoryRunner:
         escenarios: str,
         sinopsis: str,
         atmosfera: str,
+        reglas: list[str] | None = None,
         num_beats: int = 10,
     ) -> Story:
         """Ejecuta el flujo completo: crear story + plan + narrar todos los beats."""
@@ -55,6 +64,7 @@ class StoryRunner:
             escenarios=escenarios,
             sinopsis=sinopsis,
             atmosfera=atmosfera,
+            reglas=reglas or [],
         )
         story = await create_story.execute(dto)
 
@@ -93,11 +103,14 @@ class StoryRunner:
         logger.info(f"[DIRECTOR] Planificando {num_beats} beats", module="orchestrator", line=1)
 
         create_plan = DirectorUseCase(self.llm, self.prompt_builder)
+        t0 = time.perf_counter()
         plan = await create_plan.execute(story, num_beats=num_beats)
+        elapsed = time.perf_counter() - t0
 
         for beat in plan.beats:
             await self.beat_repo.save(beat, story.id)
 
+        self.reporter.plan_done(len(plan.beats), elapsed)
         logger.info(
             f"[DIRECTOR] Plan guardado: {len(plan.beats)} beats generados",
             module="orchestrator",
@@ -120,29 +133,35 @@ class StoryRunner:
         narrate_beat = VozUseCase(self.llm)
         completed_beats = []
         journal: NarrativeJournal | None = await self.story_repo.get_journal(story.id)
+        total = len(pending_beats)
 
         for i, beat in enumerate(pending_beats):
             logger.info(
-                f"[VOZ] Narrando Beat #{beat.number} ({i + 1}/{len(pending_beats)})",
+                f"[VOZ] Narrando Beat #{beat.number} ({i + 1}/{total})",
                 module="orchestrator",
                 line=1,
             )
 
-            generated_beat, journal = await narrate_beat.execute(
+            t0 = time.perf_counter()
+            generated_beat, journal, llm_elapsed = await narrate_beat.execute(
                 story=story,
                 beat=beat,
                 previous_beats=completed_beats,
                 journal=journal,
             )
+            step_elapsed = time.perf_counter() - t0
 
             await self.beat_repo.save(generated_beat, story.id)
             if journal:
                 await self.story_repo.save_journal(story.id, journal)
             completed_beats.append(generated_beat)
 
+            self.reporter.beat_done(i + 1, total, step_elapsed, llm_elapsed)
             logger.info(
                 f"[VOZ] Beat #{beat.number} completado y guardado", module="orchestrator", line=1
             )
+
+        story.beats = completed_beats
 
         logger.info(
             "[VOZ] Todos los beats han sido narrados con éxito", module="orchestrator", line=1

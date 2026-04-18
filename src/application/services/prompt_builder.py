@@ -34,9 +34,13 @@ class PromptBuilder:
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
         if self._system_template:
+            persona = self._get_persona_gramatical(story.relator)
             return self._system_template.format(
+                title=story.title,
                 atmosfera=story.atmosfera,
+                atmosphere=story.atmosfera,
                 relator=story.relator,
+                persona_gramatical=persona,
                 reglas=reglas_str,
                 protagonistas=story.protagonista,
                 escenarios=story.escenarios,
@@ -210,6 +214,7 @@ Historia: {story.sinopsis[:200]}"""
                 atmosphere=story.atmosfera,
                 protagonistas=story.protagonista,
                 escenarios=story.escenarios,
+                sinopsis=story.sinopsis,
                 beat_number=beat.number,
                 total_beats=total_beats,
                 beat_summary=beat.summary,
@@ -229,6 +234,7 @@ Contexto:
 - Escenario: {story.escenarios}
 - Atmósfera: {story.atmosfera}
 - Relator: {story.relator} ({persona})
+- Sinopsis: {story.sinopsis}
 
 Extiende este momento (150-400 palabras)."""
 
@@ -302,7 +308,7 @@ Instrucciones:
         if self._journal_template:
             return self._journal_template.format(
                 title=story.title,
-                protagonists=story.protagonista,
+                protagonistas=story.protagonista,
                 atmosfera=story.atmosfera,
                 prev_last_events=prev_last_events,
                 prev_unresolved_mysteries=prev_unresolved,
