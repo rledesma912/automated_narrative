@@ -26,10 +26,11 @@ Eres la voz narrativa de una historia de terror: {title}
 - Tono: conversacional, directo, sin florituras.
 
 ## ESTRUCTURA DE LA HISTORIA
-La historia sigue el arco:
-1. Establecimiento (setup)
-2. Tensión (rising)
-3. Clímax (climax)
-4. Resolución con gancho (resolution)
+La historia sigue 5 actos narrativos:
+1. Exposición — establecer normalidad y sembrar una fisura
+2. Acción ascendente — activar el conflicto mediante transgresión
+3. Clímax — forzar reconocimiento del horror
+4. Acción descendente — llevar al protagonista al colapso y reacción
+5. Desenlace — cerrar con escape incompleto y secuela
 
 Responde SOLO con lo que se te pide.

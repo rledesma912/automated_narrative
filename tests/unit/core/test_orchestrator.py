@@ -79,7 +79,7 @@ class TestStoryRunner:
             escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
-            num_beats=3,
+
         )
 
         assert story is not None
@@ -105,7 +105,7 @@ class TestStoryRunner:
             escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
-            num_beats=3,
+
         )
 
         beats = await beat_repo.get_by_story(story.id)
@@ -131,7 +131,7 @@ class TestStoryRunner:
             escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
-            num_beats=2,
+
         )
 
         beats = await beat_repo.get_by_story(story.id)

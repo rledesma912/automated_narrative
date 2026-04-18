@@ -1,0 +1,77 @@
+beats_spec:
+  version: "1.0"
+  granularity: "5_actos"
+
+  beats:
+
+    - id: 1
+      name: "exposicion"
+      intent: "establecer normalidad y sembrar una fisura"
+      must:
+        - "presentar situacion base del narrador"
+        - "introducir una anomalia sutil"
+        - "incluir regla, advertencia o limite implicito"
+      must_not:
+        - "confirmar lo paranormal"
+      state_change:
+        from: "estabilidad"
+        to: "incomodidad leve"
+      success_signal:
+        - "el lector percibe que algo no encaja pero no sabe que"
+
+    - id: 2
+      name: "accion_ascendente"
+      intent: "activar el conflicto mediante transgresion"
+      must:
+        - "romper la regla o ignorar la advertencia"
+        - "mostrar un evento anomalo concreto"
+        - "intentar explicacion racional"
+      must_not:
+        - "aceptar lo paranormal como hecho"
+      state_change:
+        from: "incomodidad"
+        to: "inquietud concreta"
+      success_signal:
+        - "el protagonista duda pero sigue dentro de una logica racional"
+
+    - id: 3
+      name: "climax"
+      intent: "forzar reconocimiento del horror"
+      must:
+        - "invalidar explicacion racional"
+        - "mostrar amenaza o presencia directa"
+      must_not:
+        - "explicar origen o reglas completas del fenomeno"
+      state_change:
+        from: "negacion"
+        to: "reconocimiento"
+      success_signal:
+        - "el protagonista entiende que enfrenta algo fuera de su marco"
+
+    - id: 4
+      name: "accion_descendente"
+      intent: "llevar al protagonista al colapso y reaccion"
+      must:
+        - "perdida de control o desorientacion"
+        - "intento de escape o respuesta (instinto, fe, memoria)"
+      must_not:
+        - "resolver el conflicto facilmente"
+      state_change:
+        from: "reconocimiento"
+        to: "desesperacion"
+      success_signal:
+        - "la situacion empeora antes de cualquier mejora"
+
+    - id: 5
+      name: "desenlace"
+      intent: "cerrar con escape incompleto y secuela"
+      must:
+        - "salida o alejamiento del peligro"
+        - "marca persistente o evidencia ambigua"
+      must_not:
+        - "cerrar completamente el misterio"
+      state_change:
+        from: "desesperacion"
+        to: "calma inestable"
+      success_signal:
+        - "queda una sensacion de que el horror no termino"

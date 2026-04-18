@@ -43,11 +43,11 @@ cli/             → CLI runner, commands, logger
 
 The app has two entry points: `src/main.py` (FastAPI) and `src/__main__.py` (CLI via `python -m src`).
 
-## Core Concept: 10-Beat Story Generation
+## Core Concept: 5-Beat Story Generation
 
-Stories are broken into **10 beats** (narrative units). Three LLM roles collaborate per beat:
+Stories are broken into **5 beats** (narrative units) following the 5-act structure defined in `config/llm_beats_definition.yaml`. That YAML is the single source of truth for beat count and narrative structure. Three LLM roles collaborate per beat:
 
-1. **Director** (`DirectorUseCase`) — plans all 10 beat summaries upfront using `config/prompts_generation/planner.md`
+1. **Director** (`DirectorUseCase`) — plans all 5 beat summaries upfront using `config/prompts_generation/planner.md`. Beat structure (intent, must, must_not) is injected from the YAML.
 2. **Voz** (`VozUseCase`) — expands each beat summary into full prose using `config/prompts_generation/voice.md`
 3. **MemoryJournalist** — tracks cross-beat coherence (last events, unresolved mysteries, character state) using `config/prompts_generation/journal.md`
 
@@ -80,7 +80,7 @@ Switch providers via `LLM_PROVIDER` env var or by injecting adapters in `StoryRu
 
 Prompts live in `config/prompts_generation/` as Markdown templates:
 - `system.md` — base context injected for all roles
-- `planner.md` — Director: receives story params, outputs 10 beat summaries
+- `planner.md` — Director: receives story params + beat specs from YAML, outputs 5 beat summaries
 - `voice.md` — Voz: receives beat summary + journal state, outputs prose
 - `journal.md` — Journalist: receives beat content, extracts state update
 
@@ -94,6 +94,7 @@ LLM_MODEL=Tohur/natsumura-storytelling-rp-llama-3.1:8b
 DATABASE_URL=sqlite+aiosqlite:///stories.db
 PROMPTS_DIR=./config/prompts_generation
 OUTPUT_DIR=./output_stories
+BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 DIRECTOR_TEMPERATURE=0.4
 VOZ_TEMPERATURE=0.6
 STATE_EXTRACTOR_TEMPERATURE=0.3

@@ -57,7 +57,6 @@ def main() -> None:
         "--input",
         help="Archivo markdown de input (en input_stories/)",
     )
-    generate_parser.add_argument("--beats", type=int, default=10, help="Cantidad de beats")
     generate_parser.add_argument("--real", action="store_true", help="Usar Ollama real (no Mock)")
     generate_parser.add_argument(
         "--output",
@@ -68,7 +67,6 @@ def main() -> None:
 
     plan_parser = subparsers.add_parser("plan", help="Generar solo el plan (beats)")
     plan_parser.add_argument("--title", required=True, help="Título")
-    plan_parser.add_argument("--beats", type=int, default=10, help="Cantidad de beats")
     plan_parser.add_argument(
         "--mock", action="store_true", default=True, help="Usar Mock (default)"
     )
@@ -115,7 +113,6 @@ def main() -> None:
                     provider=args.provider,
                 )
             elif args.input:
-                # Si hay --input, usar el parser de markdown
                 commands.generate(
                     title="",
                     protagonista="",
@@ -123,22 +120,6 @@ def main() -> None:
                     escenarios="",
                     sinopsis="",
                     atmosfera="",
-                    num_beats=args.beats,
-                    use_mock=not args.real,
-                    output_dir=args.output,
-                    provider=args.provider,
-                    input_file=args.input,
-                )
-            elif args.input:
-                # Si hay --input, usar el parser de markdown (no requiere campos)
-                commands.generate(
-                    title="",
-                    protagonista="",
-                    relator="",
-                    escenarios="",
-                    sinopsis="",
-                    atmosfera="",
-                    num_beats=args.beats,
                     use_mock=not args.real,
                     output_dir=args.output,
                     provider=args.provider,
@@ -176,7 +157,6 @@ def main() -> None:
                     escenarios=args.escenarios,
                     sinopsis=args.sinopsis,
                     atmosfera=args.atmosfera,
-                    num_beats=args.beats,
                     use_mock=not args.real,
                     output_dir=args.output,
                     provider=args.provider,
@@ -185,7 +165,6 @@ def main() -> None:
         elif args.command == "plan":
             commands.plan(
                 title=args.title,
-                num_beats=args.beats,
                 use_mock=args.mock,
                 output_dir=args.output,
             )

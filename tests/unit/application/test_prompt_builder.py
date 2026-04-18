@@ -38,7 +38,7 @@ class TestPromptBuilder:
         )
 
         builder = PromptBuilder()
-        prompt = builder.build_planner_prompt(story, num_beats=5)
+        prompt = builder.build_planner_prompt(story)
 
         assert "Test Story" in prompt
         assert "5" in prompt
@@ -84,7 +84,7 @@ class TestPromptBuilder:
         beat2 = Beat(number=2, summary="El protagonista sube las escaleras")
 
         builder = PromptBuilder()
-        prompt = builder.build_beat_prompt(story, beat2, previous_beats=[beat1], total_beats=5)
+        prompt = builder.build_beat_prompt(story, beat2, previous_beats=[beat1])
 
         assert "2" in prompt and "El protagonista sube las escaleras" in prompt
 
@@ -104,7 +104,7 @@ class TestPromptBuilder:
         beat = Beat(number=1, summary="Llegan a la casa")
 
         builder = PromptBuilder()
-        prompt = builder.build_beat_prompt(story, beat, total_beats=10)
+        prompt = builder.build_beat_prompt(story, beat)
 
         assert "Irene" in prompt
         assert "primera persona" in prompt.lower()

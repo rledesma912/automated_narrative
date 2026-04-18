@@ -49,7 +49,6 @@ class StoryRunner:
         sinopsis: str,
         atmosfera: str,
         reglas: list[str] | None = None,
-        num_beats: int = 10,
     ) -> Story:
         """Ejecuta el flujo completo: crear story + plan + narrar todos los beats."""
         logger.info(
@@ -72,7 +71,7 @@ class StoryRunner:
             f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}", module="orchestrator", line=1
         )
 
-        await self._run_plan(story, num_beats)
+        await self._run_plan(story)
 
         await self._run_narrate_all(story)
 
@@ -98,21 +97,20 @@ class StoryRunner:
 
         return story
 
-    async def _run_plan(self, story: Story, num_beats: int) -> list[Beat]:
-        """Genera el plan de beats."""
-        logger.info(f"[DIRECTOR] Planificando {num_beats} beats", module="orchestrator", line=1)
-
+    async def _run_plan(self, story: Story) -> list[Beat]:
+        """Genera el plan de beats. La cantidad viene del YAML via PromptBuilder."""
         create_plan = DirectorUseCase(self.llm, self.prompt_builder)
         t0 = time.perf_counter()
-        plan = await create_plan.execute(story, num_beats=num_beats)
+        plan = await create_plan.execute(story)
         elapsed = time.perf_counter() - t0
 
         for beat in plan.beats:
             await self.beat_repo.save(beat, story.id)
 
-        self.reporter.plan_done(len(plan.beats), elapsed)
+        num_beats = len(plan.beats)
+        self.reporter.plan_done(num_beats, elapsed)
         logger.info(
-            f"[DIRECTOR] Plan guardado: {len(plan.beats)} beats generados",
+            f"[DIRECTOR] Plan guardado: {num_beats} beats generados",
             module="orchestrator",
             line=1,
         )

@@ -28,7 +28,7 @@ class TestDirectorUseCase:
         prompt_builder = PromptBuilder()
         use_case = DirectorUseCase(mock_llm, prompt_builder)
 
-        result = await use_case.execute(story, num_beats=3)
+        result = await use_case.execute(story)
 
         assert isinstance(result, StoryPlan)
         assert result.title == "Test Story"
@@ -51,7 +51,7 @@ class TestDirectorUseCase:
         prompt_builder = PromptBuilder()
         use_case = DirectorUseCase(mock_llm, prompt_builder)
 
-        result = await use_case.execute(story, num_beats=3)
+        result = await use_case.execute(story)
 
         assert len(result.beats) == 3
         assert result.beats[0].number == 1
@@ -74,9 +74,9 @@ class TestDirectorUseCase:
         prompt_builder = PromptBuilder()
         use_case = DirectorUseCase(mock_llm, prompt_builder)
 
-        result = await use_case.execute(story, num_beats=8)
+        result = await use_case.execute(story)
 
-        assert len(result.beats) == 8
+        assert len(result.beats) == 5
         assert result.beats[0].status == "pending"
 
     @pytest.mark.asyncio
@@ -103,7 +103,7 @@ class TestDirectorUseCase:
         prompt_builder = PromptBuilder()
         use_case = DirectorUseCase(mock_llm, prompt_builder)
 
-        result = await use_case.execute(story, num_beats=6)
+        result = await use_case.execute(story)
 
         assert len(result.beats) == 6
         assert result.beats[0].summary.startswith("Apertura")

@@ -107,7 +107,7 @@ Contenido del acto
         assert data.relator == "Irene"
         assert "monte" in data.escenarios.lower()
         assert len(data.sinopsis) > 100
-        assert "Monte Prohibido" in data.sinopsis
+        assert "Monte de los Espinillos" in data.sinopsis
         assert len(data.reglas) == 5
         assert any("Ricardo" in r for r in data.reglas)
         assert any("Irene" in r for r in data.reglas)

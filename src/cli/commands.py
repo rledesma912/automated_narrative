@@ -59,7 +59,6 @@ def generate(
     escenarios: str,
     sinopsis: str,
     atmosfera: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,
     input_file: str | None = None,
@@ -97,7 +96,6 @@ def generate(
                 escenarios,
                 sinopsis,
                 atmosfera,
-                num_beats,
                 use_mock,
                 output_dir,
                 provider,
@@ -120,7 +118,6 @@ async def _generate_async(
     escenarios: str,
     sinopsis: str,
     atmosfera: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
@@ -155,7 +152,6 @@ async def _generate_async(
         sinopsis=sinopsis,
         atmosfera=atmosfera,
         reglas=reglas or [],
-        num_beats=num_beats,
     )
 
     t_export = time.perf_counter()
@@ -168,7 +164,6 @@ async def _generate_async(
 
 def plan(
     title: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
@@ -179,7 +174,7 @@ def plan(
     try:
         import asyncio
 
-        asyncio.run(_plan_async(title, num_beats, use_mock, output_dir, provider))
+        asyncio.run(_plan_async(title, use_mock, output_dir, provider))
     except Exception as e:
         logger.error(f"[COMANDOS] Error al generar el plan: {e}", module="commands", line=1)
         raise GenerationError(str(e))
@@ -189,7 +184,6 @@ def plan(
 
 async def _plan_async(
     title: str,
-    num_beats: int,
     use_mock: bool,
     output_dir: Path,  # noqa: ARG001
     provider: str | None = None,
@@ -213,7 +207,7 @@ async def _plan_async(
         atmosfera="",
     )
 
-    plan = await create_plan.execute(story, num_beats=num_beats)
+    plan = await create_plan.execute(story)
     logger.info(f"[COMANDOS] Se han generado {len(plan.beats)} beats", module="commands", line=1)
 
 
