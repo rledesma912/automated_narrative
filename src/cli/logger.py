@@ -30,31 +30,37 @@ class NarrativeLogger:
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-        self._logger = logging.getLogger(self.name)
-        self._logger.setLevel(logging.DEBUG)
-        self._logger.handlers.clear()
-
-        # Handler para archivo con DEBUG
         file_handler = logging.FileHandler(main_log, encoding="utf-8")
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
+
+        # Root logger: recibe todos los loggers del proyecto (src.*, httpx, etc.)
+        # Solo escribe al archivo para no contaminar la consola.
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.DEBUG)
+        # Evitar handlers duplicados si _setup_loggers se llama más de una vez
+        if not any(isinstance(h, logging.FileHandler) and h.baseFilename == str(main_log.resolve())
+                   for h in root_logger.handlers):
+            root_logger.addHandler(file_handler)
+
+        # "narrative" logger: mensajes de CLI/orquestador con formato idéntico.
+        # propagate=False evita que sus mensajes lleguen también al root (doble escritura).
+        self._logger = logging.getLogger(self.name)
+        self._logger.setLevel(logging.DEBUG)
+        self._logger.handlers.clear()
+        self._logger.propagate = False
         self._logger.addHandler(file_handler)
 
-        # Handler para consola: solo WARNING+ para no ensuciar la salida del usuario
+        # Consola: solo WARNING+ para no ensuciar la salida del usuario
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.WARNING)
         console_handler.setFormatter(formatter)
         self._logger.addHandler(console_handler)
 
-        # Root logger: solo al archivo (evita que libs internas como httpx/aiosqlite
-        # vuelquen sus logs de debug a consola)
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(file_handler)
-
         self._error_logger = logging.getLogger(f"{self.name}-error")
         self._error_logger.setLevel(logging.ERROR)
         self._error_logger.handlers.clear()
+        self._error_logger.propagate = False
 
         error_handler = logging.FileHandler(error_log, encoding="utf-8")
         error_handler.setLevel(logging.ERROR)

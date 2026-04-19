@@ -8,18 +8,26 @@ El sistema se basa en una tríada de agentes especializados que colaboran para m
 
 ```mermaid
 graph TD
-    A[Usuario] --> B[Director]
-    B -- "Genera StoryPlan (Beats)" --> C[Voz]
-    C -- "Escribe Prosa" --> D[Story Output]
-    C <--> E[Journalist]
-    E -- "Mantiene Memoria y Coherencia" --> C
+    A[Usuario] --> B[StoryRunner]
+    B --> DIR[DirectorUseCase]
+    DIR -- "llama LLM" --> LLM1[LLMProvider]
+    LLM1 --> N1[ResponseNormalizer]
+    N1 -- "texto limpio" --> DIR
+    DIR -- "5 beat summaries" --> VOZ[VozUseCase]
+    VOZ -- "llama LLM por beat" --> LLM2[LLMProvider]
+    LLM2 --> N2[ResponseNormalizer]
+    N2 -- "prosa limpia" --> VOZ
+    VOZ <--> JRN[MemoryJournalist]
+    JRN -- "coherencia cross-beat" --> VOZ
+    VOZ --> OUT[output_stories/]
 ```
 
 | Rol | Responsabilidad | Clase/Componente |
 |---|---|---|
-| **Director** | Planificación estructural. Divide la historia en beats lógicos. | `DirectorUseCase` |
-| **Voz** | Ejecución narrativa. Transforma el beat en prosa rica y atmosférica. | `VozUseCase` |
+| **Director** | Planificación estructural. Divide la historia en 5 beats lógicos. | `DirectorUseCase` |
+| **Voz** | Ejecución narrativa. Transforma cada beat en prosa rica y atmosférica. | `VozUseCase` |
 | **Journalist** | Continuidad. Rastrea eventos, estados emocionales y misterios. | `MemoryJournalist` |
+| **Normalizer** | Post-procesamiento. Elimina ruido LLM (thinking tags, headers, frases de asistente). | `ResponseNormalizer` |
 
 ## 2. Comandos de Desarrollo
 
@@ -45,12 +53,35 @@ Cada nueva funcionalidad debe definirse bajo estos puntos:
     *   **Ask First**: Cambios en el esquema de la DB.
     *   **Never Do**: Hardcodear credenciales o paths.
 
-## 4. Modelos de Referencia (Ollama)
+## 4. Configuración LLM — Fuente de verdad única
 
-El sistema está optimizado para los siguientes modelos locales:
-- **Principal (Voz/Director):** `Tohur/natsumura-storytelling-rp-llama-3.1:8b` (storytelling) o `llama3.1:8b` (más rápido)
-- **Alternativo/Ligero:** `mistral:latest`
-- **Codificación:** `qwen2.5-coder:7b-instruct`
+Toda la configuración LLM vive en **`config/llm_core_definitions.yaml`**. El `.env` se reserva exclusivamente para secretos (`ANTHROPIC_API_KEY`) y paths del sistema.
+
+### Perfiles pre-configurados (Spec 027)
+
+El YAML define múltiples **perfiles** bajo `profiles:`. Cada perfil es autocontenido: incluye su `provider`, bloque adapter-specific y los 3 roles (`director`, `voz`, `journal`) con todos sus parámetros.
+
+| Perfil | Provider | Modelo(s) |
+|---|---|---|
+| `ollama-natsumura` | Ollama local | `Tohur/natsumura-storytelling-rp-llama-3.1:8b` |
+| `ollama-llama31` | Ollama local | `llama3.1:8b` (más rápido) |
+| `ollama-mistral` | Ollama local | `mistral:latest` |
+| `anthropic-sonnet` | Anthropic API | `claude-sonnet-4-6` |
+| `gemini-pro` | Gemini CLI | `gemini-1.5-pro-latest` |
+| `gemini-mixto` | Gemini CLI | Pro para narrativa, Flash para journal |
+
+Para cambiar de perfil: una línea en el YAML (`active_profile: <nombre>`) o variable de entorno `LLM_PROFILE=<nombre>`.
+
+### Pipeline de normalización
+
+`ResponseNormalizer` (`src/infrastructure/normalizers/response_normalizer.py`) se inyecta en `DirectorUseCase` y `VozUseCase` desde `StoryRunner`. Normaliza el texto raw del LLM antes de persistir:
+
+1. Elimina thinking tags (`<think>`, `<thought>`, `<reasoning>`) con su contenido
+2. Filtra líneas de ruido: headers markdown, separadores, frases de asistente
+3. Preserva saltos de párrafo (`\n\n`) — no colapsa prosa narrativa
+4. Aplica `model_overrides` según substring del nombre del modelo activo
+
+Los filtros se configuran en la sección `response_filters` del YAML, sin tocar código.
 
 ## 5. Modelo de Datos (ERD)
 

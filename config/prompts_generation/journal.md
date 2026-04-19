@@ -8,11 +8,7 @@ Tu misión es actuar como el "Journalist" del sistema. Después de cada beat, de
 - Protagonistas: {protagonistas}
 - Atmósfera: {atmosfera}
 
-## ESTADO ANTERIOR (del beat anterior)
-
-- Últimos eventos: {prev_last_events}
-- Misterios sin resolver: {prev_unresolved_mysteries}
-- Estado físico/emocional: {prev_physical_emotional_state}
+{previous_state_section}
 
 ## BEAT ACTUAL
 
@@ -36,6 +32,5 @@ Analiza el beat generado y actualiza el registro narrativo. Responde SOLO con es
 ## REGLAS
 
 - No inventar información que no esté en el beat
-- Mantener consistencia con el estado anterior
 - last_action debe ser una acción física o decisión clara (no emociones)
-- Si no hay cambios relevantes, mantener el valor anterior
+{consistency_rules}

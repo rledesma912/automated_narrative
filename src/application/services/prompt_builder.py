@@ -18,7 +18,6 @@ class PromptBuilder:
     def __init__(self, prompts_dir: str | None = None):
         self.prompts_dir = Path(prompts_dir or settings.prompts_dir)
         self._system_template = None
-        self._planner_template = None
         self._voice_template = None
         self._journal_template = None
         self._beats_spec: list[dict] = self._load_beats_definition()
@@ -55,11 +54,26 @@ class PromptBuilder:
             lines.append("")
         return "\n".join(lines).strip()
 
+    def _get_prompt_variant(self) -> str:
+        return settings.active_profile_config().get("prompt_variant", "frontier")
+
+    def _voice_template_path(self) -> str:
+        variant = self._get_prompt_variant()
+        if variant == "compact":
+            path = self.prompts_dir / "voice_compact.md"
+            if path.exists():
+                return "voice_compact.md"
+            logger.warning("[PB] voice_compact.md no encontrado — usando voice.md")
+        return settings.prompt_file_voice
+
     def _load_prompt(self, filename: str) -> str:
         """Carga una plantilla de prompt."""
         file_path = self.prompts_dir / filename
         if file_path.exists():
-            return file_path.read_text(encoding="utf-8").strip()
+            content = file_path.read_text(encoding="utf-8").strip()
+            logger.debug(f"[PB] template loaded: {filename} ({len(content)} chars)")
+            return content
+        logger.warning(f"[PB] template not found: {filename}")
         return ""
 
     def build_system_prompt(self, story: Story) -> str:
@@ -94,68 +108,6 @@ Protagonistas: {story.protagonista}
 Escenarios: {story.escenarios}
 Sinopsis: {story.sinopsis}
 """
-
-    def build_planner_prompt(self, story: Story) -> str:
-        """Build el prompt del Director. num_beats y estructura vienen del YAML."""
-        if self._planner_template is None:
-            self._planner_template = self._load_prompt(settings.prompt_file_planner)
-
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        beats_spec = self._format_beats_spec()
-
-        if self._planner_template:
-            return self._planner_template.format(
-                title=story.title,
-                protagonistas=story.protagonista,
-                escenarios=story.escenarios,
-                sinopsis=story.sinopsis,
-                atmosfera=story.atmosfera,
-                num_beats=self.num_beats,
-                reglas=reglas_str,
-                beats_spec=beats_spec,
-            )
-
-        # Fallback inline si no existe planner.md
-        return f"""Crea exactamente {self.num_beats} beats para esta historia de terror siguiendo la estructura definida:
-
-Título: {story.title}
-Protagonistas: {story.protagonista}
-Escenarios: {story.escenarios}
-Sinopsis: {story.sinopsis}
-Atmósfera: {story.atmosfera}
-
-REGLAS DE LA HISTORIA:
-{reglas_str}
-
-ESTRUCTURA DE ACTOS (obligatoria):
-{beats_spec}
-
-INSTRUCCIONES:
-- Genera EXACTAMENTE {self.num_beats} beats, uno por acto
-- Cada beat: una línea numerada "N. [summary del acto]"
-- El summary debe ser específico a esta historia y respetar el intent del acto
-
-Responde solo con {self.num_beats} líneas numeradas."""
-
-    def _build_narrative_planner_prompt(self, story: Story) -> str:
-        """Build el prompt del Director para 6 beats narrativos."""
-        narrative_template = self._load_prompt("planner_prompt_narrative.md")
-
-        if narrative_template:
-            return narrative_template.format(
-                sinopsis=story.sinopsis[:200],  # Limit sinopsis length
-                protagonista=story.protagonista[:100],  # Limit protagonista
-            )
-
-        return f"""Responde solo con 6 líneas numeradas:
-1. Apertura: ...
-2. Incidente: ...
-3. Subida: ...
-4. Crisis: ...
-5. Cumbre: ...
-6. Desenlace: ...
-
-Historia: {story.sinopsis[:200]}"""
 
     def _get_persona_gramatical(self, relator: str) -> str:
         """Obtiene la persona gramatical basada en el relator.
@@ -203,7 +155,9 @@ Historia: {story.sinopsis[:200]}"""
 
         return " | ".join(parts)
 
-    def _build_previous_context(self, previous_beats: list[Beat] | None) -> str:
+    def _build_previous_context(
+        self, previous_beats: list[Beat] | None, max_chars: int = 150
+    ) -> str:
         """Construye el contexto de beats anteriores."""
         if not previous_beats:
             return "Sin contexto anterior"
@@ -215,7 +169,7 @@ Historia: {story.sinopsis[:200]}"""
         last_2 = completed[-2:]
         context_parts = []
         for b in last_2:
-            content = b.content[:150] + "..." if len(b.content) > 150 else b.content
+            content = b.content[:max_chars] + "..." if len(b.content) > max_chars else b.content
             context_parts.append(f"Beat #{b.number}: {content}")
 
         return "\n\n".join(context_parts)
@@ -236,16 +190,35 @@ Historia: {story.sinopsis[:200]}"""
           none       → sin sinopsis
         """
         if self._voice_template is None:
-            self._voice_template = self._load_prompt(settings.prompt_file_voice)
+            self._voice_template = self._load_prompt(self._voice_template_path())
 
+        variant = self._get_prompt_variant()
         total_beats = total_beats if total_beats is not None else self.num_beats
-        previous_context = self._build_previous_context(previous_beats)
+        max_ctx = 500 if variant == "compact" else 150
+        previous_context = self._build_previous_context(previous_beats, max_chars=max_ctx)
         journal_context = self._build_journal_context(journal)
         persona = self._get_persona_gramatical(story.relator)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
 
         strategy = settings.role_config("voz").get("context_strategy", "beat_slice")
         sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, strategy)
+        beat_spec = self._format_beat_spec_for_beat(beat.number, variant)
+        continuation_cta = (
+            "Continúa el relato:" if beat.number > 1 else "Escribí el primer fragmento del relato:"
+        )
+
+        if beat.number == 1:
+            context_section = ""
+        elif variant == "compact":
+            context_section = (
+                f"--- LO QUE PASÓ ANTES ---\n{previous_context}\n\n"
+                f"--- ESTADO DEL RELATO ---\n{journal_context}"
+            )
+        else:
+            context_section = (
+                f"## CONTEXTO ANTERIOR\n{previous_context}\n\n"
+                f"## MEMORIA NARRATIVA (Journal)\n{journal_context}"
+            )
 
         logger.debug(
             f"[PB] relator={story.relator}, persona={persona}, beat={beat.number}/{total_beats}, "
@@ -253,7 +226,7 @@ Historia: {story.sinopsis[:200]}"""
         )
 
         if self._voice_template:
-            prompt = self._voice_template.format(
+            return self._voice_template.format(
                 title=story.title,
                 relator=story.relator,
                 persona_gramatical=persona,
@@ -266,10 +239,11 @@ Historia: {story.sinopsis[:200]}"""
                 beat_summary=beat.summary,
                 previous_context=previous_context,
                 journal_context=journal_context,
+                context_section=context_section,
                 reglas=reglas_str,
+                beat_spec=beat_spec,
+                continuation_cta=continuation_cta,
             )
-            logger.debug(f"[PB] prompt (first 800 chars):\n{prompt[:800]}")
-            return prompt
 
         base = f"""NARRA EL BEAT #{beat.number} de {total_beats}:
 {beat.summary}
@@ -362,6 +336,109 @@ Instrucciones:
 - Cada beat debe AVANZAR la historia
 - Mantén la tensión y el misterio"""
 
+    def _format_beats_spec_compact(self) -> str:
+        """Versión abreviada de beats_spec: solo id, name e intent."""
+        lines = []
+        for beat in self._beats_spec:
+            lines.append(f"Acto {beat['id']} ({beat['name']}): {beat.get('intent', '')}")
+        return "\n".join(lines)
+
+    def _format_beats_spec_with_constraints(self) -> str:
+        """Beats spec para el mapper: intent + must + must_not por acto."""
+        lines = []
+        for beat in self._beats_spec:
+            lines.append(f"Acto {beat['id']} ({beat['name']}): {beat.get('intent', '')}")
+            must = beat.get("must", [])
+            if must:
+                lines.append(f"  Debe incluir: {' / '.join(must)}")
+            must_not = beat.get("must_not", [])
+            if must_not:
+                lines.append(f"  No debe incluir: {' / '.join(must_not)}")
+            lines.append("")
+        return "\n".join(lines).strip()
+
+    def _format_beat_spec_for_beat(self, beat_number: int, variant: str = "frontier") -> str:
+        """Restricciones del YAML para un beat específico, usadas por VOZ."""
+        beat = next((b for b in self._beats_spec if b["id"] == beat_number), None)
+        if not beat:
+            return ""
+
+        if variant == "compact":
+            parts = [f"Acto {beat['id']} — {beat['name']}: {beat.get('intent', '')}"]
+            must = beat.get("must", [])
+            if must:
+                parts.append(f"Debe incluir: {' / '.join(must)}")
+            must_not = beat.get("must_not", [])
+            if must_not:
+                parts.append(f"No debe incluir: {' / '.join(must_not)}")
+            return "\n".join(parts)
+
+        lines = []
+        must = beat.get("must", [])
+        if must:
+            lines.append("Debe incluir:")
+            lines.extend(f"- {m}" for m in must)
+        must_not = beat.get("must_not", [])
+        if must_not:
+            lines.append("No debe incluir:")
+            lines.extend(f"- {m}" for m in must_not)
+        sc = beat.get("state_change", {})
+        if sc:
+            lines.append(f"Transición emocional: {sc.get('from', '')} → {sc.get('to', '')}")
+        success = beat.get("success_signal", [])
+        if success:
+            lines.append(f"Señal de éxito: {success[0]}")
+        return "\n".join(lines)
+
+    def build_synopsis_mapper_prompt(self, story: "Story") -> str:
+        """Prompt principal del SynopsisBeatMapper, selecciona variante por perfil."""
+        variant = self._get_prompt_variant()
+        template_file = (
+            "synopsis_mapper_compact.md" if variant == "compact" else "synopsis_mapper.md"
+        )
+        template = self._load_prompt(template_file)
+        if not template:
+            logger.warning(f"[PB] {template_file} no encontrado — usando synopsis_mapper.md")
+            template = self._load_prompt("synopsis_mapper.md")
+
+        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        beats_spec = self._format_beats_spec()
+        beats_spec_compact = self._format_beats_spec_compact()
+        beats_spec_with_constraints = self._format_beats_spec_with_constraints()
+
+        return template.format(
+            title=story.title,
+            sinopsis=story.sinopsis,
+            protagonistas=story.protagonista,
+            relator=story.relator,
+            escenarios=story.escenarios,
+            atmosfera=story.atmosfera,
+            reglas=reglas_str,
+            num_beats=self.num_beats,
+            beats_spec=beats_spec,
+            beats_spec_compact=beats_spec_compact,
+            beats_spec_with_constraints=beats_spec_with_constraints,
+        )
+
+    def build_voice_system_compact(self, story: Story, beat_number: int = 1) -> str | None:
+        """System prompt para VOZ en perfil compact. Carga voice_system_compact.md si existe."""
+        system = self._load_prompt("voice_system_compact.md")
+        if not system:
+            return None
+        continuation_hint = (
+            "Continuás exactamente desde donde terminó el fragmento anterior."
+            if beat_number > 1
+            else "Comenzás tu narración desde el inicio de los eventos de esa noche."
+        )
+        return system.format(relator=story.relator, continuation_hint=continuation_hint)
+
+    def build_synopsis_mapper_system(self, story: "Story") -> str | None:
+        """System prompt para el mapper. Carga synopsis_mapper_system_compact.md si existe."""
+        if self._get_prompt_variant() == "compact":
+            system = self._load_prompt("synopsis_mapper_system_compact.md")
+            return system if system else None
+        return self.build_system_prompt(story)
+
     def build_journal_prompt(
         self,
         story: Story,
@@ -372,41 +449,44 @@ Instrucciones:
         if self._journal_template is None:
             self._journal_template = self._load_prompt(settings.prompt_file_journal)
 
-        prev_last_events = (
-            previous_journal.last_events if previous_journal else "Sin eventos registrados"
-        )
-        prev_unresolved = (
-            previous_journal.unresolved_mysteries if previous_journal else "Sin misterios"
-        )
-        prev_state = (
-            previous_journal.physical_emotional_state
-            if previous_journal
-            else "Sin estado registrado"
-        )
+        if previous_journal is None:
+            previous_state_section = ""
+            consistency_rules = ""
+        else:
+            prev_last_events = previous_journal.last_events
+            prev_unresolved = previous_journal.unresolved_mysteries
+            prev_state = previous_journal.physical_emotional_state
+            previous_state_section = (
+                "## ESTADO ANTERIOR (del beat anterior)\n\n"
+                f"- Últimos eventos: {prev_last_events}\n"
+                f"- Misterios sin resolver: {prev_unresolved}\n"
+                f"- Estado físico/emocional: {prev_state}"
+            )
+            consistency_rules = (
+                "- Mantener consistencia con el estado anterior\n"
+                "- Si no hay cambios relevantes, mantener el valor anterior"
+            )
 
         if self._journal_template:
             return self._journal_template.format(
                 title=story.title,
                 protagonistas=story.protagonista,
                 atmosfera=story.atmosfera,
-                prev_last_events=prev_last_events,
-                prev_unresolved_mysteries=prev_unresolved,
-                prev_physical_emotional_state=prev_state,
+                previous_state_section=previous_state_section,
                 beat_number=beat.number,
                 beat_summary=beat.summary,
                 beat_content=beat.content[:800] if beat.content else "[Aún no generado]",
+                consistency_rules=consistency_rules,
             )
 
+        estado_anterior = previous_state_section if previous_state_section else "(Sin estado anterior)"
         return f"""Eres el diario de memoria de una historia de terror. Registras lo que ocurre.
 
 HISTORIA: {story.title}
 BEAT #{beat.number}: {beat.summary}
 CONTENIDO: {beat.content[:800] if beat.content else "[Aún no generado]"}
 
-REGISTRO ANTERIOR:
-- Últimos eventos: {prev_last_events}
-- Misterios sin resolver: {prev_unresolved}
-- Estado físico/emocional: {prev_state}
+{estado_anterior}
 
 Responde SOLO con este JSON exacto:
 {{

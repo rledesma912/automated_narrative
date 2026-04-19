@@ -57,7 +57,13 @@ def main() -> None:
         "--input",
         help="Archivo markdown de input (en input_stories/)",
     )
-    generate_parser.add_argument("--real", action="store_true", help="Usar Ollama real (no Mock)")
+    generate_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
+    generate_parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Genera debug_prompts_responses_YYYYMMDDHHМM.md con prompts y respuestas completas",
+    )
     generate_parser.add_argument(
         "--output",
         type=Path,
@@ -67,9 +73,7 @@ def main() -> None:
 
     plan_parser = subparsers.add_parser("plan", help="Generar solo el plan (beats)")
     plan_parser.add_argument("--title", required=True, help="Título")
-    plan_parser.add_argument(
-        "--mock", action="store_true", default=True, help="Usar Mock (default)"
-    )
+    plan_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
     plan_parser.add_argument(
         "--output",
         type=Path,
@@ -80,7 +84,7 @@ def main() -> None:
     narrate_parser = subparsers.add_parser("narrate", help="Narrar beats específicos")
     narrate_parser.add_argument("--story-id", required=True, help="UUID de la historia")
     narrate_parser.add_argument("--beats", required=True, help="Beats a narrar (csv: 1,2,3)")
-    narrate_parser.add_argument("--real", action="store_true", help="Usar Ollama real")
+    narrate_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
 
     export_parser = subparsers.add_parser("export", help="Exportar historia a archivo")
     export_parser.add_argument("--story-id", required=True, help="UUID de la historia")
@@ -108,9 +112,10 @@ def main() -> None:
             if args.story_id:
                 commands.generate_from_db(
                     story_id=args.story_id,
-                    use_mock=not args.real,
+                    use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
+                    debug=args.debug,
                 )
             elif args.input:
                 commands.generate(
@@ -120,10 +125,11 @@ def main() -> None:
                     escenarios="",
                     sinopsis="",
                     atmosfera="",
-                    use_mock=not args.real,
+                    use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
                     input_file=args.input,
+                    debug=args.debug,
                 )
             else:
                 # Validación de campos obligatorios para nueva historia SIN --input
@@ -157,10 +163,11 @@ def main() -> None:
                     escenarios=args.escenarios,
                     sinopsis=args.sinopsis,
                     atmosfera=args.atmosfera,
-                    use_mock=not args.real,
+                    use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
                     input_file=args.input,
+                    debug=args.debug,
                 )
         elif args.command == "plan":
             commands.plan(
@@ -172,7 +179,7 @@ def main() -> None:
             commands.narrate(
                 story_id=args.story_id,
                 beats=args.beats,
-                use_mock=not args.real,
+                use_mock=args.mock,
             )
         elif args.command == "export":
             commands.export_(

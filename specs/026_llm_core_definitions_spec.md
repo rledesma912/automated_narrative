@@ -203,7 +203,7 @@ response_filters:
 
 **Tareas:**
 
-- [ ] **1.1** — Crear `config/llm_core_definitions.yaml` con la estructura especificada.
+- [x] **1.1** — Crear `config/llm_core_definitions.yaml` con la estructura especificada.
   - Verify: `python -c "import yaml; yaml.safe_load(open('config/llm_core_definitions.yaml'))"`
 
 ---
@@ -219,7 +219,7 @@ response_filters:
 
 **Tareas:**
 
-- [ ] **2.1** — Agregar método `_load_llm_core()` a `Settings` que carga el YAML.
+- [x] **2.1** — Agregar método `_load_llm_core()` a `Settings` que carga el YAML.
   - Archivo: `src/config.py`
   - Si el archivo no existe, loguea warning y usa defaults hardcodeados
   - Expone:
@@ -228,12 +228,12 @@ response_filters:
     - `settings.llm_response_filter_config` → dict de filtros
   - Verify: `python -c "from src.config import settings; print(settings.llm_provider)"`
 
-- [ ] **2.2** — Actualizar `OllamaAdapter` para leer `num_ctx`, `num_predict`, `stop` del YAML via settings.
+- [x] **2.2** — Actualizar `OllamaAdapter` para leer `num_ctx`, `num_predict`, `stop` del YAML via settings.
   - Archivo: `src/infrastructure/adapters/ollama_adapter.py`
   - Recibir el `role` como parámetro opcional en `generate()` o como config del adapter
   - Verify: `pytest tests/unit/infrastructure/test_ollama_adapter.py -v` (si existe)
 
-- [ ] **2.3** — Limpiar `.env.sample`: eliminar vars LLM movidas al YAML, agregar comentario de migración.
+- [x] **2.3** — Limpiar `.env.sample`: eliminar vars LLM movidas al YAML, agregar comentario de migración.
   - Variables a eliminar: `LLM_MODEL`, `LLM_MODEL_TEMPERATURE`, `DIRECTOR_TEMPERATURE`,
     `VOZ_TEMPERATURE`, `STATE_EXTRACTOR_MODEL`, `STATE_EXTRACTOR_TEMPERATURE`,
     `OLLAMA_HOST`, `GEMINI_CLI_COMMAND`, `GEMINI_MODEL_NAME`, `ANTHROPIC_MODEL`
@@ -280,7 +280,7 @@ class ResponseNormalizer:
 
 **Tareas:**
 
-- [ ] **3.1** — Reescribir `ResponseNormalizer` según el diseño.
+- [x] **3.1** — Reescribir `ResponseNormalizer` según el diseño.
   - Archivo: `src/infrastructure/normalizers/response_normalizer.py`
   - Inyección de config via `__init__` (SOLID: DI, OCP)
   - No hardcodear ninguna lista — todo viene de `cfg`
@@ -330,21 +330,21 @@ contenido para dividir limpiamente, retorna las primeras 2 oraciones como contex
 
 **Tareas:**
 
-- [ ] **4.1** — Inyectar `normalizer` en `DirectorUseCase` y aplicar post-LLM.
+- [x] **4.1** — Inyectar `normalizer` en `DirectorUseCase` y aplicar post-LLM.
   - Archivo: `src/application/use_cases/director_use_case.py`
   - `clean_text = self.normalizer.normalize(response.text, model_name=settings.llm_model)`
   - `beats = self._parse_beats(clean_text, ...)`
 
-- [ ] **4.2** — Inyectar `normalizer` en `VozUseCase` y aplicar post-LLM.
+- [x] **4.2** — Inyectar `normalizer` en `VozUseCase` y aplicar post-LLM.
   - Archivo: `src/application/use_cases/voz_use_case.py`
   - `clean_text = self.normalizer.normalize(response.text, model_name=settings.llm_model)`
   - `beat.content = clean_text`
 
-- [ ] **4.3** — Pasar `normalizer` desde `StoryRunner`.
+- [x] **4.3** — Pasar `normalizer` desde `StoryRunner`.
   - Archivo: `src/core/orchestrator.py`
   - Instanciar `ResponseNormalizer()` en `__init__` y pasarlo a DirectorUseCase y VozUseCase
 
-- [ ] **4.4** — Implementar `context_strategy` en `PromptBuilder`.
+- [x] **4.4** — Implementar `context_strategy` en `PromptBuilder`.
   - Archivo: `src/application/services/prompt_builder.py`
   - `build_beat_prompt()` lee `settings.llm_role_config("voz")["context_strategy"]`
   - `"full"` → inyecta `story.sinopsis` completa (comportamiento actual)
@@ -379,7 +379,7 @@ o anticipe el siguiente momento, sin resolver nada.
 
 **Tareas:**
 
-- [ ] **5.1** — Editar `config/prompts_generation/voice.md`.
+- [x] **5.1** — Editar `config/prompts_generation/voice.md`.
   - Reemplazar la lista `Apertura / Desarrollo / Cierre` por instrucciones en prosa
   - Verify: correr generación con Tohur y confirmar que `###` no aparece en el output
 
@@ -394,7 +394,7 @@ o anticipe el siguiente momento, sin resolver nada.
 
 **Tareas:**
 
-- [ ] **6.1** — Crear `tests/unit/infrastructure/test_response_normalizer.py`.
+- [x] **6.1** — Crear `tests/unit/infrastructure/test_response_normalizer.py`.
   - Test: elimina `<think>` tags con contenido
   - Test: elimina líneas que empiezan con `###`, `##`, `#`
   - Test: elimina líneas `---`
@@ -403,11 +403,11 @@ o anticipe el siguiente momento, sin resolver nada.
   - Test: config custom via `__init__` (no depende de settings global)
   - Test: `model_overrides` activa filtros adicionales según `model_name`
 
-- [ ] **6.2** — Actualizar tests de `DirectorUseCase` y `VozUseCase`.
+- [x] **6.2** — Actualizar tests de `DirectorUseCase` y `VozUseCase`.
   - Inyectar normalizer mock para tests existentes (no romper tests de parsing/lógica)
   - Agregar test: el normalizer se llama con el texto raw del LLM
 
-- [ ] **6.3** — Tests de `context_strategy` en `PromptBuilder`.
+- [x] **6.3** — Tests de `context_strategy` en `PromptBuilder`.
   - Test: `beat_slice` — beat 1/5 recibe el segmento inicial, beat 5/5 recibe el final
   - Test: `beat_slice` — sinopsis corta (< 3 oraciones) retorna sinopsis completa sin dividir
   - Test: `full` — el prompt contiene la sinopsis completa
@@ -424,17 +424,17 @@ o anticipe el siguiente momento, sin resolver nada.
 
 **Tareas:**
 
-- [ ] **7.1** — Actualizar `CLAUDE.md`.
+- [x] **7.1** — Actualizar `CLAUDE.md`.
   - Sección "Key Environment Variables": reemplazar vars LLM por referencia al YAML
   - Agregar sección "LLM Configuration": explica `llm_core_definitions.yaml`
   - Agregar sección "Response Pipeline": describe el flujo con normalizador
 
-- [ ] **7.2** — Actualizar `specs/001_marco_sdd.md`.
+- [x] **7.2** — Actualizar `specs/001_marco_sdd.md`.
   - Agregar `ResponseNormalizer` al diagrama de arquitectura
   - Actualizar tabla de modelos de referencia
   - Agregar nota sobre `llm_core_definitions.yaml` como fuente de verdad
 
-- [ ] **7.3** — Limpiar `config/llm_response_filters.yaml`.
+- [x] **7.3** — Limpiar `config/llm_response_filters.yaml`.
   - Agregar comentario `# DEPRECATED: migrado a llm_core_definitions.yaml`
   - (Eliminación física en una release posterior, para no romper git history)
 
