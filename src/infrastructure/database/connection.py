@@ -26,6 +26,7 @@ async def init_db() -> None:
             escenarios TEXT,
             sinopsis TEXT,
             atmosfera TEXT,
+            narrative_brief TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )

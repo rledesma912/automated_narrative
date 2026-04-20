@@ -141,8 +141,9 @@ class TestDirectorUseCase:
         use_case = DirectorUseCase(mock_llm, PromptBuilder(), normalizer=spy)
         result = await use_case.execute(story)
 
-        assert len(spy.calls) == 1
-        assert spy.calls[0][0] == raw
+        # 2 llamadas: Fase 0 (story_analyst) + Fase 1 (mapper)
+        assert len(spy.calls) == 2
+        assert all(call[0] == raw for call in spy.calls)
         assert result.beats[0].summary == "Beat limpio"
 
     def test_parse_beats_formats_correctly(self):

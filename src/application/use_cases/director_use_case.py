@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Callable
 from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
+from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, NarrativeJournal, Story, StoryPlan
 from src.infrastructure.normalizers import ResponseNormalizer
@@ -65,6 +66,43 @@ class DirectorUseCase:
             )
         return self._journalist
 
+    async def _analyze_story(self, story: Story) -> str:
+        """Fase 0: expande la sinopsis en un narrative brief estructurado."""
+        role_cfg = settings.role_config("story_analyst")
+        model = role_cfg.get("model") or settings.llm_model
+        temperature = role_cfg.get("temperature", 0.3)
+
+        prompt = self.prompt_builder.build_story_analyst_prompt(story)
+        response = await self.llm.generate(
+            prompt=prompt,
+            system_prompt=None,
+            model=model,
+            temperature=temperature,
+            role="story_analyst",
+        )
+
+        brief = self.normalizer.normalize(response.text, model_name=model).strip()
+
+        self.debug_collector.record(
+            role="story_analyst",
+            beat_number=None,
+            source_component=DebugCollector.source_label(self),
+            model=model,
+            temperature=temperature,
+            num_ctx=role_cfg.get("num_ctx"),
+            num_predict=role_cfg.get("num_predict"),
+            system_prompt=None,
+            user_prompt=prompt,
+            raw_response=response.text,
+            normalized_response=brief,
+            parser_result="n/a",
+            elapsed_s=response.elapsed_s,
+        )
+
+        story.narrative_brief = brief
+        logger.debug(f"[DIRECTOR] Narrative brief generado: {len(brief)} chars")
+        return brief
+
     async def execute(self, story: Story) -> StoryPlan:
         """Planificación solamente. Usado por CLI `plan`."""
         mapper = SynopsisBeatMapper(
@@ -79,7 +117,8 @@ class DirectorUseCase:
             f"prompt_builder={self.prompt_builder.__class__.__name__}",
         )
 
-        beats = await mapper.map(story)
+        brief = await self._analyze_story(story)
+        beats = await mapper.map(story, narrative_brief=brief)
         logger.debug(f"[DIRECTOR] Plan generado: {len(beats)} beats")
 
         return StoryPlan(story_id=story.id, title=story.title, beats=beats)
@@ -102,7 +141,8 @@ class DirectorUseCase:
         )
 
         t0 = perf_counter()
-        beats = await mapper.map(story)
+        brief = await self._analyze_story(story)
+        beats = await mapper.map(story, narrative_brief=brief)
         plan_elapsed = perf_counter() - t0
 
         logger.debug(f"[DIRECTOR] Plan: {len(beats)} beats en {plan_elapsed:.1f}s")

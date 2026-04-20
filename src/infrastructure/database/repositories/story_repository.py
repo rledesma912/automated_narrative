@@ -15,8 +15,8 @@ class SQLStoryRepository:
 
         await conn.execute(
             """INSERT OR REPLACE INTO story
-            (id, title, protagonista, relator, escenarios, sinopsis, atmosfera, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (id, title, protagonista, relator, escenarios, sinopsis, atmosfera, narrative_brief, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story.id),
                 story.title,
@@ -25,6 +25,7 @@ class SQLStoryRepository:
                 story.escenarios,
                 story.sinopsis,
                 story.atmosfera,
+                story.narrative_brief,
                 story.status.value,
                 story.created_at.isoformat(),
             ),
@@ -134,6 +135,16 @@ class SQLStoryRepository:
             physical_emotional_state=row["physical_emotional_state"],
         )
 
+    async def save_narrative_brief(self, story_id, brief: str) -> None:
+        """Persiste el narrative_brief generado por el expansor."""
+        conn = await get_connection()
+        await conn.execute(
+            "UPDATE story SET narrative_brief = ? WHERE id = ?",
+            (brief, str(story_id)),
+        )
+        await conn.commit()
+        await conn.close()
+
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""
         return Story(
@@ -144,5 +155,6 @@ class SQLStoryRepository:
             escenarios=row["escenarios"],
             sinopsis=row["sinopsis"],
             atmosfera=row["atmosfera"],
+            narrative_brief=row["narrative_brief"] or "",
             status=StoryStatus(row["status"]),
         )

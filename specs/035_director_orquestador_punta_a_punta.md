@@ -1,6 +1,6 @@
 # Spec 035 — DirectorUseCase como Orquestador Punta a Punta
 
-**Estado:** APPROVED  
+**Estado:** IMPLEMENTED  
 **Fecha:** 2026-04-19  
 **Rama destino:** `fix_flow_ollama_local`  
 **Motivación:** `StoryRunner` mezcla lógica de dominio LLM con infraestructura (repos, reporter, debug). `DirectorUseCase` es un wrapper delgado que solo delega al mapper. El resultado es responsabilidades difusas: StoryRunner sabe demasiado de LLM, y el Director no dirige nada en realidad. Además, `planner.md`, `planner_compact.md` y `build_planner_prompt()` son dead code desde que `SynopsisBeatMapper` reemplazó el approach creativo del planner.

@@ -1,6 +1,6 @@
 # Spec 034 — Suprimir Secciones Vacías en Beat #1 (VOZ y Journal)
 
-**Estado:** APPROVED  
+**Estado:** IMPLEMENTED  
 **Fecha:** 2026-04-19  
 **Rama destino:** `fix_flow_ollama_local`  
 **Motivación:** En la primera iteración del pipeline (Beat #1), los prompts de VOZ y Journal incluyen secciones que sólo tienen sentido a partir del beat #2. Las secciones vacías consumen tokens innecesarios y peor aún, envían al LLM instrucciones contradictorias (ej: "mantén consistencia con el estado anterior" cuando no hay estado anterior).

@@ -33,27 +33,6 @@ class PromptBuilder:
             data = yaml.safe_load(f)
         return data.get("beats_spec", {}).get("beats", [])
 
-    def _format_beats_spec(self) -> str:
-        """Serializa los beats del YAML a bloque legible para el LLM."""
-        lines = []
-        for beat in self._beats_spec:
-            lines.append(f"Beat {beat['id']} — {beat['name']}")
-            lines.append(f"  Intent: {beat.get('intent', '')}")
-            must = beat.get("must", [])
-            if must:
-                lines.append(f"  Debe incluir: {' / '.join(must)}")
-            must_not = beat.get("must_not", [])
-            if must_not:
-                lines.append(f"  No debe incluir: {' / '.join(must_not)}")
-            sc = beat.get("state_change", {})
-            if sc:
-                lines.append(f"  Cambio de estado: {sc.get('from', '')} → {sc.get('to', '')}")
-            success = beat.get("success_signal", [])
-            if success:
-                lines.append(f"  Señal de éxito: {success[0]}")
-            lines.append("")
-        return "\n".join(lines).strip()
-
     def _get_prompt_variant(self) -> str:
         return settings.active_profile_config().get("prompt_variant", "frontier")
 
@@ -343,20 +322,6 @@ Instrucciones:
             lines.append(f"Acto {beat['id']} ({beat['name']}): {beat.get('intent', '')}")
         return "\n".join(lines)
 
-    def _format_beats_spec_with_constraints(self) -> str:
-        """Beats spec para el mapper: intent + must + must_not por acto."""
-        lines = []
-        for beat in self._beats_spec:
-            lines.append(f"Acto {beat['id']} ({beat['name']}): {beat.get('intent', '')}")
-            must = beat.get("must", [])
-            if must:
-                lines.append(f"  Debe incluir: {' / '.join(must)}")
-            must_not = beat.get("must_not", [])
-            if must_not:
-                lines.append(f"  No debe incluir: {' / '.join(must_not)}")
-            lines.append("")
-        return "\n".join(lines).strip()
-
     def _format_beat_spec_for_beat(self, beat_number: int, variant: str = "frontier") -> str:
         """Restricciones del YAML para un beat específico, usadas por VOZ."""
         beat = next((b for b in self._beats_spec if b["id"] == beat_number), None)
@@ -390,7 +355,26 @@ Instrucciones:
             lines.append(f"Señal de éxito: {success[0]}")
         return "\n".join(lines)
 
-    def build_synopsis_mapper_prompt(self, story: "Story") -> str:
+    def build_story_analyst_prompt(self, story: "Story") -> str:
+        """Prompt del expansor de sinopsis. Selecciona variante por perfil."""
+        variant = self._get_prompt_variant()
+        template_file = "story_analyst_compact.md" if variant == "compact" else "story_analyst.md"
+        template = self._load_prompt(template_file)
+        if not template:
+            logger.warning(f"[PB] {template_file} no encontrado — usando story_analyst.md")
+            template = self._load_prompt("story_analyst.md")
+
+        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        return template.format(
+            title=story.title,
+            sinopsis=story.sinopsis,
+            protagonistas=story.protagonista,
+            escenarios=story.escenarios,
+            atmosfera=story.atmosfera,
+            reglas=reglas_str,
+        )
+
+    def build_synopsis_mapper_prompt(self, story: "Story", narrative_brief: str = "") -> str:
         """Prompt principal del SynopsisBeatMapper, selecciona variante por perfil."""
         variant = self._get_prompt_variant()
         template_file = (
@@ -402,9 +386,7 @@ Instrucciones:
             template = self._load_prompt("synopsis_mapper.md")
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        beats_spec = self._format_beats_spec()
         beats_spec_compact = self._format_beats_spec_compact()
-        beats_spec_with_constraints = self._format_beats_spec_with_constraints()
 
         return template.format(
             title=story.title,
@@ -415,9 +397,8 @@ Instrucciones:
             atmosfera=story.atmosfera,
             reglas=reglas_str,
             num_beats=self.num_beats,
-            beats_spec=beats_spec,
             beats_spec_compact=beats_spec_compact,
-            beats_spec_with_constraints=beats_spec_with_constraints,
+            narrative_brief=narrative_brief,
         )
 
     def build_voice_system_compact(self, story: Story, beat_number: int = 1) -> str | None:

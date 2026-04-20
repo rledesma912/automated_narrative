@@ -17,9 +17,13 @@ precisión qué sucede en la sinopsis durante ese momento.
 
 {sinopsis}
 
+## Análisis narrativo previo
+
+{narrative_brief}
+
 ## Estructura de actos
 
-{beats_spec}
+{beats_spec_compact}
 
 ## Instrucciones
 
@@ -27,8 +31,6 @@ Para cada acto:
 - Identifica en la sinopsis el pasaje que corresponde a ese momento narrativo.
 - Escribe UNA oración que describe qué ocurre, usando los eventos y personajes
   reales de la sinopsis. No inventes nada que no esté en ella.
-- La oración DEBE respetar el `must` del acto e incluir sus elementos clave.
-- La oración NO DEBE violar el `must_not` del acto bajo ninguna circunstancia.
 - Si la sinopsis no detalla explícitamente ese acto, infiere la conclusión lógica
   más coherente con lo que sí describe.
 

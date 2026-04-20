@@ -29,6 +29,12 @@ profiles:
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
+      story_analyst:
+        model: llama3.1:8b
+        temperature: 0.3
+        num_ctx: 2048
+        num_predict: 500
+        stop: ["###", "---\n"]
       director:
         model: llama3.1:8b
         temperature: 0.4
@@ -54,6 +60,12 @@ profiles:
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
+      story_analyst:
+        model: mistral:latest
+        temperature: 0.3
+        num_ctx: 2048
+        num_predict: 500
+        stop: []
       director:
         model: mistral:latest
         temperature: 0.4
@@ -79,6 +91,12 @@ profiles:
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
+      story_analyst:
+        model: qwen2.5:7b
+        temperature: 0.3
+        num_ctx: 2048
+        num_predict: 500
+        stop: []
       director:
         model: qwen2.5:7b
         temperature: 0.4
@@ -104,6 +122,10 @@ profiles:
     provider: anthropic
     anthropic: { model: claude-sonnet-4-6 }
     roles:
+      story_analyst:
+        model: claude-sonnet-4-6
+        temperature: 0.3
+        num_predict: 600
       director:
         model: claude-sonnet-4-6
         temperature: 0.4
@@ -120,6 +142,10 @@ profiles:
     provider: gemini
     gemini: { cli_command: gemini, model: gemini-2.5-flash }
     roles:
+      story_analyst:
+        model: gemini-2.5-flash
+        temperature: 0.3
+        num_predict: 600
       director:
         model: gemini-2.5-flash
         temperature: 0.4

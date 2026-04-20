@@ -32,7 +32,7 @@ class SynopsisBeatMapper:
         self.normalizer = normalizer or ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
 
-    async def map(self, story: Story) -> list[Beat]:
+    async def map(self, story: Story, narrative_brief: str = "") -> list[Beat]:
         """Genera los beats mapeando la sinopsis a la estructura de actos."""
         num_beats = self.prompt_builder.num_beats
         role_cfg = settings.role_config("director")
@@ -40,7 +40,7 @@ class SynopsisBeatMapper:
         temperature = role_cfg.get("temperature", 0.3)
 
         variant = self.prompt_builder._get_prompt_variant()
-        prompt = self.prompt_builder.build_synopsis_mapper_prompt(story)
+        prompt = self.prompt_builder.build_synopsis_mapper_prompt(story, narrative_brief)
         system_prompt = self.prompt_builder.build_synopsis_mapper_system(story)
 
         logger.debug(

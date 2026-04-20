@@ -1,12 +1,42 @@
-Sinopsis:
+SINOPSIS:
 {sinopsis}
 
-Narrador: {relator}
+CONTEXTO:
+Narradora: {relator}
 Personajes: {protagonistas}
 Atmósfera: {atmosfera}
 
-Dividí la sinopsis en exactamente {num_beats} momentos, uno por acto. Cada línea debe citar o parafrasear directamente lo que dice la sinopsis — sin agregar eventos que no estén escritos. Respetá las restricciones de cada acto.
+ANÁLISIS:
+{narrative_brief}
 
-{beats_spec_with_constraints}
+ACTOS:
+{beats_spec_compact}
 
-Formato de respuesta - Cada oración debe describir el evento de la sinopsis Y reflejar el propósito dramático del acto.
+INSTRUCCIONES:
+
+Dividí la sinopsis en exactamente {num_beats} actos.
+
+Para cada acto:
+- seleccioná el fragmento más representativo de la sinopsis
+- condensalo en una sola oración
+- mantené fidelidad semántica total
+
+REGLAS:
+
+- Cada línea debe derivarse directamente de la sinopsis
+- Podés condensar, pero no reinterpretar
+- Usá acciones, percepciones o eventos observables
+- No uses lenguaje abstracto
+
+ANCLAJE:
+
+- Cada acto debe basarse principalmente en un párrafo de la sinopsis
+- Solo combiná párrafos si es estrictamente necesario
+
+FORMATO DE RESPUESTA:
+
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...

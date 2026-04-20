@@ -107,3 +107,22 @@ class TestSynopsisBeatMapper:
         call_kwargs = llm.generate.call_args.kwargs
         assert call_kwargs["system_prompt"] is not None
         assert len(call_kwargs["system_prompt"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_map_with_empty_brief_behaves_as_before(self):
+        """map() sin narrative_brief es backwards compatible."""
+        llm = _make_llm("1. A\n2. B\n3. C\n4. D\n5. E")
+        mapper = SynopsisBeatMapper(llm, self._builder())
+        beats = await mapper.map(_make_story())
+        assert len(beats) == 5
+
+    @pytest.mark.asyncio
+    async def test_map_with_brief_injects_into_prompt(self):
+        """El narrative_brief se inyecta en el prompt del mapper."""
+        llm = _make_llm("1. A\n2. B\n3. C\n4. D\n5. E")
+        builder = self._builder()
+        mapper = SynopsisBeatMapper(llm, builder)
+        brief = "Amenaza: fantasma del monte. Estado inicial: tranquila."
+        await mapper.map(_make_story(), narrative_brief=brief)
+        prompt_sent = llm.generate.call_args.kwargs["prompt"]
+        assert brief in prompt_sent

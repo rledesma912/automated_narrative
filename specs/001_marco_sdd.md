@@ -39,6 +39,20 @@ graph TD
 | **Type Checking** | `uv run mypy src` |
 | **Init DB** | `bash scripts/bash/init_db.sh` |
 
+### Contratos de comandos CLI
+
+| Comando | Descripción | Flags clave |
+|---|---|---|
+| `generate` | Plan completo + todos los beats narrados | `--input <file.md>`, `--debug` |
+| `plan` | Solo genera el plan de beats, sin narrar | `--story-id <UUID>` |
+| `narrate` | Narra beats de una historia ya planificada | `--story-id <UUID>` |
+| `export` | Exporta historia a Markdown | `--story-id <UUID>` |
+
+**Boundaries del CLI:**
+- **Always Do**: Usar `python -m src` como entry point; nunca invocar módulos internos directamente.
+- **Always Do**: Validar que el `story-id` existe en DB antes de intentar narrar o exportar.
+- **Never Do**: Mezclar lógica de negocio en `commands.py` — ese archivo solo despacha a use cases.
+
 ## 3. Estándar de Spec SDD
 
 Cada nueva funcionalidad debe definirse bajo estos puntos:

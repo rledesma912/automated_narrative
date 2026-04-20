@@ -342,9 +342,18 @@ Crear `config/prompts_generation/synopsis_mapper.md` y
 
 ## Relación con specs previos
 
-- **Spec 028**: el parser robusto (`_BEAT_PATTERNS`) se mueve a `beat_parser.py`
-  y se importa desde ambos use cases.
 - **Spec 029**: `SynopsisBeatMapper` selecciona la variante de prompt
   (`compact`/`frontier`) igual que `PromptBuilder` para la Voz.
 - **Spec 026/027**: no hay cambios al YAML de perfiles ni a `Settings`.
   El mapper reutiliza `role_config("director")`.
+
+---
+
+## Boundaries
+
+| Categoría | Regla |
+|---|---|
+| **Always Do** | Leer `num_beats` del YAML vía `prompt_builder.num_beats` — nunca hardcodear el número de beats |
+| **Always Do** | Usar `role_config("director")` del perfil activo para los parámetros LLM del mapper |
+| **Ask First** | Agregar un rol `mapper` separado al YAML (impacta todos los perfiles) |
+| **Never Do** | Hardcodear paths al YAML de beats — siempre via `settings.beats_definition_file` |
