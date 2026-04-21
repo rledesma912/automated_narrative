@@ -78,7 +78,7 @@ class SQLStoryRepository:
         """Delete a story."""
         conn = await get_connection()
 
-        await conn.execute("DELETE FROM beat WHERE story_id = ?", (str(story_id),))
+        await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (str(story_id),))
         await conn.execute("DELETE FROM story WHERE id = ?", (str(story_id),))
         await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (str(story_id),))
 

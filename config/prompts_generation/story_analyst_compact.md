@@ -5,10 +5,13 @@ PROTAGONISTAS: {protagonistas}
 ESCENARIO: {escenarios}
 ATMÓSFERA: {atmosfera}
 
-TAREA: Extraé los elementos concretos de esta historia en 5 líneas.
+Extraé los cuatro anclajes narrativos de esta sinopsis. Usá solo información que esté en el texto.
 
-1. Amenaza: [qué es exactamente el horror, cómo se manifiesta]
-2. Estado inicial: [cómo llega emocionalmente el protagonista]
-3. Momento clave A: [evento concreto que debe ocurrir]
-4. Momento clave B: [segundo evento concreto]
-5. Detalle del escenario: [1-2 detalles físicos específicos del lugar]
+Devolvé ÚNICAMENTE este JSON, sin texto adicional antes ni después:
+
+{{
+  "initial_state": "estado emocional y situacional del narrador al inicio del relato",
+  "threat_nature": "naturaleza exacta del horror — qué es y cómo opera en esta historia concreta",
+  "horror_peak": "el evento paranormal o de máximo impacto — el momento sin vuelta atrás",
+  "spatial_anchor": "detalles físicos y sensoriales concretos del lugar donde ocurre el horror"
+}}

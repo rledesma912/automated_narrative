@@ -86,10 +86,12 @@ class DebugMarkdownRenderer:
             "",
         ]
 
-        if r.context_strategy:
+        if r.narrative_context:
             lines += [
-                "### Context Strategy aplicada",
-                f"`{r.context_strategy}`",
+                "### Narrative Context (pre-baked)",
+                "```",
+                r.narrative_context,
+                "```",
                 "",
             ]
 

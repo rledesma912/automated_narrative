@@ -7,7 +7,7 @@ from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, NarrativeJournal, Story
+from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,6 @@ class VozUseCase:
             temperature=temp,
             num_ctx=role_cfg.get("num_ctx"),
             num_predict=role_cfg.get("num_predict"),
-            context_strategy=role_cfg.get("context_strategy"),
             system_prompt=system_prompt,
             user_prompt=prompt,
             raw_response=response.text,
@@ -105,6 +104,58 @@ class VozUseCase:
         updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
 
         return beat, updated_journal, response.elapsed_s
+
+    async def narrate(self, macro_beat: MacroBeat, story: Story) -> tuple[MacroBeat, float]:
+        """Narra un macro-beat que ya tiene narrative_context pre-ensamblado (Spec-038).
+
+        Usa build_voz_user_prompt() en lugar de build_beat_prompt(). No toca el journal.
+        """
+        role_cfg = settings.role_config("voz")
+        model = role_cfg.get("model") or settings.llm_model
+        temp = settings.voz_temperature
+
+        variant = self.prompt_builder._get_prompt_variant()
+        if variant == "compact":
+            system_prompt = self.prompt_builder.build_voice_system_compact(story)
+        else:
+            system_prompt = self.prompt_builder.build_voice_prompt(story)
+
+        prompt = self.prompt_builder.build_voz_user_prompt(macro_beat)
+
+        logger.debug(
+            f"[VOZ] narrate beat={macro_beat.number} model={model} "
+            f'nc={len(macro_beat.narrative_context or "")} chars'
+        )
+
+        response = await self._generate_with_retry(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            model=model,
+            temperature=temp,
+        )
+
+        clean_text = self.normalizer.normalize(response.text, model_name=model)
+        macro_beat.content = clean_text
+        macro_beat.status = "completed"
+
+        self.debug_collector.record(
+            role="voz",
+            beat_number=macro_beat.number,
+            source_component=DebugCollector.source_label(self),
+            model=model,
+            temperature=temp,
+            num_ctx=role_cfg.get("num_ctx"),
+            num_predict=role_cfg.get("num_predict"),
+            system_prompt=system_prompt,
+            user_prompt=prompt,
+            raw_response=response.text,
+            normalized_response=clean_text,
+            parser_result="n/a",
+            elapsed_s=response.elapsed_s,
+            narrative_context=macro_beat.narrative_context,
+        )
+
+        return macro_beat, response.elapsed_s
 
     async def _generate_with_retry(
         self,

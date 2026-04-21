@@ -10,7 +10,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, NarrativeJournal, Story, StoryPlan
+from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryPlan
 from src.infrastructure.normalizers import ResponseNormalizer
 
 if TYPE_CHECKING:
@@ -73,9 +73,10 @@ class DirectorUseCase:
         temperature = role_cfg.get("temperature", 0.3)
 
         prompt = self.prompt_builder.build_story_analyst_prompt(story)
+        system_prompt = self.prompt_builder.build_story_analyst_system()
         response = await self.llm.generate(
             prompt=prompt,
-            system_prompt=None,
+            system_prompt=system_prompt,
             model=model,
             temperature=temperature,
             role="story_analyst",
@@ -91,7 +92,7 @@ class DirectorUseCase:
             temperature=temperature,
             num_ctx=role_cfg.get("num_ctx"),
             num_predict=role_cfg.get("num_predict"),
-            system_prompt=None,
+            system_prompt=system_prompt,
             user_prompt=prompt,
             raw_response=response.text,
             normalized_response=brief,
@@ -128,30 +129,65 @@ class DirectorUseCase:
         story: Story,
         initial_journal: NarrativeJournal | None = None,
         on_plan_ready: Callable[[int, float], None] | None = None,
-    ) -> AsyncIterator[tuple[Beat, NarrativeJournal, float]]:
-        """Orquestación punta a punta: plan → narración beat-by-beat.
+    ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
+        """Orquestación punta a punta (Spec-038): ANALYST → 5×(MAPPER+NC+VOZ+JOURNAL).
 
-        Yields (beat_completado, journal_actualizado, llm_elapsed) por cada beat.
+        Yields (macro_beat_completado, journal_actualizado, llm_elapsed_voz) por beat.
         """
-        mapper = SynopsisBeatMapper(
-            self.llm,
-            self.prompt_builder,
-            normalizer=self.normalizer,
-            debug_collector=self.debug_collector,
-        )
+        from src.application.services.story_analyst_service import StoryAnalystService
 
         t0 = perf_counter()
-        brief = await self._analyze_story(story)
-        beats = await mapper.map(story, narrative_brief=brief)
-        plan_elapsed = perf_counter() - t0
 
-        logger.debug(f"[DIRECTOR] Plan: {len(beats)} beats en {plan_elapsed:.1f}s")
+        analyst = StoryAnalystService(
+            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+        )
+        narrative_anchors = await analyst.extract_anchors(story)
+
+        if story.scenarios:
+            cronologic_scenarios = [s.name for s in story.scenarios]
+        elif story.escenarios:
+            cronologic_scenarios = [e.strip() for e in story.escenarios.split("/") if e.strip()]
+        else:
+            cronologic_scenarios = []
+
+        mapper = SynopsisBeatMapper(
+            self.llm, self.prompt_builder,
+            normalizer=self.normalizer, debug_collector=self.debug_collector,
+        )
+        voz = self._get_voz()
+        journalist = self._get_journalist()
+
+        num_beats = self.prompt_builder.num_beats
+        plan_elapsed = perf_counter() - t0
+        logger.debug(f"[DIRECTOR] Anclajes extraídos en {plan_elapsed:.1f}s → {num_beats} beats")
 
         if on_plan_ready is not None:
-            on_plan_ready(len(beats), plan_elapsed)
+            on_plan_ready(num_beats, plan_elapsed)
 
-        async for item in self.execute_narration(story, beats, initial_journal):
-            yield item
+        journal = initial_journal
+        prev_snapshot: str | None = None
+
+        for beat_id in range(1, num_beats + 1):
+            beat_anchors = analyst.resolve_beat_anchors(narrative_anchors, beat_id)
+
+            macro_beat = await mapper.map_one(
+                story=story,
+                macro_beat_id=beat_id,
+                beat_anchors=beat_anchors,
+                prev_snapshot=prev_snapshot,
+                cronologic_scenarios=cronologic_scenarios,
+            )
+
+            macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
+                macro_beat, beat_anchors, prev_snapshot
+            )
+
+            macro_beat, llm_elapsed = await voz.narrate(macro_beat, story)
+
+            prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
+            macro_beat.memory_snapshot = prev_snapshot
+
+            yield macro_beat, journal, llm_elapsed
 
     async def execute_narration(
         self,

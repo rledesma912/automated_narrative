@@ -33,7 +33,7 @@ async def init_db() -> None:
     """)
 
     await conn.execute("""
-        CREATE TABLE IF NOT EXISTS beat (
+        CREATE TABLE IF NOT EXISTS macro_beat (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             story_id TEXT NOT NULL,
             number INTEGER NOT NULL,
@@ -41,9 +41,33 @@ async def init_db() -> None:
             content TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
             technical_context TEXT,
+            active_scenario_id TEXT REFERENCES scenario(id),
+            narrative_context TEXT,
+            memory_snapshot TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id),
             UNIQUE(story_id, number)
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS scenario (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL REFERENCES story(id),
+            order_index INTEGER NOT NULL,
+            name TEXT NOT NULL
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS narrative_anchors (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL UNIQUE REFERENCES story(id),
+            initial_state TEXT NOT NULL,
+            threat_nature TEXT NOT NULL,
+            horror_peak TEXT NOT NULL,
+            spatial_anchor TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
 

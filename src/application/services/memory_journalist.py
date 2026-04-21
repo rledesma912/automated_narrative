@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, NarrativeJournal, Story
+from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
 
 if TYPE_CHECKING:
     from src.application.services import PromptBuilder
@@ -75,6 +75,28 @@ class MemoryJournalist:
         )
 
         return self._parse_journal(response.text, previous_journal)
+
+    async def extract(
+        self,
+        story: Story,
+        macro_beat: MacroBeat,
+        previous_journal: NarrativeJournal | None = None,
+    ) -> tuple[str, NarrativeJournal]:
+        """Extrae memory_snapshot (JSON str) y journal actualizado para un macro-beat.
+
+        Retorna (snapshot_json, journal). El snapshot se almacena en MacroBeat.memory_snapshot
+        y se pasa como prev_snapshot al build_narrative_context() del siguiente beat.
+        """
+        journal = await self.update_journal(story, macro_beat, previous_journal)
+        snapshot = json.dumps(
+            {
+                "last_events": journal.last_events,
+                "unresolved_mysteries": journal.unresolved_mysteries,
+                "physical_emotional_state": journal.physical_emotional_state,
+            },
+            ensure_ascii=False,
+        )
+        return snapshot, journal
 
     async def summarize_beats(self, completed_beats: list[Beat]) -> str:
         """Resumen conciso de beats para el contexto."""

@@ -15,13 +15,13 @@ class LLMCallRecord:
     temperature: float
     num_ctx: int | None
     num_predict: int | None
-    context_strategy: str | None
     system_prompt: str | None
     user_prompt: str
     raw_response: str
     normalized_response: str
     parser_result: str
     elapsed_s: float
+    narrative_context: str | None = None
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -46,13 +46,13 @@ class DebugCollector:
         temperature: float,
         num_ctx: int | None,
         num_predict: int | None,
-        context_strategy: str | None = None,
         system_prompt: str | None,
         user_prompt: str,
         raw_response: str,
         normalized_response: str,
         parser_result: str,
         elapsed_s: float,
+        narrative_context: str | None = None,
     ) -> None:
         self.records.append(
             LLMCallRecord(
@@ -63,13 +63,13 @@ class DebugCollector:
                 temperature=temperature,
                 num_ctx=num_ctx,
                 num_predict=num_predict,
-                context_strategy=context_strategy,
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 raw_response=raw_response,
                 normalized_response=normalized_response,
                 parser_result=parser_result,
                 elapsed_s=elapsed_s,
+                narrative_context=narrative_context,
             )
         )
 

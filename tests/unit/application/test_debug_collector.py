@@ -20,7 +20,6 @@ def _make_record(**overrides) -> dict:
         temperature=0.3,
         num_ctx=4096,
         num_predict=800,
-        context_strategy=None,
         system_prompt="You are a narrator.",
         user_prompt="Write beat 1.",
         raw_response="<think>thinking</think>\n## Beat 1\nSomething happened.",

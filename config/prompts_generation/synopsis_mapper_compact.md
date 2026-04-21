@@ -1,42 +1,32 @@
 SINOPSIS:
 {sinopsis}
 
-CONTEXTO:
-Narradora: {relator}
-Personajes: {protagonistas}
-Atmósfera: {atmosfera}
-
 ANÁLISIS:
 {narrative_brief}
 
-ACTOS:
+ESTRUCTURA DE LOS {num_beats} ACTOS:
 {beats_spec_compact}
 
-INSTRUCCIONES:
+REGLAS DEL RELATO:
+{reglas}
 
-Dividí la sinopsis en exactamente {num_beats} actos.
+Dividí la sinopsis en exactamente {num_beats} fragmentos siguiendo la estructura de actos.
+Cada fragmento corresponde a un momento narrativo — no necesariamente a un único párrafo.
+Agrupá los eventos de la sinopsis según el acto al que pertenecen aunque provengan del mismo párrafo.
 
-Para cada acto:
-- seleccioná el fragmento más representativo de la sinopsis
-- condensalo en una sola oración
-- mantené fidelidad semántica total
+Para cada fragmento, listá todos los eventos concretos de ese acto.
+Si el análisis aporta un detalle sensorial, percepción del narrador o momento clave relevante a ese acto, incluyelo como punto separado.
+No interpretés. No expandás creativamente. Solo los eventos que están en el texto.
 
-REGLAS:
+Si el acto menciona una referencia temporal (temprano, de noche, al amanecer), incluyela como primer punto.
 
-- Cada línea debe derivarse directamente de la sinopsis
-- Podés condensar, pero no reinterpretar
-- Usá acciones, percepciones o eventos observables
-- No uses lenguaje abstracto
+FORMATO:
 
-ANCLAJE:
+1.
+- [evento concreto de este acto]
+- [otro evento del mismo acto]
 
-- Cada acto debe basarse principalmente en un párrafo de la sinopsis
-- Solo combiná párrafos si es estrictamente necesario
+2.
+- [evento concreto del acto 2]
 
-FORMATO DE RESPUESTA:
-
-1. ...
-2. ...
-3. ...
-4. ...
-5. ...
+(y así hasta {num_beats})

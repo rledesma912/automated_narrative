@@ -1,12 +1,15 @@
 beats_spec:
-  version: "1.0"
+  version: "2.0"
   granularity: "5_actos"
 
-  beats:
+  macro_beats:
 
     - id: 1
       name: "exposicion"
       intent: "establecer normalidad y sembrar una fisura"
+      anchor_priorities:
+        principal: "initial_state"
+        contexto: "spatial_anchor"
       must:
         - "presentar situacion base del narrador"
         - "introducir una anomalia sutil"
@@ -17,11 +20,14 @@ beats_spec:
         from: "estabilidad"
         to: "incomodidad leve"
       success_signal:
-        - "el lector percibe que algo no encaja pero no sabe que"
+        - "quien escucha el relato percibe que algo no encaja pero no sabe que"
 
     - id: 2
       name: "accion_ascendente"
       intent: "activar el conflicto mediante transgresion"
+      anchor_priorities:
+        principal: "threat_nature"
+        contexto: "initial_state"
       must:
         - "romper la regla o ignorar la advertencia"
         - "mostrar un evento anomalo concreto"
@@ -32,11 +38,14 @@ beats_spec:
         from: "incomodidad"
         to: "inquietud concreta"
       success_signal:
-        - "el protagonista duda pero sigue dentro de una logica racional"
+        - "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
 
     - id: 3
       name: "climax"
       intent: "forzar reconocimiento del horror"
+      anchor_priorities:
+        principal: "horror_peak"
+        contexto: "threat_nature"
       must:
         - "invalidar explicacion racional"
         - "mostrar amenaza o presencia directa"
@@ -46,11 +55,14 @@ beats_spec:
         from: "negacion"
         to: "reconocimiento"
       success_signal:
-        - "el protagonista entiende que enfrenta algo fuera de su marco"
+        - "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
 
     - id: 4
       name: "accion_descendente"
       intent: "llevar al protagonista al colapso y reaccion"
+      anchor_priorities:
+        principal: "spatial_anchor"
+        contexto: "threat_nature"
       must:
         - "perdida de control o desorientacion"
         - "intento de escape o respuesta (instinto, fe, memoria)"
@@ -60,11 +72,14 @@ beats_spec:
         from: "reconocimiento"
         to: "desesperacion"
       success_signal:
-        - "la situacion empeora antes de cualquier mejora"
+        - "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
 
     - id: 5
       name: "desenlace"
       intent: "cerrar con escape incompleto y secuela"
+      anchor_priorities:
+        principal: "initial_state"
+        contexto: "threat_nature"
       must:
         - "salida o alejamiento del peligro"
         - "marca persistente o evidencia ambigua"
@@ -74,4 +89,4 @@ beats_spec:
         from: "desesperacion"
         to: "calma inestable"
       success_signal:
-        - "queda una sensacion de que el horror no termino"
+        - "quien escucha el relato queda con la sensacion de que el horror no termino"

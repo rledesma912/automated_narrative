@@ -235,9 +235,11 @@ class TestDirectorUseCase:
 
     @pytest.mark.asyncio
     async def test_execute_full_yields_beats(self):
-        """execute_full() yields one (beat, journal, elapsed) tuple per beat."""
-        from unittest.mock import AsyncMock, MagicMock
-        from src.domain.models import Beat, NarrativeJournal
+        """execute_full() yields one (macro_beat, journal, elapsed) tuple per beat (nueva arquitectura Spec-038)."""
+        import json
+        import uuid
+        from unittest.mock import AsyncMock, MagicMock, patch
+        from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal
 
         story = Story(
             title="Test",
@@ -248,63 +250,94 @@ class TestDirectorUseCase:
             atmosfera="terror",
         )
 
-        plan_beats = [
-            Beat(number=1, summary="Beat uno", status="pending"),
-            Beat(number=2, summary="Beat dos", status="pending"),
-        ]
-        completed_beat = lambda b: Beat(number=b.number, summary=b.summary, content="Prosa.", status="completed")
+        anchors = NarrativeAnchors(
+            story_id=story.id,
+            initial_state="Tranquilo",
+            threat_nature="Presencia",
+            horror_peak="El claro",
+            spatial_anchor="Monte",
+        )
         journal = NarrativeJournal(last_events="algo", unresolved_mysteries="", physical_emotional_state="")
+        snapshot = json.dumps({"last_events": "algo", "unresolved_mysteries": "", "physical_emotional_state": ""})
+
+        def make_macro_beat(beat_id):
+            return MacroBeat(number=beat_id, summary=f"Evento {beat_id}", active_scenario_id="Y", status="completed", content="Prosa.")
+
+        mock_analyst = MagicMock()
+        mock_analyst.extract_anchors = AsyncMock(return_value=anchors)
+        mock_analyst.resolve_beat_anchors = MagicMock(return_value={"principal": "Tranquilo", "contexto": "Monte"})
 
         mock_mapper = MagicMock()
-        mock_mapper.map = AsyncMock(return_value=plan_beats)
+        mock_mapper.map_one = AsyncMock(side_effect=lambda **kw: make_macro_beat(kw["macro_beat_id"]))
 
         mock_voz = MagicMock()
-        mock_voz.execute = AsyncMock(side_effect=lambda story, beat, **kw: (completed_beat(beat), journal, 1.0))
+        mock_voz.narrate = AsyncMock(side_effect=lambda mb, story: (mb, 1.0))
 
-        director = DirectorUseCase(MockLLMAdapter(), PromptBuilder(), voz=mock_voz)
+        mock_journalist = MagicMock()
+        mock_journalist.extract = AsyncMock(return_value=(snapshot, journal))
 
-        # Patch mapper instantiation
-        from unittest.mock import patch
-        with patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper):
+        director = DirectorUseCase(MockLLMAdapter(), PromptBuilder(), voz=mock_voz, journalist=mock_journalist)
+        num_beats = director.prompt_builder.num_beats
+
+        with (
+            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
+            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+        ):
             results = []
             async for item in director.execute_full(story):
                 results.append(item)
 
-        assert len(results) == 2
+        assert len(results) == num_beats
         assert results[0][0].number == 1
         assert results[0][0].status == "completed"
-        assert results[1][0].number == 2
 
     @pytest.mark.asyncio
     async def test_execute_full_calls_on_plan_ready(self):
         """execute_full() llama on_plan_ready con num_beats y elapsed."""
+        import json
         from unittest.mock import AsyncMock, MagicMock, patch
-        from src.domain.models import Beat, NarrativeJournal
+        from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal
 
         story = Story(title="T", protagonista="P", relator="r", escenarios="e", sinopsis="s", atmosfera="a")
 
-        plan_beats = [Beat(number=1, summary="b", status="pending")]
+        anchors = NarrativeAnchors(
+            story_id=story.id, initial_state="s", threat_nature="t",
+            horror_peak="h", spatial_anchor="sp",
+        )
         journal = NarrativeJournal()
+        snapshot = json.dumps({"last_events": "", "unresolved_mysteries": "", "physical_emotional_state": ""})
+
+        mock_analyst = MagicMock()
+        mock_analyst.extract_anchors = AsyncMock(return_value=anchors)
+        mock_analyst.resolve_beat_anchors = MagicMock(return_value={"principal": "s", "contexto": "sp"})
 
         mock_mapper = MagicMock()
-        mock_mapper.map = AsyncMock(return_value=plan_beats)
+        mock_mapper.map_one = AsyncMock(side_effect=lambda **kw: MacroBeat(
+            number=kw["macro_beat_id"], summary="b", active_scenario_id="e", status="pending",
+        ))
 
         mock_voz = MagicMock()
-        mock_voz.execute = AsyncMock(return_value=(
-            Beat(number=1, summary="b", content="x", status="completed"), journal, 1.0
-        ))
+        mock_voz.narrate = AsyncMock(side_effect=lambda mb, story: (mb, 1.0))
+
+        mock_journalist = MagicMock()
+        mock_journalist.extract = AsyncMock(return_value=(snapshot, journal))
 
         called_with = []
         def on_plan_ready(n, t):
             called_with.append((n, t))
 
-        director = DirectorUseCase(MockLLMAdapter(), PromptBuilder(), voz=mock_voz)
-        with patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper):
+        director = DirectorUseCase(MockLLMAdapter(), PromptBuilder(), voz=mock_voz, journalist=mock_journalist)
+        num_beats = director.prompt_builder.num_beats
+
+        with (
+            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
+            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+        ):
             async for _ in director.execute_full(story, on_plan_ready=on_plan_ready):
                 pass
 
         assert len(called_with) == 1
-        assert called_with[0][0] == 1  # num_beats
+        assert called_with[0][0] == num_beats
 
     @pytest.mark.asyncio
     async def test_execute_narration_yields_completed_beats(self):

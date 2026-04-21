@@ -8,7 +8,7 @@ version: "1.1"
 # Para cambiar de modelo basta con editar esta línea o exportar LLM_PROFILE.
 # Cada perfil trae su provider y sus 3 roles completamente definidos.
 
-active_profile: ollama-mistral
+active_profile: ollama-qwen25-14b
 
 # ── Perfiles pre-configurados ────────────────────────────────────────────────
 #
@@ -17,11 +17,6 @@ active_profile: ollama-mistral
 # solo aportan settings de transporte (host, cli_command) y un default de
 # fallback por adapter.
 #
-# context_strategy (solo aplica al rol voz):
-#   full       → sinopsis completa en cada beat (modelos potentes)
-#   beat_slice → segmento proporcional al beat actual (modelos locales/pequeños)
-#   none       → sin sinopsis (solo beat_summary + previous_context + journal)
-
 profiles:
 
   ollama-llama31:
@@ -45,9 +40,8 @@ profiles:
         model: llama3.1:8b
         temperature: 0.6
         num_ctx: 4096
-        num_predict: 1200
+        num_predict: 350
         stop: ["###", "---\n"]
-        context_strategy: none
       journal:
         model: mistral:latest
         temperature: 0.3
@@ -76,9 +70,8 @@ profiles:
         model: mistral:latest
         temperature: 0.6
         num_ctx: 4096
-        num_predict: 1200
+        num_predict: 450
         stop: []
-        context_strategy: none
       journal:
         model: mistral:latest
         temperature: 0.3
@@ -86,34 +79,123 @@ profiles:
         num_predict: 256
         stop: []
 
-  ollama-qwen25:
+  ollama-qwen25-14b:
     prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
       story_analyst:
-        model: qwen2.5:7b
+        model: qwen2.5:14b
         temperature: 0.3
-        num_ctx: 2048
+        num_ctx: 4096
         num_predict: 500
         stop: []
       director:
-        model: qwen2.5:7b
+        model: qwen2.5:14b
         temperature: 0.4
-        num_ctx: 4096
-        num_predict: 512
+        num_ctx: 6144
+        num_predict: 700
         stop: []
       voz:
-        model: qwen2.5:7b
+        model: qwen2.5:14b
         temperature: 0.6
-        num_ctx: 4096
-        num_predict: 1200
+        num_ctx: 6144
+        num_predict: 600
         stop: []
-        context_strategy: none
       journal:
-        model: qwen2.5:7b
+        model: qwen2.5:14b
         temperature: 0.3
-        num_ctx: 2048
+        num_ctx: 3072
+        num_predict: 256
+        stop: []
+
+  ollama-mistral-nemo:
+    prompt_variant: compact
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      story_analyst:
+        model: mistral-nemo:12b-instruct-2407-q4_0
+        temperature: 0.3
+        num_ctx: 4096
+        num_predict: 500
+        stop: []
+      director:
+        model: mistral-nemo:12b-instruct-2407-q4_0
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 700
+        stop: []
+      voz:
+        model: mistral-nemo:12b-instruct-2407-q4_0
+        temperature: 0.6
+        num_ctx: 8192
+        num_predict: 600
+        stop: []
+      journal:
+        model: mistral-nemo:12b-instruct-2407-q4_0
+        temperature: 0.3
+        num_ctx: 4096
+        num_predict: 256
+        stop: []
+
+  ollama-qwen3-8b:
+    prompt_variant: compact
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      story_analyst:
+        model: qwen3:8b
+        temperature: 0.3
+        num_ctx: 4096
+        num_predict: 500
+        stop: []
+      director:
+        model: qwen3:8b
+        temperature: 0.4
+        num_ctx: 6144
+        num_predict: 700
+        stop: []
+      voz:
+        model: qwen3:8b
+        temperature: 0.6
+        num_ctx: 6144
+        num_predict: 600
+        stop: []
+      journal:
+        model: qwen3:8b
+        temperature: 0.3
+        num_ctx: 4096
+        num_predict: 256
+        stop: []
+
+  ollama-gemma3-12b:
+    prompt_variant: compact
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      story_analyst:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 4096
+        num_predict: 500
+        stop: []
+      director:
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 700
+        stop: []
+      voz:
+        model: gemma3:12b
+        temperature: 0.6
+        num_ctx: 8192
+        num_predict: 600
+        stop: []
+      journal:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 4096
         num_predict: 256
         stop: []
 
@@ -132,7 +214,6 @@ profiles:
       voz:
         model: claude-sonnet-4-6
         temperature: 0.6
-        context_strategy: full
       journal:
         model: claude-sonnet-4-6
         temperature: 0.3
@@ -152,7 +233,6 @@ profiles:
       voz:
         model: gemini-2.5-flash
         temperature: 0.6
-        context_strategy: full
       journal:
         model: gemini-2.5-flash
         temperature: 0.3

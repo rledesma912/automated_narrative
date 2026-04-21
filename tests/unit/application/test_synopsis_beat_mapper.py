@@ -117,8 +117,9 @@ class TestSynopsisBeatMapper:
         assert len(beats) == 5
 
     @pytest.mark.asyncio
-    async def test_map_with_brief_injects_into_prompt(self):
-        """El narrative_brief se inyecta en el prompt del mapper."""
+    async def test_map_with_brief_injects_into_compact_prompt(self):
+        """En perfil compact el narrative_brief SÍ se inyecta en el mapper
+        para que el análisis ancle los beats al contexto concreto de la historia."""
         llm = _make_llm("1. A\n2. B\n3. C\n4. D\n5. E")
         builder = self._builder()
         mapper = SynopsisBeatMapper(llm, builder)

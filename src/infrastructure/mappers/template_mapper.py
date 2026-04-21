@@ -39,7 +39,6 @@ class TemplateMapper:
             reglas=input_data.reglas or [],
             protagonist=input_data.protagonista,
             atmosphere=input_data.atmosfera,
-            scenarios=input_data.escenarios,
             synopsis=input_data.sinopsis,
         )
 

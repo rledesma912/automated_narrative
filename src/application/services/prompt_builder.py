@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 from src.config import settings
-from src.domain.models import Beat, NarrativeJournal, Story
+from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class PromptBuilder:
             return [{"id": i, "name": f"beat_{i}"} for i in range(1, 6)]
         with path.open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        return data.get("beats_spec", {}).get("beats", [])
+        return data.get("beats_spec", {}).get("macro_beats", [])
 
     def _get_prompt_variant(self) -> str:
         return settings.active_profile_config().get("prompt_variant", "frontier")
@@ -149,7 +149,7 @@ Sinopsis: {story.sinopsis}
         context_parts = []
         for b in last_2:
             content = b.content[:max_chars] + "..." if len(b.content) > max_chars else b.content
-            context_parts.append(f"Beat #{b.number}: {content}")
+            context_parts.append(content)
 
         return "\n\n".join(context_parts)
 
@@ -330,12 +330,18 @@ Instrucciones:
 
         if variant == "compact":
             parts = [f"Acto {beat['id']} — {beat['name']}: {beat.get('intent', '')}"]
+            sc = beat.get("state_change", {})
+            if sc:
+                parts.append(f"Arco emocional: {sc.get('from', '')} → {sc.get('to', '')}")
             must = beat.get("must", [])
             if must:
                 parts.append(f"Debe incluir: {' / '.join(must)}")
             must_not = beat.get("must_not", [])
             if must_not:
-                parts.append(f"No debe incluir: {' / '.join(must_not)}")
+                parts.append(f"PROHIBIDO en este acto: {' / '.join(must_not)}")
+            success = beat.get("success_signal", [])
+            if success:
+                parts.append(f"Objetivo del fragmento: {success[0]}")
             return "\n".join(parts)
 
         lines = []
@@ -401,17 +407,72 @@ Instrucciones:
             narrative_brief=narrative_brief,
         )
 
+    def build_synopsis_mapper_one_prompt(
+        self,
+        story: "Story",
+        macro_beat_id: int,
+        beat_anchors: dict,
+        prev_snapshot: str | None = None,
+        cronologic_scenarios: list[str] | None = None,
+    ) -> str:
+        """Prompt para mapear un solo macro-beat: extrae evento + escenario activo."""
+        variant = self._get_prompt_variant()
+        template_file = (
+            "synopsis_mapper_one_compact.md" if variant == "compact" else "synopsis_mapper_one_compact.md"
+        )
+        template = self._load_prompt(template_file)
+        if not template:
+            # Fallback mínimo si no existe el archivo
+            template = (
+                "SINOPSIS:\n{sinopsis}\n\nACTO {macro_beat_id} — {beat_name}: {beat_intent}\n\n"
+                "FORMATO:\nESCENARIO: [escenario]\n\nEVENTOS:\n- [evento]"
+            )
+
+        beat_info = self._get_beat_info(macro_beat_id)
+        scenarios = cronologic_scenarios or (
+            [s.strip() for s in story.escenarios.split("/") if s.strip()]
+            if story.escenarios else []
+        )
+        cronologic_list = "\n".join(f"- {s}" for s in scenarios) if scenarios else story.escenarios
+
+        prev_section = ""
+        if prev_snapshot:
+            prev_section = f"\nMEMORIA DEL ACTO ANTERIOR:\n{prev_snapshot}\n"
+
+        return template.format(
+            sinopsis=story.sinopsis,
+            cronologic_scenarios_list=cronologic_list,
+            anchor_principal=beat_anchors.get("principal", ""),
+            anchor_contexto=beat_anchors.get("contexto", ""),
+            prev_snapshot_section=prev_section,
+            macro_beat_id=macro_beat_id,
+            beat_name=beat_info.get("name", f"acto_{macro_beat_id}"),
+            beat_intent=beat_info.get("intent", ""),
+        )
+
+    def _get_beat_info(self, beat_id: int) -> dict:
+        """Retorna el spec del beat por ID, o dict vacío si no existe."""
+        return next((b for b in self._beats_spec if b["id"] == beat_id), {})
+
     def build_voice_system_compact(self, story: Story, beat_number: int = 1) -> str | None:
         """System prompt para VOZ en perfil compact. Carga voice_system_compact.md si existe."""
         system = self._load_prompt("voice_system_compact.md")
         if not system:
             return None
-        continuation_hint = (
-            "Continuás exactamente desde donde terminó el fragmento anterior."
-            if beat_number > 1
-            else "Comenzás tu narración desde el inicio de los eventos de esa noche."
+        reglas_str = "\n".join(f"- {r}" for r in story.reglas) if story.reglas else "Ninguna"
+        return system.format(
+            relator=story.relator,
+            atmosfera=story.atmosfera,
+            protagonistas=story.protagonista,
+            reglas=reglas_str,
         )
-        return system.format(relator=story.relator, continuation_hint=continuation_hint)
+
+    def build_story_analyst_system(self) -> str | None:
+        """System prompt para story_analyst en perfil compact. None si no aplica."""
+        if self._get_prompt_variant() == "compact":
+            system = self._load_prompt("story_analyst_system_compact.md")
+            return system if system else None
+        return None
 
     def build_synopsis_mapper_system(self, story: "Story") -> str | None:
         """System prompt para el mapper. Carga synopsis_mapper_system_compact.md si existe."""
@@ -419,6 +480,70 @@ Instrucciones:
             system = self._load_prompt("synopsis_mapper_system_compact.md")
             return system if system else None
         return self.build_system_prompt(story)
+
+    def build_narrative_context(
+        self,
+        macro_beat: MacroBeat,
+        beat_anchors: dict,
+        prev_snapshot: str | None = None,
+    ) -> str:
+        """Ensambla el narrative_context pre-baked que recibe el VOZ (Spec-038).
+
+        Combina: beat_spec (YAML) + anclajes + synopsis_event + active_scenario + memory_snapshot.
+        Determinístico: sin llamada LLM.
+        """
+        import json
+
+        beat_spec = self._get_beat_info(macro_beat.number)
+        sc = beat_spec.get("state_change", {})
+        must_items = beat_spec.get("must", [])
+        must_not_items = beat_spec.get("must_not", [])
+        success_items = beat_spec.get("success_signal", [])
+
+        lines = [
+            f"ACTO: {beat_spec.get('name', '')} — {beat_spec.get('intent', '')}",
+            f"ARCO EMOCIONAL: {sc.get('from', '')} → {sc.get('to', '')}",
+            "",
+            "ESCENARIO ACTIVO:",
+            macro_beat.active_scenario_id or "",
+            "",
+            "EVENTO DE ESTE MOMENTO:",
+            macro_beat.summary or "",
+            "",
+            "ANCLAJE PRINCIPAL:",
+            beat_anchors.get("principal", ""),
+            "",
+            "ANCLAJE DE CONTEXTO:",
+            beat_anchors.get("contexto", ""),
+        ]
+
+        if prev_snapshot:
+            try:
+                data = json.loads(prev_snapshot)
+                last_events = data.get("last_events", "")
+                phys_state = data.get("physical_emotional_state", "")
+                lines += ["", "MEMORIA DEL ACTO ANTERIOR:"]
+                if last_events:
+                    lines.append(last_events)
+                if phys_state:
+                    lines.append(f"Estado: {phys_state}")
+            except (json.JSONDecodeError, AttributeError):
+                lines += ["", "MEMORIA DEL ACTO ANTERIOR:", str(prev_snapshot)]
+
+        lines += [
+            "",
+            "RESTRICCIONES:",
+            f"Debe incluir: {' / '.join(must_items)}",
+            f"PROHIBIDO: {' / '.join(must_not_items)}",
+            f"Objetivo: {success_items[0] if success_items else ''}",
+        ]
+
+        return "\n".join(lines)
+
+    def build_voz_user_prompt(self, macro_beat: MacroBeat) -> str:
+        """User prompt para VOZ (nueva arquitectura): solo contiene narrative_context."""
+        nc = macro_beat.narrative_context or ""
+        return f"{nc}\n\nEscribí el fragmento del relato para este acto."
 
     def build_journal_prompt(
         self,

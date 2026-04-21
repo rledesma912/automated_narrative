@@ -23,6 +23,7 @@ class MarkdownStoryData:
     sinopsis: str
     atmosfera: str = ""
     reglas: list[str] = field(default_factory=list)
+    cronologic_scenarios: list[str] = field(default_factory=list)
 
 
 class MarkdownStoryParser:
@@ -54,10 +55,11 @@ class MarkdownStoryParser:
                     title=data.get("title", file_path.stem),
                     protagonista=data.get("protagonist") or data.get("protagonista", ""),
                     relator=self._normalize_relator(storyteller),
-                    escenarios=data.get("escenarios") or data.get("scenarios", ""),
+                    escenarios=self._resolve_escenarios(data),
                     sinopsis=data.get("sinopsis") or data.get("synopsis", ""),
                     atmosfera=data.get("atmosphere") or data.get("atmosfera", ""),
                     reglas=data.get("reglas") or data.get("rules", []),
+                    cronologic_scenarios=self._parse_cronologic_scenarios(data),
                 )
                 logger.debug(
                     "[Parser] YAML frontmatter extraído: title=%r, relator=%r, "
@@ -164,6 +166,35 @@ class MarkdownStoryParser:
             else:
                 result.append(line)
         return "\n".join(result)
+
+    def _parse_cronologic_scenarios(self, data: dict) -> list[str]:
+        """Devuelve la lista de escenarios cronológicos del frontmatter.
+
+        Acepta tanto YAML list como bloque literal `|` con ítems `- nombre`.
+        """
+        value = data.get("cronologic_scenarios")
+        if isinstance(value, list):
+            return [str(item).strip().lstrip("- ") for item in value if item]
+        if isinstance(value, str):
+            items = []
+            for line in value.splitlines():
+                line = line.strip().lstrip("- ").strip()
+                if line:
+                    items.append(line)
+            return items
+        return []
+
+    def _resolve_escenarios(self, data: dict) -> str:
+        """Lee escenarios del frontmatter. Acepta `escenarios`, `scenarios` y `cronologic_scenarios`."""
+        value = data.get("escenarios") or data.get("scenarios")
+        if value:
+            return str(value).strip()
+        cronologic = data.get("cronologic_scenarios")
+        if isinstance(cronologic, list):
+            return " / ".join(item.strip().lstrip("- ") for item in cronologic if item)
+        if isinstance(cronologic, str):
+            return cronologic.strip()
+        return ""
 
     def _validate(self, data: "MarkdownStoryData", source: str) -> None:
         """Lanza ValueError si faltan campos obligatorios tras el parseo."""
