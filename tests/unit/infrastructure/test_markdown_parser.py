@@ -114,6 +114,33 @@ Contenido del acto
         assert data.atmosfera != ""
         assert "terror" in data.atmosfera.lower()
 
+    def test_parse_cronologic_scenarios_list(self, parser):
+        """_parse_cronologic_scenarios devuelve lista desde YAML list."""
+        data = {"cronologic_scenarios": ["Casa de la abuela", "La fiesta", "El monte"]}
+        result = parser._parse_cronologic_scenarios(data)
+        assert result == ["Casa de la abuela", "La fiesta", "El monte"]
+
+    def test_parse_cronologic_scenarios_block_string(self, parser):
+        """_parse_cronologic_scenarios parsea bloque `|` con ítems `- nombre`."""
+        data = {
+            "cronologic_scenarios": "- La casa de campo\n- El monte prohibido\n"
+        }
+        result = parser._parse_cronologic_scenarios(data)
+        assert result == ["La casa de campo", "El monte prohibido"]
+
+    def test_parse_cronologic_scenarios_empty(self, parser):
+        result = parser._parse_cronologic_scenarios({})
+        assert result == []
+
+    def test_parse_el_monte_prohibido_cronologic_scenarios(self):
+        """El archivo real devuelve los 3 escenarios cronológicos como lista."""
+        from pathlib import Path
+        parser = MarkdownStoryParser(input_dir=Path("input_stories"))
+        data = parser.parse("el_monte_prohibido.md")
+        assert len(data.cronologic_scenarios) == 3
+        assert any("abuela" in s.lower() for s in data.cronologic_scenarios)
+        assert any("monte" in s.lower() for s in data.cronologic_scenarios)
+
     def test_parse_file_not_found(self, parser):
         """Maneja archivo no encontrado."""
         with pytest.raises(FileNotFoundError):

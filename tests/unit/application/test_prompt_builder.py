@@ -1,5 +1,7 @@
 """Tests for PromptBuilder service."""
 
+from unittest.mock import patch
+
 from src.application.services import PromptBuilder
 from src.domain.models import Story
 
@@ -25,24 +27,6 @@ class TestPromptBuilder:
         assert "terror" in prompt
         assert "Protagonist" in prompt
         assert "Location" in prompt
-
-    def test_build_planner_prompt(self):
-        """Test building planner prompt."""
-        story = Story(
-            title="Test Story",
-            protagonista="Protagonist",
-            relator="primera_persona",
-            escenarios="Casa embrujada",
-            sinopsis="Una historia de terror",
-            atmosfera="horror",
-        )
-
-        builder = PromptBuilder()
-        prompt = builder.build_planner_prompt(story)
-
-        assert "Test Story" in prompt
-        assert "5" in prompt
-        assert "Casa embrujada" in prompt
 
     def test_build_beat_prompt(self):
         """Test building beat prompt."""
@@ -109,8 +93,8 @@ class TestPromptBuilder:
         assert "Irene" in prompt
         assert "primera persona" in prompt.lower()
 
-    def test_build_beat_prompt_includes_sinopsis(self):
-        """La sinopsis debe aparecer en el prompt del beat (tarea 3.4 spec 017)."""
+    def test_build_beat_prompt_compact_no_incluye_sinopsis(self):
+        """El template compact no expone la sinopsis en el prompt (se omite por diseño)."""
         from src.domain.models import Beat
 
         story = Story(
@@ -118,18 +102,20 @@ class TestPromptBuilder:
             protagonista="Ricardo, Irene",
             relator="Irene",
             escenarios="El monte",
-            sinopsis="Una familia enfrenta el terror del monte prohibido.",
+            sinopsis="SINOPSIS_UNICA_IDENTIFICADORA_XYZ",
             atmosfera="terror folclórico",
         )
         beat = Beat(number=1, summary="La advertencia de la abuela")
 
         builder = PromptBuilder()
-        prompt = builder.build_beat_prompt(story, beat)
+        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
+            builder._voice_template = None
+            prompt = builder.build_beat_prompt(story, beat)
 
-        assert "Una familia enfrenta el terror del monte prohibido." in prompt
+        assert "SINOPSIS_UNICA_IDENTIFICADORA_XYZ" not in prompt
 
     def test_build_beat_prompt_fallback_includes_sinopsis(self):
-        """El fallback (sin template) también debe incluir la sinopsis."""
+        """El fallback inline (sin template) incluye la sinopsis cuando la estrategia la resuelve."""
         from src.domain.models import Beat
 
         story = Story(
@@ -143,9 +129,11 @@ class TestPromptBuilder:
         beat = Beat(number=1, summary="Inicio")
 
         builder = PromptBuilder(prompts_dir="/ruta/que/no/existe")
-        prompt = builder.build_beat_prompt(story, beat)
+        sinopsis_text = "Sinopsis única de prueba para verificar fallback."
+        with patch.object(builder, "_resolve_sinopsis", return_value=sinopsis_text):
+            prompt = builder.build_beat_prompt(story, beat)
 
-        assert "Sinopsis única de prueba para verificar fallback." in prompt
+        assert sinopsis_text in prompt
 
     def test_resolve_sinopsis_full_strategy(self):
         """full: retorna la sinopsis completa sin recortar."""
@@ -205,3 +193,92 @@ class TestPromptBuilder:
 
         assert "terror_psicologico" in prompt
         assert "primera_persona" in prompt
+
+
+class TestPromptVariants:
+    """Tests para selección de variante compact/frontier (Spec 029)."""
+
+    def _story(self):
+        return Story(
+            title="Historia de Test",
+            protagonista="Ana",
+            relator="primera_persona",
+            escenarios="Casa abandonada",
+            sinopsis="Una mujer investiga una casa abandonada.",
+            atmosfera="terror",
+        )
+
+    def test_compact_variant_loads_compact_voice_template(self):
+        with patch("src.application.services.prompt_builder.settings") as mock_s:
+            mock_s.active_profile_config.return_value = {"prompt_variant": "compact"}
+            mock_s.beats_definition_file = "config/llm_beats_definition.yaml"
+            mock_s.prompts_dir = "config/prompts_generation"
+
+            mock_s.prompt_file_voice = "voice.md"
+            builder = PromptBuilder()
+            assert builder._voice_template_path() == "voice_compact.md"
+
+    def test_frontier_variant_loads_standard_voice_template(self):
+        with patch("src.application.services.prompt_builder.settings") as mock_s:
+            mock_s.active_profile_config.return_value = {"prompt_variant": "frontier"}
+            mock_s.beats_definition_file = "config/llm_beats_definition.yaml"
+            mock_s.prompts_dir = "config/prompts_generation"
+
+            mock_s.prompt_file_voice = "voice.md"
+            builder = PromptBuilder()
+            assert builder._voice_template_path() == "voice.md"
+
+    def test_compact_previous_context_max_500(self):
+        from src.domain.models import Beat
+
+        builder = PromptBuilder()
+        long_content = "x" * 600
+        beat = Beat(number=1, summary="s", content=long_content, status="completed")
+        result = builder._build_previous_context([beat], max_chars=500)
+        assert len(result) < 600
+        assert "x" * 500 in result
+
+    def test_frontier_previous_context_max_150(self):
+        from src.domain.models import Beat
+
+        builder = PromptBuilder()
+        long_content = "x" * 300
+        beat = Beat(number=1, summary="s", content=long_content, status="completed")
+        result = builder._build_previous_context([beat], max_chars=150)
+        assert "x" * 150 in result
+        assert "x" * 151 not in result
+
+    def test_compact_voice_beat1_uses_primer_fragmento_cta(self):
+        from src.domain.models import Beat
+
+        builder = PromptBuilder()
+        story = self._story()
+        beat = Beat(number=1, summary="La protagonista llega a la casa")
+        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
+            builder._voice_template = None
+            prompt = builder.build_beat_prompt(story, beat)
+        assert "primer fragmento" in prompt
+
+    def test_compact_voice_beat2_uses_continua_cta(self):
+        from src.domain.models import Beat
+
+        builder = PromptBuilder()
+        story = self._story()
+        beat = Beat(number=2, summary="El misterio se intensifica")
+        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
+            builder._voice_template = None
+            prompt = builder.build_beat_prompt(story, beat)
+        assert "Continúa el relato:" in prompt
+
+    def test_compact_beat_summary_in_second_half(self):
+        """El beat_summary aparece en la segunda mitad del prompt compact."""
+        from src.domain.models import Beat
+
+        builder = PromptBuilder()
+        story = self._story()
+        beat = Beat(number=1, summary="ESCENA_UNICA_IDENTIFICADORA")
+        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
+            builder._voice_template = None
+            prompt = builder.build_beat_prompt(story, beat)
+        mid = len(prompt) // 2
+        assert "ESCENA_UNICA_IDENTIFICADORA" in prompt[mid:]

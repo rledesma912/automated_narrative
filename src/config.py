@@ -119,6 +119,10 @@ class Settings(BaseSettings):
         """Config de un rol específico (director | voz | journal) del perfil activo."""
         return self.llm_role_config.get(role, {})
 
+    def active_profile_config(self) -> dict:
+        """Bloque completo del perfil activo (provider, prompt_variant, roles, etc.)."""
+        return _profile
+
     @property
     def llm_response_filter_config(self) -> dict:
         """Config de filtros de respuesta (top-level, transversal a perfiles)."""

@@ -18,6 +18,7 @@ class MockLLMAdapter:
         model: str = "mock",
         temperature: float = 0.6,
         role: str | None = None,
+        **kwargs,
     ) -> LLMResponse:
         """Generate mock text."""
         self.call_count += 1

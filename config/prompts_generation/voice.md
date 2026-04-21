@@ -12,12 +12,10 @@
 ## BEAT ACTUAL
 - Numero: {beat_number} de {total_beats}
 - Resumen: {beat_summary}
+- Restricciones dramáticas:
+{beat_spec}
 
-## CONTEXTO ANTERIOR
-{previous_context}
-
-## MEMORIA NARRATIVA (Journal)
-{journal_context}
+{context_section}
 
 ## REGLAS DE LA HISTORIA
 {reglas}

@@ -65,6 +65,7 @@ def generate(
     output_dir: Path,
     input_file: str | None = None,
     provider: str | None = None,
+    debug: bool = False,
 ) -> None:
     """Generate complete story with plan and narrated beats."""
     reglas: list[str] = []
@@ -102,6 +103,7 @@ def generate(
                 output_dir,
                 provider,
                 reglas,
+                debug=debug,
             )
         )
     except OllamaConnectionError:
@@ -124,6 +126,7 @@ async def _generate_async(
     output_dir: Path,
     provider: str | None = None,
     reglas: list[str] | None = None,
+    debug: bool = False,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
@@ -143,6 +146,9 @@ async def _generate_async(
     )
     t_total = time.perf_counter()
 
+    from src.application.services.debug_collector import DebugCollector, NullDebugCollector
+    collector = DebugCollector() if debug else NullDebugCollector()
+
     runner = StoryRunner(
         llm_adapter=llm,
         story_repo=story_repo,
@@ -150,6 +156,7 @@ async def _generate_async(
         prompt_builder=prompt_builder,
         output_dir=output_dir,
         reporter=reporter,
+        debug_collector=collector,
     )
 
     story = await runner.run_full(
@@ -291,6 +298,7 @@ def generate_from_db(
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
+    debug: bool = False,
 ) -> None:
     """Generate story from existing DB entry."""
     logger.info(
@@ -302,7 +310,7 @@ def generate_from_db(
     try:
         import asyncio
 
-        asyncio.run(_generate_from_db_async(story_id, use_mock, output_dir, provider))
+        asyncio.run(_generate_from_db_async(story_id, use_mock, output_dir, provider, debug=debug))
     except StoryNotFoundError:
         raise
     except OllamaConnectionError:
@@ -319,6 +327,7 @@ async def _generate_from_db_async(
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
+    debug: bool = False,
 ) -> None:
     """Async implementation of generate_from_db."""
     await _init_database()
@@ -337,6 +346,9 @@ async def _generate_from_db_async(
     reporter.start(story.title)
     t_total = time.perf_counter()
 
+    from src.application.services.debug_collector import DebugCollector, NullDebugCollector
+    collector = DebugCollector() if debug else NullDebugCollector()
+
     runner = StoryRunner(
         llm_adapter=llm,
         story_repo=story_repo,
@@ -344,6 +356,7 @@ async def _generate_from_db_async(
         prompt_builder=prompt_builder,
         output_dir=output_dir,
         reporter=reporter,
+        debug_collector=collector,
     )
 
     story = await runner.run_from_story(story)

@@ -1,21 +1,31 @@
-"""DirectorUseCase - genera la escaleta de beats."""
+"""DirectorUseCase - orquestador LLM punta a punta."""
 
 import logging
-import re
+from collections.abc import AsyncIterator
+from time import perf_counter
+from typing import TYPE_CHECKING, Callable
 
-from src.application.services import PromptBuilder
+from src.application.services import MemoryJournalist, PromptBuilder
+from src.application.services.debug_collector import DebugCollector, NullDebugCollector
+from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, Story, StoryPlan
+from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryPlan
 from src.infrastructure.normalizers import ResponseNormalizer
+
+if TYPE_CHECKING:
+    from src.application.use_cases.voz_use_case import VozUseCase
 
 logger = logging.getLogger(__name__)
 
 
 class DirectorUseCase:
-    """Caso de uso para generar el plan de beats (Director).
+    """Orquestador de la generación de historias punta a punta.
 
-    Planificación estructural. Divide la historia en beats lógicos.
+    Responsabilidades:
+    - execute()           → planificación solamente (CLI `plan`)
+    - execute_full()      → plan + narración + journal, beat-by-beat (AsyncGenerator)
+    - execute_narration() → narración sobre beats pre-existentes (AsyncGenerator)
     """
 
     def __init__(
@@ -23,75 +33,186 @@ class DirectorUseCase:
         llm: LLMProvider,
         prompt_builder: PromptBuilder,
         normalizer: ResponseNormalizer | None = None,
+        debug_collector: DebugCollector | None = None,
+        voz: "VozUseCase | None" = None,
+        journalist: MemoryJournalist | None = None,
     ):
         self.llm = llm
         self.prompt_builder = prompt_builder
         self.normalizer = normalizer or ResponseNormalizer()
+        self.debug_collector = debug_collector or NullDebugCollector()
+        self._voz = voz
+        self._journalist = journalist
 
-    async def execute(self, story: Story) -> StoryPlan:
-        """Genera la escaleta de beats. num_beats viene del YAML via PromptBuilder."""
-        num_beats = self.prompt_builder.num_beats
-        prompt = self.prompt_builder.build_planner_prompt(story)
-        system_prompt = self.prompt_builder.build_system_prompt(story)
+    def _get_voz(self) -> "VozUseCase":
+        if self._voz is None:
+            from src.application.use_cases.voz_use_case import VozUseCase
+            journalist = self._get_journalist()
+            self._voz = VozUseCase(
+                self.llm,
+                memory_journalist=journalist,
+                prompt_builder=self.prompt_builder,
+                normalizer=self.normalizer,
+                debug_collector=self.debug_collector,
+            )
+        return self._voz
 
-        logger.debug(f"[DIRECTOR] ===SYSTEM_PROMPT===\n{system_prompt}\n===END===")
-        logger.debug(f"[DIRECTOR] ===PLANNER_PROMPT===\n{prompt}\n===END===")
+    def _get_journalist(self) -> MemoryJournalist:
+        if self._journalist is None:
+            self._journalist = MemoryJournalist(
+                self.llm,
+                prompt_builder=self.prompt_builder,
+                debug_collector=self.debug_collector,
+            )
+        return self._journalist
 
+    async def _analyze_story(self, story: Story) -> str:
+        """Fase 0: expande la sinopsis en un narrative brief estructurado."""
+        role_cfg = settings.role_config("story_analyst")
+        model = role_cfg.get("model") or settings.llm_model
+        temperature = role_cfg.get("temperature", 0.3)
+
+        prompt = self.prompt_builder.build_story_analyst_prompt(story)
+        system_prompt = self.prompt_builder.build_story_analyst_system()
         response = await self.llm.generate(
             prompt=prompt,
             system_prompt=system_prompt,
-            model=settings.role_config("director").get("model"),
-            temperature=settings.director_temperature,
-            role="director",
+            model=model,
+            temperature=temperature,
+            role="story_analyst",
         )
 
-        logger.debug(f"[DIRECTOR] ===RAW_RESPONSE===\n{response.text}\n===END===")
+        brief = self.normalizer.normalize(response.text, model_name=model).strip()
 
-        clean_text = self.normalizer.normalize(response.text, model_name=settings.llm_model)
-        beats = self._parse_beats(clean_text, story.id, num_beats)
-
-        return StoryPlan(
-            story_id=story.id,
-            title=story.title,
-            beats=beats,
+        self.debug_collector.record(
+            role="story_analyst",
+            beat_number=None,
+            source_component=DebugCollector.source_label(self),
+            model=model,
+            temperature=temperature,
+            num_ctx=role_cfg.get("num_ctx"),
+            num_predict=role_cfg.get("num_predict"),
+            system_prompt=system_prompt,
+            user_prompt=prompt,
+            raw_response=response.text,
+            normalized_response=brief,
+            parser_result="n/a",
+            elapsed_s=response.elapsed_s,
         )
 
-    def _parse_beats(self, text: str, story_id, num_beats: int) -> list[Beat]:
-        """Parsea la respuesta del LLM en beats."""
-        beats = []
-        lines = text.strip().split("\n")
+        story.narrative_brief = brief
+        logger.debug(f"[DIRECTOR] Narrative brief generado: {len(brief)} chars")
+        return brief
 
-        for line in lines:
-            line = line.strip()
-            match = re.match(r"^(\d+)", line)
-            if match:
-                beat_number = int(match.group(1))
-                summary = line[len(match.group(0)):].strip(".- ").strip()
-                if summary:
-                    beats.append(
-                        Beat(
-                            number=beat_number,
-                            summary=summary,
-                            status="pending",
-                        )
-                    )
+    async def execute(self, story: Story) -> StoryPlan:
+        """Planificación solamente. Usado por CLI `plan`."""
+        mapper = SynopsisBeatMapper(
+            self.llm,
+            self.prompt_builder,
+            normalizer=self.normalizer,
+            debug_collector=self.debug_collector,
+        )
 
-        if not beats:
-            logger.warning(
-                f"[DIRECTOR] FALLBACK: no se pudo parsear la respuesta, "
-                f"se usan {num_beats} beats genéricos. Raw response:\n{text[:2000]}"
-            )
-            beats = [
-                Beat(number=i, summary=f"Beat #{i} generado automáticamente", status="pending")
-                for i in range(1, num_beats + 1)
-            ]
+        logger.debug(
+            f"[DIRECTOR] Planificación via mapper — "
+            f"prompt_builder={self.prompt_builder.__class__.__name__}",
+        )
+
+        brief = await self._analyze_story(story)
+        beats = await mapper.map(story, narrative_brief=brief)
+        logger.debug(f"[DIRECTOR] Plan generado: {len(beats)} beats")
+
+        return StoryPlan(story_id=story.id, title=story.title, beats=beats)
+
+    async def execute_full(
+        self,
+        story: Story,
+        initial_journal: NarrativeJournal | None = None,
+        on_plan_ready: Callable[[int, float], None] | None = None,
+    ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
+        """Orquestación punta a punta (Spec-038): ANALYST → 5×(MAPPER+NC+VOZ+JOURNAL).
+
+        Yields (macro_beat_completado, journal_actualizado, llm_elapsed_voz) por beat.
+        """
+        from src.application.services.story_analyst_service import StoryAnalystService
+
+        t0 = perf_counter()
+
+        analyst = StoryAnalystService(
+            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+        )
+        narrative_anchors = await analyst.extract_anchors(story)
+
+        if story.scenarios:
+            cronologic_scenarios = [s.name for s in story.scenarios]
+        elif story.escenarios:
+            cronologic_scenarios = [e.strip() for e in story.escenarios.split("/") if e.strip()]
         else:
-            logger.debug(
-                f"[DIRECTOR] {len(beats)} beats parseados OK: "
-                f"{[b.summary[:60] for b in beats]}"
+            cronologic_scenarios = []
+
+        mapper = SynopsisBeatMapper(
+            self.llm, self.prompt_builder,
+            normalizer=self.normalizer, debug_collector=self.debug_collector,
+        )
+        voz = self._get_voz()
+        journalist = self._get_journalist()
+
+        num_beats = self.prompt_builder.num_beats
+        plan_elapsed = perf_counter() - t0
+        logger.debug(f"[DIRECTOR] Anclajes extraídos en {plan_elapsed:.1f}s → {num_beats} beats")
+
+        if on_plan_ready is not None:
+            on_plan_ready(num_beats, plan_elapsed)
+
+        journal = initial_journal
+        prev_snapshot: str | None = None
+
+        for beat_id in range(1, num_beats + 1):
+            beat_anchors = analyst.resolve_beat_anchors(narrative_anchors, beat_id)
+
+            macro_beat = await mapper.map_one(
+                story=story,
+                macro_beat_id=beat_id,
+                beat_anchors=beat_anchors,
+                prev_snapshot=prev_snapshot,
+                cronologic_scenarios=cronologic_scenarios,
             )
 
-        return beats
+            macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
+                macro_beat, beat_anchors, prev_snapshot
+            )
+
+            macro_beat, llm_elapsed = await voz.narrate(macro_beat, story)
+
+            prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
+            macro_beat.memory_snapshot = prev_snapshot
+
+            yield macro_beat, journal, llm_elapsed
+
+    async def execute_narration(
+        self,
+        story: Story,
+        beats_to_narrate: list[Beat],
+        initial_journal: NarrativeJournal | None = None,
+    ) -> AsyncIterator[tuple[Beat, NarrativeJournal, float]]:
+        """Narra una lista de beats pre-existentes.
+
+        Yields (beat_completado, journal_actualizado, llm_elapsed) por cada beat.
+        """
+        voz = self._get_voz()
+        journal = initial_journal
+        completed: list[Beat] = []
+
+        for beat in beats_to_narrate:
+            logger.debug(f"[DIRECTOR] Narrando beat #{beat.number}")
+            beat, journal, llm_elapsed = await voz.execute(
+                story=story,
+                beat=beat,
+                previous_beats=completed,
+                journal=journal,
+            )
+            completed.append(beat)
+            yield beat, journal, llm_elapsed
 
 
 # Alias para backwards compatibility

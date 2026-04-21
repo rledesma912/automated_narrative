@@ -31,7 +31,7 @@ class TestTemplateMapper:
         assert story.title == "La Casa Abandonada"
         assert story.protagonist == "María"
         assert story.atmosphere == "terror psicológico"
-        assert story.scenarios == "Una casa abandonada en las afueras"
+        assert story.escenarios == "Una casa abandonada en las afueras"
         assert story.synopsis == "Una familia se muda a una casa embrujada"
 
     def test_map_keeps_spanish_fields(self, mapper, valid_input):
