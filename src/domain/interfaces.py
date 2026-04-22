@@ -28,6 +28,8 @@ class LLMProvider(Protocol):
         model: str = "mistral:latest",
         temperature: float = 0.6,
         role: str | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> LLMResponse:
         """Generate text with LLM. `role` permite al adapter leer config específica del rol."""
         ...

@@ -26,6 +26,8 @@ class OllamaAdapter:
         model: str | None = None,
         temperature: float | None = None,
         role: str | None = None,
+        num_ctx: int | None = None,
+        num_predict: int | None = None,
     ) -> LLMResponse:
         """Generate text with Ollama.
 
@@ -42,8 +44,8 @@ class OllamaAdapter:
             "temperature": temp,
             "top_p": 0.9,
             "repeat_penalty": 1.15,
-            "num_ctx": int(role_cfg.get("num_ctx", 4096)),
-            "num_predict": int(role_cfg.get("num_predict", 2048)),
+            "num_ctx": int(num_ctx if num_ctx is not None else role_cfg.get("num_ctx", 4096)),
+            "num_predict": int(num_predict if num_predict is not None else role_cfg.get("num_predict", 2048)),
         }
 
         payload: dict = {
