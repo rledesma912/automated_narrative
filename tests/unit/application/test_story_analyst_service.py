@@ -1,6 +1,5 @@
 """Tests para StoryAnalystService (Spec-038, criterio B5)."""
 
-import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock
 
@@ -32,12 +31,19 @@ def _make_llm(response_text: str):
     return llm
 
 
-_VALID_JSON = json.dumps({
-    "initial_state": "Irene llega tranquila, sin sospechar nada.",
-    "threat_nature": "Una presencia que imita a los conocidos para atraer.",
-    "horror_peak": "La figura de María inmóvil en el claro del monte.",
-    "spatial_anchor": "Monte de los Espinillos: espinillos cerrados, relámpagos.",
-})
+_VALID_MARKDOWN = """\
+## initial_state
+Irene llega tranquila, sin sospechar nada.
+
+## threat_nature
+Una presencia que imita a los conocidos para atraer.
+
+## horror_peak
+La figura de María inmóvil en el claro del monte.
+
+## spatial_anchor
+Monte de los Espinillos: espinillos cerrados, relámpagos.
+"""
 
 
 class TestExtractAnchors:
@@ -45,14 +51,14 @@ class TestExtractAnchors:
 
     @pytest.mark.asyncio
     async def test_returns_narrative_anchors_object(self):
-        llm = _make_llm(_VALID_JSON)
+        llm = _make_llm(_VALID_MARKDOWN)
         service = StoryAnalystService(llm, PromptBuilder())
         result = await service.extract_anchors(_make_story())
         assert isinstance(result, NarrativeAnchors)
 
     @pytest.mark.asyncio
     async def test_all_four_fields_populated(self):
-        llm = _make_llm(_VALID_JSON)
+        llm = _make_llm(_VALID_MARKDOWN)
         service = StoryAnalystService(llm, PromptBuilder())
         result = await service.extract_anchors(_make_story())
         assert result.initial_state != ""
@@ -62,15 +68,15 @@ class TestExtractAnchors:
 
     @pytest.mark.asyncio
     async def test_story_id_matches(self):
-        llm = _make_llm(_VALID_JSON)
+        llm = _make_llm(_VALID_MARKDOWN)
         service = StoryAnalystService(llm, PromptBuilder())
         story = _make_story()
         result = await service.extract_anchors(story)
         assert result.story_id == story.id
 
     @pytest.mark.asyncio
-    async def test_values_match_json(self):
-        llm = _make_llm(_VALID_JSON)
+    async def test_values_match_sections(self):
+        llm = _make_llm(_VALID_MARKDOWN)
         service = StoryAnalystService(llm, PromptBuilder())
         result = await service.extract_anchors(_make_story())
         assert "Irene" in result.initial_state
@@ -78,26 +84,32 @@ class TestExtractAnchors:
 
     @pytest.mark.asyncio
     async def test_uses_story_analyst_role(self):
-        llm = _make_llm(_VALID_JSON)
+        llm = _make_llm(_VALID_MARKDOWN)
         service = StoryAnalystService(llm, PromptBuilder())
         await service.extract_anchors(_make_story())
         call_kwargs = llm.generate.call_args.kwargs
         assert call_kwargs.get("role") == "story_analyst"
 
     @pytest.mark.asyncio
-    async def test_json_wrapped_in_markdown_fence(self):
-        """extract_anchors() extrae JSON aunque venga dentro de ```json ... ```."""
-        wrapped = f"```json\n{_VALID_JSON}\n```"
-        llm = _make_llm(wrapped)
+    async def test_multiline_section_value(self):
+        """El valor de una sección puede ocupar múltiples líneas."""
+        response = (
+            "## initial_state\n"
+            "Irene llega tranquila.\n"
+            "No sospecha nada todavía.\n\n"
+            "## threat_nature\nUna presencia imitadora.\n\n"
+            "## horror_peak\nFigura inmóvil en el claro.\n\n"
+            "## spatial_anchor\nEspinillos, barro, relámpagos.\n"
+        )
+        llm = _make_llm(response)
         service = StoryAnalystService(llm, PromptBuilder())
         result = await service.extract_anchors(_make_story())
-        assert isinstance(result, NarrativeAnchors)
-        assert result.horror_peak != ""
+        assert "No sospecha nada todavía" in result.initial_state
 
     @pytest.mark.asyncio
-    async def test_json_with_preamble_text(self):
-        """extract_anchors() ignora texto antes del JSON."""
-        response = f"Aquí están los anclajes:\n{_VALID_JSON}"
+    async def test_preamble_text_before_sections_ignored(self):
+        """Texto libre antes de las secciones ## no interfiere."""
+        response = "Aquí están los anclajes:\n\n" + _VALID_MARKDOWN
         llm = _make_llm(response)
         service = StoryAnalystService(llm, PromptBuilder())
         result = await service.extract_anchors(_make_story())
@@ -109,29 +121,32 @@ class TestFallbackAnchors:
     """extract_anchors() aplica fallback cuando el LLM devuelve formato inválido."""
 
     @pytest.mark.asyncio
-    async def test_fallback_on_non_json_response(self):
-        """Si el LLM devuelve el formato viejo (5 líneas), retorna NarrativeAnchors igualmente."""
-        old_format = (
-            "1. Estado inicial: Irene llega sin sospechar nada.\n"
-            "2. Amenaza: Una presencia en el monte.\n"
-            "3. Momento clave A: Ven la figura de María.\n"
-            "5. Escenario clave: Espinillos, barro, relámpagos."
-        )
-        llm = _make_llm(old_format)
+    async def test_fallback_on_missing_sections(self):
+        """Si el LLM devuelve texto sin secciones ##, retorna NarrativeAnchors con fallback."""
+        llm = _make_llm("No sé qué responder.")
         service = StoryAnalystService(llm, PromptBuilder())
         result = await service.extract_anchors(_make_story())
         assert isinstance(result, NarrativeAnchors)
         assert result.initial_state != ""
 
     @pytest.mark.asyncio
-    async def test_fallback_never_raises(self):
-        """Un response completamente vacío devuelve NarrativeAnchors con sinopsis como fallback."""
-        llm = _make_llm("")
+    async def test_fallback_on_partial_sections(self):
+        """Si solo hay algunas secciones, los campos faltantes usan sinopsis como fallback."""
+        partial = "## initial_state\nIrene llega.\n\n## threat_nature\nUna presencia."
+        llm = _make_llm(partial)
         service = StoryAnalystService(llm, PromptBuilder())
         story = _make_story()
         result = await service.extract_anchors(story)
+        assert result.initial_state == "Irene llega."
+        assert result.horror_peak != ""  # fallback con sinopsis
+
+    @pytest.mark.asyncio
+    async def test_fallback_never_raises(self):
+        """Un response completamente vacío devuelve NarrativeAnchors sin lanzar excepción."""
+        llm = _make_llm("")
+        service = StoryAnalystService(llm, PromptBuilder())
+        result = await service.extract_anchors(_make_story())
         assert isinstance(result, NarrativeAnchors)
-        # fallback rellena con fragmento de sinopsis
         assert result.initial_state != ""
 
 
@@ -149,7 +164,6 @@ class TestResolveAnchors:
             spatial_anchor="Espacio D",
         )
         result = service.resolve_beat_anchors(anchors, 1)
-        # beat 1: principal=initial_state, contexto=spatial_anchor
         assert result["principal"] == "Estado A"
         assert result["contexto"] == "Espacio D"
 

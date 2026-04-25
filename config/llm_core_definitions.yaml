@@ -268,3 +268,7 @@ response_filters:
         - "^### "
         - "^## "
         - "^# "
+
+  role_overrides:
+    story_analyst:
+      strip_line_patterns: []  # preservar ## initial_state, ## threat_nature, ## horror_peak, ## spatial_anchor

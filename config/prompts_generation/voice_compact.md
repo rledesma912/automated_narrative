@@ -1,3 +1,4 @@
+<!-- variante: compact | rol: voz (user, ruta legacy execute()) | cargado por: build_beat_prompt() -->
 {relator} narra en primera persona lo que vivió en su historia.
 Atmósfera: {atmosphere}
 Personajes: {protagonistas}

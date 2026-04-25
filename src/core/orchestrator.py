@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from src.application.dto import StoryCreateDTO
 from src.application.services import PromptBuilder
+from src.application.services.checkpoint import validate, ordinal
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases import CreateStoryUseCase, DirectorUseCase
 from src.cli.logger import logger
@@ -46,12 +47,20 @@ class StoryRunner:
         title: str,
         protagonista: str,
         relator: str,
-        escenarios: str,
+        escenarios: list[str] | str,
         sinopsis: str,
         atmosfera: str,
         reglas: list[str] | None = None,
+        stop_after: str | None = None,
     ) -> Story:
-        """Flujo completo: crear story + plan + narrar todos los beats."""
+        """Flujo completo: crear story + plan + narrar todos los beats.
+
+        Args:
+            stop_after: Checkpoint para detener el pipeline (Spec-040).
+                Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
+        """
+        if stop_after is not None:
+            validate(stop_after)
         from src.config import settings as cfg
 
         logger.info("[SESSION] ── Iniciando generación ──────────────────────────────", module="orchestrator", line=1)
@@ -64,11 +73,14 @@ class StoryRunner:
         )
 
         create_story = CreateStoryUseCase(self.story_repo)
+        escenarios_list = escenarios if isinstance(escenarios, list) else (
+            [e.strip() for e in escenarios.split("/") if e.strip()] if escenarios else []
+        )
         dto = StoryCreateDTO(
             title=title,
             protagonista=protagonista,
             relator=relator,
-            escenarios=escenarios,
+            escenarios=escenarios_list,
             sinopsis=sinopsis,
             atmosfera=atmosfera,
             reglas=reglas or [],
@@ -90,14 +102,27 @@ class StoryRunner:
         async for beat, journal, llm_elapsed in director.execute_full(
             story,
             on_plan_ready=lambda n, t: self.reporter.plan_done(n, t),
+            on_step_done=lambda label, t: self.reporter.step_done(label, t),
+            on_step_start=lambda msg: self.reporter.step_start(msg),
+            stop_after=stop_after,
         ):
+            self.reporter.step_start(f"Guardando beat {beat.number}/{total}...")
             await self.beat_repo.save(beat, story.id)
-            await self.story_repo.save_journal(story.id, journal)
+            if journal is not None:
+                await self.story_repo.save_journal(story.id, journal)
             step_elapsed = perf_counter() - beat_t0
             self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
             completed.append(beat)
             logger.info(f"[VOZ] Beat #{beat.number} completado y guardado", module="orchestrator", line=1)
             beat_t0 = perf_counter()
+
+        if stop_after is not None:
+            cp_ordinal = ordinal(stop_after)
+            debug_path = (
+                f"output_stories/debug_{title}_{cp_ordinal}.md"
+                if self.debug_collector.is_active() else None
+            )
+            self.reporter.checkpoint_pause(stop_after, str(story.id), cp_ordinal, debug_path)
 
         story.beats = completed
 

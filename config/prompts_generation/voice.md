@@ -1,3 +1,4 @@
+<!-- variante: frontier | rol: voz (user) | cargado por: build_beat_prompt() via _voice_template_path() -->
 # INSTRUCCIONES DE VOZ - NARRACIÓN DE BEAT
 
 ## HISTORIA BASE

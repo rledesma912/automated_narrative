@@ -1,6 +1,5 @@
 """SQL Scenario Repository."""
 
-import uuid
 from uuid import UUID
 
 from src.domain.models import Scenario

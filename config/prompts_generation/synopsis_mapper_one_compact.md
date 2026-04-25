@@ -1,25 +1,39 @@
-SINOPSIS COMPLETA:
-{sinopsis}
+<!-- variante: compact | rol: mapper (user, map_one) | cargado por: build_synopsis_mapper_one_prompt() -->
+# ARQUITECTO DE BEAT (Acto {macro_beat_id})
 
-ESCENARIOS CRONOLÓGICOS:
-{cronologic_scenarios_list}
+Tu tarea es diseñar la estructura técnica del **Acto {macro_beat_id}: {beat_name}**.
+Sos el puente entre la sinopsis y la narración literaria.
 
-ANCLAJE PRINCIPAL: {anchor_principal}
-ANCLAJE DE CONTEXTO: {anchor_contexto}
+## CONTEXTO ESPECÍFICO DE ESTE ACTO
+- **ATMÓSFERA:** {atmosphere}
+- **INTENTO NARRATIVO:** {beat_intent}
+- **ESCENARIO DESIGNADO:** {active_scenario}
+
+### REGLAS ACTIVAS QUE DEBEN MANIFESTARSE
+{active_rules}
+
+### FRAGMENTO DE SINOPSIS (EVENTOS BASE)
+{synopsis_slice}
+
 {prev_snapshot_section}
-ACTO {macro_beat_id} — {beat_name}: {beat_intent}
 
-Extraé la información de este acto a partir de la sinopsis.
+## ANCLAJES NARRATIVOS
+- **Principal:** {anchor_principal}
+- **Contexto:** {anchor_contexto}
 
-1. Identificá qué escenario de la lista corresponde a este acto.
-2. Extraé todos los eventos concretos de la sinopsis que pertenecen a este acto.
+---
 
-No inventés. No expandás. Solo lo que está escrito en el texto.
+## INSTRUCCIONES DE DISEÑO
+1. **Segmentación Fina:** Analiza el fragmento de sinopsis y extrae los eventos concretos que deben ocurrir.
+2. **Integración de Reglas:** Describe cómo las reglas activas afectan a los personajes o al entorno en este momento preciso.
+3. **Coherencia Atmosférica:** Asegúrate de que los eventos reflejen la atmósfera ({atmosphere}).
+4. **No anticipar:** No incluyas eventos que pertenecen a fragmentos posteriores de la sinopsis.
 
-FORMATO (seguilo exactamente, sin texto adicional antes ni después):
+## FORMATO DE RESPUESTA (ESTRICTO)
 
-ESCENARIO: [nombre exacto de uno de los escenarios de la lista]
+ESCENARIO: [Nombre exacto del escenario activo]
 
 EVENTOS:
-- [primer evento concreto del acto, en orden narrativo]
-- [segundo evento concreto del acto]
+- [Descripción técnica del primer evento, integrando reglas/atmósfera]
+- [Descripción técnica del segundo evento, integrando reglas/atmósfera]
+- [etc...]

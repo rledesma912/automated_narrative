@@ -60,6 +60,7 @@ class SynopsisBeatMapper:
         clean_text = self.normalizer.normalize(response.text, model_name=model)
         beats = parse_beats(clean_text, num_beats, story.id, caller="MAPPER")
 
+        variant = self.prompt_builder._get_prompt_variant()
         self.debug_collector.record(
             role="mapper",
             beat_number=None,
@@ -74,6 +75,8 @@ class SynopsisBeatMapper:
             normalized_response=clean_text,
             parser_result=f"ok: {len(beats)} beats" if beats else "error: 0 beats",
             elapsed_s=response.elapsed_s,
+            system_prompt_file="synopsis_mapper_system_compact.md",
+            user_prompt_file="synopsis_mapper_compact.md" if variant == "compact" else "synopsis_mapper.md",
         )
 
         logger.debug(f"[MAPPER] beats mapeados: {[b.summary[:70] for b in beats]}")
@@ -85,12 +88,15 @@ class SynopsisBeatMapper:
         macro_beat_id: int,
         beat_anchors: dict,
         prev_snapshot: str | None = None,
-        cronologic_scenarios: list[str] | None = None,
+        synopsis_slice: str | None = None,
+        active_rules: list[str] | None = None,
+        active_scenario_description: str | None = None,
+        beat_intent: str | None = None,
+        atmosphere: str | None = None,
     ) -> MacroBeat:
-        """Mapea un único macro-beat: extrae su evento de la sinopsis e identifica el escenario activo.
+        """Mapea un único macro-beat enriquecido: extrae eventos e integra reglas/escenario.
 
-        El escenario activo se almacena en active_scenario_id como nombre de texto hasta que
-        DirectorUseCase lo resuelva al UUID de la tabla scenario.
+        El escenario activo se almacena en active_scenario_id como nombre de texto.
         """
         role_cfg = settings.role_config("director")
         model = role_cfg.get("model") or settings.llm_model
@@ -101,13 +107,17 @@ class SynopsisBeatMapper:
             macro_beat_id=macro_beat_id,
             beat_anchors=beat_anchors,
             prev_snapshot=prev_snapshot,
-            cronologic_scenarios=cronologic_scenarios,
+            synopsis_slice=synopsis_slice,
+            active_rules=active_rules,
+            active_scenario=active_scenario_description,
+            beat_intent=beat_intent,
+            atmosphere=atmosphere,
         )
         system_prompt = self.prompt_builder.build_synopsis_mapper_system(story)
 
         logger.debug(
             f"[MAPPER] map_one beat={macro_beat_id} model={model} "
-            f"anchors=({beat_anchors.get('principal', '')[:30]}...)"
+            f"rules={len(active_rules or [])} scenario={bool(active_scenario_description)}"
         )
 
         response = await self.llm.generate(
@@ -121,15 +131,20 @@ class SynopsisBeatMapper:
         )
 
         clean_text = self.normalizer.normalize(response.text, model_name=model)
-        summary, active_scenario = self._parse_map_one_response(
-            clean_text, macro_beat_id, cronologic_scenarios or []
+
+        summary, active_scenario_from_llm = self._parse_map_one_response(
+            clean_text, macro_beat_id, []
         )
+
+        final_scenario = active_scenario_from_llm or active_scenario_description
 
         macro_beat = MacroBeat(
             number=macro_beat_id,
             summary=summary,
             status="pending",
-            active_scenario_id=active_scenario,  # nombre (string), resuelto a UUID en Slice 6
+            active_scenario_id=final_scenario,
+            active_scenario_description=active_scenario_description or "",
+            active_rules=active_rules or [],
         )
 
         self.debug_collector.record(
@@ -144,12 +159,14 @@ class SynopsisBeatMapper:
             user_prompt=prompt,
             raw_response=response.text,
             normalized_response=clean_text,
-            parser_result=f"ok: escenario={active_scenario!r}, summary={len(summary)} chars",
+            parser_result=f"ok: escenario={active_scenario_from_llm!r}, summary={len(summary)} chars",
             elapsed_s=response.elapsed_s,
+            system_prompt_file="synopsis_mapper_system_compact.md",
+            user_prompt_file="synopsis_mapper_one_compact.md",
         )
 
         logger.debug(
-            f"[MAPPER] beat #{macro_beat_id} → escenario={active_scenario!r} "
+            f"[MAPPER] beat #{macro_beat_id} → escenario={active_scenario_from_llm!r} "
             f"summary={summary[:80]}"
         )
         return macro_beat

@@ -52,3 +52,36 @@ class InvalidInputError(NarrativeError):
             details={"field": field},
         )
         self.field = field
+
+
+class LLMProviderError(NarrativeError):
+    """Error en la llamada al proveedor LLM."""
+
+    def __init__(self, provider: str, reason: str):
+        super().__init__(
+            f"Error del proveedor LLM '{provider}': {reason}",
+            details={"provider": provider, "reason": reason},
+        )
+        self.provider = provider
+
+
+class PromptTemplateError(NarrativeError):
+    """Template de prompt no encontrado o inválido."""
+
+    def __init__(self, filename: str):
+        super().__init__(
+            f"Template de prompt no encontrado: {filename}",
+            details={"filename": filename},
+        )
+        self.filename = filename
+
+
+class ParseError(NarrativeError):
+    """Error al parsear la respuesta del LLM."""
+
+    def __init__(self, role: str, reason: str):
+        super().__init__(
+            f"Error de parseo en rol '{role}': {reason}",
+            details={"role": role, "reason": reason},
+        )
+        self.role = role

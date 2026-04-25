@@ -53,16 +53,17 @@ Stories are broken into **5 macro-beats** following the 5-act structure defined 
 
 **El VOZ recibe un `narrative_context` completamente pre-construido. Su única responsabilidad es generar prosa literaria.** No interpreta la sinopsis, no infiere contexto, no toma decisiones narrativas.
 
-### Cuatro roles LLM por historia
+### Cinco roles LLM por historia
 
 | Rol | Componente | Llamadas | Responsabilidad |
 |---|---|---|---|
 | **Analyst** | `StoryAnalystService` | 1 (global) | Extrae los 4 `NarrativeAnchors` de la sinopsis (JSON estructurado) |
+| **Resolver** | `RuleScenarioResolverService` | 1 (global) | Distribuye reglas y escenarios a cada beat (JSON) |
 | **Mapper** | `SynopsisBeatMapper.map_one()` | 5 (una por beat) | Extrae qué ocurre en el beat N + identifica el escenario activo |
 | **Voz** | `VozUseCase.narrate()` | 5 (una por beat) | Expande `narrative_context` a prosa literaria |
 | **Journal** | `MemoryJournalist.extract()` | 5 (una por beat) | Extrae `memory_snapshot` del beat narrado |
 
-**Total: 16 llamadas LLM por historia** (1 analyst + 5×3).
+**Total: 17 llamadas LLM por historia** (1 analyst + 1 resolver + 5×3).
 
 ### Los 4 NarrativeAnchors (estáticos, extraídos una sola vez)
 
@@ -99,16 +100,19 @@ API/CLI → CreateStoryUseCase → DB (story record)
                 → NarrativeAnchors (1 LLM call)
                 → DB (narrative_anchors table)
 
+            [2] RuleScenarioResolverService.resolve_distribution()
+                → rule_distribution: {beat_id: {rules, scenario_index}} (1 LLM call)
+
             Para cada beat 1..5:
-            [2a] analyst.resolve_beat_anchors()  → beat_anchors dict (sin LLM)
+            [3a] analyst.resolve_beat_anchors()  → beat_anchors dict (sin LLM)
                  mapper.map_one()                → MacroBeat.summary + active_scenario_id (1 LLM call)
                  build_narrative_context()       → MacroBeat.narrative_context (sin LLM)
                  → DB (macro_beat: summary + narrative_context)
 
-            [2b] voz.narrate()                   → MacroBeat.content (1 LLM call)
+            [3b] voz.narrate()                   → MacroBeat.content (1 LLM call)
                  → DB (macro_beat: content + status=completed)
 
-            [2c] journalist.extract()            → MacroBeat.memory_snapshot + NarrativeJournal (1 LLM call)
+            [3c] journalist.extract()            → MacroBeat.memory_snapshot + NarrativeJournal (1 LLM call)
                  → DB (macro_beat: memory_snapshot, narrative_journal)
 
           MarkdownRenderer → output_stories/
@@ -228,46 +232,50 @@ Esquema de `macro_beat` (tabla renombrada desde `beat` en Spec-038):
 
 Repositories in `src/infrastructure/database/` implement interfaces defined in `src/domain/interfaces/`.
 
-## Diagrama de Secuencia — Pipeline Completo (Spec-038)
+## Diagrama de Secuencia — Pipeline Completo (Spec-038 + Spec-041)
 
 ```
-CLI/API          DirectorUseCase     StoryAnalystService   SynopsisBeatMapper   VozUseCase   MemoryJournalist
-   │                    │                     │                     │                │               │
-   │  execute_full(story)│                     │                     │                │               │
-   │───────────────────>│                     │                     │                │               │
-   │                    │  extract_anchors()  │                     │                │               │
-   │                    │────────────────────>│                     │                │               │
-   │                    │  NarrativeAnchors   │   [1 LLM call]      │                │               │
-   │                    │<────────────────────│                     │                │               │
-   │                    │                     │                     │                │               │
-   │                    │════ LOOP beat 1..5 ════════════════════════════════════════════════════════│
-   │                    │                     │                     │                │               │
-   │                    │  resolve_beat_anchors(anchors, beat_id)   │                │               │
-   │                    │────────────────────>│                     │                │               │
-   │                    │  {principal, contexto}                    │                │               │
-   │                    │<────────────────────│                     │                │               │
-   │                    │                     │                     │                │               │
-   │                    │                           map_one(story, beat_id, anchors, prev_snapshot)  │
-   │                    │──────────────────────────────────────────>│   [1 LLM call] │               │
-   │                    │                           MacroBeat(summary, active_scenario_id)           │
-   │                    │<──────────────────────────────────────────│                │               │
-   │                    │                     │                     │                │               │
-   │                    │  build_narrative_context()  [sin LLM]     │                │               │
-   │                    │──────────────────────────────────────────────────────────> │               │
-   │                    │  macro_beat.narrative_context             │                │               │
-   │                    │<──────────────────────────────────────────────────────────│               │
-   │                    │                     │                     │                │               │
-   │                    │                                                narrate(macro_beat, story)  │
-   │                    │────────────────────────────────────────────────────────────────────────────│
-   │                    │                                                [1 LLM call] MacroBeat+content
-   │                    │<───────────────────────────────────────────────────────────────────────────│
-   │                    │                     │                     │                │               │
-   │                    │                                                        extract(story, beat)│
-   │                    │─────────────────────────────────────────────────────────────────────────> │
-   │                    │                                                [1 LLM call] (snapshot, journal)
-   │                    │<─────────────────────────────────────────────────────────────────────────-│
-   │                    │                     │                     │                │               │
-   │  yield (beat, journal, elapsed)          │                     │                │               │
-   │<───────────────────│                     │                     │                │               │
-   │                    │════ FIN LOOP ═══════════════════════════════════════════════════════════════│
+CLI/API     DirectorUseCase  StoryAnalystService  RuleScenarioResolver  SynopsisBeatMapper  VozUseCase  MemoryJournalist
+   │               │                  │                    │                     │               │               │
+   │  execute_full(story)             │                    │                     │               │               │
+   │──────────────>│                  │                    │                     │               │               │
+   │               │  extract_anchors()                    │                     │               │               │
+   │               │─────────────────>│                    │                     │               │               │
+   │               │  NarrativeAnchors [1 LLM call]        │                     │               │               │
+   │               │<─────────────────│                    │                     │               │               │
+   │               │                  │                    │                     │               │               │
+   │               │                  resolve_distribution(story)                │               │               │
+   │               │──────────────────────────────────────>│   [1 LLM call]      │               │               │
+   │               │                  rule_distribution (JSON por beat)          │               │               │
+   │               │<──────────────────────────────────────│                     │               │               │
+   │               │                  │                    │                     │               │               │
+   │               │════ LOOP beat 1..5 ══════════════════════════════════════════════════════════════════════════│
+   │               │                  │                    │                     │               │               │
+   │               │  resolve_beat_anchors()               │                     │               │               │
+   │               │─────────────────>│                    │                     │               │               │
+   │               │  {principal, contexto} [sin LLM]      │                     │               │               │
+   │               │<─────────────────│                    │                     │               │               │
+   │               │                  │            map_one(story, beat_id, anchors, rules, scenario)             │
+   │               │───────────────────────────────────────────────────────────>│   [1 LLM call] │               │
+   │               │                  │            MacroBeat(summary, active_scenario_id)        │               │
+   │               │<──────────────────────────────────────────────────────────│                │               │
+   │               │                  │                    │                     │               │               │
+   │               │  build_narrative_context() [sin LLM]  │                     │               │               │
+   │               │─────────────────────────────────────────────────────────────────────────────│               │
+   │               │  macro_beat.narrative_context          │                     │               │               │
+   │               │<────────────────────────────────────────────────────────────────────────────│               │
+   │               │                  │                    │                     │               │               │
+   │               │                  │              narrate(macro_beat, story) [1 LLM call]     │               │
+   │               │────────────────────────────────────────────────────────────────────────────>│               │
+   │               │                  │              MacroBeat + content                         │               │
+   │               │<────────────────────────────────────────────────────────────────────────────│               │
+   │               │                  │                    │                     │               │               │
+   │               │                  │                    │              extract(story, beat)   │  [1 LLM call] │
+   │               │──────────────────────────────────────────────────────────────────────────────────────────> │
+   │               │                  │                    │              (snapshot, journal)    │               │
+   │               │<─────────────────────────────────────────────────────────────────────────────────────────-│
+   │               │                  │                    │                     │               │               │
+   │  yield (beat, journal, elapsed)  │                    │                     │               │               │
+   │<──────────────│                  │                    │                     │               │               │
+   │               │════ FIN LOOP ════════════════════════════════════════════════════════════════════════════════│
 ```

@@ -1,6 +1,6 @@
 """Tests for domain models."""
 
-from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryStatus
+from src.domain.models import Beat, NarrativeJournal, Story, StoryStatus
 
 
 class TestStory:

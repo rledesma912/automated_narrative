@@ -2,7 +2,6 @@
 
 import uuid
 
-import pytest
 
 from src.domain.models import (
     Beat,

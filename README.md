@@ -12,13 +12,19 @@ NarrativeForge construye relatos de terror cohesivos y atmosféricos usando una 
 
 Un **beat** es la unidad mínima de narración (~300-500 palabras). La historia no se genera de un golpe; se construye beat a beat siguiendo una escaleta de **5 actos** definida en `config/llm_beats_definition.yaml`. Ese YAML es la única fuente de verdad para la estructura narrativa — nunca se hardcodea el número de beats.
 
-### Los tres agentes LLM
+### Los cinco roles LLM
 
-| Agente | Clase | Rol |
-|--------|-------|-----|
-| **Director** | `DirectorUseCase` | Orquestador punta a punta: corre el mapper y delega la narración beat-by-beat |
-| **Voz** | `VozUseCase` | Expande el summary de cada beat en prosa literaria |
-| **Journalist** | `MemoryJournalist` | Rastrea eventos, misterios y estado emocional para mantener coherencia cross-beat |
+| Rol | Clase | Llamadas | Responsabilidad |
+|-----|-------|----------|-----------------|
+| **Analyst** | `StoryAnalystService` | 1 (global) | Extrae los 4 `NarrativeAnchors` de la sinopsis |
+| **Resolver** | `RuleScenarioResolverService` | 1 (global) | Distribuye reglas y escenarios a cada beat |
+| **Mapper** | `SynopsisBeatMapper` | 5 (una por beat) | Extrae qué ocurre en el beat N + escenario activo |
+| **Voz** | `VozUseCase` | 5 (una por beat) | Expande `narrative_context` a prosa literaria |
+| **Journal** | `MemoryJournalist` | 5 (una por beat) | Mantiene memoria cross-beat (eventos, misterios, estado) |
+
+**Total: 17 llamadas LLM por historia** (1 analyst + 1 resolver + 5×3).
+
+El orquestador es `DirectorUseCase` (no hace llamadas LLM directamente, coordina los 5 roles). `StoryRunner` persiste en BD y reporta progreso.
 
 ---
 
@@ -31,6 +37,8 @@ sequenceDiagram
     participant CLI
     participant Runner as StoryRunner
     participant Dir as DirectorUseCase
+    participant Ana as StoryAnalyst
+    participant Res as RuleScenarioResolver
     participant Map as SynopsisBeatMapper
     participant Voz as VozUseCase
     participant Jrn as MemoryJournalist
@@ -42,15 +50,19 @@ sequenceDiagram
 
     Runner->>Dir: execute_full(story)
 
-    Dir->>Map: map(story)
-    Map->>LLM: generate(role="director")
-    LLM-->>Map: N líneas numeradas
-    Map-->>Dir: list[Beat] con summaries
+    Dir->>Ana: extract_anchors(story)
+    Ana->>LLM: generate(role="story_analyst")
+    LLM-->>Ana: NarrativeAnchors (JSON)
 
-    Dir-->>Runner: on_plan_ready(n, elapsed)
-    Runner->>DB: save beats (status=pending)
+    Dir->>Res: resolve_distribution(story)
+    Res->>LLM: generate(role="director")
+    LLM-->>Res: Rules/Scenarios Map (JSON)
 
     loop Por cada beat (1..N)
+        Dir->>Map: map_one(story, beat_id, ...)
+        Map->>LLM: generate(role="director")
+        LLM-->>Map: Summary + ScenarioID
+        
         Dir->>Voz: execute(story, beat, journal)
         Voz->>LLM: generate(role="voz")
         LLM-->>Voz: prosa literaria
@@ -59,7 +71,7 @@ sequenceDiagram
         LLM-->>Jrn: estado actualizado
         Voz-->>Dir: (beat_completado, journal, elapsed)
         Dir-->>Runner: yield (beat, journal, elapsed)
-        Runner->>DB: save beat content + journal
+        Runner->>DB: save beat content + rules + scenarios + journal
     end
 
     Runner->>CLI: relato completo (.md)
@@ -72,15 +84,21 @@ flowchart TD
     CLI --> Runner["StoryRunner\n(core/orchestrator.py)"]
     Runner --> Dir["DirectorUseCase\n(application/use_cases)"]
 
+    Dir --> Ana["StoryAnalystService\n(application/services)"]
+    Dir --> Res["RuleScenarioResolver\n(application/services)"]
     Dir --> Map["SynopsisBeatMapper\n(application/use_cases)"]
     Dir --> Voz["VozUseCase\n(application/use_cases)"]
     Dir --> Jrn["MemoryJournalist\n(application/services)"]
 
-    Map --> PB["PromptBuilder\n(application/services)"]
+    Ana --> PB["PromptBuilder\n(application/services)"]
+    Res --> PB
+    Map --> PB
     Voz --> PB
     Jrn --> PB
 
-    Map --> LLM["LLMProvider\n(domain/interfaces)"]
+    Ana --> LLM["LLMProvider\n(domain/interfaces)"]
+    Res --> LLM
+    Map --> LLM
     Voz --> LLM
     Jrn --> LLM
 
@@ -161,35 +179,78 @@ Cada perfil define tres roles con sus parámetros LLM propios:
 
 ## Modelo de datos (ERD)
 
+Esquema normalizado (Spec-041). `macro_beat` es la unidad narrativa; `rule` y `scenario` son fuentes de verdad independientes.
+
 ```mermaid
 erDiagram
-    STORY ||--o{ BEAT : contiene
+    STORY ||--o{ MACRO_BEAT : contiene
+    STORY ||--o{ SCENARIO : define
+    STORY ||--o{ RULE : posee
+    STORY ||--|| NARRATIVE_ANCHORS : analizado_en
     STORY ||--|| NARRATIVE_JOURNAL : mantiene_estado
+    
+    MACRO_BEAT }o--o| SCENARIO : transcurre_en
+    MACRO_BEAT ||--o{ MACRO_BEAT_RULE : aplica
+    RULE ||--o{ MACRO_BEAT_RULE : asignada_en
 
     STORY {
-        uuid id PK
-        string title
-        string protagonista
-        string relator
-        string escenarios
+        text id PK
+        text title
+        text protagonista
+        text relator
         text sinopsis
-        string atmosfera
-        text reglas
-        string status
-        datetime created_at
+        text atmosfera
+        text narrative_brief
+        text status
+        text created_at
     }
 
-    BEAT {
-        uuid id PK
-        uuid story_id FK
-        int number
-        string summary
+    RULE {
+        text id PK
+        text story_id FK
         text content
-        string status
+    }
+
+    SCENARIO {
+        text id PK
+        text story_id FK
+        int order_index
+        text name
+    }
+
+    NARRATIVE_ANCHORS {
+        text id PK
+        text story_id FK
+        text initial_state
+        text threat_nature
+        text horror_peak
+        text spatial_anchor
+        text created_at
+    }
+
+    MACRO_BEAT {
+        int id PK
+        text story_id FK
+        int number
+        text summary
+        text content
+        text status
+        text active_scenario_id FK
+        text active_scenario_description
+        text narrative_context
+        text memory_snapshot
+        text technical_context
+        text created_at
+    }
+
+    MACRO_BEAT_RULE {
+        int macro_beat_id PK, FK
+        text rule_id PK, FK
     }
 
     NARRATIVE_JOURNAL {
-        uuid story_id FK
+        int id PK
+        text story_id
         text last_events
         text unresolved_mysteries
         text physical_emotional_state
@@ -258,6 +319,57 @@ Los siguientes specs definen la arquitectura y el comportamiento actual del sist
 | [034 — Beat #1 sin contexto vacío](specs/034_suprimir_secciones_vacias_beat1.md) | Por qué Beat #1 no recibe secciones de contexto anterior |
 | [035 — Director Orquestador](specs/035_director_orquestador_punta_a_punta.md) | Contrato de `execute_full()` / `execute_narration()` |
 | [036 — Beat Spec solo en VOZ](specs/036_beat_spec_solo_en_voz.md) | Por qué el mapper no recibe constraints dramáticas |
+| [037 — Analyst System](specs/037_analyst_system_y_beats_enriquecidos.md) | System prompts para el analista y beats enriquecidos |
+| [038 — Anclajes Narrativos](specs/038_anclajes_narrativos.md) | Arquitectura de anclajes estáticos y flujo secuencial |
+| [039 — Mantenimiento scripts](specs/039_mantenimiento_scripts_tests_uml.md) | Actualización de scripts de DB y diagramas |
+| [040 — Checkpoint Hasta](specs/040_checkpoint_hasta.md) | Sistema de re-generación parcial desde un beat específico |
+| [041 — Reglas y Escenarios Dinámicos](specs/041_mapeo_dinamico_reglas_escenarios.md) | Mapeo de reglas de usuario y descripciones sensoriales por beat |
+| [042 — Revisión Global de Arquitectura](specs/042_revision_global_arquitectura.md) | Deuda técnica: DI, excepciones, logs AM/PM, spinner, debug prompts, saneamiento |
+
+---
+
+## Control de pipeline con `--hasta`
+
+El parámetro `--hasta` permite detener el pipeline en un checkpoint específico para depuración, re-generación parcial, o testing incremental.
+
+### Valores disponibles
+
+| Checkpoint | Ordinal | Descripción |
+|------------|--------|-------------|
+| `analyst` | 1 | Solo extrae anclajes narrativos |
+| `resolver` | 2 | Distribuye reglas y escenarios por beat |
+| `mapper:1` | 3 | Mapea beat 1 |
+| `voz:1` | 4 | Narra beat 1 |
+| `journal:1` | 5 | Registra memoria beat 1 |
+| `mapper:2` | 6 | Mapea beat 2 |
+| `voz:2` | 7 | Narra beat 2 |
+| `journal:2` | 8 | Registra memoria beat 2 |
+| `mapper:3` | 9 | Mapea beat 3 |
+| `voz:3` | 10 | Narra beat 3 |
+| `journal:3` | 11 | Registra memoria beat 3 |
+| `mapper:4` | 12 | Mapea beat 4 |
+| `voz:4` | 13 | Narra beat 4 |
+| `journal:4` | 14 | Registra memoria beat 4 |
+| `mapper:5` | 15 | Mapea beat 5 |
+| `voz:5` | 16 | Narra beat 5 |
+| `journal:5` | 17 | Registra memoria beat 5 (completo) |
+
+### Uso
+
+```bash
+# Detener después de extraer anclajes (solo analyst)
+python -m src generate --input input.md --hasta analyst
+
+# Generar hasta beat 2 completo (incluye mapper:2, voz:2, journal:2)
+python -m src generate --input input.md --until voz:2
+
+# Re-generar desde beat 3: detener en mapper:3
+python -m src generate --input input.md --until mapper:3
+```
+
+### Re-generación parcial
+
+Si detienes en `mapper:N` o `voz:N`, los beats anteriores ya completados se preservan en DB. Puedes re-ejecutar con un checkpoint diferente para regenerar solo los beats restantes.
 
 ---
 

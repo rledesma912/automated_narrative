@@ -1,3 +1,4 @@
+<!-- variante: compact | rol: story_analyst (user) | cargado por: build_story_analyst_prompt() -->
 PROTAGONISTAS: {protagonistas}
 ESCENARIO: {escenarios}
 ATMÓSFERA: {atmosfera}
@@ -26,10 +27,16 @@ Restricciones por campo:
 - horror_peak → SOLO SINOPSIS
 - spatial_anchor → ESCENARIO + SINOPSIS
 
-Salida:
-{{
-  "initial_state": "...",
-  "threat_nature": "...",
-  "horror_peak": "...",
-  "spatial_anchor": "..."
-}}
+Respondé ÚNICAMENTE con este formato, sin texto antes ni después:
+
+## initial_state
+[estado emocional y situacional sólo del narrador al inicio del relato]
+
+## threat_nature
+[naturaleza exacta del horror — qué es y cómo opera en esta historia concreta]
+
+## horror_peak
+[el evento paranormal o de máximo impacto — el momento sin vuelta atrás]
+
+## spatial_anchor
+[detalles físicos y sensoriales concretos del lugar donde ocurre el horror]

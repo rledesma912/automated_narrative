@@ -47,6 +47,8 @@ class MacroBeat(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
+    active_rules: list[str] = []
+    active_scenario_description: str = ""
     narrative_context: Optional[str] = None
     memory_snapshot: Optional[str] = None
 
@@ -81,7 +83,6 @@ class Story(BaseModel):
     relator: str
     sinopsis: str
     atmosfera: str
-    escenarios: str = ""
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []

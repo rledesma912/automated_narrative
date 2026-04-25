@@ -2,8 +2,10 @@
 
 from unittest.mock import patch
 
+import uuid
+
 from src.application.services import PromptBuilder
-from src.domain.models import Story
+from src.domain.models import Scenario, Story
 
 
 class TestPromptBuilder:
@@ -11,14 +13,16 @@ class TestPromptBuilder:
 
     def test_build_system_prompt(self):
         """Test building system prompt."""
+        story_id = uuid.uuid4()
         story = Story(
+            id=story_id,
             title="Test",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
             reglas=["Sin miedo"],
+            scenarios=[Scenario(story_id=story_id, order_index=0, name="Location")],
         )
 
         builder = PromptBuilder()

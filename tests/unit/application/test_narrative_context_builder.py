@@ -3,7 +3,6 @@
 import json
 import uuid
 
-import pytest
 
 from src.application.services import PromptBuilder
 from src.domain.models import MacroBeat, NarrativeAnchors, Story, resolve_beat_anchors

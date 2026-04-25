@@ -1,6 +1,5 @@
 """StoryAnalystService — extrae NarrativeAnchors de la sinopsis (Spec-038)."""
 
-import json
 import logging
 import re
 from typing import TYPE_CHECKING
@@ -8,6 +7,7 @@ from typing import TYPE_CHECKING
 from src.config import settings
 from src.domain.models import NarrativeAnchors, resolve_beat_anchors
 from src.domain.interfaces import LLMProvider
+from src.infrastructure.normalizers.response_normalizer import ResponseNormalizer
 
 if TYPE_CHECKING:
     from src.application.services.prompt_builder import PromptBuilder
@@ -36,14 +36,14 @@ class StoryAnalystService:
     ):
         self.llm = llm
         self.prompt_builder = prompt_builder
-        self.normalizer = normalizer
+        self.normalizer = normalizer if normalizer is not None else ResponseNormalizer(role="story_analyst")
         self._debug = debug_collector
 
     async def extract_anchors(self, story: "Story") -> NarrativeAnchors:
         """Llama al LLM para extraer los 4 anclajes narrativos de la sinopsis.
 
-        Parsea la respuesta JSON y retorna un objeto NarrativeAnchors estructurado.
-        Si el LLM devuelve JSON inválido, aplica fallback con texto de la sinopsis.
+        Parsea secciones Markdown (## key) y retorna NarrativeAnchors estructurado.
+        Si faltan secciones, aplica fallback con fragmento de sinopsis.
         """
         role_cfg = settings.role_config("story_analyst")
         model = role_cfg.get("model") or settings.llm_model
@@ -72,6 +72,7 @@ class StoryAnalystService:
 
         if self._debug:
             from src.application.services.debug_collector import DebugCollector
+            variant = self.prompt_builder._get_prompt_variant()
             self._debug.record(
                 role="story_analyst",
                 beat_number=None,
@@ -86,6 +87,8 @@ class StoryAnalystService:
                 normalized_response=normalized,
                 parser_result=f"OK: {len([v for v in [anchors.initial_state, anchors.threat_nature, anchors.horror_peak, anchors.spatial_anchor] if v])} anclajes",
                 elapsed_s=response.elapsed_s,
+                system_prompt_file="story_analyst_system_compact.md",
+                user_prompt_file="story_analyst_compact.md" if variant == "compact" else "story_analyst.md",
             )
 
         logger.debug(
@@ -103,56 +106,39 @@ class StoryAnalystService:
     # ── parsing ──────────────────────────────────────────────────────────────
 
     def _parse_anchors(self, text: str, story: "Story") -> NarrativeAnchors:
-        """Parsea la respuesta del LLM como JSON. Aplica fallback si falla."""
-        data = self._extract_json(text)
+        """Parsea secciones ## key del texto. Aplica fallback si faltan campos."""
+        data = self._extract_sections(text)
         if data and all(k in data for k in _ANCHOR_KEYS):
             return NarrativeAnchors(
                 story_id=story.id,
-                initial_state=str(data["initial_state"]).strip(),
-                threat_nature=str(data["threat_nature"]).strip(),
-                horror_peak=str(data["horror_peak"]).strip(),
-                spatial_anchor=str(data["spatial_anchor"]).strip(),
+                initial_state=data["initial_state"],
+                threat_nature=data["threat_nature"],
+                horror_peak=data["horror_peak"],
+                spatial_anchor=data["spatial_anchor"],
             )
 
-        logger.warning("[ANALYST] JSON inválido o incompleto — aplicando fallback")
+        logger.warning("[ANALYST] Secciones incompletas o ausentes — aplicando fallback")
         return self._fallback_anchors(text, story)
 
-    def _extract_json(self, text: str) -> dict | None:
-        """Extrae el primer objeto JSON válido del texto, ignorando markdown fences."""
-        # Quita bloques de código markdown: ```json ... ``` o ``` ... ```
-        clean = re.sub(r"```(?:json)?\s*(.*?)\s*```", r"\1", text, flags=re.DOTALL)
-        # Busca el primer { ... } en el texto limpio
-        match = re.search(r"\{[^{}]*\}", clean, re.DOTALL)
-        if not match:
-            return None
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            return None
+    def _extract_sections(self, text: str) -> dict | None:
+        """Extrae secciones Markdown '## key\\nvalor' del texto."""
+        sections: dict[str, str] = {}
+        matches = list(re.finditer(r"^##\s*(\w+)", text, re.MULTILINE))
+        for i, m in enumerate(matches):
+            key = m.group(1).lower()
+            start = m.end()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            sections[key] = text[start:end].strip()
+        return sections if sections else None
 
     def _fallback_anchors(self, text: str, story: "Story") -> NarrativeAnchors:
-        """Fallback: intenta mapear líneas del formato viejo (N. Label: valor)."""
-        mapping = {
-            "initial_state": ["estado inicial", "1."],
-            "threat_nature": ["amenaza", "2."],
-            "horror_peak": ["momento clave", "3.", "4."],
-            "spatial_anchor": ["escenario", "5."],
-        }
-        lines = [l.strip() for l in text.splitlines() if l.strip()]
-        result: dict[str, str] = {k: "" for k in _ANCHOR_KEYS}
-
-        for line in lines:
-            line_lower = line.lower()
-            for key, markers in mapping.items():
-                if not result[key] and any(line_lower.startswith(m) for m in markers):
-                    # Extrae el valor después del primer ":"
-                    if ":" in line:
-                        result[key] = line.split(":", 1)[1].strip()
-
-        # Último recurso: poner fragmento de sinopsis en campos vacíos
+        """Fallback: rellena campos ausentes con fragmento de sinopsis."""
+        existing = self._extract_sections(text) or {}
         synopsis_snippet = story.sinopsis[:120] if story.sinopsis else "N/D"
-        for k in _ANCHOR_KEYS:
-            if not result[k]:
-                result[k] = synopsis_snippet
-
-        return NarrativeAnchors(story_id=story.id, **result)
+        return NarrativeAnchors(
+            story_id=story.id,
+            initial_state=existing.get("initial_state") or synopsis_snippet,
+            threat_nature=existing.get("threat_nature") or synopsis_snippet,
+            horror_peak=existing.get("horror_peak") or synopsis_snippet,
+            spatial_anchor=existing.get("spatial_anchor") or synopsis_snippet,
+        )

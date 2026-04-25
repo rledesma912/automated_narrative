@@ -2,7 +2,7 @@
 
 from src.application.dto import StoryCreateDTO
 from src.domain.interfaces import StoryRepository
-from src.domain.models import Story, StoryStatus
+from src.domain.models import Scenario, Story, StoryStatus
 
 
 class CreateStoryUseCase:
@@ -17,11 +17,17 @@ class CreateStoryUseCase:
             title=dto.title,
             protagonista=dto.protagonista,
             relator=dto.relator,
-            escenarios=dto.escenarios,
             sinopsis=dto.sinopsis,
             atmosfera=dto.atmosfera,
             reglas=dto.reglas,
             status=StoryStatus.PENDING,
         )
+
+        # Crear objetos Scenario
+        if dto.escenarios:
+            story.scenarios = [
+                Scenario(story_id=story.id, order_index=i, name=name)
+                for i, name in enumerate(dto.escenarios)
+            ]
 
         return await self.story_repository.save(story)

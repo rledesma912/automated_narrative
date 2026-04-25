@@ -6,6 +6,7 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Callable
 
 from src.application.services import MemoryJournalist, PromptBuilder
+from src.application.services.checkpoint import VALID_CHECKPOINTS, ordinal
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.config import settings
@@ -84,6 +85,7 @@ class DirectorUseCase:
 
         brief = self.normalizer.normalize(response.text, model_name=model).strip()
 
+        variant = self.prompt_builder._get_prompt_variant()
         self.debug_collector.record(
             role="story_analyst",
             beat_number=None,
@@ -98,6 +100,8 @@ class DirectorUseCase:
             normalized_response=brief,
             parser_result="n/a",
             elapsed_s=response.elapsed_s,
+            system_prompt_file="story_analyst_system_compact.md",
+            user_prompt_file="story_analyst_compact.md" if variant == "compact" else "story_analyst.md",
         )
 
         story.narrative_brief = brief
@@ -129,26 +133,53 @@ class DirectorUseCase:
         story: Story,
         initial_journal: NarrativeJournal | None = None,
         on_plan_ready: Callable[[int, float], None] | None = None,
+        on_step_done: Callable[[str, float], None] | None = None,
+        on_step_start: Callable[[str], None] | None = None,
+        stop_after: str | None = None,
     ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
         """Orquestación punta a punta (Spec-038): ANALYST → 5×(MAPPER+NC+VOZ+JOURNAL).
 
         Yields (macro_beat_completado, journal_actualizado, llm_elapsed_voz) por beat.
+
+        Args:
+            story: Historia a generar.
+            initial_journal: Journal inicial (para resumed).
+            on_plan_ready: Callback cuando el plan está listo.
+            on_step_done: Callback para pasos intermedios (Spec-043).
+            stop_after: Checkpoint para detener el pipeline (Spec-040).
+                Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
         """
         from src.application.services.story_analyst_service import StoryAnalystService
+        from src.application.services.rule_scenario_resolver_service import RuleScenarioResolverService
 
+        stop_at: int | None = VALID_CHECKPOINTS.get(stop_after) if stop_after else None
         t0 = perf_counter()
 
         analyst = StoryAnalystService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
+        
+        if on_step_start:
+            on_step_start("🔍  Analizando sinopsis y anclajes...")
+        t_step = perf_counter()
         narrative_anchors = await analyst.extract_anchors(story)
+        if on_step_done:
+            on_step_done("🔍  Analizando sinopsis y anclajes", perf_counter() - t_step)
 
-        if story.scenarios:
-            cronologic_scenarios = [s.name for s in story.scenarios]
-        elif story.escenarios:
-            cronologic_scenarios = [e.strip() for e in story.escenarios.split("/") if e.strip()]
-        else:
-            cronologic_scenarios = []
+        if stop_at == 1:
+            logger.debug("[DIRECTOR] Detenido en checkpoint 'analyst' (1/16)")
+            return
+
+        resolver = RuleScenarioResolverService(
+            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+        )
+        
+        if on_step_start:
+            on_step_start("⚖️   Distribuyendo reglas y escenarios...")
+        t_step = perf_counter()
+        rule_distribution = await resolver.resolve_distribution(story)
+        if on_step_done:
+            on_step_done("⚖️   Distribuyendo reglas y escenarios", perf_counter() - t_step)
 
         mapper = SynopsisBeatMapper(
             self.llm, self.prompt_builder,
@@ -166,26 +197,74 @@ class DirectorUseCase:
 
         journal = initial_journal
         prev_snapshot: str | None = None
+        num_beats = self.prompt_builder.num_beats
 
         for beat_id in range(1, num_beats + 1):
-            beat_anchors = analyst.resolve_beat_anchors(narrative_anchors, beat_id)
+            cp_mapper = ordinal(f"mapper:{beat_id}")
+            cp_voz = ordinal(f"voz:{beat_id}")
+            cp_journal = ordinal(f"journal:{beat_id}")
 
+            beat_anchors = analyst.resolve_beat_anchors(narrative_anchors, beat_id)
+            
+            # Segmentación de sinopsis y datos específicos del beat
+            synopsis_slice = self.prompt_builder.get_beat_sinopsis_slice(story.sinopsis, beat_id, num_beats)
+            dist = rule_distribution.get(str(beat_id), {})
+            active_rules = dist.get("rules", [])
+            s_idx = dist.get("scenario_index", 0)
+            active_scenario_desc = ""
+            if story.scenarios and 0 <= s_idx < len(story.scenarios):
+                active_scenario_desc = story.scenarios[s_idx].name # O la descripción si existiera
+            
+            beat_info = self.prompt_builder.get_beat_info(beat_id)
+            beat_intent = beat_info.get("intent", "")
+
+            if on_step_start:
+                on_step_start(f"📐  Mapeando beat {beat_id}/{num_beats}...")
             macro_beat = await mapper.map_one(
                 story=story,
                 macro_beat_id=beat_id,
                 beat_anchors=beat_anchors,
                 prev_snapshot=prev_snapshot,
-                cronologic_scenarios=cronologic_scenarios,
+                synopsis_slice=synopsis_slice,
+                active_rules=active_rules,
+                active_scenario_description=active_scenario_desc,
+                beat_intent=beat_intent,
+                atmosphere=story.atmosfera
             )
+
+            if stop_at == cp_mapper:
+                macro_beat.status = "pending"
+                logger.debug(f"[DIRECTOR] Detenido en checkpoint 'mapper:{beat_id}' ({cp_mapper}/16)")
+                yield macro_beat, journal, 0.0
+                return
+
+            # Ya vienen asignados desde mapper.map_one, pero reforzamos por si acaso
+            macro_beat.active_rules = active_rules
+            macro_beat.active_scenario_description = active_scenario_desc
 
             macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
                 macro_beat, beat_anchors, prev_snapshot
             )
 
+            if on_step_start:
+                on_step_start(f"✍️   Narrando beat {beat_id}/{num_beats}...")
             macro_beat, llm_elapsed = await voz.narrate(macro_beat, story)
 
+            if stop_at == cp_voz:
+                macro_beat.status = "pending"
+                logger.debug(f"[DIRECTOR] Detenido en checkpoint 'voz:{beat_id}' ({cp_voz}/16)")
+                yield macro_beat, journal, llm_elapsed
+                return
+
+            if on_step_start:
+                on_step_start(f"📓  Actualizando journal beat {beat_id}/{num_beats}...")
             prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
             macro_beat.memory_snapshot = prev_snapshot
+
+            if stop_at == cp_journal:
+                logger.debug(f"[DIRECTOR] Detenido en checkpoint 'journal:{beat_id}' ({cp_journal}/16)")
+                yield macro_beat, journal, llm_elapsed
+                return
 
             yield macro_beat, journal, llm_elapsed
 

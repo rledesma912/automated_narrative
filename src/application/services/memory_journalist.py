@@ -72,6 +72,8 @@ class MemoryJournalist:
             normalized_response=normalized,
             parser_result="n/a (JSON interno)",
             elapsed_s=response.elapsed_s,
+            system_prompt_file=None,
+            user_prompt_file="journal.md",
         )
 
         return self._parse_journal(response.text, previous_journal)

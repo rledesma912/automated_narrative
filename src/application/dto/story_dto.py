@@ -11,7 +11,7 @@ class StoryCreateDTO(BaseModel):
     title: str
     protagonista: str
     relator: str
-    escenarios: str
+    escenarios: list[str] = []
     sinopsis: str
     atmosfera: str
     reglas: list[str] = []

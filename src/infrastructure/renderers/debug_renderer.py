@@ -83,6 +83,8 @@ class DebugMarkdownRenderer:
             f"| temperature | {r.temperature} |",
             f"| num_ctx | {r.num_ctx if r.num_ctx is not None else '—'} |",
             f"| num_predict | {r.num_predict if r.num_predict is not None else '—'} |",
+            f"| system_prompt_file | `{r.system_prompt_file or '—'}` |",
+            f"| user_prompt_file | `{r.user_prompt_file or '—'}` |",
             "",
         ]
 

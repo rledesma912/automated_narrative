@@ -158,7 +158,7 @@ class TestDirectorUseCase:
         )
 
         prompt_builder = PromptBuilder()
-        use_case = DirectorUseCase(MockLLMAdapter(), prompt_builder)
+        DirectorUseCase(MockLLMAdapter(), prompt_builder)
 
         beats = parse_beats("1. First beat\n2. Second beat\n3. Third beat", 3, story.id)
 
@@ -237,7 +237,6 @@ class TestDirectorUseCase:
     async def test_execute_full_yields_beats(self):
         """execute_full() yields one (macro_beat, journal, elapsed) tuple per beat (nueva arquitectura Spec-038)."""
         import json
-        import uuid
         from unittest.mock import AsyncMock, MagicMock, patch
         from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal
 

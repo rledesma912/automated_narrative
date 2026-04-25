@@ -61,6 +61,7 @@ class PromptBuilder:
             self._system_template = self._load_prompt(settings.prompt_file_system)
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        escenarios_str = "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
 
         if self._system_template:
             persona = self._get_persona_gramatical(story.relator)
@@ -72,7 +73,7 @@ class PromptBuilder:
                 persona_gramatical=persona,
                 reglas=reglas_str,
                 protagonistas=story.protagonista,
-                escenarios=story.escenarios,
+                escenarios=escenarios_str,
                 sinopsis=story.sinopsis,
             )
 
@@ -84,7 +85,7 @@ REGLAS:
 {reglas_str}
 
 Protagonistas: {story.protagonista}
-Escenarios: {story.escenarios}
+Escenarios: {story.scenarios}
 Sinopsis: {story.sinopsis}
 """
 
@@ -178,6 +179,7 @@ Sinopsis: {story.sinopsis}
         journal_context = self._build_journal_context(journal)
         persona = self._get_persona_gramatical(story.relator)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        escenarios_str = "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
 
         strategy = settings.role_config("voz").get("context_strategy", "beat_slice")
         sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, strategy)
@@ -211,7 +213,7 @@ Sinopsis: {story.sinopsis}
                 persona_gramatical=persona,
                 atmosphere=story.atmosfera,
                 protagonistas=story.protagonista,
-                escenarios=story.escenarios,
+                escenarios=escenarios_str,
                 sinopsis=sinopsis,
                 beat_number=beat.number,
                 total_beats=total_beats,
@@ -230,7 +232,7 @@ Sinopsis: {story.sinopsis}
 Contexto:
 - Título: {story.title}
 - Protagonistas: {story.protagonista}
-- Escenario: {story.escenarios}
+- Escenario: {escenarios_str}
 - Atmósfera: {story.atmosfera}
 - Relator: {story.relator} ({persona})
 - Sinopsis: {sinopsis}
@@ -254,9 +256,9 @@ Extiende este momento (150-400 palabras)."""
         if strategy == "full":
             return sinopsis
         # beat_slice (default): segmento proporcional al beat actual
-        return self._get_beat_sinopsis_hint(sinopsis, beat_number, total_beats)
+        return self.get_beat_sinopsis_slice(sinopsis, beat_number, total_beats)
 
-    def _get_beat_sinopsis_hint(
+    def get_beat_sinopsis_slice(
         self, sinopsis: str, beat_number: int, total_beats: int
     ) -> str:
         """Divide la sinopsis en segmentos por párrafos y retorna el del beat actual.
@@ -288,6 +290,7 @@ Extiende este momento (150-400 palabras)."""
         """Build el system prompt para la Voz (usa system.md)."""
         system_template = self._load_system_prompt()
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        escenarios_str = "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
         persona = self._get_persona_gramatical(story.relator)
 
         if system_template:
@@ -297,7 +300,7 @@ Extiende este momento (150-400 palabras)."""
                 persona_gramatical=persona,
                 atmosphere=story.atmosfera,
                 protagonistas=story.protagonista,
-                escenarios=story.escenarios,
+                escenarios=escenarios_str,
                 reglas=reglas_str,
             )
 
@@ -375,7 +378,7 @@ Instrucciones:
             title=story.title,
             sinopsis=story.sinopsis,
             protagonistas=story.protagonista,
-            escenarios=story.escenarios,
+            escenarios=[s.name for s in story.scenarios] if story.scenarios else [],
             atmosfera=story.atmosfera,
             reglas=reglas_str,
         )
@@ -392,6 +395,7 @@ Instrucciones:
             template = self._load_prompt("synopsis_mapper.md")
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        escenarios_str = "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
         beats_spec_compact = self._format_beats_spec_compact()
 
         return template.format(
@@ -399,7 +403,7 @@ Instrucciones:
             sinopsis=story.sinopsis,
             protagonistas=story.protagonista,
             relator=story.relator,
-            escenarios=story.escenarios,
+            escenarios=escenarios_str,
             atmosfera=story.atmosfera,
             reglas=reglas_str,
             num_beats=self.num_beats,
@@ -413,44 +417,58 @@ Instrucciones:
         macro_beat_id: int,
         beat_anchors: dict,
         prev_snapshot: str | None = None,
-        cronologic_scenarios: list[str] | None = None,
+        synopsis_slice: str | None = None,
+        active_rules: list[str] | None = None,
+        active_scenario: str | None = None,
+        beat_intent: str | None = None,
+        atmosphere: str | None = None,
     ) -> str:
         """Prompt para mapear un solo macro-beat: extrae evento + escenario activo."""
-        variant = self._get_prompt_variant()
-        template_file = (
-            "synopsis_mapper_one_compact.md" if variant == "compact" else "synopsis_mapper_one_compact.md"
-        )
+        # Usamos un nombre específico para NO colisionar con el mapeo global
+        template_file = "synopsis_mapper_one_compact.md"
         template = self._load_prompt(template_file)
         if not template:
             # Fallback mínimo si no existe el archivo
             template = (
-                "SINOPSIS:\n{sinopsis}\n\nACTO {macro_beat_id} — {beat_name}: {beat_intent}\n\n"
-                "FORMATO:\nESCENARIO: [escenario]\n\nEVENTOS:\n- [evento]"
+                "SINOPSIS (FRAGMENTO):\n{synopsis_slice}\n\n"
+                "ATMÓSFERA: {atmosphere}\n"
+                "INTENTO NARRATIVO: {beat_intent}\n"
+                "ESCENARIO: {active_scenario}\n"
+                "REGLAS: {active_rules}\n\n"
+                "ACTO {macro_beat_id} — {beat_name}\n\n"
+                "FORMATO:\nESCENARIO: [nombre]\n\nEVENTOS:\n- [evento]"
             )
 
-        beat_info = self._get_beat_info(macro_beat_id)
-        scenarios = cronologic_scenarios or (
-            [s.strip() for s in story.escenarios.split("/") if s.strip()]
-            if story.escenarios else []
-        )
-        cronologic_list = "\n".join(f"- {s}" for s in scenarios) if scenarios else story.escenarios
+        beat_info = self.get_beat_info(macro_beat_id)
+        
+        # Fallbacks para los nuevos campos si vienen vacíos
+        synopsis_slice_val = synopsis_slice or story.sinopsis
+        active_rules_str = "\n".join(f"- {r}" for r in active_rules) if active_rules else "Ninguna"
+        active_scenario_val = active_scenario or "No especificado"
+        beat_intent_val = beat_intent or beat_info.get("intent", "")
+        atmosphere_val = atmosphere or story.atmosfera
 
         prev_section = ""
         if prev_snapshot:
             prev_section = f"\nMEMORIA DEL ACTO ANTERIOR:\n{prev_snapshot}\n"
 
         return template.format(
-            sinopsis=story.sinopsis,
-            cronologic_scenarios_list=cronologic_list,
+            sinopsis=story.sinopsis,  # Mantener por si el template aún lo usa
+            synopsis_slice=synopsis_slice_val,
+            active_rules=active_rules_str,
+            active_scenario=active_scenario_val,
+            beat_intent=beat_intent_val,
+            atmosphere=atmosphere_val,
             anchor_principal=beat_anchors.get("principal", ""),
             anchor_contexto=beat_anchors.get("contexto", ""),
             prev_snapshot_section=prev_section,
             macro_beat_id=macro_beat_id,
             beat_name=beat_info.get("name", f"acto_{macro_beat_id}"),
-            beat_intent=beat_info.get("intent", ""),
+            # Parámetro extra por compatibilidad con templates viejos
+            beat_intent_legacy=beat_info.get("intent", ""),
         )
 
-    def _get_beat_info(self, beat_id: int) -> dict:
+    def get_beat_info(self, beat_id: int) -> dict:
         """Retorna el spec del beat por ID, o dict vacío si no existe."""
         return next((b for b in self._beats_spec if b["id"] == beat_id), {})
 
@@ -487,14 +505,15 @@ Instrucciones:
         beat_anchors: dict,
         prev_snapshot: str | None = None,
     ) -> str:
-        """Ensambla el narrative_context pre-baked que recibe el VOZ (Spec-038).
+        """Ensambla el narrative_context pre-baked que recibe el VOZ (Spec-038/041).
 
-        Combina: beat_spec (YAML) + anclajes + synopsis_event + active_scenario + memory_snapshot.
+        Combina: beat_spec (YAML) + anclajes + synopsis_event + active_scenario + memory_snapshot
+        + REGLAS ACTIVAS + ESCENARIO DETALLADO (Spec-041).
         Determinístico: sin llamada LLM.
         """
         import json
 
-        beat_spec = self._get_beat_info(macro_beat.number)
+        beat_spec = self.get_beat_info(macro_beat.number)
         sc = beat_spec.get("state_change", {})
         must_items = beat_spec.get("must", [])
         must_not_items = beat_spec.get("must_not", [])
@@ -506,6 +525,16 @@ Instrucciones:
             "",
             "ESCENARIO ACTIVO:",
             macro_beat.active_scenario_id or "",
+        ]
+
+        if macro_beat.active_scenario_description:
+            lines += [
+                "",
+                "ESCENARIO DETALLADO (Input Usuario):",
+                macro_beat.active_scenario_description,
+            ]
+
+        lines += [
             "",
             "EVENTO DE ESTE MOMENTO:",
             macro_beat.summary or "",
@@ -516,6 +545,13 @@ Instrucciones:
             "ANCLAJE DE CONTEXTO:",
             beat_anchors.get("contexto", ""),
         ]
+
+        if macro_beat.active_rules:
+            lines += [
+                "",
+                "REGLAS ESPECÍFICAS PARA ESTE ACTO:",
+            ]
+            lines.extend([f"- {r}" for r in macro_beat.active_rules])
 
         if prev_snapshot:
             try:
@@ -539,6 +575,27 @@ Instrucciones:
         ]
 
         return "\n".join(lines)
+
+    def build_rule_resolver_prompt(self, story: "Story") -> str:
+        """Prompt para distribuir reglas y escenarios detallados."""
+        template = self._load_prompt("rule_resolver_compact.md")
+        if not template:
+            return f"Distribuye estas reglas: {story.reglas}"
+
+        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        scenarios = story.scenarios or []
+        escenarios_str = "\n".join([f"{i}. {s.name}" for i, s in enumerate(scenarios)]) if scenarios else "No definidos"
+
+        return template.format(
+            sinopsis=story.sinopsis,
+            protagonistas=story.protagonista,
+            reglas=reglas_str,
+            escenarios=escenarios_str,
+        )
+
+    def build_rule_resolver_system(self) -> str | None:
+        """System prompt para el rule resolver."""
+        return self._load_prompt("rule_resolver_system_compact.md")
 
     def build_voz_user_prompt(self, macro_beat: MacroBeat) -> str:
         """User prompt para VOZ (nueva arquitectura): solo contiene narrative_context."""

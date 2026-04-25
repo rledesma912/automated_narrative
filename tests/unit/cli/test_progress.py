@@ -15,9 +15,18 @@ class TestProgressReporter:
 
     def test_config_summary_imprime_separador(self, capsys):
         r = ProgressReporter()
-        r.config_summary("model", 0.4, 0.6, 0.3)
+        r.config_summary("ollama-qwen25-14b")
         out = capsys.readouterr().out
         assert "─" in out
+        assert "ollama-qwen25-14b" in out
+
+    def test_step_done_formato(self, capsys):
+        r = ProgressReporter()
+        r.step_done("🔍  Prueba de paso", 12.5)
+        out = capsys.readouterr().out
+        assert "🔍  Prueba de paso" in out
+        assert "✓" in out
+        assert "12.5s" in out
 
     def test_plan_done_formato(self, capsys):
         r = ProgressReporter()

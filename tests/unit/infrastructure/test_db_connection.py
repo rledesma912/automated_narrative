@@ -69,7 +69,6 @@ class TestDbConnection:
             "title",
             "protagonista",
             "relator",
-            "escenarios",
             "sinopsis",
             "atmosfera",
             "status",

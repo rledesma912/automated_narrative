@@ -20,10 +20,12 @@ class NarrativeLogger:
     def _setup_loggers(self) -> None:
         """Configura los loggers."""
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        today = datetime.now().strftime("%Y%m%d")
+        now = datetime.now()
+        today = now.strftime("%Y%m%d")
+        turno = "am" if now.hour < 12 else "pm"
 
-        main_log = self.log_dir / f"narrative-{today}.log"
-        error_log = self.log_dir / f"narrative-error-{today}.log"
+        main_log = self.log_dir / f"narrative-{today}-{turno}.log"
+        error_log = self.log_dir / f"narrative-error-{today}_{turno}.log"
 
         formatter = logging.Formatter(
             "[%(asctime)s] [%(levelname)s] %(message)s",

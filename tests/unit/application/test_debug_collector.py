@@ -1,6 +1,5 @@
 """Tests unitarios para DebugCollector y NullDebugCollector."""
 
-from pathlib import Path
 
 import pytest
 

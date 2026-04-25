@@ -1,3 +1,4 @@
+<!-- variante: compact | rol: mapper (user, map global) | cargado por: build_synopsis_mapper_prompt() -->
 SINOPSIS:
 {sinopsis}
 

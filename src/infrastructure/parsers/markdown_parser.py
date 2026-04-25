@@ -14,12 +14,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MarkdownStoryData:
-    """Datos extraídos del markdown."""
+    """Datos extraídos del markdown (Normalizado)."""
 
     title: str
     protagonista: str
     relator: str
-    escenarios: str
     sinopsis: str
     atmosfera: str = ""
     reglas: list[str] = field(default_factory=list)
@@ -51,15 +50,25 @@ class MarkdownStoryParser:
                 raw_frontmatter = self._sanitize_frontmatter(frontmatter_match.group(1))
                 data = yaml.safe_load(raw_frontmatter)
                 storyteller = data.get("storyteller") or data.get("relator", "")
+                
+                # Resolución de escenarios: preferir cronologic_scenarios
+                scenarios = self._parse_cronologic_scenarios(data)
+                if not scenarios:
+                    # Fallback a 'scenarios' o 'escenarios' (intentar parsear como lista o split por /)
+                    legacy = data.get("scenarios") or data.get("escenarios")
+                    if isinstance(legacy, list):
+                        scenarios = [str(s).strip() for s in legacy]
+                    elif isinstance(legacy, str):
+                        scenarios = [s.strip() for s in legacy.split("/") if s.strip()]
+
                 result = MarkdownStoryData(
                     title=data.get("title", file_path.stem),
                     protagonista=data.get("protagonist") or data.get("protagonista", ""),
                     relator=self._normalize_relator(storyteller),
-                    escenarios=self._resolve_escenarios(data),
                     sinopsis=data.get("sinopsis") or data.get("synopsis", ""),
                     atmosfera=data.get("atmosphere") or data.get("atmosfera", ""),
                     reglas=data.get("reglas") or data.get("rules", []),
-                    cronologic_scenarios=self._parse_cronologic_scenarios(data),
+                    cronologic_scenarios=scenarios,
                 )
                 logger.debug(
                     "[Parser] YAML frontmatter extraído: title=%r, relator=%r, "
@@ -72,7 +81,7 @@ class MarkdownStoryParser:
             except yaml.YAMLError as e:
                 logger.warning(
                     "[Parser] YAML inválido en frontmatter de '%s': %s. "
-                    "Usando fallback regex. Verificar formato del archivo.",
+                    "Usando fallback regex.",
                     file_path.name, e,
                 )
 
@@ -83,21 +92,30 @@ class MarkdownStoryParser:
     def _extract_data_via_regex(self, content: str, default_title: str) -> MarkdownStoryData:
         """Extrae los campos del contenido usando expresiones regulares."""
         raw_protagonista = self._extract_inline_field(content, "Protagonistas")
-        raw_escenarios = self._extract_inline_field(content, "Escenarios")
         raw_sinopsis = self._extract_inline_field(content, "Sinopsis")
+        raw_atmosfera = self._extract_inline_field(content, "Atmósfera") or self._extract_inline_field(content, "Atmosfera")
 
         raw_relator = self._extract_inline_field(content, "relator")
         relator = raw_relator.split()[0] if raw_relator else "tercera_persona"
 
-        reglas = self._extract_list(content, "Las reglas de la historia")
+        # Escenarios: intentar extraer como sección de lista
+        scenarios = self._extract_list(content, "Escenarios")
+        if not scenarios:
+            # Intentar campo inline con /
+            raw_escenarios = self._extract_inline_field(content, "Escenarios")
+            if raw_escenarios:
+                scenarios = [s.strip() for s in raw_escenarios.split("/") if s.strip()]
+
+        reglas = self._extract_list(content, "Las reglas de la historia") or self._extract_list(content, "Reglas")
 
         return MarkdownStoryData(
             title=default_title,
             protagonista=raw_protagonista.strip(),
             relator=self._normalize_relator(relator),
-            escenarios=raw_escenarios.strip(),
             sinopsis=raw_sinopsis.strip(),
+            atmosfera=raw_atmosfera.strip(),
             reglas=reglas,
+            cronologic_scenarios=scenarios,
         )
 
     def _extract_inline_field(self, content: str, field_name: str) -> str:
@@ -105,23 +123,6 @@ class MarkdownStoryParser:
         pattern = (
             rf"\*\*{re.escape(field_name)}\*\*:\s*(.+?)(?=\n\s*\n|\n\s*-|\n\s*\*\*|\n\s*---|$)"
         )
-        match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
-        return match.group(1).strip() if match else ""
-
-    def _clean_markdown(self, text: str) -> str:
-        """Limpia caracteres de markdown."""
-        if not text:
-            return text
-        cleaned = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
-        cleaned = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"\1", cleaned)
-        cleaned = re.sub(r"^#+\s*", "", cleaned, flags=re.MULTILINE)
-        cleaned = re.sub(r"^\s*-\s+", "", cleaned, flags=re.MULTILINE)
-        cleaned = re.sub(r"^\s*\*\s+", "", cleaned, flags=re.MULTILINE)
-        return cleaned.strip()
-
-    def _extract_field(self, content: str, start: str, end: str) -> str:
-        """Extrae texto entre dos marcadores."""
-        pattern = re.escape(start) + r"(.*?)" + re.escape(end)
         match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
         return match.group(1).strip() if match else ""
 
@@ -135,27 +136,15 @@ class MarkdownStoryParser:
         return [item.strip() for item in items]
 
     def _normalize_relator(self, relator: str) -> str:
-        """Normaliza relator a valores válidos.
-
-        Mantiene nombres de personajes específicos (Irene, Ricardo, etc.)
-        que no sean valores estándar.
-        """
+        """Normaliza relator."""
         relator_lower = str(relator).lower().strip()
-
-        if "tercera" in relator_lower or "3" in relator_lower:
-            return "tercera_persona"
-        if "primera" in relator_lower or "1" in relator_lower:
-            return "primera_persona"
-        if "segunda" in relator_lower or "2" in relator_lower:
-            return "segunda_persona"
-
-        if relator_lower in ("primera_persona", "tercera_persona", "segunda_persona"):
-            return relator_lower
-
+        if "tercera" in relator_lower or "3" in relator_lower: return "tercera_persona"
+        if "primera" in relator_lower or "1" in relator_lower: return "primera_persona"
+        if "segunda" in relator_lower or "2" in relator_lower: return "segunda_persona"
         return relator.strip()
 
     def _sanitize_frontmatter(self, raw: str) -> str:
-        """Convierte 'key: | texto en misma línea' a bloque YAML válido."""
+        """Limpia frontmatter para bloques literales."""
         lines = raw.split("\n")
         result = []
         for line in lines:
@@ -168,10 +157,7 @@ class MarkdownStoryParser:
         return "\n".join(result)
 
     def _parse_cronologic_scenarios(self, data: dict) -> list[str]:
-        """Devuelve la lista de escenarios cronológicos del frontmatter.
-
-        Acepta tanto YAML list como bloque literal `|` con ítems `- nombre`.
-        """
+        """Extrae lista de escenarios del frontmatter."""
         value = data.get("cronologic_scenarios")
         if isinstance(value, list):
             return [str(item).strip().lstrip("- ") for item in value if item]
@@ -179,37 +165,16 @@ class MarkdownStoryParser:
             items = []
             for line in value.splitlines():
                 line = line.strip().lstrip("- ").strip()
-                if line:
-                    items.append(line)
+                if line: items.append(line)
             return items
         return []
 
-    def _resolve_escenarios(self, data: dict) -> str:
-        """Lee escenarios del frontmatter. Acepta `escenarios`, `scenarios` y `cronologic_scenarios`."""
-        value = data.get("escenarios") or data.get("scenarios")
-        if value:
-            return str(value).strip()
-        cronologic = data.get("cronologic_scenarios")
-        if isinstance(cronologic, list):
-            return " / ".join(item.strip().lstrip("- ") for item in cronologic if item)
-        if isinstance(cronologic, str):
-            return cronologic.strip()
-        return ""
-
     def _validate(self, data: "MarkdownStoryData", source: str) -> None:
-        """Lanza ValueError si faltan campos obligatorios tras el parseo."""
+        """Validación de campos obligatorios."""
         missing = []
-        if not data.title:
-            missing.append("title")
-        if not data.protagonista:
-            missing.append("protagonist / protagonista")
-        if not data.sinopsis:
-            missing.append("synopsis / sinopsis")
+        if not data.title: missing.append("title")
+        if not data.protagonista: missing.append("protagonista")
+        if not data.sinopsis: missing.append("sinopsis")
+        if not data.cronologic_scenarios: missing.append("escenarios")
         if missing:
-            raise ValueError(
-                f"[Parser] Campos obligatorios faltantes en '{source}': "
-                f"{', '.join(missing)}. Verificar formato del archivo de input."
-            )
-
-    # Alias for backwards compatibility
-    _extract_data = _extract_data_via_regex
+            raise ValueError(f"[Parser] Campos faltantes en '{source}': {', '.join(missing)}")

@@ -66,8 +66,14 @@ def generate(
     input_file: str | None = None,
     provider: str | None = None,
     debug: bool = False,
+    hasta: str | None = None,
 ) -> None:
-    """Generate complete story with plan and narrated beats."""
+    """Generate complete story with plan and narrated beats.
+
+    Args:
+        hasta: Checkpoint para detener el pipeline (Spec-040).
+            Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
+    """
     reglas: list[str] = []
 
     if input_file:
@@ -79,7 +85,7 @@ def generate(
         title = story_data.title
         protagonista = story_data.protagonista
         relator = story_data.relator
-        escenarios = story_data.escenarios
+        escenarios = story_data.cronologic_scenarios
         sinopsis = story_data.sinopsis
         atmosfera = story_data.atmosfera
         reglas = story_data.reglas
@@ -104,13 +110,14 @@ def generate(
                 provider,
                 reglas,
                 debug=debug,
+                hasta=hasta,
             )
         )
     except OllamaConnectionError:
         raise
     except Exception as e:
         logger.error(f"[COMANDOS] Error en la generación: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        raise GenerationError(str(e)) from e
 
     logger.info(f"[COMANDOS] Generación de historia completada: {title}", module="commands", line=1)
 
@@ -127,6 +134,7 @@ async def _generate_async(
     provider: str | None = None,
     reglas: list[str] | None = None,
     debug: bool = False,
+    hasta: str | None = None,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
@@ -138,12 +146,7 @@ async def _generate_async(
     reporter = ProgressReporter()
 
     reporter.start(title)
-    reporter.config_summary(
-        model=settings.llm_model,
-        director_t=settings.director_temperature,
-        voz_t=settings.voz_temperature,
-        journal_t=settings.state_extractor_temperature,
-    )
+    reporter.config_summary(profile=settings.active_profile_name)
     t_total = time.perf_counter()
 
     from src.application.services.debug_collector import DebugCollector, NullDebugCollector
@@ -167,6 +170,7 @@ async def _generate_async(
         sinopsis=sinopsis,
         atmosfera=atmosfera,
         reglas=reglas or [],
+        stop_after=hasta,
     )
 
     t_export = time.perf_counter()
@@ -192,7 +196,7 @@ def plan(
         asyncio.run(_plan_async(title, use_mock, output_dir, provider))
     except Exception as e:
         logger.error(f"[COMANDOS] Error al generar el plan: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        raise GenerationError(str(e)) from e
 
     logger.info(f"[COMANDOS] Generación de plan completada: {title}", module="commands", line=1)
 
@@ -245,7 +249,7 @@ def narrate(
         raise
     except Exception as e:
         logger.error(f"[COMANDOS] Error en la narración: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        raise GenerationError(str(e)) from e
 
     logger.info(
         f"[COMANDOS] Narración completada para historia: {story_id}", module="commands", line=1
@@ -317,7 +321,7 @@ def generate_from_db(
         raise
     except Exception as e:
         logger.error(f"[COMANDOS] Error en la generación desde BD: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        raise GenerationError(str(e)) from e
 
     logger.info(f"[COMANDOS] Generación desde BD completada: {story_id}", module="commands", line=1)
 

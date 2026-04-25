@@ -96,6 +96,8 @@ class VozUseCase:
             normalized_response=clean_text,
             parser_result="n/a",
             elapsed_s=response.elapsed_s,
+            system_prompt_file="voice_system_compact.md" if variant == "compact" else None,
+            user_prompt_file="voice_compact.md" if variant == "compact" else "voice.md",
         )
 
         beat.content = clean_text
@@ -153,6 +155,8 @@ class VozUseCase:
             parser_result="n/a",
             elapsed_s=response.elapsed_s,
             narrative_context=macro_beat.narrative_context,
+            system_prompt_file="voice_system_compact.md" if variant == "compact" else None,
+            user_prompt_file="(narrative_context inline)",
         )
 
         return macro_beat, response.elapsed_s
