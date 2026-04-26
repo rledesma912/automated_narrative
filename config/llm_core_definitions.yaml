@@ -40,7 +40,7 @@ profiles:
         model: llama3.1:8b
         temperature: 0.6
         num_ctx: 4096
-        num_predict: 350
+        num_predict: 1000
         stop: ["###", "---\n"]
       journal:
         model: mistral:latest
@@ -70,7 +70,7 @@ profiles:
         model: mistral:latest
         temperature: 0.6
         num_ctx: 4096
-        num_predict: 450
+        num_predict: 1000
         stop: []
       journal:
         model: mistral:latest
@@ -100,7 +100,7 @@ profiles:
         model: qwen2.5:14b
         temperature: 0.6
         num_ctx: 6144
-        num_predict: 600
+        num_predict: 1000
         stop: []
       journal:
         model: qwen2.5:14b
@@ -130,7 +130,7 @@ profiles:
         model: mistral-nemo:12b-instruct-2407-q4_0
         temperature: 0.6
         num_ctx: 8192
-        num_predict: 600
+        num_predict: 1000
         stop: []
       journal:
         model: mistral-nemo:12b-instruct-2407-q4_0
@@ -160,12 +160,42 @@ profiles:
         model: qwen3:8b
         temperature: 0.6
         num_ctx: 6144
-        num_predict: 600
+        num_predict: 1000
         stop: []
       journal:
         model: qwen3:8b
         temperature: 0.3
         num_ctx: 4096
+        num_predict: 256
+        stop: []
+
+  ollama-hybrid-voz-qwen3:
+    prompt_variant: compact
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      story_analyst:
+        model: qwen2.5:14b
+        temperature: 0.3
+        num_ctx: 6144
+        num_predict: 700
+        stop: []
+      director:
+        model: qwen2.5:14b
+        temperature: 0.4
+        num_ctx: 6144
+        num_predict: 700
+        stop: []
+      voz:
+        model: qwen3:8b
+        temperature: 0.6
+        num_ctx: 6144
+        num_predict: 2000
+        stop: []
+      journal:
+        model: qwen2.5:14b
+        temperature: 0.3
+        num_ctx: 3072
         num_predict: 256
         stop: []
 
@@ -190,7 +220,7 @@ profiles:
         model: gemma3:12b
         temperature: 0.6
         num_ctx: 8192
-        num_predict: 600
+        num_predict: 1000
         stop: []
       journal:
         model: gemma3:12b
@@ -246,14 +276,11 @@ response_filters:
     - reasoning
 
   strip_line_patterns:
-    - "^#{1,6}\\s"            # headers markdown: # ## ### etc.
-    - "^---+\\s*$"            # separadores horizontales
-    - "^```"                  # bloques de código
     - "^Aquí tienes"
+    - "^A continuación"
     - "^Espero que te guste"
     - "^Por supuesto"
     - "^Claro[,!.]"
-    - "^INSTRUCCIONES"
 
   preserve_paragraph_breaks: true
 
@@ -264,11 +291,3 @@ response_filters:
       strip_thinking: false
     natsumura:
       strip_thinking: false
-      strip_line_patterns_extra:
-        - "^### "
-        - "^## "
-        - "^# "
-
-  role_overrides:
-    story_analyst:
-      strip_line_patterns: []  # preservar ## initial_state, ## threat_nature, ## horror_peak, ## spatial_anchor

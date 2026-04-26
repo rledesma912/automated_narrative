@@ -54,10 +54,6 @@ class StoryRepository(Protocol):
         """Update a story."""
         ...
 
-    async def delete(self, story_id: UUID) -> None:
-        """Delete a story."""
-        ...
-
     async def list_all(self) -> list[Story]:
         """List all stories."""
         ...
@@ -77,13 +73,7 @@ class BeatRepository(Protocol):
     async def get_by_number(self, story_id: UUID, number: int) -> Beat | None:
         """Get beat by number."""
         ...
-        """Get beat by number."""
-        ...
 
     async def update(self, beat: Beat) -> Beat:
         """Update a beat."""
-        ...
-
-    async def save_batch(self, beats: list[Beat]) -> list[Beat]:
-        """Save multiple beats."""
         ...

@@ -29,10 +29,10 @@ class TestTemplateMapper:
         story = mapper.map(valid_input)
 
         assert story.title == "La Casa Abandonada"
-        assert story.protagonist == "María"
-        assert story.atmosphere == "terror psicológico"
+        assert story.protagonista == "María"
+        assert story.atmosfera == "terror psicológico"
         assert any("abandonada" in s.name.lower() for s in story.scenarios)
-        assert story.synopsis == "Una familia se muda a una casa embrujada"
+        assert story.sinopsis == "Una familia se muda a una casa embrujada"
 
     def test_map_keeps_spanish_fields(self, mapper, valid_input):
         """Mantiene campos en español para backwards-compatibility."""

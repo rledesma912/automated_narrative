@@ -25,27 +25,31 @@ echo "Limpiando base de datos..."
 
 python3 -c "
 import sqlite3
-try:
-    conn = sqlite3.connect('$DB_FILE')
-    cursor = conn.cursor()
-    cursor.execute('PRAGMA foreign_keys = ON;')
 
-    # Orden de borrado respetando FK: hijos antes que padres
-    tables = ['narrative_journal', 'macro_beat', 'narrative_anchors', 'scenario', 'story']
-    for table in tables:
-        cursor.execute(f'DELETE FROM {table};')
-        print(f'Tabla {table} limpiada.')
+conn = sqlite3.connect('$DB_FILE')
+cursor = conn.cursor()
+cursor.execute('PRAGMA foreign_keys = ON;')
 
-    # Resetear autoincrement
-    cursor.execute(\"DELETE FROM sqlite_sequence WHERE name IN ('macro_beat', 'narrative_journal');\")
+tables_order = [
+    'macro_beat_rule',
+    'rule',
+    'macro_beat',
+    'narrative_anchors',
+    'narrative_journal',
+    'scenario',
+    'story',
+]
 
-    conn.commit()
-    cursor.execute('VACUUM;')
-    conn.close()
-    print('Limpieza completada.')
-except Exception as e:
-    print(f'Error: {e}')
-    exit(1)
+for table in tables_order:
+    cursor.execute(f'DELETE FROM {table};')
+    print(f'Tabla {table} limpiada.')
+
+cursor.execute(\"DELETE FROM sqlite_sequence WHERE name IN ('macro_beat', 'narrative_journal');\")
+
+conn.commit()
+cursor.execute('VACUUM;')
+conn.close()
+print('Limpieza completada.')
 "
 
 if [ $? -eq 0 ]; then

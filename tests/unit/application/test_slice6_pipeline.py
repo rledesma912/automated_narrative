@@ -37,10 +37,11 @@ def _make_story(**kw):
 def _make_anchors(story_id=None):
     return NarrativeAnchors(
         story_id=story_id or uuid.uuid4(),
-        initial_state="Irene llega tranquila.",
-        threat_nature="Una presencia imitadora.",
-        horror_peak="La figura inmóvil en el claro.",
-        spatial_anchor="Monte: espinillos, barro, relámpagos.",
+        resonance_hamartia="Irene llega tranquila.",
+        resonance_hybris="Una presencia imitadora.",
+        resonance_anagnorisis="La figura inmóvil en el claro.",
+        resonance_peripeteia="Monte: espinillos, barro, relámpagos.",
+        resonance_residual="Irene ya no puede cerrar los ojos.",
     )
 
 

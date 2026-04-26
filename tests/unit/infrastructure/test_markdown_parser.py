@@ -95,24 +95,26 @@ Contenido del acto
         assert "No matar" in data.reglas[0]
 
     def test_parse_el_monte_prohibido_completo(self):
-        """Verifica que el archivo real mapea correctamente todos los campos (tarea 4.2 spec 017)."""
+        """Verifica que el archivo real mapea correctamente todos los campos (Spec-043: nuevo formato)."""
         from pathlib import Path
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
         data = parser.parse("el_monte_prohibido.md")
 
-        assert data.title == "El Monte Prohibido"
-        assert "Ricardo" in data.protagonista
-        assert "Irene" in data.protagonista
-        assert "Mariano" in data.protagonista
+        # Título desde story.title (nuevo formato)
+        assert "monte" in data.title.lower()
+        # Protagonista resuelta desde protagonists[role=protagonista]
+        assert data.protagonista == "Irene"
         assert data.relator == "Irene"
+        # Escenarios: el nuevo archivo tiene 4 escenarios
         assert any("monte" in s.lower() for s in data.cronologic_scenarios)
+        # Sinopsis: concatenación de los 5 actos
         assert len(data.sinopsis) > 100
-        assert "Monte de los Espinillos" in data.sinopsis
-        assert len(data.reglas) >= 5
-        assert any("Ricardo" in r for r in data.reglas)
-        assert any("Irene" in r for r in data.reglas)
+        assert len(data.reglas) >= 1  # el archivo tiene 1 regla
+        # Nuevos campos Spec-043
+        assert len(data.typed_rules) == len(data.reglas)
+        assert all(r.get("type") for r in data.typed_rules)
         assert data.atmosfera != ""
-        assert "terror" in data.atmosfera.lower()
+        assert len(data.storyteller_config) > 0
 
     def test_parse_cronologic_scenarios_list(self, parser):
         """_parse_cronologic_scenarios devuelve lista desde YAML list."""
@@ -133,11 +135,11 @@ Contenido del acto
         assert result == []
 
     def test_parse_el_monte_prohibido_cronologic_scenarios(self):
-        """El archivo real devuelve los 3 escenarios cronológicos como lista."""
+        """El archivo real devuelve los escenarios cronológicos como lista (Spec-043: 4 escenarios)."""
         from pathlib import Path
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
         data = parser.parse("el_monte_prohibido.md")
-        assert len(data.cronologic_scenarios) == 3
+        assert len(data.cronologic_scenarios) == 4
         assert any("abuela" in s.lower() for s in data.cronologic_scenarios)
         assert any("monte" in s.lower() for s in data.cronologic_scenarios)
 

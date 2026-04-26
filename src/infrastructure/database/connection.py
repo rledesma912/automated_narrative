@@ -26,6 +26,8 @@ async def init_db() -> None:
             sinopsis TEXT,
             atmosfera TEXT,
             narrative_brief TEXT DEFAULT '',
+            storyteller_config TEXT,
+            personajes TEXT DEFAULT '[]',
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
@@ -36,6 +38,8 @@ async def init_db() -> None:
             id TEXT PRIMARY KEY,
             story_id TEXT NOT NULL,
             content TEXT NOT NULL,
+            type TEXT,
+            intensity TEXT,
             FOREIGN KEY (story_id) REFERENCES story(id)
         )
     """)
@@ -53,6 +57,7 @@ async def init_db() -> None:
             active_scenario_description TEXT,
             narrative_context TEXT,
             memory_snapshot TEXT,
+            type TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id),
             UNIQUE(story_id, number)
@@ -81,13 +86,15 @@ async def init_db() -> None:
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS narrative_anchors (
             id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL UNIQUE REFERENCES story(id),
-            initial_state TEXT NOT NULL,
-            threat_nature TEXT NOT NULL,
-            horror_peak TEXT NOT NULL,
-            spatial_anchor TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
+            story_id TEXT NOT NULL REFERENCES story(id),
+            resonance_hamartia TEXT NOT NULL,
+            resonance_hybris TEXT NOT NULL,
+            resonance_anagnorisis TEXT NOT NULL,
+            resonance_peripeteia TEXT NOT NULL,
+            resonance_residual TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
     """)
 
     await conn.execute("""

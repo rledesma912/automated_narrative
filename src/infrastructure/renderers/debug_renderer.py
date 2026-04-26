@@ -48,7 +48,7 @@ class DebugMarkdownRenderer:
         ]
 
     def _story_params(self, meta: dict) -> list[str]:
-        lines = [
+        return [
             "## Parámetros de la Historia",
             "",
             "| Campo | Valor |",
@@ -62,70 +62,103 @@ class DebugMarkdownRenderer:
             "---",
             "",
         ]
-        return lines
 
     def _call_section(self, idx: int, r: LLMCallRecord) -> list[str]:
         beat_label = f"Beat #{r.beat_number}" if r.beat_number is not None else "—"
         role_upper = r.role.upper()
-        title = f"## Llamada {idx} — {role_upper} {beat_label}"
-
         lines = [
-            title,
+            f"## Llamada {idx} — {role_upper} {beat_label}",
             "",
             "### Componente",
-            f"`{r.source_component}`",
+            r.source_component,
+            "",
+            "---",
             "",
             "### Parámetros de Inferencia",
+            self._inline_params(r),
             "",
-            "| Param | Valor |",
-            "|---|---|",
-            f"| model | `{r.model}` |",
-            f"| temperature | {r.temperature} |",
-            f"| num_ctx | {r.num_ctx if r.num_ctx is not None else '—'} |",
-            f"| num_predict | {r.num_predict if r.num_predict is not None else '—'} |",
-            f"| system_prompt_file | `{r.system_prompt_file or '—'}` |",
-            f"| user_prompt_file | `{r.user_prompt_file or '—'}` |",
-            "",
+            "---",
         ]
 
         if r.narrative_context:
             lines += [
                 "### Narrative Context (pre-baked)",
-                "```",
+                "",
+                "```text",
                 r.narrative_context,
                 "```",
                 "",
+                "---",
             ]
 
         lines += self._prompt_block("System Prompt", r.system_prompt or "_(ninguno)_")
         lines += self._prompt_block("Prompt Enviado", r.user_prompt)
         lines += self._prompt_block("Respuesta Raw", r.raw_response)
         lines += self._prompt_block("Respuesta Normalizada", r.normalized_response)
+        lines += self._parser_result(r)
+        lines += self._timing(r)
+        lines += ["---", ""]
+        return lines
 
+    def _inline_params(self, r: LLMCallRecord) -> str:
+        parts = [f"model: `{r.model}`", f"temperature: {r.temperature}"]
+        if r.num_ctx is not None:
+            parts.append(f"num_ctx: {r.num_ctx}")
+        if r.num_predict is not None:
+            parts.append(f"num_predict: {r.num_predict}")
+        if r.system_prompt_file:
+            parts.append(f"system: `{r.system_prompt_file}`")
+        if r.user_prompt_file:
+            parts.append(f"user: `{r.user_prompt_file}`")
+
+        line = "  ".join(parts)
+        if len(line) <= 90:
+            return line
+        return self._params_table(r)
+
+    def _params_table(self, r: LLMCallRecord) -> str:
+        rows = [
+            "| Param | Valor |",
+            "|---|---|",
+        ]
+        if r.num_ctx is not None:
+            rows.append(f"| num_ctx | {r.num_ctx} |")
+        if r.num_predict is not None:
+            rows.append(f"| num_predict | {r.num_predict} |")
+        if r.system_prompt_file:
+            rows.append(f"| system_prompt_file | `{r.system_prompt_file}` |")
+        if r.user_prompt_file:
+            rows.append(f"| user_prompt_file | `{r.user_prompt_file}` |")
+        return "\n".join(rows)
+
+    def _parser_result(self, r: LLMCallRecord) -> list[str]:
         raw_chars = len(r.raw_response)
         norm_chars = len(r.normalized_response)
         diff_pct = ((raw_chars - norm_chars) / raw_chars * 100) if raw_chars else 0.0
-
-        lines += [
+        return [
             "### Resultado del Parser",
-            f"**Estado:** {r.parser_result}  ",
-            f"**Raw chars:** {raw_chars} | **Norm chars:** {norm_chars} | "
-            f"**Diferencia:** {diff_pct:.1f}%",
-            "",
-            "### Timing",
-            f"- Elapsed LLM: {r.elapsed_s:.2f} s",
+            f"Estado: {r.parser_result}  Raw: {raw_chars}  Norm: {norm_chars}  Diff: {diff_pct:.1f}%",
             "",
             "---",
             "",
         ]
-        return lines
+
+    def _timing(self, r: LLMCallRecord) -> list[str]:
+        return [
+            "### Timing",
+            f"LLM elapsed: {r.elapsed_s:.2f}s",
+            "",
+        ]
 
     def _prompt_block(self, title: str, content: str) -> list[str]:
         return [
             f"### {title}",
-            "```",
+            "",
+            "```text",
             content,
             "```",
+            "",
+            "---",
             "",
         ]
 
@@ -144,8 +177,6 @@ class DebugMarkdownRenderer:
                 f"| {len(r.raw_response)} | {len(r.normalized_response)} "
                 f"| {r.parser_result} |"
             )
-        lines.append(
-            f"| **TOTAL** | | | | | **{total_elapsed:.1f}s** | | | |"
-        )
+        lines.append(f"| **TOTAL** | | | | | **{total_elapsed:.1f}s** | | | |")
         lines.append("")
         return lines

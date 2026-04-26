@@ -98,17 +98,3 @@ class TestSqlBeatRepository:
         assert result.content == "Updated content"
         assert result.status == "completed"
 
-    @pytest.mark.asyncio
-    async def test_save_batch(self, repo, setup_db, story_id):
-        """Test saving multiple beats at once."""
-        beats = [
-            Beat(number=1, summary="Beat 1"),
-            Beat(number=2, summary="Beat 2"),
-            Beat(number=3, summary="Beat 3"),
-        ]
-
-        results = await repo.save_batch(beats, story_id)
-
-        assert len(results) == 3
-        saved = await repo.get_by_story(story_id)
-        assert len(saved) == 3

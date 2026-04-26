@@ -30,7 +30,7 @@ class TestNarrativeLogger:
         from pathlib import Path
 
         logger = NarrativeLogger(log_dir=Path(temp_log_dir))
-        logger.info("Test message", module="test", line=1)
+        logger.info("Test message")
 
         now = datetime.datetime.now()
         today = now.strftime("%Y%m%d")
@@ -45,7 +45,7 @@ class TestNarrativeLogger:
         from pathlib import Path
 
         logger = NarrativeLogger(log_dir=Path(temp_log_dir))
-        logger.error("Error message", module="test", line=1)
+        logger.error("Error message")
 
         now = datetime.datetime.now()
         today = now.strftime("%Y%m%d")

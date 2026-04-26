@@ -6,7 +6,8 @@ Tu misión es actuar como el "Journalist" del sistema. Después de cada beat, de
 ## CONTEXTO DE LA HISTORIA
 
 - Título: {title}
-- Protagonistas: {protagonistas}
+- Protagonistas:
+{protagonistas}
 - Atmósfera: {atmosfera}
 
 {previous_state_section}

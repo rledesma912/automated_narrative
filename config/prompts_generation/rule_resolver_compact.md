@@ -1,67 +1,24 @@
 <!-- variante: compact | rol: rule_resolver (user) | cargado por: build_rule_resolver_prompt() -->
-## INFORMACIÓN DE LA HISTORIA 
+Asignar reglas y escenarios a cada acto.
 
-SINOPSIS:
-{sinopsis}
+Anclajes Narrativos (referencia para asignación de reglas):
+{anchors_json}
 
-PROTAGONISTAS:
-{protagonistas}
+Actos:
+{acts_json}
 
-REGLAS DEL USUARIO:
-{reglas}
+Reglas:
+{rules_json}
 
-ESCENARIOS DETALLADOS:
-{escenarios}
+Escenarios (en orden cronológico):
+{scenarios_json}
 
-## ACTOS NARRATIVOS (ESTRUCTURA OBLIGATORIA):
+Instrucciones:
+- TODOS los actos deben recibir un scenario_id (usa el order para asignarlos cronológicamente).
+- Asigna 0 a 2 reglas por acto según el tipo y la intensidad del acto.
+- No repitas la misma regla en múltiples actos salvo motivo dramático claro.
+- Compara el content de cada regla con el resonance_anagnorisis (clímax, Acto 3): si coinciden, asígnala solo al Acto 3 o 4.
+- El Acto 1 tiene must_not "confirmar lo paranormal" — no le asignes reglas de tipo evento que confirmen el horror.
 
-1. EXPOSICIÓN:
-   - Establece la normalidad inicial de la historia.
-   - Introduce reglas base del mundo.
-   - Primera fisura o anomalía leve que sea cliffhanger para el siguiente acto.
-
-2. ACCIÓN_ASCENDENTE:
-   - Inicia con una normalidad aparente antes del conflicto.
-   - Activa el conflicto mediante una transgresión o evento disruptivo.
-   - Aumenta la tensión progresivamente.
-
-3. CLÍMAX:
-   - Momento de máxima intensidad.
-   - Obliga al protagonista a reconocer el horror o la verdad.
-   - Las reglas más críticas deben estar presentes aquí.
-
-4. ACCIÓN_DESCENDENTE:
-   - Consecuencias del clímax.
-   - El protagonista entra en colapso, huida o reacción desesperada.
-   - El mundo puede volverse hostil o distorsionado.
-
-5. DESENLACE:
-   - Puede haber escape parcial o resolución incompleta.
-   - Debe sugerir secuelas o persistencia del horror.
-   - Cierre de la historia.
-
----
-
-TAREA:
-Analiza la historia identificando los actos narrativos y asigna a cada acto:
-
-1. Las reglas de usuario se asocian considerando su función narrativa.
-2. Cada acto podría tener más de una regla.
-3. El listado de escenarios es cronológico a cada acto.
-
----
-
-REGLAS DE ASIGNACIÓN:
-
-- Las reglas deben aparecer cuando son dramáticamente relevantes, no antes.
-
----
-
-RESPONDE ÚNICAMENTE CON ESTE JSON:
-{{
-  "ACT 1": {{ "rules": [...], "scenario": "..." }},
-  "ACT 2": {{ "rules": [...], "scenario": "..." }},
-  "ACT 3": {{ "rules": [...], "scenario": "..." }},
-  "ACT 4": {{ "rules": [...], "scenario": "..." }},
-  "ACT 5": {{ "rules": [...], "scenario": "..." }}
-}}
+Respondé ÚNICAMENTE con este JSON (sin texto adicional, sin markdown):
+{{"1": {{"rules": [], "scenario_id": "S1"}}, "2": {{"rules": [], "scenario_id": "S2"}}, "3": {{"rules": ["<id>"], "scenario_id": "S3"}}, "4": {{"rules": [], "scenario_id": "S4"}}, "5": {{"rules": [], "scenario_id": "S4"}}}}

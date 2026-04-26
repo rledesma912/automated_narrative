@@ -11,7 +11,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryPlan
+from src.domain.models import Beat, BeatType, MacroBeat, NarrativeJournal, Story, StoryPlan
 from src.infrastructure.normalizers import ResponseNormalizer
 
 if TYPE_CHECKING:
@@ -37,35 +37,28 @@ class DirectorUseCase:
         debug_collector: DebugCollector | None = None,
         voz: "VozUseCase | None" = None,
         journalist: MemoryJournalist | None = None,
+        story_repo=None,
     ):
+        from src.application.use_cases.voz_use_case import VozUseCase
+
         self.llm = llm
         self.prompt_builder = prompt_builder
         self.normalizer = normalizer or ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
-        self._voz = voz
-        self._journalist = journalist
+        self.story_repo = story_repo
 
-    def _get_voz(self) -> "VozUseCase":
-        if self._voz is None:
-            from src.application.use_cases.voz_use_case import VozUseCase
-            journalist = self._get_journalist()
-            self._voz = VozUseCase(
-                self.llm,
-                memory_journalist=journalist,
-                prompt_builder=self.prompt_builder,
-                normalizer=self.normalizer,
-                debug_collector=self.debug_collector,
-            )
-        return self._voz
-
-    def _get_journalist(self) -> MemoryJournalist:
-        if self._journalist is None:
-            self._journalist = MemoryJournalist(
-                self.llm,
-                prompt_builder=self.prompt_builder,
-                debug_collector=self.debug_collector,
-            )
-        return self._journalist
+        self._journalist = journalist or MemoryJournalist(
+            llm,
+            prompt_builder=prompt_builder,
+            debug_collector=self.debug_collector,
+        )
+        self._voz = voz or VozUseCase(
+            llm,
+            memory_journalist=self._journalist,
+            prompt_builder=prompt_builder,
+            normalizer=self.normalizer,
+            debug_collector=self.debug_collector,
+        )
 
     async def _analyze_story(self, story: Story) -> str:
         """Fase 0: expande la sinopsis en un narrative brief estructurado."""
@@ -149,8 +142,10 @@ class DirectorUseCase:
             stop_after: Checkpoint para detener el pipeline (Spec-040).
                 Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
         """
+        from src.application.services.rule_scenario_resolver_service import (
+            RuleScenarioResolverService,
+        )
         from src.application.services.story_analyst_service import StoryAnalystService
-        from src.application.services.rule_scenario_resolver_service import RuleScenarioResolverService
 
         stop_at: int | None = VALID_CHECKPOINTS.get(stop_after) if stop_after else None
         t0 = perf_counter()
@@ -158,11 +153,15 @@ class DirectorUseCase:
         analyst = StoryAnalystService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
-        
+
         if on_step_start:
             on_step_start("🔍  Analizando sinopsis y anclajes...")
         t_step = perf_counter()
         narrative_anchors = await analyst.extract_anchors(story)
+
+        if self.story_repo is not None:
+            await self.story_repo.save_narrative_anchors(story.id, narrative_anchors)
+
         if on_step_done:
             on_step_done("🔍  Analizando sinopsis y anclajes", perf_counter() - t_step)
 
@@ -173,11 +172,11 @@ class DirectorUseCase:
         resolver = RuleScenarioResolverService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
-        
+
         if on_step_start:
             on_step_start("⚖️   Distribuyendo reglas y escenarios...")
         t_step = perf_counter()
-        rule_distribution = await resolver.resolve_distribution(story)
+        rule_distribution = await resolver.resolve_distribution(story, anchors=narrative_anchors)
         if on_step_done:
             on_step_done("⚖️   Distribuyendo reglas y escenarios", perf_counter() - t_step)
 
@@ -185,8 +184,8 @@ class DirectorUseCase:
             self.llm, self.prompt_builder,
             normalizer=self.normalizer, debug_collector=self.debug_collector,
         )
-        voz = self._get_voz()
-        journalist = self._get_journalist()
+        voz = self._voz
+        journalist = self._journalist
 
         num_beats = self.prompt_builder.num_beats
         plan_elapsed = perf_counter() - t0
@@ -205,7 +204,7 @@ class DirectorUseCase:
             cp_journal = ordinal(f"journal:{beat_id}")
 
             beat_anchors = analyst.resolve_beat_anchors(narrative_anchors, beat_id)
-            
+
             # Segmentación de sinopsis y datos específicos del beat
             synopsis_slice = self.prompt_builder.get_beat_sinopsis_slice(story.sinopsis, beat_id, num_beats)
             dist = rule_distribution.get(str(beat_id), {})
@@ -213,10 +212,12 @@ class DirectorUseCase:
             s_idx = dist.get("scenario_index", 0)
             active_scenario_desc = ""
             if story.scenarios and 0 <= s_idx < len(story.scenarios):
-                active_scenario_desc = story.scenarios[s_idx].name # O la descripción si existiera
-            
+                active_scenario_desc = story.scenarios[s_idx].name
+
             beat_info = self.prompt_builder.get_beat_info(beat_id)
+            beat_type = beat_info.get("name", "")
             beat_intent = beat_info.get("intent", "")
+            beat_intensity = beat_info.get("intensity", "")
 
             if on_step_start:
                 on_step_start(f"📐  Mapeando beat {beat_id}/{num_beats}...")
@@ -229,8 +230,17 @@ class DirectorUseCase:
                 active_rules=active_rules,
                 active_scenario_description=active_scenario_desc,
                 beat_intent=beat_intent,
-                atmosphere=story.atmosfera
+                beat_type=beat_type,
+                beat_intensity=beat_intensity,
+                atmosphere=story.atmosfera,
             )
+
+            # Persistir tipo de beat desde YAML (YAML inicializa, DB gobierna — Spec-043)
+            if beat_type:
+                try:
+                    macro_beat.beat_type = BeatType(beat_type)
+                except ValueError:
+                    pass
 
             if stop_at == cp_mapper:
                 macro_beat.status = "pending"
@@ -243,23 +253,23 @@ class DirectorUseCase:
             macro_beat.active_scenario_description = active_scenario_desc
 
             macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
-                macro_beat, beat_anchors, prev_snapshot
+                macro_beat, beat_anchors, prev_snapshot, story=story
             )
 
             if on_step_start:
                 on_step_start(f"✍️   Narrando beat {beat_id}/{num_beats}...")
             macro_beat, llm_elapsed = await voz.narrate(macro_beat, story)
 
+            if on_step_start:
+                on_step_start(f"📓  Actualizando journal beat {beat_id}/{num_beats}...")
+            prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
+            macro_beat.memory_snapshot = prev_snapshot
+
             if stop_at == cp_voz:
                 macro_beat.status = "pending"
                 logger.debug(f"[DIRECTOR] Detenido en checkpoint 'voz:{beat_id}' ({cp_voz}/16)")
                 yield macro_beat, journal, llm_elapsed
                 return
-
-            if on_step_start:
-                on_step_start(f"📓  Actualizando journal beat {beat_id}/{num_beats}...")
-            prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
-            macro_beat.memory_snapshot = prev_snapshot
 
             if stop_at == cp_journal:
                 logger.debug(f"[DIRECTOR] Detenido en checkpoint 'journal:{beat_id}' ({cp_journal}/16)")
@@ -278,7 +288,7 @@ class DirectorUseCase:
 
         Yields (beat_completado, journal_actualizado, llm_elapsed) por cada beat.
         """
-        voz = self._get_voz()
+        voz = self._voz
         journal = initial_journal
         completed: list[Beat] = []
 

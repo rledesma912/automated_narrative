@@ -1,8 +1,10 @@
 """SQL Story Repository."""
 
+import json
+import uuid
 from uuid import UUID
 
-from src.domain.models import NarrativeJournal, Story, StoryStatus
+from src.domain.models import NarrativeJournal, RuleType, Story, StoryStatus, TypedRule
 from src.infrastructure.database.connection import get_connection
 
 
@@ -15,8 +17,9 @@ class SQLStoryRepository:
 
         await conn.execute(
             """INSERT OR REPLACE INTO story
-            (id, title, protagonista, relator, sinopsis, atmosfera, narrative_brief, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (id, title, protagonista, relator, sinopsis, atmosfera, narrative_brief,
+             storyteller_config, personajes, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story.id),
                 story.title,
@@ -25,15 +28,26 @@ class SQLStoryRepository:
                 story.sinopsis,
                 story.atmosfera,
                 story.narrative_brief,
+                json.dumps(story.storyteller_config) if story.storyteller_config else None,
+                json.dumps(story.personajes_full),
                 story.status.value,
                 story.created_at.isoformat(),
             ),
         )
 
         # Persistir reglas en la tabla rule (borrar y re-insertar)
+        # Siempre se genera un UUID fresco como PK de DB para evitar colisiones entre historias.
+        # El r.id lógico ("R1", "R2"…) vive solo en TypedRule, no en la tabla.
         await conn.execute("DELETE FROM rule WHERE story_id = ?", (str(story.id),))
-        if story.reglas:
-            import uuid
+        if story.typed_rules:
+            for r in story.typed_rules:
+                db_rule_id = str(uuid.uuid4())
+                await conn.execute(
+                    "INSERT INTO rule (id, story_id, content, type, intensity) VALUES (?, ?, ?, ?, ?)",
+                    (db_rule_id, str(story.id), r.content,
+                     r.type.value if r.type else None, r.intensity),
+                )
+        elif story.reglas:
             for r in story.reglas:
                 rule_id = str(uuid.uuid4())
                 await conn.execute(
@@ -65,18 +79,19 @@ class SQLStoryRepository:
         )
 
         row = await cursor.fetchone()
-        
+
         if not row:
             await conn.close()
             return None
-        
+
         # Cargar reglas
         cursor_rules = await conn.execute(
-            "SELECT content FROM rule WHERE story_id = ?",
+            "SELECT id, content, type, intensity FROM rule WHERE story_id = ?",
             (str(story_id),),
         )
         rule_rows = await cursor_rules.fetchall()
         reglas = [r["content"] for r in rule_rows]
+        typed_rules = self._rows_to_typed_rules(rule_rows, str(story_id))
 
         # Cargar escenarios
         from src.domain.models import Scenario
@@ -89,11 +104,12 @@ class SQLStoryRepository:
             Scenario(id=UUID(s["id"]), story_id=UUID(s["story_id"]), order_index=s["order_index"], name=s["name"])
             for s in scenario_rows
         ]
-        
+
         await conn.close()
 
         story = self._row_to_story(row)
         story.reglas = reglas
+        story.typed_rules = typed_rules
         story.scenarios = scenarios
         return story
 
@@ -114,11 +130,12 @@ class SQLStoryRepository:
 
         # Cargar reglas
         cursor_rules = await conn.execute(
-            "SELECT content FROM rule WHERE story_id = ?",
+            "SELECT id, content, type, intensity FROM rule WHERE story_id = ?",
             (story_id,),
         )
         rule_rows = await cursor_rules.fetchall()
         reglas = [r["content"] for r in rule_rows]
+        typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
 
         # Cargar escenarios
         from src.domain.models import Scenario
@@ -136,6 +153,7 @@ class SQLStoryRepository:
 
         story = self._row_to_story(row)
         story.reglas = reglas
+        story.typed_rules = typed_rules
         story.scenarios = scenarios
         return story
 
@@ -143,34 +161,19 @@ class SQLStoryRepository:
         """Update a story."""
         return await self.save(story)
 
-    async def delete(self, story_id: UUID) -> None:
-        """Delete a story."""
-        conn = await get_connection()
-
-        await conn.execute("DELETE FROM macro_beat_rule WHERE macro_beat_id IN (SELECT id FROM macro_beat WHERE story_id = ?)", (str(story_id),))
-        await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (str(story_id),))
-        await conn.execute("DELETE FROM rule WHERE story_id = ?", (str(story_id),))
-        await conn.execute("DELETE FROM scenario WHERE story_id = ?", (str(story_id),))
-        await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (str(story_id),))
-        await conn.execute("DELETE FROM story WHERE id = ?", (str(story_id),))
-        await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (str(story_id),))
-
-        await conn.commit()
-        await conn.close()
-
     async def list_all(self) -> list[Story]:
         """List all stories."""
         conn = await get_connection()
 
         cursor = await conn.execute("SELECT * FROM story ORDER BY created_at DESC")
         rows = await cursor.fetchall()
-        
+
         stories = []
         for row in rows:
             story_id = row["id"]
             # Cargar reglas
             cursor_rules = await conn.execute(
-                "SELECT content FROM rule WHERE story_id = ?",
+                "SELECT id, content, type, intensity FROM rule WHERE story_id = ?",
                 (story_id,),
             )
             rule_rows = await cursor_rules.fetchall()
@@ -187,12 +190,13 @@ class SQLStoryRepository:
                 Scenario(id=UUID(s["id"]), story_id=UUID(s["story_id"]), order_index=s["order_index"], name=s["name"])
                 for s in scenario_rows
             ]
-            
+
             story = self._row_to_story(row)
             story.reglas = reglas
+            story.typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
             story.scenarios = scenarios
             stories.append(story)
-            
+
         await conn.close()
         return stories
 
@@ -246,8 +250,46 @@ class SQLStoryRepository:
         await conn.commit()
         await conn.close()
 
+    async def save_narrative_anchors(self, story_id, anchors) -> None:
+        """Persiste los 5 anclajes de resonancia aristotélica (Spec-081)."""
+        from datetime import datetime
+
+        conn = await get_connection()
+        # Nota: Usamos una subquery para el ID o generamos uno si es nuevo, 
+        # pero para simplificar seguiremos el patrón de INSERT OR REPLACE por story_id
+        # si la tabla tiene story_id como UNIQUE o PK. En SQLite actual es story_id NOT NULL.
+        # Vamos a asegurar que id sea único.
+        import uuid
+        
+        # Primero buscamos si ya existe un ID para este story_id
+        cursor = await conn.execute("SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),))
+        row = await cursor.fetchone()
+        anchor_id = row[0] if row else str(uuid.uuid4())
+
+        await conn.execute(
+            """INSERT OR REPLACE INTO narrative_anchors
+            (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis, 
+             resonance_peripeteia, resonance_residual, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                anchor_id,
+                str(story_id),
+                anchors.resonance_hamartia,
+                anchors.resonance_hybris,
+                anchors.resonance_anagnorisis,
+                anchors.resonance_peripeteia,
+                anchors.resonance_residual,
+                datetime.now().isoformat(),
+            ),
+        )
+        await conn.commit()
+        await conn.close()
+
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""
+        keys = row.keys()
+        raw_cfg = row["storyteller_config"] if "storyteller_config" in keys else None
+        raw_personajes = row["personajes"] if "personajes" in keys else None
         return Story(
             id=UUID(row["id"]),
             title=row["title"],
@@ -256,5 +298,27 @@ class SQLStoryRepository:
             sinopsis=row["sinopsis"],
             atmosfera=row["atmosfera"],
             narrative_brief=row["narrative_brief"] or "",
+            storyteller_config=json.loads(raw_cfg) if raw_cfg else None,
+            personajes_full=json.loads(raw_personajes) if raw_personajes else [],
             status=StoryStatus(row["status"]),
         )
+
+    def _rows_to_typed_rules(self, rule_rows, story_id: str) -> list[TypedRule]:
+        """Convierte filas de rule en TypedRule, tolerando columnas faltantes."""
+        result = []
+        for r in rule_rows:
+            keys = r.keys()
+            raw_type = r["type"] if "type" in keys else None
+            raw_intensity = r["intensity"] if "intensity" in keys else None
+            try:
+                rule_type = RuleType(raw_type) if raw_type else None
+            except ValueError:
+                rule_type = None
+            result.append(TypedRule(
+                id=r["id"],
+                story_id=UUID(story_id) if len(story_id) == 36 else story_id,  # type: ignore[arg-type]
+                content=r["content"],
+                type=rule_type,
+                intensity=raw_intensity,
+            ))
+        return result

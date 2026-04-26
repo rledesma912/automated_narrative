@@ -2,10 +2,11 @@
 
 import json
 import uuid
-
+from unittest.mock import MagicMock
 
 from src.application.services import PromptBuilder
-from src.domain.models import MacroBeat, NarrativeAnchors, Story, resolve_beat_anchors
+from src.application.services.story_analyst_service import StoryAnalystService
+from src.domain.models import MacroBeat, NarrativeAnchors, Story
 
 
 def _make_story(**kwargs):
@@ -25,16 +26,18 @@ def _make_story(**kwargs):
 _STORY_ID = uuid.uuid4()
 _ANCHORS = NarrativeAnchors(
     story_id=_STORY_ID,
-    initial_state="Irene llega tranquila, sin sospechar nada.",
-    threat_nature="Una presencia que imita a los conocidos.",
-    horror_peak="La figura de María inmóvil en el claro del monte.",
-    spatial_anchor="Monte de los Espinillos: espinillos cerrados, barro, relámpagos.",
+    resonance_hamartia="Irene llega tranquila, sin sospechar nada.",
+    resonance_hybris="Una presencia que imita a los conocidos.",
+    resonance_anagnorisis="La figura de María inmóvil en el claro del monte.",
+    resonance_peripeteia="Monte de los Espinillos: espinillos cerrados, barro, relámpagos.",
+    resonance_residual="Irene ya no puede cerrar los ojos sin ver el claro.",
 )
 
 
 def _beat_anchors(beat_id: int) -> dict:
     builder = PromptBuilder()
-    return resolve_beat_anchors(_ANCHORS, beat_id, builder._beats_spec)
+    analyst = StoryAnalystService(MagicMock(), builder)
+    return analyst.resolve_beat_anchors(_ANCHORS, beat_id)
 
 
 def _make_beat(number: int, summary: str = "La familia llega temprano.", scenario: str = "La casa de la abuela") -> MacroBeat:
@@ -71,21 +74,21 @@ class TestBuildNarrativeContext:
         result = builder.build_narrative_context(beat, _beat_anchors(1))
         assert "La abuela advierte sobre el monte." in result
 
-    def test_contains_anchor_principal(self):
-        """B3 — contiene el valor del anclaje principal."""
+    def test_contains_resonance_value(self):
+        """B3 — contiene el valor de resonancia del pilar."""
         builder = PromptBuilder()
         beat = _make_beat(1)
         anchors = _beat_anchors(1)
         result = builder.build_narrative_context(beat, anchors)
-        assert anchors["principal"] in result
+        assert anchors["resonance"] in result
 
-    def test_contains_anchor_contexto(self):
-        """B3 — contiene el valor del anclaje de contexto."""
+    def test_contains_label_voz(self):
+        """B3 — contiene el label_voz del pilar como etiqueta semántica."""
         builder = PromptBuilder()
         beat = _make_beat(1)
         anchors = _beat_anchors(1)
         result = builder.build_narrative_context(beat, anchors)
-        assert anchors["contexto"] in result
+        assert anchors["label_voz"] in result
 
     def test_contains_last_events_from_snapshot(self):
         """B3 — contiene last_events del memory_snapshot anterior."""
@@ -126,7 +129,7 @@ class TestBuildNarrativeContext:
         builder = PromptBuilder()
         beat = _make_beat(1)
         result = builder.build_narrative_context(beat, _beat_anchors(1))
-        assert "RESTRICCIONES" in result or "Debe incluir" in result
+        assert "FIDELIDAD" in result or "PROHIBIDO" in result
 
 
 class TestActiveScenarioInNarrativeContext:
@@ -142,7 +145,7 @@ class TestActiveScenarioInNarrativeContext:
         builder = PromptBuilder()
         beat = _make_beat(2, scenario="La estancia de la fiesta")
         result = builder.build_narrative_context(beat, _beat_anchors(2))
-        assert "ESCENARIO ACTIVO" in result
+        assert "ESCENARIO:" in result
 
 
 class TestVozUserPrompt:
@@ -160,7 +163,6 @@ class TestVozUserPrompt:
         story = _make_story()
         beat = _make_beat_with_nc(2)
         prompt = builder.build_voz_user_prompt(beat)
-        # La sinopsis completa no debería estar en el user prompt del VOZ
         assert story.sinopsis not in prompt
 
     def test_voz_user_prompt_not_empty(self):
@@ -211,7 +213,6 @@ class TestNarrativeContextHasNoStoryConstants:
         beat = _make_beat(1, summary="La familia llega.")
         anchors = _beat_anchors(1)
         nc = builder.build_narrative_context(beat, anchors)
-        # El narrative_context no debe listar los protagonistas
         assert story.protagonista not in nc
 
     def test_narrative_context_has_no_reglas(self):

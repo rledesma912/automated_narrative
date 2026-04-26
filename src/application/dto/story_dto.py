@@ -1,6 +1,6 @@
 """Story DTOs."""
 
-from uuid import UUID
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -15,15 +15,6 @@ class StoryCreateDTO(BaseModel):
     sinopsis: str
     atmosfera: str
     reglas: list[str] = []
-
-
-class StoryResponseDTO(BaseModel):
-    """DTO for story response."""
-
-    id: UUID
-    title: str
-    status: str
-    created_at: str
-
-    class Config:
-        from_attributes = True
+    storyteller_config: Optional[dict] = None
+    typed_rules: list[dict] = []
+    personajes_full: list[dict] = []

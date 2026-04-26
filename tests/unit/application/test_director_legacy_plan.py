@@ -251,10 +251,11 @@ class TestDirectorUseCase:
 
         anchors = NarrativeAnchors(
             story_id=story.id,
-            initial_state="Tranquilo",
-            threat_nature="Presencia",
-            horror_peak="El claro",
-            spatial_anchor="Monte",
+            resonance_hamartia="Tranquilo",
+            resonance_hybris="Presencia",
+            resonance_anagnorisis="El claro",
+            resonance_peripeteia="Monte",
+            resonance_residual="Marca residual",
         )
         journal = NarrativeJournal(last_events="algo", unresolved_mysteries="", physical_emotional_state="")
         snapshot = json.dumps({"last_events": "algo", "unresolved_mysteries": "", "physical_emotional_state": ""})
@@ -300,8 +301,10 @@ class TestDirectorUseCase:
         story = Story(title="T", protagonista="P", relator="r", escenarios="e", sinopsis="s", atmosfera="a")
 
         anchors = NarrativeAnchors(
-            story_id=story.id, initial_state="s", threat_nature="t",
-            horror_peak="h", spatial_anchor="sp",
+            story_id=story.id,
+            resonance_hamartia="s", resonance_hybris="t",
+            resonance_anagnorisis="h", resonance_peripeteia="sp",
+            resonance_residual="r",
         )
         journal = NarrativeJournal()
         snapshot = json.dumps({"last_events": "", "unresolved_mysteries": "", "physical_emotional_state": ""})
@@ -363,3 +366,44 @@ class TestDirectorUseCase:
         assert len(results) == 3
         assert all(b.status == "completed" for b, _, _ in results)
         assert mock_voz.execute.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_director_malformed_json_returns_default_beats(self):
+        """LLM retorna JSON malformado — parse_beats activa fallback con beats genéricos."""
+        story = Story(
+            title="Test",
+            protagonista="P",
+            relator="tercera_persona",
+            escenarios="L",
+            sinopsis="S",
+            atmosfera="terror",
+        )
+        mock_llm = MockLLMAdapter(fixed_response='{"broken": [1, 2, "unclosed"')
+        prompt_builder = PromptBuilder()
+        use_case = DirectorUseCase(mock_llm, prompt_builder)
+
+        result = await use_case.execute(story)
+
+        assert isinstance(result, StoryPlan)
+        assert len(result.beats) > 0
+        assert all(b.status == "pending" for b in result.beats)
+
+    @pytest.mark.asyncio
+    async def test_director_empty_beats_response_uses_fallback(self):
+        """LLM retorna texto sin beats reconocibles — activa fallback con 5 beats por defecto."""
+        story = Story(
+            title="Test",
+            protagonista="P",
+            relator="tercera_persona",
+            escenarios="L",
+            sinopsis="S",
+            atmosfera="terror",
+        )
+        mock_llm = MockLLMAdapter(fixed_response="No hay nada aquí.")
+        prompt_builder = PromptBuilder()
+        use_case = DirectorUseCase(mock_llm, prompt_builder)
+
+        result = await use_case.execute(story)
+
+        assert len(result.beats) == 5
+        assert all("generado automáticamente" in b.summary for b in result.beats)

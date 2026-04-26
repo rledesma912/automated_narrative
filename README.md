@@ -14,17 +14,17 @@ Un **beat** es la unidad mínima de narración (~300-500 palabras). La historia 
 
 ### Los cinco roles LLM
 
-| Rol | Clase | Llamadas | Responsabilidad |
-|-----|-------|----------|-----------------|
-| **Analyst** | `StoryAnalystService` | 1 (global) | Extrae los 4 `NarrativeAnchors` de la sinopsis |
-| **Resolver** | `RuleScenarioResolverService` | 1 (global) | Distribuye reglas y escenarios a cada beat |
-| **Mapper** | `SynopsisBeatMapper` | 5 (una por beat) | Extrae qué ocurre en el beat N + escenario activo |
-| **Voz** | `VozUseCase` | 5 (una por beat) | Expande `narrative_context` a prosa literaria |
-| **Journal** | `MemoryJournalist` | 5 (una por beat) | Mantiene memoria cross-beat (eventos, misterios, estado) |
+| Rol | Componente | Llamadas (full) | Llamadas (plan) | Responsabilidad |
+|-----|-----------|-----------------|-----------------|-----------------|
+| **Analyst** | `StoryAnalystService` | 1 | 1 | Extrae los 4 `NarrativeAnchors` de la sinopsis |
+| **Resolver** | `RuleScenarioResolverService` | 1 | 0 | Distribuye reglas y escenarios a cada beat |
+| **Mapper** | `SynopsisBeatMapper` | 5 | 1 (mapeo global) | Mapea sinopsis a beats; con `map_one` extrae evento + escenario activo |
+| **Voz** | `VozUseCase` | 5 | 0 | Expande `narrative_context` a prosa literaria |
+| **Journal** | `MemoryJournalist` | 5 | 0 | Mantiene memoria cross-beat (eventos, misterios, estado) |
 
-**Total: 17 llamadas LLM por historia** (1 analyst + 1 resolver + 5×3).
+**Total: 17 llamadas LLM** en `execute_full` (plan + narración), **2 llamadas** en `execute` (solo planificación).
 
-El orquestador es `DirectorUseCase` (no hace llamadas LLM directamente, coordina los 5 roles). `StoryRunner` persiste en BD y reporta progreso.
+El orquestador es `DirectorUseCase` (`application/use_cases/director_use_case.py`). No hace llamadas LLM directamente — coordina los 5 roles. `StoryRunner` (CLI) persiste en BD y reporta progreso.
 
 ---
 
@@ -35,43 +35,49 @@ El orquestador es `DirectorUseCase` (no hace llamadas LLM directamente, coordina
 ```mermaid
 sequenceDiagram
     participant CLI
-    participant Runner as StoryRunner
+    participant Runner as StoryRunner (core)
     participant Dir as DirectorUseCase
-    participant Ana as StoryAnalyst
-    participant Res as RuleScenarioResolver
+    participant Ana as StoryAnalystService
+    participant Res as RuleScenarioResolverService
     participant Map as SynopsisBeatMapper
     participant Voz as VozUseCase
     participant Jrn as MemoryJournalist
     participant LLM as LLMProvider
     participant DB as SQLite
 
-    CLI->>Runner: generate(input.md)
+    CLI->>Runner: generate(input)
     Runner->>DB: CreateStory → story_id
 
     Runner->>Dir: execute_full(story)
 
     Dir->>Ana: extract_anchors(story)
-    Ana->>LLM: generate(role="story_analyst")
-    LLM-->>Ana: NarrativeAnchors (JSON)
+    Ana->>LLM: generate(role=story_analyst)
+    LLM-->>Ana: NarrativeAnchors (4 anclajes)
 
     Dir->>Res: resolve_distribution(story)
-    Res->>LLM: generate(role="director")
-    LLM-->>Res: Rules/Scenarios Map (JSON)
+    Res->>LLM: generate(role=director)
+    LLM-->>Res: rule/scenario distribution por beat
 
     loop Por cada beat (1..N)
         Dir->>Map: map_one(story, beat_id, ...)
-        Map->>LLM: generate(role="director")
-        LLM-->>Map: Summary + ScenarioID
-        
-        Dir->>Voz: execute(story, beat, journal)
-        Voz->>LLM: generate(role="voz")
+        Map->>LLM: generate(role=director)
+        LLM-->>Map: summary + scenario + anchors + active_rules
+
+        Dir->>Dir: build_narrative_context(macro_beat, anchors, prev_snapshot)
+        Note right of Dir: Determinístico — sin llamada LLM
+
+        Dir->>Voz: narrate(macro_beat, story)
+        Voz->>LLM: generate(role=voz, nc=narrative_context)
         LLM-->>Voz: prosa literaria
-        Voz->>Jrn: update_journal(prosa)
-        Jrn->>LLM: generate(role="journal")
-        LLM-->>Jrn: estado actualizado
-        Voz-->>Dir: (beat_completado, journal, elapsed)
-        Dir-->>Runner: yield (beat, journal, elapsed)
-        Runner->>DB: save beat content + rules + scenarios + journal
+        Voz-->>Dir: (macro_beat, elapsed)
+
+        Dir->>Jrn: extract(story, macro_beat, journal)
+        Jrn->>LLM: generate(role=journal)
+        LLM-->>Jrn: journal actualizado
+        Jrn-->>Dir: (snapshot, journal)
+
+        Dir-->>Runner: yield (macro_beat, journal, elapsed)
+        Runner->>DB: save macro_beat + rules + scenarios
     end
 
     Runner->>CLI: relato completo (.md)
@@ -85,10 +91,12 @@ flowchart TD
     Runner --> Dir["DirectorUseCase\n(application/use_cases)"]
 
     Dir --> Ana["StoryAnalystService\n(application/services)"]
-    Dir --> Res["RuleScenarioResolver\n(application/services)"]
+    Dir --> Res["RuleScenarioResolverService\n(application/services)"]
     Dir --> Map["SynopsisBeatMapper\n(application/use_cases)"]
     Dir --> Voz["VozUseCase\n(application/use_cases)"]
     Dir --> Jrn["MemoryJournalist\n(application/services)"]
+
+    Dir --> NC["build_narrative_context()\n(PromptBuilder — determinístico)"]
 
     Ana --> PB["PromptBuilder\n(application/services)"]
     Res --> PB
@@ -125,26 +133,59 @@ flowchart TD
 
 ## Arquitectura de prompts
 
-El sistema diferencia la complejidad del prompt según el modelo activo:
+Los templates viven en `config/prompts_generation/`. La variante activa se determina con `prompt_variant` del perfil en `llm_core_definitions.yaml`.
+
+### Sistema de variantes (compact / frontier)
 
 ```mermaid
 flowchart LR
-    P[Perfil activo] -->|ollama-*| C[Variante compact]
-    P -->|anthropic-* / gemini-*| F[Variante frontier]
+    P[Perfil activo] -->|prompt_variant: compact| C[Variante compact]
+    P -->|prompt_variant: frontier| F[Variante frontier]
 
-    C --> C1[voice_compact.md]
-    C --> C2[synopsis_mapper_compact.md]
+    C --> CS1[story_analyst_compact.md]
+    C --> CS2[story_analyst_system_compact.md]
+    C --> CSM[synopsis_mapper_compact.md]
+    C --> CSM1[synopsis_mapper_one_compact.md]
+    C --> CSM_SYS[synopsis_mapper_system_compact.md]
+    C --> CV[voice_compact.md]
+    C --> CV_SYS[voice_system_compact.md]
+    C --> CJ[journal.md]
+    C --> CR[rule_resolver_compact.md]
+    C --> CR_SYS[rule_resolver_system_compact.md]
 
-    F --> F1[voice.md]
+    F --> F1[story_analyst.md]
     F --> F2[synopsis_mapper.md]
+    F --> F3[voice.md]
+    F --> F4[journal.md]
+    F --> F5[system.md]
 ```
 
-| Variante | Modelos | Característica |
-|----------|---------|----------------|
-| **compact** | Ollama local (Mistral, Llama, Natsumura) | Prompts cortos, directivos, sin secciones anidadas |
-| **frontier** | Anthropic, Gemini | Prompts ricos con contexto completo y restricciones dramáticas |
+### Templates por rol y variante
 
-Los templates viven en `config/prompts_generation/`. La variante activa se determina con el campo `prompt_variant` del perfil en `config/llm_core_definitions.yaml`.
+| Rol | Variante | Archivo | Purpose |
+|-----|----------|---------|---------|
+| **story_analyst** | compact | `story_analyst_compact.md` | Expansión extractiva de sinopsis a 4 anclajes |
+| **story_analyst** | compact | `story_analyst_system_compact.md` | System prompt base |
+| **story_analyst** | frontier | `story_analyst.md` | Expansión rica en contexto |
+| **director** (mapper) | compact | `synopsis_mapper_compact.md` | Mapeo global sinopsis→beats (5 en 1 llamada) |
+| **director** (mapper) | compact | `synopsis_mapper_one_compact.md` | Mapeo unitario por beat |
+| **director** (mapper) | compact | `synopsis_mapper_system_compact.md` | System prompt del mapper |
+| **director** (mapper) | frontier | `synopsis_mapper.md` | Mapeo global rico |
+| **director** (resolver) | compact | `rule_resolver_compact.md` | Distribución reglas/escenarios por beat |
+| **director** (resolver) | compact | `rule_resolver_system_compact.md` | System prompt del resolver |
+| **voz** | compact | `voice_compact.md` | Narración beat-by-beat compacta |
+| **voz** | compact | `voice_system_compact.md` | System prompt para voz |
+| **voz** | frontier | `voice.md` | Narración rica con约束 dramáticas |
+| **journal** | compact | `journal.md` | Actualización de memoria cross-beat |
+| **journal** | frontier | `journal.md` | Actualización de memoria (formato unificado) |
+| **system** | frontier | `system.md` | System prompt transversal (usado en fallback) |
+
+### Decisión de variante por perfil
+
+| Variante | Perfiles | Característica |
+|----------|----------|----------------|
+| **compact** | `ollama-*` (llama31, mistral, qwen25, qwen3, gemma3, mistral-nemo) | Prompts cortos, directivos, sin secciones anidadas |
+| **frontier** | `anthropic-*`, `gemini-*` | Prompts ricos con contexto completo y restricciones dramáticas |
 
 ---
 
@@ -154,32 +195,35 @@ Toda la configuración LLM vive en **`config/llm_core_definitions.yaml`**. El `.
 
 ### Perfiles disponibles
 
-| Perfil | Provider | Uso recomendado |
-|--------|----------|-----------------|
-| `ollama-natsumura` | Ollama local | Modelo fine-tuneado para narrativa de terror |
-| `ollama-llama31` | Ollama local | Más rápido, calidad aceptable |
-| `ollama-mistral` | Ollama local | Balance velocidad/calidad |
-| `anthropic-sonnet` | Anthropic API | Máxima calidad narrativa |
-| `gemini-pro` | Gemini CLI | Alta calidad, sin costo de API |
-| `gemini-mixto` | Gemini CLI | Pro para narrativa, Flash para journal |
+| Perfil | Provider | Modelos | prompt_variant |
+|--------|----------|---------|----------------|
+| `ollama-llama31` | Ollama local | llama3.1:8b | compact |
+| `ollama-mistral` | Ollama local | mistral:latest | compact |
+| `ollama-qwen25-14b` | Ollama local | qwen2.5:14b | compact |
+| `ollama-qwen3-8b` | Ollama local | qwen3:8b | compact |
+| `ollama-mistral-nemo` | Ollama local | mistral-nemo:12b-instruct-2407-q4_0 | compact |
+| `ollama-gemma3-12b` | Ollama local | gemma3:12b | compact |
+| `anthropic-sonnet` | Anthropic API | claude-sonnet-4-6 | frontier |
+| `gemini-cli` | Gemini CLI | gemini-2.5-flash | frontier |
 
-Activar un perfil: `active_profile: <nombre>` en el YAML o `LLM_PROFILE=<nombre>` como variable de entorno.
+El perfil activo se configura en `llm_core_definitions.yaml` (campo `active_profile`) o se overridea con la variable de entorno `LLM_PROFILE`.
 
 ### Roles por perfil
 
-Cada perfil define tres roles con sus parámetros LLM propios:
+Cada perfil define 4 roles con sus parámetros LLM propios. El rol `story_analyst` se usa para la fase de expansión de sinopsis.
 
-| Rol | Temperatura típica | Propósito |
-|-----|--------------------|-----------|
-| `director` | 0.3 | Planificación extractiva — fidelidad a la sinopsis |
-| `voz` | 0.7 | Narración literaria — creatividad controlada |
-| `journal` | 0.2 | Extracción de hechos — máxima precisión |
+| Rol | Temperatura | Propósito |
+|-----|-------------|-----------|
+| `story_analyst` | 0.3 | Expansión extractiva de sinopsis a anclajes narrativos |
+| `director` | 0.3-0.4 | Planificación: distribución de reglas y mapeo sinopsis→beats |
+| `voz` | 0.6-0.7 | Narración literaria — creatividad controlada |
+| `journal` | 0.3 | Extracción de hechos — máxima precisión |
 
 ---
 
 ## Modelo de datos (ERD)
 
-Esquema normalizado (Spec-041). `macro_beat` es la unidad narrativa; `rule` y `scenario` son fuentes de verdad independientes.
+Esquema normalizado (Spec-043). `macro_beat` es la unidad narrativa; `rule` y `scenario` son fuentes de verdad independientes. **Principio: YAML inicializa — DB gobierna.** Los tipos narrativos persisten en DB desde el inicio; ningún servicio depende del YAML en runtime.
 
 ```mermaid
 erDiagram
@@ -201,6 +245,7 @@ erDiagram
         text sinopsis
         text atmosfera
         text narrative_brief
+        text storyteller_config "JSON: percepción, voz, sesgos"
         text status
         text created_at
     }
@@ -209,6 +254,8 @@ erDiagram
         text id PK
         text story_id FK
         text content
+        text type "psicologica|entorno|evento|fenomeno|accion_personaje|indicador"
+        text intensity "baja|media|alta|creciente"
     }
 
     SCENARIO {
@@ -232,6 +279,7 @@ erDiagram
         int id PK
         text story_id FK
         int number
+        text type "exposicion|accion_ascendente|climax|accion_descendente|desenlace"
         text summary
         text content
         text status
@@ -325,6 +373,9 @@ Los siguientes specs definen la arquitectura y el comportamiento actual del sist
 | [040 — Checkpoint Hasta](specs/040_checkpoint_hasta.md) | Sistema de re-generación parcial desde un beat específico |
 | [041 — Reglas y Escenarios Dinámicos](specs/041_mapeo_dinamico_reglas_escenarios.md) | Mapeo de reglas de usuario y descripciones sensoriales por beat |
 | [042 — Revisión Global de Arquitectura](specs/042_revision_global_arquitectura.md) | Deuda técnica: DI, excepciones, logs AM/PM, spinner, debug prompts, saneamiento |
+| [043 — Modelo Narrativo Semántico](specs/043_semantic_narrative_model.md) | `BeatType`, `RuleType`, `TypedRule`, `storyteller_config` — semántica narrativa en DB |
+| [044 — ResponseNormalizer Scope](specs/044_response_normalizer_scope.md) | Definición canónica: el Normalizer elimina ruido de proceso LLM, no altera Markdown válido |
+| [045 — Dead Code Audit](specs/045_dead_code_audit.md) | Eliminación de use cases, repositorios, DTOs, excepciones y métodos sin uso en el pipeline |
 
 ---
 
@@ -336,7 +387,7 @@ El parámetro `--hasta` permite detener el pipeline en un checkpoint específico
 
 | Checkpoint | Ordinal | Descripción |
 |------------|--------|-------------|
-| `analyst` | 1 | Solo extrae anclajes narrativos |
+| `analyst` | 1 | Extrae anclajes narrativos |
 | `resolver` | 2 | Distribuye reglas y escenarios por beat |
 | `mapper:1` | 3 | Mapea beat 1 |
 | `voz:1` | 4 | Narra beat 1 |
@@ -353,6 +404,8 @@ El parámetro `--hasta` permite detener el pipeline en un checkpoint específico
 | `mapper:5` | 15 | Mapea beat 5 |
 | `voz:5` | 16 | Narra beat 5 |
 | `journal:5` | 17 | Registra memoria beat 5 (completo) |
+
+**Total: 17 llamadas LLM en `execute_full`** (1 analyst + 1 resolver + 5×mapper + 5×voz + 5×journal).
 
 ### Uso
 

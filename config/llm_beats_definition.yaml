@@ -1,15 +1,16 @@
 beats_spec:
-  version: "2.0"
+  version: "3.0"
   granularity: "5_actos"
+
+  # Spec-081: se elimina anchor_priorities. Cada beat recibe la resonancia N
+  # definida en llm_narrative_definition.yaml mediante mapeo 1:1 (Beat N → Pilar N).
 
   macro_beats:
 
     - id: 1
       name: "exposicion"
-      intent: "establecer normalidad y sembrar una fisura"
-      anchor_priorities:
-        principal: "initial_state"
-        contexto: "spatial_anchor"
+      intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
+      intensity: baja
       must:
         - "presentar situacion base del narrador"
         - "introducir una anomalia sutil"
@@ -25,9 +26,7 @@ beats_spec:
     - id: 2
       name: "accion_ascendente"
       intent: "activar el conflicto mediante transgresion"
-      anchor_priorities:
-        principal: "threat_nature"
-        contexto: "initial_state"
+      intensity: media
       must:
         - "romper la regla o ignorar la advertencia"
         - "mostrar un evento anomalo concreto"
@@ -43,9 +42,7 @@ beats_spec:
     - id: 3
       name: "climax"
       intent: "forzar reconocimiento del horror"
-      anchor_priorities:
-        principal: "horror_peak"
-        contexto: "threat_nature"
+      intensity: alta
       must:
         - "invalidar explicacion racional"
         - "mostrar amenaza o presencia directa"
@@ -60,9 +57,7 @@ beats_spec:
     - id: 4
       name: "accion_descendente"
       intent: "llevar al protagonista al colapso y reaccion"
-      anchor_priorities:
-        principal: "spatial_anchor"
-        contexto: "threat_nature"
+      intensity: media
       must:
         - "perdida de control o desorientacion"
         - "intento de escape o respuesta (instinto, fe, memoria)"
@@ -77,9 +72,7 @@ beats_spec:
     - id: 5
       name: "desenlace"
       intent: "cerrar con escape incompleto y secuela"
-      anchor_priorities:
-        principal: "initial_state"
-        contexto: "threat_nature"
+      intensity: baja
       must:
         - "salida o alejamiento del peligro"
         - "marca persistente o evidencia ambigua"

@@ -1,7 +1,6 @@
 """SynopsisBeatMapper - mapea la sinopsis a beats estructurales de forma extractiva."""
 
 import logging
-import re
 
 from src.application.services.beat_parser import parse_beats
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
@@ -9,6 +8,7 @@ from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, MacroBeat, Story
 from src.infrastructure.normalizers import ResponseNormalizer
+from src.infrastructure.parsers.beat_response_parser import BeatResponseParser
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,13 @@ class SynopsisBeatMapper:
         prompt_builder,
         normalizer: ResponseNormalizer | None = None,
         debug_collector: DebugCollector | None = None,
+        beat_parser: BeatResponseParser | None = None,
     ):
         self.llm = llm
         self.prompt_builder = prompt_builder
         self.normalizer = normalizer or ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
+        self.beat_parser = beat_parser or BeatResponseParser()
 
     async def map(self, story: Story, narrative_brief: str = "") -> list[Beat]:
         """Genera los beats mapeando la sinopsis a la estructura de actos."""
@@ -92,6 +94,8 @@ class SynopsisBeatMapper:
         active_rules: list[str] | None = None,
         active_scenario_description: str | None = None,
         beat_intent: str | None = None,
+        beat_type: str | None = None,
+        beat_intensity: str | None = None,
         atmosphere: str | None = None,
     ) -> MacroBeat:
         """Mapea un único macro-beat enriquecido: extrae eventos e integra reglas/escenario.
@@ -111,6 +115,8 @@ class SynopsisBeatMapper:
             active_rules=active_rules,
             active_scenario=active_scenario_description,
             beat_intent=beat_intent,
+            beat_type=beat_type,
+            beat_intensity=beat_intensity,
             atmosphere=atmosphere,
         )
         system_prompt = self.prompt_builder.build_synopsis_mapper_system(story)
@@ -132,7 +138,7 @@ class SynopsisBeatMapper:
 
         clean_text = self.normalizer.normalize(response.text, model_name=model)
 
-        summary, active_scenario_from_llm = self._parse_map_one_response(
+        summary, active_scenario_from_llm = self.beat_parser.parse_map_one_response(
             clean_text, macro_beat_id, []
         )
 
@@ -171,46 +177,3 @@ class SynopsisBeatMapper:
         )
         return macro_beat
 
-    # ── parsers ──────────────────────────────────────────────────────────────
-
-    def _parse_map_one_response(
-        self,
-        text: str,
-        macro_beat_id: int,
-        cronologic_scenarios: list[str],
-    ) -> tuple[str, str]:
-        """Extrae (summary, active_scenario_name) de la respuesta del LLM."""
-        lines = [l.strip() for l in text.strip().splitlines()]
-
-        active_scenario = ""
-        events: list[str] = []
-        in_events = False
-
-        for line in lines:
-            if not line:
-                continue
-            line_lower = line.lower()
-            if line_lower.startswith("escenario:"):
-                active_scenario = line.split(":", 1)[1].strip()
-            elif line_lower.startswith("eventos:") or line_lower == "eventos":
-                in_events = True
-            elif in_events:
-                if line.startswith("-"):
-                    events.append(line[1:].strip())
-                elif re.match(r"^\d+\.", line):
-                    break  # otro acto empezó
-                elif line and not line_lower.startswith("escenario:"):
-                    events.append(line)
-
-        # Fallback de escenario: posición proporcional en la lista
-        if not active_scenario and cronologic_scenarios:
-            idx = min(macro_beat_id - 1, len(cronologic_scenarios) - 1)
-            active_scenario = cronologic_scenarios[idx]
-
-        # Fallback de summary: texto completo si no hubo bullets
-        if not events:
-            summary = text.strip() or f"Acto {macro_beat_id} — sin eventos extraídos"
-        else:
-            summary = "\n".join(f"- {e}" for e in events)
-
-        return summary, active_scenario

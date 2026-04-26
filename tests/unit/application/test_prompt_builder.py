@@ -1,8 +1,8 @@
 """Tests for PromptBuilder service."""
 
-from unittest.mock import patch
-
+import json
 import uuid
+from unittest.mock import patch
 
 from src.application.services import PromptBuilder
 from src.domain.models import Scenario, Story
@@ -223,11 +223,8 @@ class TestPromptVariants:
             assert builder._voice_template_path() == "voice_compact.md"
 
     def test_frontier_variant_loads_standard_voice_template(self):
-        with patch("src.application.services.prompt_builder.settings") as mock_s:
+        with patch("src.application.services.template_loader.settings") as mock_s:
             mock_s.active_profile_config.return_value = {"prompt_variant": "frontier"}
-            mock_s.beats_definition_file = "config/llm_beats_definition.yaml"
-            mock_s.prompts_dir = "config/prompts_generation"
-
             mock_s.prompt_file_voice = "voice.md"
             builder = PromptBuilder()
             assert builder._voice_template_path() == "voice.md"
@@ -286,3 +283,64 @@ class TestPromptVariants:
             prompt = builder.build_beat_prompt(story, beat)
         mid = len(prompt) // 2
         assert "ESCENA_UNICA_IDENTIFICADORA" in prompt[mid:]
+
+
+class TestBuildRuleResolverPromptActsEnrichment:
+    """Spec-052: acts_json incluye intent, intensity, must y must_not del YAML."""
+
+    def _story(self):
+        sid = uuid.uuid4()
+        return Story(
+            id=sid,
+            title="T",
+            protagonista="P",
+            relator="tercera_persona",
+            sinopsis="S",
+            atmosfera="a",
+            reglas=["regla 1"],
+            scenarios=[Scenario(story_id=sid, order_index=0, name="Escenario A")],
+        )
+
+    def _acts(self, prompt: str) -> list[dict]:
+        """Extrae la lista de acts del bloque JSON entre 'Actos:' y 'Reglas:'."""
+        block = prompt.split("Actos:\n", 1)[1].split("\n\nReglas:", 1)[0].strip()
+        return json.loads(block)
+
+    def test_acts_json_includes_intent(self):
+        builder = PromptBuilder()
+        prompt = builder.build_rule_resolver_prompt(self._story())
+        acts = self._acts(prompt)
+        assert all("intent" in a and a["intent"] for a in acts)
+
+    def test_acts_json_includes_intensity(self):
+        builder = PromptBuilder()
+        prompt = builder.build_rule_resolver_prompt(self._story())
+        acts = self._acts(prompt)
+        intensities = {a["type"]: a["intensity"] for a in acts}
+        assert intensities["exposicion"] == "baja"
+        assert intensities["climax"] == "alta"
+        assert intensities["desenlace"] == "baja"
+
+    def test_acts_json_includes_must(self):
+        builder = PromptBuilder()
+        prompt = builder.build_rule_resolver_prompt(self._story())
+        acts = self._acts(prompt)
+        assert all("must" in a and isinstance(a["must"], list) and a["must"] for a in acts)
+
+    def test_acts_json_includes_must_not(self):
+        builder = PromptBuilder()
+        prompt = builder.build_rule_resolver_prompt(self._story())
+        acts = self._acts(prompt)
+        assert all("must_not" in a and isinstance(a["must_not"], list) for a in acts)
+
+    def test_acts_json_excludes_anchor_priorities(self):
+        builder = PromptBuilder()
+        prompt = builder.build_rule_resolver_prompt(self._story())
+        acts = self._acts(prompt)
+        assert all("anchor_priorities" not in a for a in acts)
+
+    def test_acts_json_excludes_state_change(self):
+        builder = PromptBuilder()
+        prompt = builder.build_rule_resolver_prompt(self._story())
+        acts = self._acts(prompt)
+        assert all("state_change" not in a for a in acts)

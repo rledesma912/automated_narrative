@@ -194,11 +194,11 @@ def main() -> None:
                 output_dir=args.output,
             )
     except CLIError as e:
-        logger.error(f"[CLI] {e.message}", module="runner", line=1)
+        logger.error(f"[CLI] {e.message}")
         print(f"Error: {e.message}", file=sys.stderr)
         sys.exit(e.exit_code)
     except Exception as e:
-        logger.error(f"[ERROR_INESPERADO] {str(e)}", module="runner", line=1)
+        logger.error(f"[ERROR_INESPERADO] {str(e)}")
         print(f"Error inesperado: {str(e)}", file=sys.stderr)
         sys.exit(1)
 

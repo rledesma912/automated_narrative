@@ -2,22 +2,36 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from src.application.use_cases import ListBeatsUseCase, UpdateBeatUseCase
+from src.domain.exceptions import StoryNotFoundError
+from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.presentation.schemas.request import BeatUpdateRequest
 from src.presentation.schemas.response import BeatResponse
 
 router = APIRouter(tags=["Beats"])
 
 
+def _beat_repo() -> SQLBeatRepository:
+    return SQLBeatRepository()
+
+
+def get_list_beats_use_case(repo=Depends(_beat_repo)) -> ListBeatsUseCase:
+    return ListBeatsUseCase(repo)
+
+
+def get_update_beat_use_case(repo=Depends(_beat_repo)) -> UpdateBeatUseCase:
+    return UpdateBeatUseCase(repo)
+
+
 @router.get("/stories/{story_id}/beats", response_model=list[BeatResponse])
-async def list_beats(story_id: str):
+async def list_beats(
+    story_id: str,
+    use_case: ListBeatsUseCase = Depends(get_list_beats_use_case),
+):
     """List all beats for a story."""
-    from src.infrastructure.database.repositories import SQLBeatRepository
-
-    repo = SQLBeatRepository()
-    beats = await repo.get_by_story(UUID(story_id))
-
+    beats = await use_case.execute(UUID(story_id))
     return [
         BeatResponse(
             number=b.number,
@@ -30,19 +44,17 @@ async def list_beats(story_id: str):
 
 
 @router.put("/stories/{story_id}/beats/{beat_number}")
-async def update_beat(story_id: str, beat_number: int, request: BeatUpdateRequest):
+async def update_beat(
+    story_id: str,
+    beat_number: int,
+    request: BeatUpdateRequest,
+    use_case: UpdateBeatUseCase = Depends(get_update_beat_use_case),
+):
     """Update a beat's summary."""
-    from src.infrastructure.database.repositories import SQLBeatRepository
-
-    repo = SQLBeatRepository()
-    beat = await repo.get_by_number(UUID(story_id), beat_number)
-
-    if not beat:
+    try:
+        await use_case.execute(UUID(story_id), beat_number, request.summary)
+    except StoryNotFoundError:
         raise HTTPException(status_code=404, detail=f"Beat no encontrado: {beat_number}")
-
-    beat.summary = request.summary
-    await repo.update(beat, UUID(story_id))
-
     return {"status": "updated"}
 
 
@@ -51,10 +63,6 @@ async def generate_beat(story_id: str, beat_number: int):
     """Generate content for a beat."""
     from src.application.use_cases.voz_use_case import VozUseCase
     from src.infrastructure.adapters import OllamaAdapter
-    from src.infrastructure.database.repositories import (
-        SQLBeatRepository,
-        SQLStoryRepository,
-    )
 
     story_repo = SQLStoryRepository()
     beat_repo = SQLBeatRepository()

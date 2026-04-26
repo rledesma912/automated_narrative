@@ -69,24 +69,24 @@ class NarrativeLogger:
         error_handler.setFormatter(formatter)
         self._error_logger.addHandler(error_handler)
 
-    def debug(self, message: str, module: str = "", line: int = 0) -> None:
+    def debug(self, message: str) -> None:
         """Log debug message."""
         self._logger.debug(message)
 
-    def info(self, message: str, module: str = "", line: int = 0) -> None:
+    def info(self, message: str) -> None:
         """Log info message."""
         self._logger.info(message)
 
-    def warning(self, message: str, module: str = "", line: int = 0) -> None:
+    def warning(self, message: str) -> None:
         """Log warning message."""
         self._logger.warning(message)
 
-    def error(self, message: str, module: str = "", line: int = 0) -> None:
+    def error(self, message: str) -> None:
         """Log error message (both to file and error file)."""
         self._logger.error(message)
         self._error_logger.error(message)
 
-    def critical(self, message: str, module: str = "", line: int = 0) -> None:
+    def critical(self, message: str) -> None:
         """Log critical message."""
         self._logger.critical(message)
         self._error_logger.critical(message)

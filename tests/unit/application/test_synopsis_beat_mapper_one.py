@@ -39,17 +39,19 @@ _ACTIVE_SCENARIO = "La casa de campo de la abuela María"
 
 _ANCHORS = NarrativeAnchors(
     story_id=uuid.uuid4(),
-    initial_state="Irene llega tranquila, sin sospechar nada.",
-    threat_nature="Una presencia que imita a los conocidos.",
-    horror_peak="La figura de María inmóvil en el claro.",
-    spatial_anchor="Monte de los Espinillos: espinillos, barro, relámpagos.",
+    resonance_hamartia="Irene llega tranquila, sin sospechar nada.",
+    resonance_hybris="Una presencia que imita a los conocidos.",
+    resonance_anagnorisis="La figura de María inmóvil en el claro.",
+    resonance_peripeteia="Monte de los Espinillos: espinillos, barro, relámpagos.",
+    resonance_residual="Irene ya no puede cerrar los ojos sin ver el claro.",
 )
 
 
 def _beat_anchors(beat_id: int) -> dict:
-    from src.domain.models import resolve_beat_anchors
-    builder = PromptBuilder()
-    return resolve_beat_anchors(_ANCHORS, beat_id, builder._beats_spec)
+    from unittest.mock import MagicMock
+    from src.application.services.story_analyst_service import StoryAnalystService
+    analyst = StoryAnalystService(MagicMock(), PromptBuilder())
+    return analyst.resolve_beat_anchors(_ANCHORS, beat_id)
 
 
 def _make_llm(text: str):
@@ -106,24 +108,25 @@ class TestMapOnePromptContent:
         assert "climax" in prompt.lower() or "clim" in prompt.lower()
 
     @pytest.mark.asyncio
-    async def test_prompt_contains_anchor_principal(self):
-        """B1 — prompt contiene el valor del anclaje principal."""
+    async def test_prompt_contains_resonance_value(self):
+        """B1 — prompt contiene el valor de resonancia del pilar."""
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         anchors = _beat_anchors(1)
         await mapper.map_one(_make_story(), 1, anchors, active_scenario_description=_ACTIVE_SCENARIO)
         prompt = llm.generate.call_args.kwargs["prompt"]
-        assert anchors["principal"] in prompt
+        assert anchors["resonance"] in prompt
 
     @pytest.mark.asyncio
-    async def test_prompt_contains_anchor_contexto(self):
-        """B1 — prompt contiene el valor del anclaje de contexto."""
+    async def test_prompt_does_not_crash_without_contexto(self):
+        """B1 — el prompt se genera sin error aunque no haya contexto (Spec-081)."""
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         anchors = _beat_anchors(1)
+        # No debe lanzar excepción
         await mapper.map_one(_make_story(), 1, anchors, active_scenario_description=_ACTIVE_SCENARIO)
         prompt = llm.generate.call_args.kwargs["prompt"]
-        assert anchors["contexto"] in prompt
+        assert len(prompt) > 0
 
     @pytest.mark.asyncio
     async def test_prompt_contains_prev_snapshot(self):
@@ -217,3 +220,70 @@ class TestMapOneActiveScenario:
             active_scenario_description=_ACTIVE_SCENARIO,
         )
         assert result.active_scenario_id == _ACTIVE_SCENARIO
+
+
+class TestParseMapOneResponseRobustness:
+    """Regresión: bugs detectados en debug del pipeline real (2026-04-25)."""
+
+    def _make_mapper(self):
+        llm = _make_llm("")
+        return SynopsisBeatMapper(llm, PromptBuilder())
+
+    def test_typo_escenarion_reconocido(self):
+        """El parser acepta ESCENARION: (N extra) como variante del header."""
+        text = (
+            "ESCENARION: Casa de la abuela María\n\n"
+            "EVENTOS:\n"
+            "- La familia llega temprano.\n"
+            "- Irene nota algo extraño.\n"
+        )
+        mapper = self._make_mapper()
+        summary, scenario = mapper.beat_parser.parse_map_one_response(text, 1, [])
+        assert scenario == "Casa de la abuela María"
+        assert "La familia llega temprano." in summary
+
+    def test_segundo_bloque_escenario_no_contamina_eventos(self):
+        """Cuando el LLM incluye un segundo bloque ESCENARIO:, el parser se detiene."""
+        text = (
+            "ESCENARIO: Casa de la abuela María\n\n"
+            "EVENTOS:\n"
+            "- La familia llega.\n"
+            "- Irene percibe inquietud.\n\n"
+            "ESCENARIO: Monte de los espinillos\n\n"
+            "EVENTOS:\n"
+            "- Un laberinto siniestro.\n"
+            "- Apariciones en la oscuridad.\n"
+        )
+        mapper = self._make_mapper()
+        summary, scenario = mapper.beat_parser.parse_map_one_response(text, 1, [])
+        assert "laberinto" not in summary.lower()
+        assert "monte" not in summary.lower()
+        assert "La familia llega." in summary
+
+    def test_segundo_bloque_escenarion_typo_tampoco_contamina(self):
+        """Variante con ESCENARION: (typo) como segundo bloque — también se detiene."""
+        text = (
+            "ESCENARIO: Casa de la abuela María\n\n"
+            "EVENTOS:\n"
+            "- La familia llega.\n\n"
+            "ESCENARION: Monte de los espinillos\n\n"
+            "EVENTOS:\n"
+            "- Apariciones en el monte.\n"
+        )
+        mapper = self._make_mapper()
+        summary, _ = mapper.beat_parser.parse_map_one_response(text, 1, [])
+        assert "Apariciones en el monte." not in summary
+
+    def test_escenario_correcto_sin_contaminacion(self):
+        """Happy path: respuesta limpia de un solo bloque — OK."""
+        text = (
+            "ESCENARIO: Casa de la abuela María\n\n"
+            "EVENTOS:\n"
+            "- La familia llega temprano.\n"
+            "- Irene muestra preocupación.\n"
+            "- Ricardo mantiene postura escéptica.\n"
+        )
+        mapper = self._make_mapper()
+        summary, scenario = mapper.beat_parser.parse_map_one_response(text, 1, [])
+        assert scenario == "Casa de la abuela María"
+        assert summary.count("- ") == 0 or "La familia llega" in summary

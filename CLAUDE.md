@@ -26,7 +26,6 @@ pytest tests -v --cov=src                        # run all tests
 pytest tests/unit/application/ -v               # run a single test directory
 ruff check . && ruff format .                    # lint + format
 ./scripts/bash/init_db.sh                        # initialize SQLite database
-./scripts/bash/migrate_038.sh                    # migración Spec-038 (beat → macro_beat, nuevas tablas)
 ```
 
 ## Architecture
@@ -36,7 +35,7 @@ Clean Architecture with four layers:
 ```
 domain/          → Entities (Story, MacroBeat, NarrativeAnchors, Scenario, NarrativeJournal)
                    + Interfaces (LLMProvider, Repositories)
-application/     → Use Cases (CreateStory, Director, Voz)
+application/     → Use Cases (CreateStory, Director, Voz, ListStories, GetStoryById, ListBeats, UpdateBeat)
                    + Services (PromptBuilder, MemoryJournalist, StoryAnalystService)
 infrastructure/  → Adapters (Ollama, Anthropic, Gemini, Mock)
                    + SQLite Repositories + MarkdownRenderer + DebugRenderer
@@ -65,23 +64,24 @@ Stories are broken into **5 macro-beats** following the 5-act structure defined 
 
 **Total: 17 llamadas LLM por historia** (1 analyst + 1 resolver + 5×3).
 
-### Los 4 NarrativeAnchors (estáticos, extraídos una sola vez)
+### Los 5 Pilares de Resonancia Narrativa (Spec-081, estáticos, extraídos una sola vez)
 
-| Campo | Qué captura |
-|---|---|
-| `initial_state` | Estado emocional/cognitivo del narrador al inicio |
-| `threat_nature` | Naturaleza y reglas implícitas del horror de esta historia |
-| `horror_peak` | El evento paranormal de máximo impacto |
-| `spatial_anchor` | Detalles físicos/sensoriales concretos del escenario principal |
+| Campo | Estadio Freytag | Qué captura |
+|---|---|---|
+| `resonance_hamartia` | Exposición | La grieta psicológica del narrador — vulnerabilidad preexistente |
+| `resonance_hybris` | Acción Ascendente | La Transgresión — lógica que permite cruzar la frontera |
+| `resonance_anagnorisis` | Clímax | La Violación de lo Sagrado — detalle sensorial insoportable |
+| `resonance_peripeteia` | Acción Descendente | La Trampa Espacial — el entorno como antagonista |
+| `resonance_residual` | Desenlace | La Mancha Residual — el daño observable que permanece |
 
-Cada beat recibe 2 de los 4 anchors (`principal` + `contexto`) según `anchor_priorities` en el YAML. La asignación es configuración, no decisión LLM.
+Mapeo 1:1: Beat N recibe el Pilar N del YAML. No hay `anchor_priorities`. Definición en `config/llm_narrative_definition.yaml`.
 
 ### El `narrative_context` (ensamblado determinístico)
 
 ```
 narrative_context =
     beat_spec         (del YAML: name, intent, must, must_not, arco emocional)
-  + narrative_anchors (2 anchors asignados al beat por YAML anchor_priorities)
+  + resonance         (pilar N: valor + label_voz — mapeo 1:1 Beat N → Pilar N)
   + synopsis_event    (qué ocurre en este beat, extraído por el Mapper)
   + active_scenario   (escenario activo identificado por el Mapper desde cronologic_scenarios)
   + memory_snapshot   (estado del beat anterior, del Journalist)
@@ -164,8 +164,8 @@ Prompts viven en `config/prompts_generation/` como templates Markdown:
 
 | Archivo | Rol | Descripción |
 |---|---|---|
-| `story_analyst_system_compact.md` | Analyst system | "Respondé ÚNICAMENTE con el JSON pedido." |
-| `story_analyst_compact.md` | Analyst user | Pide JSON con 4 claves: `initial_state`, `threat_nature`, `horror_peak`, `spatial_anchor` |
+| `story_analyst_system_compact.md` | Analyst system | Curador literario — define los 5 pilares aristotélicos de resonancia |
+| `story_analyst_compact.md` | Analyst user | Extrae 5 secciones `## resonance_*` (hamartia/hybris/anagnorisis/peripeteia/residual) |
 | `synopsis_mapper_system_compact.md` | Mapper system | Instrucciones para extracción extractiva |
 | `synopsis_mapper_one_compact.md` | Mapper user | Sinopsis + cronologic_scenarios + anclajes + beat spec → ESCENARIO + EVENTOS |
 | `voice_system_compact.md` | Voz system | `{relator}`, `{atmosfera}`, `{protagonistas}`, `{reglas}` — estable por historia |
@@ -213,7 +213,7 @@ SQLite via `aiosqlite` (async). Cinco tablas tras migración Spec-038:
 
 ```
 story              — metadata (title, protagonista, relator, escenarios, sinopsis, atmosfera, status)
-narrative_anchors  — NarrativeAnchors por historia (initial_state, threat_nature, horror_peak, spatial_anchor)
+narrative_anchors  — NarrativeAnchors por historia (resonance_hamartia, resonance_hybris, resonance_anagnorisis, resonance_peripeteia, resonance_residual)
 scenario           — escenarios cronológicos del input (story_id FK, order_index, name)
 macro_beat         — unidades narrativas (summary, content, status, active_scenario_id,
                      narrative_context, memory_snapshot, technical_context)

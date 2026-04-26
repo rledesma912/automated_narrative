@@ -1,7 +1,6 @@
 """Domain layer - Entities and business rules."""
 
 from src.domain.exceptions import (
-    BeatNotFoundError,
     NarrativeError,
     StoryNotFoundError,
 )
@@ -14,20 +13,21 @@ from src.domain.models import (
     Beat,
     NarrativeJournal,
     Story,
+    StoryMetadata,
     StoryPlan,
     StoryStatus,
 )
 
 __all__ = [
-    "Story",
     "Beat",
-    "StoryPlan",
-    "NarrativeJournal",
-    "StoryStatus",
-    "LLMProvider",
-    "StoryRepository",
     "BeatRepository",
+    "LLMProvider",
     "NarrativeError",
+    "NarrativeJournal",
+    "Story",
+    "StoryMetadata",
     "StoryNotFoundError",
-    "BeatNotFoundError",
+    "StoryPlan",
+    "StoryRepository",
+    "StoryStatus",
 ]

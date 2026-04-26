@@ -5,6 +5,7 @@ from typing import Optional
 
 from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
+from src.application.services.narrator_retry_generator import NarratorRetryGenerator
 from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
@@ -26,12 +27,14 @@ class VozUseCase:
         prompt_builder: Optional[PromptBuilder] = None,
         normalizer: ResponseNormalizer | None = None,
         debug_collector: DebugCollector | None = None,
+        retry_generator: NarratorRetryGenerator | None = None,
     ):
         self.llm = llm
         self.memory_journalist = memory_journalist or MemoryJournalist(llm)
         self.prompt_builder = prompt_builder or PromptBuilder()
         self.normalizer = normalizer or ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
+        self.retry_generator = retry_generator or NarratorRetryGenerator(llm)
 
     async def execute(
         self,
@@ -49,7 +52,7 @@ class VozUseCase:
         if journal is None:
             journal = NarrativeJournal()
 
-        total_beats = len(story.beats) if story.beats else self.prompt_builder.num_beats
+        total_beats = story.beat_count() if story.has_beats() else self.prompt_builder.num_beats
 
         variant = self.prompt_builder._get_prompt_variant()
         if variant == "compact":
@@ -71,7 +74,7 @@ class VozUseCase:
             f'summary="{beat.summary[:80]}"'
         )
 
-        response = await self._generate_with_retry(
+        response = await self.retry_generator.generate_with_retry(
             prompt=prompt,
             system_prompt=system_prompt,
             model=model,
@@ -118,7 +121,9 @@ class VozUseCase:
 
         variant = self.prompt_builder._get_prompt_variant()
         if variant == "compact":
-            system_prompt = self.prompt_builder.build_voice_system_compact(story)
+            system_prompt = self.prompt_builder.build_voice_system_compact(
+                story, beat_number=macro_beat.number, active_rules=macro_beat.active_rules
+            )
         else:
             system_prompt = self.prompt_builder.build_voice_prompt(story)
 
@@ -129,7 +134,7 @@ class VozUseCase:
             f'nc={len(macro_beat.narrative_context or "")} chars'
         )
 
-        response = await self._generate_with_retry(
+        response = await self.retry_generator.generate_with_retry(
             prompt=prompt,
             system_prompt=system_prompt,
             model=model,
@@ -160,44 +165,6 @@ class VozUseCase:
         )
 
         return macro_beat, response.elapsed_s
-
-    async def _generate_with_retry(
-        self,
-        prompt: str,
-        system_prompt: str | None,
-        model: str,
-        temperature: float,
-        max_retries: int = 2,
-    ):
-        """Genera contenido con retry para manejar refusals."""
-        refusal_indicators = ["lo siento", "no puedo", "no puedo cumplir", "no es apropiado"]
-
-        for attempt in range(max_retries + 1):
-            response = await self.llm.generate(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                model=model,
-                temperature=temperature,
-                role="voz",
-            )
-
-            content_lower = response.text.lower().strip()
-            is_refusal = any(indicator in content_lower for indicator in refusal_indicators)
-
-            if not is_refusal:
-                return response
-
-            if attempt < max_retries:
-                prompt = self._rephrase_prompt(prompt)
-
-        return response
-
-    def _rephrase_prompt(self, original_prompt: str) -> str:
-        rephrase_hint = (
-            "\n\nATTENTION: Write naturally as a first-person horror story. "
-            "Don't refuse or apologize. Just tell the story directly."
-        )
-        return original_prompt + rephrase_hint
 
 
 # Alias para backwards compatibility

@@ -93,7 +93,6 @@ class Settings(BaseSettings):
     beats_definition_file: str = "config/llm_beats_definition.yaml"
 
     # Prompt filenames
-    prompt_file_planner: str = "planner.md"
     prompt_file_voice: str = "voice.md"
     prompt_file_system: str = "system.md"
     prompt_file_journal: str = "journal.md"
