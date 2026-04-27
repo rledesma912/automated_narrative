@@ -17,14 +17,46 @@ class StoryStatus(str, Enum):
     FAILED = "failed"
 
 
+class BeatType(str, Enum):
+    """Función narrativa de un macro-beat (Spec-043)."""
+
+    EXPOSICION = "exposicion"
+    ACCION_ASCENDENTE = "accion_ascendente"
+    CLIMAX = "climax"
+    ACCION_DESCENDENTE = "accion_descendente"
+    DESENLACE = "desenlace"
+
+
+class RuleType(str, Enum):
+    """Categoría semántica de una regla narrativa (Spec-043)."""
+
+    PSICOLOGICA = "psicologica"
+    ENTORNO = "entorno"
+    EVENTO = "evento"
+    FENOMENO = "fenomeno"
+    ACCION_PERSONAJE = "accion_personaje"
+    INDICADOR = "indicador"
+
+
+class TypedRule(BaseModel):
+    """Regla narrativa con semántica explícita (Spec-043)."""
+
+    id: str
+    story_id: UUID4
+    content: str
+    type: Optional[RuleType] = None
+    intensity: Optional[str] = None
+
+
 class NarrativeAnchors(BaseModel):
-    """Anclajes narrativos extraídos una vez de la sinopsis global (Spec 038)."""
+    """Anclajes de resonancia narrativa extraídos de la sinopsis global (Spec 081)."""
 
     story_id: UUID4
-    initial_state: str
-    threat_nature: str
-    horror_peak: str
-    spatial_anchor: str
+    resonance_hamartia: str     # La Grieta (Acto 1)
+    resonance_hybris: str       # La Transgresión (Acto 2)
+    resonance_anagnorisis: str  # La Epifanía (Acto 3)
+    resonance_peripeteia: str   # La Claustrofobia (Acto 4)
+    resonance_residual: str     # La Mancha (Acto 5)
 
 
 class Scenario(BaseModel):
@@ -43,12 +75,26 @@ class MacroBeat(BaseModel):
     summary: str
     content: str = ""
     status: str = "pending"
-    technical_context: Optional[list[int]] = None
     created_at: datetime = Field(default_factory=datetime.now)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
+    active_rules: list[str] = []
+    active_scenario_description: str = ""
     narrative_context: Optional[str] = None
     memory_snapshot: Optional[str] = None
+    beat_type: Optional[BeatType] = None
+
+    def is_narrated(self) -> bool:
+        """True si el beat tiene prosa generada y está marcado como completado."""
+        return bool(self.content and self.status == "completed")
+
+    def is_pending(self) -> bool:
+        """True si el beat aún no fue narrado."""
+        return self.status == "pending"
+
+    def has_content(self) -> bool:
+        """True si el beat tiene contenido (independientemente del status)."""
+        return bool(self.content)
 
 
 # Alias de compatibilidad — se mantiene mientras los tests y repos migran a MacroBeat
@@ -62,6 +108,10 @@ class NarrativeJournal(BaseModel):
     unresolved_mysteries: str = ""
     physical_emotional_state: str = ""
 
+    def is_empty(self) -> bool:
+        """True si no tiene ningún campo con datos."""
+        return not (self.last_events or self.unresolved_mysteries or self.physical_emotional_state)
+
 
 class StoryPlan(BaseModel):
     """Plan maestro de la historia."""
@@ -70,6 +120,34 @@ class StoryPlan(BaseModel):
     title: str
     beats: list[Beat] = []
     created_at: datetime = Field(default_factory=datetime.now)
+
+
+class StoryMetadata(BaseModel):
+    """Value object con los datos de input del usuario (Spec 080)."""
+
+    protagonista: str
+    relator: str
+    sinopsis: str
+    atmosfera: str
+    reglas: list[str] = []
+    storyteller_config: Optional[dict] = None
+    personajes_full: list[dict] = []
+
+    @classmethod
+    def from_story(cls, story: "Story") -> "StoryMetadata":
+        return cls(
+            protagonista=story.protagonista,
+            relator=story.relator,
+            sinopsis=story.sinopsis,
+            atmosfera=story.atmosfera,
+            reglas=story.reglas,
+            storyteller_config=story.storyteller_config,
+            personajes_full=story.personajes_full,
+        )
+
+    def has_rules(self) -> bool:
+        """True si hay reglas de narrativa o configuración de narrador."""
+        return bool(self.reglas or self.storyteller_config)
 
 
 class Story(BaseModel):
@@ -81,7 +159,6 @@ class Story(BaseModel):
     relator: str
     sinopsis: str
     atmosfera: str
-    escenarios: str = ""
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
@@ -90,26 +167,49 @@ class Story(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
 
     narrative_brief: str = ""
+    storyteller_config: Optional[dict] = None
+    typed_rules: list[TypedRule] = []
+    personajes_full: list[dict] = []
 
-    protagonist: str = ""  # English mapping
-    atmosphere: str = ""   # English mapping
-    synopsis: str = ""     # English mapping
+    # -- Spec 070: comportamiento de dominio --
 
+    def has_beats(self) -> bool:
+        """True si la historia tiene al menos un beat."""
+        return bool(self.beats)
 
-def resolve_beat_anchors(
-    anchors: NarrativeAnchors,
-    macro_beat_id: int,
-    beats_spec: list[dict],
-) -> dict:
-    """Retorna los valores de anclaje principal y contexto para un macro-beat.
+    def beat_count(self) -> int:
+        """Número de beats de la historia."""
+        return len(self.beats)
 
-    Determinístico: lee anchor_priorities del YAML, no llama al LLM.
-    """
-    beat_spec = next((b for b in beats_spec if b["id"] == macro_beat_id), None)
-    if not beat_spec:
-        return {}
-    priorities = beat_spec.get("anchor_priorities", {})
-    return {
-        "principal": getattr(anchors, priorities.get("principal", ""), ""),
-        "contexto": getattr(anchors, priorities.get("contexto", ""), ""),
-    }
+    def get_pending_beats(self) -> list[Beat]:
+        """Retorna los beats que aún no fueron narrados."""
+        return [b for b in self.beats if b.is_pending()]
+
+    def get_completed_beats(self) -> list[Beat]:
+        """Retorna los beats completamente narrados."""
+        return [b for b in self.beats if b.is_narrated()]
+
+    # -- Spec 080: aggregate root --
+
+    @property
+    def metadata(self) -> StoryMetadata:
+        """Value object con los datos de input del usuario."""
+        return StoryMetadata.from_story(self)
+
+    @property
+    def has_content(self) -> bool:
+        """True si al menos un beat tiene prosa generada."""
+        return bool(self.beats) and any(b.has_content() for b in self.beats)
+
+    def get_beat_by_number(self, n: int) -> Beat | None:
+        """Retorna el beat con ese número, o None si no existe."""
+        return next((b for b in self.beats if b.number == n), None)
+
+    def get_first_beat(self) -> Beat | None:
+        """Retorna el primer beat (menor número), o None si no hay beats."""
+        return min(self.beats, key=lambda b: b.number) if self.beats else None
+
+    def get_last_beat(self) -> Beat | None:
+        """Retorna el último beat (mayor número), o None si no hay beats."""
+        return max(self.beats, key=lambda b: b.number) if self.beats else None
+

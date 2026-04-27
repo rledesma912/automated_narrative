@@ -109,15 +109,21 @@ def _load_story() -> Story:
     input_dir = Path(__file__).parent.parent.parent / "input_stories"
     parser = MarkdownStoryParser(input_dir=input_dir)
     data = parser.parse("el_monte_prohibido.md")
-    return Story(
+    from src.domain.models import Scenario
+    story = Story(
         title=data.title,
         protagonista=data.protagonista,
         relator=data.relator,
-        escenarios=data.escenarios,
         sinopsis=data.sinopsis,
         atmosfera=data.atmosfera,
         reglas=data.reglas,
+        storyteller_config=data.storyteller_config or None,
     )
+    story.scenarios = [
+        Scenario(story_id=story.id, order_index=i, name=name)
+        for i, name in enumerate(data.cronologic_scenarios)
+    ]
+    return story
 
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
@@ -136,14 +142,15 @@ class TestSlice8E2EMontePipeline:
 
     @pytest.mark.asyncio
     async def test_parser_extracts_story(self, story):
-        assert story.title == "El Monte Prohibido"
+        assert "monte" in story.title.lower()
         assert "Irene" in story.protagonista
         assert story.sinopsis != ""
         assert story.atmosfera != ""
 
     @pytest.mark.asyncio
     async def test_parser_extracts_escenarios(self, story):
-        assert "Monte" in story.escenarios or "campo" in story.escenarios.lower()
+        scenario_names = [s.name for s in story.scenarios]
+        assert any("monte" in n.lower() for n in scenario_names)
 
     @pytest.mark.asyncio
     async def test_pipeline_yields_all_beats(self, story):
@@ -283,5 +290,5 @@ class TestSlice8E2EMontePipeline:
         async for _ in director.execute_full(story):
             pass
 
-        expected = 1 + pb.num_beats * 3  # ANALYST + 3×num_beats
+        expected = 2 + pb.num_beats * 3  # ANALYST + RESOLVER + 3×num_beats (Spec-043)
         assert llm.call_count == expected

@@ -1,3 +1,4 @@
+<!-- variante: ambas | rol: journal (user) | cargado por: build_journal_prompt() -->
 # GUARDIÁN DE COHERENCIA NARRATIVA
 
 Tu misión es actuar como el "Journalist" del sistema. Después de cada beat, debes extraer y actualizar el estado narrativo para mantener coherencia entre actos.
@@ -5,7 +6,8 @@ Tu misión es actuar como el "Journalist" del sistema. Después de cada beat, de
 ## CONTEXTO DE LA HISTORIA
 
 - Título: {title}
-- Protagonistas: {protagonistas}
+- Protagonistas:
+{protagonistas}
 - Atmósfera: {atmosfera}
 
 {previous_state_section}

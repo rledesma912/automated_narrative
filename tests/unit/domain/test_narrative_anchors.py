@@ -1,114 +1,57 @@
-"""Tests Spec-038 — dominio: NarrativeAnchors, Scenario, MacroBeat, resolve_beat_anchors."""
+"""Tests Spec-081 — dominio: NarrativeAnchors (5 pilares de resonancia), MacroBeat, Scenario."""
 
 import uuid
-
-import pytest
 
 from src.domain.models import (
     Beat,
     MacroBeat,
     NarrativeAnchors,
     Scenario,
-    resolve_beat_anchors,
 )
 
 _STORY_ID = uuid.uuid4()
 
-_SAMPLE_BEATS_SPEC = [
-    {
-        "id": 1,
-        "name": "exposicion",
-        "anchor_priorities": {"principal": "initial_state", "contexto": "spatial_anchor"},
-    },
-    {
-        "id": 2,
-        "name": "accion_ascendente",
-        "anchor_priorities": {"principal": "threat_nature", "contexto": "initial_state"},
-    },
-    {
-        "id": 3,
-        "name": "climax",
-        "anchor_priorities": {"principal": "horror_peak", "contexto": "threat_nature"},
-    },
-    {
-        "id": 4,
-        "name": "accion_descendente",
-        "anchor_priorities": {"principal": "spatial_anchor", "contexto": "threat_nature"},
-    },
-    {
-        "id": 5,
-        "name": "desenlace",
-        "anchor_priorities": {"principal": "initial_state", "contexto": "threat_nature"},
-    },
-]
-
 _SAMPLE_ANCHORS = NarrativeAnchors(
     story_id=_STORY_ID,
-    initial_state="Irene llega tranquila, esperando un día de campo sin complicaciones.",
-    threat_nature="Una presencia que imita a los conocidos para atraer hacia el monte.",
-    horror_peak="La figura de María inmóvil en el claro del monte, mirándolos.",
-    spatial_anchor="Monte de los Espinillos: espinillos bajos y cerrados, barro, relámpagos.",
+    resonance_hamartia="Irene carga con la culpa de haber dejado a su madre sola.",
+    resonance_hybris="La familia entra al monte de noche ignorando la advertencia.",
+    resonance_anagnorisis="La figura de María inmóvil en el claro del monte, mirándolos.",
+    resonance_peripeteia="Monte de los Espinillos: espinillos cerrados, barro, relámpagos sin salida.",
+    resonance_residual="Irene ya no puede cerrar los ojos sin ver el claro del monte.",
 )
 
 
-class TestResolveAnchorsBeat1:
-    """A1 — beat 1 usa initial_state como principal y spatial_anchor como contexto."""
-
-    def test_beat1_principal_is_initial_state(self):
-        result = resolve_beat_anchors(_SAMPLE_ANCHORS, 1, _SAMPLE_BEATS_SPEC)
-        assert result["principal"] == _SAMPLE_ANCHORS.initial_state
-
-    def test_beat1_contexto_is_spatial_anchor(self):
-        result = resolve_beat_anchors(_SAMPLE_ANCHORS, 1, _SAMPLE_BEATS_SPEC)
-        assert result["contexto"] == _SAMPLE_ANCHORS.spatial_anchor
-
-
-class TestResolveAnchorsBeat3:
-    """A2 — beat 3 (clímax) usa horror_peak como principal."""
-
-    def test_beat3_principal_is_horror_peak(self):
-        result = resolve_beat_anchors(_SAMPLE_ANCHORS, 3, _SAMPLE_BEATS_SPEC)
-        assert result["principal"] == _SAMPLE_ANCHORS.horror_peak
-
-    def test_beat3_contexto_is_threat_nature(self):
-        result = resolve_beat_anchors(_SAMPLE_ANCHORS, 3, _SAMPLE_BEATS_SPEC)
-        assert result["contexto"] == _SAMPLE_ANCHORS.threat_nature
-
-
-class TestResolveAnchorsEdgeCases:
-    def test_unknown_beat_id_returns_empty(self):
-        result = resolve_beat_anchors(_SAMPLE_ANCHORS, 99, _SAMPLE_BEATS_SPEC)
-        assert result == {}
-
-    def test_all_five_beats_resolve_without_error(self):
-        for beat_id in range(1, 6):
-            result = resolve_beat_anchors(_SAMPLE_ANCHORS, beat_id, _SAMPLE_BEATS_SPEC)
-            assert "principal" in result
-            assert "contexto" in result
-            assert result["principal"] != ""
-            assert result["contexto"] != ""
-
-
 class TestNarrativeAnchors:
-    """A3 — NarrativeAnchors tiene los 4 campos no vacíos."""
+    """A3 — NarrativeAnchors tiene los 5 campos de resonancia narrativa (Spec-081)."""
 
     def test_all_fields_populated(self):
-        assert _SAMPLE_ANCHORS.initial_state != ""
-        assert _SAMPLE_ANCHORS.threat_nature != ""
-        assert _SAMPLE_ANCHORS.horror_peak != ""
-        assert _SAMPLE_ANCHORS.spatial_anchor != ""
+        assert _SAMPLE_ANCHORS.resonance_hamartia != ""
+        assert _SAMPLE_ANCHORS.resonance_hybris != ""
+        assert _SAMPLE_ANCHORS.resonance_anagnorisis != ""
+        assert _SAMPLE_ANCHORS.resonance_peripeteia != ""
+        assert _SAMPLE_ANCHORS.resonance_residual != ""
 
     def test_constructed_from_dict(self):
         data = {
             "story_id": str(_STORY_ID),
-            "initial_state": "Estado inicial",
-            "threat_nature": "Naturaleza amenaza",
-            "horror_peak": "Pico de horror",
-            "spatial_anchor": "Anclaje espacial",
+            "resonance_hamartia": "La grieta del narrador",
+            "resonance_hybris": "La transgresión",
+            "resonance_anagnorisis": "El detalle que no puede ser",
+            "resonance_peripeteia": "El entorno como trampa",
+            "resonance_residual": "La mancha que permanece",
         }
         anchors = NarrativeAnchors(**data)
-        assert anchors.initial_state == "Estado inicial"
-        assert anchors.horror_peak == "Pico de horror"
+        assert anchors.resonance_hamartia == "La grieta del narrador"
+        assert anchors.resonance_residual == "La mancha que permanece"
+
+    def test_story_id_is_preserved(self):
+        assert _SAMPLE_ANCHORS.story_id == _STORY_ID
+
+    def test_each_pillar_maps_to_freytag_beat(self):
+        """Cada pilar corresponde a un estadio de Freytag."""
+        # beat 1 = hamartia (Exposición), beat 5 = residual (Desenlace)
+        assert "culpa" in _SAMPLE_ANCHORS.resonance_hamartia
+        assert "monte" in _SAMPLE_ANCHORS.resonance_residual
 
 
 class TestMacroBeatNewFields:

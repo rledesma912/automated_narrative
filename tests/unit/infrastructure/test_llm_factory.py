@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
 
 from src.infrastructure.adapters import AnthropicAdapter, GeminiCLIAdapter, MockLLMAdapter, OllamaAdapter
 from src.infrastructure.factories import LLMFactory

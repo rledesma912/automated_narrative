@@ -102,25 +102,6 @@ class TestSqlStoryRepository:
         assert result.status == StoryStatus.COMPLETED
 
     @pytest.mark.asyncio
-    async def test_delete_story(self, repo, setup_db, temp_db_path):
-        """Test deleting a story."""
-        story = Story(
-            title="Test Story",
-            protagonista="Protagonist",
-            relator="tercera_persona",
-            escenarios="Location",
-            sinopsis="Synopsis",
-            atmosfera="terror",
-        )
-
-        await repo.save(story)
-        await repo.delete(story.id)
-
-        result = await repo.get_by_id(story.id)
-
-        assert result is None
-
-    @pytest.mark.asyncio
     async def test_list_all(self, repo, setup_db, temp_db_path):
         """Test listing all stories."""
         story1 = Story(

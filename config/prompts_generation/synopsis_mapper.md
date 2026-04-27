@@ -1,3 +1,4 @@
+<!-- variante: frontier | rol: mapper (user, map global) | cargado por: build_synopsis_mapper_prompt() -->
 # TAREA DEL DRAMATURGO
 
 Analizas sinopsis narrativas e identificas qué ocurre en cada momento del arco

@@ -23,12 +23,24 @@ async def init_db() -> None:
             title TEXT NOT NULL,
             protagonista TEXT,
             relator TEXT,
-            escenarios TEXT,
             sinopsis TEXT,
             atmosfera TEXT,
             narrative_brief TEXT DEFAULT '',
+            storyteller_config TEXT,
+            personajes TEXT DEFAULT '[]',
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS rule (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL,
+            content TEXT NOT NULL,
+            type TEXT,
+            intensity TEXT,
+            FOREIGN KEY (story_id) REFERENCES story(id)
         )
     """)
 
@@ -42,11 +54,23 @@ async def init_db() -> None:
             status TEXT DEFAULT 'pending',
             technical_context TEXT,
             active_scenario_id TEXT REFERENCES scenario(id),
+            active_scenario_description TEXT,
             narrative_context TEXT,
             memory_snapshot TEXT,
+            type TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id),
             UNIQUE(story_id, number)
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS macro_beat_rule (
+            macro_beat_id INTEGER NOT NULL,
+            rule_id TEXT NOT NULL,
+            PRIMARY KEY (macro_beat_id, rule_id),
+            FOREIGN KEY (macro_beat_id) REFERENCES macro_beat(id) ON DELETE CASCADE,
+            FOREIGN KEY (rule_id) REFERENCES rule(id) ON DELETE CASCADE
         )
     """)
 
@@ -62,13 +86,15 @@ async def init_db() -> None:
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS narrative_anchors (
             id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL UNIQUE REFERENCES story(id),
-            initial_state TEXT NOT NULL,
-            threat_nature TEXT NOT NULL,
-            horror_peak TEXT NOT NULL,
-            spatial_anchor TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
+            story_id TEXT NOT NULL REFERENCES story(id),
+            resonance_hamartia TEXT NOT NULL,
+            resonance_hybris TEXT NOT NULL,
+            resonance_anagnorisis TEXT NOT NULL,
+            resonance_peripeteia TEXT NOT NULL,
+            resonance_residual TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
     """)
 
     await conn.execute("""

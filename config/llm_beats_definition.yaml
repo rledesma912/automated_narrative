@@ -1,15 +1,17 @@
 beats_spec:
-  version: "2.0"
+  version: "3.0"
   granularity: "5_actos"
+
+  # Spec-081: se elimina anchor_priorities. Cada beat recibe la resonancia N
+  # definida en llm_narrative_definition.yaml mediante mapeo 1:1 (Beat N → Pilar N).
 
   macro_beats:
 
     - id: 1
       name: "exposicion"
-      intent: "establecer normalidad y sembrar una fisura"
-      anchor_priorities:
-        principal: "initial_state"
-        contexto: "spatial_anchor"
+      word_limit: "entre 380 y 420 palabras"
+      intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
+      intensity: baja
       must:
         - "presentar situacion base del narrador"
         - "introducir una anomalia sutil"
@@ -24,10 +26,9 @@ beats_spec:
 
     - id: 2
       name: "accion_ascendente"
+      word_limit: "entre 360 y 440 palabras"
       intent: "activar el conflicto mediante transgresion"
-      anchor_priorities:
-        principal: "threat_nature"
-        contexto: "initial_state"
+      intensity: media
       must:
         - "romper la regla o ignorar la advertencia"
         - "mostrar un evento anomalo concreto"
@@ -42,10 +43,9 @@ beats_spec:
 
     - id: 3
       name: "climax"
+      word_limit: "entre 430 y 530 palabras"
       intent: "forzar reconocimiento del horror"
-      anchor_priorities:
-        principal: "horror_peak"
-        contexto: "threat_nature"
+      intensity: alta
       must:
         - "invalidar explicacion racional"
         - "mostrar amenaza o presencia directa"
@@ -59,15 +59,14 @@ beats_spec:
 
     - id: 4
       name: "accion_descendente"
+      word_limit: "entre 320 y 350 palabras"
       intent: "llevar al protagonista al colapso y reaccion"
-      anchor_priorities:
-        principal: "spatial_anchor"
-        contexto: "threat_nature"
+      intensity: media
       must:
         - "perdida de control o desorientacion"
         - "intento de escape o respuesta (instinto, fe, memoria)"
       must_not:
-        - "resolver el conflicto facilmente"
+        - "resolución fácil del conflicto"
       state_change:
         from: "reconocimiento"
         to: "desesperacion"
@@ -76,13 +75,13 @@ beats_spec:
 
     - id: 5
       name: "desenlace"
-      intent: "cerrar con escape incompleto y secuela"
-      anchor_priorities:
-        principal: "initial_state"
-        contexto: "threat_nature"
+      word_limit: "entre 100 y 150 palabras (máxima brevedad emocional)"
+      intent: "cerrar con brevedad emocional, escape incompleto y secuela"
+      intensity: muy_baja
       must:
-        - "salida o alejamiento del peligro"
+        - "salida rapida o alejamiento del peligro"
         - "marca persistente o evidencia ambigua"
+        - "reflexion final corta y contundente"
       must_not:
         - "cerrar completamente el misterio"
       state_change:

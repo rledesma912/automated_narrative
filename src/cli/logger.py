@@ -20,10 +20,12 @@ class NarrativeLogger:
     def _setup_loggers(self) -> None:
         """Configura los loggers."""
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        today = datetime.now().strftime("%Y%m%d")
+        now = datetime.now()
+        today = now.strftime("%Y%m%d")
+        turno = "am" if now.hour < 12 else "pm"
 
-        main_log = self.log_dir / f"narrative-{today}.log"
-        error_log = self.log_dir / f"narrative-error-{today}.log"
+        main_log = self.log_dir / f"narrative-{today}-{turno}.log"
+        error_log = self.log_dir / f"narrative-error-{today}_{turno}.log"
 
         formatter = logging.Formatter(
             "[%(asctime)s] [%(levelname)s] %(message)s",
@@ -67,24 +69,24 @@ class NarrativeLogger:
         error_handler.setFormatter(formatter)
         self._error_logger.addHandler(error_handler)
 
-    def debug(self, message: str, module: str = "", line: int = 0) -> None:
+    def debug(self, message: str) -> None:
         """Log debug message."""
         self._logger.debug(message)
 
-    def info(self, message: str, module: str = "", line: int = 0) -> None:
+    def info(self, message: str) -> None:
         """Log info message."""
         self._logger.info(message)
 
-    def warning(self, message: str, module: str = "", line: int = 0) -> None:
+    def warning(self, message: str) -> None:
         """Log warning message."""
         self._logger.warning(message)
 
-    def error(self, message: str, module: str = "", line: int = 0) -> None:
+    def error(self, message: str) -> None:
         """Log error message (both to file and error file)."""
         self._logger.error(message)
         self._error_logger.error(message)
 
-    def critical(self, message: str, module: str = "", line: int = 0) -> None:
+    def critical(self, message: str) -> None:
         """Log critical message."""
         self._logger.critical(message)
         self._error_logger.critical(message)

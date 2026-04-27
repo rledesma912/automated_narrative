@@ -5,13 +5,6 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from src.application.services import PromptBuilder
-from src.config import settings
-from src.application.use_cases import (
-    CreateStoryUseCase,
-    DirectorUseCase,
-    VozUseCase,
-)
 from src.cli.exceptions import (
     ExportError,
     GenerationError,
@@ -20,11 +13,9 @@ from src.cli.exceptions import (
     ValidationError,
 )
 from src.cli.logger import logger
-from src.cli.progress import ProgressReporter
-from src.core.orchestrator import StoryRunner
+from src.config import settings
+from src.infrastructure.container import CLIContainer
 from src.infrastructure.database.connection import init_db
-from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
-from src.infrastructure.factories import LLMFactory
 from src.infrastructure.renderers import MarkdownRenderer
 
 
@@ -66,9 +57,18 @@ def generate(
     input_file: str | None = None,
     provider: str | None = None,
     debug: bool = False,
+    hasta: str | None = None,
 ) -> None:
-    """Generate complete story with plan and narrated beats."""
+    """Generate complete story with plan and narrated beats.
+
+    Args:
+        hasta: Checkpoint para detener el pipeline (Spec-040).
+            Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
+    """
     reglas: list[str] = []
+    storyteller_config: dict | None = None
+    typed_rules: list[dict] = []
+    personajes_full: list[dict] = []
 
     if input_file:
         from src.infrastructure.parsers import MarkdownStoryParser
@@ -79,14 +79,17 @@ def generate(
         title = story_data.title
         protagonista = story_data.protagonista
         relator = story_data.relator
-        escenarios = story_data.escenarios
+        escenarios = story_data.cronologic_scenarios
         sinopsis = story_data.sinopsis
         atmosfera = story_data.atmosfera
         reglas = story_data.reglas
+        storyteller_config = story_data.storyteller_config or None
+        typed_rules = story_data.typed_rules
+        personajes_full = story_data.personajes_full
 
-        logger.info(f"[COMANDOS] Cargando historia desde: {input_file}", module="commands", line=1)
+        logger.info(f"[COMANDOS] Cargando historia desde: {input_file}")
 
-    logger.info(f"[COMANDOS] Iniciando generación de historia: {title}", module="commands", line=1)
+    logger.info(f"[COMANDOS] Iniciando generación de historia: {title}")
 
     try:
         import asyncio
@@ -104,15 +107,19 @@ def generate(
                 provider,
                 reglas,
                 debug=debug,
+                hasta=hasta,
+                storyteller_config=storyteller_config,
+                typed_rules=typed_rules,
+                personajes_full=personajes_full,
             )
         )
     except OllamaConnectionError:
         raise
     except Exception as e:
-        logger.error(f"[COMANDOS] Error en la generación: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        logger.error(f"[COMANDOS] Error en la generación: {e}")
+        raise GenerationError(str(e)) from e
 
-    logger.info(f"[COMANDOS] Generación de historia completada: {title}", module="commands", line=1)
+    logger.info(f"[COMANDOS] Generación de historia completada: {title}")
 
 
 async def _generate_async(
@@ -127,37 +134,20 @@ async def _generate_async(
     provider: str | None = None,
     reglas: list[str] | None = None,
     debug: bool = False,
+    hasta: str | None = None,
+    storyteller_config: dict | None = None,
+    typed_rules: list[dict] | None = None,
+    personajes_full: list[dict] | None = None,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
 
-    llm = LLMFactory.get_provider(use_mock=use_mock, provider=provider)
-    story_repo = SQLStoryRepository()
-    beat_repo = SQLBeatRepository()
-    prompt_builder = PromptBuilder()
-    reporter = ProgressReporter()
+    container = CLIContainer(use_mock=use_mock, provider=provider, debug=debug)
+    runner = container.story_runner(output_dir)
 
-    reporter.start(title)
-    reporter.config_summary(
-        model=settings.llm_model,
-        director_t=settings.director_temperature,
-        voz_t=settings.voz_temperature,
-        journal_t=settings.state_extractor_temperature,
-    )
+    container.reporter.start(title)
+    container.reporter.config_summary(profile=settings.active_profile_name)
     t_total = time.perf_counter()
-
-    from src.application.services.debug_collector import DebugCollector, NullDebugCollector
-    collector = DebugCollector() if debug else NullDebugCollector()
-
-    runner = StoryRunner(
-        llm_adapter=llm,
-        story_repo=story_repo,
-        beat_repo=beat_repo,
-        prompt_builder=prompt_builder,
-        output_dir=output_dir,
-        reporter=reporter,
-        debug_collector=collector,
-    )
 
     story = await runner.run_full(
         title=title,
@@ -167,14 +157,17 @@ async def _generate_async(
         sinopsis=sinopsis,
         atmosfera=atmosfera,
         reglas=reglas or [],
+        stop_after=hasta,
+        storyteller_config=storyteller_config,
+        typed_rules=typed_rules or [],
+        personajes_full=personajes_full or [],
     )
 
     t_export = time.perf_counter()
     output_path = _write_markdown(story, output_dir)
-    reporter.export_done(time.perf_counter() - t_export)
-
-    reporter.done(time.perf_counter() - t_total, output_path)
-    logger.info(f"[COMANDOS] Historia exportada a: {output_path}", module="commands", line=1)
+    container.reporter.export_done(time.perf_counter() - t_export)
+    container.reporter.done(time.perf_counter() - t_total, output_path)
+    logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
 
 
 def plan(
@@ -184,17 +177,17 @@ def plan(
     provider: str | None = None,
 ) -> None:
     """Generate only the story plan (beats)."""
-    logger.info(f"[COMANDOS] Iniciando generación de plan: {title}", module="commands", line=1)
+    logger.info(f"[COMANDOS] Iniciando generación de plan: {title}")
 
     try:
         import asyncio
 
         asyncio.run(_plan_async(title, use_mock, output_dir, provider))
     except Exception as e:
-        logger.error(f"[COMANDOS] Error al generar el plan: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        logger.error(f"[COMANDOS] Error al generar el plan: {e}")
+        raise GenerationError(str(e)) from e
 
-    logger.info(f"[COMANDOS] Generación de plan completada: {title}", module="commands", line=1)
+    logger.info(f"[COMANDOS] Generación de plan completada: {title}")
 
 
 async def _plan_async(
@@ -206,12 +199,9 @@ async def _plan_async(
     """Async implementation of plan."""
     await _init_database()
 
-    llm = LLMFactory.get_provider(use_mock=use_mock, provider=provider)
-    story_repo = SQLStoryRepository()
-    prompt_builder = PromptBuilder()
-
-    create_story = CreateStoryUseCase(story_repo)
-    create_plan = DirectorUseCase(llm, prompt_builder)
+    container = CLIContainer(use_mock=use_mock, provider=provider)
+    create_story = container.create_story_use_case()
+    create_plan = container.director_use_case()
 
     story = await create_story.execute(
         title=title,
@@ -222,8 +212,8 @@ async def _plan_async(
         atmosfera="",
     )
 
-    plan = await create_plan.execute(story)
-    logger.info(f"[COMANDOS] Se han generado {len(plan.beats)} beats", module="commands", line=1)
+    plan_result = await create_plan.execute(story)
+    logger.info(f"[COMANDOS] Se han generado {len(plan_result.beats)} beats")
 
 
 def narrate(
@@ -233,9 +223,7 @@ def narrate(
     provider: str | None = None,
 ) -> None:
     """Narrate specific beats from an existing story."""
-    logger.info(
-        f"[COMANDOS] Iniciando narración para historia: {story_id}", module="commands", line=1
-    )
+    logger.info(f"[COMANDOS] Iniciando narración para historia: {story_id}")
 
     try:
         import asyncio
@@ -244,12 +232,10 @@ def narrate(
     except StoryNotFoundError:
         raise
     except Exception as e:
-        logger.error(f"[COMANDOS] Error en la narración: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        logger.error(f"[COMANDOS] Error en la narración: {e}")
+        raise GenerationError(str(e)) from e
 
-    logger.info(
-        f"[COMANDOS] Narración completada para historia: {story_id}", module="commands", line=1
-    )
+    logger.info(f"[COMANDOS] Narración completada para historia: {story_id}")
 
 
 async def _narrate_async(
@@ -266,10 +252,9 @@ async def _narrate_async(
     except ValueError:
         raise ValidationError(f"Formato de UUID inválido: {story_id}")
 
-    story_repo = SQLStoryRepository()
-    beat_repo = SQLBeatRepository()
+    container = CLIContainer(use_mock=use_mock, provider=provider)
 
-    story = await story_repo.get_by_id(story_uuid)
+    story = await container.story_repo.get_by_id(story_uuid)
     if not story:
         raise StoryNotFoundError(story_id)
 
@@ -277,20 +262,18 @@ async def _narrate_async(
     if not beat_list:
         raise ValidationError(f"Formato de beats inválido: {beats_csv}")
 
-    all_beats = await beat_repo.get_by_story(story_uuid)
+    all_beats = await container.beat_repo.get_by_story(story_uuid)
     beats_to_narrate = [b for b in all_beats if b.number in beat_list]
 
     if not beats_to_narrate:
         raise ValidationError("No se encontraron beats que coincidan con la selección")
 
-    llm = LLMFactory.get_provider(use_mock=use_mock, provider=provider)
-    narrate_beat = VozUseCase(llm)
-
+    narrate_beat = container.voz_use_case()
     for beat in beats_to_narrate:
-        logger.info(f"[COMANDOS] Narrando beat #{beat.number}", module="commands", line=1)
+        logger.info(f"[COMANDOS] Narrando beat #{beat.number}")
         generated_beat, _, _ = await narrate_beat.execute(story, beat)
-        await beat_repo.save(generated_beat, story_uuid)
-        logger.info(f"[COMANDOS] Beat #{beat.number} completado", module="commands", line=1)
+        await container.beat_repo.save(generated_beat, story_uuid)
+        logger.info(f"[COMANDOS] Beat #{beat.number} completado")
 
 
 def generate_from_db(
@@ -301,25 +284,23 @@ def generate_from_db(
     debug: bool = False,
 ) -> None:
     """Generate story from existing DB entry."""
-    logger.info(
-        f"[COMANDOS] Iniciando generación desde BD para historia: {story_id}",
-        module="commands",
-        line=1,
-    )
+    logger.info(f"[COMANDOS] Iniciando generación desde BD para historia: {story_id}")
 
     try:
         import asyncio
 
-        asyncio.run(_generate_from_db_async(story_id, use_mock, output_dir, provider, debug=debug))
+        asyncio.run(
+            _generate_from_db_async(story_id, use_mock, output_dir, provider, debug=debug)
+        )
     except StoryNotFoundError:
         raise
     except OllamaConnectionError:
         raise
     except Exception as e:
-        logger.error(f"[COMANDOS] Error en la generación desde BD: {e}", module="commands", line=1)
-        raise GenerationError(str(e))
+        logger.error(f"[COMANDOS] Error en la generación desde BD: {e}")
+        raise GenerationError(str(e)) from e
 
-    logger.info(f"[COMANDOS] Generación desde BD completada: {story_id}", module="commands", line=1)
+    logger.info(f"[COMANDOS] Generación desde BD completada: {story_id}")
 
 
 async def _generate_from_db_async(
@@ -332,41 +313,23 @@ async def _generate_from_db_async(
     """Async implementation of generate_from_db."""
     await _init_database()
 
-    story_repo = SQLStoryRepository()
-    story = await story_repo.get_by_string_id(story_id)
+    container = CLIContainer(use_mock=use_mock, provider=provider, debug=debug)
 
+    story = await container.story_repo.get_by_string_id(story_id)
     if not story:
         raise StoryNotFoundError(story_id)
 
-    llm = LLMFactory.get_provider(use_mock=use_mock, provider=provider)
-    beat_repo = SQLBeatRepository()
-    prompt_builder = PromptBuilder()
-    reporter = ProgressReporter()
-
-    reporter.start(story.title)
+    runner = container.story_runner(output_dir)
+    container.reporter.start(story.title)
     t_total = time.perf_counter()
-
-    from src.application.services.debug_collector import DebugCollector, NullDebugCollector
-    collector = DebugCollector() if debug else NullDebugCollector()
-
-    runner = StoryRunner(
-        llm_adapter=llm,
-        story_repo=story_repo,
-        beat_repo=beat_repo,
-        prompt_builder=prompt_builder,
-        output_dir=output_dir,
-        reporter=reporter,
-        debug_collector=collector,
-    )
 
     story = await runner.run_from_story(story)
 
     t_export = time.perf_counter()
     output_path = _write_markdown(story, output_dir)
-    reporter.export_done(time.perf_counter() - t_export)
-
-    reporter.done(time.perf_counter() - t_total, output_path)
-    logger.info(f"[COMANDOS] Historia exportada a: {output_path}", module="commands", line=1)
+    container.reporter.export_done(time.perf_counter() - t_export)
+    container.reporter.done(time.perf_counter() - t_total, output_path)
+    logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
 
 
 def export_(
@@ -376,9 +339,7 @@ def export_(
     provider: str | None = None,  # noqa: ARG001
 ) -> None:
     """Export story to file."""
-    logger.info(
-        f"[COMANDOS] Iniciando exportación para historia: {story_id}", module="commands", line=1
-    )
+    logger.info(f"[COMANDOS] Iniciando exportación para historia: {story_id}")
 
     try:
         import asyncio
@@ -387,12 +348,10 @@ def export_(
     except StoryNotFoundError:
         raise
     except Exception as e:
-        logger.error(f"[COMANDOS] Error en la exportación: {e}", module="commands", line=1)
+        logger.error(f"[COMANDOS] Error en la exportación: {e}")
         raise ExportError(str(e))
 
-    logger.info(
-        f"[COMANDOS] Exportación completada para historia: {story_id}", module="commands", line=1
-    )
+    logger.info(f"[COMANDOS] Exportación completada para historia: {story_id}")
 
 
 async def _export_async(
@@ -408,15 +367,13 @@ async def _export_async(
     except ValueError:
         raise ValidationError(f"Formato de UUID inválido: {story_id}")
 
-    story_repo = SQLStoryRepository()
-    beat_repo = SQLBeatRepository()
+    container = CLIContainer()
 
-    story = await story_repo.get_by_id(story_uuid)
+    story = await container.story_repo.get_by_id(story_uuid)
     if not story:
         raise StoryNotFoundError(story_id)
 
-    beats = await beat_repo.get_by_story(story_uuid)
-
+    beats = await container.beat_repo.get_by_story(story_uuid)
     story.beats = beats
     output_path = _write_markdown(story, output_dir)
-    logger.info(f"[COMANDOS] Historia exportada a: {output_path}", module="commands", line=1)
+    logger.info(f"[COMANDOS] Historia exportada a: {output_path}")

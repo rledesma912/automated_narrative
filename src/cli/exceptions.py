@@ -1,7 +1,7 @@
 """CLI Exceptions for NarrativeForge."""
 
 
-class CLIError(BaseException):
+class CLIError(Exception):
     """Base exception for CLI errors."""
 
     def __init__(self, message: str, exit_code: int = 1):

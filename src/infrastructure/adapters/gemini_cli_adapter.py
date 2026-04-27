@@ -24,6 +24,7 @@ class GeminiCLIAdapter:
         model: str | None = None,
         temperature: float | None = None,
         role: str | None = None,
+        **kwargs,
     ) -> LLMResponse:
         """
         Genera texto ejecutando el comando CLI de Gemini.

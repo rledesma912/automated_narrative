@@ -37,10 +37,11 @@ def _make_story(**kw):
 def _make_anchors(story_id=None):
     return NarrativeAnchors(
         story_id=story_id or uuid.uuid4(),
-        initial_state="Irene llega tranquila.",
-        threat_nature="Una presencia imitadora.",
-        horror_peak="La figura inmóvil en el claro.",
-        spatial_anchor="Monte: espinillos, barro, relámpagos.",
+        resonance_hamartia="Irene llega tranquila.",
+        resonance_hybris="Una presencia imitadora.",
+        resonance_anagnorisis="La figura inmóvil en el claro.",
+        resonance_peripeteia="Monte: espinillos, barro, relámpagos.",
+        resonance_residual="Irene ya no puede cerrar los ojos.",
     )
 
 
@@ -274,7 +275,7 @@ class TestDirectorExecuteFullLoop:
             patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
             patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
         ):
-            results = [item async for item in director.execute_full(story)]
+            [item async for item in director.execute_full(story)]
 
         # map_one se llamó num_beats veces
         assert mock_mapper.map_one.call_count == num_beats
@@ -330,9 +331,9 @@ class TestDirectorExecuteFullLoop:
         assert fired[0] == num_beats
 
     @pytest.mark.asyncio
-    async def test_cronologic_scenarios_from_escenarios_string(self):
-        """Si story.scenarios está vacío, deriva cronologic_scenarios de escenarios string."""
-        story = _make_story(escenarios="Monte / Casa / Camino")
+    async def test_active_scenario_description_passed_to_map_one(self):
+        """El director pasa active_scenario_description a cada map_one() call."""
+        story = _make_story()
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
@@ -348,5 +349,4 @@ class TestDirectorExecuteFullLoop:
                 pass
 
         first_call = mock_mapper.map_one.call_args_list[0]
-        cronologic = first_call.kwargs.get("cronologic_scenarios")
-        assert cronologic == ["Monte", "Casa", "Camino"]
+        assert "active_scenario_description" in first_call.kwargs

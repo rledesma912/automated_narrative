@@ -1,0 +1,63 @@
+version: "1.0"
+
+# Fuente de verdad para los 5 Pilares de Resonancia Narrativa (Spec-081).
+# Cada pilar mapea 1:1 con un beat de la Pirámide de Freytag.
+# StoryAnalystService carga estas claves dinámicamente — no hay hardcoding en Python.
+
+resonance_pillars:
+
+  - beat: 1
+    field: "resonance_hamartia"
+    concept: "El Espejo Fisurado"
+    description: >
+      La vulnerabilidad psicológica del protagonista que el horror explotará.
+      No el estado genérico de tranquilidad — la grieta específica que ya existía antes.
+    guia_extraccion: >
+      ¿Qué fisura emocional o psicológica tiene el narrador? Buscá el subtexto:
+      la culpa no confesada, el miedo que niega, la herida que calla. Eso, no la descripción del personaje.
+    label_voz: "RESONANCIA (El Espejo Fisurado — la grieta del narrador)"
+
+  - beat: 2
+    field: "resonance_hybris"
+    concept: "La Transgresión"
+    description: >
+      El primer momento donde la lógica cotidiana se rompe. La regla que el protagonista
+      viola o ignora, consciente o no, que abre la puerta al horror.
+    guia_extraccion: >
+      ¿Qué frontera se cruza en esta historia? No la acción en sí — la lógica que la hace posible.
+      ¿Qué debería haber detenido al protagonista y no lo detuvo? Esa imagen es la Transgresión.
+    label_voz: "RESONANCIA (La Transgresión — la frontera cruzada)"
+
+  - beat: 3
+    field: "resonance_anagnorisis"
+    concept: "La Violación de lo Sagrado"
+    description: >
+      El detalle sensorial insoportable. El punto sin vuelta atrás donde ya no queda
+      explicación racional. No la emoción — el detalle físico o sensorial concreto.
+    guia_extraccion: >
+      ¿Cuál es el instante concreto que no puede pertenecer al mundo normal?
+      No "sintió miedo" — qué vio, oyó, olió o tocó que no tenía derecho a existir.
+      Ese detalle específico es la Anagnórisis.
+    label_voz: "RESONANCIA (La Violación de lo Sagrado — el detalle que no puede ser)"
+
+  - beat: 4
+    field: "resonance_peripeteia"
+    concept: "La Trampa Espacial"
+    description: >
+      Cómo el entorno se vuelve cómplice del horror. Texturas, sonidos, encierro —
+      el espacio como antagonista activo que cierra sobre el protagonista.
+    guia_extraccion: >
+      ¿Cómo el espacio físico atrapa, desorienta o amenaza? Detalles sensoriales del entorno
+      hostil: la geometría imposible, el sonido que no corresponde, la textura que repele.
+    label_voz: "RESONANCIA (La Trampa Espacial — el entorno como cómplice)"
+
+  - beat: 5
+    field: "resonance_residual"
+    concept: "La Mancha Residual"
+    description: >
+      El daño permanente o la nueva normalidad traumática. La prueba concreta de que el
+      horror fue real y dejó marca. No "ya no soy el mismo" — el cambio observable.
+    guia_extraccion: >
+      ¿Qué queda después? No el trauma vago — la cicatriz específica. ¿Qué no puede hacer
+      ya el narrador que antes hacía? ¿Qué ve ahora que antes no veía? La Mancha es concreta.
+    label_voz: "RESONANCIA (La Mancha Residual — el daño que permanece)"

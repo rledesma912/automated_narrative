@@ -2,8 +2,10 @@
 
 import pytest
 
+from src.application.services.narrator_retry_generator import NarratorRetryGenerator
 from src.application.use_cases import VozUseCase
-from src.domain.models import Beat, NarrativeJournal, Story
+from src.domain.interfaces import LLMResponse
+from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
 from src.infrastructure.adapters import MockLLMAdapter
 
 
@@ -174,3 +176,86 @@ class TestVozUseCase:
         assert len(completed) == 6
         assert all(b.status == "completed" for b in completed)
         assert all(b.content == "Contenido narrado" for b in completed)
+
+
+class TestVozErrorPaths:
+    """Error path tests para VozUseCase."""
+
+    def _make_story(self) -> Story:
+        return Story(
+            title="Test",
+            protagonista="P",
+            relator="primera_persona",
+            escenarios="L",
+            sinopsis="S",
+            atmosfera="terror",
+        )
+
+    @pytest.mark.asyncio
+    async def test_voz_empty_response(self):
+        """LLM retorna texto vacío — beat se marca completed con content vacío."""
+        mock_llm = MockLLMAdapter(fixed_response="")
+        beat = Beat(number=1, summary="algo", status="pending")
+
+        use_case = VozUseCase(mock_llm)
+        result_beat, _, _ = await use_case.execute(self._make_story(), beat)
+
+        assert result_beat.status == "completed"
+        assert result_beat.content == ""
+
+    @pytest.mark.asyncio
+    async def test_voz_refusal_triggers_retry(self):
+        """Modelo hace refusal en primer intento — NarratorRetryGenerator reintenta."""
+        responses = ["Lo siento, no puedo escribir eso.", "El viejo molino crujía."]
+        call_count = 0
+
+        class SequentialMock:
+            async def generate(self, prompt, **kwargs):
+                nonlocal call_count
+                text = responses[min(call_count, len(responses) - 1)]
+                call_count += 1
+                return LLMResponse(text=text, context=None)
+
+            async def close(self):
+                pass
+
+        beat = Beat(number=1, summary="algo", status="pending")
+        use_case = VozUseCase(SequentialMock())
+        result_beat, _, _ = await use_case.execute(self._make_story(), beat)
+
+        assert call_count >= 2, "Debe haber reintentado al detectar refusal"
+        assert "molino" in result_beat.content
+
+    @pytest.mark.asyncio
+    async def test_voz_malformed_response_is_normalized(self):
+        """Respuesta con caracteres de encabezado markdown — normalizer los limpia."""
+        raw = "## Título indeseado\n\nTexto del relato."
+        mock_llm = MockLLMAdapter(fixed_response=raw)
+        beat = Beat(number=1, summary="algo", status="pending")
+
+        class StripHeadingsNormalizer:
+            def normalize(self, text: str, model_name: str = "") -> str:
+                import re
+                return re.sub(r"^##.*\n\n", "", text)
+
+        use_case = VozUseCase(mock_llm, normalizer=StripHeadingsNormalizer())
+        result_beat, _, _ = await use_case.execute(self._make_story(), beat)
+
+        assert not result_beat.content.startswith("##")
+        assert "Texto del relato." in result_beat.content
+
+    @pytest.mark.asyncio
+    async def test_voz_narrate_empty_response(self):
+        """narrate() con respuesta vacía — macro_beat.content queda vacío, status completed."""
+        mock_llm = MockLLMAdapter(fixed_response="")
+        macro_beat = MacroBeat(
+            number=1,
+            summary="algo",
+            status="pending",
+            narrative_context="Contexto de prueba",
+        )
+        use_case = VozUseCase(mock_llm)
+        result, _ = await use_case.narrate(macro_beat, self._make_story())
+
+        assert result.status == "completed"
+        assert result.content == ""

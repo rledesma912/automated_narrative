@@ -1,9 +1,7 @@
 """Tests para helpers de commands.py."""
 
 import re
-from pathlib import Path
 
-import pytest
 
 from src.cli.commands import _write_markdown
 from src.domain.models import Beat, Story

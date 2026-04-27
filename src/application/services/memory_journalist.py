@@ -1,14 +1,12 @@
 """MemoryJournalist - gestiona la coherencia narrativa."""
 
 import json
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
+from src.application.services.prompt_builder import PromptBuilder
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
-
-if TYPE_CHECKING:
-    from src.application.services import PromptBuilder
 
 
 class MemoryJournalist:
@@ -17,22 +15,13 @@ class MemoryJournalist:
     def __init__(
         self,
         llm: LLMProvider,
-        prompt_builder: "PromptBuilder | None" = None,
+        prompt_builder: PromptBuilder | None = None,
         debug_collector: DebugCollector | None = None,
     ):
         self.llm = llm
-        self._prompt_builder = prompt_builder
+        self.prompt_builder = prompt_builder or PromptBuilder()
         self._system_prompt_cache = None
         self.debug_collector = debug_collector or NullDebugCollector()
-
-    @property
-    def prompt_builder(self) -> "PromptBuilder":
-        """Lazy load PromptBuilder."""
-        if self._prompt_builder is None:
-            from src.application.services import PromptBuilder
-
-            self._prompt_builder = PromptBuilder()
-        return self._prompt_builder
 
     async def update_journal(
         self,
@@ -72,6 +61,8 @@ class MemoryJournalist:
             normalized_response=normalized,
             parser_result="n/a (JSON interno)",
             elapsed_s=response.elapsed_s,
+            system_prompt_file=None,
+            user_prompt_file="journal.md",
         )
 
         return self._parse_journal(response.text, previous_journal)
@@ -97,19 +88,6 @@ class MemoryJournalist:
             ensure_ascii=False,
         )
         return snapshot, journal
-
-    async def summarize_beats(self, completed_beats: list[Beat]) -> str:
-        """Resumen conciso de beats para el contexto."""
-        if not completed_beats:
-            return ""
-
-        last_3 = completed_beats[-3:]
-        parts = [f"Beat {b.number}: {b.summary}" for b in last_3]
-
-        if len(completed_beats) > 3:
-            parts.insert(0, f"[... {len(completed_beats) - 3} beats anteriores ...]")
-
-        return "\n".join(parts)
 
     def _parse_journal(self, text: str, previous: Optional[NarrativeJournal]) -> NarrativeJournal:
         """Parsea la respuesta del LLM en journal."""

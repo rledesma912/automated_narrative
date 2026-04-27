@@ -474,7 +474,7 @@ Antes de aprobar, el usuario puede (y debe) hacer preguntas al agente como:
 
 | Herramienta | Genérica | Específica del Proyecto |
 |-------------|----------|-------------------------|
-| **Agente** | Asistente de IA para análisis y código | Opencode (modelo minimax-m2.5-free) |
+| **Agente** | Asistente de IA para análisis y código | Claude Code (claude-sonnet-4-6) |
 | **Skills** | Capacidades especializadas del agente | Skills en `.opencode/skills/` |
 | **Contexto** | Documentos del proyecto | Specs, README, AGENTS.md |
 
@@ -631,7 +631,7 @@ Cuando se recibe un requerimiento, el agente debe realizar:
 |-------|-------|
 | **Versión** | 1.2.0 |
 | **Fecha de creación** | 2026-04-16 |
-| **Última actualización** | 2026-04-16 |
+| **Última actualización** | 2026-04-26 |
 | **Enfoque** | Spec-Driven Development (SDD) |
 | **Aplicabilidad** | Este proyecto y futuros proyectos |
 

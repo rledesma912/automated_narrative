@@ -7,7 +7,6 @@ Verifica:
 - El campo no aparece en llamadas que no lo tienen
 """
 
-from pathlib import Path
 
 import pytest
 

@@ -22,6 +22,8 @@ class LLMCallRecord:
     parser_result: str
     elapsed_s: float
     narrative_context: str | None = None
+    system_prompt_file: str | None = None
+    user_prompt_file: str | None = None
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -53,6 +55,8 @@ class DebugCollector:
         parser_result: str,
         elapsed_s: float,
         narrative_context: str | None = None,
+        system_prompt_file: str | None = None,
+        user_prompt_file: str | None = None,
     ) -> None:
         self.records.append(
             LLMCallRecord(
@@ -70,6 +74,8 @@ class DebugCollector:
                 parser_result=parser_result,
                 elapsed_s=elapsed_s,
                 narrative_context=narrative_context,
+                system_prompt_file=system_prompt_file,
+                user_prompt_file=user_prompt_file,
             )
         )
 

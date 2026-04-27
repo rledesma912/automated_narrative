@@ -30,10 +30,12 @@ class TestNarrativeLogger:
         from pathlib import Path
 
         logger = NarrativeLogger(log_dir=Path(temp_log_dir))
-        logger.info("Test message", module="test", line=1)
+        logger.info("Test message")
 
-        today = datetime.datetime.now().strftime("%Y%m%d")
-        log_file = Path(temp_log_dir) / f"narrative-{today}.log"
+        now = datetime.datetime.now()
+        today = now.strftime("%Y%m%d")
+        turno = "am" if now.hour < 12 else "pm"
+        log_file = Path(temp_log_dir) / f"narrative-{today}-{turno}.log"
 
         assert log_file.exists()
 
@@ -43,10 +45,12 @@ class TestNarrativeLogger:
         from pathlib import Path
 
         logger = NarrativeLogger(log_dir=Path(temp_log_dir))
-        logger.error("Error message", module="test", line=1)
+        logger.error("Error message")
 
-        today = datetime.datetime.now().strftime("%Y%m%d")
-        error_log = Path(temp_log_dir) / f"narrative-error-{today}.log"
+        now = datetime.datetime.now()
+        today = now.strftime("%Y%m%d")
+        turno = "am" if now.hour < 12 else "pm"
+        error_log = Path(temp_log_dir) / f"narrative-error-{today}_{turno}.log"
 
         assert error_log.exists()
 

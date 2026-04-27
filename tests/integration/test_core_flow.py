@@ -30,20 +30,16 @@ class TestCoreFlowWithMocks:
 - No hay reglas
 """
 
-        story_data = parser._extract_data(content, "test_story")
+        story_data = parser._extract_data_via_regex(content, "test_story")
 
-        cleaned_protagonista = parser._clean_markdown(story_data.protagonista)
-        cleaned_escenarios = parser._clean_markdown(story_data.escenarios)
-
-        assert "Juan" in cleaned_protagonista
-        assert "Maria" in cleaned_protagonista
-        assert "casa" in cleaned_escenarios.lower()
+        assert "Juan" in story_data.protagonista
+        assert "Maria" in story_data.protagonista
+        assert any("casa" in s.lower() for s in story_data.cronologic_scenarios)
 
         story = Story(
             title=story_data.title,
-            protagonista=cleaned_protagonista,
+            protagonista=story_data.protagonista,
             relator=story_data.relator,
-            escenarios=cleaned_escenarios,
             sinopsis=story_data.sinopsis,
             atmosfera="terror",
         )
@@ -116,13 +112,12 @@ class TestCoreFlowWithMocks:
 - Ricardo es escéptico
 """
 
-        story_data = parser._extract_data(content, "el_monte")
+        story_data = parser._extract_data_via_regex(content, "el_monte")
 
         story = Story(
             title=story_data.title,
             protagonista=story_data.protagonista,
             relator=story_data.relator,
-            escenarios=story_data.escenarios,
             sinopsis=story_data.sinopsis,
             atmosfera="terror psicológico",
         )

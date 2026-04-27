@@ -65,6 +65,10 @@ def main() -> None:
         help="Genera debug_prompts_responses_YYYYMMDDHHМM.md con prompts y respuestas completas",
     )
     generate_parser.add_argument(
+        "--hasta",
+        help="Checkpoint para detener el pipeline (Spec-040). Valores: analyst, mapper:1..5, voz:1..5, journal:1..5",
+    )
+    generate_parser.add_argument(
         "--output",
         type=Path,
         default=Path("output_stories/"),
@@ -130,6 +134,7 @@ def main() -> None:
                     provider=args.provider,
                     input_file=args.input,
                     debug=args.debug,
+                    hasta=args.hasta,
                 )
             else:
                 # Validación de campos obligatorios para nueva historia SIN --input
@@ -168,6 +173,7 @@ def main() -> None:
                     provider=args.provider,
                     input_file=args.input,
                     debug=args.debug,
+                    hasta=args.hasta,
                 )
         elif args.command == "plan":
             commands.plan(
@@ -188,11 +194,11 @@ def main() -> None:
                 output_dir=args.output,
             )
     except CLIError as e:
-        logger.error(f"[CLI] {e.message}", module="runner", line=1)
+        logger.error(f"[CLI] {e.message}")
         print(f"Error: {e.message}", file=sys.stderr)
         sys.exit(e.exit_code)
     except Exception as e:
-        logger.error(f"[ERROR_INESPERADO] {str(e)}", module="runner", line=1)
+        logger.error(f"[ERROR_INESPERADO] {str(e)}")
         print(f"Error inesperado: {str(e)}", file=sys.stderr)
         sys.exit(1)
 

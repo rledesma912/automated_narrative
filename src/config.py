@@ -93,10 +93,13 @@ class Settings(BaseSettings):
     beats_definition_file: str = "config/llm_beats_definition.yaml"
 
     # Prompt filenames
-    prompt_file_planner: str = "planner.md"
     prompt_file_voice: str = "voice.md"
     prompt_file_system: str = "system.md"
     prompt_file_journal: str = "journal.md"
+
+    # Prompting strategy (Spec-170): assertive | auto | descriptive
+    # Vacío = no forzado por env → se lee del perfil YAML o se usa "auto"
+    prompting_strategy: str = ""
 
     # ── Properties del perfil activo ─────────────────────────────────────────
 
@@ -104,6 +107,13 @@ class Settings(BaseSettings):
     def active_profile_name(self) -> str:
         """Nombre del perfil actualmente activo."""
         return _active_profile_name
+
+    @property
+    def effective_prompting_strategy(self) -> str:
+        """Estrategia de prompting activa: env PROMPTING_STRATEGY > perfil YAML > 'auto'."""
+        if self.prompting_strategy:
+            return self.prompting_strategy
+        return _profile.get("prompting_strategy", "auto")
 
     @property
     def llm_provider(self) -> str:
