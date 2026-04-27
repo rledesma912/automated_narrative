@@ -1,9 +1,26 @@
 """Ports (interfaces) for the domain."""
 
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from src.domain.models import Beat, Story
+
+
+@dataclass
+class AuditResult:
+    """Resultado de la auditoría de alfabetismo narrativo."""
+
+    passed: bool
+    reason: str
+    score: float = 1.0
+
+
+@runtime_checkable
+class INarrativeValidator(Protocol):
+    """Contrato para la validación de alfabetismo narrativo (Spec-170)."""
+
+    def validate(self, response: str, synopsis: str = "") -> AuditResult: ...
 
 
 class LLMResponse:

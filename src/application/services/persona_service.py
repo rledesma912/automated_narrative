@@ -1,25 +1,51 @@
-"""PersonaService — convierte relator en persona gramatical para el prompt."""
+"""PersonaService — resuelve la perspectiva gramatical del narrador."""
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PersonaService:
-    """Convierte el campo `relator` de una historia en persona gramatical."""
+    """
+    Convierte la identidad del narrador en instrucciones gramaticales.
+    
+    Prioridad:
+    1. storyteller_config['voice']['person']
+    2. storyteller_config['gender']
+    3. Mapeo directo de palabras clave en 'relator'
+    """
 
-    _FEMENINOS = {"maría", "irene", "soledad", "mariana", "ana", "laura"}
-    _MASCULINOS = {"ricardo", "mariano", "juan", "pedro", "diego"}
+    def resolve(self, relator: str, storyteller_config: dict | None = None) -> str:
+        config = storyteller_config or {}
+        voice = config.get("voice", {})
+        
+        # 1. Configuración explícita de Voz
+        person = voice.get("person")
+        if person:
+            person_map = {
+                "primera": "primera persona",
+                "segunda": "segunda persona",
+                "tercera": "tercera persona"
+            }
+            base_person = person_map.get(person.lower(), person)
+            
+            # Ajuste de género si es primera persona
+            gender = config.get("gender", "").lower()
+            if "primera" in base_person:
+                if "femenino" in gender or "mujer" in gender or "ella" in gender:
+                    return "primera persona (ella narra)"
+                if "masculino" in gender or "hombre" in gender or "él" in gender:
+                    return "primera persona (él narra)"
+            return base_person
 
-    def resolve(self, relator: str) -> str:
+        # 2. Mapeo por palabra clave en el campo relator (Fallback)
         normalized = relator.lower().strip()
-
-        if normalized in ("tercera_persona", "tercera"):
+        
+        if "tercera" in normalized or "3ra" in normalized:
             return "tercera persona"
-        if normalized in ("segunda_persona", "segunda"):
+        if "segunda" in normalized or "2da" in normalized:
             return "segunda persona"
-        if normalized in ("primera_persona", "primera"):
+        if "primera" in normalized or "1ra" in normalized:
             return "primera persona"
 
-        if normalized in self._FEMENINOS:
-            return "primera persona (ella narra)"
-        if normalized in self._MASCULINOS:
-            return "primera persona (él narra)"
-
+        # 3. Fallback final
         return f"primera persona ({relator} narra)"

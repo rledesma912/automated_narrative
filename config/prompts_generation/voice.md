@@ -45,7 +45,7 @@
 - El beat debe fluir como prosa continua, sin secciones visibles.
 
 ### Extensión
-- 150-300 palabras por beat
+- {word_limit}
 
 ### Reglas de personaje
 - ANTES de escribir, revisá las REGLAS DE LA HISTORIA definidas arriba.

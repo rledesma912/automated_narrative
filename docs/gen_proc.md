@@ -67,8 +67,18 @@ El pipeline produce **17 llamadas LLM** por historia: 1 Analyst + 1 Resolver + 5
 | `SINOPSIS` (completa) | `story.sinopsis` |
 
 **Prompts usados:**
-- System: `story_analyst_system_compact.md`
-- User: `story_analyst_compact.md`
+
+El system prompt se selecciona según `effective_prompting_strategy` (Spec-170):
+
+| Estrategia | System prompt | Comportamiento |
+|------------|---------------|----------------|
+| `assertive` | `story_analyst_system_assertive.md` | Términos técnicos puros — activa esquemas preentrenados del LLM |
+| `auto` (default) | `story_analyst_system_assertive.md` → fallback a compact | Intenta assertive; reintenta con descriptive si el auditor falla |
+| `descriptive` | `story_analyst_system_compact.md` | Prompt con definiciones completas. Comportamiento legacy. |
+
+User prompt: `story_analyst_compact.md` (igual en todos los modos)
+
+**NarrativeAuditor (Spec-170):** En modos `assertive` y `auto`, `NarrativeAuditor` evalúa la respuesta antes de aceptarla con tres heurísticas: boilerplate (explica en vez de aplicar), sensoriality (densidad de imágenes concretas) y entropy (calco literal de la sinopsis). Si falla en modo `assertive` → `NarrativeLiteracyError`. Si falla en modo `auto` → reintento con prompt descriptivo.
 
 **Respuesta del LLM:** Markdown con 5 secciones `## resonance_*`
 
@@ -322,7 +332,7 @@ Los pasos 4 a 7 se ejecutan en secuencia para cada beat. La salida del Journal d
 
 | # | Rol | Componente | Modelo (perfil activo) | Prompts | Nro de llamadas |
 |---|---|---|---|---|---|
-| 1 | `story_analyst` | `StoryAnalystService` | `roles.story_analyst.model` | `story_analyst_system_compact.md` + `story_analyst_compact.md` | 1 (global) |
+| 1 | `story_analyst` | `StoryAnalystService` | `roles.story_analyst.model` | `story_analyst_system_assertive.md` o `_compact.md` (según `prompting_strategy`) + `story_analyst_compact.md` | 1–2 (global; 2 solo en modo `auto` si auditor falla) |
 | 2 | `director` | `RuleScenarioResolverService` | `roles.director.model` | `rule_resolver_system_compact.md` + `rule_resolver_compact.md` | 1 (global) |
 | 3–7 | `director` | `SynopsisBeatMapper` | `roles.director.model` | `synopsis_mapper_system_compact.md` + `synopsis_mapper_one_compact.md` | 5 (1 por beat) |
 | 8–12 | `voz` | `VozUseCase` | `roles.voz.model` | `voice_system_compact.md` + `narrative_context` inline | 5 (1 por beat) |

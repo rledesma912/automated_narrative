@@ -78,7 +78,7 @@ class DirectorUseCase:
 
         brief = self.normalizer.normalize(response.text, model_name=model).strip()
 
-        variant = self.prompt_builder._get_prompt_variant()
+        variant = self.prompt_builder.get_variant_name()
         self.debug_collector.record(
             role="story_analyst",
             beat_number=None,
@@ -93,7 +93,7 @@ class DirectorUseCase:
             normalized_response=brief,
             parser_result="n/a",
             elapsed_s=response.elapsed_s,
-            system_prompt_file="story_analyst_system_compact.md",
+            system_prompt_file="story_analyst_system_compact.md" if variant == "compact" else "n/a",
             user_prompt_file="story_analyst_compact.md" if variant == "compact" else "story_analyst.md",
         )
 

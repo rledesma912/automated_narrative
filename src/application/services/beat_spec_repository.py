@@ -38,6 +38,11 @@ class BeatSpecRepository:
     def get_by_id(self, beat_id: int) -> dict:
         return next((b for b in self._beats if b["id"] == beat_id), {})
 
+    def get_word_limit(self, beat_id: int, default: str = "") -> str:
+        """Retorna el word_limit configurado en el YAML para este beat."""
+        beat = self.get_by_id(beat_id)
+        return beat.get("word_limit", default)
+
     def format_compact(self) -> str:
         """Versión abreviada: solo id, name e intent. Usado por el mapper global."""
         lines = []

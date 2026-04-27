@@ -16,13 +16,13 @@ Un **beat** es la unidad mínima de narración (~300-500 palabras). La historia 
 
 | Rol | Componente | Llamadas (full) | Llamadas (plan) | Responsabilidad |
 |-----|-----------|-----------------|-----------------|-----------------|
-| **Analyst** | `StoryAnalystService` | 1 | 1 | Extrae los 4 `NarrativeAnchors` de la sinopsis |
-| **Resolver** | `RuleScenarioResolverService` | 1 | 0 | Distribuye reglas y escenarios a cada beat |
-| **Mapper** | `SynopsisBeatMapper` | 5 | 1 (mapeo global) | Mapea sinopsis a beats; con `map_one` extrae evento + escenario activo |
+| **Analyst** | `StoryAnalystService` | 1 | 1 | Extrae los **5 Pilares de Resonancia** de la sinopsis (Freytag/Aristotélico) |
+| **Resolver** | `RuleScenarioResolverService` | 1 | 1 | Distribuye reglas y escenarios a cada beat |
+| **Mapper** | `SynopsisBeatMapper` | 5 | 5 | Extrae evento + escenario activo para cada beat |
 | **Voz** | `VozUseCase` | 5 | 0 | Expande `narrative_context` a prosa literaria |
 | **Journal** | `MemoryJournalist` | 5 | 0 | Mantiene memoria cross-beat (eventos, misterios, estado) |
 
-**Total: 17 llamadas LLM** en `execute_full` (plan + narración), **2 llamadas** en `execute` (solo planificación).
+**Total: 17 llamadas LLM** en `execute_full` (plan + narración).
 
 El orquestador es `DirectorUseCase` (`application/use_cases/director_use_case.py`). No hace llamadas LLM directamente — coordina los 5 roles. `StoryRunner` (CLI) persiste en BD y reporta progreso.
 
@@ -52,16 +52,16 @@ sequenceDiagram
 
     Dir->>Ana: extract_anchors(story)
     Ana->>LLM: generate(role=story_analyst)
-    LLM-->>Ana: NarrativeAnchors (4 anclajes)
+    LLM-->>Ana: NarrativeAnchors (5 pilares aristotélicos)
 
     Dir->>Res: resolve_distribution(story)
     Res->>LLM: generate(role=director)
     LLM-->>Res: rule/scenario distribution por beat
 
-    loop Por cada beat (1..N)
+    loop Por cada beat (1..5)
         Dir->>Map: map_one(story, beat_id, ...)
         Map->>LLM: generate(role=director)
-        LLM-->>Map: summary + scenario + anchors + active_rules
+        LLM-->>Map: summary + scenario + active_rules
 
         Dir->>Dir: build_narrative_context(macro_beat, anchors, prev_snapshot)
         Note right of Dir: Determinístico — sin llamada LLM
@@ -98,6 +98,7 @@ flowchart TD
 
     Dir --> NC["build_narrative_context()\n(PromptBuilder — determinístico)"]
 
+    Ana --> Aud["NarrativeAuditor\n(application/services)\n[opcional — Spec-170]"]
     Ana --> PB["PromptBuilder\n(application/services)"]
     Res --> PB
     Map --> PB
@@ -144,6 +145,7 @@ flowchart LR
 
     C --> CS1[story_analyst_compact.md]
     C --> CS2[story_analyst_system_compact.md]
+    C --> CS3[story_analyst_system_assertive.md]
     C --> CSM[synopsis_mapper_compact.md]
     C --> CSM1[synopsis_mapper_one_compact.md]
     C --> CSM_SYS[synopsis_mapper_system_compact.md]
@@ -162,10 +164,11 @@ flowchart LR
 
 ### Templates por rol y variante
 
-| Rol | Variante | Archivo | Purpose |
-|-----|----------|---------|---------|
-| **story_analyst** | compact | `story_analyst_compact.md` | Expansión extractiva de sinopsis a 4 anclajes |
-| **story_analyst** | compact | `story_analyst_system_compact.md` | System prompt base |
+| Rol | Variante | Archivo | Propósito |
+|-----|----------|---------|-----------|
+| **story_analyst** | compact / assertive | `story_analyst_compact.md` | User prompt: extracción de 5 pilares |
+| **story_analyst** | compact (descriptive) | `story_analyst_system_compact.md` | System prompt con definiciones completas |
+| **story_analyst** | compact (assertive) | `story_analyst_system_assertive.md` | System prompt corto sin definiciones — activa esquemas preentrenados |
 | **story_analyst** | frontier | `story_analyst.md` | Expansión rica en contexto |
 | **director** (mapper) | compact | `synopsis_mapper_compact.md` | Mapeo global sinopsis→beats (5 en 1 llamada) |
 | **director** (mapper) | compact | `synopsis_mapper_one_compact.md` | Mapeo unitario por beat |
@@ -175,17 +178,54 @@ flowchart LR
 | **director** (resolver) | compact | `rule_resolver_system_compact.md` | System prompt del resolver |
 | **voz** | compact | `voice_compact.md` | Narración beat-by-beat compacta |
 | **voz** | compact | `voice_system_compact.md` | System prompt para voz |
-| **voz** | frontier | `voice.md` | Narración rica con约束 dramáticas |
-| **journal** | compact | `journal.md` | Actualización de memoria cross-beat |
-| **journal** | frontier | `journal.md` | Actualización de memoria (formato unificado) |
-| **system** | frontier | `system.md` | System prompt transversal (usado en fallback) |
+| **voz** | frontier | `voice.md` | Narración rica con restricciones dramáticas |
+| **journal** | compact + frontier | `journal.md` | Actualización de memoria cross-beat |
+| **system** | frontier | `system.md` | System prompt transversal (fallback) |
 
 ### Decisión de variante por perfil
 
 | Variante | Perfiles | Característica |
 |----------|----------|----------------|
-| **compact** | `ollama-*` (llama31, mistral, qwen25, qwen3, gemma3, mistral-nemo) | Prompts cortos, directivos, sin secciones anidadas |
+| **compact** | `ollama-*` (llama31, mistral, qwen25, qwen3, gemma3, mistral-nemo, hybrid) | Prompts cortos, directivos, sin secciones anidadas |
 | **frontier** | `anthropic-*`, `gemini-*` | Prompts ricos con contexto completo y restricciones dramáticas |
+
+---
+
+## Estrategia de Prompting (Spec-170)
+
+El sistema soporta tres modos de prompting para el rol `story_analyst`, controlados por `PROMPTING_STRATEGY`:
+
+| Modo | System prompt usado | Comportamiento | Cuándo usar |
+|------|---------------------|----------------|-------------|
+| `assertive` | `story_analyst_system_assertive.md` | Términos técnicos puros. Falla con `NarrativeLiteracyError` si el LLM explica en vez de aplicar. | Modelos frontier con entrenamiento literario sólido |
+| `auto` | `story_analyst_system_assertive.md` → fallback a compact | Intenta assertive; si el auditor detecta boilerplate, reintenta con descriptive. | Producción general — recomendado |
+| `descriptive` | `story_analyst_system_compact.md` | Prompt con definiciones completas, sin auditoría. Comportamiento legacy. | Modelos sin conocimiento narrativo previo |
+
+### Configuración
+
+```yaml
+# config/llm_core_definitions.yaml — por perfil
+profiles:
+  anthropic-sonnet:
+    prompting_strategy: assertive   # modelos frontier: modo estricto
+  ollama-qwen3-8b:
+    prompting_strategy: auto        # modelos locales: fallback inteligente
+```
+
+```bash
+# Variable de entorno (prioridad máxima)
+PROMPTING_STRATEGY=assertive python -m src generate --input input.md
+```
+
+### NarrativeAuditor — tres heurísticas
+
+El `NarrativeAuditor` (`application/services/narrative_auditor.py`) evalúa la respuesta antes de aceptarla:
+
+| Heurística | Qué detecta | Penalización |
+|------------|-------------|--------------|
+| **Boilerplate** | El modelo explica el concepto en lugar de aplicarlo a la historia | Total (−1.0) |
+| **Sensoriality** | Densidad de imágenes concretas insuficiente (< 4% de palabras sensoriales) | Parcial (−0.2) |
+| **Entropy** | El texto es un calco literal de la sinopsis (solapamiento > 80%) | Parcial (−0.2) |
 
 ---
 
@@ -203,27 +243,53 @@ Toda la configuración LLM vive en **`config/llm_core_definitions.yaml`**. El `.
 | `ollama-qwen3-8b` | Ollama local | qwen3:8b | compact |
 | `ollama-mistral-nemo` | Ollama local | mistral-nemo:12b-instruct-2407-q4_0 | compact |
 | `ollama-gemma3-12b` | Ollama local | gemma3:12b | compact |
+| `ollama-hybrid-voz-qwen3` | Ollama local | qwen2.5:14b (analyst/director/journal) + qwen3:8b (voz) | compact |
 | `anthropic-sonnet` | Anthropic API | claude-sonnet-4-6 | frontier |
 | `gemini-cli` | Gemini CLI | gemini-2.5-flash | frontier |
 
-El perfil activo se configura en `llm_core_definitions.yaml` (campo `active_profile`) o se overridea con la variable de entorno `LLM_PROFILE`.
+El perfil activo se configura en `llm_core_definitions.yaml` (campo `active_profile`) o se sobreescribe con la variable de entorno `LLM_PROFILE`.
 
 ### Roles por perfil
 
-Cada perfil define 4 roles con sus parámetros LLM propios. El rol `story_analyst` se usa para la fase de expansión de sinopsis.
+Cada perfil define 4 roles con sus parámetros LLM propios.
 
 | Rol | Temperatura | Propósito |
 |-----|-------------|-----------|
-| `story_analyst` | 0.3 | Expansión extractiva de sinopsis a anclajes narrativos |
-| `director` | 0.3-0.4 | Planificación: distribución de reglas y mapeo sinopsis→beats |
-| `voz` | 0.6-0.7 | Narración literaria — creatividad controlada |
-| `journal` | 0.3 | Extracción de hechos — máxima precisión |
+| `story_analyst` | 0.3 | Extracción de los 5 Pilares de Resonancia desde la sinopsis |
+| `director` | 0.3–0.4 | Planificación: distribución de reglas y mapeo sinopsis→beats |
+| `voz` | 0.6–0.7 | Narración literaria — creatividad controlada |
+| `journal` | 0.3 | Extracción de hechos narrativos — máxima precisión |
+
+### Variables de entorno relevantes
+
+```bash
+ANTHROPIC_API_KEY=...          # solo si el perfil activo usa AnthropicAdapter
+LLM_PROFILE=anthropic-sonnet   # override del perfil activo
+PROMPTING_STRATEGY=assertive   # override de la estrategia de prompting (Spec-170)
+DATABASE_URL=sqlite+aiosqlite:///stories.db
+PROMPTS_DIR=./config/prompts_generation
+OUTPUT_DIR=./output_stories
+```
+
+---
+
+## Los 5 Pilares de Resonancia Narrativa
+
+Definidos en `config/llm_narrative_definition.yaml`. Mapeo 1:1: Beat N recibe el Pilar N.
+
+| Beat | Pilar | Estadio Freytag | Qué captura |
+|------|-------|-----------------|-------------|
+| 1 | `resonance_hamartia` | Exposición | La grieta psicológica del narrador — vulnerabilidad preexistente |
+| 2 | `resonance_hybris` | Acción Ascendente | La Transgresión — lógica que permite cruzar la frontera |
+| 3 | `resonance_anagnorisis` | Clímax | La Violación de lo Sagrado — detalle sensorial insoportable |
+| 4 | `resonance_peripeteia` | Acción Descendente | La Trampa Espacial — el entorno como antagonista |
+| 5 | `resonance_residual` | Desenlace | La Mancha Residual — el daño observable que permanece |
 
 ---
 
 ## Modelo de datos (ERD)
 
-Esquema normalizado (Spec-043). `macro_beat` es la unidad narrativa; `rule` y `scenario` son fuentes de verdad independientes. **Principio: YAML inicializa — DB gobierna.** Los tipos narrativos persisten en DB desde el inicio; ningún servicio depende del YAML en runtime.
+Esquema normalizado. `macro_beat` es la unidad narrativa; `rule` y `scenario` son fuentes de verdad independientes. **Principio: YAML inicializa — DB gobierna.**
 
 ```mermaid
 erDiagram
@@ -232,7 +298,7 @@ erDiagram
     STORY ||--o{ RULE : posee
     STORY ||--|| NARRATIVE_ANCHORS : analizado_en
     STORY ||--|| NARRATIVE_JOURNAL : mantiene_estado
-    
+
     MACRO_BEAT }o--o| SCENARIO : transcurre_en
     MACRO_BEAT ||--o{ MACRO_BEAT_RULE : aplica
     RULE ||--o{ MACRO_BEAT_RULE : asignada_en
@@ -244,7 +310,6 @@ erDiagram
         text relator
         text sinopsis
         text atmosfera
-        text narrative_brief
         text storyteller_config "JSON: percepción, voz, sesgos"
         text status
         text created_at
@@ -268,10 +333,11 @@ erDiagram
     NARRATIVE_ANCHORS {
         text id PK
         text story_id FK
-        text initial_state
-        text threat_nature
-        text horror_peak
-        text spatial_anchor
+        text resonance_hamartia
+        text resonance_hybris
+        text resonance_anagnorisis
+        text resonance_peripeteia
+        text resonance_residual
         text created_at
     }
 
@@ -287,7 +353,6 @@ erDiagram
         text active_scenario_description
         text narrative_context
         text memory_snapshot
-        text technical_context
         text created_at
     }
 
@@ -331,63 +396,43 @@ python -m src generate --input input_stories/mi_historia.md
 
 # Con diagnóstico completo de prompts y respuestas LLM
 python -m src generate --input input_stories/mi_historia.md --debug
+
+# Con perfil específico
+LLM_PROFILE=anthropic-sonnet python -m src generate --input input_stories/mi_historia.md
+
+# Con estrategia de prompting asertiva
+PROMPTING_STRATEGY=assertive python -m src generate --input input_stories/mi_historia.md
 ```
 
 ### Otros comandos
 
 ```bash
-python -m src plan <story_id>      # solo fase de planificación
-python -m src narrate <story_id>   # solo fase de narración (sobre plan existente)
+python -m src plan <story_id>      # solo fase de planificación (analyst + resolver + mapper)
+python -m src narrate <story_id>   # solo fase de narración (voz + journal) sobre plan existente
 python -m src export <story_id>    # exportar relato a Markdown
 ```
 
 ### Comandos de desarrollo
 
 ```bash
-uv run pytest tests/unit/ -v       # tests unitarios
-ruff check . && ruff format .      # lint + formato
+uv sync                             # instalar dependencias
+uv run pytest tests/unit/ -v        # tests unitarios
+uv run pytest tests -v --cov=src    # suite completa con cobertura
+ruff check . && ruff format .       # lint + formato
+bash scripts/bash/init_db.sh        # recrear BD (borra y reinicia)
 ```
-
----
-
-## Especificaciones activas
-
-Los siguientes specs definen la arquitectura y el comportamiento actual del sistema:
-
-| Spec | Qué define |
-|------|------------|
-| [001 — Marco SDD](specs/001_marco_sdd.md) | Convenciones, naming, layering, principios de ingeniería |
-| [019 — Progress Reporter](specs/019_progress_reporter_cli.md) | Contrato de `ProgressReporter` y salida de terminal |
-| [020 — Anthropic Provider](specs/020_anthropic_provider.md) | Config del adapter Anthropic y env vars |
-| [026 — LLM Core Definitions](specs/026_llm_core_definitions_spec.md) | YAML como fuente de verdad única para config LLM |
-| [027 — LLM Profiles](specs/027_llm_profiles_spec.md) | Perfiles pre-configurados y precedencia de resolución |
-| [029 — Prompt Variants](specs/029_prompt_variants_spec.md) | Sistema compact/frontier de templates |
-| [030 — SynopsisBeatMapper](specs/030_synopsis_beat_mapper_spec.md) | Mapeo extractivo de sinopsis a beats estructurales |
-| [031 — Prompts Compact](specs/031_prompts_relato_compact.md) | Decisiones de diseño de los templates de relato |
-| [034 — Beat #1 sin contexto vacío](specs/034_suprimir_secciones_vacias_beat1.md) | Por qué Beat #1 no recibe secciones de contexto anterior |
-| [035 — Director Orquestador](specs/035_director_orquestador_punta_a_punta.md) | Contrato de `execute_full()` / `execute_narration()` |
-| [036 — Beat Spec solo en VOZ](specs/036_beat_spec_solo_en_voz.md) | Por qué el mapper no recibe constraints dramáticas |
-| [037 — Analyst System](specs/037_analyst_system_y_beats_enriquecidos.md) | System prompts para el analista y beats enriquecidos |
-| [038 — Anclajes Narrativos](specs/038_anclajes_narrativos.md) | Arquitectura de anclajes estáticos y flujo secuencial |
-| [039 — Mantenimiento scripts](specs/039_mantenimiento_scripts_tests_uml.md) | Actualización de scripts de DB y diagramas |
-| [040 — Checkpoint Hasta](specs/040_checkpoint_hasta.md) | Sistema de re-generación parcial desde un beat específico |
-| [041 — Reglas y Escenarios Dinámicos](specs/041_mapeo_dinamico_reglas_escenarios.md) | Mapeo de reglas de usuario y descripciones sensoriales por beat |
-| [042 — Revisión Global de Arquitectura](specs/042_revision_global_arquitectura.md) | Deuda técnica: DI, excepciones, logs AM/PM, spinner, debug prompts, saneamiento |
-| [043 — Modelo Narrativo Semántico](specs/043_semantic_narrative_model.md) | `BeatType`, `RuleType`, `TypedRule`, `storyteller_config` — semántica narrativa en DB |
-| [044 — ResponseNormalizer Scope](specs/044_response_normalizer_scope.md) | Definición canónica: el Normalizer elimina ruido de proceso LLM, no altera Markdown válido |
-| [045 — Dead Code Audit](specs/045_dead_code_audit.md) | Eliminación de use cases, repositorios, DTOs, excepciones y métodos sin uso en el pipeline |
 
 ---
 
 ## Control de pipeline con `--hasta`
 
-El parámetro `--hasta` permite detener el pipeline en un checkpoint específico para depuración, re-generación parcial, o testing incremental.
+El parámetro `--hasta` permite detener el pipeline en un checkpoint específico para depuración o re-generación parcial.
 
 ### Valores disponibles
 
 | Checkpoint | Ordinal | Descripción |
 |------------|--------|-------------|
-| `analyst` | 1 | Extrae anclajes narrativos |
+| `analyst` | 1 | Extrae anclajes narrativos (5 pilares) |
 | `resolver` | 2 | Distribuye reglas y escenarios por beat |
 | `mapper:1` | 3 | Mapea beat 1 |
 | `voz:1` | 4 | Narra beat 1 |
@@ -414,15 +459,36 @@ El parámetro `--hasta` permite detener el pipeline en un checkpoint específico
 python -m src generate --input input.md --hasta analyst
 
 # Generar hasta beat 2 completo (incluye mapper:2, voz:2, journal:2)
-python -m src generate --input input.md --until voz:2
+python -m src generate --input input.md --hasta voz:2
 
 # Re-generar desde beat 3: detener en mapper:3
-python -m src generate --input input.md --until mapper:3
+python -m src generate --input input.md --hasta mapper:3
 ```
 
-### Re-generación parcial
+---
 
-Si detienes en `mapper:N` o `voz:N`, los beats anteriores ya completados se preservan en DB. Puedes re-ejecutar con un checkpoint diferente para regenerar solo los beats restantes.
+## Especificaciones activas
+
+Los siguientes specs definen la arquitectura y el comportamiento actual del sistema:
+
+| Spec | Qué define |
+|------|------------|
+| [010 — Marco SDD](specs/010_marco_sdd.md) | Convenciones, naming, layering, principios de ingeniería |
+| [040 — Progress Reporter](specs/040_progress_reporter_cli.md) | Contrato de `ProgressReporter` y salida de terminal |
+| [050 — Anthropic Provider](specs/050_anthropic_provider.md) | Config del adapter Anthropic y env vars |
+| [060 — LLM Core Definitions](specs/060_llm_core_definitions_spec.md) | YAML como fuente de verdad única para config LLM |
+| [070 — LLM Profiles](specs/070_llm_profiles_spec.md) | Perfiles pre-configurados y precedencia de resolución |
+| [080 — Response Normalizer](specs/080_response_normalizer_scope.md) | Definición canónica: elimina ruido LLM sin alterar Markdown válido |
+| [090 — Dead Code Audit](specs/090_dead_code_audit.md) | Eliminación de código sin uso en el pipeline |
+| [100 — Debug Prompts PDF](specs/100_debug_prompts_pdf_spec.md) | Exportación de debug info a Markdown/PDF |
+| [110 — Critical Debt Refactor](specs/110_critical_debt_refactor_spec.md) | Refactorización de deuda técnica crítica |
+| [120 — CLI Service Container](specs/120_cli_service_container_spec.md) | DI container para CLI |
+| [130 — Persistencia Narrativa](specs/130_persistencia_campos_narrativa_spec.md) | Persistencia de campos narrativos en DB |
+| [140 — Dominio Anémico](specs/140_dominio_anemico_spec.md) | Evitar entidades sin comportamiento de dominio |
+| [150 — Story God Object](specs/150_story_god_object_spec.md) | Descomposición del agregado Story |
+| [160 — Freytag Resonance](specs/160_freytag_resonance_spec.md) | 5 Pilares: unificación Freytag + aristotélico |
+| [170 — Prompting Asertivo](specs/170_prompting_asertivo_spec.md) | NarrativeAuditor, prompt multinivel, ciclo de reintento |
+| [180 — Saneamiento Arquitectónico](specs/180_saneamiento_architectural_narrativo.md) | Limpieza de deuda arquitectónica |
 
 ---
 

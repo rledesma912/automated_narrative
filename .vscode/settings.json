@@ -2,6 +2,7 @@
     "files.exclude": {
         "**/__pycache__": true,
         "**/__init__.py": true,
+        "**/__main__.py": true,
         "**/.gitkeep": true
     }
 }

@@ -11,6 +11,8 @@ from src.application.services.template_loader import TemplateLoader
 from src.config import settings
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
 
+from src.application.services.prompt_strategies import CompactStrategy, FrontierStrategy, IPromptStrategy
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,26 +28,38 @@ class PromptBuilder:
         self._nc_assembler = NarrativeContextAssembler(self._beat_repo)
         self._beats_spec: list[dict] = self._beat_repo.get_all()
         self.num_beats: int = self._beat_repo.num_beats
+        self._strategy: IPromptStrategy | None = None
 
-    def _get_prompt_variant(self) -> str:
-        return self._loader.get_variant()
+    def get_variant_name(self) -> str:
+        """Retorna el nombre de la variante activa (compact, frontier, etc)."""
+        return self._get_strategy().variant_name
 
-    def _voice_template_path(self) -> str:
-        return self._loader.voice_template_name()
+    def _get_strategy(self) -> IPromptStrategy:
+        if self._strategy:
+            return self._strategy
+        variant = self._loader.get_variant()
+        if variant == "compact":
+            self._strategy = CompactStrategy()
+        else:
+            self._strategy = FrontierStrategy()
+        return self._strategy
 
     def _load_prompt(self, filename: str) -> str:
         return self._loader.load(filename)
 
     def build_system_prompt(self, story: Story) -> str:
         """Build el system prompt base."""
-        template = self._load_prompt(settings.prompt_file_system)
+        # El system prompt suele ser fijo (system.md), pero usamos la estrategia para el nombre si fuera necesario
+        strategy = self._get_strategy()
+        template_name = strategy.get_template_name("system").replace("_compact.md", ".md") # system.md es compartido usualmente
+        template = self._load_prompt(template_name)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         escenarios_str = (
             "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
         )
 
         if template:
-            persona = self._get_persona_gramatical(story.relator)
+            persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
             return template.format(
                 title=story.title,
                 atmosfera=story.atmosfera,
@@ -70,8 +84,8 @@ Escenarios: {story.scenarios}
 Sinopsis: {story.sinopsis}
 """
 
-    def _get_persona_gramatical(self, relator: str) -> str:
-        return self._persona.resolve(relator)
+    def _get_persona_gramatical(self, relator: str, config: dict | None = None) -> str:
+        return self._persona.resolve(relator, storyteller_config=config)
 
     def _build_journal_context(self, journal: NarrativeJournal | None) -> str:
         """Construye el contexto del journal para el prompt."""
@@ -119,42 +133,44 @@ Sinopsis: {story.sinopsis}
         total_beats: int | None = None,
     ) -> str:
         """Build el prompt para narrar un beat con contexto completo."""
-        voice_template = self._load_prompt(self._voice_template_path())
-        variant = self._get_prompt_variant()
+        strategy = self._get_strategy()
+        voice_template = self._load_prompt(strategy.get_template_name("voice"))
         total_beats = total_beats if total_beats is not None else self.num_beats
-        max_ctx = 500 if variant == "compact" else 150
-        previous_context = self._build_previous_context(previous_beats, max_chars=max_ctx)
+        
+        previous_context = self._build_previous_context(previous_beats, max_chars=strategy.max_context_chars)
         journal_context = self._build_journal_context(journal)
-        persona = self._get_persona_gramatical(story.relator)
+        persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         escenarios_str = (
             "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
         )
 
         sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, "beat_slice")
-        beat_spec = self._format_beat_spec_for_beat(beat.number, variant)
+        beat_spec = self._format_beat_spec_for_beat(beat.number, strategy.variant_name)
+        
+        # Enriquecimiento con metadatos del YAML (Slice 3)
+        beat_def = self._beat_repo.get_by_id(beat.number)
+        intensity = beat_def.get("intensity", "media")
+        success_signal = beat_def.get("success_signal", ["No definida"])[0]
+        state_change = beat_def.get("state_change", {})
+        
+        meta_context = strategy.format_beat_metadata(intensity, success_signal, state_change)
+        context_section = strategy.format_context_section(previous_context, journal_context, beat.number)
+
         continuation_cta = (
             "Continúa el relato:" if beat.number > 1 else "Escribí el primer fragmento del relato:"
         )
-
-        if beat.number == 1:
-            context_section = ""
-        elif variant == "compact":
-            context_section = (
-                f"--- LO QUE PASÓ ANTES ---\n{previous_context}\n\n"
-                f"--- ESTADO DEL RELATO ---\n{journal_context}"
-            )
-        else:
-            context_section = (
-                f"## CONTEXTO ANTERIOR\n{previous_context}\n\n"
-                f"## MEMORIA NARRATIVA (Journal)\n{journal_context}"
-            )
 
         logger.debug(
             f"[PB] relator={story.relator}, persona={persona}, beat={beat.number}/{total_beats}"
         )
 
+        word_limit = self._beat_repo.get_word_limit(beat.number, "entre 350 y 430 palabras")
+
         if voice_template:
+            # Añadimos meta_context si el template tiene el placeholder o lo inyectamos en beat_spec
+            full_beat_spec = f"{beat_spec}\n\n--- GUÍA DE TONO ---\n{meta_context}"
+            
             return voice_template.format(
                 title=story.title,
                 relator=story.relator,
@@ -170,8 +186,9 @@ Sinopsis: {story.sinopsis}
                 journal_context=journal_context,
                 context_section=context_section,
                 reglas=reglas_str,
-                beat_spec=beat_spec,
+                beat_spec=full_beat_spec,
                 continuation_cta=continuation_cta,
+                word_limit=word_limit,
             )
 
         base = f"""NARRA EL BEAT #{beat.number} de {total_beats}:
@@ -247,8 +264,8 @@ Instrucciones:
 
     def build_story_analyst_prompt(self, story: "Story") -> str:
         """Prompt del expansor de sinopsis. Selecciona variante por perfil."""
-        variant = self._get_prompt_variant()
-        template_file = "story_analyst_compact.md" if variant == "compact" else "story_analyst.md"
+        strategy = self._get_strategy()
+        template_file = strategy.get_template_name("story_analyst")
         template = self._load_prompt(template_file)
         if not template:
             logger.warning(f"[PB] {template_file} no encontrado — usando story_analyst.md")
@@ -266,10 +283,8 @@ Instrucciones:
 
     def build_synopsis_mapper_prompt(self, story: "Story", narrative_brief: str = "") -> str:
         """Prompt principal del SynopsisBeatMapper, selecciona variante por perfil."""
-        variant = self._get_prompt_variant()
-        template_file = (
-            "synopsis_mapper_compact.md" if variant == "compact" else "synopsis_mapper.md"
-        )
+        strategy = self._get_strategy()
+        template_file = strategy.get_template_name("synopsis_mapper")
         template = self._load_prompt(template_file)
         if not template:
             logger.warning(f"[PB] {template_file} no encontrado — usando synopsis_mapper.md")
@@ -309,8 +324,8 @@ Instrucciones:
         atmosphere: str | None = None,
     ) -> str:
         """Prompt para mapear un solo macro-beat: extrae evento + escenario activo."""
-        # Usamos un nombre específico para NO colisionar con el mapeo global
-        template_file = "synopsis_mapper_one_compact.md"
+        strategy = self._get_strategy()
+        template_file = strategy.get_template_name("synopsis_mapper_one")
         template = self._load_prompt(template_file)
         if not template:
             # Fallback mínimo si no existe el archivo
@@ -359,31 +374,43 @@ Instrucciones:
         return self._beat_repo.get_by_id(beat_id)
 
     def _build_storyteller_block(self, config: dict) -> str:
-        """Formatea storyteller_config como bloque compacto para el system prompt."""
+        """Formatea storyteller_config completo para el prompt (Spec-070/180)."""
         if not config:
             return ""
-        lines = ["== Narrador =="]
+        lines = ["== Perfil del Narrador =="]
+        
+        # Percepción
         perception = config.get("perception", {})
         if perception:
             reliability = perception.get("reliability", "")
             distortion = perception.get("distortion", {})
             dist_level = distortion.get("level", "") if isinstance(distortion, dict) else ""
-            dist_triggers = distortion.get("triggers", []) if isinstance(distortion, dict) else []
             line = f"Percepción: {reliability}"
             if dist_level:
-                line += f" | Distorsión: {dist_level}"
-                if dist_triggers:
-                    line += f" (triggers: {', '.join(dist_triggers)})"
+                line += f" (Distorsión: {dist_level})"
             lines.append(line)
+            
+        # Voz y Lenguaje
         voice = config.get("voice", {})
-        if voice:
-            parts = [voice.get("person", ""), voice.get("tense", ""), voice.get("style", "")]
-            parts = [p for p in parts if p]
-            intensity = voice.get("emotional_intensity", "")
-            line = "Voz: " + ", ".join(parts)
-            if intensity:
-                line += f" — intensidad: {intensity}"
-            lines.append(line)
+        lang = config.get("language", {})
+        v_parts = [voice.get("person", ""), voice.get("tense", ""), voice.get("style", "")]
+        v_parts = [p for p in v_parts if p]
+        l_parts = [lang.get("register", ""), lang.get("figurative_density", "")]
+        l_parts = [p for p in l_parts if p]
+        
+        if v_parts:
+            lines.append(f"Voz: {', '.join(v_parts)}")
+        if l_parts:
+            lines.append(f"Registro: {', '.join(l_parts)}")
+            
+        # Conocimiento e Interpretación
+        kn = config.get("knowledge", {})
+        if kn:
+            style = kn.get("interpretation_style", "")
+            if style:
+                lines.append(f"Estilo Interpretativo: {style}")
+
+        # Sesgos
         bias = config.get("bias", {})
         if bias:
             fear = bias.get("fear_focus", [])
@@ -394,7 +421,7 @@ Instrucciones:
             if attention:
                 parts.append(f"atención → {', '.join(attention)}")
             if parts:
-                lines.append("Sesgos: " + " | ".join(parts))
+                lines.append("Enfoque/Sesgos: " + " | ".join(parts))
         return "\n".join(lines)
 
     def _format_cast(self, story: Story) -> str:
@@ -419,15 +446,7 @@ Instrucciones:
                 lines.append(f"- {name} ({role})" if role else f"- {name}")
         return "\n".join(lines) if len(lines) > 1 else None
 
-    # Rangos de extensión por beat — calibrados al arco dramático del horror
-    _BEAT_WORD_LIMITS: dict[int, str] = {
-        1: "entre 300 y 380 palabras",   # Exposición: normalidad con fisura
-        2: "entre 360 y 440 palabras",   # Acción ascendente: tensión en construcción
-        3: "entre 430 y 530 palabras",   # Clímax: horror en su cima — el acto más extenso
-        4: "entre 380 y 470 palabras",   # Acción descendente: colapso y huida
-        5: "entre 320 y 400 palabras",   # Desenlace: calma engañosa
-    }
-    _DEFAULT_WORD_LIMIT = "entre 350 y 430 palabras"
+    # El word_limit ahora se gestiona desde llm_beats_definition.yaml vía BeatSpecRepository
 
     def build_voice_system_compact(
         self,
@@ -436,13 +455,15 @@ Instrucciones:
         active_rules: list[str] | None = None,
     ) -> str | None:
         """System prompt para VOZ en perfil compact. Usa solo las reglas del beat actual."""
-        system = self._load_prompt("voice_system_compact.md")
+        strategy = self._get_strategy()
+        template_name = strategy.get_template_name("voice_system")
+        system = self._load_prompt(template_name)
         if not system:
             return None
         rules = active_rules if active_rules is not None else story.reglas
         reglas_str = "\n".join(f"- {r}" for r in rules) if rules else "Ninguna"
         storyteller_config_block = self._build_storyteller_block(story.storyteller_config or {})
-        word_limit = self._BEAT_WORD_LIMITS.get(beat_number, self._DEFAULT_WORD_LIMIT)
+        word_limit = self._beat_repo.get_word_limit(beat_number, "entre 350 y 430 palabras")
         return system.format(
             relator=story.relator,
             atmosfera=story.atmosfera,
@@ -452,18 +473,26 @@ Instrucciones:
             word_limit=word_limit,
         )
 
-    def build_story_analyst_system(self) -> str | None:
-        """System prompt para story_analyst en perfil compact. None si no aplica."""
-        if self._get_prompt_variant() == "compact":
+    def build_story_analyst_system(self, assertive: bool = False) -> str | None:
+        """System prompt para story_analyst. Selecciona entre assertive y descriptive (Spec-170)."""
+        if assertive:
+            system = self._load_prompt("story_analyst_system_assertive.md")
+            if system:
+                return system
+        # fallback a descriptive (compact)
+        strategy = self._get_strategy()
+        if strategy.variant_name == "compact":
             system = self._load_prompt("story_analyst_system_compact.md")
             return system if system else None
         return None
 
     def build_synopsis_mapper_system(self, story: "Story") -> str | None:
-        """System prompt para el mapper. Carga synopsis_mapper_system_compact.md si existe."""
-        if self._get_prompt_variant() == "compact":
-            system = self._load_prompt("synopsis_mapper_system_compact.md")
-            return system if system else None
+        """System prompt para el mapper. Usa estrategia para cargar el template correcto."""
+        strategy = self._get_strategy()
+        template_name = strategy.get_template_name("synopsis_mapper_system")
+        system = self._load_prompt(template_name)
+        if system:
+            return system
         return self.build_system_prompt(story)
 
     def build_narrative_context(
@@ -545,7 +574,9 @@ Instrucciones:
 
     def build_rule_resolver_system(self) -> str | None:
         """System prompt para el rule resolver."""
-        return self._load_prompt("rule_resolver_system_compact.md")
+        strategy = self._get_strategy()
+        template_name = strategy.get_template_name("rule_resolver_system")
+        return self._load_prompt(template_name)
 
     def build_voz_user_prompt(self, macro_beat: MacroBeat) -> str:
         """User prompt para VOZ (nueva arquitectura): solo contiene narrative_context."""

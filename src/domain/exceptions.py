@@ -19,3 +19,14 @@ class StoryNotFoundError(NarrativeError):
             details={"story_id": story_id},
         )
         self.story_id = story_id
+
+
+class NarrativeLiteracyError(NarrativeError):
+    """El modelo falló la auditoría de alfabetismo narrativo en modo estricto (assertive)."""
+
+    def __init__(self, reason: str):
+        super().__init__(
+            f"Respuesta pedagógica rechazada: {reason}",
+            details={"reason": reason},
+        )
+        self.reason = reason

@@ -42,7 +42,7 @@ class SynopsisBeatMapper:
         model = role_cfg.get("model") or settings.llm_model
         temperature = role_cfg.get("temperature", 0.3)
 
-        variant = self.prompt_builder._get_prompt_variant()
+        variant = self.prompt_builder.get_variant_name()
         prompt = self.prompt_builder.build_synopsis_mapper_prompt(story, narrative_brief)
         system_prompt = self.prompt_builder.build_synopsis_mapper_system(story)
 
@@ -62,7 +62,7 @@ class SynopsisBeatMapper:
         clean_text = self.normalizer.normalize(response.text, model_name=model)
         beats = parse_beats(clean_text, num_beats, story.id, caller="MAPPER")
 
-        variant = self.prompt_builder._get_prompt_variant()
+        variant = self.prompt_builder.get_variant_name()
         self.debug_collector.record(
             role="mapper",
             beat_number=None,

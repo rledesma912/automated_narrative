@@ -54,7 +54,7 @@ class VozUseCase:
 
         total_beats = story.beat_count() if story.has_beats() else self.prompt_builder.num_beats
 
-        variant = self.prompt_builder._get_prompt_variant()
+        variant = self.prompt_builder.get_variant_name()
         if variant == "compact":
             system_prompt = self.prompt_builder.build_voice_system_compact(story, beat.number)
         else:
@@ -119,7 +119,7 @@ class VozUseCase:
         model = role_cfg.get("model") or settings.llm_model
         temp = settings.voz_temperature
 
-        variant = self.prompt_builder._get_prompt_variant()
+        variant = self.prompt_builder.get_variant_name()
         if variant == "compact":
             system_prompt = self.prompt_builder.build_voice_system_compact(
                 story, beat_number=macro_beat.number, active_rules=macro_beat.active_rules

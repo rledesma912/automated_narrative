@@ -9,6 +9,7 @@ beats_spec:
 
     - id: 1
       name: "exposicion"
+      word_limit: "entre 380 y 420 palabras"
       intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
       intensity: baja
       must:
@@ -25,6 +26,7 @@ beats_spec:
 
     - id: 2
       name: "accion_ascendente"
+      word_limit: "entre 360 y 440 palabras"
       intent: "activar el conflicto mediante transgresion"
       intensity: media
       must:
@@ -41,6 +43,7 @@ beats_spec:
 
     - id: 3
       name: "climax"
+      word_limit: "entre 430 y 530 palabras"
       intent: "forzar reconocimiento del horror"
       intensity: alta
       must:
@@ -56,13 +59,14 @@ beats_spec:
 
     - id: 4
       name: "accion_descendente"
+      word_limit: "entre 320 y 350 palabras"
       intent: "llevar al protagonista al colapso y reaccion"
       intensity: media
       must:
         - "perdida de control o desorientacion"
         - "intento de escape o respuesta (instinto, fe, memoria)"
       must_not:
-        - "resolver el conflicto facilmente"
+        - "resolución fácil del conflicto"
       state_change:
         from: "reconocimiento"
         to: "desesperacion"
@@ -71,11 +75,13 @@ beats_spec:
 
     - id: 5
       name: "desenlace"
-      intent: "cerrar con escape incompleto y secuela"
-      intensity: baja
+      word_limit: "entre 100 y 150 palabras (máxima brevedad emocional)"
+      intent: "cerrar con brevedad emocional, escape incompleto y secuela"
+      intensity: muy_baja
       must:
-        - "salida o alejamiento del peligro"
+        - "salida rapida o alejamiento del peligro"
         - "marca persistente o evidencia ambigua"
+        - "reflexion final corta y contundente"
       must_not:
         - "cerrar completamente el misterio"
       state_change:
