@@ -102,7 +102,7 @@ profiles:
         model: qwen2.5:14b
         temperature: 0.6
         num_ctx: 6144
-        num_predict: 1000
+        num_predict: 1500
         stop: []
       journal:
         model: qwen2.5:14b

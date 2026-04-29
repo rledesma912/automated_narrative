@@ -1,5 +1,7 @@
 """Request schemas."""
 
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -13,6 +15,8 @@ class StoryCreateRequest(BaseModel):
     sinopsis: str
     atmosfera: str
     reglas: list[str] = Field(default_factory=list)
+    storyteller_config: Optional[dict] = None
+    personajes_full: list[dict] = Field(default_factory=list)
 
 
 class BeatUpdateRequest(BaseModel):

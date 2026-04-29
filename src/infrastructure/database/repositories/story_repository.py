@@ -161,6 +161,16 @@ class SQLStoryRepository:
         """Update a story."""
         return await self.save(story)
 
+    async def update_status(self, story_id, status: str) -> None:
+        """Actualiza solo el campo status de una historia."""
+        from src.infrastructure.database.connection import get_connection
+        conn = await get_connection()
+        await conn.execute(
+            "UPDATE story SET status = ? WHERE id = ?",
+            (status, str(story_id)),
+        )
+        await conn.commit()
+
     async def list_all(self) -> list[Story]:
         """List all stories."""
         conn = await get_connection()

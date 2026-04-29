@@ -1,0 +1,520 @@
+<%
+/*
+ * Variables de entrada:
+ *   steps:   WizardStep[]  — todos los pasos
+ *   step:    WizardStep    — paso activo
+ *   saved:   Record<string, string> — datos guardados en sesión para este paso
+ *   isLast:  boolean
+ */
+
+const GROUP_META = {
+  elenco:       { title: 'PERSONAJES',       subtitle: 'Quiénes son en la historia' },
+  narrador:     { title: 'NARRADOR',         subtitle: 'Quién cuenta la historia, su nombre y tono de voz' },
+  percepcion:   { title: 'PERCEPCIÓN',       subtitle: 'Qué tan confiable es lo que ve, oye y siente' },
+  conocimiento: { title: 'CONOCIMIENTO',     subtitle: 'Qué sabe de lo oculto y lo sagrado' },
+  lenguaje:     { title: 'LENGUAJE',         subtitle: 'Cómo habla y escribe el narrador' },
+  sesgos:       { title: 'SESGOS',           subtitle: 'Qué le da miedo y en qué presta atención' },
+  atmosphere:   { title: 'ATMÓSFERA',        subtitle: 'El subgénero y tono del horror' },
+  escenarios:   { title: 'ESCENARIOS',       subtitle: 'Los lugares donde ocurre la historia' },
+  reglas:       { title: 'REGLAS DEL MUNDO', subtitle: 'Las leyes que rigen este universo' },
+  actos:        { title: 'LA TRAMA',         subtitle: 'Los 5 actos según la Pirámide de Freytag' },
+};
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getSavedArray(fieldName) {
+  try { return JSON.parse(saved[fieldName] || '[]'); } catch { return []; }
+}
+
+const ungrouped = step.fields.filter(f => !f.group);
+const seenGroups = [];
+const groupedMap = {};
+step.fields.filter(f => f.group).forEach(f => {
+  if (!seenGroups.includes(f.group)) seenGroups.push(f.group);
+  if (!groupedMap[f.group]) groupedMap[f.group] = [];
+  groupedMap[f.group].push(f);
+});
+
+const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge-text text-lg px-4 py-3 focus:outline-none focus:border-forge-accent transition-colors placeholder:text-forge-muted';
+
+function fieldHtml(field) {
+  const sv        = saved[field.name] || '';
+  const effective = sv || field.default || '';
+  const msArr     = (field.type === 'multi-select') ? getSavedArray(field.name) : [];
+  const reqAttr   = field.required ? ' required' : '';
+  const ph        = esc(field.placeholder || '');
+
+  let html = '<div class="mb-5">';
+
+  html += `<label class="block text-lg font-semibold text-forge-text mb-1">${esc(field.label)}`;
+  if (field.required) html += ' <span class="text-forge-accent">*</span>';
+  html += '</label>';
+
+  if (field.subtitle) {
+    html += `<p class="text-sm text-forge-muted mb-2">${esc(field.subtitle)}</p>`;
+  }
+
+  if (field.type === 'textarea') {
+    html += `<textarea name="${esc(field.name)}" rows="${field.rows || 3}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT} resize-none">${esc(sv)}</textarea>`;
+
+  } else if (field.type === 'select') {
+    const isStoryteller = field.name === 'storyteller_id';
+    html += `<select name="${esc(field.name)}"${reqAttr} class="${CLS_INPUT}">`;
+    html += `<option value="" disabled${!effective ? ' selected' : ''}>Seleccioná...</option>`;
+    (field.options || []).forEach(opt => {
+      const sel = effective === opt ? ' selected' : '';
+      let label;
+      if (isStoryteller) {
+        const idx = esc(opt).replace('protagonista_', '');
+        label = `Personaje ${idx}`;
+      } else {
+        label = esc(opt);
+      }
+      html += `<option value="${esc(opt)}"${sel}>${label}</option>`;
+    });
+    html += '</select>';
+
+  } else if (field.type === 'radio') {
+    html += '<div class="space-y-2 mt-2">';
+    (field.options || []).forEach(opt => {
+      const chk = effective === opt ? ' checked' : '';
+      html += '<label class="flex items-center gap-3 cursor-pointer">';
+      html += `<input type="radio" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
+      html += `<span class="text-base text-forge-text">${esc(opt)}</span>`;
+      html += '</label>';
+    });
+    html += '</div>';
+
+  } else if (field.type === 'multi-select') {
+    html += '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">';
+    (field.options || []).forEach(opt => {
+      const chk = msArr.includes(opt) ? ' checked' : '';
+      html += '<label class="flex items-center gap-2 cursor-pointer">';
+      html += `<input type="checkbox" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
+      html += `<span class="text-base text-forge-text">${esc(opt)}</span>`;
+      html += '</label>';
+    });
+    html += '</div>';
+
+  } else {
+    html += `<input type="text" name="${esc(field.name)}" value="${esc(sv)}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT}" />`;
+  }
+
+  if (field.note) {
+    html += `<p class="text-xs text-forge-muted mt-2 italic">${esc(field.note)}</p>`;
+  }
+  if (field.hint) {
+    html += `<p class="text-xs text-forge-muted mt-1 italic">${esc(field.hint)}</p>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ── Helpers para grupos dinámicos ────────────────────────────────────────────
+function groupFieldsByIndex(fields, pattern) {
+  // Agrupa fields por índice extraído del nombre según pattern
+  const cards = {};
+  fields.forEach(f => {
+    const m = f.name.match(pattern);
+    if (m) {
+      const idx = m[1];
+      if (!cards[idx]) cards[idx] = [];
+      cards[idx].push(f);
+    }
+  });
+  return cards;
+}
+
+function hasCardData(fields) {
+  return fields.some(f => {
+    const v = saved[f.name];
+    if (!v) return false;
+    if (f.type === 'multi-select') {
+      try { return JSON.parse(v).length > 0; } catch { return false; }
+    }
+    return v.trim() !== '';
+  });
+}
+%>
+
+<div class="w-[85vw] max-w-5xl mx-auto">
+
+  <%/* ── Stepper header ─────────────────────────────── */%>
+  <div class="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
+    <% steps.forEach((s, i) => { %>
+      <%
+        const done   = s.number < step.number;
+        const active = s.number === step.number;
+        const circleClass = active
+          ? 'bg-forge-accent text-forge-text border-forge-accent'
+          : done
+            ? 'bg-transparent text-forge-accent border-forge-accent'
+            : 'bg-transparent text-forge-muted border-forge-border';
+        const labelClass = active ? 'text-forge-text' : done ? 'text-forge-accent' : 'text-forge-muted';
+      %>
+      <div class="flex flex-col items-center shrink-0">
+        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold <%= circleClass %>">
+          <% if (done) { %><i data-lucide="check" class="w-3 h-3"></i><% } else { %><%= s.number %><% } %>
+        </div>
+        <span class="text-xs mt-1 <%= labelClass %> whitespace-nowrap"><%= s.title %></span>
+      </div>
+      <% if (i < steps.length - 1) { %>
+        <div class="h-px flex-1 min-w-4 mx-2 mt-[-14px] <%= s.number < step.number ? 'bg-forge-accent' : 'bg-forge-border' %>"></div>
+      <% } %>
+    <% }); %>
+  </div>
+
+  <%/* ── Título + Subtítulo del paso ─────────────────── */%>
+  <h2 class="font-serif text-2xl text-forge-accent mb-1"><%= step.title %></h2>
+  <% if (step.subtitle) { %>
+    <p class="text-sm text-forge-muted mb-8 uppercase tracking-widest"><%= step.subtitle %></p>
+  <% } else { %>
+    <div class="mb-6"></div>
+  <% } %>
+
+  <%/* ── Formulario ───────────────────────────────────── */%>
+  <form method="POST" action="/generar/paso/<%= step.number %>" class="space-y-6">
+
+    <%/* -- Campos sin grupo */%>
+    <% ungrouped.forEach(field => { %>
+      <%- fieldHtml(field) %>
+    <% }); %>
+
+    <%/* -- Grupos como cards */%>
+    <% seenGroups.forEach(groupName => { %>
+      <% const meta = GROUP_META[groupName] || { title: groupName.toUpperCase(), subtitle: '' }; %>
+
+      <% if (groupName === 'elenco') { %>
+        <%
+          const protagCards = groupFieldsByIndex(groupedMap['elenco'], /^protagonista_(\d+)_/);
+          const protagIndices = Object.keys(protagCards).sort((a,b) => Number(a)-Number(b));
+          const MAX_PROTAGONISTAS = 5;
+        %>
+        <div class="border border-forge-border bg-forge-surface p-6 space-y-5" id="elenco-group">
+          <div class="border-b border-forge-border pb-3">
+            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
+          </div>
+
+          <% protagIndices.forEach((idx, i) => { %>
+            <%
+              const isFirst = i === 0;
+              const visible = isFirst || hasCardData(protagCards[idx]);
+              const nameVal = saved['protagonista_' + idx + '_name'] || '';
+            %>
+            <div id="personaje-card-<%= idx %>"
+                 class="border border-forge-border p-4<%= visible ? '' : ' hidden' %>">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xs uppercase tracking-widest text-forge-muted font-bold"
+                    id="personaje-label-<%= idx %>">
+                  PERSONAJE <%= idx %><% if (nameVal) { %> — <%= esc(nameVal) %><% } %>
+                </h4>
+                <button type="button"
+                        onclick="askDeletePersonaje('<%= idx %>')"
+                        id="personaje-delete-btn-<%= idx %>"
+                        class="text-forge-muted hover:text-red-400 transition-colors<%= isFirst ? ' invisible' : '' %>">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <% protagCards[idx].forEach(field => { %>
+                <%- fieldHtml(field) %>
+              <% }); %>
+            </div>
+          <% }); %>
+
+          <div class="flex items-center gap-4 pt-2">
+            <button type="button" onclick="addPersonaje()"
+                    id="btn-add-personaje"
+                    class="flex items-center gap-2 text-sm text-forge-accent hover:opacity-70 transition-opacity border border-forge-border px-4 py-2">
+              <i data-lucide="user-plus" class="w-4 h-4"></i> Agregar personaje
+            </button>
+            <span class="text-xs text-forge-muted hidden" id="msg-max-personajes">Máximo <%= MAX_PROTAGONISTAS %> personajes</span>
+          </div>
+        </div>
+
+      <% } else if (groupName === 'escenarios') { %>
+        <%
+          const scenCards = groupFieldsByIndex(groupedMap['escenarios'], /^scenario_(\d+)_/);
+          const scenIndices = Object.keys(scenCards).sort((a,b) => Number(a)-Number(b));
+          const MAX_ESCENARIOS = 4;
+        %>
+        <div class="border border-forge-border bg-forge-surface p-6 space-y-5" id="escenarios-group">
+          <div class="border-b border-forge-border pb-3">
+            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
+          </div>
+
+          <% scenIndices.forEach((idx, i) => { %>
+            <%
+              const isFirstS = i === 0;
+              const visibleS = isFirstS || hasCardData(scenCards[idx]);
+            %>
+            <div id="scenario-card-<%= idx %>"
+                 class="border border-forge-border p-4<%= visibleS ? '' : ' hidden' %>">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xs uppercase tracking-widest text-forge-muted font-bold">ESCENARIO <%= idx %></h4>
+                <button type="button"
+                        onclick="askDeleteScenario('<%= idx %>')"
+                        id="scenario-delete-btn-<%= idx %>"
+                        class="text-forge-muted hover:text-red-400 transition-colors<%= isFirstS ? ' invisible' : '' %>">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <% scenCards[idx].forEach(field => { %>
+                <%- fieldHtml(field) %>
+              <% }); %>
+            </div>
+          <% }); %>
+
+          <div class="flex items-center gap-4 pt-2">
+            <button type="button" onclick="addScenario()"
+                    id="btn-add-scenario"
+                    class="flex items-center gap-2 text-sm text-forge-accent hover:opacity-70 transition-opacity border border-forge-border px-4 py-2">
+              <i data-lucide="map-pin" class="w-4 h-4"></i> Agregar escenario
+            </button>
+            <span class="text-xs text-forge-muted hidden" id="msg-max-escenarios">Máximo <%= MAX_ESCENARIOS %> escenarios</span>
+          </div>
+        </div>
+
+      <% } else { %>
+        <div class="border border-forge-border bg-forge-surface p-6 space-y-5">
+          <div class="border-b border-forge-border pb-3">
+            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
+          </div>
+          <% groupedMap[groupName].forEach(field => { %>
+            <%- fieldHtml(field) %>
+          <% }); %>
+        </div>
+      <% } %>
+
+    <% }); %>
+
+    <%/* ── Navegación ────────────────────────────────── */%>
+    <div class="flex items-center justify-between pt-4 border-t border-forge-border">
+      <% if (step.number > 1) { %>
+        <a href="/generar/paso/<%= step.number - 1 %>"
+           class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i> Anterior
+        </a>
+      <% } else { %>
+        <span></span>
+      <% } %>
+
+      <button type="submit"
+              class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
+                     tracking-widest uppercase hover:opacity-80 transition-opacity">
+        <% if (isLast) { %>
+          <i data-lucide="eye" class="w-4 h-4"></i> Revisar
+        <% } else { %>
+          Siguiente <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        <% } %>
+      </button>
+    </div>
+  </form>
+</div>
+
+<%/* ── Modal de confirmación de eliminación ────────────────────────────── */%>
+<div id="delete-modal"
+     class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+  <div class="bg-forge-bg border border-forge-border p-6 max-w-sm w-full mx-4">
+    <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold mb-3">Confirmar eliminación</h3>
+    <p id="delete-modal-msg" class="text-sm text-forge-text mb-5"></p>
+    <div class="flex gap-3 justify-end">
+      <button type="button" onclick="closeDeleteModal()"
+              class="px-4 py-2 text-sm border border-forge-border text-forge-muted hover:text-forge-text transition-colors">
+        Cancelar
+      </button>
+      <button type="button" id="delete-modal-confirm"
+              class="px-4 py-2 text-sm bg-red-900 text-red-100 hover:bg-red-800 transition-colors">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  // ── Storyteller: actualizar labels con nombres escritos ─────────────────
+  function updateStoryteller() {
+    var sel = document.querySelector('[name="storyteller_id"]');
+    if (!sel) return;
+    [1, 2, 3, 4, 5].forEach(function (n) {
+      var nameInput = document.querySelector('[name="protagonista_' + n + '_name"]');
+      var opt = sel.querySelector('option[value="protagonista_' + n + '"]');
+      if (opt && nameInput) {
+        var name = nameInput.value.trim();
+        opt.textContent = name || 'Personaje ' + n + ' (sin nombre)';
+      }
+    });
+  }
+  document.querySelectorAll('[name$="_name"]').forEach(function (el) {
+    el.addEventListener('input', updateStoryteller);
+  });
+  updateStoryteller();
+
+  // ── Modal de eliminación ─────────────────────────────────────────────────
+  var pendingDelete = null;
+
+  window.closeDeleteModal = function () {
+    pendingDelete = null;
+    document.getElementById('delete-modal').classList.add('hidden');
+  };
+
+  function openDeleteModal(msg, onConfirm) {
+    document.getElementById('delete-modal-msg').textContent = msg;
+    document.getElementById('delete-modal-confirm').onclick = function () {
+      onConfirm();
+      window.closeDeleteModal();
+    };
+    document.getElementById('delete-modal').classList.remove('hidden');
+  }
+
+  // Cierra el modal al hacer click fuera
+  document.getElementById('delete-modal').addEventListener('click', function (e) {
+    if (e.target === this) window.closeDeleteModal();
+  });
+
+  // ── Listas dinámicas: Protagonistas ─────────────────────────────────────
+  var MAX_PROTAGONISTAS = 5;
+
+  function getVisiblePersonajes() {
+    var visible = [];
+    for (var i = 1; i <= MAX_PROTAGONISTAS; i++) {
+      var card = document.getElementById('personaje-card-' + i);
+      if (card && !card.classList.contains('hidden')) visible.push(i);
+    }
+    return visible;
+  }
+
+  window.addPersonaje = function () {
+    var visible = getVisiblePersonajes();
+    if (visible.length >= MAX_PROTAGONISTAS) {
+      document.getElementById('msg-max-personajes').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('msg-max-personajes').classList.add('hidden');
+
+    // Mostrar la siguiente oculta
+    for (var i = 1; i <= MAX_PROTAGONISTAS; i++) {
+      var card = document.getElementById('personaje-card-' + i);
+      if (card && card.classList.contains('hidden')) {
+        card.classList.remove('hidden');
+        // Hacer visible el botón de eliminar
+        var delBtn = document.getElementById('personaje-delete-btn-' + i);
+        if (delBtn) delBtn.classList.remove('invisible');
+        lucide.createIcons();
+        break;
+      }
+    }
+
+    var newVisible = getVisiblePersonajes();
+    if (newVisible.length >= MAX_PROTAGONISTAS) {
+      document.getElementById('msg-max-personajes').classList.remove('hidden');
+    }
+  };
+
+  window.askDeletePersonaje = function (idx) {
+    var nameInput = document.querySelector('[name="protagonista_' + idx + '_name"]');
+    var name = nameInput ? nameInput.value.trim() : '';
+    var msg = name
+      ? 'Se borrará "' + name + '" definitivamente.'
+      : 'Se borrará el Personaje ' + idx + ' definitivamente.';
+
+    openDeleteModal(msg, function () {
+      var card = document.getElementById('personaje-card-' + idx);
+      if (!card) return;
+
+      // Limpiar campos
+      card.querySelectorAll('input, textarea, select').forEach(function (el) {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = false;
+        } else {
+          el.value = '';
+        }
+      });
+
+      // Ocultar card
+      card.classList.add('hidden');
+      document.getElementById('msg-max-personajes').classList.add('hidden');
+
+      // Actualizar storyteller labels
+      updateStoryteller();
+    });
+  };
+
+  // ── Listas dinámicas: Escenarios ─────────────────────────────────────────
+  var MAX_ESCENARIOS = 4;
+
+  function getVisibleScenarios() {
+    var visible = [];
+    for (var i = 1; i <= MAX_ESCENARIOS; i++) {
+      var card = document.getElementById('scenario-card-' + i);
+      if (card && !card.classList.contains('hidden')) visible.push(i);
+    }
+    return visible;
+  }
+
+  window.addScenario = function () {
+    var visible = getVisibleScenarios();
+    if (visible.length >= MAX_ESCENARIOS) {
+      document.getElementById('msg-max-escenarios').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('msg-max-escenarios').classList.add('hidden');
+
+    for (var i = 1; i <= MAX_ESCENARIOS; i++) {
+      var card = document.getElementById('scenario-card-' + i);
+      if (card && card.classList.contains('hidden')) {
+        card.classList.remove('hidden');
+        var delBtn = document.getElementById('scenario-delete-btn-' + i);
+        if (delBtn) delBtn.classList.remove('invisible');
+        lucide.createIcons();
+        break;
+      }
+    }
+
+    var newVisible = getVisibleScenarios();
+    if (newVisible.length >= MAX_ESCENARIOS) {
+      document.getElementById('msg-max-escenarios').classList.remove('hidden');
+    }
+  };
+
+  window.askDeleteScenario = function (idx) {
+    var nameInput = document.querySelector('[name="scenario_' + idx + '_name"]');
+    var name = nameInput ? nameInput.value.trim() : '';
+    var msg = name
+      ? 'Se borrará "' + name + '" definitivamente.'
+      : 'Se borrará el Escenario ' + idx + ' definitivamente.';
+
+    openDeleteModal(msg, function () {
+      var card = document.getElementById('scenario-card-' + idx);
+      if (!card) return;
+
+      card.querySelectorAll('input, textarea, select').forEach(function (el) {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = false;
+        } else {
+          el.value = '';
+        }
+      });
+
+      card.classList.add('hidden');
+      document.getElementById('msg-max-escenarios').classList.add('hidden');
+    });
+  };
+
+  // Render lucide icons iniciales
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+}());
+</script>

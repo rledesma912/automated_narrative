@@ -11,6 +11,7 @@ from pydantic import UUID4, BaseModel, Field
 class StoryStatus(str, Enum):
     """Estado de una historia."""
 
+    DRAFT = "draft"
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"

@@ -61,7 +61,7 @@ beats_spec:
       name: "accion_descendente"
       word_limit: "entre 320 y 350 palabras"
       intent: "llevar al protagonista al colapso y reaccion"
-      intensity: media
+      intensity: media-alta
       must:
         - "perdida de control o desorientacion"
         - "intento de escape o respuesta (instinto, fe, memoria)"
@@ -77,7 +77,7 @@ beats_spec:
       name: "desenlace"
       word_limit: "entre 100 y 150 palabras (máxima brevedad emocional)"
       intent: "cerrar con brevedad emocional, escape incompleto y secuela"
-      intensity: muy_baja
+      intensity: baja
       must:
         - "salida rapida o alejamiento del peligro"
         - "marca persistente o evidencia ambigua"

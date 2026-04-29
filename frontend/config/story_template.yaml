@@ -1,0 +1,300 @@
+# Template Completo para Historia de Horror
+# Versión: 1.0.0
+# Fecha: 2026-04-28
+# Este archivo es la FUENTE DE VERDAD para la UI y transformación
+
+# ============================================
+# SECCIÓN 1: CONFIGURACIÓN BÁSICA
+# ============================================
+story:
+  title_template: "{{title}}"
+
+atmosphere:
+  genre_options:
+    - terror_psicologico
+    - horror_cosmico
+    - terror_gotico
+    - body_horror
+    - paranormal
+    - folk_horror
+    - suspenso
+    - terror_supervivencia
+  
+  subgenre_options:
+    - rural_folklore
+    - gotico
+    - urbano_moderno
+    - historico
+    - sci_fi
+    - psicologico
+    - sobrenatural
+    - otro
+  
+  tone_options:
+    - creciente_opresivo
+    - constante
+    - descendente
+    - quebrado
+    - ambiguo
+
+# ============================================
+# SECCIÓN 2: PERSONAJES
+# ============================================
+protagonists:
+  max_count: 5
+  min_count: 1
+  field_prefix: "protagonista"
+  
+  fields:
+    - name: "{prefix}_{n}_name"
+      label: "Nombre del personaje"
+      type: text
+      required: true
+
+    - name: "{prefix}_{n}_role"
+      label: "Rol o relación"
+      type: text
+      required: true
+
+    - name: "{prefix}_{n}_traits"
+      label: "Traits de personalidad"
+      type: multi-select
+      options:
+        - religioso
+        - protector
+        - observador
+        - escéptico
+        - pragmático
+        - terco
+        - bondadoso
+        - portador_folklore
+        - sereno
+        - callado
+
+storyteller:
+  source_field: "storyteller_id"
+  format: "P{n}"  # transforma "protagonista_1" → "P1"
+
+voice_style_options:
+  - intimista
+  - omnisciente
+  - dramático
+  - contemplativo
+  - poético
+
+# ============================================
+# SECCIÓN 3: VOZ NARRADORA
+# ============================================
+storyteller_config:
+  perception:
+    reliability_options:
+      - subjetiva
+      - objetiva
+      - poco_confiable
+    
+    distortion_level_options:
+      - minima
+      - baja
+      - media
+      - alta
+      - critica
+    
+    distortion_triggers_options:
+      - miedo
+      - oscuridad
+      - fatiga
+      - trauma
+      - sustancia
+      - paranoia
+  
+  knowledge:
+    level_options:
+      - nulo
+      - bajo
+      - medio
+      - alto
+      - experto
+    
+    interpretation_style_options:
+      - literal
+      - simbolica
+      - mitologica
+      - cientifica
+      - supersticiosa
+  
+  language:
+    register_options:
+      - formal
+      - coloquial
+      - rural_tradicional
+      - arcaico
+      - poético
+    
+    density_options:
+      - minima
+      - baja
+      - media
+      - alta
+      - maxima
+  
+  bias:
+    fear_focus_options:
+      - proteccion_de_hijos
+      - supervivencia
+      - perdida
+      - traicion
+      - corrupcion
+      - lo_desconocido
+      - aislamiento
+    
+    attention_focus_options:
+      - sonidos
+      - sombras
+      - naturaleza
+      - tecnologia
+      - rostros
+      - espacios_cerrados
+      - detalles_fisicos
+
+# ============================================
+# SECCIÓN 4: ESCENARIOS
+# ============================================
+scenarios:
+  max_count: 4
+  min_count: 1
+  field_prefix: "scenario"
+  
+  fields:
+    - name: "{prefix}_{n}_name"
+      label: "Nombre del escenario"
+      type: text
+      required: true
+    
+    - name: "{prefix}_{n}_description"
+      label: "Descripción"
+      type: textarea
+      rows: 2
+      required: false
+
+# ============================================
+# SECCIÓN 5: REGLAS
+# ============================================
+rules:
+  max_count: 5
+  min_count: 1
+  field_prefix: "rule"
+  
+  fields:
+    - name: "{prefix}_{n}_text"
+      label: "Texto de la regla"
+      type: textarea
+      rows: 2
+      required: true
+    
+    - name: "{prefix}_{n}_type"
+      label: "Tipo de regla"
+      type: select
+      options:
+        - entorno
+        - psicologica
+        - paranormal
+        - evento
+        - social
+
+# ============================================
+# SECCIÓN 6: TRAMA
+# ============================================
+synopsis:
+  field_name: "sinopsis"
+  label: "Sinopsis de la historia"
+  type: textarea
+  rows: 10
+  hint: "Esbozo libre de la historia"
+
+# ============================================
+# SECCIÓN 7: MAPEO A API CORE
+# ============================================
+# Campos que se envían al endpoint POST /stories
+
+api_payload:
+  title:
+    source: "step_config_title.title"
+  
+  protagonista:
+    source: "step_config_personajes.protagonista_1_name"
+    template: "{{name}}"
+  
+  relator:
+    source: "step_config_personajes.voice_style"
+    template: "{{voice_style}}"
+  
+  atmosfera:
+    source: "step_config_title"
+    template: "{{atmosphere}}{{#if atmosphere_subgenre}} ({{atmosphere_subgenre}}){{/if}}"
+  
+  escenarios:
+    source: "step_world"
+    template: "{{#if scenario_1_name}}{{scenario_1_name}}{{/if}}{{#if scenario_2_name}}; {{scenario_2_name}}{{/if}}{{#if scenario_3_name}}; {{scenario_3_name}}{{/if}}"
+  
+  reglas:
+    source: "step_world"
+    template: "{{#if rule_1_text}}{{rule_1_text}}{{/if}}{{#if rule_2_text}}; {{rule_2_text}}{{/if}}"
+  
+  personajes_full:
+    source: "step_config_personajes"
+    type: array
+    fields:
+      - name: "protagonista_1_name"
+        map_to: "name"
+      - name: "protagonista_1_role"
+        map_to: "role"
+      - name: "protagonista_1_traits"
+        map_to: "traits"
+  
+  storyteller_config:
+    source: "step_config_voz + step_config_personajes"
+    type: object
+    fields:
+      perception:
+        reliability: "perception_reliability"
+        distortion:
+          level: "distortion_level"
+          triggers: "distortion_triggers"
+      knowledge:
+        domain:
+          paranormal: "paranormal_knowledge"
+          religioso: "religioso_knowledge"
+        interpretation_style: "interpretation_style"
+      voice:
+        person: "primera"  # default implícito
+        tense: "pasado"    # default implícito
+        style: "voice_style"
+      language:
+        register: "language_register"
+        figurative_density: "figurative_density"
+      bias:
+        fear_focus: "fear_focus"
+        attention_focus: "attention_focus"
+
+# ============================================
+# SECCIÓN 8: DEFAULTS IMPLÍCITOS
+# ============================================
+defaults:
+  voice:
+    person: "primera"
+    tense: "pasado"
+  atmosphere:
+    tone: "creciente_opresivo"
+    subgenre: "otro"
+  perception:
+    reliability: "subjetiva"
+    level: "media"
+
+# ============================================
+# NOTES
+# ============================================
+# 1. Este template genera el ui_definitions.yaml automáticamente
+# 2. La transformación a API usa los templates de api_payload
+# 3. Los valores en defaults son implícitos (no se muestran en UI)
+# 4. El campo {n} se reemplaza por 1, 2, 3, 4, 5
+# 5. El campo {prefix} se reemplaza por el field_prefix

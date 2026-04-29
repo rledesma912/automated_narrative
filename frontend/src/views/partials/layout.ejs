@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NarrativeForge — <%= title %></title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forge: {
+              bg:      'var(--forge-bg)',
+              surface: 'var(--forge-surface)',
+              border:  'var(--forge-border)',
+              accent:  'var(--forge-accent)',
+              muted:   'var(--forge-muted)',
+              text:    'var(--forge-text)',
+            }
+          },
+          fontFamily: {
+            serif: ['Georgia', 'serif'],
+            mono:  ['"Courier New"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { <%- themeCssVars %>; }
+    body { background-color: var(--forge-bg); color: var(--forge-text); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--forge-bg); }
+    ::-webkit-scrollbar-thumb { background: var(--forge-accent); border-radius: 2px; }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden font-<%= themeFont %> text-forge-text">
+
+  <%- include('sidebar', { activePage, activeTheme, allThemes }) %>
+
+  <main class="flex-1 overflow-y-auto p-8">
+    <%- body %>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

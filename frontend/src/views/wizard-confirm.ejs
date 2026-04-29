@@ -1,0 +1,75 @@
+<%
+/*
+ * Variables de entrada:
+ *   steps:  WizardStep[]
+ *   wizard: WizardData — datos completos de la sesión
+ */
+function displayValue(field, rawVal) {
+  if (!rawVal) return '—';
+  if (field.type === 'multi-select') {
+    try {
+      const arr = JSON.parse(rawVal);
+      return Array.isArray(arr) && arr.length ? arr.join(', ') : '—';
+    } catch { return rawVal; }
+  }
+  return rawVal;
+}
+%>
+<div class="max-w-3xl">
+  <h2 class="font-serif text-2xl text-forge-accent mb-1">Revisar Historia</h2>
+  <p class="text-forge-muted text-xs uppercase tracking-widest mb-8">Confirmá los datos antes de generar</p>
+
+  <div class="space-y-6 mb-8">
+    <% steps.forEach(s => { %>
+      <% const data = wizard[s.id] || {}; %>
+      <div class="bg-forge-surface border border-forge-border p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="text-xs uppercase tracking-widest text-forge-muted"><%= s.title %></h3>
+            <% if (s.subtitle) { %>
+              <p class="text-xs text-forge-muted opacity-60 mt-0.5"><%= s.subtitle %></p>
+            <% } %>
+          </div>
+          <a href="/generar/paso/<%= s.number %>"
+             class="text-xs text-forge-accent hover:opacity-70 flex items-center gap-1">
+            <i data-lucide="pencil" class="w-3 h-3"></i> Editar
+          </a>
+        </div>
+        <% s.fields.forEach(field => { %>
+          <% const val = displayValue(field, data[field.name]); %>
+          <% if (val !== '—' || field.required) { %>
+            <div class="mb-2">
+              <span class="text-xs text-forge-muted"><%= field.label %>: </span>
+              <span class="text-sm text-forge-text"><%= val %></span>
+            </div>
+          <% } %>
+        <% }); %>
+      </div>
+    <% }); %>
+  </div>
+
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <a href="/generar/paso/<%= steps.length %>"
+       class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+    </a>
+    <div class="flex items-center gap-3">
+      <form method="POST" action="/generar/submit">
+        <input type="hidden" name="action" value="save" />
+        <button type="submit"
+                class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
+                       tracking-widest uppercase hover:text-forge-text transition-colors">
+          <i data-lucide="save" class="w-4 h-4"></i> Guardar borrador
+        </button>
+      </form>
+      <form method="POST" action="/generar/submit">
+        <input type="hidden" name="action" value="generate" />
+        <button type="submit"
+                class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
+                       tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <i data-lucide="zap" class="w-4 h-4"></i> Generar historia
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

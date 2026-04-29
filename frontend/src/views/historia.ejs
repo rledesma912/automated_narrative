@@ -1,0 +1,142 @@
+<%
+/*
+ * Variables de entrada:
+ *   story: {
+ *     id, title, status, created_at,
+ *     atmosfera, protagonista, relator, sinopsis,
+ *     storyteller_config, personajes_full
+ *   }
+ */
+const STATUS_LABEL = {
+  draft:      { text: 'Borrador',    cls: 'text-yellow-400 border-yellow-900' },
+  pending:    { text: 'En cola',     cls: 'text-forge-muted border-forge-border' },
+  processing: { text: 'Generando',   cls: 'text-blue-400 border-blue-900' },
+  completed:  { text: 'Completada',  cls: 'text-green-400 border-green-900' },
+  failed:     { text: 'Error',       cls: 'text-red-400 border-red-900' },
+};
+const sl = STATUS_LABEL[story.status] || STATUS_LABEL['pending'];
+
+const sc = story.storyteller_config || {};
+const atm = sc.atmosphere || {};
+const scenarios = sc.scenarios || [];
+const rules = sc.rules || [];
+const personajes = story.personajes_full || [];
+%>
+<div class="max-w-3xl">
+
+  <%/* ── Header ────────────────────────────────────────────────────────── */%>
+  <div class="flex items-start justify-between mb-8 gap-4">
+    <div>
+      <h2 class="font-serif text-2xl text-forge-accent mb-1"><%= story.title || 'Sin título' %></h2>
+      <p class="text-forge-muted text-xs uppercase tracking-widest">
+        <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+      </p>
+    </div>
+    <span class="px-3 py-1 text-xs font-bold border rounded shrink-0 <%= sl.cls %>">
+      <%= sl.text %>
+    </span>
+  </div>
+
+  <%/* ── Secciones de datos ─────────────────────────────────────────────── */%>
+  <div class="space-y-6">
+
+    <% if (atm.genre || story.atmosfera) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">ATMÓSFERA</h3>
+      <p class="text-sm text-forge-text">
+        <%= atm.genre || story.atmosfera %>
+        <% if (atm.subgenre) { %><span class="text-forge-muted"> (<%= atm.subgenre %>)</span><% } %>
+        <% if (atm.tone) { %><span class="text-forge-muted"> — <%= atm.tone %></span><% } %>
+      </p>
+    </div>
+    <% } %>
+
+    <% if (story.relator) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">NARRADOR</h3>
+      <p class="text-sm text-forge-text"><%= story.relator %></p>
+    </div>
+    <% } %>
+
+    <% if (personajes.length > 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">PERSONAJES</h3>
+      <ul class="space-y-2">
+        <% personajes.forEach(function(p) { %>
+          <li class="text-sm text-forge-text">
+            <span class="font-semibold"><%= p.name %>:</span>
+            <%= p.role %>
+            <% if (p.traits && p.traits.length) { %>
+              <span class="text-forge-muted text-xs"> [<%= p.traits.join(', ') %>]</span>
+            <% } %>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (scenarios.length > 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">ESCENARIOS</h3>
+      <ul class="space-y-1">
+        <% scenarios.forEach(function(s) { %>
+          <li class="text-sm text-forge-text">
+            <span class="font-semibold"><%= s.name %></span>
+            <% if (s.description) { %><span class="text-forge-muted"> — <%= s.description %></span><% } %>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (rules.length > 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">REGLAS DEL MUNDO</h3>
+      <ul class="space-y-1">
+        <% rules.forEach(function(r) { %>
+          <li class="text-sm text-forge-text">
+            <span class="text-forge-muted text-xs">[<%= r.type || 'entorno' %>]</span>
+            <%= r.text %>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (story.sinopsis) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">TRAMA</h3>
+      <p class="text-sm text-forge-text whitespace-pre-wrap leading-relaxed"><%= story.sinopsis %></p>
+    </div>
+    <% } %>
+
+  </div>
+
+  <%/* ── Acciones ───────────────────────────────────────────────────────── */%>
+  <div class="flex items-center gap-4 mt-8 pt-6 border-t border-forge-border flex-wrap">
+    <a href="/galeria"
+       class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
+    </a>
+
+    <% if (story.status === 'draft' || story.status === 'failed') { %>
+      <form method="POST" action="/historia/<%= story.id %>/generar">
+        <button type="submit"
+                class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
+                       tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <%= story.status === 'failed' ? 'Reintentar' : 'Generar historia' %>
+        </button>
+      </form>
+    <% } else if (story.status === 'completed') { %>
+      <form method="POST" action="/historia/<%= story.id %>/generar">
+        <button type="submit"
+                class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
+                       tracking-widest uppercase hover:text-forge-text transition-colors">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
+        </button>
+      </form>
+    <% } %>
+  </div>
+
+</div>

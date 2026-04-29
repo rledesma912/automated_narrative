@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.presentation.routers import beat_router, export_router, story_router
+from src.presentation.routers import beat_router, export_router, story_router, stream_router
 
 app = FastAPI(
     title="NarrativeForge API",
@@ -22,13 +22,9 @@ app.add_middleware(
 app.include_router(story_router, prefix="/api/v1")
 app.include_router(beat_router, prefix="/api/v1")
 app.include_router(export_router, prefix="/api/v1")
+app.include_router(stream_router, prefix="/api/v1")
 
 
 @app.get("/")
 async def root():
     return {"status": "ok", "service": "NarrativeForge"}
-
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
