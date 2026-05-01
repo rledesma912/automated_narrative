@@ -105,6 +105,21 @@ def main() -> None:
         help="Directorio de output",
     )
 
+    export_yaml_parser = subparsers.add_parser(
+        "export-yaml",
+        help="Exportar una historia a YAML canónico (Spec-217). Round-trip con generate --input.",
+    )
+    export_yaml_parser.add_argument(
+        "story_id",
+        help="UUID de la historia a exportar",
+    )
+    export_yaml_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Path de salida (default: input_stories/<slug>.yaml)",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -192,6 +207,11 @@ def main() -> None:
                 story_id=args.story_id,
                 format=args.format,
                 output_dir=args.output,
+            )
+        elif args.command == "export-yaml":
+            commands.export_yaml(
+                story_id=args.story_id,
+                output=args.output,
             )
     except CLIError as e:
         logger.error(f"[CLI] {e.message}")

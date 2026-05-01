@@ -4,7 +4,12 @@ import logging
 
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.infrastructure.adapters import AnthropicAdapter, GeminiCLIAdapter, MockLLMAdapter, OllamaAdapter
+from src.infrastructure.adapters import (
+    AnthropicAdapter,
+    GeminiCLIAdapter,
+    MockLLMAdapter,
+    OllamaAdapter,
+)
 
 logger = logging.getLogger(__name__)
 

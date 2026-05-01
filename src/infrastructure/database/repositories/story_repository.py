@@ -6,6 +6,7 @@ from uuid import UUID
 
 from src.domain.models import NarrativeJournal, RuleType, Story, StoryStatus, TypedRule
 from src.infrastructure.database.connection import get_connection
+from src.utils.timezone import now_argentina
 
 
 class SQLStoryRepository:
@@ -170,6 +171,7 @@ class SQLStoryRepository:
             (status, str(story_id)),
         )
         await conn.commit()
+        await conn.close()
 
     async def list_all(self) -> list[Story]:
         """List all stories."""
@@ -250,6 +252,64 @@ class SQLStoryRepository:
             physical_emotional_state=row["physical_emotional_state"],
         )
 
+    async def clear_story_artifacts(self, story_id) -> None:
+        """Limpia artefactos generados (beats, journal, anchors) para reinicio limpio (Spec-212)."""
+        conn = await get_connection()
+        sid = str(story_id)
+        try:
+            await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
+            await conn.commit()
+        except Exception:
+            await conn.rollback()
+            raise
+        finally:
+            await conn.close()
+
+    async def recover_processing_stories(self) -> int:
+        """Transición masiva processing → failed tras reinicio del servidor (Spec-214 B1)."""
+        import logging
+        conn = await get_connection()
+        cursor = await conn.execute(
+            "UPDATE story SET status = ? WHERE status = ?",
+            (StoryStatus.FAILED.value, StoryStatus.PROCESSING.value),
+        )
+        count = cursor.rowcount
+        await conn.commit()
+        await conn.close()
+        if count > 0:
+            logging.getLogger(__name__).warning(
+                "Recuperadas %d historias en estado inconsistente tras reinicio", count
+            )
+        return count
+
+    async def update_file_path(self, story_id, file_path: str | None) -> None:
+        """Persiste el path relativo del MD exportado (None para desvincular)."""
+        conn = await get_connection()
+        await conn.execute(
+            "UPDATE story SET file_path = ? WHERE id = ?",
+            (file_path, str(story_id)),
+        )
+        await conn.commit()
+        await conn.close()
+
+    async def delete(self, story_id: UUID) -> None:
+        """Hard delete: borra la historia y todas sus tablas hijas."""
+        conn = await get_connection()
+        sid = str(story_id)
+        # Las FK tienen ON DELETE CASCADE con PRAGMA foreign_keys = ON,
+        # pero borramos explícitamente para garantizar el orden correcto.
+        await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
+        await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
+        # macro_beat_rule hace CASCADE desde macro_beat
+        await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
+        await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
+        await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))
+        await conn.execute("DELETE FROM story WHERE id = ?", (sid,))
+        await conn.commit()
+        await conn.close()
+
     async def save_narrative_brief(self, story_id, brief: str) -> None:
         """Persiste el narrative_brief generado por el expansor."""
         conn = await get_connection()
@@ -262,15 +322,13 @@ class SQLStoryRepository:
 
     async def save_narrative_anchors(self, story_id, anchors) -> None:
         """Persiste los 5 anclajes de resonancia aristotélica (Spec-081)."""
-        from datetime import datetime
-
         conn = await get_connection()
-        # Nota: Usamos una subquery para el ID o generamos uno si es nuevo, 
+        # Nota: Usamos una subquery para el ID o generamos uno si es nuevo,
         # pero para simplificar seguiremos el patrón de INSERT OR REPLACE por story_id
         # si la tabla tiene story_id como UNIQUE o PK. En SQLite actual es story_id NOT NULL.
         # Vamos a asegurar que id sea único.
         import uuid
-        
+
         # Primero buscamos si ya existe un ID para este story_id
         cursor = await conn.execute("SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),))
         row = await cursor.fetchone()
@@ -289,7 +347,7 @@ class SQLStoryRepository:
                 anchors.resonance_anagnorisis,
                 anchors.resonance_peripeteia,
                 anchors.resonance_residual,
-                datetime.now().isoformat(),
+                now_argentina().isoformat(),
             ),
         )
         await conn.commit()
@@ -310,7 +368,8 @@ class SQLStoryRepository:
             narrative_brief=row["narrative_brief"] or "",
             storyteller_config=json.loads(raw_cfg) if raw_cfg else None,
             personajes_full=json.loads(raw_personajes) if raw_personajes else [],
-            status=StoryStatus(row["status"]),
+            status=StoryStatus(row["status"]) if row["status"] in [s.value for s in StoryStatus] else StoryStatus.DRAFT,
+            file_path=row["file_path"] if "file_path" in keys else None,
         )
 
     def _rows_to_typed_rules(self, rule_rows, story_id: str) -> list[TypedRule]:

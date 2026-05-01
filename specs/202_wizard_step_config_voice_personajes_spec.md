@@ -787,7 +787,7 @@ Cada campo puede incluir:
 - [ ] Reemplazar steps actuales por 3 nuevos steps
 - [ ] Agregar campo `subtitle` a cada step
 - [ ] Definir step_config_title con title, atmosfera
-- [ ] Definir step_config_personajes (elenco: 5人物的 × name, role, traits + storyteller_id, voice_style)
+- [ ] Definir step_config_personajes (elenco: 5 personajes × name, role, traits + storyteller_id, voice_style)
 - [ ] Definir step_config_voz (percepcion: 3 campos, conocimiento: 3 campos, lenguaje: 2 campos, sesgos: 2 campos)
 - [ ] Agregar campo `type: radio` para distortion_level, language_register
 - [ ] Agregar campo `type: multi-select` para traits, triggers, fear_focus, attention_focus

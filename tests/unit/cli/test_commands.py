@@ -2,7 +2,6 @@
 
 import re
 
-
 from src.cli.commands import _write_markdown
 from src.domain.models import Beat, Story
 

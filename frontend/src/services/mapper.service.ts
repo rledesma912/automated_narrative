@@ -22,10 +22,16 @@ function parseJsonArray(raw: string | undefined): string[] {
   }
 }
 
+/** Extrae el ID técnico de un string con formato "id: Etiqueta" */
+function parseOptionalLabel(val: string): string {
+  if (!val) return "";
+  return val.split(":")[0].trim();
+}
+
 function buildAtmosphere(cfg: Record<string, string>) {
-  const genre    = cfg["atmosfera"]           ?? "";
-  const subgenre = cfg["atmosphere_subgenre"] ?? "";
-  const tone     = cfg["atmosphere_tone"]     ?? "";
+  const genre    = parseOptionalLabel(cfg["atmosfera"]           ?? "");
+  const subgenre = parseOptionalLabel(cfg["atmosphere_subgenre"] ?? "");
+  const tone     = parseOptionalLabel(cfg["atmosphere_tone"]     ?? "");
   return { genre, subgenre, tone };
 }
 
@@ -52,10 +58,11 @@ function buildActos(plot: Record<string, string>) {
 
 function buildRules(world: Record<string, string>) {
   const rules: Array<{ id: string; text: string; type: string }> = [];
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 7; i++) {
     const text = (world[`rule_${i}_text`] ?? "").trim();
     if (!text) continue;
-    const type = (world[`rule_${i}_type`] ?? "entorno").trim();
+    const typeRaw = (world[`rule_${i}_type`] ?? "entorno").trim();
+    const type = typeRaw.split(":")[0].trim(); // Extrae 'entorno' de 'entorno: Del lugar'
     rules.push({ id: `R${i}`, text, type });
   }
   return rules;
@@ -75,7 +82,8 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
     const name = (pjs[`protagonista_${i}_name`] ?? "").trim();
     if (!name) continue;
     const role   = (pjs[`protagonista_${i}_role`]   ?? "").trim();
-    const traits = parseJsonArray(pjs[`protagonista_${i}_traits`]);
+    const traitsRaw = parseJsonArray(pjs[`protagonista_${i}_traits`]);
+    const traits = traitsRaw.map(t => t.split(":")[0].trim()); // Limpia rasgos
     protagonists.push({ id: `P${i}`, name, role, traits });
   }
 
@@ -126,6 +134,7 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
     atmosphere,
     scenarios,
     rules,
+    actos,
     perception: {
       reliability: voz["perception_reliability"] ?? "subjetiva",
       distortion: {

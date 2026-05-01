@@ -68,22 +68,26 @@ function fieldHtml(field) {
     const isStoryteller = field.name === 'storyteller_id';
     html += `<select name="${esc(field.name)}"${reqAttr} class="${CLS_INPUT}">`;
     html += `<option value="" disabled${!effective ? ' selected' : ''}>Seleccioná...</option>`;
-    (field.options || []).forEach(opt => {
+    (Array.isArray(field.options) ? field.options : []).forEach(opt => {
+      const parts = opt.split(':');
+      const val   = parts[0].trim();
+      const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
+
       const sel = effective === opt ? ' selected' : '';
-      let label;
+      let displayLabel;
       if (isStoryteller) {
-        const idx = esc(opt).replace('protagonista_', '');
-        label = `Personaje ${idx}`;
+        const idx = val.replace('protagonista_', '');
+        displayLabel = `Personaje ${idx}`;
       } else {
-        label = esc(opt);
+        displayLabel = label;
       }
-      html += `<option value="${esc(opt)}"${sel}>${label}</option>`;
+      html += `<option value="${esc(opt)}"${sel}>${displayLabel}</option>`;
     });
     html += '</select>';
 
   } else if (field.type === 'radio') {
     html += '<div class="space-y-2 mt-2">';
-    (field.options || []).forEach(opt => {
+    (Array.isArray(field.options) ? field.options : []).forEach(opt => {
       const chk = effective === opt ? ' checked' : '';
       html += '<label class="flex items-center gap-3 cursor-pointer">';
       html += `<input type="radio" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
@@ -94,11 +98,13 @@ function fieldHtml(field) {
 
   } else if (field.type === 'multi-select') {
     html += '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">';
-    (field.options || []).forEach(opt => {
+    (Array.isArray(field.options) ? field.options : []).forEach(opt => {
+      const parts = opt.split(':');
+      const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
       const chk = msArr.includes(opt) ? ' checked' : '';
       html += '<label class="flex items-center gap-2 cursor-pointer">';
       html += `<input type="checkbox" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
-      html += `<span class="text-base text-forge-text">${esc(opt)}</span>`;
+      html += `<span class="text-base text-forge-text">${label}</span>`;
       html += '</label>';
     });
     html += '</div>';
@@ -161,9 +167,16 @@ function hasCardData(fields) {
         const labelClass = active ? 'text-forge-text' : done ? 'text-forge-accent' : 'text-forge-muted';
       %>
       <div class="flex flex-col items-center shrink-0">
-        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold <%= circleClass %>">
-          <% if (done) { %><i data-lucide="check" class="w-3 h-3"></i><% } else { %><%= s.number %><% } %>
-        </div>
+        <% if (done) { %>
+          <a href="/generar/paso/<%= s.number %>"
+             class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold <%= circleClass %> hover:opacity-70 transition-opacity">
+            <i data-lucide="check" class="w-3 h-3"></i>
+          </a>
+        <% } else { %>
+          <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold <%= circleClass %>">
+            <%= s.number %>
+          </div>
+        <% } %>
         <span class="text-xs mt-1 <%= labelClass %> whitespace-nowrap"><%= s.title %></span>
       </div>
       <% if (i < steps.length - 1) { %>
@@ -284,6 +297,50 @@ function hasCardData(fields) {
           </div>
         </div>
 
+      <% } else if (groupName === 'reglas') { %>
+        <%
+          const ruleCards = groupFieldsByIndex(groupedMap['reglas'], /^rule_(\d+)_/);
+          const ruleIndices = Object.keys(ruleCards).sort((a,b) => Number(a)-Number(b));
+          const MAX_REGLAS = 7;
+        %>
+        <div class="border border-forge-border bg-forge-surface p-6 space-y-5" id="reglas-group">
+          <div class="border-b border-forge-border pb-3">
+            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
+          </div>
+
+          <% ruleIndices.forEach((idx, i) => { %>
+            <%
+              const isFirstR = i === 0;
+              const visibleR = isFirstR || hasCardData(ruleCards[idx]);
+            %>
+            <div id="rule-card-<%= idx %>"
+                 class="border border-forge-border p-4<%= visibleR ? '' : ' hidden' %>">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xs uppercase tracking-widest text-forge-muted font-bold">REGLA <%= idx %></h4>
+                <button type="button"
+                        onclick="askDeleteRule('<%= idx %>')"
+                        id="rule-delete-btn-<%= idx %>"
+                        class="text-forge-muted hover:text-red-400 transition-colors<%= isFirstR ? ' invisible' : '' %>">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <% ruleCards[idx].forEach(field => { %>
+                <%- fieldHtml(field) %>
+              <% }); %>
+            </div>
+          <% }); %>
+
+          <div class="flex items-center gap-4 pt-2">
+            <button type="button" onclick="addRule()"
+                    id="btn-add-rule"
+                    class="flex items-center gap-2 text-sm text-forge-accent hover:opacity-70 transition-opacity border border-forge-border px-4 py-2">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Agregar regla
+            </button>
+            <span class="text-xs text-forge-muted hidden" id="msg-max-reglas">Máximo <%= MAX_REGLAS %> reglas</span>
+          </div>
+        </div>
+
       <% } else { %>
         <div class="border border-forge-border bg-forge-surface p-6 space-y-5">
           <div class="border-b border-forge-border pb-3">
@@ -313,7 +370,7 @@ function hasCardData(fields) {
               class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
                      tracking-widest uppercase hover:opacity-80 transition-opacity">
         <% if (isLast) { %>
-          <i data-lucide="eye" class="w-4 h-4"></i> Revisar
+          <i data-lucide="save" class="w-4 h-4"></i> Guardar y revisar
         <% } else { %>
           Siguiente <i data-lucide="arrow-right" class="w-4 h-4"></i>
         <% } %>
@@ -510,6 +567,67 @@ function hasCardData(fields) {
 
       card.classList.add('hidden');
       document.getElementById('msg-max-escenarios').classList.add('hidden');
+    });
+  };
+
+  // ── Listas dinámicas: Reglas ─────────────────────────────────────────────
+  var MAX_REGLAS = 7;
+
+  function getVisibleRules() {
+    var visible = [];
+    for (var i = 1; i <= MAX_REGLAS; i++) {
+      var card = document.getElementById('rule-card-' + i);
+      if (card && !card.classList.contains('hidden')) visible.push(i);
+    }
+    return visible;
+  }
+
+  window.addRule = function () {
+    var visible = getVisibleRules();
+    if (visible.length >= MAX_REGLAS) {
+      document.getElementById('msg-max-reglas').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('msg-max-reglas').classList.add('hidden');
+
+    for (var i = 1; i <= MAX_REGLAS; i++) {
+      var card = document.getElementById('rule-card-' + i);
+      if (card && card.classList.contains('hidden')) {
+        card.classList.remove('hidden');
+        var delBtn = document.getElementById('rule-delete-btn-' + i);
+        if (delBtn) delBtn.classList.remove('invisible');
+        lucide.createIcons();
+        break;
+      }
+    }
+
+    var newVisible = getVisibleRules();
+    if (newVisible.length >= MAX_REGLAS) {
+      document.getElementById('msg-max-reglas').classList.remove('hidden');
+    }
+  };
+
+  window.askDeleteRule = function (idx) {
+    var textInput = document.querySelector('[name="rule_' + idx + '_text"]');
+    var text = textInput ? textInput.value.trim() : '';
+    var msg = text
+      ? 'Se borrará la regla "' + (text.length > 30 ? text.substring(0, 30) + '...' : text) + '" definitivamente.'
+      : 'Se borrará la Regla ' + idx + ' definitivamente.';
+
+    openDeleteModal(msg, function () {
+      var card = document.getElementById('rule-card-' + idx);
+      if (!card) return;
+
+      card.querySelectorAll('input, textarea, select').forEach(function (el) {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = false;
+        } else {
+          el.value = '';
+        }
+      });
+
+      card.classList.add('hidden');
+      document.getElementById('msg-max-reglas').classList.add('hidden');
     });
   };
 

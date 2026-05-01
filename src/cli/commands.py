@@ -1,7 +1,6 @@
 """CLI Commands for NarrativeForge."""
 
 import time
-from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -17,6 +16,7 @@ from src.config import settings
 from src.infrastructure.container import CLIContainer
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.renderers import MarkdownRenderer
+from src.utils.timezone import now_argentina
 
 
 def _write_markdown(story, output_dir: Path) -> Path:
@@ -25,7 +25,7 @@ def _write_markdown(story, output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     md_content = renderer.render(story)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    timestamp = now_argentina().strftime("%Y%m%d%H%M")
     safe_title = (
         "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
         .strip()
@@ -162,6 +162,8 @@ async def _generate_async(
         typed_rules=typed_rules or [],
         personajes_full=personajes_full or [],
     )
+
+    await container.story_repo.update_status(story.id, "completed")
 
     t_export = time.perf_counter()
     output_path = _write_markdown(story, output_dir)
@@ -325,11 +327,56 @@ async def _generate_from_db_async(
 
     story = await runner.run_from_story(story)
 
+    await container.story_repo.update_status(story.id, "completed")
+
     t_export = time.perf_counter()
     output_path = _write_markdown(story, output_dir)
     container.reporter.export_done(time.perf_counter() - t_export)
     container.reporter.done(time.perf_counter() - t_total, output_path)
     logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
+
+
+def export_yaml(
+    story_id: str,
+    output: Path | None = None,
+) -> None:
+    """Exporta una historia al formato YAML canónico (Spec-217)."""
+    logger.info(f"[COMANDOS] Iniciando export-yaml para historia: {story_id}")
+    try:
+        import asyncio
+
+        asyncio.run(_export_yaml_async(story_id, output))
+    except StoryNotFoundError:
+        raise
+    except Exception as e:
+        logger.error(f"[COMANDOS] Error en export-yaml: {e}")
+        raise ExportError(str(e)) from e
+
+
+async def _export_yaml_async(story_id: str, output: Path | None) -> None:
+    """Async impl de export-yaml."""
+    await _init_database()
+
+    container = CLIContainer()
+    story = await container.story_repo.get_by_string_id(story_id)
+    if not story:
+        raise StoryNotFoundError(story_id)
+
+    from src.infrastructure.exporters import YamlStoryExporter
+
+    if output is None:
+        safe_title = (
+            "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
+            .strip()
+            .replace(" ", "_")
+            .lower()
+        )
+        output = Path(settings.input_dir) / f"{safe_title}.yaml"
+
+    exporter = YamlStoryExporter()
+    written = exporter.export_to_file(story, output)
+    logger.info(f"[COMANDOS] YAML exportado a: {written}")
+    print(f"YAML escrito en: {written}")
 
 
 def export_(

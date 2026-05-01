@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from src.utils.timezone import now_argentina
+
 
 class StreamEventType(str, Enum):
     STATUS    = "status"
@@ -19,7 +21,7 @@ class StreamEventType(str, Enum):
 class StreamEvent(BaseModel):
     event: StreamEventType
     data: dict | str
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=now_argentina)
 
     def to_sse(self) -> dict:
         """Formato compatible con sse-starlette EventSourceResponse."""

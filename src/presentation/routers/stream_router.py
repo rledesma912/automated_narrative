@@ -8,10 +8,11 @@ from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
 from src.application.services import PromptBuilder
+from src.application.services.export_service import ExportService
+from src.application.services.observability_service import observability
 from src.application.services.streaming_service import stream_story
 from src.application.use_cases.director_use_case import DirectorUseCase
 from src.config import settings
-from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
 from src.infrastructure.normalizers import ResponseNormalizer
@@ -24,28 +25,34 @@ router = APIRouter(tags=["Streaming"])
 
 @router.get("/stories/{story_id}/stream")
 async def stream_generation(story_id: str):
-    """Inicia la generación de una historia y emite eventos SSE en tiempo real.
-
-    Idempotencia (punto 3): si la historia ya está en PROCESSING devuelve error inmediato.
-    Heartbeat (punto 2): emitido cada 15s desde una tarea paralela durante la espera del LLM.
-    Normalizer (punto 4): macro_beat.content ya viene normalizado desde VozUseCase.
-    Eventos: status | beat_start | beat_done | heartbeat | done | error
-    """
+    """Inicia la generación de una historia y emite eventos SSE en tiempo real."""
     story_repo = SQLStoryRepository()
     story = await story_repo.get_by_id(UUID(story_id))
+
     if not story:
+        logger.warning(f"SSE Request failed: Story {story_id} not found.")
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
-    # Punto 3 — Idempotencia: bloquear si ya hay un proceso activo
+    logger.info(f"[STREAM] Inicio de petición SSE | Story: {story_id} | Status actual: {story.status.value}")
+
+    observability.record(
+        category="generation",
+        message=f"Iniciando generación de '{story.title}'",
+        story_id=story_id,
+        story_title=story.title
+    )
+
+    # Punto 3 — Idempotencia: si ya está en processing, permitir reconexión para ver progreso
     if story.status.value == "processing":
-        raise HTTPException(
-            status_code=409,
-            detail="La historia ya está siendo generada. Espera a que termine o recarga para ver el progreso.",
-        )
+        logger.info(f"[STREAM] Historia {story_id} ya en procesamiento. Permitiendo reconexión.")
+        # Continuar para permitir que el navegador se conecte al stream existente
+
 
     llm            = LLMFactory.get_provider()
     prompt_builder = PromptBuilder()
     normalizer     = ResponseNormalizer()
+    beat_repo      = SQLBeatRepository()
+    export_service = ExportService()
 
     director = DirectorUseCase(
         llm=llm,
@@ -55,7 +62,13 @@ async def stream_generation(story_id: str):
     )
 
     async def event_generator():
-        async for event in stream_story(director, story, story_repo=story_repo):
+        async for event in stream_story(
+            director,
+            story,
+            story_repo=story_repo,
+            beat_repo=beat_repo,
+            export_service=export_service,
+        ):
             yield event.to_sse()
 
     return EventSourceResponse(event_generator())
@@ -172,3 +185,9 @@ async def get_active_profile():
         "provider": settings.llm_provider,
         "roles": roles,
     }
+
+
+@router.get("/system/events")
+async def get_system_events(limit: int = 10):
+    """Devuelve el historial de eventos del sistema."""
+    return observability.get_history(limit)

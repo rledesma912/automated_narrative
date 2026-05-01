@@ -3,72 +3,225 @@
  * Variables de entrada:
  *   storyId:       string
  *   coreStreamUrl: string — URL del endpoint SSE del Core Python
+ *   storyStatus:   string — 'processing' | 'completed' | 'failed' | 'draft'
+ *   story:         object | null
+ *   beats:         array  — beats cargados de DB (solo si !processing)
  */
 %>
 
-<div class="max-w-3xl" id="streaming-root">
+<% if (storyStatus !== 'processing') { %>
+<%/* ══════════════════════════════════════════════════════════════════════════ */%>
+<%/* MODO LECTURA — historia completed o failed                               */%>
+<%/* ══════════════════════════════════════════════════════════════════════════ */%>
+<%
+  const READ_STATUS = {
+    completed: { text: 'Completada', cls: 'text-green-500', icon: 'check-circle' },
+    failed:    { text: 'Error',      cls: 'text-red-500',   icon: 'alert-triangle' },
+    draft:     { text: 'Borrador',   cls: 'text-yellow-500', icon: 'file' },
+  };
+  const rs = READ_STATUS[storyStatus] || READ_STATUS['draft'];
+%>
+<div class="max-w-4xl mx-auto">
 
-  <%/* ── Header ────────────────────────────────────────── */%>
-  <div class="flex items-center justify-between mb-8">
+  <%/* ── Header ───────────────────────────────────────────── */%>
+  <div class="flex items-center justify-between mb-10">
     <div>
-      <h2 class="font-serif text-2xl text-forge-accent">Sala de Generación</h2>
-      <p class="text-forge-muted text-xs uppercase tracking-widest mt-1" id="status-line">
-        Conectando con el sistema...
-      </p>
+      <h2 class="font-serif text-3xl text-forge-accent"><%= story ? story.title : 'Historia' %></h2>
+      <p class="text-forge-muted text-sm uppercase tracking-widest mt-2">Sala de Generación — Avance</p>
     </div>
-    <div id="connection-badge"
-         class="px-3 py-1 text-xs font-bold rounded border border-forge-border text-forge-muted">
-      INICIANDO
+    <div class="flex items-center gap-2 px-4 py-2 border border-forge-border text-sm font-bold <%= rs.cls %>">
+      <i data-lucide="<%= rs.icon %>" class="w-4 h-4"></i>
+      <%= rs.text %>
     </div>
   </div>
 
-  <%/* ── Progress bar ───────────────────────────────────── */%>
-  <div class="w-full bg-forge-surface border border-forge-border h-1 mb-8">
-    <div id="progress-bar" class="h-1 bg-forge-accent transition-all duration-700" style="width: 0%"></div>
-  </div>
+  <%/* ── Beats cargados ─────────────────────────────────────── */%>
+  <% if (beats && beats.length > 0) { %>
+    <div class="space-y-6 mb-10">
+      <% beats.forEach(function(b) { %>
+        <% if (b.status === 'completed' && b.content) { %>
+          <div class="border border-forge-border bg-forge-surface p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-8 h-8 rounded-full bg-forge-accent flex items-center justify-center shrink-0">
+                <i data-lucide="check" class="w-4 h-4 text-forge-bg"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-forge-accent">Beat <%= b.beat_number || b.number %></span>
+                <% if (b.summary) { %>
+                  <p class="text-xs text-forge-muted mt-0.5"><%= b.summary %></p>
+                <% } %>
+              </div>
+            </div>
+            <p class="text-base text-forge-text font-serif leading-relaxed whitespace-pre-wrap"><%= b.content %></p>
+          </div>
+        <% } %>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="border border-forge-border bg-forge-surface p-12 text-center text-forge-muted mb-10">
+      <i data-lucide="file-x" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+      <p class="text-sm">No hay beats generados para esta historia.</p>
+    </div>
+  <% } %>
 
-  <%/* ── Beat dots ──────────────────────────────────────── */%>
-  <div class="flex gap-3 mb-10" id="beat-dots">
-    <% for (let i = 1; i <= 5; i++) { %>
-      <div id="dot-<%= i %>"
-           class="w-3 h-3 rounded-full border-2 border-forge-border bg-transparent transition-all duration-300"
-           title="Beat <%= i %>"></div>
+  <%/* ── Acciones ────────────────────────────────────────────── */%>
+  <div class="flex items-center gap-4 flex-wrap pt-6 border-t border-forge-border">
+    <a href="/galeria"
+       class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
+    </a>
+    <% if (story) { %>
+      <a href="/historia/<%= storyId %>"
+         class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm tracking-widest uppercase hover:text-forge-text transition-colors">
+        <i data-lucide="book-open" class="w-4 h-4"></i> Ver historia
+      </a>
+      <% if (storyStatus === 'completed') { %>
+        <button hx-get="/modales/confirmar-regenerar/<%= storyId %>"
+                hx-target="body"
+                hx-swap="beforeend"
+                class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm tracking-widest uppercase hover:opacity-80 transition-opacity cursor-pointer border-none">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
+        </button>
+      <% } else if (storyStatus === 'failed') { %>
+        <form method="POST" action="/historia/<%= storyId %>/generar">
+          <button type="submit"
+                  class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm tracking-widest uppercase hover:opacity-80 transition-opacity">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
+          </button>
+        </form>
+      <% } %>
     <% } %>
   </div>
 
-  <%/* ── Beats container ────────────────────────────────── */%>
-  <div id="beats-container" class="space-y-8"></div>
+</div>
+
+<% } else { %>
+<%/* ══════════════════════════════════════════════════════════════════════════ */%>
+<%/* MODO SSE — generación activa                                             */%>
+<%/* ══════════════════════════════════════════════════════════════════════════ */%>
+
+<div class="max-w-5xl mx-auto" id="streaming-root">
+
+  <%/* ── Header ────────────────────────────────────────── */%>
+  <div class="flex items-center justify-between mb-12">
+    <div>
+      <h2 class="font-serif text-3xl text-forge-accent">Sala de Generación</h2>
+      <p class="text-forge-muted text-sm uppercase tracking-widest mt-2" id="status-line">
+        Conectando...
+      </p>
+      </div>
+      <div id="connection-badge"
+         class="px-5 py-2 text-sm font-bold rounded border border-forge-border text-forge-muted flex items-center gap-3">
+      <span id="spinner-icon" class="hidden"><i data-lucide="loader" class="w-4 h-4 animate-spin"></i></span>
+      <span id="badge-text">INICIANDO</span>
+      </div>
+  </div>
+
+  <%/* ── Fases de Avance (Círculos Vistosos) ──────────────── */%>
+  <div class="flex items-start justify-between mb-16 px-4" id="beat-dots">
+    <% 
+      const phases = [
+        { id: 1, label: 'Análisis' },
+        { id: 2, label: 'Exposición' },
+        { id: 3, label: 'Acción' },
+        { id: 4, label: 'Clímax' },
+        { id: 5, label: 'Resolución' }
+      ];
+    %>
+    <% phases.forEach(p => { %>
+      <div class="flex flex-col items-center gap-4 flex-1 relative">
+        <% if (p.id < 5) { %>
+          <div class="absolute top-6 left-[60%] right-[-40%] h-0.5 bg-forge-border z-0" id="line-<%= p.id %>"></div>
+        <% } %>
+        <div id="dot-<%= p.id %>"
+             class="w-12 h-12 rounded-full border-4 border-forge-border bg-forge-surface flex items-center justify-center z-10 transition-all duration-500 shadow-lg">
+          <span class="text-sm font-bold text-forge-muted"><%= p.id %></span>
+        </div>
+        <span class="text-[10px] uppercase tracking-widest text-forge-muted font-bold" id="label-<%= p.id %>">
+          <%= p.label %>
+        </span>
+      </div>
+    <% }) %>
+  </div>
+
+  <%/* ── Botón iniciar (visible hasta que el usuario haga click) ─ */%>
+  <div id="start-panel" class="flex flex-col items-center justify-center py-24 gap-8">
+    <div class="text-center">
+      <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
+      <button onclick="initiateGeneration()"
+              class="px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
+        <i data-lucide="sparkles" class="w-6 h-6 inline mr-3 group-hover:rotate-12 transition-transform"></i>
+        Iniciar generación
+      </button>
+    </div>
+  </div>
+
+  <%/* ── Spinner (oculto hasta iniciar) ───────────────────── */%>
+  <div id="initial-spinner" class="hidden flex flex-col items-center justify-center py-24 gap-8">
+    <div class="relative w-24 h-24">
+      <div class="absolute inset-0 border-4 border-forge-border rounded-full opacity-20"></div>
+      <div id="spinner-spin" class="absolute inset-0 border-4 border-t-forge-accent rounded-full"></div>
+      <i id="sparkles-icon" data-lucide="sparkles" class="absolute inset-0 m-auto w-10 h-10 text-forge-accent"></i>
+    </div>
+    <div class="text-center">
+      <p class="text-forge-text text-xl font-serif mb-2">Despertando al Narrador...</p>
+      <p id="processing-text" class="text-forge-muted text-xs uppercase tracking-widest">
+        El LLM está procesando tu historia
+      </p>
+    </div>
+  </div>
+
+  <%/* ── Log de progreso estilo CLI ────────────────────── */%>
+  <div id="log-container"
+       class="hidden font-mono text-sm space-y-2 bg-forge-surface border border-forge-border p-8 mb-12 shadow-inner">
+  </div>
 
   <%/* ── Error panel (oculto por defecto) ──────────────── */%>
-  <div id="error-panel" class="hidden mt-8 border border-red-900 bg-red-950 p-5">
-    <div class="flex items-center gap-2 mb-2">
-      <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i>
-      <span class="text-red-400 text-sm font-bold">Conexión interrumpida</span>
+  <div id="error-panel" class="hidden mt-8 border border-red-900 bg-red-950/50 p-8 shadow-2xl">
+    <div class="flex items-center gap-3 mb-4">
+      <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500"></i>
+      <span class="text-red-400 text-lg font-bold uppercase tracking-widest">Conexión interrumpida</span>
     </div>
-    <p id="error-msg" class="text-red-300 text-sm mb-4"></p>
-    <div class="flex gap-3">
+    <p id="error-msg" class="text-red-200 text-base mb-8 leading-relaxed"></p>
+    <div class="flex gap-4 flex-wrap">
       <button onclick="retryStream()"
-              class="px-4 py-2 bg-forge-accent text-forge-text text-xs uppercase tracking-widest hover:opacity-80">
+              class="px-6 py-3 bg-forge-accent text-forge-text text-sm uppercase tracking-widest hover:opacity-80 transition-opacity">
         Reintentar
       </button>
+      <button onclick="cancelGeneration()"
+              class="px-6 py-3 border border-red-900 text-red-400 text-sm uppercase tracking-widest hover:bg-red-950 transition-colors">
+        <i data-lucide="square" class="w-4 h-4 inline mr-2"></i> Detener generación
+      </button>
       <a href="/galeria"
-         class="px-4 py-2 border border-forge-border text-forge-muted text-xs uppercase tracking-widest hover:text-forge-text">
+         class="px-6 py-3 border border-forge-border text-forge-muted text-sm uppercase tracking-widest hover:text-forge-text transition-colors">
         Ver galería
       </a>
     </div>
   </div>
 
   <%/* ── Done panel (oculto por defecto) ───────────────── */%>
-  <div id="done-panel" class="hidden mt-8 border border-forge-border bg-forge-surface p-5">
-    <div class="flex items-center gap-2 mb-2">
-      <i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
-      <span class="text-green-400 text-sm font-bold">Historia completada</span>
+  <div id="done-panel" class="hidden mt-8 border border-forge-border bg-forge-surface p-8 shadow-2xl animate-in zoom-in-95 duration-500">
+    <div class="flex items-center gap-3 mb-6">
+      <i data-lucide="check-circle" class="w-6 h-6 text-green-500"></i>
+      <span class="text-green-500 text-lg font-bold uppercase tracking-widest">Historia completada</span>
     </div>
-    <a href="/galeria"
-       class="inline-flex items-center gap-2 mt-3 px-5 py-2 bg-forge-accent text-forge-text text-sm
-              uppercase tracking-widest hover:opacity-80">
-      <i data-lucide="library" class="w-4 h-4"></i> Ver en Galería
-    </a>
+    <div class="flex flex-wrap gap-4">
+      <a href="/historia/<%= storyId %>"
+         class="inline-flex items-center gap-3 px-8 py-3 bg-forge-accent text-forge-text text-sm
+                uppercase tracking-widest hover:opacity-80 transition-opacity shadow-lg">
+        <i data-lucide="book-open" class="w-5 h-5"></i> Ver Historia Completa
+      </a>
+      <a id="download-md-btn" href="#" class="hidden
+         inline-flex items-center gap-3 px-8 py-3 border border-forge-border text-forge-muted text-sm
+         uppercase tracking-widest hover:text-forge-text transition-colors">
+        <i data-lucide="download" class="w-5 h-5"></i> Descargar Markdown
+      </a>
+      <a href="/galeria"
+         class="inline-flex items-center gap-3 px-8 py-3 border border-forge-border text-forge-muted text-sm
+                uppercase tracking-widest hover:text-forge-text transition-colors">
+        <i data-lucide="library" class="w-5 h-5"></i> Ver Galería
+      </a>
+    </div>
   </div>
 </div>
 
@@ -81,101 +234,237 @@
 
   function setBadge(text, color) {
     const badge = document.getElementById("connection-badge");
-    badge.textContent = text;
-    badge.className = `px-3 py-1 text-xs font-bold rounded border ${color}`;
+    const textSpan = document.getElementById("badge-text");
+    const spinner = document.getElementById("spinner-icon");
+    textSpan.textContent = text;
+    badge.className = `px-5 py-2 text-sm font-bold rounded border ${color} flex items-center gap-3`;
+    
+    if (text === "GENERANDO") {
+      spinner.classList.remove("hidden");
+    } else {
+      spinner.classList.add("hidden");
+    }
   }
 
   function setStatus(msg) {
     document.getElementById("status-line").textContent = msg;
   }
 
-  function setProgress(pct) {
-    document.getElementById("progress-bar").style.width = `${pct}%`;
-  }
-
   function markDot(num, state) {
     const dot = document.getElementById(`dot-${num}`);
+    const label = document.getElementById(`label-${num}`);
+    const line = document.getElementById(`line-${num-1}`);
     if (!dot) return;
+
     if (state === "active") {
-      dot.className = "w-3 h-3 rounded-full border-2 border-forge-accent bg-transparent animate-pulse";
+      dot.className = "w-14 h-14 -mt-1 rounded-full border-4 border-forge-accent bg-forge-surface flex items-center justify-center z-10 animate-pulse shadow-[0_0_20px_rgba(var(--forge-accent-rgb),0.3)]";
+      dot.innerHTML = `<i data-lucide="loader" class="w-6 h-6 text-forge-accent animate-spin"></i>`;
+      if (label) {
+        label.classList.remove('text-forge-muted');
+        label.classList.add('text-forge-accent', 'scale-110');
+      }
+      lucide.createIcons();
     } else if (state === "done") {
-      dot.className = "w-3 h-3 rounded-full border-2 border-forge-accent bg-forge-accent";
+      dot.className = "w-12 h-12 rounded-full border-4 border-forge-accent bg-forge-accent flex items-center justify-center z-10 shadow-inner";
+      dot.innerHTML = `<i data-lucide="check" class="w-6 h-6 text-forge-bg"></i>`;
+      if (label) {
+        label.classList.remove('text-forge-accent', 'scale-110');
+        label.classList.add('text-forge-muted');
+      }
+      if (line) {
+        line.classList.remove('bg-forge-border');
+        line.classList.add('bg-forge-accent');
+      }
+      lucide.createIcons();
     }
   }
 
-  function appendBeat(number, content) {
-    const container = document.getElementById("beats-container");
-    const el = document.createElement("article");
-    el.id = `beat-${number}`;
-    el.className = "border-l-2 border-forge-accent pl-5";
-    el.innerHTML = `
-      <p class="text-xs uppercase tracking-widest text-forge-muted mb-3">Beat ${number}</p>
-      <div class="text-forge-text text-sm leading-relaxed font-serif whitespace-pre-wrap">${escapeHtml(content)}</div>
-    `;
-    container.appendChild(el);
-    el.scrollIntoView({ behavior: "smooth", block: "end" });
-    lucide.createIcons();
+  function hideSpinner() {
+    const spinner = document.getElementById("initial-spinner");
+    if (spinner) spinner.classList.add("hidden");
+    const log = document.getElementById("log-container");
+    if (log) log.classList.remove("hidden");
   }
 
-  function escapeHtml(str) {
-    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const loadingIntervals = {};
+
+  function appendLog(msg, isProgress = false) {
+    const container = document.getElementById("log-container");
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 5);
+    const el = document.createElement("div");
+    el.className = "text-forge-muted border-l-2 border-forge-accent/20 pl-4 py-1";
+    
+    let dotsHtml = '';
+    if (isProgress) {
+      dotsHtml = '<span class="loading-dots text-forge-accent font-bold ml-1">...</span>';
+    }
+    
+    el.innerHTML = `<span class="text-forge-accent font-bold opacity-60">[${time}]</span> ${msg}${dotsHtml}`;
+    container.appendChild(el);
+    el.scrollIntoView({ behavior: "smooth", block: "end" });
+
+    if (isProgress) {
+      const dotsSpan = el.querySelector('.loading-dots');
+      const msgId = Date.now().toString();
+      let dotIndex = 0;
+      const dotStates = [' . ', ' .. ', ' ... '];
+      
+      loadingIntervals[msgId] = setInterval(() => {
+        dotIndex = (dotIndex + 1) % dotStates.length;
+        if (dotsSpan) dotsSpan.textContent = dotStates[dotIndex];
+      }, 400);
+      
+      el.dataset.intervalId = msgId;
+    }
+    
+    return el;
+  }
+
+  function clearLoadingDot(element) {
+    if (element && element.dataset.intervalId) {
+      const intervalId = element.dataset.intervalId;
+      if (loadingIntervals[intervalId]) {
+        clearInterval(loadingIntervals[intervalId]);
+        delete loadingIntervals[intervalId];
+      }
+      const dotsSpan = element.querySelector('.loading-dots');
+      if (dotsSpan) dotsSpan.textContent = '';
+    }
   }
 
   function showError(msg) {
     setBadge("ERROR", "border-red-900 text-red-400");
-    document.getElementById("error-msg").textContent = msg;
+    
+    // Mejorar mensajes de error comunes
+    let displayMsg = msg;
+    if (msg.includes("All connection attempts failed") || msg.includes("connection")) {
+      displayMsg = "El servicio de IA (Ollama) no está disponible. Asegurate de tener Ollama corriendo en tu máquina.";
+    }
+    
+    document.getElementById("error-msg").textContent = displayMsg;
     document.getElementById("error-panel").classList.remove("hidden");
     if (es) { es.close(); es = null; }
   }
 
-  function showDone() {
+  function showDone(filePath) {
     setBadge("COMPLETO", "border-green-900 text-green-400");
     setStatus("Historia generada con éxito");
-    setProgress(100);
-    document.getElementById("done-panel").classList.remove("hidden");
+    const panel = document.getElementById("done-panel");
+    panel.classList.remove("hidden");
+
+    if (filePath) {
+      const dlBtn = document.getElementById("download-md-btn");
+      dlBtn.href = `/historia/${STORY_ID}/descargar-markdown`;
+      dlBtn.classList.remove("hidden");
+      dlBtn.classList.add("inline-flex");
+    }
+
     if (es) { es.close(); es = null; }
+    lucide.createIcons();
+  }
+
+  async function cancelGeneration() {
+    if (es) { es.close(); es = null; }
+    const CORE_URL = STREAM_URL.replace(/\/stories\/.*/, "");
+    try {
+      await fetch(`${CORE_URL}/stories/${STORY_ID}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "failed" }),
+      });
+    } catch { /* ignorar — el backend lo resolverá por cancelación del SSE */ }
+    
+    // Mostrar panel de cancelación en la misma página
+    document.getElementById("initial-spinner").classList.add("hidden");
+    document.getElementById("log-container").classList.add("hidden");
+    document.getElementById("error-panel").classList.remove("hidden");
+    document.getElementById("error-msg").textContent = "La generación fue cancelada antes de completarse.";
+    
+    // Actualizar los botones del panel de error
+    const errorActions = document.querySelector("#error-panel .flex.gap-4");
+    if (errorActions) {
+      errorActions.innerHTML = `
+        <a href="/historia/${STORY_ID}" class="px-6 py-3 bg-forge-accent text-forge-text text-sm uppercase tracking-widest hover:opacity-80 transition-opacity">
+          Ver historia
+        </a>
+        <a href="/galeria" class="px-6 py-3 border border-forge-border text-forge-muted text-sm uppercase tracking-widest hover:text-forge-text transition-colors">
+          Galería
+        </a>
+      `;
+    }
+    lucide.createIcons();
   }
 
   function retryStream() {
+    activateAnimations();
     document.getElementById("error-panel").classList.add("hidden");
     startStream();
   }
 
+  function initiateGeneration() {
+    document.getElementById("start-panel").classList.add("hidden");
+    document.getElementById("initial-spinner").classList.remove("hidden");
+    lucide.createIcons();
+    startStream();
+  }
+
+  function activateAnimations() {
+    document.getElementById("spinner-spin").classList.add("animate-spin");
+    document.getElementById("sparkles-icon").classList.add("animate-pulse");
+    document.getElementById("processing-text").classList.add("animate-pulse");
+  }
+
   function startStream() {
+    activateAnimations();
     setBadge("CONECTANDO", "border-forge-border text-forge-muted");
     setStatus("Conectando con el sistema...");
 
     es = new EventSource(STREAM_URL);
 
     es.addEventListener("status", (e) => {
+      hideSpinner();
       const d = JSON.parse(e.data);
       setStatus(d.msg);
+      appendLog(`🔍 ${d.msg}`);
     });
 
     es.addEventListener("beat_start", (e) => {
+      hideSpinner();
       const d = JSON.parse(e.data);
       setBadge("GENERANDO", "border-forge-accent text-forge-accent");
       setStatus(`Narrando beat ${d.number} de ${TOTAL_BEATS}...`);
       markDot(d.number, "active");
-      setProgress(((d.number - 1) / TOTAL_BEATS) * 100);
+      appendLog(`✍️ Narrando Beat ${d.number}/${TOTAL_BEATS}`, true);
     });
 
     es.addEventListener("beat_done", (e) => {
       const d = JSON.parse(e.data);
       beatCount = d.number;
       markDot(d.number, "done");
-      appendBeat(d.number, d.content);
-      setProgress((d.number / TOTAL_BEATS) * 100);
+      
+      const logs = document.querySelectorAll('#log-container > div');
+      if (logs.length > 0) {
+        clearLoadingDot(logs[logs.length - 1]);
+      }
+      
+      appendLog(`✅ Beat ${d.number} completado`);
     });
 
     // Punto 2: heartbeat ignorado en UI — mantiene el canal abierto
     es.addEventListener("heartbeat", () => { /* canal vivo, sin acción visual */ });
 
-    es.addEventListener("done", () => { showDone(); });
+    es.addEventListener("done", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        showDone(d.file_path);
+        appendLog(`🏁 Historia completa — ${d.total_beats} beats generados`);
+      } catch {
+        showDone(null);
+      }
+    });
 
-    // Punto 5: error a mitad de stream (event: "error" del backend)
-    // Nota: "error" en EventSource es reservado para fallos de conexión.
-    // sse-starlette emite event type "error" → se captura aquí como stream_error.
+    // Punto 5: error a mitad de stream
     es.addEventListener("stream_error", (e) => {
       try {
         const d = JSON.parse(e.data);
@@ -186,21 +475,10 @@
     });
 
     es.onerror = () => {
-      if (beatCount === TOTAL_BEATS) { showDone(); return; }
+      if (beatCount === TOTAL_BEATS) { showDone(null); return; }
       showError("Conexión interrumpida. El servidor no responde.");
     };
   }
-
-  // Punto 5: verificar /health antes de conectar
-  const HEALTH_URL = STREAM_URL.replace(/\/stories\/.*/, "/health");
-  fetch(HEALTH_URL)
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === "healthy") {
-        startStream();
-      } else {
-        showError("El sistema reporta estado degradado. Verifica el panel de Debug.");
-      }
-    })
-    .catch(() => showError("No se puede contactar al backend. ¿Está corriendo en el puerto 8010?"));
 </script>
+
+<% } %>

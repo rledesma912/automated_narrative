@@ -1,8 +1,27 @@
 import { Request, Response } from "express";
-import { STEPS, getStep, saveStepData, getStepData, WizardData } from "../services/wizard.service";
+import axios from "axios";
+import { STEPS, getStep, saveStepData, getStepData, WizardData, mapStoryToWizard } from "../services/wizard.service";
+import { mapWizardToCore } from "../services/mapper.service";
+import { createStory, updateStory } from "../services/core_api.service";
 import { renderPage } from "../utils/render";
 
-type WizardSession = Request["session"] & { wizard?: WizardData };
+const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
+
+type WizardSession = Request["session"] & { wizard?: WizardData; wizard_story_id?: string };
+
+export async function loadWizardData(req: Request, res: Response): Promise<void> {
+  const { storyId } = req.params as { storyId: string };
+  try {
+    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
+    const session = req.session as WizardSession;
+    session.wizard = mapStoryToWizard(resp.data as Record<string, unknown>);
+    session.wizard_story_id = storyId;
+    res.redirect("/generar/paso/1");
+  } catch {
+    res.redirect("/galeria?error=load_failed");
+  }
+}
+
 
 function stepLocals(req: Request, stepNumber: number) {
   const step   = getStep(stepNumber)!;
@@ -11,7 +30,9 @@ function stepLocals(req: Request, stepNumber: number) {
   return { step, saved, steps: STEPS, isLast };
 }
 
-export function wizardRedirect(_req: Request, res: Response): void {
+export function wizardRedirect(req: Request, res: Response): void {
+  const session = req.session as WizardSession;
+  delete session.wizard_story_id;
   res.redirect("/generar/paso/1");
 }
 
@@ -44,6 +65,22 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
 
   const next = num + 1;
   if (next > STEPS.length) {
+    // Último paso: persistir en DB (POST si nuevo, PATCH si ya existe)
+    const session = req.session as WizardSession;
+    const wizard  = session.wizard ?? {};
+    const coreDto = mapWizardToCore(wizard) as unknown as Record<string, unknown>;
+
+    try {
+      if (session.wizard_story_id) {
+        await updateStory(session.wizard_story_id, coreDto);
+      } else {
+        const story = await createStory(coreDto, "save");
+        session.wizard_story_id = story.id;
+      }
+    } catch {
+      // Si la persistencia falla, igual avanzamos a confirmar
+    }
+
     res.redirect("/generar/confirmar");
   } else {
     res.redirect(`/generar/paso/${next}`);
@@ -51,11 +88,15 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
 }
 
 export async function confirmPage(req: Request, res: Response): Promise<void> {
-  const wizard = (req.session as WizardSession).wizard ?? {};
+  const session = req.session as WizardSession;
+  const wizard  = session.wizard ?? {};
+  const storyId = session.wizard_story_id ?? null;
+
   await renderPage(res, "wizard-confirm", {
     title: "Confirmar Historia",
     activePage: "generate",
     steps: STEPS,
     wizard,
+    storyId,
   });
 }

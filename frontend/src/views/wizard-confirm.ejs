@@ -1,8 +1,9 @@
 <%
 /*
  * Variables de entrada:
- *   steps:  WizardStep[]
- *   wizard: WizardData — datos completos de la sesión
+ *   steps:   WizardStep[]
+ *   wizard:  WizardData — datos completos de la sesión
+ *   storyId: string | null — ID de la historia ya persistida (null si sesión expiró)
  */
 function displayValue(field, rawVal) {
   if (!rawVal) return '—';
@@ -54,22 +55,24 @@ function displayValue(field, rawVal) {
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
     </a>
     <div class="flex items-center gap-3">
-      <form method="POST" action="/generar/submit">
-        <input type="hidden" name="action" value="save" />
-        <button type="submit"
-                class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
-                       tracking-widest uppercase hover:text-forge-text transition-colors">
-          <i data-lucide="save" class="w-4 h-4"></i> Guardar borrador
-        </button>
-      </form>
-      <form method="POST" action="/generar/submit">
-        <input type="hidden" name="action" value="generate" />
-        <button type="submit"
-                class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
-                       tracking-widest uppercase hover:opacity-80 transition-opacity">
-          <i data-lucide="zap" class="w-4 h-4"></i> Generar historia
-        </button>
-      </form>
+      <% if (storyId) { %>
+        <form method="POST" action="/historia/<%= storyId %>/generar">
+          <button type="submit"
+                  class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
+                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+            <i data-lucide="zap" class="w-4 h-4"></i> Generar historia
+          </button>
+        </form>
+      <% } else { %>
+        <form method="POST" action="/generar/submit">
+          <input type="hidden" name="action" value="generate" />
+          <button type="submit"
+                  class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
+                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+            <i data-lucide="zap" class="w-4 h-4"></i> Generar historia
+          </button>
+        </form>
+      <% } %>
     </div>
   </div>
 </div>

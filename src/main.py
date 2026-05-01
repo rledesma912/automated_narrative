@@ -1,14 +1,27 @@
 """FastAPI application entrypoint."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.infrastructure.database.connection import init_db
+from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
 from src.presentation.routers import beat_router, export_router, story_router, stream_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    await SQLStoryRepository().recover_processing_stories()
+    yield
+
 
 app = FastAPI(
     title="NarrativeForge API",
     version="1.0.0",
     description="Sistema de generación granular de relatos de terror",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

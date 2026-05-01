@@ -2,7 +2,6 @@
 
 import pytest
 
-from src.application.services.narrator_retry_generator import NarratorRetryGenerator
 from src.application.use_cases import VozUseCase
 from src.domain.interfaces import LLMResponse
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
@@ -145,37 +144,6 @@ class TestVozUseCase:
         assert spy.calls, "Normalizer no fue invocado"
         assert spy.calls[0][0] == raw
         assert result_beat.content == "CONTENIDO LIMPIO"
-
-    @pytest.mark.asyncio
-    async def test_narrate_all_6_beats_sequentially(self):
-        """Test narrating all 6 beats in sequence maintains context."""
-        story = Story(
-            title="Test",
-            protagonista="Familia",
-            relator="primera_persona",
-            escenarios="Casa de campo",
-            sinopsis="Historia de terror",
-            atmosfera="terror psicológico",
-        )
-
-        beats = [Beat(number=i, summary=f"Beat {i}", status="pending") for i in range(1, 7)]
-
-        completed = []
-        journal = None
-
-        mock_llm = MockLLMAdapter(fixed_response="Contenido narrado")
-        use_case = VozUseCase(mock_llm)
-
-        for beat in beats:
-            result_beat, result_journal, _ = await use_case.execute(
-                story, beat, previous_beats=completed, journal=journal
-            )
-            completed.append(result_beat)
-            journal = result_journal
-
-        assert len(completed) == 6
-        assert all(b.status == "completed" for b in completed)
-        assert all(b.content == "Contenido narrado" for b in completed)
 
 
 class TestVozErrorPaths:

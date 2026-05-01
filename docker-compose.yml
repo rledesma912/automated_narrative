@@ -1,42 +1,53 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend-app
-    restart: always
-    ports:
-      - "${PORT:-3100}:3100"
-    environment:
-      - NODE_ENV=production
-      - PORT=3100
-      - SITE_TITLE=${SITE_TITLE:-Narrative Builder}
-      - OUTPUT_DIR=/app/output_stories
-      - DEFAULT_TOTAL_ACTS=${DEFAULT_TOTAL_ACTS:-5}
-      - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
-      - WS_BASE_URL=${WS_BASE_URL:-ws://backend:8000}
-    volumes:
-      - ./frontend/output_stories:/app/output_stories
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      backend:
-        condition: service_started
 
+  # ── Core API (FastAPI/Python) ─────────────────────────────────────────────
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: backend-api
-    restart: always
+    container_name: narrative-api
+    restart: unless-stopped
     ports:
-      - "${API_PORT:-9000}:8000"
+      - "8010:8010"
+    env_file: .env
     environment:
-      - API_HOST=0.0.0.0:8000
-      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      # Pisa DATABASE_URL del .env para que la DB quede en el volumen persistente
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/stories.db
+      - OUTPUT_DIR=/app/output_stories
+      # Ollama corre en el host — accesible vía host.docker.internal
+      - OLLAMA_HOST=http://host.docker.internal:11434
     volumes:
-      - ./output_stories:/app/output_stories
-      - ./config:/app/config:ro
-      - ./templates:/app/templates:ro
+      - ./data:/app/data                        # SQLite DB persistente
+      - ./output_stories:/app/output_stories    # Archivos MD exportados
+      - ./config:/app/config:ro                 # Config YAML (sin rebuild al editar)
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8010/api/v1/health')\" 2>/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Frontend (Node.js/Express) ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: narrative-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: frontend/.env
+    environment:
+      - NODE_ENV=production
+      # El container del frontend usa host.docker.internal para alcanzar al backend
+      - CORE_API_URL=http://host.docker.internal:8010
+    volumes:
+      # Mismo directorio que el backend: los MD exportados son visibles de inmediato
+      - ./output_stories:/app/public/output_stories
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      backend:
+        condition: service_healthy

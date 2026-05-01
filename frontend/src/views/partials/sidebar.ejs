@@ -7,13 +7,12 @@
  */
 const navItems = [
   { page: 'home',       href: '/',           icon: 'home',         label: 'Inicio'      },
-  { page: 'generate',   href: '/generar',    icon: 'pen-line',     label: 'Generar'     },
-  { page: 'gallery',    href: '/galeria',    icon: 'library',      label: 'Galería'     },
-  { page: 'components', href: '/componentes',icon: 'layers',       label: 'Componentes' },
-  { page: 'debug',      href: '/debug',      icon: 'activity',     label: 'Debug'       },
-];
+  { page: 'generate',   href: '/generar',    icon: 'pen-line',     label: 'Nuevo relato'     },
+  { page: 'gallery',    href: '/galeria',    icon: 'library',      label: 'Galería de historias' },
+  { page: 'debug',      href: '/debug',      icon: 'terminal',     label: 'API conn' },
+  ];
 %>
-<aside class="w-56 flex-shrink-0 flex flex-col border-r border-forge-border bg-forge-surface">
+<aside class="w-[var(--sidebar-width)] flex-shrink-0 flex flex-col border-r border-forge-border bg-forge-surface">
 
   <div class="px-5 py-6 border-b border-forge-border">
     <span class="text-forge-accent font-serif text-lg tracking-widest uppercase">Narrative</span>

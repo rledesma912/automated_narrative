@@ -1,10 +1,13 @@
 """Story router."""
 
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 
 from src.application.dto import StoryCreateDTO
+from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
 from src.application.use_cases.create_story import CreateStoryUseCase
 from src.domain.models import StoryStatus
@@ -84,11 +87,20 @@ async def create_story(
     action: str = "generate",
     use_case: CreateStoryUseCase = Depends(get_create_story_use_case),
 ):
-    """Create a new story. action=save → draft; action=generate → pending."""
+    """Create a new story. action=save → draft; action=generate → draft (inicia proceso)."""
     try:
         dto = _request_to_dto(request)
-        initial_status = StoryStatus.DRAFT if action == "save" else StoryStatus.PENDING
+        # Consolidado: todo inicia en DRAFT. El proceso de stream cambiará a PROCESSING.
+        initial_status = StoryStatus.DRAFT
         story = await use_case.execute(dto, initial_status=initial_status)
+
+        observability.record(
+            category="database",
+            message=f"Historia '{story.title}' guardada como {action}",
+            story_id=str(story.id),
+            story_title=story.title
+        )
+
         return StoryResponse(
             id=str(story.id),
             title=story.title,
@@ -113,9 +125,150 @@ async def list_stories(
             created_at=s.created_at,
             atmosfera=s.atmosfera,
             protagonista=s.protagonista,
+            file_path=s.file_path,
         )
         for s in stories
     ]
+
+
+_PATCHABLE_STATUSES = {"draft", "pending", "failed", "processing"}
+
+
+@router.patch("/stories/{story_id}/status", status_code=200)
+async def update_story_status(
+    story_id: str,
+    body: dict,
+    repo: SQLStoryRepository = Depends(_story_repo),
+):
+    """Actualiza el status de una historia. Solo permite transiciones a estados seguros.
+
+    Si la transición es a `processing` (regeneración), se ejecuta limpieza inmediata
+    de artefactos y archivo MD físico ANTES del UPDATE de status (Spec-216).
+    """
+    new_status = body.get("status", "")
+    if new_status not in _PATCHABLE_STATUSES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Status '{new_status}' no permitido. Válidos: {sorted(_PATCHABLE_STATUSES)}",
+        )
+    story = await repo.get_by_id(UUID(story_id))
+    if not story:
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
+
+    if new_status == "processing":
+        if story.file_path:
+            md_file = Path("frontend/public") / story.file_path
+            if md_file.exists():
+                md_file.unlink()
+                observability.record(
+                    "system",
+                    f"Archivo físico eliminado: {story.file_path}",
+                    story_id=story_id,
+                )
+            await repo.update_file_path(story.id, None)
+        await repo.clear_story_artifacts(story.id)
+        observability.record(
+            category="generation",
+            message=f"Limpieza completa para regeneración — story_id={story_id}",
+            story_id=story_id,
+        )
+
+    await repo.update_status(story.id, new_status)
+    return {"id": story_id, "status": new_status}
+
+
+@router.patch("/stories/{story_id}", response_model=StoryResponse, status_code=200)
+async def update_story(
+    story_id: str,
+    request: StoryCreateRequest,
+    repo: SQLStoryRepository = Depends(_story_repo),
+):
+    """Actualiza datos de una historia en estado draft (Spec-214 F2)."""
+    from uuid import uuid4
+    from src.domain.models import RuleType, Scenario, TypedRule
+
+    story = await repo.get_by_id(UUID(story_id))
+    if not story:
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
+    if story.status != StoryStatus.DRAFT:
+        raise HTTPException(status_code=422, detail="Solo se pueden editar historias en estado draft")
+
+    dto = _request_to_dto(request)
+    story.title = dto.title
+    story.protagonista = dto.protagonista
+    story.relator = dto.relator
+    story.sinopsis = dto.sinopsis
+    story.atmosfera = dto.atmosfera
+    story.reglas = dto.reglas
+    story.storyteller_config = dto.storyteller_config
+    story.personajes_full = dto.personajes_full or []
+
+    if dto.escenarios:
+        story.scenarios = [
+            Scenario(story_id=story.id, order_index=i, name=name)
+            for i, name in enumerate(dto.escenarios)
+        ]
+
+    if dto.typed_rules:
+        typed = []
+        for r in dto.typed_rules:
+            raw_type = r.get("type")
+            try:
+                rule_type = RuleType(raw_type) if raw_type else None
+            except ValueError:
+                rule_type = None
+            typed.append(TypedRule(
+                id=r.get("id") or str(uuid4()),
+                story_id=story.id,
+                content=r.get("content", ""),
+                type=rule_type,
+                intensity=r.get("intensity"),
+            ))
+        story.typed_rules = typed
+
+    await repo.save(story)
+    return StoryResponse(id=str(story.id), title=story.title, status=story.status.value, created_at=story.created_at)
+
+
+@router.patch("/stories/{story_id}/file-path", status_code=200)
+async def update_file_path(
+    story_id: str,
+    body: dict,
+    repo: SQLStoryRepository = Depends(_story_repo),
+):
+    """Actualiza o desvincula la ruta del archivo exportado (null para desvincular)."""
+    file_path: str | None = body.get("file_path")  # None si el cliente envía null
+    story = await repo.get_by_id(UUID(story_id))
+    if not story:
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
+    await repo.update_file_path(story.id, file_path)
+    observability.record(
+        category="database",
+        message=f"file_path actualizado: {file_path!r}",
+        story_id=story_id,
+    )
+    return {"id": story_id, "file_path": file_path}
+
+
+@router.delete("/stories/{story_id}", status_code=204)
+async def delete_story(
+    story_id: str,
+    repo: SQLStoryRepository = Depends(_story_repo),
+):
+    """Hard delete: borra historia, beats y archivo MD físico."""
+    story = await repo.get_by_id(UUID(story_id))
+    if not story:
+        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
+
+    if story.file_path:
+        md_file = Path("frontend/public") / story.file_path
+        if md_file.exists():
+            md_file.unlink()
+            observability.record("system", f"Archivo físico eliminado: {story.file_path}", story_id=story_id)
+
+    await repo.delete(UUID(story_id))
+    observability.record("database", f"Historia '{story.title}' eliminada de DB", type="warning", story_id=story_id)
+    return Response(status_code=204)
 
 
 @router.get("/stories/{story_id}", response_model=StoryResponse)
@@ -138,4 +291,5 @@ async def get_story(
         sinopsis=story.sinopsis,
         storyteller_config=story.storyteller_config,
         personajes_full=story.personajes_full,
+        file_path=story.file_path,
     )

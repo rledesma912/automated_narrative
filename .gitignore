@@ -58,4 +58,5 @@ build/
 .env.local
 .env.development
 .env.test
-.env.production
+.env.productiondata/stories.db
+stories.db

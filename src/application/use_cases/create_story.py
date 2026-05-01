@@ -13,7 +13,7 @@ class CreateStoryUseCase:
     def __init__(self, story_repository: StoryRepository):
         self.story_repository = story_repository
 
-    async def execute(self, dto: StoryCreateDTO, initial_status: StoryStatus = StoryStatus.PENDING) -> Story:
+    async def execute(self, dto: StoryCreateDTO, initial_status: StoryStatus = StoryStatus.DRAFT) -> Story:
         """Crea una nueva historia."""
         story = Story(
             title=dto.title,

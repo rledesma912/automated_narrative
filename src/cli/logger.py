@@ -2,9 +2,10 @@
 
 import logging
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+from src.utils.timezone import now_argentina
 
 
 class NarrativeLogger:
@@ -20,7 +21,7 @@ class NarrativeLogger:
     def _setup_loggers(self) -> None:
         """Configura los loggers."""
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        now = datetime.now()
+        now = now_argentina()
         today = now.strftime("%Y%m%d")
         turno = "am" if now.hour < 12 else "pm"
 

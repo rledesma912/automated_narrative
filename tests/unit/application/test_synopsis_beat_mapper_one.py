@@ -49,6 +49,7 @@ _ANCHORS = NarrativeAnchors(
 
 def _beat_anchors(beat_id: int) -> dict:
     from unittest.mock import MagicMock
+
     from src.application.services.story_analyst_service import StoryAnalystService
     analyst = StoryAnalystService(MagicMock(), PromptBuilder())
     return analyst.resolve_beat_anchors(_ANCHORS, beat_id)

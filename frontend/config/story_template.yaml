@@ -21,21 +21,21 @@ atmosphere:
     - terror_supervivencia
   
   subgenre_options:
-    - rural_folklore
+    - rural
     - gotico
-    - urbano_moderno
+    - urbano
     - historico
-    - sci_fi
+    - scifi
     - psicologico
     - sobrenatural
     - otro
   
-  tone_options:
-    - creciente_opresivo
-    - constante
-    - descendente
-    - quebrado
-    - ambiguo
+tone_options:
+    - "creciente: Sube poco a poco"
+    - "constante: Se mantiene constante"
+    - "descendente: Empieza fuerte y baja"
+    - "quebrado: Con picos y valles"
+    - "ambiguo: No sabés qué esperar"
 
 # ============================================
 # SECCIÓN 2: PERSONAJES
@@ -60,16 +60,20 @@ protagonists:
       label: "Traits de personalidad"
       type: multi-select
       options:
-        - religioso
-        - protector
+        - inseguro
+        - ansioso
         - observador
+        - imaginativo
         - escéptico
+        - tradicional
         - pragmático
+        - disciplinado
+        - sociable
+        - audaz
+        - cooperativo
+        - reservado
+        - protector
         - terco
-        - bondadoso
-        - portador_folklore
-        - sereno
-        - callado
 
 storyteller:
   source_field: "storyteller_id"
@@ -100,12 +104,13 @@ storyteller_config:
       - critica
     
     distortion_triggers_options:
-      - miedo
       - oscuridad
-      - fatiga
+      - soledad
+      - agotamiento
+      - panico
       - trauma
-      - sustancia
-      - paranoia
+      - sustancias
+      - ansiedad
   
   knowledge:
     level_options:
@@ -139,13 +144,16 @@ storyteller_config:
   
   bias:
     fear_focus_options:
-      - proteccion_de_hijos
-      - supervivencia
+      - muerte
       - perdida
+      - aislamiento
       - traicion
       - corrupcion
       - lo_desconocido
-      - aislamiento
+      - perdida_control
+      - silencio
+      - abandono
+      - revelacion
     
     attention_focus_options:
       - sonidos

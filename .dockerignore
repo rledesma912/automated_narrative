@@ -1,0 +1,32 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# ── Datos / salida ─────────────────────────────────────────────────────────────
+data/
+output_stories/
+input_stories/
+*.db
+
+# ── Frontend (no pertenece al contexto del backend) ───────────────────────────
+frontend/
+node_modules/
+
+# ── Tests / specs ──────────────────────────────────────────────────────────────
+tests/
+specs/
+
+# ── Dev tooling ────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.opencode/
+.env
+.env.*
+!.env.sample
+scripts/
+logs/
+templates/

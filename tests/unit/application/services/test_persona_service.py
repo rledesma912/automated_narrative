@@ -30,20 +30,30 @@ class TestPersonaService:
     def test_primera_alias(self, svc):
         assert svc.resolve("primera") == "primera persona"
 
-    def test_nombre_femenino_irene(self, svc):
-        assert svc.resolve("irene") == "primera persona (ella narra)"
+    def test_nombre_irene(self, svc):
+        # Sin detección de género: devuelve el nombre tal cual
+        assert svc.resolve("irene") == "primera persona (irene narra)"
 
-    def test_nombre_femenino_case_insensitive(self, svc):
-        assert svc.resolve("Irene") == "primera persona (ella narra)"
+    def test_nombre_irene_case_insensitive(self, svc):
+        assert svc.resolve("Irene") == "primera persona (Irene narra)"
 
-    def test_nombre_femenino_laura(self, svc):
-        assert svc.resolve("laura") == "primera persona (ella narra)"
+    def test_nombre_laura(self, svc):
+        assert svc.resolve("laura") == "primera persona (laura narra)"
 
-    def test_nombre_masculino_ricardo(self, svc):
-        assert svc.resolve("ricardo") == "primera persona (él narra)"
+    def test_nombre_ricardo(self, svc):
+        assert svc.resolve("ricardo") == "primera persona (ricardo narra)"
 
-    def test_nombre_masculino_juan(self, svc):
-        assert svc.resolve("juan") == "primera persona (él narra)"
+    def test_nombre_juan(self, svc):
+        assert svc.resolve("juan") == "primera persona (juan narra)"
 
     def test_nombre_desconocido(self, svc):
         assert svc.resolve("Zorba") == "primera persona (Zorba narra)"
+
+    def test_nombre_con_config_gender_femenino(self, svc):
+        # El género explícito en storyteller_config sí cambia el output
+        config = {"voice": {"person": "primera"}, "gender": "femenino"}
+        assert svc.resolve("irene", storyteller_config=config) == "primera persona (ella narra)"
+
+    def test_nombre_con_config_gender_masculino(self, svc):
+        config = {"voice": {"person": "primera"}, "gender": "masculino"}
+        assert svc.resolve("ricardo", storyteller_config=config) == "primera persona (él narra)"

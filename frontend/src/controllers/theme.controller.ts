@@ -12,10 +12,3 @@ export function setTheme(req: Request, res: Response): void {
   const back = req.headers.referer ?? "/";
   res.redirect(back);
 }
-
-export async function componentsPage(_req: Request, res: Response): Promise<void> {
-  await renderPage(res, "components", {
-    title: "Componentes",
-    activePage: "components",
-  });
-}

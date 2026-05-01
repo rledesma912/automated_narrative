@@ -80,7 +80,7 @@
                 { nombre: 'Final', sub: 'La Mancha', ex: 'Bill hereda un trauma que no puede explicar. El barco desaparece, pero el miedo queda impregnado.' }
             ];
             actosInfo.forEach((acto, i) => { %>
-                <div class="bg-black/70 border border-white/10 p-10 flex flex-col transition-all duration-500 hover:border-forge-accent hover:scale-150 hover:bg-black/95 hover:z-50 hover:shadow-[0_0_50px_rgba(0,0,0,0.8)] cursor-default group <%= i === 2 ? 'border-forge-accent bg-forge-accent/5 ring-1 ring-forge-accent/30 scale-105 z-10' : '' %>">
+                <div class="bg-black/70 border border-white/10 p-10 flex flex-col transition-all duration-300 hover:border-forge-accent hover:scale-125 hover:w-[140%] hover:mx-[-20%] hover:bg-black/95 hover:z-50 hover:shadow-[0_0_40px_rgba(0,0,0,0.9)] cursor-default group rounded-sm <%= i === 2 ? 'border-forge-accent bg-forge-accent/5 ring-1 ring-forge-accent/30 scale-105 z-10' : '' %>">
                     <span class="text-forge-muted text-[10px] uppercase tracking-[0.2em] mb-4">Acto <%= i + 1 %></span>
                     <span class="text-forge-text text-2xl font-bold uppercase tracking-widest mb-2 group-hover:text-forge-accent transition-colors"><%= acto.nombre %></span>
                     <span class="text-forge-accent text-xs uppercase font-bold mb-8 tracking-tighter"><%= acto.sub %></span>

@@ -87,21 +87,22 @@ class TestSynopsisBeatMapper:
 
     @pytest.mark.asyncio
     async def test_compact_variant_loads_system_prompt_if_file_exists(self):
+        # Perfil activo por defecto es compact — carga synopsis_mapper_system_compact.md
         llm = _make_llm("1. A\n2. B\n3. C\n4. D\n5. E")
         builder = self._builder()
-        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
-            mapper = SynopsisBeatMapper(llm, builder)
-            await mapper.map(_make_story())
+        mapper = SynopsisBeatMapper(llm, builder)
+        await mapper.map(_make_story())
         call_kwargs = llm.generate.call_args.kwargs
-        # synopsis_mapper_system_compact.md existe → system_prompt es str no vacío
         assert call_kwargs["system_prompt"] is not None
         assert len(call_kwargs["system_prompt"]) > 0
 
     @pytest.mark.asyncio
     async def test_frontier_variant_passes_system_prompt(self):
+        # Con frontier el mapper cae a build_system_prompt, que también retorna str no vacío
         llm = _make_llm("1. A\n2. B\n3. C\n4. D\n5. E")
         builder = self._builder()
-        with patch.object(builder, "_get_prompt_variant", return_value="frontier"):
+        with patch.object(builder._loader, "get_variant", return_value="frontier"):
+            builder._strategy = None  # forzar resolución con frontier
             mapper = SynopsisBeatMapper(llm, builder)
             await mapper.map(_make_story())
         call_kwargs = llm.generate.call_args.kwargs

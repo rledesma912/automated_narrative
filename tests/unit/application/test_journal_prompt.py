@@ -6,7 +6,6 @@ Si alguien "corrige" el template quitando los {{ se producirá KeyError — este
 test lo detecta.
 """
 
-import uuid
 
 from src.application.services import PromptBuilder
 from src.domain.models import Beat, NarrativeJournal, Story

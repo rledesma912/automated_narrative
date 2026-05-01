@@ -6,10 +6,22 @@ from src.config import settings
 
 
 async def get_connection() -> aiosqlite.Connection:
-    """Get database connection."""
-    db_url = settings.database_url.replace("sqlite+aiosqlite://", "")
+    """Get database connection.
+
+    Convención SQLAlchemy para SQLite:
+      - `sqlite+aiosqlite:///foo.db`   → relativo `foo.db`
+      - `sqlite+aiosqlite:////abs.db`  → absoluto `/abs.db`
+    """
+    raw = settings.database_url
+    if raw.startswith("sqlite+aiosqlite:///"):
+        db_url = raw[len("sqlite+aiosqlite:///"):]
+    elif raw.startswith("sqlite+aiosqlite://"):
+        db_url = raw[len("sqlite+aiosqlite://"):]
+    else:
+        db_url = raw
     conn = await aiosqlite.connect(db_url)
     conn.row_factory = aiosqlite.Row
+    await conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -29,6 +41,7 @@ async def init_db() -> None:
             storyteller_config TEXT,
             personajes TEXT DEFAULT '[]',
             status TEXT DEFAULT 'pending',
+            file_path TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -40,7 +53,7 @@ async def init_db() -> None:
             content TEXT NOT NULL,
             type TEXT,
             intensity TEXT,
-            FOREIGN KEY (story_id) REFERENCES story(id)
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
 
@@ -53,13 +66,13 @@ async def init_db() -> None:
             content TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
             technical_context TEXT,
-            active_scenario_id TEXT REFERENCES scenario(id),
+            active_scenario_id TEXT,
             active_scenario_description TEXT,
             narrative_context TEXT,
             memory_snapshot TEXT,
             type TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (story_id) REFERENCES story(id),
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, number)
         )
     """)
@@ -77,24 +90,25 @@ async def init_db() -> None:
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS scenario (
             id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL REFERENCES story(id),
+            story_id TEXT NOT NULL,
             order_index INTEGER NOT NULL,
-            name TEXT NOT NULL
+            name TEXT NOT NULL,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
 
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS narrative_anchors (
             id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL REFERENCES story(id),
+            story_id TEXT NOT NULL,
             resonance_hamartia TEXT NOT NULL,
             resonance_hybris TEXT NOT NULL,
             resonance_anagnorisis TEXT NOT NULL,
             resonance_peripeteia TEXT NOT NULL,
             resonance_residual TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+        )
     """)
 
     await conn.execute("""
@@ -103,7 +117,8 @@ async def init_db() -> None:
             story_id TEXT UNIQUE NOT NULL,
             last_events TEXT DEFAULT '',
             unresolved_mysteries TEXT DEFAULT '',
-            physical_emotional_state TEXT DEFAULT ''
+            physical_emotional_state TEXT DEFAULT '',
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
 

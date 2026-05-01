@@ -18,6 +18,7 @@ class StoryResponse(BaseModel):
     sinopsis: str | None = None
     storyteller_config: dict | None = None
     personajes_full: list | None = None
+    file_path: str | None = None
 
     class Config:
         from_attributes = True

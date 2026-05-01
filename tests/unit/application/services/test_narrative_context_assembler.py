@@ -2,10 +2,9 @@
 
 import json
 import uuid
+from unittest.mock import MagicMock
 
 import pytest
-
-from unittest.mock import MagicMock
 
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.narrative_context_assembler import NarrativeContextAssembler

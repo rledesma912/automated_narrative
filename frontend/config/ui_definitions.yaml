@@ -17,14 +17,14 @@ steps:
         required: true
         group: "atmosphere"
         options:
-          - "Terror Psicológico"
-          - "Horror Cósmico"
-          - "Terror Gótico"
-          - "Body Horror"
-          - "Paranormal"
-          - "Folk Horror"
-          - "Suspenso"
-          - "Terror Supervivencia"
+          - "terror_psicologico: Terror Psicológico"
+          - "horror_cosmico: Horror Cósmico (Lovecraftiano)"
+          - "terror_gotico: Terror Gótico"
+          - "body_horror: Horror Corporal (Body Horror)"
+          - "paranormal: Fenómenos Paranormales"
+          - "folk_horror: Terror Rural (Leyendas de campo)"
+          - "suspenso: Suspenso / Thriller"
+          - "terror_supervivencia: Terror de Supervivencia"
 
       - name: atmosphere_subgenre
         type: select
@@ -32,26 +32,27 @@ steps:
         subtitle: "El subgénero o estilo específico"
         group: "atmosphere"
         options:
-          - rural_folklore
-          - gotico
-          - urbano_moderno
-          - historico
-          - sci_fi
-          - psicologico
-          - sobrenatural
-          - otro
+          - "rural: Leyendas del campo"
+          - "gotico: Gótico (Atmósfera lúgubre)"
+          - "leyenda_urbana: Leyendas urbanas"
+          - "historico: Época pasada / Histórico"
+          - "scifi: Ciencia Ficción / Futurista"
+          - "psicologico: Psicológico / Interior"
+          - "sobrenatural: Sobrenatural"
+          - "otro: Otro estilo"
 
       - name: atmosphere_tone
         type: radio
-        label: "Cómo sube la tensión"
+        label: "Cómo evolve la tensión"
         subtitle: "El tono narrativo de la historia"
+        hint: "Cómo evolve la tensión a lo largo de toda la historia"
         group: "atmosphere"
         options:
-          - creciente_opresivo
-          - constante
-          - descendente
-          - quebrado
-          - ambiguo
+          - "creciente: Creciente y opresivo"
+          - "constante: Tensión constante"
+          - "descendente: Tensión descendente"
+          - "quebrado: Tensión quebrada (Sustos repentinos)"
+          - "ambiguo: Atmósfera ambigua"
 
   - id: step_config_personajes
     title: "Personajes"
@@ -76,19 +77,24 @@ steps:
       - name: protagonista_1_traits
         type: multi-select
         label: "Personaje 1 - Cómo es"
-        subtitle: "Traits de personalidad (seleccioná los que aplican)"
+        subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
         options:
-          - religioso
-          - protector
-          - observador
-          - escéptico
-          - pragmático
-          - terco
-          - bondadoso
-          - portador_folklore
-          - sereno
-          - callado
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
 
       - name: protagonista_2_name
         type: text
@@ -108,18 +114,23 @@ steps:
         type: multi-select
         label: "Personaje 2 - Cómo es"
         subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
         options:
-          - religioso
-          - protector
-          - observador
-          - escéptico
-          - pragmático
-          - terco
-          - bondadoso
-          - portador_folklore
-          - sereno
-          - callado
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
 
       - name: protagonista_3_name
         type: text
@@ -139,18 +150,23 @@ steps:
         type: multi-select
         label: "Personaje 3 - Cómo es"
         subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
         options:
-          - religioso
-          - protector
-          - observador
-          - escéptico
-          - pragmático
-          - terco
-          - bondadoso
-          - portador_folklore
-          - sereno
-          - callado
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
 
       - name: protagonista_4_name
         type: text
@@ -168,18 +184,23 @@ steps:
         type: multi-select
         label: "Personaje 4 - Cómo es"
         subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
         options:
-          - religioso
-          - protector
-          - observador
-          - escéptico
-          - pragmático
-          - terco
-          - bondadoso
-          - portador_folklore
-          - sereno
-          - callado
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
 
       - name: protagonista_5_name
         type: text
@@ -197,18 +218,23 @@ steps:
         type: multi-select
         label: "Personaje 5 - Cómo es"
         subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
         options:
-          - religioso
-          - protector
-          - observador
-          - escéptico
-          - pragmático
-          - terco
-          - bondadoso
-          - portador_folklore
-          - sereno
-          - callado
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
 
       - name: storyteller_id
         type: select
@@ -227,7 +253,8 @@ steps:
       - name: voice_style
         type: radio
         label: "Con qué tono de voz"
-        subtitle: "Cómo suena la historia"
+        subtitle: "Cómo se siente la narración"
+        hint: "Cómo se siente la narración (cercano, omnisciente, etc)"
         group: "narrador"
         options:
           - "intimista: Como un diario personal, cámara cerca"
@@ -244,129 +271,143 @@ steps:
         type: select
         label: "Qué tan confiable es lo que ve/oye"
         subtitle: "¿Percibe la realidad tal cual?"
+        hint: "Qué tan confiables son sus percepciones"
         group: "percepcion"
         default: "subjetiva"
         options:
-          - subjetiva
-          - objetiva
-          - poco_confiable
+          - "subjetiva: Ve lo que espera ver"
+          - "objetiva: Percibe la realidad tal cual"
+          - "poco_confiable: A veces ve bien, a veces no"
 
       - name: distortion_level
         type: radio
         label: "Cuánto distorsiona la realidad"
         subtitle: "Nivel de distorsión bajo miedo o estrés"
+        hint: "Qué tanto lo que ve difiere de lo real"
         group: "percepcion"
         default: "media"
         options:
-          - minima
-          - baja
-          - media
-          - alta
-          - critica
+          - "minima: Apenas distorsiona"
+          - "baja: Distorsión leve"
+          - "media: Distorsión notable"
+          - "alta: Distorsión constante"
+          - "critica: No distingue real de irreal"
 
       - name: distortion_triggers
         type: multi-select
-        label: "Qué le hace perder la realidad"
-        subtitle: "¿Qué situaciones distorsionan su percepción?"
+        label: "Pierde contacto cuando"
+        subtitle: "Qué hace que dude de lo que ve/oye"
+        hint: "Qué situaciones le hacen perder contacto con la realidad"
         group: "percepcion"
         options:
-          - miedo
-          - oscuridad
-          - fatiga
-          - trauma
-          - sustancia
-          - paranoia
+          - "oscuridad: En la oscuridad"
+          - "soledad: Cuando está solo"
+          - "agotamiento: Cuando se agota"
+          - "panico: En pánico"
+          - "trauma: Cuando recuerda el pasado"
+          - "sustancias: Bajo efectos"
+          - "ansiedad: Cuando la ansiedad sube"
 
       - name: paranormal_knowledge
         type: select
         label: "Qué tanto sabe de lo oculto"
         subtitle: "Conocimiento sobre fenómenos paranormales"
+        hint: "Qué sabe del mundo sobrenatural"
         group: "conocimiento"
         default: "medio"
         options:
-          - nulo
-          - bajo
-          - medio
-          - alto
-          - experto
+          - "nulo: No sabe nada"
+          - "bajo: Sabe poco"
+          - "medio: Conocimiento regular"
+          - "alto: Sabe bastante"
+          - "experto: Es un experto"
 
       - name: religioso_knowledge
         type: select
         label: "Qué tanto sabe de lo sagrado"
         subtitle: "Conocimiento religioso/espiritual"
+        hint: "Qué sabe de temas religiosos"
         group: "conocimiento"
         default: "medio"
         options:
-          - nulo
-          - bajo
-          - medio
-          - alto
-          - experto
+          - "nulo: No sabe nada"
+          - "bajo: Sabe poco"
+          - "medio: Conocimiento regular"
+          - "alto: Sabe bastante"
+          - "experto: Es un experto"
 
       - name: interpretation_style
         type: select
-        label: "Cómo interpreta lo extraño"
-        subtitle: "Cuando ve algo incontrolable, ¿cómo lo entiende?"
+        label: "Cuando ve algo extraño, lo interpreta como"
+        subtitle: "Cómo procesa lo sobrenatural"
+        hint: "Cómo procesa lo sobrenatural"
         group: "conocimiento"
         options:
-          - literal
-          - simbolica
-          - mitologica
-          - cientifica
-          - supersticiosa
+          - "literal: Lo ve tal cual"
+          - "simbolica: Busca significados ocultos"
+          - "mitologica: Lo conecta con mitos"
+          - "cientifica: Busca explicaciones"
+          - "supersticiosa: Le teme y lo evita"
 
       - name: language_register
         type: radio
         label: "Cómo habla el narrador"
         subtitle: "Registro lingüístico"
+        hint: "El registro del narrador (formal, coloquial, etc)"
         group: "lenguaje"
         options:
-          - formal
-          - coloquial
-          - rural_tradicional
-          - arcaico
-          - poético
+          - "formal: Educado y correcto"
+          - "coloquial: Natural y diario"
+          - "rural_tradicional: Del campo"
+          - "arcaico: Antiguo"
+          - "poético: Evocador"
 
       - name: figurative_density
         type: select
         label: "Cuánto usa figuras retóricas"
         subtitle: "Metáforas, comparaciones, descripciones"
+        hint: "Cuánto usa lenguaje figurativo"
         group: "lenguaje"
         default: "media"
         options:
-          - minima
-          - baja
-          - media
-          - alta
-          - maxima
+          - "minima: Apenas usa"
+          - "baja: Usa poco"
+          - "media: Uso regular"
+          - "alta: Usa mucho"
+          - "maxima: Lenguaje muy rico"
 
       - name: fear_focus
         type: multi-select
-        label: "De qué tiene más miedo"
-        subtitle: "Qué activa su miedo automáticamente"
+        label: "Su mayor miedo es"
+        subtitle: "El miedo profundo del narrador"
+        hint: "Seleccioná 1 solo miedo principal"
         group: "sesgos"
         options:
-          - proteccion_de_hijos
-          - supervivencia
-          - perdida
-          - traicion
-          - corrupcion
-          - lo_desconocido
-          - aislamiento
+          - "muerte: La muerte"
+          - "perdida: Perder algo valioso"
+          - "aislamiento: Quedar solo"
+          - "traicion: Ser traicionado"
+          - "corrupcion: Corrupción interna"
+          - "desconocido: Lo que no entiende"
+          - "perdida_control: Perder el control"
+          - "silencio: El silencio"
+          - "abandono: Ser abandonado"
+          - "revelacion: Descubrir una verdad terrible"
 
       - name: attention_focus
         type: multi-select
-        label: "En qué presta más atención"
-        subtitle: "A qué le dedica más energía mental"
+        label: "Presta atención a"
+        subtitle: "A qué le dedica energía mental"
+        hint: "En qué se fixa el narrador (busca pistas visuales/auditvas)"
         group: "sesgos"
         options:
-          - sonidos
-          - sombras
-          - naturaleza
-          - tecnologia
-          - rostros
-          - espacios_cerrados
-          - detalles_fisicos
+          - "sonidos: Sonidos y ruidos"
+          - "sombras: Sombras y oscuridad"
+          - "naturaleza: La naturaleza"
+          - "tecnologia: Tecnología"
+          - "rostros: Rostros y expresiones"
+          - "espacios: Espacios cerrados"
+          - "detalles: Detalles físicos"
 
   - id: step_world
     title: "El Mundo"
@@ -442,11 +483,11 @@ steps:
         label: "Tipo de regla 1"
         group: "reglas"
         options:
-          - entorno
-          - psicologica
-          - paranormal
-          - evento
-          - social
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
 
       - name: rule_2_text
         type: textarea
@@ -460,11 +501,11 @@ steps:
         label: "Tipo de regla 2"
         group: "reglas"
         options:
-          - entorno
-          - psicologica
-          - paranormal
-          - evento
-          - social
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
 
       - name: rule_3_text
         type: textarea
@@ -478,11 +519,11 @@ steps:
         label: "Tipo de regla 3"
         group: "reglas"
         options:
-          - entorno
-          - psicologica
-          - paranormal
-          - evento
-          - social
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
 
       - name: rule_4_text
         type: textarea
@@ -496,11 +537,11 @@ steps:
         label: "Tipo de regla 4"
         group: "reglas"
         options:
-          - entorno
-          - psicologica
-          - paranormal
-          - evento
-          - social
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
 
       - name: rule_5_text
         type: textarea
@@ -514,11 +555,47 @@ steps:
         label: "Tipo de regla 5"
         group: "reglas"
         options:
-          - entorno
-          - psicologica
-          - paranormal
-          - evento
-          - social
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_6_text
+        type: textarea
+        label: "Regla 6 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_6_type
+        type: select
+        label: "Tipo de regla 6"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_7_text
+        type: textarea
+        label: "Regla 7 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_7_type
+        type: select
+        label: "Tipo de regla 7"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
 
   - id: step_plot
     title: "La Trama"
@@ -529,7 +606,7 @@ steps:
         label: "Acto 1: Exposición"
         subtitle: "Presentá el mundo, los personajes y el conflicto inicial"
         hint: "Quién es el protagonista, dónde está, qué problema enfrenta o qué lo motiva"
-        rows: 4
+        rows: 7
         group: "actos"
         required: true
 
@@ -538,7 +615,7 @@ steps:
         label: "Acto 2: Acción Ascendente"
         subtitle: "Las complicaciones que llevan al momento más intenso"
         hint: "Qué obstáculos aparecen, qué decisiones debe tomar el protagonista"
-        rows: 4
+        rows: 7
         group: "actos"
         required: true
 
@@ -547,7 +624,7 @@ steps:
         label: "Acto 3: Clímax"
         subtitle: "El momento de mayor tensión o revelación"
         hint: "Qué descubrimiento o evento cambia todo"
-        rows: 4
+        rows: 7
         group: "actos"
         required: true
 
@@ -556,7 +633,7 @@ steps:
         label: "Acto 4: Acción Descendente"
         subtitle: "Las consecuencias del momento más intenso"
         hint: "Cómo cambian las reglas del mundo después del clímax"
-        rows: 4
+        rows: 7
         group: "actos"
         required: true
 
@@ -565,6 +642,6 @@ steps:
         label: "Acto 5: Desenlace"
         subtitle: "La resolución y la nueva normalidad"
         hint: "Cómo queda el mundo después de la historia"
-        rows: 4
+        rows: 7
         group: "actos"
         required: true

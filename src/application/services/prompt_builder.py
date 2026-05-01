@@ -6,12 +6,15 @@ from pathlib import Path
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.narrative_context_assembler import NarrativeContextAssembler
 from src.application.services.persona_service import PersonaService
+from src.application.services.prompt_strategies import (
+    CompactStrategy,
+    FrontierStrategy,
+    IPromptStrategy,
+)
 from src.application.services.synopsis_slice_resolver import SynopsisSliceResolver
 from src.application.services.template_loader import TemplateLoader
 from src.config import settings
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
-
-from src.application.services.prompt_strategies import CompactStrategy, FrontierStrategy, IPromptStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +139,7 @@ Sinopsis: {story.sinopsis}
         strategy = self._get_strategy()
         voice_template = self._load_prompt(strategy.get_template_name("voice"))
         total_beats = total_beats if total_beats is not None else self.num_beats
-        
+
         previous_context = self._build_previous_context(previous_beats, max_chars=strategy.max_context_chars)
         journal_context = self._build_journal_context(journal)
         persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
@@ -147,13 +150,13 @@ Sinopsis: {story.sinopsis}
 
         sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, "beat_slice")
         beat_spec = self._format_beat_spec_for_beat(beat.number, strategy.variant_name)
-        
+
         # Enriquecimiento con metadatos del YAML (Slice 3)
         beat_def = self._beat_repo.get_by_id(beat.number)
         intensity = beat_def.get("intensity", "media")
         success_signal = beat_def.get("success_signal", ["No definida"])[0]
         state_change = beat_def.get("state_change", {})
-        
+
         meta_context = strategy.format_beat_metadata(intensity, success_signal, state_change)
         context_section = strategy.format_context_section(previous_context, journal_context, beat.number)
 
@@ -170,7 +173,7 @@ Sinopsis: {story.sinopsis}
         if voice_template:
             # Añadimos meta_context si el template tiene el placeholder o lo inyectamos en beat_spec
             full_beat_spec = f"{beat_spec}\n\n--- GUÍA DE TONO ---\n{meta_context}"
-            
+
             return voice_template.format(
                 title=story.title,
                 relator=story.relator,
@@ -378,7 +381,7 @@ Instrucciones:
         if not config:
             return ""
         lines = ["== Perfil del Narrador =="]
-        
+
         # Percepción
         perception = config.get("perception", {})
         if perception:
@@ -389,7 +392,7 @@ Instrucciones:
             if dist_level:
                 line += f" (Distorsión: {dist_level})"
             lines.append(line)
-            
+
         # Voz y Lenguaje
         voice = config.get("voice", {})
         lang = config.get("language", {})
@@ -397,12 +400,12 @@ Instrucciones:
         v_parts = [p for p in v_parts if p]
         l_parts = [lang.get("register", ""), lang.get("figurative_density", "")]
         l_parts = [p for p in l_parts if p]
-        
+
         if v_parts:
             lines.append(f"Voz: {', '.join(v_parts)}")
         if l_parts:
             lines.append(f"Registro: {', '.join(l_parts)}")
-            
+
         # Conocimiento e Interpretación
         kn = config.get("knowledge", {})
         if kn:

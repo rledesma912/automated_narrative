@@ -6,6 +6,7 @@
   <title>NarrativeForge — <%= title %></title>
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -23,6 +24,15 @@
           fontFamily: {
             serif: ['Georgia', 'serif'],
             mono:  ['"Courier New"', 'monospace'],
+          },
+          fontSize: {
+            'xs': '0.85rem',
+            'sm': '1rem',
+            'base': '1.125rem',
+            'lg': '1.25rem',
+            'xl': '1.5rem',
+            '2xl': '1.875rem',
+            '3xl': '2.25rem',
           }
         }
       }
@@ -30,22 +40,61 @@
   </script>
 
   <style>
-    :root { <%- themeCssVars %>; }
-    body { background-color: var(--forge-bg); color: var(--forge-text); }
-    ::-webkit-scrollbar { width: 4px; }
+    :root { 
+      <%- themeCssVars %>; 
+      --sidebar-width: 16rem;
+    }
+    body { background-color: var(--forge-bg); color: var(--forge-text); font-size: 1.125rem; }
+    ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--forge-bg); }
-    ::-webkit-scrollbar-thumb { background: var(--forge-accent); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb { background: var(--forge-accent); border-radius: 3px; }
   </style>
 </head>
-<body class="flex h-screen overflow-hidden font-<%= themeFont %> text-forge-text">
+<body class="flex h-screen overflow-hidden font-<%= themeFont %> text-forge-text" hx-boost="true">
 
   <%- include('sidebar', { activePage, activeTheme, allThemes }) %>
 
-  <main class="flex-1 overflow-y-auto p-8">
+  <main class="flex-1 overflow-y-auto p-12 pb-24">
     <%- body %>
   </main>
 
+  <%- include('footer') %>
+
+  <% if (typeof flashMsg !== 'undefined' && flashMsg) { %>
+  <div id="toast-notification"
+       class="fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border shadow-lg text-sm font-medium transition-opacity duration-500
+              <%= flashType === 'error' ? 'bg-forge-surface border-red-500 text-red-400' : 'bg-forge-surface border-forge-accent text-forge-accent' %>">
+    <i data-lucide="<%= flashType === 'error' ? 'x-circle' : 'check-circle' %>" class="w-4 h-4 shrink-0"></i>
+    <span><%= flashMsg %></span>
+  </div>
+  <script>
+    (function() {
+      const t = document.getElementById('toast-notification');
+      if (!t) return;
+      setTimeout(function() { t.style.opacity = '0'; }, 3000);
+      setTimeout(function() { t.remove(); }, 3500);
+    })();
+  </script>
+  <% } %>
+
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script>lucide.createIcons();</script>
+  <script>
+    lucide.createIcons();
+
+    // Autofocus al primer campo del formulario
+    function focusFirstField() {
+      const firstField = document.querySelector('form input:not([type="hidden"]), form textarea, form select');
+      if (firstField) {
+        firstField.focus();
+      }
+    }
+
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', focusFirstField);
+
+    // Ejecutar después de swaps de HTMX (si se usa en el proyecto)
+    document.addEventListener('htmx:afterSwap', focusFirstField);
+    document.addEventListener('htmx:afterSettle', () => { lucide.createIcons(); });
+  </script>
 </body>
 </html>
