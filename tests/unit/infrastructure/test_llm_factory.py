@@ -2,8 +2,12 @@
 
 from unittest.mock import patch
 
-
-from src.infrastructure.adapters import AnthropicAdapter, GeminiCLIAdapter, MockLLMAdapter, OllamaAdapter
+from src.infrastructure.adapters import (
+    AnthropicAdapter,
+    GeminiCLIAdapter,
+    MockLLMAdapter,
+    OllamaAdapter,
+)
 from src.infrastructure.factories import LLMFactory
 
 

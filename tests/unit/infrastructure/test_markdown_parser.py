@@ -140,8 +140,10 @@ Contenido del acto
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
         data = parser.parse("el_monte_prohibido.md")
         assert len(data.cronologic_scenarios) == 4
-        assert any("abuela" in s.lower() for s in data.cronologic_scenarios)
-        assert any("monte" in s.lower() for s in data.cronologic_scenarios)
+        # Verificar que los nombres reales del archivo están presentes
+        scenarios_lower = [s.lower() for s in data.cronologic_scenarios]
+        assert any("monte" in s for s in scenarios_lower)
+        assert any("maría" in s or "maria" in s for s in scenarios_lower)
 
     def test_parse_file_not_found(self, parser):
         """Maneja archivo no encontrado."""

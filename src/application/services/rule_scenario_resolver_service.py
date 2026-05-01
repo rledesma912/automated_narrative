@@ -8,8 +8,8 @@ from src.config import settings
 from src.domain.interfaces import LLMProvider
 
 if TYPE_CHECKING:
-    from src.application.services.prompt_builder import PromptBuilder
     from src.application.services.debug_collector import DebugCollector
+    from src.application.services.prompt_builder import PromptBuilder
     from src.domain.models import Story
 
 logger = logging.getLogger(__name__)

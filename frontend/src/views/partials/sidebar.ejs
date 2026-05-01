@@ -1,0 +1,59 @@
+<%
+/*
+ * Variables de entrada:
+ *   activePage:  string — 'home' | 'generate' | 'gallery' | 'debug' | 'components'
+ *   activeTheme: string — clave del tema activo
+ *   allThemes:   Array<{ key: string, def: { name, accent, ... } }>
+ */
+const navItems = [
+  { page: 'home',       href: '/',           icon: 'home',         label: 'Inicio'      },
+  { page: 'generate',   href: '/generar',    icon: 'pen-line',     label: 'Nuevo relato'     },
+  { page: 'gallery',    href: '/galeria',    icon: 'library',      label: 'Galería de historias' },
+  { page: 'debug',      href: '/debug',      icon: 'terminal',     label: 'API conn' },
+  ];
+%>
+<aside class="w-[var(--sidebar-width)] flex-shrink-0 flex flex-col border-r border-forge-border bg-forge-surface">
+
+  <div class="px-5 py-6 border-b border-forge-border">
+    <span class="text-forge-accent font-serif text-lg tracking-widest uppercase">Narrative</span>
+    <span class="block text-forge-muted text-xs tracking-widest">Forge</span>
+  </div>
+
+  <nav class="flex-1 py-4">
+    <% navItems.forEach(item => { %>
+      <%
+        const isActive = activePage === item.page;
+        const base   = 'flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 border-l-2';
+        const state  = isActive
+          ? 'text-forge-accent border-forge-accent bg-forge-bg'
+          : 'text-forge-muted hover:text-forge-text hover:bg-forge-bg border-transparent';
+      %>
+      <a href="<%= item.href %>" class="<%= base %> <%= state %>">
+        <i data-lucide="<%= item.icon %>" class="w-4 h-4 flex-shrink-0"></i>
+        <%= item.label %>
+      </a>
+    <% }); %>
+  </nav>
+
+  <%/* ── Selector de temas ───────────────────────────── */%>
+  <div class="px-4 py-4 border-t border-forge-border">
+    <p class="text-xs uppercase tracking-widest text-forge-muted mb-3">Tema</p>
+    <div class="flex gap-2">
+      <% allThemes.forEach(({ key, def }) => { %>
+        <form method="POST" action="/theme">
+          <input type="hidden" name="theme" value="<%= key %>" />
+          <button
+            type="submit"
+            title="<%= def.name %>"
+            class="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none <%= activeTheme === key ? 'border-forge-text scale-110' : 'border-transparent opacity-60' %>"
+            style="background-color: <%= def.accent %>"
+          ></button>
+        </form>
+      <% }); %>
+    </div>
+  </div>
+
+  <div class="px-5 py-3 text-xs text-forge-muted">
+    v0.3.0 — Slice 3
+  </div>
+</aside>

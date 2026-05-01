@@ -1,0 +1,45 @@
+<%/* ── Modal de Confirmación de Regeneración (HTMX) — Spec-215 ── */%>
+<div id="modal-container"
+     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 animate-in fade-in duration-200">
+
+  <div class="bg-forge-surface border border-forge-border p-8 max-w-md w-full mx-4 shadow-2xl"
+       hx-on="click: event.stopPropagation()">
+
+    <div class="flex items-center gap-4 mb-6">
+      <div class="p-3 bg-amber-950/30 rounded-full">
+        <i data-lucide="alert-triangle" class="w-8 h-8 text-amber-500"></i>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold text-forge-text uppercase tracking-widest">¿Regenerar historia?</h3>
+        <p class="text-forge-muted text-sm mt-1">Esta operación no se puede deshacer.</p>
+      </div>
+    </div>
+
+    <p class="text-forge-text text-base mb-8 leading-relaxed">
+      Se perderá la generación actual (los 5 actos) y el archivo Markdown exportado.
+      La configuración de la historia se conserva.
+    </p>
+
+    <div class="flex items-center justify-end gap-4">
+      <button onclick="document.getElementById('modal-container').remove()"
+              class="px-6 py-2 border border-forge-border text-forge-muted text-sm uppercase tracking-widest hover:text-forge-text transition-colors">
+        Cancelar
+      </button>
+
+      <form method="POST" action="/historia/<%= storyId %>/generar">
+        <button type="submit"
+                class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm uppercase tracking-widest hover:opacity-80 transition-opacity">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          Regenerar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+  document.getElementById('modal-container').addEventListener('click', function(e) {
+    if (e.target === this) this.remove();
+  });
+</script>

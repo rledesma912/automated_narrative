@@ -59,7 +59,7 @@ scenario table:
 
 ## Research: Solución de decompose
 
-### Opción 1: Descomposición completa (风险: alto)
+### Opción 1: Descomposición completa (Riesgo: alto)
 
 Crear 3 entidades nuevas:
 - `StoryCore` — identidad + metadata de input
@@ -68,7 +68,7 @@ Crear 3 entidades nuevas:
 
 **Problema**: Requiere migración de DB, cambios en todos los repos, routers, tests. Blast radius muy alto.
 
-### Opción 2: Value Objects + Composición (风险: medio)
+### Opción 2: Value Objects + Composición (Riesgo: medio)
 
 Crear value objects que encapsulen grupos de campos:
 
@@ -102,7 +102,7 @@ class Story(BaseModel):
 
 **Problema**: Afecta todos los call sites que usan `story.beats`, `story.protagonista`, etc.
 
-### Opción 3: Backward-Compatible Wrapper (风险: bajo) - **ELEGIDA**
+### Opción 3: Backward-Compatible Wrapper (Riesgo: bajo) - **ELEGIDA**
 
 Mantener `Story` con los mismos campos pero:
 1. Agregar propiedades que delegan a value objects

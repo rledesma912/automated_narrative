@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 
+
 class IPromptStrategy(ABC):
     """Interfaz para estrategias de construcción de prompts."""
 

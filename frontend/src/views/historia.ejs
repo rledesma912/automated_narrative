@@ -1,0 +1,189 @@
+<%
+/*
+ * Variables de entrada:
+ *   story: {
+ *     id, title, status, created_at,
+ *     atmosfera, protagonista, relator, sinopsis,
+ *     storyteller_config, personajes_full
+ *   }
+ */
+const STATUS_LABEL = {
+  draft:      { text: 'Borrador',    cls: 'text-yellow-500' },
+  processing: { text: 'Generando',   cls: 'text-blue-400' },
+  failed:     { text: 'Error',       cls: 'text-red-500' },
+  completed:  { text: 'Completada',  cls: 'text-green-500' },
+};
+const sl = STATUS_LABEL[story.status] || STATUS_LABEL['draft'];
+
+const sc = story.storyteller_config || {};
+const atm = sc.atmosphere || {};
+const scenarios = sc.scenarios || [];
+const rules = sc.rules || [];
+const personajes = story.personajes_full || [];
+%>
+<div class="max-w-3xl">
+
+  <%/* ── Header ────────────────────────────────────────────────────────── */%>
+  <div class="flex items-start justify-between mb-8 gap-4">
+    <div>
+      <h2 class="font-serif text-2xl text-forge-accent mb-1"><%= story.title || 'Sin título' %></h2>
+      <p class="text-forge-muted text-xs uppercase tracking-widest">
+        <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+      </p>
+    </div>
+    <span class="text-[10px] font-bold uppercase tracking-widest shrink-0 <%= sl.cls %>">
+      <%= sl.text %>
+    </span>
+  </div>
+
+
+  <%/* ── Secciones de datos ─────────────────────────────────────────────── */%>
+  <div class="space-y-6">
+
+    <% if (atm.genre || story.atmosfera) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">ATMÓSFERA</h3>
+      <p class="text-sm text-forge-text">
+        <%= atm.genre || story.atmosfera %>
+        <% if (atm.subgenre) { %><span class="text-forge-muted"> (<%= atm.subgenre %>)</span><% } %>
+        <% if (atm.tone) { %><span class="text-forge-muted"> — <%= atm.tone %></span><% } %>
+      </p>
+    </div>
+    <% } %>
+
+    <% if (story.relator) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">NARRADOR</h3>
+      <p class="text-sm text-forge-text"><%= story.relator %></p>
+    </div>
+    <% } %>
+
+    <% if (personajes.length > 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">PERSONAJES</h3>
+      <ul class="space-y-2">
+        <% personajes.forEach(function(p) { %>
+          <li class="text-sm text-forge-text">
+            <span class="font-semibold"><%= p.name %>:</span>
+            <%= p.role %>
+            <% if (p.traits && p.traits.length) { %>
+              <span class="text-forge-muted text-xs"> [<%= p.traits.join(', ') %>]</span>
+            <% } %>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (scenarios.length > 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">ESCENARIOS</h3>
+      <ul class="space-y-1">
+        <% scenarios.forEach(function(s) { %>
+          <li class="text-sm text-forge-text">
+            <span class="font-semibold"><%= s.name %></span>
+            <% if (s.description) { %><span class="text-forge-muted"> — <%= s.description %></span><% } %>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (rules.length > 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">REGLAS DEL MUNDO</h3>
+      <ul class="space-y-1">
+        <% rules.forEach(function(r) { %>
+          <li class="text-sm text-forge-text">
+            <span class="text-forge-muted text-xs">[<%= r.type || 'entorno' %>]</span>
+            <%= r.text %>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (story.sinopsis) { %>
+    <div class="border border-forge-border bg-forge-surface p-5">
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">TRAMA</h3>
+      <p class="text-sm text-forge-text whitespace-pre-wrap leading-relaxed"><%= story.sinopsis %></p>
+    </div>
+    <% } %>
+
+  </div>
+
+  <%/* ── Acciones ───────────────────────────────────────────────────────── */%>
+  <div class="flex items-center gap-4 mt-8 pt-6 border-t border-forge-border flex-wrap">
+    <a href="/galeria"
+       class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
+    </a>
+
+    <% if (story.file_path) { %>
+      <a href="/historia/<%= story.id %>/ver-markdown"
+         class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-accent transition-colors">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Ver Markdown
+      </a>
+      <button onclick="confirmDeleteMarkdown('<%= story.id %>')"
+              class="flex items-center gap-1 text-sm text-forge-muted hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer p-0">
+        <i data-lucide="file-minus" class="w-4 h-4"></i>
+      </button>
+    <% } %>
+
+    <% 
+  const showStartButton = typeof startGeneration !== 'undefined' && startGeneration === 1;
+  const btnLabel = story.status === 'failed' ? 'Reintentar' : story.status === 'completed' ? 'Regenerar' : 'Generar historia';
+%>
+
+    <% if (showStartButton) { %>
+      <div class="flex items-center gap-4 w-full">
+        <a href="/generar/stream/<%= story.id %>"
+           class="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-forge-accent text-forge-text text-lg font-bold
+                  tracking-widest uppercase hover:opacity-80 transition-opacity shadow-lg">
+          <i data-lucide="<%= story.status === 'completed' ? 'refresh-cw' : 'zap' %>" class="w-6 h-6"></i>
+          Comenzar <%= btnLabel.replace('historia', '').trim() %>
+        </a>
+      </div>
+    <% } else if (story.status !== 'processing') { %>
+      <a href="/generar/cargar/<%= story.id %>"
+         class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
+                tracking-widest uppercase hover:text-forge-text transition-colors">
+        <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
+      </a>
+      <% if (story.status === 'completed') { %>
+        <button hx-get="/modales/confirmar-regenerar/<%= story.id %>"
+                hx-target="body"
+                hx-swap="beforeend"
+                class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
+                       tracking-widest uppercase hover:opacity-80 transition-opacity cursor-pointer border-none">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          Regenerar
+        </button>
+      <% } else { %>
+        <form method="POST" action="/historia/<%= story.id %>/generar">
+          <button type="submit"
+                  class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
+                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <%= btnLabel %>
+          </button>
+        </form>
+      <% } %>
+    <% } %>
+
+    <script>
+      async function confirmDeleteMarkdown(storyId) {
+        if (!confirm("¿Eliminar el archivo Markdown? La historia y su configuración se conservan.")) return;
+        try {
+          const res = await fetch(`/api/historia/${storyId}/markdown`, { method: "DELETE" });
+          if (!res.ok) throw new Error("Error al eliminar Markdown");
+          window.location.reload();
+        } catch {
+          alert("No se pudo eliminar el archivo Markdown.");
+        }
+      }
+
+    </script>
+  </div>
+
+</div>

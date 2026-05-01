@@ -23,7 +23,7 @@ profiles:
     prompt_variant: compact
     prompting_strategy: assertive
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: llama3.1:8b
@@ -53,7 +53,7 @@ profiles:
   ollama-mistral:
     prompt_variant: compact
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: mistral:latest
@@ -84,7 +84,7 @@ profiles:
     prompt_variant: compact
     prompting_strategy: assertive
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: qwen2.5:14b
@@ -102,7 +102,7 @@ profiles:
         model: qwen2.5:14b
         temperature: 0.6
         num_ctx: 6144
-        num_predict: 1000
+        num_predict: 1500
         stop: []
       journal:
         model: qwen2.5:14b
@@ -114,7 +114,7 @@ profiles:
   ollama-mistral-nemo:
     prompt_variant: compact
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: mistral-nemo:12b-instruct-2407-q4_0
@@ -144,7 +144,7 @@ profiles:
   ollama-qwen3-8b:
     prompt_variant: compact
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: qwen3:8b
@@ -174,7 +174,7 @@ profiles:
   ollama-hybrid-voz-qwen3:
     prompt_variant: compact
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: qwen2.5:14b
@@ -204,7 +204,7 @@ profiles:
   ollama-gemma3-12b:
     prompt_variant: compact
     provider: ollama
-    ollama: { host: "http://localhost:11434" }
+    ollama: { host: "http://host.docker.internal:11434" }
     roles:
       story_analyst:
         model: gemma3:12b

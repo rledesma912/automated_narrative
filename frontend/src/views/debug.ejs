@@ -1,0 +1,58 @@
+<%
+/*
+ * Variables de entrada:
+ *   coreHealth: { reachable: boolean, status?: string, error?: string }
+ *   env: { PORT: string, CORE_API_URL: string, NODE_ENV: string }
+ */
+%>
+<div class="max-w-2xl">
+  <h2 class="font-serif text-2xl text-forge-accent mb-1">Panel de Diagnóstico</h2>
+  <p class="text-forge-muted text-xs uppercase tracking-widest mb-10">Slice 1 — Infraestructura</p>
+
+  <section class="mb-8">
+    <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3 border-b border-forge-border pb-2">
+      Core API
+    </h3>
+    <table class="w-full text-sm">
+      <tr class="border-b border-forge-border">
+        <td class="py-2 pr-4 text-forge-muted w-40">Estado</td>
+        <td class="py-2">
+          <% if (coreHealth.reachable) { %>
+            <span class="px-2 py-0.5 bg-green-950 text-green-400 text-xs font-bold rounded">ONLINE</span>
+          <% } else { %>
+            <span class="px-2 py-0.5 bg-red-950 text-red-400 text-xs font-bold rounded">OFFLINE</span>
+          <% } %>
+        </td>
+      </tr>
+      <tr class="border-b border-forge-border">
+        <td class="py-2 pr-4 text-forge-muted">URL</td>
+        <td class="py-2"><%= env.CORE_API_URL %></td>
+      </tr>
+      <% if (coreHealth.reachable) { %>
+      <tr>
+        <td class="py-2 pr-4 text-forge-muted">Health response</td>
+        <td class="py-2"><%= coreHealth.status %></td>
+      </tr>
+      <% } else { %>
+      <tr>
+        <td class="py-2 pr-4 text-forge-muted">Error</td>
+        <td class="py-2 text-red-400"><%= coreHealth.error %></td>
+      </tr>
+      <% } %>
+    </table>
+  </section>
+
+  <section>
+    <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3 border-b border-forge-border pb-2">
+      Variables de Entorno
+    </h3>
+    <table class="w-full text-sm">
+      <% Object.entries(env).forEach(([key, val]) => { %>
+      <tr class="border-b border-forge-border">
+        <td class="py-2 pr-4 text-forge-muted w-40"><%= key %></td>
+        <td class="py-2"><%= val %></td>
+      </tr>
+      <% }) %>
+    </table>
+  </section>
+</div>

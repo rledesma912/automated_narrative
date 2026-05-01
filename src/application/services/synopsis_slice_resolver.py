@@ -1,7 +1,7 @@
 """SynopsisSliceResolver — segmenta sinopsis por beat según estrategia."""
 
-import re
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +20,12 @@ class SynopsisSliceResolver:
         """Resuelve qué fragmento de sinopsis inyectar según la estrategia configurada."""
         if not sinopsis:
             return ""
-            
+
         if strategy == "none":
             return ""
         if strategy == "full":
             return sinopsis
-            
+
         return self.get_slice(sinopsis, beat_number, total_beats)
 
     def get_slice(self, sinopsis: str, beat_number: int, total_beats: int) -> str:
@@ -44,11 +44,11 @@ class SynopsisSliceResolver:
         segment_size = len(paragraphs) / total_beats
         start = int((beat_number - 1) * segment_size)
         end = int(beat_number * segment_size)
-        
+
         # Asegurar al menos un párrafo si hay párrafos disponibles
         end = max(end, start + 1)
-        
+
         # Limitar al máximo disponible
         end = min(end, len(paragraphs))
-        
+
         return "\n\n".join(paragraphs[start:end])

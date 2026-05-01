@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía NarrativeForge - El Arte de Narrar</title>
+    <link rel="stylesheet" href="/css/style.css"> <!-- Asumiendo esta ruta -->
+    <style>
+        :root {
+            --bg-dark: #0a0a0c;
+            --accent-blood: #8b0000;
+            --text-ghost: #d1d1d1;
+            --card-bg: #16161a;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-ghost);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            color: var(--accent-blood);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-blood);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-circle {
+            background: var(--accent-blood);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .pro-tip {
+            background: rgba(139, 0, 0, 0.1);
+            border: 1px dashed var(--accent-blood);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 40px;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .step-number {
+            color: var(--accent-blood);
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 80px;
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+
+        .visual-aid {
+            text-align: center;
+            padding: 20px;
+            background: #000;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            border: 1px solid #333;
+        }
+
+        .highlight {
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>NarrativeForge</h1>
+            <p class="subtitle">La alquimia entre el dato y el terror</p>
+        </header>
+
+        <section class="intro">
+            <p>Bienvenido, Arquitecto. Estás a punto de invocar una historia. Para que el <strong>Core</strong> genere un relato que hiele la sangre, debes comprender la simbiosis entre tu visión y nuestra lógica.</p>
+        </section>
+
+        <div class="grid">
+            <div class="card">
+                <h2><span class="icon-circle">✍️</span> Tu Rol</h2>
+                <p><strong>El "Qué":</strong> Eres el dueño de los hechos. Tu tarea es definir la estructura lógica y los eventos físicos.</p>
+                <ul class="step-list">
+                    <li><span class="step-number">01</span> Inyecta eventos detallados.</li>
+                    <li><span class="step-number">02</span> Define objetos clave (ej: <em>el sulki, la vela</em>).</li>
+                    <li><span class="step-number">03</span> Marca los puntos de no retorno.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon-circle">⚙️</span> El Core</h2>
+                <p><strong>El "Cómo":</strong> El sistema orquestador transforma tus datos en prosa literaria y atmósfera opresiva.</p>
+                <ul class="step-list">
+                    <li><span class="step-number">01</span> Traduce hechos en sensaciones.</li>
+                    <li><span class="step-number">02</span> Mantiene la voz del narrador.</li>
+                    <li><span class="step-number">03</span> Asegura la resonancia en cada acto.</li>
+                </ul>
+            </div>
+        </div>
+
+        <section class="anatomy">
+            <h2>Anatomía de una Sinopsis Ganadora</h2>
+            <p>El motor se alimenta de <strong>detalles sensoriales</strong>. No resumas, describe el evento para que la IA tenga "tracción".</p>
+            
+            <div class="visual-aid">
+                <span style="color: #666;">// Evita esto:</span><br>
+                "Vuelven a la casa bajo la lluvia y tienen miedo."<br><br>
+                <span style="color: var(--accent-blood);">// Prefiere esto:</span><br>
+                "El sulki vibra bajo un silbido humano. La lluvia cesa de golpe dejando una luz cenicienta. Ricardo guarda el caballo en silencio catatónico."
+            </div>
+        </section>
+
+        <div class="pro-tip">
+            <h3>💡 Regla de Oro: Eventos, no Emociones</h3>
+            <p>Si escribes <em>"Irene está asustada"</em>, el sistema hará lo que pueda. Si escribes <em>"Irene nota que las garras marcaron la madera del sulki"</em>, el sistema construirá el terror por ti.</p>
+        </div>
+
+        <section class="acts">
+            <h2>Los 5 Actos del Terror</h2>
+            <p>Tu historia fluirá a través de esta estructura clásica:</p>
+            <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
+                <div style="flex: 1; text-align: center; padding: 10px; background: #1a1a1f;"><strong>1. Inicio</strong><br><small>La Grieta</small></div>
+                <div style="flex: 1; text-align: center; padding: 10px; background: #1a1a1f;"><strong>2. Ascenso</strong><br><small>La Transgresión</small></div>
+                <div style="flex: 1; text-align: center; padding: 10px; background: #1a1a1f; border: 1px solid var(--accent-blood);"><strong>3. Clímax</strong><br><small>El Horror</small></div>
+                <div style="flex: 1; text-align: center; padding: 10px; background: #1a1a1f;"><strong>4. Descenso</strong><br><small>La Trampa</small></div>
+                <div style="flex: 1; text-align: center; padding: 10px; background: #1a1a1f;"><strong>5. Final</strong><br><small>La Mancha</small></div>
+            </div>
+        </section>
+
+        <footer>
+            <p>NarrativeForge v2.0 | La oscuridad es solo falta de datos.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

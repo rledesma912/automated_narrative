@@ -1,0 +1,32 @@
+{
+  "horror": {
+    "name": "Terror Clásico",
+    "bg": "#0a0a0a",
+    "surface": "#111111",
+    "border": "#1e1e1e",
+    "accent": "#8b0000",
+    "muted": "#6b7280",
+    "text": "#d1d1d1",
+    "font": "mono"
+  },
+  "noir": {
+    "name": "Noir Urbano",
+    "bg": "#111118",
+    "surface": "#18181f",
+    "border": "#25253a",
+    "accent": "#6060aa",
+    "muted": "#6b6b8a",
+    "text": "#c8c8d8",
+    "font": "mono"
+  },
+  "umbral": {
+    "name": "Umbral",
+    "bg": "#0d1b12",
+    "surface": "#121e17",
+    "border": "#1a2e20",
+    "accent": "#2d6a4f",
+    "muted": "#4a7a5a",
+    "text": "#b7d4c3",
+    "font": "serif"
+  }
+}

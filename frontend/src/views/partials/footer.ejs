@@ -1,0 +1,94 @@
+<%/* ── Monitor de Actividad Global (Spec-211) ─────────────────────────── */%>
+<div id="global-status-footer" 
+     class="fixed bottom-0 left-56 right-0 bg-forge-surface border-t border-forge-border px-6 py-2 z-40 h-10 flex items-center">
+  
+  <div class="flex items-center justify-between w-full">
+    
+    <%/* -- Actividad Actual -- */%>
+    <div id="footer-active-content" class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-forge-accent">
+        <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Generando:</span>
+      </div>
+      <span id="footer-story-title" class="text-sm text-forge-text font-serif"></span>
+      <a id="footer-story-link" href="#" 
+         class="text-[10px] uppercase tracking-widest text-forge-accent hover:opacity-70 flex items-center gap-1 ml-2">
+        <i data-lucide="eye" class="w-3 h-3"></i> Ver progreso
+      </a>
+    </div>
+
+    <%/* -- Último Evento (Visible solo si no hay stream activo) -- */%>
+    <div id="footer-idle-content" class="hidden flex items-center gap-3">
+      <div class="flex items-center gap-2 text-forge-muted">
+        <i data-lucide="activity" class="w-3 h-3"></i>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Actividad:</span>
+      </div>
+      <span id="footer-last-event" class="text-xs text-forge-muted italic">Esperando eventos...</span>
+    </div>
+
+    <%/* -- Indicador de conexión con Core -- */%>
+    <div class="flex items-center gap-2">
+      <div id="core-status-dot" class="w-2 h-2 rounded-full bg-forge-border"></div>
+      <span class="text-[9px] uppercase tracking-widest text-forge-muted">Core API</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    let lastKnownEventTime = null;
+
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/streaming/active');
+        if (!res.ok) {
+           updateConnStatus(false);
+           return;
+        }
+        updateConnStatus(true);
+        const data = await res.json();
+        
+        const activeContainer = document.getElementById('footer-active-content');
+        const idleContainer = document.getElementById('footer-idle-content');
+
+        if (data.active && data.story) {
+          // Hay generación activa
+          activeContainer.classList.remove('hidden');
+          idleContainer.classList.add('hidden');
+          document.getElementById('footer-story-title').textContent = data.story.title || 'Sin título';
+          document.getElementById('footer-story-link').href = `/generar/stream/${data.story.id}`;
+        } else {
+          // No hay generación activa, mostrar último evento
+          activeContainer.classList.add('hidden');
+          idleContainer.classList.remove('hidden');
+          
+          if (data.lastEvent) {
+             const event = data.lastEvent;
+             const msg = `[${event.timestamp}] ${event.message}`;
+             const el = document.getElementById('footer-last-event');
+             
+             // Si es un evento nuevo, dar feedback visual
+             if (event.timestamp !== lastKnownEventTime) {
+                el.classList.add('text-forge-accent');
+                setTimeout(() => el.classList.remove('text-forge-accent'), 2000);
+                lastKnownEventTime = event.timestamp;
+             }
+             el.textContent = msg;
+          }
+        }
+      } catch (e) {
+        updateConnStatus(false);
+      }
+    }
+
+    function updateConnStatus(online) {
+      const dot = document.getElementById('core-status-dot');
+      dot.className = online ? 'w-2 h-2 rounded-full bg-green-500' : 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
+    }
+
+    // Polling cada 5 segundos para que sea más reactivo
+    checkStatus();
+    setInterval(checkStatus, 5000);
+  })();
+</script>

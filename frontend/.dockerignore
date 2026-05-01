@@ -1,0 +1,15 @@
+# ── Dependencias / build ───────────────────────────────────────────────────────
+node_modules/
+dist/
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+tests/
+test-results/
+playwright.config.ts
+
+# ── Dev tooling ────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.env
+.env.*
+!.env.example

@@ -16,9 +16,8 @@ import pytest
 from src.application.services import PromptBuilder
 from src.application.use_cases.director_use_case import DirectorUseCase
 from src.domain.interfaces import LLMResponse
-from src.infrastructure.parsers.markdown_parser import MarkdownStoryParser
 from src.domain.models import Story
-
+from src.infrastructure.parsers.markdown_parser import MarkdownStoryParser
 
 # ── Mock LLM con secuencia de respuestas ─────────────────────────────────────
 

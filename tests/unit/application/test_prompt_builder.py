@@ -105,16 +105,14 @@ class TestPromptBuilder:
             title="El Monte Prohibido",
             protagonista="Ricardo, Irene",
             relator="Irene",
-            escenarios="El monte",
             sinopsis="SINOPSIS_UNICA_IDENTIFICADORA_XYZ",
             atmosfera="terror folclórico",
         )
         beat = Beat(number=1, summary="La advertencia de la abuela")
 
         builder = PromptBuilder()
-        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
-            builder._voice_template = None
-            prompt = builder.build_beat_prompt(story, beat)
+        # El perfil activo por defecto es compact — no requiere parcheo
+        prompt = builder.build_beat_prompt(story, beat)
 
         assert "SINOPSIS_UNICA_IDENTIFICADORA_XYZ" not in prompt
 
@@ -213,21 +211,15 @@ class TestPromptVariants:
         )
 
     def test_compact_variant_loads_compact_voice_template(self):
-        with patch("src.application.services.prompt_builder.settings") as mock_s:
-            mock_s.active_profile_config.return_value = {"prompt_variant": "compact"}
-            mock_s.beats_definition_file = "config/llm_beats_definition.yaml"
-            mock_s.prompts_dir = "config/prompts_generation"
-
-            mock_s.prompt_file_voice = "voice.md"
-            builder = PromptBuilder()
-            assert builder._voice_template_path() == "voice_compact.md"
+        # El perfil activo por defecto es compact — la estrategia elige voice_compact.md
+        builder = PromptBuilder()
+        assert builder._get_strategy().get_template_name("voice") == "voice_compact.md"
 
     def test_frontier_variant_loads_standard_voice_template(self):
-        with patch("src.application.services.template_loader.settings") as mock_s:
-            mock_s.active_profile_config.return_value = {"prompt_variant": "frontier"}
-            mock_s.prompt_file_voice = "voice.md"
-            builder = PromptBuilder()
-            assert builder._voice_template_path() == "voice.md"
+        builder = PromptBuilder()
+        with patch.object(builder._loader, "get_variant", return_value="frontier"):
+            builder._strategy = None  # forzar resolución con frontier
+            assert builder._get_strategy().get_template_name("voice") == "voice.md"
 
     def test_compact_previous_context_max_500(self):
         from src.domain.models import Beat
@@ -252,12 +244,11 @@ class TestPromptVariants:
     def test_compact_voice_beat1_uses_primer_fragmento_cta(self):
         from src.domain.models import Beat
 
+        # Perfil activo por defecto es compact — carga voice_compact.md con {continuation_cta}
         builder = PromptBuilder()
         story = self._story()
         beat = Beat(number=1, summary="La protagonista llega a la casa")
-        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
-            builder._voice_template = None
-            prompt = builder.build_beat_prompt(story, beat)
+        prompt = builder.build_beat_prompt(story, beat)
         assert "primer fragmento" in prompt
 
     def test_compact_voice_beat2_uses_continua_cta(self):
@@ -266,9 +257,7 @@ class TestPromptVariants:
         builder = PromptBuilder()
         story = self._story()
         beat = Beat(number=2, summary="El misterio se intensifica")
-        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
-            builder._voice_template = None
-            prompt = builder.build_beat_prompt(story, beat)
+        prompt = builder.build_beat_prompt(story, beat)
         assert "Continúa el relato:" in prompt
 
     def test_compact_beat_summary_in_second_half(self):
@@ -278,9 +267,7 @@ class TestPromptVariants:
         builder = PromptBuilder()
         story = self._story()
         beat = Beat(number=1, summary="ESCENA_UNICA_IDENTIFICADORA")
-        with patch.object(builder, "_get_prompt_variant", return_value="compact"):
-            builder._voice_template = None
-            prompt = builder.build_beat_prompt(story, beat)
+        prompt = builder.build_beat_prompt(story, beat)
         mid = len(prompt) // 2
         assert "ESCENA_UNICA_IDENTIFICADORA" in prompt[mid:]
 

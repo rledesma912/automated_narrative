@@ -1,0 +1,647 @@
+steps:
+  - id: step_config_title
+    title: "Título y Atmósfera"
+    subtitle: "El nombre de tu historia y el tipo de horror"
+    fields:
+      - name: title
+        type: text
+        label: "Título de la historia"
+        subtitle: "El nombre de tu historia"
+        placeholder: "Ej: La Casa del Umbral"
+        required: true
+
+      - name: atmosfera
+        type: select
+        label: "Qué tipo de horror"
+        subtitle: "El género principal de la historia"
+        required: true
+        group: "atmosphere"
+        options:
+          - "terror_psicologico: Terror Psicológico"
+          - "horror_cosmico: Horror Cósmico (Lovecraftiano)"
+          - "terror_gotico: Terror Gótico"
+          - "body_horror: Horror Corporal (Body Horror)"
+          - "paranormal: Fenómenos Paranormales"
+          - "folk_horror: Terror Rural (Leyendas de campo)"
+          - "suspenso: Suspenso / Thriller"
+          - "terror_supervivencia: Terror de Supervivencia"
+
+      - name: atmosphere_subgenre
+        type: select
+        label: "Qué estilo de horror"
+        subtitle: "El subgénero o estilo específico"
+        group: "atmosphere"
+        options:
+          - "rural: Leyendas del campo"
+          - "gotico: Gótico (Atmósfera lúgubre)"
+          - "leyenda_urbana: Leyendas urbanas"
+          - "historico: Época pasada / Histórico"
+          - "scifi: Ciencia Ficción / Futurista"
+          - "psicologico: Psicológico / Interior"
+          - "sobrenatural: Sobrenatural"
+          - "otro: Otro estilo"
+
+      - name: atmosphere_tone
+        type: radio
+        label: "Cómo evolve la tensión"
+        subtitle: "El tono narrativo de la historia"
+        hint: "Cómo evolve la tensión a lo largo de toda la historia"
+        group: "atmosphere"
+        options:
+          - "creciente: Creciente y opresivo"
+          - "constante: Tensión constante"
+          - "descendente: Tensión descendente"
+          - "quebrado: Tensión quebrada (Sustos repentinos)"
+          - "ambiguo: Atmósfera ambigua"
+
+  - id: step_config_personajes
+    title: "Personajes"
+    subtitle: "Quiénes son y quién cuenta la historia"
+    fields:
+      - name: protagonista_1_name
+        type: text
+        label: "Personaje 1 - Nombre"
+        subtitle: "El nombre de tu personaje principal"
+        placeholder: "Ej: Irene"
+        group: "elenco"
+        required: true
+
+      - name: protagonista_1_role
+        type: text
+        label: "Personaje 1 - Qué hace"
+        subtitle: "Su rol o relación con otros"
+        placeholder: "Ej: Narradora y protagonista; nuera de María"
+        group: "elenco"
+        required: true
+
+      - name: protagonista_1_traits
+        type: multi-select
+        label: "Personaje 1 - Cómo es"
+        subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
+        group: "elenco"
+        options:
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
+
+      - name: protagonista_2_name
+        type: text
+        label: "Personaje 2 - Nombre"
+        subtitle: "Otro personaje (opcional)"
+        placeholder: "Ej: Ricardo"
+        group: "elenco"
+
+      - name: protagonista_2_role
+        type: text
+        label: "Personaje 2 - Qué hace"
+        subtitle: "Su rol o relación con otros"
+        placeholder: "Ej: Esposo de Irene; hijo de María"
+        group: "elenco"
+
+      - name: protagonista_2_traits
+        type: multi-select
+        label: "Personaje 2 - Cómo es"
+        subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
+        group: "elenco"
+        options:
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
+
+      - name: protagonista_3_name
+        type: text
+        label: "Personaje 3 - Nombre"
+        subtitle: "Otro personaje (opcional)"
+        placeholder: "Ej: María"
+        group: "elenco"
+
+      - name: protagonista_3_role
+        type: text
+        label: "Personaje 3 - Qué hace"
+        subtitle: "Su rol o relación con otros"
+        placeholder: "Ej: Suegra de Irene; dueña de la casa"
+        group: "elenco"
+
+      - name: protagonista_3_traits
+        type: multi-select
+        label: "Personaje 3 - Cómo es"
+        subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
+        group: "elenco"
+        options:
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
+
+      - name: protagonista_4_name
+        type: text
+        label: "Personaje 4 - Nombre"
+        subtitle: "Otro personaje (opcional)"
+        group: "elenco"
+
+      - name: protagonista_4_role
+        type: text
+        label: "Personaje 4 - Qué hace"
+        subtitle: "Su rol o relación con otros"
+        group: "elenco"
+
+      - name: protagonista_4_traits
+        type: multi-select
+        label: "Personaje 4 - Cómo es"
+        subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
+        group: "elenco"
+        options:
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
+
+      - name: protagonista_5_name
+        type: text
+        label: "Personaje 5 - Nombre"
+        subtitle: "Otro personaje (opcional)"
+        group: "elenco"
+
+      - name: protagonista_5_role
+        type: text
+        label: "Personaje 5 - Qué hace"
+        subtitle: "Su rol o relación con otros"
+        group: "elenco"
+
+      - name: protagonista_5_traits
+        type: multi-select
+        label: "Personaje 5 - Cómo es"
+        subtitle: "Traits de personalidad"
+        hint: "Elegí 2-3 que definan mejor al personaje"
+        group: "elenco"
+        options:
+          - "inseguro: Inseguro"
+          - "ansioso: Ansioso"
+          - "observador: Observador"
+          - "imaginativo: Imaginativo"
+          - "escéptico: Escéptico (No cree en nada)"
+          - "tradicional: Tradicional"
+          - "pragmático: Pragmático"
+          - "disciplinado: Disciplinado"
+          - "sociable: Sociable"
+          - "audaz: Audaz / Valiente"
+          - "cooperativo: Cooperativo"
+          - "reservado: Reservado"
+          - "protector: Protector"
+          - "terco: Obstinado / Terco"
+
+      - name: storyteller_id
+        type: select
+        label: "Aquí va quien cuenta la historia"
+        subtitle: "Seleccioná el personaje que narra"
+        note: "Elegí uno de los personajes que definiste arriba"
+        group: "narrador"
+        required: true
+        options:
+          - protagonista_1
+          - protagonista_2
+          - protagonista_3
+          - protagonista_4
+          - protagonista_5
+
+      - name: voice_style
+        type: radio
+        label: "Con qué tono de voz"
+        subtitle: "Cómo se siente la narración"
+        hint: "Cómo se siente la narración (cercano, omnisciente, etc)"
+        group: "narrador"
+        options:
+          - "intimista: Como un diario personal, cámara cerca"
+          - "omnisciente: Un narrador que todo lo ve y todo lo sabe"
+          - "dramático: Escenas con tensión y revelaciones"
+          - "contemplativo: Ritmo lento, descripción rica"
+          - "poético: Lenguaje evocador y metafórico"
+
+  - id: step_config_voz
+    title: "Cómo suena la historia"
+    subtitle: "Cómo percibe, piensa y habla el narrador"
+    fields:
+      - name: perception_reliability
+        type: select
+        label: "Qué tan confiable es lo que ve/oye"
+        subtitle: "¿Percibe la realidad tal cual?"
+        hint: "Qué tan confiables son sus percepciones"
+        group: "percepcion"
+        default: "subjetiva"
+        options:
+          - "subjetiva: Ve lo que espera ver"
+          - "objetiva: Percibe la realidad tal cual"
+          - "poco_confiable: A veces ve bien, a veces no"
+
+      - name: distortion_level
+        type: radio
+        label: "Cuánto distorsiona la realidad"
+        subtitle: "Nivel de distorsión bajo miedo o estrés"
+        hint: "Qué tanto lo que ve difiere de lo real"
+        group: "percepcion"
+        default: "media"
+        options:
+          - "minima: Apenas distorsiona"
+          - "baja: Distorsión leve"
+          - "media: Distorsión notable"
+          - "alta: Distorsión constante"
+          - "critica: No distingue real de irreal"
+
+      - name: distortion_triggers
+        type: multi-select
+        label: "Pierde contacto cuando"
+        subtitle: "Qué hace que dude de lo que ve/oye"
+        hint: "Qué situaciones le hacen perder contacto con la realidad"
+        group: "percepcion"
+        options:
+          - "oscuridad: En la oscuridad"
+          - "soledad: Cuando está solo"
+          - "agotamiento: Cuando se agota"
+          - "panico: En pánico"
+          - "trauma: Cuando recuerda el pasado"
+          - "sustancias: Bajo efectos"
+          - "ansiedad: Cuando la ansiedad sube"
+
+      - name: paranormal_knowledge
+        type: select
+        label: "Qué tanto sabe de lo oculto"
+        subtitle: "Conocimiento sobre fenómenos paranormales"
+        hint: "Qué sabe del mundo sobrenatural"
+        group: "conocimiento"
+        default: "medio"
+        options:
+          - "nulo: No sabe nada"
+          - "bajo: Sabe poco"
+          - "medio: Conocimiento regular"
+          - "alto: Sabe bastante"
+          - "experto: Es un experto"
+
+      - name: religioso_knowledge
+        type: select
+        label: "Qué tanto sabe de lo sagrado"
+        subtitle: "Conocimiento religioso/espiritual"
+        hint: "Qué sabe de temas religiosos"
+        group: "conocimiento"
+        default: "medio"
+        options:
+          - "nulo: No sabe nada"
+          - "bajo: Sabe poco"
+          - "medio: Conocimiento regular"
+          - "alto: Sabe bastante"
+          - "experto: Es un experto"
+
+      - name: interpretation_style
+        type: select
+        label: "Cuando ve algo extraño, lo interpreta como"
+        subtitle: "Cómo procesa lo sobrenatural"
+        hint: "Cómo procesa lo sobrenatural"
+        group: "conocimiento"
+        options:
+          - "literal: Lo ve tal cual"
+          - "simbolica: Busca significados ocultos"
+          - "mitologica: Lo conecta con mitos"
+          - "cientifica: Busca explicaciones"
+          - "supersticiosa: Le teme y lo evita"
+
+      - name: language_register
+        type: radio
+        label: "Cómo habla el narrador"
+        subtitle: "Registro lingüístico"
+        hint: "El registro del narrador (formal, coloquial, etc)"
+        group: "lenguaje"
+        options:
+          - "formal: Educado y correcto"
+          - "coloquial: Natural y diario"
+          - "rural_tradicional: Del campo"
+          - "arcaico: Antiguo"
+          - "poético: Evocador"
+
+      - name: figurative_density
+        type: select
+        label: "Cuánto usa figuras retóricas"
+        subtitle: "Metáforas, comparaciones, descripciones"
+        hint: "Cuánto usa lenguaje figurativo"
+        group: "lenguaje"
+        default: "media"
+        options:
+          - "minima: Apenas usa"
+          - "baja: Usa poco"
+          - "media: Uso regular"
+          - "alta: Usa mucho"
+          - "maxima: Lenguaje muy rico"
+
+      - name: fear_focus
+        type: multi-select
+        label: "Su mayor miedo es"
+        subtitle: "El miedo profundo del narrador"
+        hint: "Seleccioná 1 solo miedo principal"
+        group: "sesgos"
+        options:
+          - "muerte: La muerte"
+          - "perdida: Perder algo valioso"
+          - "aislamiento: Quedar solo"
+          - "traicion: Ser traicionado"
+          - "corrupcion: Corrupción interna"
+          - "desconocido: Lo que no entiende"
+          - "perdida_control: Perder el control"
+          - "silencio: El silencio"
+          - "abandono: Ser abandonado"
+          - "revelacion: Descubrir una verdad terrible"
+
+      - name: attention_focus
+        type: multi-select
+        label: "Presta atención a"
+        subtitle: "A qué le dedica energía mental"
+        hint: "En qué se fixa el narrador (busca pistas visuales/auditvas)"
+        group: "sesgos"
+        options:
+          - "sonidos: Sonidos y ruidos"
+          - "sombras: Sombras y oscuridad"
+          - "naturaleza: La naturaleza"
+          - "tecnologia: Tecnología"
+          - "rostros: Rostros y expresiones"
+          - "espacios: Espacios cerrados"
+          - "detalles: Detalles físicos"
+
+  - id: step_world
+    title: "El Mundo"
+    subtitle: "Escenarios y reglas del universo de la historia"
+    fields:
+      # ── Escenarios ────────────────────────────────────
+      - name: scenario_1_name
+        type: text
+        label: "Escenario 1"
+        subtitle: "El primer lugar de la historia"
+        placeholder: "Ej: La casa de la abuela"
+        group: "escenarios"
+        required: true
+
+      - name: scenario_1_description
+        type: textarea
+        label: "Descripción del escenario 1"
+        subtitle: "Cómo es este lugar, qué ambiente tiene"
+        placeholder: "Una casa antigua en el campo, con paredes de barro y olor a humedad..."
+        rows: 2
+        group: "escenarios"
+
+      - name: scenario_2_name
+        type: text
+        label: "Escenario 2"
+        subtitle: "Otro lugar (opcional)"
+        placeholder: "Ej: El monte detrás de la casa"
+        group: "escenarios"
+
+      - name: scenario_2_description
+        type: textarea
+        label: "Descripción del escenario 2"
+        subtitle: "Cómo es este lugar"
+        rows: 2
+        group: "escenarios"
+
+      - name: scenario_3_name
+        type: text
+        label: "Escenario 3"
+        subtitle: "Otro lugar (opcional)"
+        group: "escenarios"
+
+      - name: scenario_3_description
+        type: textarea
+        label: "Descripción del escenario 3"
+        rows: 2
+        group: "escenarios"
+
+      - name: scenario_4_name
+        type: text
+        label: "Escenario 4"
+        subtitle: "Otro lugar (opcional)"
+        group: "escenarios"
+
+      - name: scenario_4_description
+        type: textarea
+        label: "Descripción del escenario 4"
+        rows: 2
+        group: "escenarios"
+
+      # ── Reglas del mundo ──────────────────────────────
+      - name: rule_1_text
+        type: textarea
+        label: "Regla 1 del mundo"
+        subtitle: "Una ley que rige este universo"
+        placeholder: "Los espejos muestran el pasado de quien los mira..."
+        rows: 2
+        group: "reglas"
+        required: true
+
+      - name: rule_1_type
+        type: select
+        label: "Tipo de regla 1"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_2_text
+        type: textarea
+        label: "Regla 2 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_2_type
+        type: select
+        label: "Tipo de regla 2"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_3_text
+        type: textarea
+        label: "Regla 3 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_3_type
+        type: select
+        label: "Tipo de regla 3"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_4_text
+        type: textarea
+        label: "Regla 4 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_4_type
+        type: select
+        label: "Tipo de regla 4"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_5_text
+        type: textarea
+        label: "Regla 5 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_5_type
+        type: select
+        label: "Tipo de regla 5"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_6_text
+        type: textarea
+        label: "Regla 6 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_6_type
+        type: select
+        label: "Tipo de regla 6"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+      - name: rule_7_text
+        type: textarea
+        label: "Regla 7 del mundo"
+        subtitle: "Otra ley (opcional)"
+        rows: 2
+        group: "reglas"
+
+      - name: rule_7_type
+        type: select
+        label: "Tipo de regla 7"
+        group: "reglas"
+        options:
+          - "entorno: Del lugar"
+          - "psicologica: De la mente"
+          - "paranormal: Sobrenatural"
+          - "evento: De un evento"
+          - "social: Social"
+
+  - id: step_plot
+    title: "La Trama"
+    subtitle: "Los 5 actos según la Pirámide de Freytag"
+    fields:
+      - name: acto_1_exposicion
+        type: textarea
+        label: "Acto 1: Exposición"
+        subtitle: "Presentá el mundo, los personajes y el conflicto inicial"
+        hint: "Quién es el protagonista, dónde está, qué problema enfrenta o qué lo motiva"
+        rows: 7
+        group: "actos"
+        required: true
+
+      - name: acto_2_accion
+        type: textarea
+        label: "Acto 2: Acción Ascendente"
+        subtitle: "Las complicaciones que llevan al momento más intenso"
+        hint: "Qué obstáculos aparecen, qué decisiones debe tomar el protagonista"
+        rows: 7
+        group: "actos"
+        required: true
+
+      - name: acto_3_climax
+        type: textarea
+        label: "Acto 3: Clímax"
+        subtitle: "El momento de mayor tensión o revelación"
+        hint: "Qué descubrimiento o evento cambia todo"
+        rows: 7
+        group: "actos"
+        required: true
+
+      - name: acto_4_accion
+        type: textarea
+        label: "Acto 4: Acción Descendente"
+        subtitle: "Las consecuencias del momento más intenso"
+        hint: "Cómo cambian las reglas del mundo después del clímax"
+        rows: 7
+        group: "actos"
+        required: true
+
+      - name: acto_5_desenlace
+        type: textarea
+        label: "Acto 5: Desenlace"
+        subtitle: "La resolución y la nueva normalidad"
+        hint: "Cómo queda el mundo después de la historia"
+        rows: 7
+        group: "actos"
+        required: true

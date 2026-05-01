@@ -1,0 +1,36 @@
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-10 border-b border-forge-border pb-6">
+    <div>
+      <h2 class="font-serif text-4xl text-forge-accent"><%= story.title %></h2>
+      <p class="text-forge-muted text-sm uppercase tracking-widest mt-2">Versión Markdown Exportada</p>
+    </div>
+    <div class="flex gap-4">
+      <a href="/historia/<%= story.id %>/descargar-markdown"
+         class="px-6 py-2 border border-forge-border text-forge-muted text-sm uppercase tracking-widest hover:text-forge-text flex items-center gap-2 transition-colors">
+        <i data-lucide="download" class="w-4 h-4"></i> Descargar
+      </a>
+      
+      <button hx-get="/modales/confirmar-borrar-markdown/<%= story.id %>"
+              hx-target="body"
+              hx-swap="beforeend"
+              class="px-6 py-2 border border-red-900/50 text-red-400 text-sm uppercase tracking-widest hover:bg-red-950/20 flex items-center gap-2 transition-colors">
+        <i data-lucide="file-minus" class="w-4 h-4"></i> Eliminar Archivo
+      </button>
+
+      <a href="/galeria"
+         class="px-6 py-2 bg-forge-accent text-forge-text text-sm uppercase tracking-widest hover:opacity-80 flex items-center gap-2 transition-opacity">
+        <i data-lucide="library" class="w-4 h-4"></i> Galería
+      </a>
+    </div>
+  </div>
+
+  <div class="bg-forge-surface border border-forge-border p-12 shadow-2xl">
+    <div class="prose prose-invert prose-stone max-w-none font-serif text-forge-text text-xl leading-relaxed whitespace-pre-wrap">
+<%= content %>
+    </div>
+  </div>
+
+  <div class="mt-8 text-center text-forge-muted text-xs uppercase tracking-widest">
+    Fin del relato · NarrativeForge
+  </div>
+</div>

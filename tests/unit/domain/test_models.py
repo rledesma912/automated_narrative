@@ -1,6 +1,5 @@
 """Tests for domain models."""
 
-import pytest
 
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryMetadata, StoryStatus
 

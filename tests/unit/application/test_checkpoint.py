@@ -4,9 +4,9 @@ import pytest
 
 from src.application.services.checkpoint import (
     VALID_CHECKPOINTS,
-    validate,
-    ordinal,
     label,
+    ordinal,
+    validate,
 )
 
 

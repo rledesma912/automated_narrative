@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from src.utils.timezone import now_argentina
+
 
 @dataclass
 class LLMCallRecord:
@@ -24,7 +26,7 @@ class LLMCallRecord:
     narrative_context: str | None = None
     system_prompt_file: str | None = None
     user_prompt_file: str | None = None
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=now_argentina)
 
 
 class DebugCollector:
@@ -33,7 +35,7 @@ class DebugCollector:
     def __init__(self, active: bool = True):
         self._active = active
         self.records: list[LLMCallRecord] = []
-        self._session_start: datetime = datetime.now()
+        self._session_start = now_argentina()
 
     def is_active(self) -> bool:
         return self._active

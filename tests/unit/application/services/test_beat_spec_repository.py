@@ -1,6 +1,5 @@
 """Tests para BeatSpecRepository — Spec 063 Slice A."""
 
-import textwrap
 from pathlib import Path
 
 import pytest

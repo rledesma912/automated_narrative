@@ -7,11 +7,13 @@ from typing import Optional
 
 from pydantic import UUID4, BaseModel, Field
 
+from src.utils.timezone import now_argentina
+
 
 class StoryStatus(str, Enum):
     """Estado de una historia."""
 
-    PENDING = "pending"
+    DRAFT = "draft"
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -75,7 +77,7 @@ class MacroBeat(BaseModel):
     summary: str
     content: str = ""
     status: str = "pending"
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=now_argentina)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
     active_rules: list[str] = []
@@ -119,7 +121,7 @@ class StoryPlan(BaseModel):
     story_id: UUID4
     title: str
     beats: list[Beat] = []
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=now_argentina)
 
 
 class StoryMetadata(BaseModel):
@@ -163,13 +165,14 @@ class Story(BaseModel):
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
     journal: NarrativeJournal = Field(default_factory=NarrativeJournal)
-    status: StoryStatus = StoryStatus.PENDING
-    created_at: datetime = Field(default_factory=datetime.now)
+    status: StoryStatus = StoryStatus.DRAFT
+    created_at: datetime = Field(default_factory=now_argentina)
 
     narrative_brief: str = ""
     storyteller_config: Optional[dict] = None
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
+    file_path: Optional[str] = None
 
     # -- Spec 070: comportamiento de dominio --
 

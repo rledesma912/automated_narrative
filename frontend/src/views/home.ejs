@@ -1,0 +1,107 @@
+<div class="max-w-5xl mx-auto py-16 px-6">
+    <!-- Header Principal -->
+    <header class="text-center mb-20">
+        <h1 class="font-serif text-7xl text-forge-accent mb-6 tracking-tighter">NarrativeForge</h1>
+        <p class="text-forge-muted text-sm tracking-[0.4em] uppercase">La alquimia entre el dato y el terror</p>
+    </header>
+
+    <!-- Sección Intro -->
+    <section class="mb-20 text-center">
+        <p class="text-forge-text text-2xl leading-relaxed max-w-3xl mx-auto font-light">
+            Bienvenido, Arquitecto. Estás a punto de invocar una historia. 
+            Para que el <span class="text-forge-accent font-bold">Core</span> genere un relato que hiele la sangre, 
+            debes comprender la simbiosis entre tu visión y nuestra lógica.
+        </p>
+    </section>
+
+    <!-- Grid de Roles -->
+    <div class="grid md:grid-cols-2 gap-10 mb-20">
+        <div class="bg-black/40 p-10 border-l-4 border-forge-accent hover:bg-black/60 transition-colors shadow-2xl">
+            <h2 class="text-forge-text font-serif text-3xl mb-6 flex items-center gap-4">
+                <span class="w-10 h-10 rounded-full bg-forge-accent flex items-center justify-center text-lg">✍️</span>
+                Tu Rol
+            </h2>
+            <p class="text-forge-muted text-lg mb-8 leading-relaxed">
+                <strong>El "Qué":</strong> Eres el dueño de los hechos. Tu tarea es definir la estructura lógica y los eventos físicos.
+            </p>
+            <ul class="space-y-4 text-sm uppercase tracking-[0.15em] text-forge-text/90">
+                <li class="flex gap-4 items-center"><span class="text-forge-accent font-bold">01</span> Inyecta eventos detallados</li>
+                <li class="flex gap-4 items-center"><span class="text-forge-accent font-bold">02</span> Define objetos clave</li>
+                <li class="flex gap-4 items-center"><span class="text-forge-accent font-bold">03</span> Define los momentos que cambian el rumbo</li>
+            </ul>
+        </div>
+
+        <div class="bg-black/40 p-10 border-l-4 border-forge-accent hover:bg-black/60 transition-colors shadow-2xl">
+            <h2 class="text-forge-text font-serif text-3xl mb-6 flex items-center gap-4">
+                <span class="w-10 h-10 rounded-full bg-forge-accent flex items-center justify-center text-lg">⚙️</span>
+                El Core
+            </h2>
+            <p class="text-forge-muted text-lg mb-8 leading-relaxed">
+                <strong>El "Cómo":</strong> El sistema orquestador transforma tus datos en prosa literaria y atmósfera opresiva.
+            </p>
+            <ul class="space-y-4 text-sm uppercase tracking-[0.15em] text-forge-text/90">
+                <li class="flex gap-4 items-center"><span class="text-forge-accent font-bold">01</span> Traduce hechos en sensaciones</li>
+                <li class="flex gap-4 items-center"><span class="text-forge-accent font-bold">02</span> Mantiene la voz del narrador</li>
+                <li class="flex gap-4 items-center"><span class="text-forge-accent font-bold">03</span> Asegura la resonancia de los actos</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Anatomía de Sinopsis -->
+    <section class="bg-black/30 p-12 rounded-lg border border-white/10 mb-20 shadow-inner">
+        <h2 class="text-forge-text font-serif text-3xl mb-10 text-center tracking-tight">Anatomía de una Sinopsis Ganadora</h2>
+        <div class="grid md:grid-cols-2 gap-10 font-mono">
+            <div class="p-6 bg-black/50 rounded border border-white/5">
+                <p class="text-forge-muted text-sm mb-4 uppercase tracking-widest">// Evita resúmenes genéricos:</p>
+                <p class="text-red-400/50 text-lg line-through leading-snug">"Un payaso malvado asusta a un niño en un día de lluvia."</p>
+            </div>
+            <div class="p-6 bg-forge-accent/10 rounded border border-forge-accent/30">
+                <p class="text-forge-accent text-sm mb-4 uppercase tracking-widest">// Inyecta densidad sensorial (IT):</p>
+                <p class="text-forge-text text-lg leading-snug">"Un globo rojo flota contra el viento. Georgie se asoma a la rejilla del desagüe. Dos ojos amarillos parpadean desde la oscuridad del alcantarillado."</p>
+            </div>
+        </div>
+        <div class="text-center mt-10">
+            <span class="inline-block px-4 py-2 bg-forge-accent/20 text-forge-accent text-sm uppercase tracking-widest rounded-full">
+                💡 Regla de Oro: El motor prefiere eventos físicos sobre emociones abstractas
+            </span>
+        </div>
+    </section>
+
+    <!-- Los 5 Actos -->
+    <section class="mb-32 -mx-4 md:-mx-24">
+        <h2 class="text-forge-text font-serif text-4xl mb-16 text-center uppercase tracking-[0.3em] opacity-90">Estructura de Resonancia</h2>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 px-4">
+            <% 
+            const actosInfo = [
+                { nombre: 'Inicio', sub: 'La Grieta', ex: 'Bill le regala el barco a Georgie. Hay una advertencia implícita de no salir solo bajo la tormenta.' },
+                { nombre: 'Ascenso', sub: 'La Transgresión', ex: 'Georgie persigue el barco de papel hasta la alcantarilla, rompiendo el límite de seguridad.' },
+                { nombre: 'Clímax', sub: 'El Horror', ex: 'Pennywise aparece en el drenaje. El brazo de Georgie es arrancado; el horror es físico e innegable.' },
+                { nombre: 'Descenso', sub: 'La Trampa', ex: 'La lluvia lava la sangre y arrastra el cuerpo al alcantarillado. El pueblo de Derry guarda un silencio cómplice.' },
+                { nombre: 'Final', sub: 'La Mancha', ex: 'Bill hereda un trauma que no puede explicar. El barco desaparece, pero el miedo queda impregnado.' }
+            ];
+            actosInfo.forEach((acto, i) => { %>
+                <div class="bg-black/70 border border-white/10 p-10 flex flex-col transition-all duration-300 hover:border-forge-accent hover:scale-125 hover:w-[140%] hover:mx-[-20%] hover:bg-black/95 hover:z-50 hover:shadow-[0_0_40px_rgba(0,0,0,0.9)] cursor-default group rounded-sm <%= i === 2 ? 'border-forge-accent bg-forge-accent/5 ring-1 ring-forge-accent/30 scale-105 z-10' : '' %>">
+                    <span class="text-forge-muted text-[10px] uppercase tracking-[0.2em] mb-4">Acto <%= i + 1 %></span>
+                    <span class="text-forge-text text-2xl font-bold uppercase tracking-widest mb-2 group-hover:text-forge-accent transition-colors"><%= acto.nombre %></span>
+                    <span class="text-forge-accent text-xs uppercase font-bold mb-8 tracking-tighter"><%= acto.sub %></span>
+                    <p class="text-forge-text text-base leading-relaxed italic border-t border-white/10 pt-8 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <%= acto.ex %>
+                    </p>
+                </div>
+            <% }); %>
+        </div>
+    </section>
+
+    <!-- Botón de Acción Final -->
+    <div class="text-center py-16 border-t border-white/10">
+        <a href="/generar"
+           class="inline-flex items-center gap-4 px-12 py-5 bg-forge-accent text-forge-text text-lg
+                  tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
+            <i data-lucide="skull" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
+            Comenzar historia
+        </a>
+        <p class="mt-6 text-forge-muted text-xs tracking-[0.5em] uppercase opacity-40">
+            Cruza el umbral de la creación
+        </p>
+    </div>
+</div>

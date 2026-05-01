@@ -17,7 +17,7 @@ class PersonaService:
     def resolve(self, relator: str, storyteller_config: dict | None = None) -> str:
         config = storyteller_config or {}
         voice = config.get("voice", {})
-        
+
         # 1. Configuración explícita de Voz
         person = voice.get("person")
         if person:
@@ -27,7 +27,7 @@ class PersonaService:
                 "tercera": "tercera persona"
             }
             base_person = person_map.get(person.lower(), person)
-            
+
             # Ajuste de género si es primera persona
             gender = config.get("gender", "").lower()
             if "primera" in base_person:
@@ -39,7 +39,7 @@ class PersonaService:
 
         # 2. Mapeo por palabra clave en el campo relator (Fallback)
         normalized = relator.lower().strip()
-        
+
         if "tercera" in normalized or "3ra" in normalized:
             return "tercera persona"
         if "segunda" in normalized or "2da" in normalized:
