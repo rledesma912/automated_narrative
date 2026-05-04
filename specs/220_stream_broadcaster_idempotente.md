@@ -1,7 +1,7 @@
 # Spec-220: Stream Broadcaster Idempotente y MODO MONITOR
 
 ## Estado
-IMPLEMENTADO — T1-T5 aplicados; T6 verificación automática completa. CA3, CA4, CA6, CA7, CA8 verificados via tests; CA1, CA2, CA5 requieren smoke manual (frontend + 2 pestañas).
+IMPLEMENTADO — T1-T5 aplicados; T6 verificación automática completa. CA3, CA4, CA6, CA7, CA8 verificados via tests; CA1, CA2, CA5 verificados con smoke manual (2026-05-04) con frontend + 2 pestañas.
 
 ---
 

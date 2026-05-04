@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import axios from "axios";
 import { WizardData } from "../services/wizard.service";
 import { mapWizardToCore } from "../services/mapper.service";
-import { createStory, checkCoreHealth, streamUrl } from "../services/core_api.service";
+import { createStory, checkCoreHealth } from "../services/core_api.service";
 import { renderPage } from "../utils/render";
 
 type WizardSession = Request["session"] & { wizard?: WizardData };
@@ -47,7 +47,9 @@ export async function submitGeneration(req: Request, res: Response): Promise<voi
 export async function streamingRoomPage(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params as { storyId: string };
   const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
-  const coreStreamUrl = streamUrl(storyId);
+  // Spec-221: path relativo. El navegador resuelve contra el origin del HTML
+  // y Express proxia /api/* al backend. Mantiene same-origin desde cualquier host.
+  const coreStreamUrl = `/api/v1/stories/${storyId}/stream`;
 
   let story: Record<string, unknown> | null = null;
   let beats: unknown[] = [];

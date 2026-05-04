@@ -58,7 +58,7 @@
   async function desvincularRegistro(storyId) {
     if (!confirm("¿Desvincular el registro del archivo Markdown? La historia y su configuración se conservarán.")) return;
     try {
-      const res = await fetch(`/api/historia/${storyId}/file-path`, {
+      const res = await fetch(`/internal/historia/${storyId}/file-path`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file_path: null }),

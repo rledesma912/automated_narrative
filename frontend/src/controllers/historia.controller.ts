@@ -147,7 +147,7 @@ export async function confirmDeleteModal(req: Request, res: Response): Promise<v
     const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 3000 });
     res.render("partials/modal_confirm", {
       message: `¿Estás seguro de que deseas eliminar definitivamente la historia "${resp.data.title || "Sin título"}"?`,
-      actionUrl: `/api/historia/${storyId}`,
+      actionUrl: `/internal/historia/${storyId}`,
       confirmText: "Eliminar Historia",
     });
   } catch {
@@ -159,7 +159,7 @@ export async function confirmDeleteMarkdownModal(req: Request, res: Response): P
   const { storyId } = req.params;
   res.render("partials/modal_confirm", {
     message: "¿Deseas eliminar únicamente el archivo Markdown exportado? La historia y su configuración se conservarán.",
-    actionUrl: `/api/historia/${storyId}/markdown`,
+    actionUrl: `/internal/historia/${storyId}/markdown`,
     confirmText: "Eliminar Markdown",
   });
 }

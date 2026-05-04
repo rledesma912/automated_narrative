@@ -24,7 +24,8 @@ router.get("/generar/cargar/:storyId", loadWizardData);
 // Stream
 router.post("/generar/submit",              submitGeneration);
 router.get("/generar/stream/:storyId",      streamingRoomPage);
-router.get("/api/streaming/active",         getActiveStreamApi);
+// Spec-221 T0: rutas Express renombradas a /internal/* para liberar /api/* al proxy del backend.
+router.get("/internal/streaming/active",    getActiveStreamApi);
 
 // Historia (ver detalle + generar desde borrador + eliminar)
 router.get("/historia/:storyId",            historiaPage);
@@ -32,11 +33,11 @@ router.get("/historia/:storyId/ver-markdown", verMarkdownHandler);
 router.get("/historia/:storyId/descargar-markdown", downloadMarkdownHandler);
 router.post("/historia/:storyId/generar",   generarDesdeHistoria);
 router.post("/historia/:storyId/exportar",  exportStoryHandler);
-router.delete("/api/historia/:storyId",          deleteStoryHandler);
-router.delete("/api/historia/:storyId/markdown", deleteMarkdownHandler);
-router.patch("/api/historia/:storyId/file-path", updateFilePathHandler);
+router.delete("/internal/historia/:storyId",          deleteStoryHandler);
+router.delete("/internal/historia/:storyId/markdown", deleteMarkdownHandler);
+router.patch("/internal/historia/:storyId/file-path", updateFilePathHandler);
 
-router.get("/api/historia/:storyId/markdown-check", markdownCheckHandler);
+router.get("/internal/historia/:storyId/markdown-check", markdownCheckHandler);
 
 // Modales de confirmación (HTMX)
 router.get("/modales/confirmar-borrar/:storyId", confirmDeleteModal);

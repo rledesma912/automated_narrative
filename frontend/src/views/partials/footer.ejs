@@ -41,7 +41,7 @@
 
     async function checkStatus() {
       try {
-        const res = await fetch('/api/streaming/active');
+        const res = await fetch('/internal/streaming/active');
         if (!res.ok) {
            updateConnStatus(false);
            return;

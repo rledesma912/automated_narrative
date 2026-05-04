@@ -1,7 +1,7 @@
 # Spec-218: Output Dir Unificado por Configuración
 
 ## Estado
-IMPLEMENTADO — T1-T6 completados. CA1, CA4, CA5, CA6 verificados automáticamente. CA2 y CA3 requieren smoke manual (consumo LLM / docker).
+IMPLEMENTADO — T1-T6 completados. CA1, CA4, CA5, CA6 verificados automáticamente. CA2 y CA3 verificados con smoke manual (2026-05-04).
 
 ### Notas de implementación
 

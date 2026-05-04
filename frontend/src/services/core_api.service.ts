@@ -39,13 +39,6 @@ export async function createStory(
   return response.data;
 }
 
-export function streamUrl(storyId: string): string {
-  // El stream se ejecuta en el navegador, necesita localhost
-  const browserUrl = process.env.CORE_API_URL?.replace("host.docker.internal", "localhost") 
-    ?? "http://localhost:8010";
-  return `${browserUrl}/api/v1/stories/${storyId}/stream`;
-}
-
 export async function deleteStory(storyId: string): Promise<void> {
   await axios.delete(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
 }

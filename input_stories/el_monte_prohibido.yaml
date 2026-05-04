@@ -1,0 +1,155 @@
+title: El monte prohibido
+personajes_full:
+- id: P1
+  name: Irene
+  role: Narradora y protagonista; nuera de María
+  traits:
+  - observador
+  - sociable
+  - protector
+- id: P2
+  name: Ricardo
+  role: Esposo de Irene; hijo de María
+  traits:
+  - escéptico
+  - pragmático
+  - protector
+- id: P3
+  name: Mariano
+  role: Hijo pequeño de Irene y Ricardo
+  traits:
+  - inseguro
+  - ansioso
+  - sociable
+- id: P4
+  name: Soledad
+  role: Bebé de Irene y Ricardo
+  traits:
+  - ansioso
+  - reservado
+- id: P5
+  name: María
+  role: Suegra de Irene; madre de Ricardo; dueña de la casa
+  traits:
+  - imaginativo
+  - tradicional
+  - protector
+protagonista: 'Irene: Narradora y protagonista; nuera de María [observador, sociable, protector]; Ricardo:
+  Esposo de Irene; hijo de María [escéptico, pragmático, protector]; Mariano: Hijo pequeño de Irene y
+  Ricardo [inseguro, ansioso, sociable]; Soledad: Bebé de Irene y Ricardo [ansioso, reservado]; María:
+  Suegra de Irene; madre de Ricardo; dueña de la casa [imaginativo, tradicional, protector]'
+relator: 'Primera persona en pasado. Narrador: Irene. Tono: intimista. Registro: coloquial: Natural y
+  diario.'
+atmosfera: folk_horror (rural) - quebrado
+escenarios: 'Casa de María: Vivienda rural antigua, aislada de la modernidad; Estancia de la fiesta: Casco
+  de estancia donde se realiza el festejo familiar.; Monte de los Espinillos: Zona de vegetación cerrada
+  y leyendas locales.; Casa de María (regreso): Casa de María (regreso)'
+sinopsis: |-
+  Irene y su familia llegan al amanecer a la casa de María en un taxi. Desayunan café de olla y pan casero mientras Mariano juega en el patio de tierra. La mañana transcurre en una calma total, sin contratiempos, dedicada a preparar los trajes y alistar a los niños para concurrir a la fiesta de un amigo de la infancia de Ricardo en una estancia de campo a la que irá la familia en sulki. Durante las charlas de la abuela y toda la familia, María les cuenta historias de su vida y también de leyendas y mitos de campo como la luz mala o el lobizón. Antes de partir al mediodía, mientras suben al sulki, María comenta les advierte que no vuelvan por el monte de los espinillos si se les hace tarde, recordandoles sobre su creencia en lo paranormal. Ricardo prepara el caballo al sulki y desestima los cuentos como folklore, prometiendo no cruzar el monte por respeto a su madre.
+
+  La fiesta es alegre, con momentos de diversión y mucha charla entre los dueños de la estancia de campo, amigos y la familia de Irene, la pasan tan bien que se les pasa la hora y les llega el atardecer. Cuando se disponen a salir se desata una tormenta eléctrica con rayos y truenos. La familia inicia de todas formas el regreso a la casa de María en el sulki bajo la lluvia. unicamente resguardados por bolsas y un pequeño techo improvisado en el sulki. Ricardo, para evitar un el camino largo y barroso, decide atravesar el Monte de los Espinillos, ignorando la promesa hecha a María. Irene que es más supersticiosa le advierte de la desición y discuten porque siente que el aire en el monte es más denso y frío de lo normal. Avanzan por un camino solo iluminado por los rayos y llegan a la entrada del monte de los espinillos tupido y oscuro. El caballo comienza a empacarse y o querer caminar, el sulki avanza muy lento y Ricardo le grita al caballo para apurarlo.
+
+  Dentro del monte, el caballo se clava en seco, encabritado por un terror animal. Frente al sulki, bloqueando el paso, surge la figura de María. No es una visión: viste la misma ropa con la que la dejaron hace una hora en la casa. María se mueve con una rigidez inhumana, sus ojos no parpadean y reflejan los rayos con un brillo mineral. La presencia es física y absoluta, un imposible   geográfico que congela la sangre de la familia. Ricardo, en un grito de puro terror intenta avanzar pero el sulki parece atrapado en raíces que no estaban allí. Las sombras se cierran sobre el vehículo de madera entonces Irene abraza a sus hijos y comienza a rezar en voz alta y les pide a Mariano su hijo y a Ricardo su marido que comiencen a rezar en voz alta. Rezan todos y el sulki comienza a andar nuevamente. La figura siniestra de María desaparece ante sus ojos.
+
+  Ricardo azota las riendas con una desesperación ciega, golpeando al caballo para huir del lugar donde desapareció la figura de María. Sin embargo, el camino parece deformarse: los mismos grupos de espinillos retorcidos y el mismo aroma a ozono y tierra muerta aparecen una y otra vez bajo los rayos, como si el monte se hubiera ensanchado para no dejarlos salir. Un silbido agudo, que ya no parece viento sino un lamento humano, empieza a vibrar en las maderas del sulki, subiendo por los pies de Irene y Mariano, haciéndoles castañear los dientes. Logran romper el cerco de ramas tras un rezo desesperado y, al salir a campo abierto, la tormenta cesa con una brusquedad antinatural. El camino se ilumina con una luz de amanecer cenicienta, fría y sin sombras, que baña el paisaje de un color enfermo. Llegan a la casa de María empapados y temblando; Ricardo guarda el caballo en el corral con movimientos mecánicos y lentos, evitando mirar hacia el monte, sumido en un silencio catatónico que Irene no se atreve a romper.
+
+  Ya dentro de la casa, María los recibe en silencio con una vela encendida. No hay reproches. Mientras Irene acuesta a los niños, nota algo extraño: en el dobladillo de la manta de la bebé Soledad, hay enganchada una rama de espinillo fresca y negra, a pesar de que la cuna estaba cerrada. Al asomarse a la ventana, Irene ve que no hay rastros de la tormenta en el patio y en sus pensamientos sabe que lo sobrenatural puede ser real.
+reglas:
+- La tecnología de celulares no existe en este tiempo.
+- María no advierte con miedo, sino compartiendo leyendas antiguas como si fueran hechos naturales del
+  campo.
+- María se queda en su casa mientras la familia parte hacia la fiesta.
+- La aparición de María en el monte de los espinillos asusta a toda la familia y el nerviosismo crece.
+- Los rezos de Irene y de toda la familia son la única defensa percibida contra la sombra del monte.
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: Irene
+  voice_style: intimista
+  voice:
+    person: primera
+    tense: pasado
+    style: intimista
+  atmosphere:
+    genre: folk_horror
+    subgenre: rural
+    tone: quebrado
+  scenarios:
+  - id: S1
+    order: 1
+    name: Casa de María
+    description: Vivienda rural antigua, aislada de la modernidad
+  - id: S2
+    order: 2
+    name: Estancia de la fiesta
+    description: Casco de estancia donde se realiza el festejo familiar.
+  - id: S3
+    order: 3
+    name: Monte de los Espinillos
+    description: Zona de vegetación cerrada y leyendas locales.
+  - id: S4
+    order: 4
+    name: Casa de María (regreso)
+    description: Casa de María (regreso)
+  rules:
+  - id: R1
+    text: La tecnología de celulares no existe en este tiempo.
+    type: social
+  - id: R2
+    text: María no advierte con miedo, sino compartiendo leyendas antiguas como si fueran hechos naturales
+      del campo.
+    type: psicologica
+  - id: R3
+    text: María se queda en su casa mientras la familia parte hacia la fiesta.
+    type: evento
+  - id: R4
+    text: La aparición de María en el monte de los espinillos asusta a toda la familia y el nerviosismo
+      crece.
+    type: evento
+  - id: R5
+    text: Los rezos de Irene y de toda la familia son la única defensa percibida contra la sombra del
+      monte.
+    type: evento
+  actos:
+    act_1:
+      type: exposicion
+      text: |-
+        Irene y su familia llegan al amanecer a la casa de María en un taxi. Desayunan café de olla y pan casero mientras Mariano juega en el patio de tierra. La mañana transcurre en una calma total, sin contratiempos, dedicada a preparar los trajes y alistar a los niños para concurrir a la fiesta de un amigo de la infancia de Ricardo en una estancia de campo a la que irá la familia en sulki. Durante las charlas de la abuela y toda la familia, María les cuenta historias de su vida y también de leyendas y mitos de campo como la luz mala o el lobizón. Antes de partir al mediodía, mientras suben al sulki, María comenta les advierte que no vuelvan por el monte de los espinillos si se les hace tarde, recordandoles sobre su creencia en lo paranormal. Ricardo prepara el caballo al sulki y desestima los cuentos como folklore, prometiendo no cruzar el monte por respeto a su madre.
+    act_2:
+      type: accion_ascendente
+      text: |-
+        La fiesta es alegre, con momentos de diversión y mucha charla entre los dueños de la estancia de campo, amigos y la familia de Irene, la pasan tan bien que se les pasa la hora y les llega el atardecer. Cuando se disponen a salir se desata una tormenta eléctrica con rayos y truenos. La familia inicia de todas formas el regreso a la casa de María en el sulki bajo la lluvia. unicamente resguardados por bolsas y un pequeño techo improvisado en el sulki. Ricardo, para evitar un el camino largo y barroso, decide atravesar el Monte de los Espinillos, ignorando la promesa hecha a María. Irene que es más supersticiosa le advierte de la desición y discuten porque siente que el aire en el monte es más denso y frío de lo normal. Avanzan por un camino solo iluminado por los rayos y llegan a la entrada del monte de los espinillos tupido y oscuro. El caballo comienza a empacarse y o querer caminar, el sulki avanza muy lento y Ricardo le grita al caballo para apurarlo.
+    act_3:
+      type: climax
+      text: |-
+        Dentro del monte, el caballo se clava en seco, encabritado por un terror animal. Frente al sulki, bloqueando el paso, surge la figura de María. No es una visión: viste la misma ropa con la que la dejaron hace una hora en la casa. María se mueve con una rigidez inhumana, sus ojos no parpadean y reflejan los rayos con un brillo mineral. La presencia es física y absoluta, un imposible   geográfico que congela la sangre de la familia. Ricardo, en un grito de puro terror intenta avanzar pero el sulki parece atrapado en raíces que no estaban allí. Las sombras se cierran sobre el vehículo de madera entonces Irene abraza a sus hijos y comienza a rezar en voz alta y les pide a Mariano su hijo y a Ricardo su marido que comiencen a rezar en voz alta. Rezan todos y el sulki comienza a andar nuevamente. La figura siniestra de María desaparece ante sus ojos.
+    act_4:
+      type: accion_descendente
+      text: |-
+        Ricardo azota las riendas con una desesperación ciega, golpeando al caballo para huir del lugar donde desapareció la figura de María. Sin embargo, el camino parece deformarse: los mismos grupos de espinillos retorcidos y el mismo aroma a ozono y tierra muerta aparecen una y otra vez bajo los rayos, como si el monte se hubiera ensanchado para no dejarlos salir. Un silbido agudo, que ya no parece viento sino un lamento humano, empieza a vibrar en las maderas del sulki, subiendo por los pies de Irene y Mariano, haciéndoles castañear los dientes. Logran romper el cerco de ramas tras un rezo desesperado y, al salir a campo abierto, la tormenta cesa con una brusquedad antinatural. El camino se ilumina con una luz de amanecer cenicienta, fría y sin sombras, que baña el paisaje de un color enfermo. Llegan a la casa de María empapados y temblando; Ricardo guarda el caballo en el corral con movimientos mecánicos y lentos, evitando mirar hacia el monte, sumido en un silencio catatónico que Irene no se atreve a romper.
+    act_5:
+      type: desenlace
+      text: |-
+        Ya dentro de la casa, María los recibe en silencio con una vela encendida. No hay reproches. Mientras Irene acuesta a los niños, nota algo extraño: en el dobladillo de la manta de la bebé Soledad, hay enganchada una rama de espinillo fresca y negra, a pesar de que la cuna estaba cerrada. Al asomarse a la ventana, Irene ve que no hay rastros de la tormenta en el patio y en sus pensamientos sabe que lo sobrenatural puede ser real.
+  perception:
+    reliability: 'subjetiva: Ve lo que espera ver'
+    distortion:
+      level: 'baja: Distorsión leve'
+      triggers:
+      - 'oscuridad: En la oscuridad'
+      - 'panico: En pánico'
+  knowledge:
+    domain:
+      paranormal: 'bajo: Sabe poco'
+      religioso: 'alto: Sabe bastante'
+    interpretation_style: 'mitologica: Lo conecta con mitos'
+  language:
+    register: 'coloquial: Natural y diario'
+    figurative_density: 'baja: Usa poco'
+  bias:
+    fear_focus:
+    - 'perdida: Perder algo valioso'
+    - 'desconocido: Lo que no entiende'
+    attention_focus:
+    - 'sonidos: Sonidos y ruidos'
+    - 'sombras: Sombras y oscuridad'
+    - 'naturaleza: La naturaleza'

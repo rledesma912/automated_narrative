@@ -175,7 +175,7 @@ const personajes = story.personajes_full || [];
       async function confirmDeleteMarkdown(storyId) {
         if (!confirm("¿Eliminar el archivo Markdown? La historia y su configuración se conservan.")) return;
         try {
-          const res = await fetch(`/api/historia/${storyId}/markdown`, { method: "DELETE" });
+          const res = await fetch(`/internal/historia/${storyId}/markdown`, { method: "DELETE" });
           if (!res.ok) throw new Error("Error al eliminar Markdown");
           window.location.reload();
         } catch {

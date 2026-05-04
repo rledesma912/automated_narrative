@@ -46,7 +46,7 @@ function renderStatusLabel(s) {
           <div class="flex items-center gap-6 flex-wrap">
             <%/* Markdown / Exportar — verificado vía HTMX para detectar archivos borrados */%>
             <% if (s.file_path || s.status === 'completed') { %>
-              <span hx-get="/api/historia/<%= s.id %>/markdown-check"
+              <span hx-get="/internal/historia/<%= s.id %>/markdown-check"
                     hx-trigger="load"
                     hx-swap="outerHTML">
               </span>

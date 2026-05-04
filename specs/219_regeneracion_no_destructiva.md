@@ -1,7 +1,7 @@
 # Spec-219: Regeneración No Destructiva y Saneamiento UX de Sala
 
 ## Estado
-IMPLEMENTADO — T1-T5 aplicados. Verificaciones automáticas OK (CA7, EJS balanceados, TypeScript compila). CA1-CA6 + CA8 requieren smoke manual con frontend corriendo y stories en cada estado.
+IMPLEMENTADO — T1-T5 aplicados. Verificaciones automáticas OK (CA7, EJS balanceados, TypeScript compila). CA1-CA6 + CA8 verificados con smoke manual (2026-05-04) con frontend corriendo y stories en cada estado.
 
 ---
 

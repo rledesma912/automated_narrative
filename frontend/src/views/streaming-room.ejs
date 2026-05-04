@@ -550,9 +550,9 @@
 
   async function cancelGeneration() {
     if (es) { es.close(); es = null; }
-    const CORE_URL = STREAM_URL.replace(/\/stories\/.*/, "");
     try {
-      await fetch(`${CORE_URL}/stories/${STORY_ID}/status`, {
+      // Spec-221: path relativo, mismo origen → Express proxia /api/* al backend.
+      await fetch(`/api/v1/stories/${STORY_ID}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "failed" }),
@@ -601,9 +601,9 @@
     document.getElementById("initial-spinner").classList.remove("hidden");
     lucide.createIcons();
 
-    const CORE_URL = STREAM_URL.replace(/\/stories\/.*/, "");
     try {
-      const resp = await fetch(`${CORE_URL}/stories/${STORY_ID}/status`, {
+      // Spec-221: path relativo, mismo origen → Express proxia /api/* al backend.
+      const resp = await fetch(`/api/v1/stories/${STORY_ID}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "processing" }),
