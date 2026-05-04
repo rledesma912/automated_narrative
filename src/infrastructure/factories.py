@@ -36,5 +36,6 @@ class LLMFactory:
             logger.info(f"[FACTORY] Instanciando proveedor Anthropic ({settings.anthropic_model})")
             return AnthropicAdapter()
 
-        logger.info(f"[FACTORY] Instanciando proveedor Ollama ({settings.llm_model})")
+        ollama_model = settings.role_config("voz").get("model", "mistral:latest")
+        logger.info(f"[FACTORY] Instanciando proveedor Ollama ({ollama_model})")
         return OllamaAdapter()

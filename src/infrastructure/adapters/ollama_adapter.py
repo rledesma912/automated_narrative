@@ -35,12 +35,8 @@ class OllamaAdapter:
         """
         role_cfg = settings.role_config(role) if role else {}
 
-        model_name = model or role_cfg.get("model") or settings.llm_model
-        temp = (
-            temperature
-            if temperature is not None
-            else float(role_cfg.get("temperature", settings.llm_model_temperature))
-        )
+        model_name = model or role_cfg.get("model") or "mistral:latest"
+        temp = temperature if temperature is not None else float(role_cfg.get("temperature", 0.6))
 
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
 

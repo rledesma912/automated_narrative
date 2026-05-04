@@ -12,7 +12,7 @@ from src.application.use_cases import CreateStoryUseCase, DirectorUseCase
 from src.cli.logger import logger
 from src.cli.progress import SilentReporter
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Story
+from src.domain.models import BeatStatus, Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.normalizers import ResponseNormalizer
 
@@ -163,11 +163,11 @@ class StoryRunner:
         logger.info(f"[ORQUESTADOR] Iniciando desde historia existente: {story.title}")
 
         all_beats = await self.beat_repo.get_by_story(story.id)
-        pending_beats = [b for b in all_beats if b.status != "completed"]
+        pending_beats = [b for b in all_beats if b.status != BeatStatus.COMPLETED]
 
         if not pending_beats:
             logger.info("[VOZ] No hay beats pendientes por narrar")
-            story.beats = [b for b in all_beats if b.status == "completed"]
+            story.beats = [b for b in all_beats if b.status == BeatStatus.COMPLETED]
             return story
 
         journal = await self.story_repo.get_journal(story.id)

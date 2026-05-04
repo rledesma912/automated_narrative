@@ -6,7 +6,7 @@ from src.application.services.beat_parser import parse_beats
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, MacroBeat, Story
+from src.domain.models import Beat, BeatStatus, MacroBeat, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 from src.infrastructure.parsers.beat_response_parser import BeatResponseParser
 
@@ -39,7 +39,7 @@ class SynopsisBeatMapper:
         """Genera los beats mapeando la sinopsis a la estructura de actos."""
         num_beats = self.prompt_builder.num_beats
         role_cfg = settings.role_config("director")
-        model = role_cfg.get("model") or settings.llm_model
+        model = role_cfg.get("model", "mistral:latest")
         temperature = role_cfg.get("temperature", 0.3)
 
         variant = self.prompt_builder.get_variant_name()
@@ -105,7 +105,7 @@ class SynopsisBeatMapper:
         El escenario activo se almacena en active_scenario_id como nombre de texto.
         """
         role_cfg = settings.role_config("director")
-        model = role_cfg.get("model") or settings.llm_model
+        model = role_cfg.get("model", "mistral:latest")
         temperature = role_cfg.get("temperature", 0.3)
 
         prompt = self.prompt_builder.build_synopsis_mapper_one_prompt(
@@ -149,7 +149,7 @@ class SynopsisBeatMapper:
         macro_beat = MacroBeat(
             number=macro_beat_id,
             summary=summary,
-            status="pending",
+            status=BeatStatus.PENDING,
             active_scenario_id=final_scenario,
             active_scenario_description=active_scenario_description or "",
             active_rules=active_rules or [],

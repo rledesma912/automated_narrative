@@ -13,15 +13,14 @@ from src.cli.exceptions import (
 )
 from src.cli.logger import logger
 from src.config import settings
+from src.domain.models import StoryStatus
 from src.infrastructure.container import CLIContainer
 from src.infrastructure.database.connection import init_db
-from src.infrastructure.renderers import MarkdownRenderer
 from src.utils.timezone import now_argentina
 
 
-def _write_markdown(story, output_dir: Path) -> Path:
+def _write_markdown(story, output_dir: Path, renderer) -> Path:
     """Renderiza la historia a Markdown y la escribe en output_dir. Retorna la ruta."""
-    renderer = MarkdownRenderer()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     md_content = renderer.render(story)
@@ -71,10 +70,8 @@ def generate(
     personajes_full: list[dict] = []
 
     if input_file:
-        from src.infrastructure.parsers import MarkdownStoryParser
-
-        parser = MarkdownStoryParser()
-        story_data = parser.parse(input_file)
+        container = CLIContainer(use_mock=use_mock, provider=provider)
+        story_data = container.markdown_parser.parse(input_file)
 
         title = story_data.title
         protagonista = story_data.protagonista
@@ -163,10 +160,10 @@ async def _generate_async(
         personajes_full=personajes_full or [],
     )
 
-    await container.story_repo.update_status(story.id, "completed")
+    await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
 
     t_export = time.perf_counter()
-    output_path = _write_markdown(story, output_dir)
+    output_path = _write_markdown(story, output_dir, container.markdown_renderer)
     container.reporter.export_done(time.perf_counter() - t_export)
     container.reporter.done(time.perf_counter() - t_total, output_path)
     logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
@@ -325,10 +322,10 @@ async def _generate_from_db_async(
 
     story = await runner.run_from_story(story)
 
-    await container.story_repo.update_status(story.id, "completed")
+    await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
 
     t_export = time.perf_counter()
-    output_path = _write_markdown(story, output_dir)
+    output_path = _write_markdown(story, output_dir, container.markdown_renderer)
     container.reporter.export_done(time.perf_counter() - t_export)
     container.reporter.done(time.perf_counter() - t_total, output_path)
     logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
@@ -420,5 +417,5 @@ async def _export_async(
 
     beats = await container.beat_repo.get_by_story(story_uuid)
     story.beats = beats
-    output_path = _write_markdown(story, output_dir)
+    output_path = _write_markdown(story, output_dir, container.markdown_renderer)
     logger.info(f"[COMANDOS] Historia exportada a: {output_path}")

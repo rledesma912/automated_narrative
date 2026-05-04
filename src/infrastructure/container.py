@@ -14,6 +14,8 @@ from src.infrastructure.factories import LLMFactory
 if TYPE_CHECKING:
     from src.cli.progress import ProgressReporter
     from src.core.orchestrator import StoryRunner
+    from src.infrastructure.parsers import MarkdownStoryParser
+    from src.infrastructure.renderers import MarkdownRenderer
 
 
 class CLIContainer:
@@ -37,6 +39,8 @@ class CLIContainer:
         self._prompt_builder = None
         self._reporter = None
         self._debug_collector = None
+        self._markdown_renderer = None
+        self._markdown_parser = None
 
     @property
     def llm(self) -> LLMFactory:
@@ -75,6 +79,22 @@ class CLIContainer:
         if self._debug_collector is None:
             self._debug_collector = DebugCollector() if self._debug else NullDebugCollector()
         return self._debug_collector
+
+    @property
+    def markdown_renderer(self) -> "MarkdownRenderer":
+        if self._markdown_renderer is None:
+            from src.infrastructure.renderers import MarkdownRenderer
+
+            self._markdown_renderer = MarkdownRenderer()
+        return self._markdown_renderer
+
+    @property
+    def markdown_parser(self) -> "MarkdownStoryParser":
+        if self._markdown_parser is None:
+            from src.infrastructure.parsers import MarkdownStoryParser
+
+            self._markdown_parser = MarkdownStoryParser()
+        return self._markdown_parser
 
     def create_story_use_case(self) -> CreateStoryUseCase:
         return CreateStoryUseCase(self.story_repo)

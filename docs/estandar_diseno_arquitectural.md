@@ -16,6 +16,9 @@ El código se organiza en capas concéntricas donde las dependencias solo fluyen
 3. **Infrastructure:** Adapters (Ollama, Anthropic, SQLite), Normalizers y Renderers.
 4. **Presentation/CLI:** Entrada de usuario y orquestación inicial (`StoryRunner`).
 
+### Inyección de Dependencias (Spec-250)
+La CLI usa `CLIContainer` para resolver todas las dependencias (LLM, repositorios, renderers, parsers), eliminando instanciación directa y facilitando testing unitario.
+
 ## 3. El Pipeline de Inteligencia (LLM)
 - **Fuente de Verdad:** `config/llm_core_definitions.yaml` gobierna perfiles, modelos y parámetros.
 - **Variantes de Prompting:**
@@ -29,7 +32,7 @@ El código se organiza en capas concéntricas donde las dependencias solo fluyen
 - **Naming:** `PascalCase` para clases, `snake_case` para funciones/variables, `MAYUSCULAS_SNAKE` para constantes.
 - **Testing:** `pytest` con cobertura > 80%. Cada task de lógica requiere su task de test unitario.
 - **Persistencia:** SQLite asíncrono (`aiosqlite`). El principio es: **YAML inicializa la estructura, la DB gobierna el estado de la historia.**
-- **Manejo de Errores:** Jerarquía clara basada en `DomainException` e `InfrastructureException`.
+- **Manejo de Errores:** Jerarquía clara basada en `DomainException` e `InfrastructureException`. Spec-250 introdujo `LLMResponseError` (respuestas vacías/inválidas del LLM) y `DatabaseError` (fallos de persistencia).
 
 ## 5. Workflow del Desarrollador (Scripts)
 - `make install`: Sincroniza dependencias con `uv`.

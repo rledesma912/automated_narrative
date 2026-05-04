@@ -35,9 +35,9 @@ class MemoryJournalist:
 
         from src.config import settings
 
-        model = settings.state_extractor_model
-        temperature = settings.state_extractor_temperature
         role_cfg = settings.role_config("journal")
+        model = role_cfg.get("model", "mistral:latest")
+        temperature = float(role_cfg.get("temperature", 0.3))
 
         response = await self.llm.generate(
             prompt=prompt,

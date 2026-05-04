@@ -161,15 +161,15 @@ class TestVozErrorPaths:
 
     @pytest.mark.asyncio
     async def test_voz_empty_response(self):
-        """LLM retorna texto vacío — beat se marca completed con content vacío."""
+        """LLM retorna texto vacío — lanza LLMResponseError (Spec-250)."""
+        from src.domain.exceptions import LLMResponseError
+
         mock_llm = MockLLMAdapter(fixed_response="")
         beat = Beat(number=1, summary="algo", status="pending")
 
         use_case = VozUseCase(mock_llm)
-        result_beat, _, _ = await use_case.execute(self._make_story(), beat)
-
-        assert result_beat.status == "completed"
-        assert result_beat.content == ""
+        with pytest.raises(LLMResponseError):
+            await use_case.execute(self._make_story(), beat)
 
     @pytest.mark.asyncio
     async def test_voz_refusal_triggers_retry(self):
@@ -215,7 +215,9 @@ class TestVozErrorPaths:
 
     @pytest.mark.asyncio
     async def test_voz_narrate_empty_response(self):
-        """narrate() con respuesta vacía — macro_beat.content queda vacío, status completed."""
+        """narrate() con respuesta vacía — lanza LLMResponseError (Spec-250)."""
+        from src.domain.exceptions import LLMResponseError
+
         mock_llm = MockLLMAdapter(fixed_response="")
         macro_beat = MacroBeat(
             number=1,
@@ -224,7 +226,5 @@ class TestVozErrorPaths:
             narrative_context="Contexto de prueba",
         )
         use_case = VozUseCase(mock_llm)
-        result, _ = await use_case.narrate(macro_beat, self._make_story())
-
-        assert result.status == "completed"
-        assert result.content == ""
+        with pytest.raises(LLMResponseError):
+            await use_case.narrate(macro_beat, self._make_story())

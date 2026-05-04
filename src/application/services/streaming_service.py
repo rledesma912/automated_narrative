@@ -11,7 +11,7 @@ from collections.abc import AsyncGenerator
 
 from src.application.services.observability_service import observability
 from src.application.use_cases.director_use_case import DirectorUseCase
-from src.domain.models import Story
+from src.domain.models import Story, StoryStatus
 from src.domain.streaming import StreamEvent, StreamEventType
 
 logger = logging.getLogger(__name__)
@@ -77,9 +77,11 @@ async def stream_story(
                     )
                 )
 
-                # Persistir beat en DB antes de emitir al cliente
+                # Persistir beat y journal en DB antes de emitir al cliente
                 if beat_repo is not None:
                     await beat_repo.save(macro_beat, story.id)
+                if story_repo is not None and _journal is not None:
+                    await story_repo.save_journal(story.id, _journal)
 
                 if beat_number < num_beats:
                     await queue.put(
@@ -100,7 +102,7 @@ async def stream_story(
                 )
 
             if story_repo is not None:
-                await story_repo.update_status(story.id, "completed")
+                await story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
                 logger.info(f"[STREAM] Pipeline finalizado con éxito | Story: {story.id}")
                 observability.record(
                     category="generation",

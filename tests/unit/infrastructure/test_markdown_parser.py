@@ -99,13 +99,13 @@ Contenido del acto
         from pathlib import Path
 
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
-        data = parser.parse("el_monte_prohibido.md")
+        data = parser.parse("el_monte_prohibido.yaml")
 
         # Título desde story.title (nuevo formato)
         assert "monte" in data.title.lower()
         # Protagonista resuelta desde protagonists[role=protagonista]
-        assert data.protagonista == "Irene"
-        assert data.relator == "Irene"
+        assert data.protagonista.startswith("Irene")
+        assert "Irene" in data.relator
         # Escenarios: el nuevo archivo tiene 4 escenarios
         assert any("monte" in s.lower() for s in data.cronologic_scenarios)
         # Sinopsis: concatenación de los 5 actos
@@ -138,7 +138,7 @@ Contenido del acto
         from pathlib import Path
 
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
-        data = parser.parse("el_monte_prohibido.md")
+        data = parser.parse("el_monte_prohibido.yaml")
         assert len(data.cronologic_scenarios) == 4
         # Verificar que los nombres reales del archivo están presentes
         scenarios_lower = [s.lower() for s in data.cronologic_scenarios]

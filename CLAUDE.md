@@ -36,9 +36,10 @@ Clean Architecture with four layers:
 domain/          → Entities (Story, MacroBeat, NarrativeAnchors, Scenario, NarrativeJournal)
                    + Interfaces (LLMProvider, Repositories)
 application/     → Use Cases (CreateStory, Director, Voz, ListStories, GetStoryById, ListBeats, UpdateBeat)
-                   + Services (PromptBuilder, MemoryJournalist, StoryAnalystService)
+                   + Services (PromptBuilder Fachada, MemoryJournalist, StoryAnalystService)
 infrastructure/  → Adapters (Ollama, Anthropic, Gemini, Mock)
                    + SQLite Repositories + MarkdownRenderer + DebugRenderer
+                   + CLIContainer (Inyección de dependencias para la CLI)
 presentation/    → FastAPI routers + Pydantic schemas
 core/            → StoryRunner orchestrator (wires everything together)
 cli/             → CLI runner, commands, logger
@@ -171,7 +172,7 @@ Prompts viven en `config/prompts_generation/` como templates Markdown:
 | `voice_system_compact.md` | Voz system | `{relator}`, `{atmosfera}`, `{protagonistas}`, `{reglas}` — estable por historia |
 | `journal.md` | Journal | Extrae `{last_events}`, `{unresolved_mysteries}`, `{physical_emotional_state}` |
 
-`PromptBuilder` (`src/application/services/prompt_builder.py`) carga y formatea los templates. Método clave: `build_narrative_context(macro_beat, beat_anchors, prev_snapshot) → str` — determinístico, sin LLM.
+`PromptBuilder` (`src/application/services/prompt_builder.py`) actúa como una **Fachada** que delega en estrategias especializadas (`CompactStrategy`, `FrontierStrategy`) y servicios de apoyo (`PersonaService`, `TemplateLoader`) para cargar y formatear los templates. Método clave: `build_narrative_context(macro_beat, beat_anchors, prev_snapshot) → str` — determinístico, sin LLM.
 
 ## Key Environment Variables
 

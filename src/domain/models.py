@@ -29,6 +29,14 @@ class BeatType(str, Enum):
     DESENLACE = "desenlace"
 
 
+class BeatStatus(str, Enum):
+    """Estado del ciclo de vida de un macro-beat (Spec-250)."""
+
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
 class RuleType(str, Enum):
     """Categoría semántica de una regla narrativa (Spec-043)."""
 
@@ -76,7 +84,7 @@ class MacroBeat(BaseModel):
     number: int
     summary: str
     content: str = ""
-    status: str = "pending"
+    status: BeatStatus = BeatStatus.PENDING
     created_at: datetime = Field(default_factory=now_argentina)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
@@ -88,11 +96,11 @@ class MacroBeat(BaseModel):
 
     def is_narrated(self) -> bool:
         """True si el beat tiene prosa generada y está marcado como completado."""
-        return bool(self.content and self.status == "completed")
+        return bool(self.content and self.status == BeatStatus.COMPLETED)
 
     def is_pending(self) -> bool:
         """True si el beat aún no fue narrado."""
-        return self.status == "pending"
+        return self.status == BeatStatus.PENDING
 
     def has_content(self) -> bool:
         """True si el beat tiene contenido (independientemente del status)."""

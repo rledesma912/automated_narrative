@@ -12,9 +12,9 @@ El pipeline produce **17 llamadas LLM** por historia: 1 Analyst + 1 Resolver + 5
 
 ## Paso 0 — Ingesta del input
 
-**Componente:** `MarkdownStoryParser` (`src/infrastructure/parsers/markdown_parser.py`)
+**Componente:** `MarkdownStoryParser` (`src/infrastructure/parsers/markdown_parser.py`) via `CLIContainer.markdown_parser`
 **LLM:** ninguno
-**Qué hace:** Lee el archivo `.md` del usuario y extrae todos los campos del frontmatter YAML.
+**Qué hace:** Lee el archivo `.md` o `.yaml` del usuario y extrae todos los campos del frontmatter YAML.
 
 **Datos que extrae:**
 

@@ -116,7 +116,7 @@ class _SequenceLLM:
 def _load_story() -> Story:
     input_dir = Path(__file__).parent.parent.parent / "input_stories"
     parser = MarkdownStoryParser(input_dir=input_dir)
-    data = parser.parse("el_monte_prohibido.md")
+    data = parser.parse("el_monte_prohibido.yaml")
     from src.domain.models import Scenario
 
     story = Story(

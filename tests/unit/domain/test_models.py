@@ -18,7 +18,7 @@ class TestStory:
         )
 
         assert story.title == "Test Story"
-        assert story.status == StoryStatus.PENDING
+        assert story.status == StoryStatus.DRAFT
         assert story.id is not None
 
     def test_story_default_values(self):
