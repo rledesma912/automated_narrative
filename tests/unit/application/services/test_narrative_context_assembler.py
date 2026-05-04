@@ -85,35 +85,37 @@ class TestNarrativeContextAssemblerBasic:
         assert "FIDELIDAD" in result or "PROHIBIDO" in result
 
 
+from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal
+
+...
+
 class TestNarrativeContextAssemblerSnapshot:
-    def test_sin_snapshot_no_incluye_seccion_memoria(self, assembler, repo):
+    def test_sin_journal_no_incluye_seccion_memoria(self, assembler, repo):
         beat = _beat(1)
-        result = assembler.assemble(beat, _beat_anchors(1, repo), prev_snapshot=None)
+        result = assembler.assemble(beat, _beat_anchors(1, repo), previous_journal=None)
         assert "MEMORIA DEL ACTO ANTERIOR" not in result
 
-    def test_con_snapshot_incluye_last_events(self, assembler, repo):
+    def test_con_journal_incluye_last_events(self, assembler, repo):
         beat = _beat(2)
-        snapshot = json.dumps(
-            {
-                "last_events": "La familia llegó a la fiesta.",
-                "unresolved_mysteries": "",
-                "physical_emotional_state": "Tranquilos",
-            }
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="",
+            physical_emotional_state="Tranquilos",
         )
-        result = assembler.assemble(beat, _beat_anchors(2, repo), prev_snapshot=snapshot)
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
         assert "La familia llegó a la fiesta." in result
 
-    def test_con_snapshot_incluye_seccion_memoria(self, assembler, repo):
+    def test_con_journal_incluye_seccion_memoria(self, assembler, repo):
         beat = _beat(2)
-        snapshot = json.dumps({"last_events": "Algo pasó.", "physical_emotional_state": ""})
-        result = assembler.assemble(beat, _beat_anchors(2, repo), prev_snapshot=snapshot)
+        journal = NarrativeJournal(last_events="Algo pasó.", physical_emotional_state="")
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
         assert "MEMORIA DEL ACTO ANTERIOR" in result
 
-    def test_snapshot_invalido_no_rompe(self, assembler, repo):
+    def test_journal_vacio_no_incluye_seccion_memoria(self, assembler, repo):
         beat = _beat(2)
-        result = assembler.assemble(beat, _beat_anchors(2, repo), prev_snapshot="texto plano")
-        assert "MEMORIA DEL ACTO ANTERIOR" in result
-        assert "texto plano" in result
+        journal = NarrativeJournal()
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
+        assert "MEMORIA DEL ACTO ANTERIOR" not in result
 
 
 class TestNarrativeContextAssemblerReglas:

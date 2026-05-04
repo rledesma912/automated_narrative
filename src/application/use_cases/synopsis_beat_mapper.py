@@ -6,7 +6,7 @@ from src.application.services.beat_parser import parse_beats
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, BeatStatus, MacroBeat, Story
+from src.domain.models import Beat, BeatStatus, MacroBeat, NarrativeJournal, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 from src.infrastructure.parsers.beat_response_parser import BeatResponseParser
 
@@ -91,7 +91,7 @@ class SynopsisBeatMapper:
         story: Story,
         macro_beat_id: int,
         beat_anchors: dict,
-        prev_snapshot: str | None = None,
+        previous_journal: NarrativeJournal | None = None,
         synopsis_slice: str | None = None,
         active_rules: list[str] | None = None,
         active_scenario_description: str | None = None,
@@ -112,7 +112,7 @@ class SynopsisBeatMapper:
             story=story,
             macro_beat_id=macro_beat_id,
             beat_anchors=beat_anchors,
-            prev_snapshot=prev_snapshot,
+            previous_journal=previous_journal,
             synopsis_slice=synopsis_slice,
             active_rules=active_rules,
             active_scenario=active_scenario_description,

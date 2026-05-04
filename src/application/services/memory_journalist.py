@@ -72,22 +72,15 @@ class MemoryJournalist:
         story: Story,
         macro_beat: MacroBeat,
         previous_journal: NarrativeJournal | None = None,
-    ) -> tuple[str, NarrativeJournal]:
-        """Extrae memory_snapshot (JSON str) y journal actualizado para un macro-beat.
+    ) -> NarrativeJournal:
+        """Extrae el journal actualizado para un macro-beat (Spec-222).
 
-        Retorna (snapshot_json, journal). El snapshot se almacena en MacroBeat.memory_snapshot
-        y se pasa como prev_snapshot al build_narrative_context() del siguiente beat.
+        Retorna solo el journal. El historial se persiste de forma relacional
+        en la tabla narrative_journal por beat_number.
         """
         journal = await self.update_journal(story, macro_beat, previous_journal)
-        snapshot = json.dumps(
-            {
-                "last_events": journal.last_events,
-                "unresolved_mysteries": journal.unresolved_mysteries,
-                "physical_emotional_state": journal.physical_emotional_state,
-            },
-            ensure_ascii=False,
-        )
-        return snapshot, journal
+        return journal
+
 
     def _parse_journal(self, text: str, previous: Optional[NarrativeJournal]) -> NarrativeJournal:
         """Parsea la respuesta del LLM en journal."""

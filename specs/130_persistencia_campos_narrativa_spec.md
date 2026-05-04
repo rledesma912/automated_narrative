@@ -52,18 +52,9 @@ El campo `technical_context` en `MacroBeat` es huérfano:
 
 **Acción**: Eliminar el campo del modelo y de la DB para eliminar deuda técnica.
 
-### 3. Persistir `memory_snapshot` antes del checkpoint
+### 3. Persistir `memory_snapshot` antes del checkpoint (OBSOLETO - Ver Spec-222)
 
- currently `memory_snapshot` se asigna solo después de la fase journal:
-```python
-# director_use_case.py:265-266
-prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
-macro_beat.memory_snapshot = prev_snapshot  # Se asigna DESPUÉS de yield
-```
-
-Con `--hasta voz:1` el beat se yielding **antes** de esta asignación.
-
-**Acción**: Asignar `memory_snapshot` inmediatamente después de `journalist.extract()`, no después del yield.
+> **Nota:** El campo `memory_snapshot` ha sido eliminado en el **Spec-222**. La persistencia de la memoria narrativa ahora se realiza de forma relacional en la tabla `narrative_journal` por beat, eliminando la necesidad de snapshots en la tabla de beats.
 
 ---
 

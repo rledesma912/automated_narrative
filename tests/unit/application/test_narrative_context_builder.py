@@ -59,6 +59,10 @@ def _make_beat_with_nc(number: int) -> MacroBeat:
     return beat
 
 
+from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal, Story
+
+...
+
 class TestBuildNarrativeContext:
     """B3 — build_narrative_context() produce un string con todos los insumos."""
 
@@ -92,32 +96,30 @@ class TestBuildNarrativeContext:
         result = builder.build_narrative_context(beat, anchors)
         assert anchors["label_voz"] in result
 
-    def test_contains_last_events_from_snapshot(self):
-        """B3 — contiene last_events del memory_snapshot anterior."""
+    def test_contains_last_events_from_journal(self):
+        """B3 — contiene last_events del journal anterior."""
         builder = PromptBuilder()
         beat = _make_beat(2)
-        snapshot = json.dumps(
-            {
-                "last_events": "La familia llegó a la fiesta.",
-                "unresolved_mysteries": "",
-                "physical_emotional_state": "Tranquilos",
-            }
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="",
+            physical_emotional_state="Tranquilos",
         )
-        result = builder.build_narrative_context(beat, _beat_anchors(2), prev_snapshot=snapshot)
+        result = builder.build_narrative_context(beat, _beat_anchors(2), previous_journal=journal)
         assert "La familia llegó a la fiesta." in result
 
     def test_beat1_has_no_prev_memory_section(self):
-        """Beat 1 sin snapshot no incluye sección MEMORIA."""
+        """Beat 1 sin journal no incluye sección MEMORIA."""
         builder = PromptBuilder()
         beat = _make_beat(1)
-        result = builder.build_narrative_context(beat, _beat_anchors(1), prev_snapshot=None)
+        result = builder.build_narrative_context(beat, _beat_anchors(1), previous_journal=None)
         assert "MEMORIA DEL ACTO ANTERIOR" not in result
 
-    def test_beat2_with_snapshot_includes_memory_section(self):
+    def test_beat2_with_journal_includes_memory_section(self):
         builder = PromptBuilder()
         beat = _make_beat(2)
-        snapshot = json.dumps({"last_events": "Algo pasó.", "physical_emotional_state": ""})
-        result = builder.build_narrative_context(beat, _beat_anchors(2), prev_snapshot=snapshot)
+        journal = NarrativeJournal(last_events="Algo pasó.", physical_emotional_state="")
+        result = builder.build_narrative_context(beat, _beat_anchors(2), previous_journal=journal)
         assert "MEMORIA DEL ACTO ANTERIOR" in result
         assert "Algo pasó." in result
 

@@ -1,0 +1,167 @@
+title: La ofrenda
+personajes_full:
+- id: P1
+  name: Ramiro
+  role: Narrador y protagonista. Cabo primero
+  traits:
+  - observador
+  - disciplinado
+  - cooperativo
+- id: P2
+  name: Gringo Ledesma
+  role: Sargento de Ramiro
+  traits:
+  - pragmático
+  - terco
+protagonista: 'Ramiro: Narrador y protagonista. Cabo primero [observador, disciplinado, cooperativo];
+  Gringo Ledesma: Sargento de Ramiro [pragmático, terco]'
+relator: 'Primera persona en pasado. Narrador: Ramiro. Tono: intimista. Registro: formal: Educado
+  y correcto.'
+atmosfera: folk_horror (rural) - creciente
+escenarios: 'Destacamento de Cuesta del Ternero: Construcción solitaria en la ladera de la montaña,
+  hecha de piedra gris y troncos hachados.; El Destacamento (Interior): Ambiente amplio, frío
+  y espartano.; La Cocina: Punto más vulnerable con el postigo de madera.; El Baño de Concreto:
+  Refugo final con puerta de hierro.'
+sinopsis: |-
+  El escenario: Destacamento de Cuesta del Ternero. Es una construcción solitaria en la ladera de la montaña. Debe verse sólida pero olvidada, hecha de piedra gris y troncos hachados.
+
+  La Misión: Ramiro (un joven Cabo Primero) y el "Gringo" Ledesma (un Sargento) son enviados a ocupar el puesto durante cinco días para realizar tareas de mantenimiento y reconocimiento del terreno antes de la temporada de nevadas.
+
+  El Conflicto Inicial: Al entrar, encuentran una orden militar pegada en la puerta que no figura en los manuales estándar. La regla es simple pero absurda: "Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina. Cerrar el postigo y no abrirlo por nada hasta el amanecer. En caso de emergencia refugiarse en el baño". Ramiro siente respeto por la orden, pero el Gringo la toma como una burla de los superiores para asustar a los novatos.
+
+  El Escenario: La cocina del refugio y el perímetro exterior.
+
+  La Misión: Cumplir con la "ofrenda" nocturna mientras el clima empeora.
+
+  El Evento Clave: Las primeras dos noches cumplen la regla y escuchan sonidos de algo pesado desgarrando la carne afuera, pero no ven nada, así que siguen realizando las actividades para las cuales fueron enviados ahí, sin inconvenientes. Ramiro una noche intenta adentrarse un poco al bosque, por curiosidad, pero cuando ve una silueta grande pasando inhumanamente rápido decide volver adentro, asustado. La tercera noche, El Gringo se cansa de "desperdiciar" comida. Decide engañar a "la fiera". En lugar de carne, cuelga una bolsa de arpillera llena de piedras y cartón mojado. Ramiro intenta detenerlo, pero El Gringo tiene más antigüedad y lo pone en su lugar, ahora el Gringo está convencido de que es un puma al que han malacostumbrado.
+
+  El Escenario: El salón principal y la ventana de la cocina.
+
+  El Evento Clave: A las 03:00 AM, el refugio es sacudido por un golpe violento contra la pared exterior. No es un animal común. Escuchan a algo trepar por el techo de chapa con una velocidad inhumana; las garras suenan como metal sobre metal.
+
+  El Avistamiento: El Gringo, movido por la soberbia y el miedo, se asoma por una rendija de la cortina de la cocina con su linterna. El haz de luz revela a la criatura: una bestia enorme, del tamaño de un caballo pero con la agilidad de un galgo hambriento. Su piel es de un color carne viva, rojiza y grisácea atrás, arrugada, casi sin pelo, dejando ver músculos tensos y costillas marcadas. Tiene un hocico alargado lleno de dientes afilados y unos ojos blancos sin pupilas, que parecen ver hasta en la oscuridad total. En las patas lleva unas garras negras, gruesas y tan afiladas que parecen hechas de metal; se nota que pueden atravesar un chaleco antibalas o romper puertas de metal sin esfuerzo. Es una masa de músculos y odio que se mueve de forma errática, lista para despedazar lo que tenga enfrente. La criatura, al notar el engaño de la bolsa de piedras, emite un chillido que rompe los vidrios de la cocina y empieza a destrozar el postigo de madera para entrar.
+
+  El Escenario: El baño de concreto del refugio.
+
+  La Misión: Sobrevivir hasta el alba sin disparar (para no revelar su posición exacta o por puro pánico).
+
+  El Evento Clave: El Gringo y Ramiro abandonan sus puestos y se encierran en el baño, que tiene una puerta de hierro reforzada. Escuchan cómo la criatura entra al refugio, destrozando muebles y olfateando bajo la puerta del baño. Ramiro describe el olor a carne podrida y el sonido de una respiración pesada y siseante del otro lado del metal. Pasan horas en un silencio absoluto, abrazados a sus fusiles, esperando que la puerta resista los embates.
+
+  El Escenario: El refugio devastado al amanecer.
+
+  El Cierre: Con los primeros rayos de sol, el silencio vuelve. Salen del baño y encuentran el salón principal destrozado. La bolsa de piedras del Gringo está sobre la mesa, pero las piedras han sido trituradas hasta ser polvo, un mensaje claro de la fuerza de la criatura.
+
+  La Consecuencia: Ramiro cuenta que al final regresaron a la base y redactaron un informe falso sobre un ataque de "vándalos" o animales salvajes para evitar ser enviados a psiquiatría. Ramiro concluye diciendo que nunca volvió a ese lugar y que, desde entonces, jamás rompe una regla por más rara que le parezca.
+reglas:
+- Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina.
+- Cerrar el postigo y no abrirlo por nada hasta el amanecer.
+- En caso de emergencia, refugiarse en el baño.
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: Ramiro
+  voice_style: intimista
+  voice:
+    person: primera
+    tense: pasado
+    style: intimista
+  atmosphere:
+    genre: folk_horror
+    subgenre: rural
+    tone: creciente
+  scenarios:
+  - id: S1
+    order: 1
+    name: El Destacamento de Cuesta del Ternero (Exterior)
+    description: |-
+      Es una construcción solitaria en la ladera de la montaña. Debe verse sólida pero olvidada, hecha de piedra gris y troncos hachados.
+
+      Detalle visual: El techo es de chapa acanalada oxidada.
+
+      El punto clave: La ventana de la cocina con el gancho de hierro oxidado que sobresale de la madera podrida del marco.
+  - id: S2
+    order: 2
+    name: El Salón Principal (Interior)
+    description: |-
+      Un ambiente amplio, frío y espartano. Hay una mesa de madera larga, un par de bancos y una estufa a leña de hierro (tipo Salamandra) que no da abasto.
+
+      Detalle visual: El piso es de cemento alisado con manchas de humedad. La luz es escasa, proveniente de faroles de noche o linternas, generando sombras largas que se mueven con el viento que se filtra por las rendijas.
+  - id: S3
+    order: 3
+    name: La Cocina (El lugar de la transgresión)
+    description: |-
+      Es el punto más vulnerable de la casa porque es donde está el postigo de madera que conecta con la criatura.
+
+      Detalle visual: Estantes con latas de conservas viejas y una cortina de tela rústica que se mueve apenas. Es un lugar que se siente "expuesto" a pesar de estar bajo techo.
+  - id: S4
+    order: 4
+    name: El Baño de Concreto (El refugio final)
+    description: |-
+      Un cuarto pequeño, casi como una celda. Paredes de cemento bruto, sin pintar, y una puerta de hierro pesado con un pasador manual.
+
+      Detalle visual: La falta de ventanas lo hace claustrofóbico. Solo se ve lo que ilumina la linterna del protagonista: el vapor del aliento de los soldados y la rendija inferior de la puerta por donde "acecha" el olor y el sonido de la criatura.
+  rules:
+  - id: R1
+    text: 'Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina.
+      Cerrar el postigo y no abrirlo por nada hasta el amanecer. En caso de emergencia, refugiarse en el baño'
+    type: entorno
+  actos:
+    act_1:
+      type: exposicion
+      text: |-
+        El escenario: Destacamento de Cuesta del Ternero. Es una construcción solitaria en la ladera de la montaña. Debe verse sólida pero olvidada, hecha de piedra gris y troncos hachados.
+
+        La Misión: Ramiro (un joven Cabo Primero) y el "Gringo" Ledesma (un Sargento) son enviados a ocupar el puesto durante cinco días para realizar tareas de mantenimiento y reconocimiento del terreno antes de la temporada de nevadas.
+
+        El Conflicto Inicial: Al entrar, encuentran una orden militar pegada en la puerta que no figura en los manuales estándar. La regla es simple pero absurda: "Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina. Cerrar el postigo y no abrirlo por nada hasta el amanecer. En caso de emergencia refugiarse en el baño". Ramiro siente respeto por la orden, pero el Gringo la toma como una burla de los superiores para asustar a los novatos.
+    act_2:
+      type: accion_ascendente
+      text: |-
+        El Escenario: La cocina del refugio y el perímetro exterior.
+
+        La Misión: Cumplir con la "ofrenda" nocturna mientras el clima empeora.
+
+        El Evento Clave: Las primeras dos noches cumplen la regla y escuchan sonidos de algo pesado desgarrando la carne afuera, pero no ven nada, así que siguen realizando las actividades para las cuales fueron enviados ahí, sin inconvenientes. Ramiro una noche intenta adentrarse un poco al bosque, por curiosidad, pero cuando ve una silueta grande pasando inhumanamente rápido decide volver adentro, asustado. La tercera noche, El Gringo se cansa de "desperdiciar" comida. Decide engañar a "la fiera". En lugar de carne, cuelga una bolsa de arpillera llena de piedras y cartón mojado. Ramiro intenta detenerlo, pero El Gringo tiene más antigüedad y lo pone en su lugar, ahora el Gringo está convencido de que es un puma al que han malacostumbrado.
+    act_3:
+      type: climax
+      text: |-
+        El Escenario: El salón principal y la ventana de la cocina.
+
+        El Evento Clave: A las 03:00 AM, el refugio es sacudido por un golpe violento contra la pared exterior. No es un animal común. Escuchan a algo trepar por el techo de chapa con una velocidad inhumana; las garras suenan como metal sobre metal.
+
+        El Avistamiento: El Gringo, movido por la soberbia y el miedo, se asoma por una rendija de la cortina de la cocina con su linterna. El haz de luz revela a la criatura: una bestia enorme, del tamaño de un caballo pero con la agilidad de un galgo hambriento. Su piel es de un color carne viva, rojiza y grisácea atrás, arrugada, casi sin pelo, dejando ver músculos tensos y costillas marcadas. Tiene un hocico alargado lleno de dientes afilados y unos ojos blancos sin pupilas, que parecen ver hasta en la oscuridad total. En las patas lleva unas garras negras, gruesas y tan afiladas que parecen hechas de metal; se nota que pueden atravesar un chaleco antibalas o romper puertas de metal sin esfuerzo. Es una masa de músculos y odio que se mueve de forma errática, lista para despedazar lo que tenga enfrente. La criatura, al notar el engaño de la bolsa de piedras, emite un chillido que rompe los vidrios de la cocina y empieza a destrozar el postigo de madera para entrar.
+    act_4:
+      type: accion_descendente
+      text: |-
+        El Escenario: El baño de concreto del refugio.
+
+        La Misión: Sobrevivir hasta el alba sin disparar (para no revelar su posición exacta o por puro pánico).
+
+        El Evento Clave: El Gringo y Ramiro abandonan sus puestos y se encierran en el baño, que tiene una puerta de hierro reforzada. Escuchan cómo la criatura entra al refugio, destrozando muebles y olfateando bajo la puerta del baño. Ramiro describe el olor a carne podrida y el sonido de una respiración pesada y siseante del otro lado del metal. Pasan horas en un silencio absoluto, abrazados a sus fusiles, esperando que la puerta resista los embates.
+    act_5:
+      type: desenlace
+      text: |-
+        El Escenario: El refugio devastado al amanecer.
+
+        El Cierre: Con los primeros rayos de sol, el silencio vuelve. Salen del baño y encuentran el salón principal destrozado. La bolsa de piedras del Gringo está sobre la mesa, pero las piedras han sido trituradas hasta ser polvo, un mensaje claro de la fuerza de la criatura.
+
+        La Consecuencia: Ramiro cuenta que al final regresaron a la base y redactaron un informe falso sobre un ataque de "vándalos" o animales salvajes para evitar ser enviados a psiquiatría. Ramiro concluye diciendo que nunca volvió a ese lugar y que, desde entonces, jamás rompe una regla por más rara que le parezca.
+  perception:
+    reliability: 'subjetiva: Ve lo que espera ver'
+    distortion:
+      level: 'minima: Apenas distorsiona'
+      triggers:
+      - 'panico: En pánico'
+  knowledge:
+    domain:
+      paranormal: 'medio: Conocimiento regular'
+      religioso: 'medio: Conocimiento regular'
+    interpretation_style: 'supersticiosa: Le teme y lo evita'
+  language:
+    register: 'formal: Educado y correcto'
+    figurative_density: 'media: Uso regular'
+  bias:
+    fear_focus:
+    - 'muerte: La muerte'
+    attention_focus:
+    - 'rostros: Rostros y expresiones'
+    - 'detalles: Detalles físicos'

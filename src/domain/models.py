@@ -91,7 +91,6 @@ class MacroBeat(BaseModel):
     active_rules: list[str] = []
     active_scenario_description: str = ""
     narrative_context: Optional[str] = None
-    memory_snapshot: Optional[str] = None
     beat_type: Optional[BeatType] = None
 
     def is_narrated(self) -> bool:

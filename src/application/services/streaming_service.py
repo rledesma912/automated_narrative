@@ -81,7 +81,7 @@ async def stream_story(
                 if beat_repo is not None:
                     await beat_repo.save(macro_beat, story.id)
                 if story_repo is not None and _journal is not None:
-                    await story_repo.save_journal(story.id, _journal)
+                    await story_repo.save_journal(story.id, _journal, beat_number)
 
                 if beat_number < num_beats:
                     await queue.put(

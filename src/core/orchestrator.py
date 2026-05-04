@@ -117,7 +117,7 @@ class StoryRunner:
             self.reporter.step_start(f"Guardando beat {beat.number}/{total}...")
             await self.beat_repo.save(beat, story.id)
             if journal is not None:
-                await self.story_repo.save_journal(story.id, journal)
+                await self.story_repo.save_journal(story.id, journal, beat.number)
             step_elapsed = perf_counter() - beat_t0
             self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
             completed.append(beat)
@@ -188,7 +188,7 @@ class StoryRunner:
             story, pending_beats, initial_journal=journal
         ):
             await self.beat_repo.save(beat, story.id)
-            await self.story_repo.save_journal(story.id, latest_journal)
+            await self.story_repo.save_journal(story.id, latest_journal, beat.number)
             step_elapsed = perf_counter() - beat_t0
             self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
             completed.append(beat)

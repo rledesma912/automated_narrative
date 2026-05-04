@@ -308,7 +308,7 @@ Extiende este momento (150-400 palabras)."""
         story: "Story",
         macro_beat_id: int,
         beat_anchors: dict,
-        prev_snapshot: str | None = None,
+        previous_journal: NarrativeJournal | None = None,
         synopsis_slice: str | None = None,
         active_rules: list[str] | None = None,
         active_scenario: str | None = None,
@@ -344,8 +344,12 @@ Extiende este momento (150-400 palabras)."""
         atmosphere_val = atmosphere or story.atmosfera
 
         prev_section = ""
-        if prev_snapshot:
-            prev_section = f"\nMEMORIA DEL ACTO ANTERIOR:\n{prev_snapshot}\n"
+        if previous_journal and not previous_journal.is_empty():
+            prev_section = (
+                f"\nMEMORIA DEL ACTO ANTERIOR:\n"
+                f"- Últimos eventos: {previous_journal.last_events}\n"
+                f"- Estado: {previous_journal.physical_emotional_state}\n"
+            )
 
         return template.format(
             sinopsis=story.sinopsis,
@@ -491,13 +495,13 @@ Extiende este momento (150-400 palabras)."""
         self,
         macro_beat: MacroBeat,
         beat_anchors: dict,
-        prev_snapshot: str | None = None,
+        previous_journal: NarrativeJournal | None = None,
         story: "Story | None" = None,
     ) -> str:
         """Ensambla el narrative_context pre-baked que recibe el VOZ. Determinístico."""
         cast_block = self._format_cast_for_context(story) if story else None
         return self._nc_assembler.assemble(
-            macro_beat, beat_anchors, prev_snapshot, cast_block=cast_block
+            macro_beat, beat_anchors, previous_journal, cast_block=cast_block
         )
 
     def build_rule_resolver_prompt(

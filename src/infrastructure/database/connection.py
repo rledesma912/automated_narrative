@@ -69,7 +69,6 @@ async def init_db() -> None:
             active_scenario_id TEXT,
             active_scenario_description TEXT,
             narrative_context TEXT,
-            memory_snapshot TEXT,
             type TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
@@ -114,11 +113,14 @@ async def init_db() -> None:
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS narrative_journal (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            story_id TEXT UNIQUE NOT NULL,
+            story_id TEXT NOT NULL,
+            beat_number INTEGER NOT NULL,
             last_events TEXT DEFAULT '',
             unresolved_mysteries TEXT DEFAULT '',
             physical_emotional_state TEXT DEFAULT '',
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            UNIQUE(story_id, beat_number)
         )
     """)
 

@@ -236,16 +236,19 @@ class SQLStoryRepository:
         await conn.close()
         return stories
 
-    async def save_journal(self, story_id: UUID, journal: NarrativeJournal) -> None:
-        """Save or update the narrative journal for a story."""
+    async def save_journal(
+        self, story_id: UUID, journal: NarrativeJournal, beat_number: int
+    ) -> None:
+        """Save the narrative journal for a specific beat (Spec-222)."""
         conn = await get_connection()
 
         await conn.execute(
             """INSERT OR REPLACE INTO narrative_journal
-            (story_id, last_events, unresolved_mysteries, physical_emotional_state)
-            VALUES (?, ?, ?, ?)""",
+            (story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state)
+            VALUES (?, ?, ?, ?, ?)""",
             (
                 str(story_id),
+                beat_number,
                 journal.last_events,
                 journal.unresolved_mysteries,
                 journal.physical_emotional_state,
@@ -255,14 +258,28 @@ class SQLStoryRepository:
         await conn.commit()
         await conn.close()
 
-    async def get_journal(self, story_id: UUID) -> NarrativeJournal | None:
-        """Get the narrative journal for a story."""
+    async def get_journal(
+        self, story_id: UUID, beat_number: int | None = None
+    ) -> NarrativeJournal | None:
+        """Get the narrative journal for a story.
+
+        Args:
+            story_id: UUID de la historia.
+            beat_number: Si se especifica, retorna el journal de ese beat.
+                        Si es None, retorna el journal del último beat completado.
+        """
         conn = await get_connection()
 
-        cursor = await conn.execute(
-            "SELECT * FROM narrative_journal WHERE story_id = ?",
-            (str(story_id),),
-        )
+        if beat_number is not None:
+            cursor = await conn.execute(
+                "SELECT * FROM narrative_journal WHERE story_id = ? AND beat_number = ?",
+                (str(story_id), beat_number),
+            )
+        else:
+            cursor = await conn.execute(
+                "SELECT * FROM narrative_journal WHERE story_id = ? ORDER BY beat_number DESC LIMIT 1",
+                (str(story_id),),
+            )
 
         row = await cursor.fetchone()
         await conn.close()

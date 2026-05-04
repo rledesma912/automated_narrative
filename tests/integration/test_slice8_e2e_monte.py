@@ -202,18 +202,6 @@ class TestSlice8E2EMontePipeline:
             assert len(beat.narrative_context) > 10
 
     @pytest.mark.asyncio
-    async def test_all_beats_have_memory_snapshot(self, story):
-        pb = PromptBuilder()
-        llm = _SequenceLLM(num_beats=pb.num_beats)
-        director = DirectorUseCase(llm, pb)
-
-        results = [item async for item in director.execute_full(story)]
-        for beat, _, _ in results:
-            assert beat.memory_snapshot is not None
-            data = json.loads(beat.memory_snapshot)
-            assert "last_events" in data
-
-    @pytest.mark.asyncio
     async def test_beats_numbered_1_to_5(self, story):
         pb = PromptBuilder()
         llm = _SequenceLLM(num_beats=pb.num_beats)

@@ -266,9 +266,8 @@ Los pasos 4 a 7 se ejecutan en secuencia para cada beat. La salida del Journal d
 ```
 
 **Resultado en memoria:**
-- `NarrativeJournal` actualizado → se pasa como `initial_journal` al Mapper del beat siguiente
-- `prev_snapshot` (JSON string) → se pasa como `prev_snapshot` al `build_narrative_context()` del beat siguiente
-- `macro_beat.memory_snapshot` ← guarda el JSON string del snapshot
+- `NarrativeJournal` actualizado → se pasa como `previous_journal` al Mapper/Assembler del beat siguiente
+- **Spec-222:** Se persiste en la tabla `narrative_journal` con `story_id` y `beat_number`.
 
 ---
 
@@ -288,7 +287,6 @@ Los pasos 4 a 7 se ejecutan en secuencia para cada beat. La salida del Journal d
 | | `narrative_context` | Paso 6 (Assembler) |
 | | `content` | Paso 7 (VOZ) |
 | | `status` | Paso 7 (`"completed"`) |
-| | `memory_snapshot` | Paso 8 (Journal) |
 | | `type` | Paso 5 (YAML via Director) |
 | `macro_beat_rule` | `macro_beat_id, rule_id` | Reglas activas del Resolver |
 
@@ -296,7 +294,7 @@ Los pasos 4 a 7 se ejecutan en secuencia para cada beat. La salida del Journal d
 
 | Tabla | Qué se escribe | Cuándo |
 |---|---|---|
-| `narrative_journal` | `story_id, last_events, unresolved_mysteries, physical_emotional_state` | Después de guardar el beat, via `story_repo.save_journal()` |
+| `narrative_journal` | `story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state` | Después de guardar el beat, via `story_repo.save_journal()` |
 
 ---
 

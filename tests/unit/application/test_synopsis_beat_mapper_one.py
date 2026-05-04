@@ -7,7 +7,7 @@ import pytest
 
 from src.application.services import PromptBuilder
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
-from src.domain.models import MacroBeat, NarrativeAnchors, Scenario, Story
+from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal, Scenario, Story
 
 
 def _make_story(**kwargs):
@@ -50,8 +50,6 @@ _ANCHORS = NarrativeAnchors(
 
 
 def _beat_anchors(beat_id: int) -> dict:
-    from unittest.mock import MagicMock
-
     from src.application.services.story_analyst_service import StoryAnalystService
 
     analyst = StoryAnalystService(MagicMock(), PromptBuilder())
@@ -105,7 +103,7 @@ class TestMapOneReturnValue:
 
 
 class TestMapOnePromptContent:
-    """B1 — el prompt incluye ID del acto, anclajes y snapshot anterior."""
+    """B1 — el prompt incluye ID del acto, anclajes y journal anterior."""
 
     @pytest.mark.asyncio
     async def test_prompt_contains_beat_id(self):
@@ -144,20 +142,22 @@ class TestMapOnePromptContent:
         assert len(prompt) > 0
 
     @pytest.mark.asyncio
-    async def test_prompt_contains_prev_snapshot(self):
-        """B1 — prompt incluye memory_snapshot del acto anterior cuando se pasa."""
+    async def test_prompt_contains_prev_journal(self):
+        """B1 — prompt incluye datos del journal del acto anterior cuando se pasa."""
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        snapshot = '{"last_events": "La familia llegó al campo.", "unresolved_mysteries": ""}'
+        journal = NarrativeJournal(
+            last_events="La familia llegó al campo.", unresolved_mysteries=""
+        )
         await mapper.map_one(
             _make_story(),
             2,
             _beat_anchors(2),
-            prev_snapshot=snapshot,
+            previous_journal=journal,
             active_scenario_description=_ACTIVE_SCENARIO,
         )
         prompt = llm.generate.call_args.kwargs["prompt"]
-        assert snapshot in prompt
+        assert "La familia llegó al campo." in prompt
 
 
 class TestMapOneBeat1NoPrevMemory:
@@ -171,7 +171,7 @@ class TestMapOneBeat1NoPrevMemory:
             _make_story(),
             1,
             _beat_anchors(1),
-            prev_snapshot=None,
+            previous_journal=None,
             active_scenario_description=_ACTIVE_SCENARIO,
         )
         prompt = llm.generate.call_args.kwargs["prompt"]
@@ -179,15 +179,15 @@ class TestMapOneBeat1NoPrevMemory:
 
     @pytest.mark.asyncio
     async def test_beat2_has_prev_memory_section_when_provided(self):
-        """Contraste: beat 2 SÍ incluye memoria si se pasa snapshot."""
+        """Contraste: beat 2 SÍ incluye memoria si se pasa journal."""
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        snapshot = '{"last_events": "Llegaron al campo."}'
+        journal = NarrativeJournal(last_events="Llegaron al campo.")
         await mapper.map_one(
             _make_story(),
             2,
             _beat_anchors(2),
-            prev_snapshot=snapshot,
+            previous_journal=journal,
             active_scenario_description=_ACTIVE_SCENARIO,
         )
         prompt = llm.generate.call_args.kwargs["prompt"]

@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite://stories.db"
 
     # Paths
-    output_dir: str = "output_stories"
+    output_dir: str = "frontend/public/output_stories"
     prompts_dir: str = "config/prompts_generation"
     input_dir: str = "input_stories"
     beats_definition_file: str = "config/llm_beats_definition.yaml"

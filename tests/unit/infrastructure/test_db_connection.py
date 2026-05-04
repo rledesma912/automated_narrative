@@ -78,7 +78,7 @@ class TestDbConnection:
 
     @pytest.mark.asyncio
     async def test_macro_beat_table_has_correct_columns(self, temp_db_path, setup_db):
-        """Test that macro_beat table has all required columns including Spec-038 fields."""
+        """Test that macro_beat table has all required columns including Spec-038 fields (Spec-222: memory_snapshot eliminado)."""
         conn = await get_connection()
 
         cursor = await conn.execute("PRAGMA table_info(macro_beat)")
@@ -96,7 +96,6 @@ class TestDbConnection:
             "technical_context",
             "active_scenario_id",
             "narrative_context",
-            "memory_snapshot",
             "created_at",
         }
         assert required.issubset(columns), f"Missing: {required - columns}"

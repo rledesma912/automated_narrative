@@ -207,7 +207,6 @@ class DirectorUseCase:
             on_plan_ready(num_beats, plan_elapsed)
 
         journal = initial_journal
-        prev_snapshot: str | None = None
         num_beats = self.prompt_builder.num_beats
 
         for beat_id in range(1, num_beats + 1):
@@ -239,7 +238,7 @@ class DirectorUseCase:
                 story=story,
                 macro_beat_id=beat_id,
                 beat_anchors=beat_anchors,
-                prev_snapshot=prev_snapshot,
+                previous_journal=journal,
                 synopsis_slice=synopsis_slice,
                 active_rules=active_rules,
                 active_scenario_description=active_scenario_desc,
@@ -269,7 +268,7 @@ class DirectorUseCase:
             macro_beat.active_scenario_description = active_scenario_desc
 
             macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
-                macro_beat, beat_anchors, prev_snapshot, story=story
+                macro_beat, beat_anchors, journal, story=story
             )
 
             if on_step_start:
@@ -278,8 +277,7 @@ class DirectorUseCase:
 
             if on_step_start:
                 on_step_start(f"📓  Actualizando journal beat {beat_id}/{num_beats}...")
-            prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
-            macro_beat.memory_snapshot = prev_snapshot
+            journal = await journalist.extract(story, macro_beat, journal)
 
             if stop_at == cp_voz:
                 macro_beat.status = BeatStatus.PENDING

@@ -115,20 +115,36 @@ async def create_story(
 async def list_stories(
     use_case: ListStoriesUseCase = Depends(get_list_stories_use_case),
 ):
-    """List all stories."""
+    """List all stories.
+
+    Spec-230: Verificación de integridad - si file_path apunta a un archivo
+    que no existe físicamente, se desvincula (null) para que la UI no muestre
+    links rotos. Soporta directorios nuevo (frontend/public/output_stories) y
+    viejo (output_stories) para compatibilidad.
+    """
+    from pathlib import Path as PathLib
+
     stories = await use_case.execute()
-    return [
-        StoryResponse(
-            id=str(s.id),
-            title=s.title,
-            status=s.status.value,
-            created_at=s.created_at,
-            atmosfera=s.atmosfera,
-            protagonista=s.protagonista,
-            file_path=s.file_path,
+    result = []
+    for s in stories:
+        verified_file_path = s.file_path
+        if s.file_path:
+            new_path = PathLib("frontend/public") / s.file_path
+            old_path = PathLib(s.file_path)
+            if not new_path.exists() and not old_path.exists():
+                verified_file_path = None
+        result.append(
+            StoryResponse(
+                id=str(s.id),
+                title=s.title,
+                status=s.status.value,
+                created_at=s.created_at,
+                atmosfera=s.atmosfera,
+                protagonista=s.protagonista,
+                file_path=verified_file_path,
+            )
         )
-        for s in stories
-    ]
+    return result
 
 
 _PATCHABLE_STATUSES = {"draft", "pending", "failed", "processing"}
