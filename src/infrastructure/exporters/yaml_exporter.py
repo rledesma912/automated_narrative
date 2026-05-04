@@ -71,12 +71,14 @@ class YamlStoryExporter:
     def _build_personajes(self, story: Story) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         for idx, p in enumerate(story.personajes_full or [], start=1):
-            out.append({
-                "id": p.get("id") or f"P{idx}",
-                "name": p.get("name", ""),
-                "role": p.get("role", ""),
-                "traits": list(p.get("traits") or []),
-            })
+            out.append(
+                {
+                    "id": p.get("id") or f"P{idx}",
+                    "name": p.get("name", ""),
+                    "role": p.get("role", ""),
+                    "traits": list(p.get("traits") or []),
+                }
+            )
         return out
 
     def _derive_escenarios_str(self, sc: dict, story: Story) -> str:
@@ -126,8 +128,12 @@ class YamlStoryExporter:
             },
             "knowledge": {
                 "domain": {
-                    "paranormal": sc.get("knowledge", {}).get("domain", {}).get("paranormal", "medio"),
-                    "religioso": sc.get("knowledge", {}).get("domain", {}).get("religioso", "medio"),
+                    "paranormal": sc.get("knowledge", {})
+                    .get("domain", {})
+                    .get("paranormal", "medio"),
+                    "religioso": sc.get("knowledge", {})
+                    .get("domain", {})
+                    .get("religioso", "medio"),
                 },
                 "interpretation_style": sc.get("knowledge", {}).get(
                     "interpretation_style", "simbolica"
@@ -148,12 +154,14 @@ class YamlStoryExporter:
         if rich:
             out = []
             for idx, s in enumerate(rich, start=1):
-                out.append({
-                    "id": s.get("id") or f"S{idx}",
-                    "order": s.get("order", idx),
-                    "name": s.get("name", ""),
-                    "description": s.get("description", ""),
-                })
+                out.append(
+                    {
+                        "id": s.get("id") or f"S{idx}",
+                        "order": s.get("order", idx),
+                        "name": s.get("name", ""),
+                        "description": s.get("description", ""),
+                    }
+                )
             return out
         # Fallback: derivar desde story.scenarios (sin description)
         return [
@@ -166,22 +174,26 @@ class YamlStoryExporter:
         if rich:
             out = []
             for idx, r in enumerate(rich, start=1):
-                out.append({
-                    "id": r.get("id") or f"R{idx}",
-                    "text": r.get("text") or r.get("content", ""),
-                    "type": r.get("type") or "",
-                })
+                out.append(
+                    {
+                        "id": r.get("id") or f"R{idx}",
+                        "text": r.get("text") or r.get("content", ""),
+                        "type": r.get("type") or "",
+                    }
+                )
             return out
         # Fallback: typed_rules
         if story.typed_rules:
             out = []
             for idx, r in enumerate(story.typed_rules, start=1):
                 rule_type = r.type.value if hasattr(r.type, "value") and r.type else (r.type or "")
-                out.append({
-                    "id": r.id or f"R{idx}",
-                    "text": r.content,
-                    "type": rule_type,
-                })
+                out.append(
+                    {
+                        "id": r.id or f"R{idx}",
+                        "text": r.content,
+                        "type": rule_type,
+                    }
+                )
             return out
         # Último fallback: reglas como strings
         return [

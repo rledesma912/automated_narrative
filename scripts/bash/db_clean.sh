@@ -1,7 +1,10 @@
 #!/bin/bash
 # Limpia todos los registros de la base de datos (respeta FK order).
 
-DB_FILE="stories.db"
+set -e
+cd "$(dirname "$0")/../.."
+
+DB_FILE="data/stories.db"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

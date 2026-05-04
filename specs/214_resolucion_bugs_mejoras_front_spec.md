@@ -30,18 +30,19 @@ Este pliego de condiciones aborda la **resiliencia del estado de la aplicación*
 
 *   **Endpoint de Verificación (`frontend/src/controllers/historia.controller.ts`):**
     *   Implementar `GET /api/historia/:id/markdown-check`.
-    *   Lógica:
+    *   Lógica (para Galería):
         1. Consultar `file_path` en la DB (vía Core API).
         2. Si no tiene path -> Retornar parcial de botón "Exportar".
         3. Si tiene path -> Verificar existencia física en disco.
         4. Si existe -> Retornar link normal al Markdown.
-        5. **Si NO existe** -> Retornar botón HTMX que dispara el modal de desvinculación (`confirmDeleteMarkdownModal`) con la leyenda: "El archivo ya no existe. Desvincular registro".
+        5. **Si NO existe** -> Retornar botón de "Archivo perdido" (enlace rojo, sin acción de desvinculación en galería).
 *   **Sala de Generación Resiliente (`streaming-room.ejs`):**
     *   **Modo Dual:**
         *   Si `status === 'processing'`: Comportamiento SSE actual (visualización dinámica).
-        *   Si `status === 'completed'` o `'failed'`: **Modo Lectura**. Cargar todos los beats desde la DB al renderizar. 
+        *   Si `status === 'completed'` o `'failed'`: **Modo Lectura**. Cargar todos los beats desde la DB al renderizar.
         *   Si `'failed'`: Mostrar un botón destacado de "Regenerar" al final de la lista de beats.
 *   **Acceso desde Galería:** El botón "Ver progreso" (ahora renombrado a "**Ver avance**" si no está generando) debe llevar siempre a esta sala.
+*   **Desvinculación por archivo perdido:** Se gestiona **exclusivamente** en la página de visualización de Markdown (`visualizar_markdown.ejs`). Si el archivo no existe al cargar la página, se muestra el botón de Desvincular que limpia el `file_path` de la DB.
 
 ---
 
@@ -63,13 +64,16 @@ Este pliego de condiciones aborda la **resiliencia del estado de la aplicación*
 
 ---
 
-## 5. Slice F3: Limpieza de UI (Vista de Historia)
-**Objetivo:** Simplificar la vista de detalle eliminando redundancia.
+## 5. Slice F3: Limpieza de UI (Vista de Historia y Markdown)
+**Objetivo:** Simplificar la vista de detalle eliminando redundancia, y mover la desvinculación a la página de Markdown.
 
 *   **Vistas (`historia.ejs`):**
     *   Eliminar el bloque de alerta y el botón de "Desvincular" manual.
     *   Mantener únicamente "Borrar Markdown" (borrado físico + desvinculación) como acción de gestión.
-    *   La desvinculación por "archivo perdido" se delega exclusivamente a la Galería (Slice F1).
+*   **Vista de Markdown (`visualizar_markdown.ejs`):**
+    *   Al cargar, verificar si el archivo físico existe.
+    *   **Si NO existe**: Mostrar botón "Desvincular registro" que llama al endpoint para limpiar `file_path` en la DB.
+    *   **Si existe**: Mostrar botón "Eliminar Archivo" (borrado físico + desvinculación) como acción de gestión.
 
 ---
 
@@ -80,7 +84,7 @@ Este pliego de condiciones aborda la **resiliencia del estado de la aplicación*
 - [ ] La sala de streaming muestra beats históricos si la historia ya terminó o falló.
 - [ ] El Wizard persiste los datos (POST o PATCH) al pasar del paso 5 a Confirmación.
 - [ ] El stepper permite volver a pasos anteriores (<= actual).
-- [ ] "Desvincular" solo aparece en la Galería si el archivo MD fue borrado del disco.
+- [ ] "Desvincular" solo aparece en la página de Markdown (`visualizar_markdown.ejs`) si el archivo MD fue borrado del disco.
 - [ ] La regeneración desde estado `failed` limpia artefactos previos (Fix Regresión Spec-212).
 
 ---

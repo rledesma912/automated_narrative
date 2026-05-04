@@ -75,8 +75,10 @@ class StoryRunner:
         )
 
         create_story = CreateStoryUseCase(self.story_repo)
-        escenarios_list = escenarios if isinstance(escenarios, list) else (
-            [e.strip() for e in escenarios.split("/") if e.strip()] if escenarios else []
+        escenarios_list = (
+            escenarios
+            if isinstance(escenarios, list)
+            else ([e.strip() for e in escenarios.split("/") if e.strip()] if escenarios else [])
         )
         dto = StoryCreateDTO(
             title=title,
@@ -125,8 +127,9 @@ class StoryRunner:
         if stop_after is not None:
             cp_ordinal = ordinal(stop_after)
             debug_path = (
-                f"output_stories/debug_{title}_{cp_ordinal}.md"
-                if self.debug_collector.is_active() else None
+                str(Path(cfg.output_dir) / f"debug_{title}_{cp_ordinal}.md")
+                if self.debug_collector.is_active()
+                else None
             )
             self.reporter.checkpoint_pause(stop_after, str(story.id), cp_ordinal, debug_path)
 
@@ -181,11 +184,11 @@ class StoryRunner:
         total = len(pending_beats)
         beat_t0 = perf_counter()
 
-        async for beat, journal, llm_elapsed in director.execute_narration(
+        async for beat, latest_journal, llm_elapsed in director.execute_narration(
             story, pending_beats, initial_journal=journal
         ):
             await self.beat_repo.save(beat, story.id)
-            await self.story_repo.save_journal(story.id, journal)
+            await self.story_repo.save_journal(story.id, latest_journal)
             step_elapsed = perf_counter() - beat_t0
             self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
             completed.append(beat)

@@ -44,6 +44,8 @@ class TestLLMFactory:
             ) as mock_adapter_settings:
                 mock_adapter_settings.anthropic_api_key = "test-key"
                 mock_adapter_settings.anthropic_model = "claude-opus-4-7"
-                with patch("src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"):
+                with patch(
+                    "src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"
+                ):
                     result = LLMFactory.get_provider(provider="anthropic")
         assert isinstance(result, AnthropicAdapter)

@@ -34,16 +34,19 @@ class TestCLIContainer:
     def test_debug_collector_debug_true(self):
         container = CLIContainer(debug=True)
         from src.application.services.debug_collector import DebugCollector
+
         assert isinstance(container.debug_collector, DebugCollector)
 
     def test_debug_collector_debug_false(self):
         container = CLIContainer(debug=False)
         from src.application.services.debug_collector import NullDebugCollector
+
         assert isinstance(container.debug_collector, NullDebugCollector)
 
     def test_story_runner_tipo(self, tmp_path):
         container = CLIContainer(use_mock=True, output_dir=tmp_path)
         from src.core.orchestrator import StoryRunner
+
         runner = container.story_runner(tmp_path)
         assert isinstance(runner, StoryRunner)
 
@@ -65,9 +68,11 @@ class TestCLIContainer:
     def test_prompt_builder(self):
         container = CLIContainer()
         from src.application.services import PromptBuilder
+
         assert isinstance(container.prompt_builder, PromptBuilder)
 
     def test_reporter(self):
         container = CLIContainer()
         from src.cli.progress import ProgressReporter
+
         assert isinstance(container.reporter, ProgressReporter)

@@ -19,7 +19,9 @@ class IPromptStrategy(ABC):
         pass
 
     @abstractmethod
-    def format_context_section(self, previous_context: str, journal_context: str, beat_number: int) -> str:
+    def format_context_section(
+        self, previous_context: str, journal_context: str, beat_number: int
+    ) -> str:
         """Formatea la sección de contexto (pasado + journal)."""
         pass
 
@@ -45,7 +47,9 @@ class FrontierStrategy(IPromptStrategy):
     def max_context_chars(self) -> int:
         return 150  # Menos contexto directo, más foco en prosa
 
-    def format_context_section(self, previous_context: str, journal_context: str, beat_number: int) -> str:
+    def format_context_section(
+        self, previous_context: str, journal_context: str, beat_number: int
+    ) -> str:
         if beat_number == 1:
             return ""
         return (
@@ -77,7 +81,9 @@ class CompactStrategy(IPromptStrategy):
     def max_context_chars(self) -> int:
         return 500  # Más contexto para compensar ventana pequeña
 
-    def format_context_section(self, previous_context: str, journal_context: str, beat_number: int) -> str:
+    def format_context_section(
+        self, previous_context: str, journal_context: str, beat_number: int
+    ) -> str:
         if beat_number == 1:
             return ""
         return (

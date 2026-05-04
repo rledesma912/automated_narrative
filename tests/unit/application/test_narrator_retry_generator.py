@@ -24,7 +24,6 @@ def _make_llm(*responses: str):
 
 
 class TestNarratorRetryGenerator:
-
     @pytest.mark.asyncio
     async def test_no_retry_on_success(self):
         """Respuesta normal — no hay retry, llama al LLM una sola vez."""
@@ -87,6 +86,7 @@ class TestNarratorRetryGenerator:
     def test_rephrase_prompt_appends_hint(self):
         """_rephrase_prompt añade el hint al prompt original."""
         from src.infrastructure.adapters import MockLLMAdapter
+
         gen = NarratorRetryGenerator(MockLLMAdapter())
 
         result = gen._rephrase_prompt("Base prompt.")

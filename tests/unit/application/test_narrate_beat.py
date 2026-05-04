@@ -204,6 +204,7 @@ class TestVozErrorPaths:
         class StripHeadingsNormalizer:
             def normalize(self, text: str, model_name: str = "") -> str:
                 import re
+
                 return re.sub(r"^##.*\n\n", "", text)
 
         use_case = VozUseCase(mock_llm, normalizer=StripHeadingsNormalizer())

@@ -9,13 +9,13 @@ from src.utils.timezone import now_argentina
 
 
 class StreamEventType(str, Enum):
-    STATUS    = "status"
-    ANCHORS   = "anchors"
+    STATUS = "status"
+    ANCHORS = "anchors"
     BEAT_START = "beat_start"
-    BEAT_DONE  = "beat_done"
-    HEARTBEAT  = "heartbeat"
-    ERROR      = "stream_error"  # "error" es reservado por EventSource en el browser
-    DONE       = "done"
+    BEAT_DONE = "beat_done"
+    HEARTBEAT = "heartbeat"
+    ERROR = "stream_error"  # "error" es reservado por EventSource en el browser
+    DONE = "done"
 
 
 class StreamEvent(BaseModel):
@@ -26,5 +26,8 @@ class StreamEvent(BaseModel):
     def to_sse(self) -> dict:
         """Formato compatible con sse-starlette EventSourceResponse."""
         import json
-        payload = self.data if isinstance(self.data, str) else json.dumps(self.data, ensure_ascii=False)
+
+        payload = (
+            self.data if isinstance(self.data, str) else json.dumps(self.data, ensure_ascii=False)
+        )
         return {"event": self.event.value, "data": payload}

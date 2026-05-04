@@ -495,3 +495,62 @@ Hito 1 (YAML base)
 ## Nota — Evolución posterior (Spec 027)
 
 El shape descripto en este spec (`provider:` + `roles:` a nivel top) fue **reemplazado** por un shape de perfiles pre-configurados. Ver `specs/027_llm_profiles_spec.md` para el formato actual: `active_profile:` + `profiles:` con múltiples perfiles autocontenidos (cada uno con provider + roles completos) y override por `LLM_PROFILE`. Los mecanismos de este spec (normalizer pipeline, context_strategy, DI en use cases, response_filters con model_overrides) siguen vigentes sin cambios — el nuevo shape solo reorganiza cómo se expresa la config de provider/roles.
+
+---
+
+## Amendment — Override por env var: `OLLAMA_HOST`
+
+**Motivación:** la app corre en dos contextos con resolución DNS distinta:
+
+- **API + frontend → siempre en Docker.** Dentro del contenedor, el host del Ollama del anfitrión es `host.docker.internal:11434`.
+- **CLI (`uv run python -m src ...`) → ejecutado directo en el host.** Ahí `host.docker.internal` no resuelve y el adapter falla con `[Errno -2] Name or service not known`.
+
+Mantener el host hardcodeado en cada perfil obligaba a editar el YAML según contexto o duplicar perfiles. La solución es desacoplar el host del perfil con override por env var.
+
+**Precedencia (`Settings.ollama_host` en `src/config.py`):**
+
+1. `OLLAMA_HOST` env var (si está seteada y no vacía)
+2. `profiles.<perfil>.ollama.host` del YAML
+3. Fallback hardcodeado `http://localhost:11434`
+
+**Convención del proyecto:**
+
+- Los perfiles del YAML traen `host: "http://localhost:11434"` como default seguro para ejecución nativa (CLI).
+- `docker-compose.yml` setea `OLLAMA_HOST=http://host.docker.internal:11434` en el contenedor de la API → gana por precedencia y resuelve correctamente al Ollama del host.
+- Para forzar manualmente otro host desde CLI: `OLLAMA_HOST=http://otra-maquina:11434 uv run python -m src ...`
+
+**Patrón consistente:** sigue la misma forma que el override `LLM_PROFILE` (env > YAML > fallback) ya descripto en spec-027.
+
+**Archivos involucrados:**
+
+| Archivo | Operación |
+|---|---|
+| `src/config.py` (property `ollama_host`) | Añadir lectura de `os.getenv("OLLAMA_HOST")` antes del YAML |
+| `config/llm_core_definitions.yaml` (7 perfiles Ollama) | Default a `http://localhost:11434` |
+| `docker-compose.yml` | `OLLAMA_HOST=http://host.docker.internal:11434` (ya presente) |
+| `CLAUDE.md` ("Key Environment Variables") | Documentar la env var |
+
+---
+
+## Amendment — DB compartida CLI host ↔ API Docker
+
+**Motivación:** mismo problema de desacople entre contextos que motivó el override `OLLAMA_HOST`. La DB SQLite vive en un archivo local; si el CLI (host) y la API (Docker) apuntan a paths distintos, las generaciones de uno son invisibles para el otro.
+
+**Estado anterior (bug):** `.env` declaraba `DATABASE_URL=sqlite+aiosqlite:///stories.db` (resolvía a `./stories.db` en el host); `docker-compose.yml` pisaba con `sqlite+aiosqlite:////app/data/stories.db`. El path de host y el path mapeado al volumen Docker eran archivos distintos → DB del CLI desconectada de la DB de la API.
+
+**Convención unificada:** un solo path canónico `./data/stories.db`, compartido por:
+
+- **CLI en host** vía `.env` `DATABASE_URL=sqlite+aiosqlite:///data/stories.db` (path relativo al cwd del proyecto).
+- **API en Docker** vía el mismo `.env` (cwd `/app` dentro del contenedor + volume mount `./data:/app/data`) → resuelve a `/app/data/stories.db`, que es el mismo archivo físico.
+
+El override de `DATABASE_URL` en `docker-compose.yml` queda eliminado: el path relativo del `.env` ya resuelve correctamente en ambos contextos. El volume mount `./data:/app/data` permanece — es lo que hace que ambos contextos toquen el mismo inode.
+
+**Archivos involucrados:**
+
+| Archivo | Operación |
+|---|---|
+| `.env` (`DATABASE_URL`) | `sqlite+aiosqlite:///data/stories.db` (en lugar de `///stories.db`) |
+| `docker-compose.yml` | Eliminar override `DATABASE_URL` redundante; mantener volume `./data:/app/data` |
+| `data/stories.db` | Archivo único de DB (lo crea el primer `init_db`) |
+
+**Patrón general:** ambos amendments (OLLAMA_HOST y DATABASE_URL) responden al mismo principio: configuración expresada en términos relativos al proyecto que resuelve correctamente sin importar el contexto de ejecución, evitando overrides paralelos entre `.env` y `docker-compose.yml`.

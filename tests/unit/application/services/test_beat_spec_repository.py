@@ -17,37 +17,52 @@ def _write_yaml(tmp_path: Path, beats: list[dict]) -> Path:
 
 FIVE_BEATS = [
     {
-        "id": 1, "name": "exposicion", "intent": "establecer normalidad",
+        "id": 1,
+        "name": "exposicion",
+        "intent": "establecer normalidad",
         "intensity": "baja",
-        "must": ["presentar situacion"], "must_not": ["confirmar paranormal"],
+        "must": ["presentar situacion"],
+        "must_not": ["confirmar paranormal"],
         "state_change": {"from": "estabilidad", "to": "incomodidad"},
         "success_signal": ["algo no encaja"],
     },
     {
-        "id": 2, "name": "accion_ascendente", "intent": "activar conflicto",
+        "id": 2,
+        "name": "accion_ascendente",
+        "intent": "activar conflicto",
         "intensity": "media",
-        "must": ["romper la regla"], "must_not": ["aceptar paranormal"],
+        "must": ["romper la regla"],
+        "must_not": ["aceptar paranormal"],
         "state_change": {"from": "incomodidad", "to": "alarma"},
         "success_signal": ["evento anomalo visible"],
     },
     {
-        "id": 3, "name": "climax", "intent": "confrontacion con lo inexplicable",
+        "id": 3,
+        "name": "climax",
+        "intent": "confrontacion con lo inexplicable",
         "intensity": "alta",
-        "must": ["enfrentamiento directo"], "must_not": ["resolver el misterio"],
+        "must": ["enfrentamiento directo"],
+        "must_not": ["resolver el misterio"],
         "state_change": {"from": "alarma", "to": "terror"},
         "success_signal": ["punto de no retorno"],
     },
     {
-        "id": 4, "name": "accion_descendente", "intent": "consecuencias",
+        "id": 4,
+        "name": "accion_descendente",
+        "intent": "consecuencias",
         "intensity": "media",
-        "must": ["mostrar secuelas"], "must_not": ["introducir personajes nuevos"],
+        "must": ["mostrar secuelas"],
+        "must_not": ["introducir personajes nuevos"],
         "state_change": {"from": "terror", "to": "resignacion"},
         "success_signal": ["personaje cambiado"],
     },
     {
-        "id": 5, "name": "desenlace", "intent": "cierre ambiguo",
+        "id": 5,
+        "name": "desenlace",
+        "intent": "cierre ambiguo",
         "intensity": "baja",
-        "must": ["tension residual"], "must_not": ["explicar lo inexplicable"],
+        "must": ["tension residual"],
+        "must_not": ["explicar lo inexplicable"],
         "state_change": {"from": "resignacion", "to": "trauma latente"},
         "success_signal": ["lector queda inquieto"],
     },
@@ -55,7 +70,6 @@ FIVE_BEATS = [
 
 
 class TestBeatSpecRepositoryLoad:
-
     def test_num_beats_cinco(self, tmp_path):
         repo = BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS))
         assert repo.num_beats == 5
@@ -83,7 +97,6 @@ class TestBeatSpecRepositoryLoad:
 
 
 class TestBeatSpecRepositoryGetById:
-
     @pytest.fixture
     def repo(self, tmp_path):
         return BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS))
@@ -105,14 +118,19 @@ class TestBeatSpecRepositoryGetById:
 
 
 class TestBeatSpecRepositoryFormatCompact:
-
     @pytest.fixture
     def repo(self, tmp_path):
         return BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS))
 
     def test_contiene_cinco_nombres(self, repo):
         text = repo.format_compact()
-        for name in ["exposicion", "accion_ascendente", "climax", "accion_descendente", "desenlace"]:
+        for name in [
+            "exposicion",
+            "accion_ascendente",
+            "climax",
+            "accion_descendente",
+            "desenlace",
+        ]:
             assert name in text
 
     def test_contiene_intents(self, repo):
@@ -126,7 +144,6 @@ class TestBeatSpecRepositoryFormatCompact:
 
 
 class TestBeatSpecRepositoryFormatForBeat:
-
     @pytest.fixture
     def repo(self, tmp_path):
         return BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS))

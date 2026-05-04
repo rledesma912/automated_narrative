@@ -78,7 +78,9 @@ class SynopsisBeatMapper:
             parser_result=f"ok: {len(beats)} beats" if beats else "error: 0 beats",
             elapsed_s=response.elapsed_s,
             system_prompt_file="synopsis_mapper_system_compact.md",
-            user_prompt_file="synopsis_mapper_compact.md" if variant == "compact" else "synopsis_mapper.md",
+            user_prompt_file="synopsis_mapper_compact.md"
+            if variant == "compact"
+            else "synopsis_mapper.md",
         )
 
         logger.debug(f"[MAPPER] beats mapeados: {[b.summary[:70] for b in beats]}")
@@ -176,4 +178,3 @@ class SynopsisBeatMapper:
             f"summary={summary[:80]}"
         )
         return macro_beat
-

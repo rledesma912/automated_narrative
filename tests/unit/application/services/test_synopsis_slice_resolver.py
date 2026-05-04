@@ -13,7 +13,6 @@ def resolver() -> SynopsisSliceResolver:
 
 
 class TestResolveStrategy:
-
     def test_strategy_none_retorna_vacio(self, resolver):
         assert resolver.resolve("algo", 1, 5, "none") == ""
 
@@ -33,7 +32,6 @@ class TestResolveStrategy:
 
 
 class TestGetSlice:
-
     def test_sinopsis_corta_retorna_dos_oraciones(self, resolver):
         sinopsis = "Primera oración. Segunda oración. Tercera oración."
         result = resolver.get_slice(sinopsis, 1, 5)

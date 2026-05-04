@@ -291,9 +291,7 @@ def generate_from_db(
     try:
         import asyncio
 
-        asyncio.run(
-            _generate_from_db_async(story_id, use_mock, output_dir, provider, debug=debug)
-        )
+        asyncio.run(_generate_from_db_async(story_id, use_mock, output_dir, provider, debug=debug))
     except StoryNotFoundError:
         raise
     except OllamaConnectionError:

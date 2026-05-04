@@ -10,6 +10,7 @@ from sse_starlette.sse import EventSourceResponse
 from src.application.services import PromptBuilder
 from src.application.services.export_service import ExportService
 from src.application.services.observability_service import observability
+from src.application.services.stream_session_manager import manager as session_manager
 from src.application.services.streaming_service import stream_story
 from src.application.use_cases.director_use_case import DirectorUseCase
 from src.config import settings
@@ -23,9 +24,15 @@ router = APIRouter(tags=["Streaming"])
 
 # ── Hito 3: SSE endpoint ──────────────────────────────────────────────────────
 
+
 @router.get("/stories/{story_id}/stream")
 async def stream_generation(story_id: str):
-    """Inicia la generación de una historia y emite eventos SSE en tiempo real."""
+    """Inicia (o se ata a) la generación SSE de una historia.
+
+    Spec-220: idempotencia real vía StreamSessionManager. La primera request
+    arranca el productor único; las siguientes se atan a la misma sesión y
+    reciben el replay buffer + flujo en vivo. Cero riesgo de doble pipeline.
+    """
     story_repo = SQLStoryRepository()
     story = await story_repo.get_by_id(UUID(story_id))
 
@@ -33,48 +40,59 @@ async def stream_generation(story_id: str):
         logger.warning(f"SSE Request failed: Story {story_id} not found.")
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
-    logger.info(f"[STREAM] Inicio de petición SSE | Story: {story_id} | Status actual: {story.status.value}")
+    logger.info(
+        f"[STREAM] Inicio de petición SSE | Story: {story_id} | "
+        f"Status actual: {story.status.value} | "
+        f"Sesión activa: {session_manager.is_active(story_id)}"
+    )
 
     observability.record(
         category="generation",
         message=f"Iniciando generación de '{story.title}'",
         story_id=story_id,
-        story_title=story.title
+        story_title=story.title,
     )
 
-    # Punto 3 — Idempotencia: si ya está en processing, permitir reconexión para ver progreso
-    if story.status.value == "processing":
-        logger.info(f"[STREAM] Historia {story_id} ya en procesamiento. Permitiendo reconexión.")
-        # Continuar para permitir que el navegador se conecte al stream existente
-
-
-    llm            = LLMFactory.get_provider()
-    prompt_builder = PromptBuilder()
-    normalizer     = ResponseNormalizer()
-    beat_repo      = SQLBeatRepository()
-    export_service = ExportService()
-
-    director = DirectorUseCase(
-        llm=llm,
-        prompt_builder=prompt_builder,
-        normalizer=normalizer,
-        story_repo=story_repo,
-    )
-
-    async def event_generator():
-        async for event in stream_story(
+    def _producer_factory():
+        """Construye el productor único (solo se invoca en la primera attach por story_id)."""
+        llm = LLMFactory.get_provider()
+        prompt_builder = PromptBuilder()
+        normalizer = ResponseNormalizer()
+        beat_repo = SQLBeatRepository()
+        export_service = ExportService()
+        director = DirectorUseCase(
+            llm=llm,
+            prompt_builder=prompt_builder,
+            normalizer=normalizer,
+            story_repo=story_repo,
+        )
+        return stream_story(
             director,
             story,
             story_repo=story_repo,
             beat_repo=beat_repo,
             export_service=export_service,
-        ):
-            yield event.to_sse()
+        )
+
+    queue, replay = await session_manager.attach(story_id, _producer_factory)
+
+    async def event_generator():
+        try:
+            for event in replay:
+                yield event.to_sse()
+            while True:
+                event = await queue.get()
+                yield event.to_sse()
+                if event.event.value in ("done", "stream_error"):
+                    break
+        finally:
+            await session_manager.detach(story_id, queue)
 
     return EventSourceResponse(event_generator())
 
 
 # ── Hito 4a: /health mejorado ─────────────────────────────────────────────────
+
 
 @router.get("/health")
 async def health_check():
@@ -95,6 +113,7 @@ async def health_check():
 
     if provider == "ollama":
         import httpx
+
         host = settings.ollama_host
         try:
             async with httpx.AsyncClient(timeout=3) as client:
@@ -105,14 +124,14 @@ async def health_check():
 
     elif provider == "anthropic":
         import os
+
         checks["anthropic_key"] = "present" if os.getenv("ANTHROPIC_API_KEY") else "missing"
 
     elif provider == "gemini":
         checks["gemini"] = "cli-based (no ping available)"
 
     healthy = checks.get("sqlite") == "ok" and (
-        checks.get("ollama") == "ok"
-        or provider in ("anthropic", "gemini", "mock")
+        checks.get("ollama") == "ok" or provider in ("anthropic", "gemini", "mock")
     )
 
     return {
@@ -124,11 +143,12 @@ async def health_check():
 
 # ── Hito 4b: /stories/{id}/full ──────────────────────────────────────────────
 
+
 @router.get("/stories/{story_id}/full")
 async def get_story_full(story_id: str):
     """Devuelve Story + Beats + NarrativeAnchors en una sola petición."""
     story_repo = SQLStoryRepository()
-    beat_repo  = SQLBeatRepository()
+    beat_repo = SQLBeatRepository()
 
     story = await story_repo.get_by_id(UUID(story_id))
     if not story:
@@ -168,6 +188,7 @@ async def get_story_full(story_id: str):
 
 
 # ── Hito 4c: /config/active-profile ──────────────────────────────────────────
+
 
 @router.get("/config/active-profile")
 async def get_active_profile():

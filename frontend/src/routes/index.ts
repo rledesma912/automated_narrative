@@ -5,7 +5,7 @@ import { debugPage } from "../controllers/debug.controller";
 import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData } from "../controllers/wizard.controller";
 import { submitGeneration, streamingRoomPage, getActiveStreamApi } from "../controllers/stream.controller";
-import { historiaPage, verMarkdownHandler, downloadMarkdownHandler, generarDesdeHistoria, deleteStoryHandler, exportStoryHandler, deleteMarkdownHandler, confirmDeleteModal, confirmDeleteMarkdownModal, markdownCheckHandler, modalConfirmarRegenerar } from "../controllers/historia.controller";
+import { historiaPage, verMarkdownHandler, downloadMarkdownHandler, generarDesdeHistoria, deleteStoryHandler, exportStoryHandler, deleteMarkdownHandler, confirmDeleteModal, confirmDeleteMarkdownModal, markdownCheckHandler, updateFilePathHandler } from "../controllers/historia.controller";
 
 const router = Router();
 
@@ -34,12 +34,12 @@ router.post("/historia/:storyId/generar",   generarDesdeHistoria);
 router.post("/historia/:storyId/exportar",  exportStoryHandler);
 router.delete("/api/historia/:storyId",          deleteStoryHandler);
 router.delete("/api/historia/:storyId/markdown", deleteMarkdownHandler);
+router.patch("/api/historia/:storyId/file-path", updateFilePathHandler);
 
 router.get("/api/historia/:storyId/markdown-check", markdownCheckHandler);
 
 // Modales de confirmación (HTMX)
 router.get("/modales/confirmar-borrar/:storyId", confirmDeleteModal);
 router.get("/modales/confirmar-borrar-markdown/:storyId", confirmDeleteMarkdownModal);
-router.get("/modales/confirmar-regenerar/:storyId", modalConfirmarRegenerar);
 
 export default router;

@@ -89,7 +89,6 @@ class TestScenario:
 
     def test_scenario_order_preserved(self):
         scenarios = [
-            Scenario(story_id=_STORY_ID, order_index=i, name=f"Escenario {i}")
-            for i in range(1, 4)
+            Scenario(story_id=_STORY_ID, order_index=i, name=f"Escenario {i}") for i in range(1, 4)
         ]
         assert [s.order_index for s in scenarios] == [1, 2, 3]

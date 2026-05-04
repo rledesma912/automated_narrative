@@ -59,12 +59,12 @@ function renderStatusLabel(s) {
               </a>
 
               <% if (s.status === 'completed') { %>
-                <button hx-get="/modales/confirmar-regenerar/<%= s.id %>"
-                        hx-target="body"
-                        hx-swap="beforeend"
-                        class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
-                  <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
-                </button>
+                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
+                  <button type="submit"
+                          class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
+                  </button>
+                </form>
               <% } else { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
                   <button type="submit"
@@ -75,7 +75,7 @@ function renderStatusLabel(s) {
                 </form>
               <% } %>
 
-              <% if (s.status === 'completed' || s.status === 'failed') { %>
+              <% if (s.status === 'failed') { %>
                 <a href="/generar/stream/<%= s.id %>"
                    class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver avance
@@ -84,7 +84,7 @@ function renderStatusLabel(s) {
             <% } else { %>
               <a href="/generar/stream/<%= s.id %>"
                  class="text-sm text-blue-400 hover:opacity-70 flex items-center gap-2">
-                <i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Ver avance
+                <i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Ver generación activa
               </a>
             <% } %>
 

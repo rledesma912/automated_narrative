@@ -54,11 +54,11 @@ class NarrativeAnchors(BaseModel):
     """Anclajes de resonancia narrativa extraídos de la sinopsis global (Spec 081)."""
 
     story_id: UUID4
-    resonance_hamartia: str     # La Grieta (Acto 1)
-    resonance_hybris: str       # La Transgresión (Acto 2)
+    resonance_hamartia: str  # La Grieta (Acto 1)
+    resonance_hybris: str  # La Transgresión (Acto 2)
     resonance_anagnorisis: str  # La Epifanía (Acto 3)
-    resonance_peripeteia: str   # La Claustrofobia (Acto 4)
-    resonance_residual: str     # La Mancha (Acto 5)
+    resonance_peripeteia: str  # La Claustrofobia (Acto 4)
+    resonance_residual: str  # La Mancha (Acto 5)
 
 
 class Scenario(BaseModel):
@@ -215,4 +215,3 @@ class Story(BaseModel):
     def get_last_beat(self) -> Beat | None:
         """Retorna el último beat (mayor número), o None si no hay beats."""
         return max(self.beats, key=lambda b: b.number) if self.beats else None
-

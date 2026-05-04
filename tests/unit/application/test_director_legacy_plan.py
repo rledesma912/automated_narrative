@@ -167,7 +167,7 @@ class TestDirectorUseCase:
         assert beats[1].summary == "Second beat"
         assert beats[2].summary == "Third beat"
 
-    def test_parse_beats_formato_N_punto_numero(self):
+    def test_parse_beats_formato_n_punto_numero(self):
         """Parser reconoce el formato N.1 que produce mistral/llama."""
         raw = (
             "N.1 La familia llega a la casa.\n"
@@ -240,15 +240,25 @@ class TestDirectorUseCase:
 
         from src.domain.models import Beat, NarrativeJournal
 
-        story = Story(title="T", protagonista="P", relator="r", escenarios="e", sinopsis="s", atmosfera="a")
+        story = Story(
+            title="T", protagonista="P", relator="r", escenarios="e", sinopsis="s", atmosfera="a"
+        )
         beats = [Beat(number=i, summary=f"beat {i}", status="pending") for i in range(1, 4)]
         journal = NarrativeJournal()
 
         mock_voz = MagicMock()
-        mock_voz.execute = AsyncMock(side_effect=lambda story, beat, **kw: (
-            Beat(number=beat.number, summary=beat.summary, content="narrativa", status="completed"),
-            journal, 2.5,
-        ))
+        mock_voz.execute = AsyncMock(
+            side_effect=lambda story, beat, **kw: (  # noqa: ARG005
+                Beat(
+                    number=beat.number,
+                    summary=beat.summary,
+                    content="narrativa",
+                    status="completed",
+                ),
+                journal,
+                2.5,
+            )
+        )
 
         director = DirectorUseCase(MockLLMAdapter(), PromptBuilder(), voz=mock_voz)
 

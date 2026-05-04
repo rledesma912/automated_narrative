@@ -37,7 +37,9 @@ class TestSynopsisBeatMapper:
 
     @pytest.mark.asyncio
     async def test_map_returns_beats_list(self):
-        llm = _make_llm("1. Llegada al monte\n2. Señales extrañas\n3. La huida\n4. El horror\n5. Resolución")
+        llm = _make_llm(
+            "1. Llegada al monte\n2. Señales extrañas\n3. La huida\n4. El horror\n5. Resolución"
+        )
         mapper = SynopsisBeatMapper(llm, self._builder())
         beats = await mapper.map(_make_story())
         assert len(beats) == 5
@@ -63,7 +65,9 @@ class TestSynopsisBeatMapper:
         raw = "### Encabezado\n1. Primer beat\n2. Segundo beat\n3. Tercero\n4. Cuarto\n5. Quinto"
         llm = _make_llm(raw)
         normalizer = MagicMock()
-        normalizer.normalize.return_value = "1. Primer beat\n2. Segundo beat\n3. Tercero\n4. Cuarto\n5. Quinto"
+        normalizer.normalize.return_value = (
+            "1. Primer beat\n2. Segundo beat\n3. Tercero\n4. Cuarto\n5. Quinto"
+        )
         mapper = SynopsisBeatMapper(llm, self._builder(), normalizer=normalizer)
         beats = await mapper.map(_make_story())
         normalizer.normalize.assert_called_once()

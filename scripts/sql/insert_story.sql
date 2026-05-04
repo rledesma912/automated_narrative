@@ -1,5 +1,5 @@
 -- Seed data: historia de ejemplo con 5 macro-beats (Spec-038)
--- Uso: sqlite3 stories.db < scripts/sql/insert_story.sql
+-- Uso (desde la raíz del proyecto): sqlite3 data/stories.db < scripts/sql/insert_story.sql
 
 -- Escenarios cronológicos
 INSERT INTO scenario (id, story_id, order_index, name) VALUES

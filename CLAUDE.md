@@ -184,6 +184,7 @@ PROMPTS_DIR=./config/prompts_generation
 OUTPUT_DIR=./output_stories
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 # LLM_PROFILE=ollama-llama31                        # opcional: pisa active_profile del YAML
+# OLLAMA_HOST=http://host.docker.internal:11434     # opcional: pisa el host del perfil (usado por la API en Docker; CLI en host cae al YAML → localhost)
 ```
 
 ## Specs-Driven Development

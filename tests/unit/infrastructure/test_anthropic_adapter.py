@@ -27,6 +27,7 @@ class TestAnthropicAdapterInit:
 
     def test_con_api_key_parametro_no_lanza(self):
         from src.config import settings
+
         with patch("src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"):
             adapter = AnthropicAdapter(api_key="test-key")
             assert adapter.default_model == settings.anthropic_model
@@ -40,9 +41,11 @@ class TestAnthropicAdapterInit:
 class TestAnthropicAdapterGenerate:
     @pytest.fixture
     def adapter(self):
-        with patch("src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic") as MockClient:
+        with patch(
+            "src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"
+        ) as mock_cls:
             mock_client = MagicMock()
-            MockClient.return_value = mock_client
+            mock_cls.return_value = mock_client
             adapter = AnthropicAdapter(api_key="test-key")
             adapter._client = mock_client
             return adapter
@@ -58,44 +61,34 @@ class TestAnthropicAdapterGenerate:
 
     @pytest.mark.asyncio
     async def test_elapsed_s_es_float(self, adapter):
-        adapter._client.messages.create = AsyncMock(
-            return_value=_make_response("texto")
-        )
+        adapter._client.messages.create = AsyncMock(return_value=_make_response("texto"))
         result = await adapter.generate("prompt")
         assert isinstance(result.elapsed_s, float)
 
     @pytest.mark.asyncio
     async def test_opus4_no_envia_temperature(self, adapter):
-        adapter._client.messages.create = AsyncMock(
-            return_value=_make_response("texto")
-        )
+        adapter._client.messages.create = AsyncMock(return_value=_make_response("texto"))
         await adapter.generate("prompt", model="claude-opus-4-7", temperature=0.7)
         call_kwargs = adapter._client.messages.create.call_args.kwargs
         assert "temperature" not in call_kwargs
 
     @pytest.mark.asyncio
     async def test_modelo_no_opus4_envia_temperature(self, adapter):
-        adapter._client.messages.create = AsyncMock(
-            return_value=_make_response("texto")
-        )
+        adapter._client.messages.create = AsyncMock(return_value=_make_response("texto"))
         await adapter.generate("prompt", model="claude-haiku-4-5", temperature=0.5)
         call_kwargs = adapter._client.messages.create.call_args.kwargs
         assert call_kwargs.get("temperature") == 0.5
 
     @pytest.mark.asyncio
     async def test_system_prompt_se_pasa_como_parametro(self, adapter):
-        adapter._client.messages.create = AsyncMock(
-            return_value=_make_response("texto")
-        )
+        adapter._client.messages.create = AsyncMock(return_value=_make_response("texto"))
         await adapter.generate("prompt", system_prompt="Eres un narrador.")
         call_kwargs = adapter._client.messages.create.call_args.kwargs
         assert call_kwargs.get("system") == "Eres un narrador."
 
     @pytest.mark.asyncio
     async def test_sin_system_prompt_no_incluye_system(self, adapter):
-        adapter._client.messages.create = AsyncMock(
-            return_value=_make_response("texto")
-        )
+        adapter._client.messages.create = AsyncMock(return_value=_make_response("texto"))
         await adapter.generate("prompt")
         call_kwargs = adapter._client.messages.create.call_args.kwargs
         assert "system" not in call_kwargs
@@ -103,6 +96,7 @@ class TestAnthropicAdapterGenerate:
     @pytest.mark.asyncio
     async def test_authentication_error_lanza_runtime(self, adapter):
         import anthropic as anthropic_module
+
         adapter._client.messages.create = AsyncMock(
             side_effect=anthropic_module.AuthenticationError(
                 message="invalid", response=MagicMock(), body={}
@@ -114,6 +108,7 @@ class TestAnthropicAdapterGenerate:
     @pytest.mark.asyncio
     async def test_rate_limit_error_lanza_runtime(self, adapter):
         import anthropic as anthropic_module
+
         adapter._client.messages.create = AsyncMock(
             side_effect=anthropic_module.RateLimitError(
                 message="rate limit", response=MagicMock(), body={}

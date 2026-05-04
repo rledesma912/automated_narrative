@@ -12,11 +12,11 @@ _SECTION_HEADER = re.compile(r"^\*{0,2}(\d+)\.\*{0,2}\s*(.*)")
 
 # Formatos alternativos que no usan "N." como encabezado
 _ALT_PATTERNS: list[re.Pattern] = [
-    re.compile(r"^N\.(\d+)\s+(.+)"),               # N.1 Summary
-    re.compile(r"^(\d+)\)\s+(.+)"),                 # 1) Summary
-    re.compile(r"^[Bb]eat\s+(\d+)[:\-\.]\s*(.+)"), # Beat 1: Summary
-    re.compile(r"^Acto\s+(\d+)[^:]*:\s*(.+)"),     # Acto 1 (nombre): Summary
-    re.compile(r"^(\d+)\s+(.+)"),                   # 1 Summary (sin separador)
+    re.compile(r"^N\.(\d+)\s+(.+)"),  # N.1 Summary
+    re.compile(r"^(\d+)\)\s+(.+)"),  # 1) Summary
+    re.compile(r"^[Bb]eat\s+(\d+)[:\-\.]\s*(.+)"),  # Beat 1: Summary
+    re.compile(r"^Acto\s+(\d+)[^:]*:\s*(.+)"),  # Acto 1 (nombre): Summary
+    re.compile(r"^(\d+)\s+(.+)"),  # 1 Summary (sin separador)
 ]
 
 # Algunos modelos ponen el header en una línea y el summary en la siguiente
@@ -51,7 +51,11 @@ def _parse_grouped(text: str) -> list[Beat]:
         if m:
             if current_num is not None and current_lines and current_num not in seen:
                 seen.add(current_num)
-                summary = "\n".join(f"- {l}" for l in current_lines) if len(current_lines) > 1 else current_lines[0]
+                summary = (
+                    "\n".join(f"- {entry}" for entry in current_lines)
+                    if len(current_lines) > 1
+                    else current_lines[0]
+                )
                 beats.append(Beat(number=current_num, summary=summary, status="pending"))
             current_num = int(m.group(1))
             current_lines = []
@@ -65,7 +69,11 @@ def _parse_grouped(text: str) -> list[Beat]:
 
     if current_num is not None and current_lines and current_num not in seen:
         seen.add(current_num)
-        summary = "\n".join(f"- {l}" for l in current_lines) if len(current_lines) > 1 else current_lines[0]
+        summary = (
+            "\n".join(f"- {entry}" for entry in current_lines)
+            if len(current_lines) > 1
+            else current_lines[0]
+        )
         beats.append(Beat(number=current_num, summary=summary, status="pending"))
 
     return beats
@@ -100,9 +108,10 @@ def parse_beats(text: str, num_beats: int, story_id=None, caller: str = "PARSER"
     if not beats:
         beats = _parse_alt_patterns(text)
 
+    story_tag = f" story={story_id}" if story_id else ""
     if not beats:
         logger.warning(
-            f"[{caller}] FALLBACK: ningún patrón reconoció la respuesta, "
+            f"[{caller}{story_tag}] FALLBACK: ningún patrón reconoció la respuesta, "
             f"se usan {num_beats} beats genéricos.\n"
             f"=== RAW RESPONSE ===\n{text}\n=== END RAW ==="
         )
@@ -112,7 +121,7 @@ def parse_beats(text: str, num_beats: int, story_id=None, caller: str = "PARSER"
         ]
     else:
         logger.debug(
-            f"[{caller}] {len(beats)} beats parseados OK: "
+            f"[{caller}{story_tag}] {len(beats)} beats parseados OK: "
             f"{[b.summary[:60] for b in beats]}"
         )
 

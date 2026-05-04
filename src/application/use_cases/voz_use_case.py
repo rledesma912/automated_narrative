@@ -131,7 +131,7 @@ class VozUseCase:
 
         logger.debug(
             f"[VOZ] narrate beat={macro_beat.number} model={model} "
-            f'nc={len(macro_beat.narrative_context or "")} chars'
+            f"nc={len(macro_beat.narrative_context or '')} chars"
         )
 
         response = await self.retry_generator.generate_with_retry(

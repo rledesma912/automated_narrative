@@ -97,6 +97,7 @@ Contenido del acto
     def test_parse_el_monte_prohibido_completo(self):
         """Verifica que el archivo real mapea correctamente todos los campos (Spec-043: nuevo formato)."""
         from pathlib import Path
+
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
         data = parser.parse("el_monte_prohibido.md")
 
@@ -124,9 +125,7 @@ Contenido del acto
 
     def test_parse_cronologic_scenarios_block_string(self, parser):
         """_parse_cronologic_scenarios parsea bloque `|` con ítems `- nombre`."""
-        data = {
-            "cronologic_scenarios": "- La casa de campo\n- El monte prohibido\n"
-        }
+        data = {"cronologic_scenarios": "- La casa de campo\n- El monte prohibido\n"}
         result = parser._parse_cronologic_scenarios(data)
         assert result == ["La casa de campo", "El monte prohibido"]
 
@@ -137,6 +136,7 @@ Contenido del acto
     def test_parse_el_monte_prohibido_cronologic_scenarios(self):
         """El archivo real devuelve los escenarios cronológicos como lista (Spec-043: 4 escenarios)."""
         from pathlib import Path
+
         parser = MarkdownStoryParser(input_dir=Path("input_stories"))
         data = parser.parse("el_monte_prohibido.md")
         assert len(data.cronologic_scenarios) == 4
@@ -158,6 +158,8 @@ Contenido del acto
 
     def test_extract_inline_multiline_value(self, parser):
         """_extract_inline_field captura valor hasta el siguiente campo.**"""
-        content = "**Protagonistas**: Ricardo 35 padre\nIrene 34 madre\n\n**Sinopsis**: Una historia"
+        content = (
+            "**Protagonistas**: Ricardo 35 padre\nIrene 34 madre\n\n**Sinopsis**: Una historia"
+        )
         result = parser._extract_inline_field(content, "Protagonistas")
         assert "Ricardo" in result

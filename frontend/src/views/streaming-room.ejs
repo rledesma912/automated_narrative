@@ -1,15 +1,186 @@
 <%
 /*
  * Variables de entrada:
- *   storyId:       string
- *   coreStreamUrl: string — URL del endpoint SSE del Core Python
- *   storyStatus:   string — 'processing' | 'completed' | 'failed' | 'draft'
- *   story:         object | null
- *   beats:         array  — beats cargados de DB (solo si !processing)
+ *   storyId:        string
+ *   coreStreamUrl:  string — URL del endpoint SSE del Core Python
+ *   storyStatus:    string — 'processing' | 'completed' | 'failed' | 'draft'
+ *   story:          object | null
+ *   beats:          array  — beats cargados de DB (parciales en monitorMode)
+ *   regenerateMode: boolean — true si llegó con ?regenerate=1 y status=completed (Spec-219)
+ *   monitorMode:    boolean — true si status=processing y !regenerateMode (Spec-220 Slice A)
  */
 %>
 
-<% if (storyStatus !== 'processing') { %>
+<% if (monitorMode) { %>
+<%/* ══════════════════════════════════════════════════════════════════════════ */%>
+<%/* MODO MONITOR — generación activa disparada por otra pestaña (Spec-220 A) */%>
+<%/* ══════════════════════════════════════════════════════════════════════════ */%>
+
+<div class="max-w-4xl mx-auto">
+
+  <%/* ── Header ────────────────────────────────────────── */%>
+  <div class="flex items-center justify-between mb-10">
+    <div>
+      <h2 class="font-serif text-3xl text-forge-accent"><%= story ? story.title : 'Historia' %></h2>
+      <p class="text-forge-muted text-sm uppercase tracking-widest mt-2">Sala de Generación — Monitor</p>
+    </div>
+    <div class="flex items-center gap-3 px-5 py-2 border border-forge-accent text-sm font-bold text-forge-accent">
+      <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+      GENERANDO
+    </div>
+  </div>
+
+  <%/* ── Aviso de monitor pasivo ─────────────────────────── */%>
+  <div class="flex items-start gap-3 mb-10 p-5 border border-blue-700/50 bg-blue-950/20">
+    <i data-lucide="eye" class="w-5 h-5 text-blue-400 shrink-0 mt-0.5"></i>
+    <div>
+      <p class="text-blue-200 text-sm font-bold mb-1">Esta historia se está generando en otra ventana.</p>
+      <p class="text-blue-300/70 text-xs leading-relaxed">
+        Estás viendo el avance en vivo. La pantalla se actualizará automáticamente cuando termine.
+      </p>
+    </div>
+  </div>
+
+  <%/* ── Beats parciales ya guardados (snapshot al cargar) ── */%>
+  <% if (beats && beats.length > 0) { %>
+    <div class="space-y-6 mb-10">
+      <% beats.forEach(function(b) { %>
+        <% if (b.status === 'completed' && b.content) { %>
+          <div class="border border-forge-border bg-forge-surface p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-8 h-8 rounded-full bg-forge-accent flex items-center justify-center shrink-0">
+                <i data-lucide="check" class="w-4 h-4 text-forge-bg"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-forge-accent">Beat <%= b.beat_number || b.number %></span>
+                <% if (b.summary) { %>
+                  <p class="text-xs text-forge-muted mt-0.5"><%= b.summary %></p>
+                <% } %>
+              </div>
+            </div>
+            <p class="text-base text-forge-text font-serif leading-relaxed whitespace-pre-wrap"><%= b.content %></p>
+          </div>
+        <% } %>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <%/* ── Log de eventos en vivo (SSE) ────────────────────── */%>
+  <div id="monitor-log"
+       class="font-mono text-sm space-y-2 bg-forge-surface border border-forge-border p-6 mb-8 shadow-inner min-h-[120px]">
+    <div class="text-forge-muted border-l-2 border-forge-accent/20 pl-4 py-1">
+      <span class="text-forge-accent font-bold opacity-60">[stream]</span> Atando a la generación en curso…
+    </div>
+  </div>
+
+  <%/* ── Spinner indicando progreso ──────────────────────── */%>
+  <div class="flex flex-col items-center gap-4 py-6" id="monitor-spinner">
+    <div class="relative w-10 h-10">
+      <div class="absolute inset-0 border-4 border-forge-border rounded-full opacity-20"></div>
+      <div class="absolute inset-0 border-4 border-t-forge-accent rounded-full animate-spin"></div>
+    </div>
+    <p class="text-forge-muted text-xs uppercase tracking-widest" id="monitor-status">Conectando al stream…</p>
+  </div>
+
+  <%/* ── Acciones ────────────────────────────────────────── */%>
+  <div class="flex items-center gap-4 flex-wrap pt-6 border-t border-forge-border">
+    <a href="/galeria"
+       class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a galería
+    </a>
+  </div>
+
+</div>
+
+<script>
+  // Spec-220 Slice D: MODO MONITOR usa EventSource real ahora que el broadcaster
+  // del backend (Slice C) garantiza idempotencia. Una sola pestaña dispara el
+  // pipeline; las demás se atan vía manager.attach() y reciben replay + en vivo.
+  const MONITOR_STREAM_URL = "<%= coreStreamUrl %>";
+  const MONITOR_TOTAL_BEATS = 5;
+  let monitorEs = null;
+
+  function monitorAppendLog(msg) {
+    const container = document.getElementById("monitor-log");
+    if (!container) return;
+    const time = new Date().toTimeString().slice(0, 5);
+    const el = document.createElement("div");
+    el.className = "text-forge-muted border-l-2 border-forge-accent/20 pl-4 py-1";
+    el.innerHTML = `<span class="text-forge-accent font-bold opacity-60">[${time}]</span> ${msg}`;
+    container.appendChild(el);
+    el.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+
+  function monitorSetStatus(msg) {
+    const el = document.getElementById("monitor-status");
+    if (el) el.textContent = msg;
+  }
+
+  function monitorHideSpinner() {
+    const el = document.getElementById("monitor-spinner");
+    if (el) el.classList.add("hidden");
+  }
+
+  function monitorAttach() {
+    monitorEs = new EventSource(MONITOR_STREAM_URL);
+
+    monitorEs.addEventListener("status", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        monitorSetStatus(d.msg);
+        monitorAppendLog(`🔍 ${d.msg}`);
+      } catch { /* ignorar payload mal formado */ }
+    });
+
+    monitorEs.addEventListener("beat_start", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        monitorSetStatus(`Narrando beat ${d.number}/${MONITOR_TOTAL_BEATS}…`);
+        monitorAppendLog(`✍️ Narrando Beat ${d.number}/${MONITOR_TOTAL_BEATS}`);
+      } catch { /* ignorar */ }
+    });
+
+    monitorEs.addEventListener("beat_done", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        monitorAppendLog(`✅ Beat ${d.number} completado`);
+      } catch { /* ignorar */ }
+    });
+
+    // Heartbeat: solo mantener canal vivo, sin acción visual
+    monitorEs.addEventListener("heartbeat", () => { /* alive */ });
+
+    monitorEs.addEventListener("done", () => {
+      monitorAppendLog(`🏁 Historia completa — recargando…`);
+      monitorEs.close();
+      monitorEs = null;
+      // Pequeño delay para que el usuario vea el último log antes del reload
+      setTimeout(() => window.location.reload(), 800);
+    });
+
+    monitorEs.addEventListener("stream_error", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        monitorAppendLog(`⚠️ Error en pipeline: ${d.msg ?? "desconocido"}`);
+      } catch {
+        monitorAppendLog(`⚠️ Error desconocido en el stream`);
+      }
+      monitorHideSpinner();
+      monitorSetStatus("Stream finalizado con error");
+      if (monitorEs) { monitorEs.close(); monitorEs = null; }
+    });
+
+    monitorEs.onerror = () => {
+      monitorAppendLog(`⚠️ Conexión SSE interrumpida — reintentando…`);
+      // EventSource hace auto-reconnect; no cerramos manualmente.
+    };
+  }
+
+  // Auto-arranque al cargar la página (sin requerir click del usuario).
+  window.addEventListener("DOMContentLoaded", monitorAttach);
+</script>
+
+<% } else if (storyStatus !== 'processing' && !regenerateMode) { %>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
 <%/* MODO LECTURA — historia completed o failed                               */%>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
@@ -76,12 +247,10 @@
         <i data-lucide="book-open" class="w-4 h-4"></i> Ver historia
       </a>
       <% if (storyStatus === 'completed') { %>
-        <button hx-get="/modales/confirmar-regenerar/<%= storyId %>"
-                hx-target="body"
-                hx-swap="beforeend"
-                class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm tracking-widest uppercase hover:opacity-80 transition-opacity cursor-pointer border-none">
+        <a href="/generar/stream/<%= storyId %>?regenerate=1"
+           class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm tracking-widest uppercase hover:opacity-80 transition-opacity">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
-        </button>
+        </a>
       <% } else if (storyStatus === 'failed') { %>
         <form method="POST" action="/historia/<%= storyId %>/generar">
           <button type="submit"
@@ -146,13 +315,28 @@
 
   <%/* ── Botón iniciar (visible hasta que el usuario haga click) ─ */%>
   <div id="start-panel" class="flex flex-col items-center justify-center py-24 gap-8">
-    <div class="text-center">
-      <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
-      <button onclick="initiateGeneration()"
-              class="px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
-        <i data-lucide="sparkles" class="w-6 h-6 inline mr-3 group-hover:rotate-12 transition-transform"></i>
-        Iniciar generación
-      </button>
+    <div class="text-center max-w-2xl">
+      <% if (regenerateMode) { %>
+        <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para regenerar?</p>
+        <div class="flex items-start gap-3 mb-8 p-4 border border-orange-700/50 bg-orange-950/20 text-left">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-400 shrink-0 mt-0.5"></i>
+          <p class="text-orange-200 text-sm leading-relaxed">
+            Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
+          </p>
+        </div>
+        <button onclick="initiateRegeneration()"
+                class="px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
+          <i data-lucide="sparkles" class="w-6 h-6 inline mr-3 group-hover:rotate-12 transition-transform"></i>
+          Iniciar regeneración
+        </button>
+      <% } else { %>
+        <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
+        <button onclick="initiateGeneration()"
+                class="px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
+          <i data-lucide="sparkles" class="w-6 h-6 inline mr-3 group-hover:rotate-12 transition-transform"></i>
+          Iniciar generación
+        </button>
+      <% } %>
     </div>
   </div>
 
@@ -406,6 +590,33 @@
     document.getElementById("start-panel").classList.add("hidden");
     document.getElementById("initial-spinner").classList.remove("hidden");
     lucide.createIcons();
+    startStream();
+  }
+
+  // Spec-219: regeneración no destructiva — el PATCH (que dispara la limpieza
+  // de beats/journal/anchors/MD por Spec-216) solo se ejecuta cuando el usuario
+  // confirma desde acá. Hasta este click, la historia mantiene status=completed.
+  async function initiateRegeneration() {
+    document.getElementById("start-panel").classList.add("hidden");
+    document.getElementById("initial-spinner").classList.remove("hidden");
+    lucide.createIcons();
+
+    const CORE_URL = STREAM_URL.replace(/\/stories\/.*/, "");
+    try {
+      const resp = await fetch(`${CORE_URL}/stories/${STORY_ID}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "processing" }),
+      });
+      if (!resp.ok) {
+        const detail = await resp.text();
+        showError(`No se pudo iniciar la regeneración: ${detail || resp.status}`);
+        return;
+      }
+    } catch (err) {
+      showError("Error de red al iniciar la regeneración. Verificá la conexión con el servidor.");
+      return;
+    }
     startStream();
   }
 

@@ -18,7 +18,6 @@ def _write(tmp_path: Path, name: str, content: str) -> None:
 
 
 class TestTemplateLoaderLoad:
-
     def test_carga_archivo_existente(self, loader, tmp_path):
         _write(tmp_path, "foo.md", "hola mundo")
         assert loader.load("foo.md") == "hola mundo"
@@ -38,7 +37,6 @@ class TestTemplateLoaderLoad:
 
 
 class TestTemplateLoaderVariant:
-
     def test_variante_compact(self, loader):
         with patch("src.application.services.template_loader.settings") as m:
             m.active_profile_config.return_value = {"prompt_variant": "compact"}
@@ -56,7 +54,6 @@ class TestTemplateLoaderVariant:
 
 
 class TestTemplateLoaderVoiceTemplateName:
-
     def test_compact_con_archivo_existente(self, loader, tmp_path):
         _write(tmp_path, "voice_compact.md", "x")
         with patch("src.application.services.template_loader.settings") as m:

@@ -7,7 +7,6 @@ Verifica:
 - El campo no aparece en llamadas que no lo tienen
 """
 
-
 import pytest
 
 from src.application.services.debug_collector import (
@@ -120,8 +119,20 @@ class TestDebugRendererNarrativeContext:
 
     def test_narrative_context_appears_in_voz_section(self, tmp_path):
         c = DebugCollector()
-        c.record(**_make_record(narrative_context="ACTO 1: Exposición\nARCO EMOCIONAL: calma → inquietud"))
-        path = c.write(tmp_path, {"title": "Test", "profile": "ollama-qwen25-14b", "provider": "ollama", "story_id": "xyz"})
+        c.record(
+            **_make_record(
+                narrative_context="ACTO 1: Exposición\nARCO EMOCIONAL: calma → inquietud"
+            )
+        )
+        path = c.write(
+            tmp_path,
+            {
+                "title": "Test",
+                "profile": "ollama-qwen25-14b",
+                "provider": "ollama",
+                "story_id": "xyz",
+            },
+        )
         content = path.read_text(encoding="utf-8")
         assert "Narrative Context" in content
         assert "ACTO 1: Exposición" in content
@@ -143,10 +154,12 @@ class TestDebugRendererNarrativeContext:
     def test_multiple_beats_narrative_context(self, tmp_path):
         c = DebugCollector()
         for i in range(1, 4):
-            c.record(**_make_record(
-                beat_number=i,
-                narrative_context=f"ACTO {i}: contexto del beat {i}.",
-            ))
+            c.record(
+                **_make_record(
+                    beat_number=i,
+                    narrative_context=f"ACTO {i}: contexto del beat {i}.",
+                )
+            )
         path = c.write(tmp_path, {})
         content = path.read_text(encoding="utf-8")
         for i in range(1, 4):

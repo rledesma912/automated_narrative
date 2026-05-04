@@ -137,7 +137,7 @@ const personajes = story.personajes_full || [];
 
     <% if (showStartButton) { %>
       <div class="flex items-center gap-4 w-full">
-        <a href="/generar/stream/<%= story.id %>"
+        <a href="/generar/stream/<%= story.id %><%= story.status === 'completed' ? '?regenerate=1' : '' %>"
            class="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-forge-accent text-forge-text text-lg font-bold
                   tracking-widest uppercase hover:opacity-80 transition-opacity shadow-lg">
           <i data-lucide="<%= story.status === 'completed' ? 'refresh-cw' : 'zap' %>" class="w-6 h-6"></i>
@@ -151,14 +151,14 @@ const personajes = story.personajes_full || [];
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (story.status === 'completed') { %>
-        <button hx-get="/modales/confirmar-regenerar/<%= story.id %>"
-                hx-target="body"
-                hx-swap="beforeend"
-                class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
-                       tracking-widest uppercase hover:opacity-80 transition-opacity cursor-pointer border-none">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-          Regenerar
-        </button>
+        <form method="POST" action="/historia/<%= story.id %>/generar">
+          <button type="submit"
+                  class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
+                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Regenerar
+          </button>
+        </form>
       <% } else { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
           <button type="submit"

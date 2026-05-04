@@ -42,8 +42,10 @@ class NarrativeLogger:
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
         # Evitar handlers duplicados si _setup_loggers se llama más de una vez
-        if not any(isinstance(h, logging.FileHandler) and h.baseFilename == str(main_log.resolve())
-                   for h in root_logger.handlers):
+        if not any(
+            isinstance(h, logging.FileHandler) and h.baseFilename == str(main_log.resolve())
+            for h in root_logger.handlers
+        ):
             root_logger.addHandler(file_handler)
 
         # "narrative" logger: mensajes de CLI/orquestador con formato idéntico.

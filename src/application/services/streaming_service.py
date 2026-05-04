@@ -8,7 +8,6 @@ no solo entre beats (crítico para conexiones largas con Nginx/Browser).
 import asyncio
 import logging
 from collections.abc import AsyncGenerator
-from pathlib import Path
 
 from src.application.services.observability_service import observability
 from src.application.use_cases.director_use_case import DirectorUseCase
@@ -48,29 +47,19 @@ async def stream_story(
     # ── Productor principal ───────────────────────────────────────────────────
     async def _main_producer():
         try:
+            # Spec-220: la limpieza canónica de artefactos vive en update_story_status
+            # (Spec-216 Slice A). La idempotencia del SSE la garantiza StreamSessionManager:
+            # un solo productor por story_id, las conexiones extra se atan a la sesión
+            # existente. Sin necesidad de salvaguardas defensivas acá.
             if story_repo is not None:
-                # Salvaguarda redundante (Spec-216): la limpieza canónica ocurre en
-                # update_story_status cuando se confirma la regeneración. Este bloque
-                # cubre el caso de un stream iniciado sin pasar por ese endpoint.
-                # Ambas rutas son idempotentes — sin riesgo de doble limpieza.
-                if story.status.value in ("completed", "failed", "processing"):
-                    observability.record(
-                        category="generation",
-                        message="Limpiando artefactos previos para reinicio de narrativa",
-                        story_id=str(story.id),
-                        story_title=story.title,
-                    )
-                    if story.file_path:
-                        md_file = Path("frontend/public") / story.file_path
-                        md_file.unlink(missing_ok=True)
-                        await story_repo.update_file_path(story.id, None)
-                    await story_repo.clear_story_artifacts(story.id)
                 await story_repo.update_status(story.id, "processing")
 
-            await queue.put(StreamEvent(
-                event=StreamEventType.STATUS,
-                data={"msg": "Analizando sinopsis y extrayendo anclajes...", "step": "analyst"},
-            ))
+            await queue.put(
+                StreamEvent(
+                    event=StreamEventType.STATUS,
+                    data={"msg": "Analizando sinopsis y extrayendo anclajes...", "step": "analyst"},
+                )
+            )
 
             beat_number = 0
             beats_collected = []
@@ -78,31 +67,37 @@ async def stream_story(
                 beat_number += 1
                 beats_collected.append(macro_beat)
 
-                await queue.put(StreamEvent(
-                    event=StreamEventType.BEAT_START,
-                    data={
-                        "number": beat_number,
-                        "type": macro_beat.beat_type.value if macro_beat.beat_type else "",
-                    },
-                ))
+                await queue.put(
+                    StreamEvent(
+                        event=StreamEventType.BEAT_START,
+                        data={
+                            "number": beat_number,
+                            "type": macro_beat.beat_type.value if macro_beat.beat_type else "",
+                        },
+                    )
+                )
 
                 # Persistir beat en DB antes de emitir al cliente
                 if beat_repo is not None:
                     await beat_repo.save(macro_beat, story.id)
 
                 if beat_number < num_beats:
-                    await queue.put(StreamEvent(
-                        event=StreamEventType.STATUS,
-                        data={
-                            "msg": f"Narrando beat {beat_number + 1}/{num_beats}...",
-                            "step": "mapper",
-                        },
-                    ))
+                    await queue.put(
+                        StreamEvent(
+                            event=StreamEventType.STATUS,
+                            data={
+                                "msg": f"Narrando beat {beat_number + 1}/{num_beats}...",
+                                "step": "mapper",
+                            },
+                        )
+                    )
 
-                await queue.put(StreamEvent(
-                    event=StreamEventType.BEAT_DONE,
-                    data={"number": beat_number, "content": macro_beat.content},
-                ))
+                await queue.put(
+                    StreamEvent(
+                        event=StreamEventType.BEAT_DONE,
+                        data={"number": beat_number, "content": macro_beat.content},
+                    )
+                )
 
             if story_repo is not None:
                 await story_repo.update_status(story.id, "completed")
@@ -112,7 +107,7 @@ async def stream_story(
                     message=f"Generación completa: '{story.title}'",
                     type="success",
                     story_id=str(story.id),
-                    story_title=story.title
+                    story_title=story.title,
                 )
 
             # Exportar MD y persistir file_path
@@ -125,14 +120,16 @@ async def stream_story(
                 except Exception:
                     logger.exception("[STREAMING] Error al exportar MD")
 
-            await queue.put(StreamEvent(
-                event=StreamEventType.DONE,
-                data={
-                    "story_id": str(story.id),
-                    "total_beats": beat_number,
-                    "file_path": file_path,
-                },
-            ))
+            await queue.put(
+                StreamEvent(
+                    event=StreamEventType.DONE,
+                    data={
+                        "story_id": str(story.id),
+                        "total_beats": beat_number,
+                        "file_path": file_path,
+                    },
+                )
+            )
 
         except asyncio.CancelledError:
             if story_repo is not None:
@@ -148,17 +145,19 @@ async def stream_story(
                 message=f"Error en generación: {str(exc)}",
                 type="error",
                 story_id=str(story.id),
-                story_title=story.title
+                story_title=story.title,
             )
             if story_repo is not None:
                 try:
                     await story_repo.update_status(story.id, "failed")
                 except Exception:
                     pass
-            await queue.put(StreamEvent(
-                event=StreamEventType.ERROR,
-                data={"msg": str(exc)},
-            ))
+            await queue.put(
+                StreamEvent(
+                    event=StreamEventType.ERROR,
+                    data={"msg": str(exc)},
+                )
+            )
         finally:
             await queue.put(_SENTINEL)
 
@@ -177,14 +176,16 @@ async def stream_story(
                 )
             except asyncio.TimeoutError:
                 if not stop.is_set():
-                    await queue.put(StreamEvent(
-                        event=StreamEventType.HEARTBEAT,
-                        data={"alive": True},
-                    ))
+                    await queue.put(
+                        StreamEvent(
+                            event=StreamEventType.HEARTBEAT,
+                            data={"alive": True},
+                        )
+                    )
 
     stop_event = asyncio.Event()
     main_task = asyncio.create_task(_main_producer())
-    hb_task   = asyncio.create_task(_heartbeat_producer(stop_event))
+    hb_task = asyncio.create_task(_heartbeat_producer(stop_event))
 
     try:
         while True:

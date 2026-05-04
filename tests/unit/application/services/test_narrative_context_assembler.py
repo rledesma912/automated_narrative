@@ -32,7 +32,7 @@ def assembler(repo) -> NarrativeContextAssembler:
     return NarrativeContextAssembler(repo)
 
 
-def _beat_anchors(beat_id: int, repo: BeatSpecRepository | None = None) -> dict:
+def _beat_anchors(beat_id: int, _repo: BeatSpecRepository | None = None) -> dict:
     analyst = StoryAnalystService(MagicMock(), MagicMock())
     return analyst.resolve_beat_anchors(_ANCHORS, beat_id)
 
@@ -42,7 +42,6 @@ def _beat(number: int, summary: str = "La familia llega.", scenario: str = "La c
 
 
 class TestNarrativeContextAssemblerBasic:
-
     def test_retorna_string_no_vacio(self, assembler, repo):
         beat = _beat(1)
         result = assembler.assemble(beat, _beat_anchors(1, repo))
@@ -87,7 +86,6 @@ class TestNarrativeContextAssemblerBasic:
 
 
 class TestNarrativeContextAssemblerSnapshot:
-
     def test_sin_snapshot_no_incluye_seccion_memoria(self, assembler, repo):
         beat = _beat(1)
         result = assembler.assemble(beat, _beat_anchors(1, repo), prev_snapshot=None)
@@ -95,11 +93,13 @@ class TestNarrativeContextAssemblerSnapshot:
 
     def test_con_snapshot_incluye_last_events(self, assembler, repo):
         beat = _beat(2)
-        snapshot = json.dumps({
-            "last_events": "La familia llegó a la fiesta.",
-            "unresolved_mysteries": "",
-            "physical_emotional_state": "Tranquilos",
-        })
+        snapshot = json.dumps(
+            {
+                "last_events": "La familia llegó a la fiesta.",
+                "unresolved_mysteries": "",
+                "physical_emotional_state": "Tranquilos",
+            }
+        )
         result = assembler.assemble(beat, _beat_anchors(2, repo), prev_snapshot=snapshot)
         assert "La familia llegó a la fiesta." in result
 
@@ -117,7 +117,6 @@ class TestNarrativeContextAssemblerSnapshot:
 
 
 class TestNarrativeContextAssemblerReglas:
-
     def test_reglas_activas_se_incluyen(self, assembler, repo):
         beat = _beat(1)
         beat.active_rules = ["No cruzar el monte de noche"]

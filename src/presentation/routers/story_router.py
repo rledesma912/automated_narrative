@@ -59,9 +59,9 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
     raw_rules: list[dict] = sc.get("rules") or []
     typed_rules = [
         {
-            "id":      r.get("id", ""),
+            "id": r.get("id", ""),
             "content": r.get("text") or r.get("content", ""),
-            "type":    r.get("type", ""),
+            "type": r.get("type", ""),
         }
         for r in raw_rules
         if r.get("text") or r.get("content")
@@ -98,7 +98,7 @@ async def create_story(
             category="database",
             message=f"Historia '{story.title}' guardada como {action}",
             story_id=str(story.id),
-            story_title=story.title
+            story_title=story.title,
         )
 
         return StoryResponse(
@@ -185,13 +185,16 @@ async def update_story(
 ):
     """Actualiza datos de una historia en estado draft (Spec-214 F2)."""
     from uuid import uuid4
+
     from src.domain.models import RuleType, Scenario, TypedRule
 
     story = await repo.get_by_id(UUID(story_id))
     if not story:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
     if story.status != StoryStatus.DRAFT:
-        raise HTTPException(status_code=422, detail="Solo se pueden editar historias en estado draft")
+        raise HTTPException(
+            status_code=422, detail="Solo se pueden editar historias en estado draft"
+        )
 
     dto = _request_to_dto(request)
     story.title = dto.title
@@ -217,17 +220,21 @@ async def update_story(
                 rule_type = RuleType(raw_type) if raw_type else None
             except ValueError:
                 rule_type = None
-            typed.append(TypedRule(
-                id=r.get("id") or str(uuid4()),
-                story_id=story.id,
-                content=r.get("content", ""),
-                type=rule_type,
-                intensity=r.get("intensity"),
-            ))
+            typed.append(
+                TypedRule(
+                    id=r.get("id") or str(uuid4()),
+                    story_id=story.id,
+                    content=r.get("content", ""),
+                    type=rule_type,
+                    intensity=r.get("intensity"),
+                )
+            )
         story.typed_rules = typed
 
     await repo.save(story)
-    return StoryResponse(id=str(story.id), title=story.title, status=story.status.value, created_at=story.created_at)
+    return StoryResponse(
+        id=str(story.id), title=story.title, status=story.status.value, created_at=story.created_at
+    )
 
 
 @router.patch("/stories/{story_id}/file-path", status_code=200)
@@ -264,10 +271,14 @@ async def delete_story(
         md_file = Path("frontend/public") / story.file_path
         if md_file.exists():
             md_file.unlink()
-            observability.record("system", f"Archivo físico eliminado: {story.file_path}", story_id=story_id)
+            observability.record(
+                "system", f"Archivo físico eliminado: {story.file_path}", story_id=story_id
+            )
 
     await repo.delete(UUID(story_id))
-    observability.record("database", f"Historia '{story.title}' eliminada de DB", type="warning", story_id=story_id)
+    observability.record(
+        "database", f"Historia '{story.title}' eliminada de DB", type="warning", story_id=story_id
+    )
     return Response(status_code=204)
 
 

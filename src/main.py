@@ -11,7 +11,7 @@ from src.presentation.routers import beat_router, export_router, story_router, s
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     await init_db()
     await SQLStoryRepository().recover_processing_stories()
     yield

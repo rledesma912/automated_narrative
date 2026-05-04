@@ -13,7 +13,9 @@ class CreateStoryUseCase:
     def __init__(self, story_repository: StoryRepository):
         self.story_repository = story_repository
 
-    async def execute(self, dto: StoryCreateDTO, initial_status: StoryStatus = StoryStatus.DRAFT) -> Story:
+    async def execute(
+        self, dto: StoryCreateDTO, initial_status: StoryStatus = StoryStatus.DRAFT
+    ) -> Story:
         """Crea una nueva historia."""
         story = Story(
             title=dto.title,
@@ -43,13 +45,15 @@ class CreateStoryUseCase:
                     rule_type = RuleType(raw_type) if raw_type else None
                 except ValueError:
                     rule_type = None
-                typed.append(TypedRule(
-                    id=r.get("id") or str(uuid4()),
-                    story_id=story.id,
-                    content=r.get("content", ""),
-                    type=rule_type,
-                    intensity=r.get("intensity"),
-                ))
+                typed.append(
+                    TypedRule(
+                        id=r.get("id") or str(uuid4()),
+                        story_id=story.id,
+                        content=r.get("content", ""),
+                        type=rule_type,
+                        intensity=r.get("intensity"),
+                    )
+                )
             story.typed_rules = typed
 
         return await self.story_repository.save(story)

@@ -56,7 +56,9 @@ class TestMarkdownRenderer:
         assert "## Acto 2" in result
 
     def test_beat_summary_not_used_as_header(self):
-        beats = [Beat(number=1, summary="Resumen largo que no debería aparecer", content="Contenido.")]
+        beats = [
+            Beat(number=1, summary="Resumen largo que no debería aparecer", content="Contenido.")
+        ]
         story = _make_story(beats)
         result = self.renderer.render(story)
         assert "Resumen largo que no debería aparecer" not in result

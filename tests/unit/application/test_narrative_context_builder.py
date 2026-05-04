@@ -40,7 +40,9 @@ def _beat_anchors(beat_id: int) -> dict:
     return analyst.resolve_beat_anchors(_ANCHORS, beat_id)
 
 
-def _make_beat(number: int, summary: str = "La familia llega temprano.", scenario: str = "La casa de la abuela") -> MacroBeat:
+def _make_beat(
+    number: int, summary: str = "La familia llega temprano.", scenario: str = "La casa de la abuela"
+) -> MacroBeat:
     return MacroBeat(
         number=number,
         summary=summary,
@@ -94,11 +96,13 @@ class TestBuildNarrativeContext:
         """B3 — contiene last_events del memory_snapshot anterior."""
         builder = PromptBuilder()
         beat = _make_beat(2)
-        snapshot = json.dumps({
-            "last_events": "La familia llegó a la fiesta.",
-            "unresolved_mysteries": "",
-            "physical_emotional_state": "Tranquilos",
-        })
+        snapshot = json.dumps(
+            {
+                "last_events": "La familia llegó a la fiesta.",
+                "unresolved_mysteries": "",
+                "physical_emotional_state": "Tranquilos",
+            }
+        )
         result = builder.build_narrative_context(beat, _beat_anchors(2), prev_snapshot=snapshot)
         assert "La familia llegó a la fiesta." in result
 

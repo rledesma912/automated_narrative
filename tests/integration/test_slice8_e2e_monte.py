@@ -21,12 +21,15 @@ from src.infrastructure.parsers.markdown_parser import MarkdownStoryParser
 
 # ── Mock LLM con secuencia de respuestas ─────────────────────────────────────
 
-_ANALYST_RESPONSE = json.dumps({
-    "initial_state": "Irene llega tranquila al campo, sin sospechar nada.",
-    "threat_nature": "Una presencia que imita a los conocidos de la familia.",
-    "horror_peak": "La figura de María inmóvil en el claro del monte.",
-    "spatial_anchor": "Monte de los Espinillos: espinillos cerrados, barro, relámpagos.",
-}, ensure_ascii=False)
+_ANALYST_RESPONSE = json.dumps(
+    {
+        "initial_state": "Irene llega tranquila al campo, sin sospechar nada.",
+        "threat_nature": "Una presencia que imita a los conocidos de la familia.",
+        "horror_peak": "La figura de María inmóvil en el claro del monte.",
+        "spatial_anchor": "Monte de los Espinillos: espinillos cerrados, barro, relámpagos.",
+    },
+    ensure_ascii=False,
+)
 
 _MAPPER_RESPONSES = [
     (
@@ -69,11 +72,14 @@ _VOZ_RESPONSES = [
     "De a poco, sin que supiéramos exactamente cuándo, el monte nos soltó. El caballo caminó solo hacia la salida. Llegamos al amanecer. Nadie habló del claro. Pero todos lo recordamos.",
 ]
 
-_JOURNAL_RESPONSE = json.dumps({
-    "last_events": "La familia transitó el monte a caballo bajo la tormenta.",
-    "unresolved_mysteries": "La figura de María en el claro.",
-    "physical_emotional_state": "Agotados y aterrados.",
-}, ensure_ascii=False)
+_JOURNAL_RESPONSE = json.dumps(
+    {
+        "last_events": "La familia transitó el monte a caballo bajo la tormenta.",
+        "unresolved_mysteries": "La figura de María en el claro.",
+        "physical_emotional_state": "Agotados y aterrados.",
+    },
+    ensure_ascii=False,
+)
 
 
 class _SequenceLLM:
@@ -92,7 +98,9 @@ class _SequenceLLM:
             seq.append(_JOURNAL_RESPONSE)
         self._sequence = seq
 
-    async def generate(self, prompt, *, system_prompt=None, model="mock", temperature=0.6, role=None, **kwargs):
+    async def generate(
+        self, prompt, *, system_prompt=None, model="mock", temperature=0.6, role=None, **kwargs
+    ):
         idx = self.call_count
         self.call_count += 1
         text = self._sequence[idx] if idx < len(self._sequence) else "Fallback."
@@ -104,11 +112,13 @@ class _SequenceLLM:
 
 # ── Fixture: Story desde el_monte_prohibido.md ───────────────────────────────
 
+
 def _load_story() -> Story:
     input_dir = Path(__file__).parent.parent.parent / "input_stories"
     parser = MarkdownStoryParser(input_dir=input_dir)
     data = parser.parse("el_monte_prohibido.md")
     from src.domain.models import Scenario
+
     story = Story(
         title=data.title,
         protagonista=data.protagonista,
@@ -127,8 +137,8 @@ def _load_story() -> Story:
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
-class TestSlice8E2EMontePipeline:
 
+class TestSlice8E2EMontePipeline:
     @pytest.fixture
     def story(self):
         return _load_story()

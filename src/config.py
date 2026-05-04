@@ -57,9 +57,7 @@ def _resolve_active_profile(core: dict, env_override: str | None) -> tuple[str, 
 
 
 _llm_core: dict = _load_llm_core()
-_active_profile_name, _profile = _resolve_active_profile(
-    _llm_core, os.getenv("LLM_PROFILE")
-)
+_active_profile_name, _profile = _resolve_active_profile(_llm_core, os.getenv("LLM_PROFILE"))
 
 
 class Settings(BaseSettings):
@@ -140,6 +138,12 @@ class Settings(BaseSettings):
 
     @property
     def ollama_host(self) -> str:
+        # Precedencia: env OLLAMA_HOST → profiles.<perfil>.ollama.host → fallback localhost.
+        # Permite que la API en Docker use host.docker.internal vía docker-compose env
+        # mientras el CLI en host cae al YAML (localhost).
+        env_host = os.getenv("OLLAMA_HOST")
+        if env_host:
+            return env_host
         return _profile.get("ollama", {}).get("host", "http://localhost:11434")
 
     @property
@@ -194,9 +198,7 @@ def _reload_profile_for_tests() -> None:
     """
     global _llm_core, _active_profile_name, _profile
     _llm_core = _load_llm_core()
-    _active_profile_name, _profile = _resolve_active_profile(
-        _llm_core, os.getenv("LLM_PROFILE")
-    )
+    _active_profile_name, _profile = _resolve_active_profile(_llm_core, os.getenv("LLM_PROFILE"))
 
 
 settings = Settings()

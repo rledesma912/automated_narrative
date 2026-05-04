@@ -43,7 +43,7 @@ class SQLBeatRepository:
         # Buscamos por story_id y number para ser seguros.
         cursor = await conn.execute(
             "SELECT id FROM macro_beat WHERE story_id = ? AND number = ?",
-            (str(story_id), beat.number)
+            (str(story_id), beat.number),
         )
         row = await cursor.fetchone()
         beat_db_id = row["id"]
@@ -56,13 +56,13 @@ class SQLBeatRepository:
                 # Buscar el ID de la regla por su contenido y story_id
                 cursor_rule = await conn.execute(
                     "SELECT id FROM rule WHERE story_id = ? AND content = ?",
-                    (str(story_id), rule_content)
+                    (str(story_id), rule_content),
                 )
                 rule_row = await cursor_rule.fetchone()
                 if rule_row:
                     await conn.execute(
                         "INSERT INTO macro_beat_rule (macro_beat_id, rule_id) VALUES (?, ?)",
-                        (beat_db_id, rule_row["id"])
+                        (beat_db_id, rule_row["id"]),
                     )
 
         await conn.commit()
@@ -113,11 +113,11 @@ class SQLBeatRepository:
 
         # Cargar contenidos de reglas via JOIN
         cursor = await conn.execute(
-            """SELECT r.content 
-               FROM rule r 
-               JOIN macro_beat_rule mbr ON r.id = mbr.rule_id 
+            """SELECT r.content
+               FROM rule r
+               JOIN macro_beat_rule mbr ON r.id = mbr.rule_id
                WHERE mbr.macro_beat_id = ?""",
-            (beat_db_id,)
+            (beat_db_id,),
         )
         rule_rows = await cursor.fetchall()
         active_rules = [r["content"] for r in rule_rows]

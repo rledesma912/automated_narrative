@@ -1,6 +1,5 @@
 """Tests for domain models."""
 
-
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryMetadata, StoryStatus
 
 
@@ -86,7 +85,6 @@ class TestNarrativeJournal:
 
 
 class TestMacroBeatBehavior:
-
     def test_is_narrated_true_cuando_content_y_completed(self):
         beat = MacroBeat(number=1, summary="T", content="Prosa generada.", status="completed")
         assert beat.is_narrated() is True
@@ -121,11 +119,14 @@ class TestMacroBeatBehavior:
 
 
 class TestStoryBehavior:
-
     def _story(self, beats=None):
         return Story(
-            title="T", protagonista="P", relator="tercera_persona",
-            sinopsis="S", atmosfera="a", beats=beats or [],
+            title="T",
+            protagonista="P",
+            relator="tercera_persona",
+            sinopsis="S",
+            atmosfera="a",
+            beats=beats or [],
         )
 
     def test_has_beats_false_sin_beats(self):
@@ -165,7 +166,9 @@ class TestStoryBehavior:
         assert all(b.is_narrated() for b in completed)
 
     def test_get_pending_beats_vacio_si_todos_narrados(self):
-        beats = [MacroBeat(number=i, summary="A", content="X", status="completed") for i in range(1, 4)]
+        beats = [
+            MacroBeat(number=i, summary="A", content="X", status="completed") for i in range(1, 4)
+        ]
         assert self._story(beats).get_pending_beats() == []
 
     def test_get_completed_beats_vacio_si_ninguno_narrado(self):
@@ -174,7 +177,6 @@ class TestStoryBehavior:
 
 
 class TestNarrativeJournalBehavior:
-
     def test_is_empty_true_cuando_vacio(self):
         assert NarrativeJournal().is_empty() is True
 
@@ -188,17 +190,22 @@ class TestNarrativeJournalBehavior:
         assert NarrativeJournal(physical_emotional_state="asustado").is_empty() is False
 
     def test_is_empty_false_con_todo(self):
-        j = NarrativeJournal(last_events="E", unresolved_mysteries="?", physical_emotional_state="S")
+        j = NarrativeJournal(
+            last_events="E", unresolved_mysteries="?", physical_emotional_state="S"
+        )
         assert j.is_empty() is False
 
 
 class TestStoryMetadata:
-
     def _story(self, **kwargs):
         defaults = dict(
-            title="T", protagonista="Irene", relator="tercera_persona",
-            sinopsis="Una historia de terror.", atmosfera="oscura",
-            reglas=["Regla A"], storyteller_config={"voz": "primera"},
+            title="T",
+            protagonista="Irene",
+            relator="tercera_persona",
+            sinopsis="Una historia de terror.",
+            atmosfera="oscura",
+            reglas=["Regla A"],
+            storyteller_config={"voz": "primera"},
         )
         defaults.update(kwargs)
         return Story(**defaults)
@@ -228,13 +235,17 @@ class TestStoryMetadata:
         assert m.storyteller_config == {"voz": "primera"}
 
     def test_has_rules_true_con_reglas(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s",
-                          atmosfera="a", reglas=["x"])
+        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", atmosfera="a", reglas=["x"])
         assert m.has_rules() is True
 
     def test_has_rules_true_con_storyteller_config(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s",
-                          atmosfera="a", storyteller_config={"k": "v"})
+        m = StoryMetadata(
+            protagonista="P",
+            relator="r",
+            sinopsis="s",
+            atmosfera="a",
+            storyteller_config={"k": "v"},
+        )
         assert m.has_rules() is True
 
     def test_has_rules_false_sin_nada(self):
@@ -243,15 +254,19 @@ class TestStoryMetadata:
 
 
 class TestStoryAggregate:
-
     def _story(self, beats=None):
         return Story(
-            title="T", protagonista="P", relator="tercera_persona",
-            sinopsis="S", atmosfera="a", beats=beats or [],
+            title="T",
+            protagonista="P",
+            relator="tercera_persona",
+            sinopsis="S",
+            atmosfera="a",
+            beats=beats or [],
         )
 
     def test_metadata_property_retorna_story_metadata(self):
         from src.domain.models import StoryMetadata
+
         story = self._story()
         assert isinstance(story.metadata, StoryMetadata)
 

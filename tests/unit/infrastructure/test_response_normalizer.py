@@ -81,7 +81,7 @@ class TestResponseNormalizerPreservesMarkdown:
 
     def test_preserves_code_fences(self):
         n = ResponseNormalizer(config=_config())
-        raw = "Instrucción:\n\n```json\n{\"key\": \"value\"}\n```"
+        raw = 'Instrucción:\n\n```json\n{"key": "value"}\n```'
         result = n.normalize(raw)
         assert "```json" in result
         assert "```" in result

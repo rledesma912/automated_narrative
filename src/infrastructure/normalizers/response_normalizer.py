@@ -22,9 +22,7 @@ class ResponseNormalizer:
 
         if role:
             role_override = self._get_role_override(role)
-            self._strip_patterns = role_override.get(
-                "strip_line_patterns", self._strip_patterns
-            )
+            self._strip_patterns = role_override.get("strip_line_patterns", self._strip_patterns)
 
     def normalize(self, text: str, model_name: str = "") -> str:
         """Aplica todos los filtros y retorna texto limpio."""

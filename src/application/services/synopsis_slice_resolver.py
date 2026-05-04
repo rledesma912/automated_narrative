@@ -5,6 +5,7 @@ import re
 
 logger = logging.getLogger(__name__)
 
+
 class SynopsisSliceResolver:
     """Divide la sinopsis en segmentos y los asigna a cada beat."""
 
@@ -37,9 +38,11 @@ class SynopsisSliceResolver:
         paragraphs = [p.strip() for p in sinopsis.split("\n\n") if p.strip()]
 
         if len(paragraphs) < total_beats:
-            logger.debug(f"[SynopsisSliceResolver] Sinopsis con pocos párrafos ({len(paragraphs)}). Usando fallback de oraciones.")
+            logger.debug(
+                f"[SynopsisSliceResolver] Sinopsis con pocos párrafos ({len(paragraphs)}). Usando fallback de oraciones."
+            )
             sentences = re.split(r"(?<=[.!?])\s+", sinopsis.strip())
-            return " ".join(sentences[:self.FALLBACK_SENTENCE_COUNT]) if sentences else sinopsis
+            return " ".join(sentences[: self.FALLBACK_SENTENCE_COUNT]) if sentences else sinopsis
 
         segment_size = len(paragraphs) / total_beats
         start = int((beat_number - 1) * segment_size)

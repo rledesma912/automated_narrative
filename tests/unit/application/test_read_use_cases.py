@@ -14,7 +14,9 @@ from src.domain.models import Beat, Story
 
 
 def _story(title: str = "T") -> Story:
-    return Story(title=title, protagonista="P", relator="tercera_persona", sinopsis="S", atmosfera="a")
+    return Story(
+        title=title, protagonista="P", relator="tercera_persona", sinopsis="S", atmosfera="a"
+    )
 
 
 def _beat(number: int = 1, summary: str = "evento") -> Beat:
@@ -22,7 +24,6 @@ def _beat(number: int = 1, summary: str = "evento") -> Beat:
 
 
 class TestListStoriesUseCase:
-
     @pytest.mark.asyncio
     async def test_execute_delega_a_repo(self):
         repo = MagicMock()
@@ -41,7 +42,6 @@ class TestListStoriesUseCase:
 
 
 class TestGetStoryByIdUseCase:
-
     @pytest.mark.asyncio
     async def test_execute_retorna_historia(self):
         story = _story("X")
@@ -61,7 +61,6 @@ class TestGetStoryByIdUseCase:
 
 
 class TestListBeatsUseCase:
-
     @pytest.mark.asyncio
     async def test_execute_delega_a_repo(self):
         beats = [_beat(1), _beat(2)]
@@ -81,7 +80,6 @@ class TestListBeatsUseCase:
 
 
 class TestUpdateBeatUseCase:
-
     @pytest.mark.asyncio
     async def test_execute_actualiza_summary(self):
         beat = _beat(1, "original")
@@ -113,7 +111,6 @@ class TestUpdateBeatUseCase:
 
 
 class TestCreateStoryUseCaseErrorPaths:
-
     @pytest.mark.asyncio
     async def test_create_story_db_failure_propagates(self):
         """Repositorio lanza excepción en save() — el use case la propaga al caller."""

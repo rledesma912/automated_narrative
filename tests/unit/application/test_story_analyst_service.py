@@ -137,7 +137,9 @@ class TestFallbackAnchors:
     @pytest.mark.asyncio
     async def test_fallback_on_partial_sections(self):
         """Si solo hay algunas secciones, los campos faltantes usan sinopsis como fallback."""
-        partial = "## resonance_hamartia\nLa culpa callada.\n\n## resonance_hybris\nEntran de noche."
+        partial = (
+            "## resonance_hamartia\nLa culpa callada.\n\n## resonance_hybris\nEntran de noche."
+        )
         llm = _make_llm(partial)
         service = StoryAnalystService(llm, PromptBuilder())
         story = _make_story()

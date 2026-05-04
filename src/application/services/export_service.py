@@ -4,18 +4,17 @@ import logging
 import re
 from pathlib import Path
 
+from src.config import settings
 from src.domain.models import MacroBeat, Story
 from src.infrastructure.renderers import MarkdownRenderer
 from src.utils.timezone import now_argentina
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_OUTPUT_DIR = Path("frontend/public/output_stories")
-
 
 class ExportService:
     def __init__(self, output_dir: Path | None = None):
-        self._output_dir = output_dir or _DEFAULT_OUTPUT_DIR
+        self._output_dir = output_dir or Path(settings.output_dir)
         self._renderer = MarkdownRenderer()
 
     async def export(self, story: Story, beats: list[MacroBeat]) -> str:

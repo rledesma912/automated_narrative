@@ -19,11 +19,11 @@ La regeneración de una historia completada debe ser posible **con advertencia e
 
 | Vista | Estado | Acción del botón |
 |---|---|---|
-| `gallery.ejs` | `completed` | Abre modal de advertencia → confirmar → regenera |
+| `gallery.ejs` | `completed` | Form POST directo (sin modal) |
 | `gallery.ejs` | `failed`/`draft` | Form POST directo (sin cambios) |
-| `historia.ejs` | `completed` | Abre modal de advertencia → confirmar → regenera |
+| `historia.ejs` | `completed` | Form POST directo (sin modal) |
 | `historia.ejs` | `failed`/`draft` | Form POST directo (sin cambios) |
-| `streaming-room.ejs` | `completed` | Nuevo botón "Regenerar" que abre modal |
+| `streaming-room.ejs` | `completed` | Botón "Regenerar" que abre modal de advertencia |
 | `streaming-room.ejs` | `failed` | Form POST directo (sin cambios) |
 
 ---
@@ -54,14 +54,15 @@ En `_main_producer()`, antes de `clear_story_artifacts()`, si la historia tiene 
 **`frontend/src/routes/index.ts`**
 - Agregar: `router.get("/modales/confirmar-regenerar/:storyId", modalConfirmarRegenerar)`
 
-### Slice C — Frontend: Gatillar modal en gallery.ejs e historia.ejs
+### Slice C — Frontend: Quitar modal de gallery.ejs e historia.ejs
 
 **`frontend/src/views/gallery.ejs`** (líneas 61–67):
-- Si `s.status === 'completed'`: cambiar `<form method="POST">` por `<button>` HTMX con `hx-get="/modales/confirmar-regenerar/:storyId"` y `hx-target="body" hx-swap="beforeend"`
-- Otros estados: sin cambios
+- Eliminar el botón HTMX con `hx-get="/modales/confirmar-regenerar/:storyId"` para status `completed`.
+- Usar `<form method="POST">` directo para todos los estados (incluyendo `completed`).
 
 **`frontend/src/views/historia.ejs`** (líneas 153–160):
-- Misma lógica: si `completed`, botón HTMX; si no, `<form>` directo
+- Eliminar el botón HTMX para status `completed`.
+- Usar `<form method="POST">` directo para todos los estados.
 
 ### Slice D — Frontend: Botón "Regenerar" para completed en streaming-room.ejs
 
@@ -76,12 +77,12 @@ En `_main_producer()`, antes de `clear_story_artifacts()`, si la historia tiene 
 | Archivo | Tipo de cambio |
 |---|---|
 | `src/application/services/streaming_service.py` | Limpieza de MD físico + DB antes de regenerar |
-| `frontend/src/views/partials/modal_regenerar.ejs` | NUEVO — modal de advertencia específico |
-| `frontend/src/controllers/historia.controller.ts` | Agregar handler `modalConfirmarRegenerar` |
-| `frontend/src/routes/index.ts` | Agregar ruta del modal |
-| `frontend/src/views/gallery.ejs` | HTMX modal para `completed` |
-| `frontend/src/views/historia.ejs` | HTMX modal para `completed` |
-| `frontend/src/views/streaming-room.ejs` | Botón "Regenerar" para `completed` |
+| `frontend/src/views/partials/modal_regenerar.ejs` | Modal de advertencia (usado solo en streaming-room) |
+| `frontend/src/controllers/historia.controller.ts` | Handler `modalConfirmarRegenerar` (solo para streaming-room) |
+| `frontend/src/routes/index.ts` | Ruta del modal (sin cambios) |
+| `frontend/src/views/gallery.ejs` | Quitar modal - usar form POST directo |
+| `frontend/src/views/historia.ejs` | Quitar modal - usar form POST directo |
+| `frontend/src/views/streaming-room.ejs` | Botón "Regenerar" con modal para `completed` |
 
 **No se modifican:**
 - `story_router.py` — `_PATCHABLE_STATUSES` está correcto (valida destino, no origen)

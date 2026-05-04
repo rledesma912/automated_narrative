@@ -14,7 +14,7 @@ from src.application.services.prompt_strategies import (
 from src.application.services.synopsis_slice_resolver import SynopsisSliceResolver
 from src.application.services.template_loader import TemplateLoader
 from src.config import settings
-from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
+from src.domain.models import Beat, MacroBeat, NarrativeAnchors, NarrativeJournal, Story
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +54,15 @@ class PromptBuilder:
         """Build el system prompt base."""
         # El system prompt suele ser fijo (system.md), pero usamos la estrategia para el nombre si fuera necesario
         strategy = self._get_strategy()
-        template_name = strategy.get_template_name("system").replace("_compact.md", ".md") # system.md es compartido usualmente
+        template_name = strategy.get_template_name("system").replace(
+            "_compact.md", ".md"
+        )  # system.md es compartido usualmente
         template = self._load_prompt(template_name)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
+            "\n".join([f"- {s.name}" for s in story.scenarios])
+            if story.scenarios
+            else "No definidos"
         )
 
         if template:
@@ -140,12 +144,16 @@ Sinopsis: {story.sinopsis}
         voice_template = self._load_prompt(strategy.get_template_name("voice"))
         total_beats = total_beats if total_beats is not None else self.num_beats
 
-        previous_context = self._build_previous_context(previous_beats, max_chars=strategy.max_context_chars)
+        previous_context = self._build_previous_context(
+            previous_beats, max_chars=strategy.max_context_chars
+        )
         journal_context = self._build_journal_context(journal)
         persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
+            "\n".join([f"- {s.name}" for s in story.scenarios])
+            if story.scenarios
+            else "No definidos"
         )
 
         sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, "beat_slice")
@@ -158,7 +166,9 @@ Sinopsis: {story.sinopsis}
         state_change = beat_def.get("state_change", {})
 
         meta_context = strategy.format_beat_metadata(intensity, success_signal, state_change)
-        context_section = strategy.format_context_section(previous_context, journal_context, beat.number)
+        context_section = strategy.format_context_section(
+            previous_context, journal_context, beat.number
+        )
 
         continuation_cta = (
             "Continúa el relato:" if beat.number > 1 else "Escribí el primer fragmento del relato:"
@@ -220,9 +230,7 @@ Extiende este momento (150-400 palabras)."""
     ) -> str:
         return self._synopsis.resolve(sinopsis, beat_number, total_beats, strategy)
 
-    def get_beat_sinopsis_slice(
-        self, sinopsis: str, beat_number: int, total_beats: int
-    ) -> str:
+    def get_beat_sinopsis_slice(self, sinopsis: str, beat_number: int, total_beats: int) -> str:
         return self._synopsis.get_slice(sinopsis, beat_number, total_beats)
 
     def build_voice_prompt(self, story: Story) -> str:
@@ -230,7 +238,9 @@ Extiende este momento (150-400 palabras)."""
         system_template = self._load_prompt(settings.prompt_file_system)
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
+            "\n".join([f"- {s.name}" for s in story.scenarios])
+            if story.scenarios
+            else "No definidos"
         )
         persona = self._get_persona_gramatical(story.relator)
 
@@ -295,7 +305,9 @@ Instrucciones:
 
         reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
         escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios]) if story.scenarios else "No definidos"
+            "\n".join([f"- {s.name}" for s in story.scenarios])
+            if story.scenarios
+            else "No definidos"
         )
         beats_spec_compact = self._format_beats_spec_compact()
 
@@ -431,9 +443,7 @@ Instrucciones:
         """Devuelve el elenco formateado para prompts del LLM."""
         if story.personajes_full:
             return "\n".join(
-                f"- {p['name']} ({p['role']})"
-                for p in story.personajes_full
-                if p.get("name")
+                f"- {p['name']} ({p['role']})" for p in story.personajes_full if p.get("name")
             )
         return story.protagonista
 
@@ -507,9 +517,13 @@ Instrucciones:
     ) -> str:
         """Ensambla el narrative_context pre-baked que recibe el VOZ. Determinístico."""
         cast_block = self._format_cast_for_context(story) if story else None
-        return self._nc_assembler.assemble(macro_beat, beat_anchors, prev_snapshot, cast_block=cast_block)
+        return self._nc_assembler.assemble(
+            macro_beat, beat_anchors, prev_snapshot, cast_block=cast_block
+        )
 
-    def build_rule_resolver_prompt(self, story: "Story", anchors: "Optional[NarrativeAnchors]" = None) -> str:
+    def build_rule_resolver_prompt(
+        self, story: "Story", anchors: NarrativeAnchors | None = None
+    ) -> str:
         """Prompt para distribuir reglas y escenarios detallados."""
         import json as _json
 

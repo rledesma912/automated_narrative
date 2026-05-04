@@ -94,7 +94,9 @@ class DirectorUseCase:
             parser_result="n/a",
             elapsed_s=response.elapsed_s,
             system_prompt_file="story_analyst_system_compact.md" if variant == "compact" else "n/a",
-            user_prompt_file="story_analyst_compact.md" if variant == "compact" else "story_analyst.md",
+            user_prompt_file="story_analyst_compact.md"
+            if variant == "compact"
+            else "story_analyst.md",
         )
 
         story.narrative_brief = brief
@@ -181,8 +183,10 @@ class DirectorUseCase:
             on_step_done("⚖️   Distribuyendo reglas y escenarios", perf_counter() - t_step)
 
         mapper = SynopsisBeatMapper(
-            self.llm, self.prompt_builder,
-            normalizer=self.normalizer, debug_collector=self.debug_collector,
+            self.llm,
+            self.prompt_builder,
+            normalizer=self.normalizer,
+            debug_collector=self.debug_collector,
         )
         voz = self._voz
         journalist = self._journalist
@@ -206,7 +210,9 @@ class DirectorUseCase:
             beat_anchors = analyst.resolve_beat_anchors(narrative_anchors, beat_id)
 
             # Segmentación de sinopsis y datos específicos del beat
-            synopsis_slice = self.prompt_builder.get_beat_sinopsis_slice(story.sinopsis, beat_id, num_beats)
+            synopsis_slice = self.prompt_builder.get_beat_sinopsis_slice(
+                story.sinopsis, beat_id, num_beats
+            )
             dist = rule_distribution.get(str(beat_id), {})
             active_rules = dist.get("rules", [])
             s_idx = dist.get("scenario_index", 0)
@@ -244,7 +250,9 @@ class DirectorUseCase:
 
             if stop_at == cp_mapper:
                 macro_beat.status = "pending"
-                logger.debug(f"[DIRECTOR] Detenido en checkpoint 'mapper:{beat_id}' ({cp_mapper}/16)")
+                logger.debug(
+                    f"[DIRECTOR] Detenido en checkpoint 'mapper:{beat_id}' ({cp_mapper}/16)"
+                )
                 yield macro_beat, journal, 0.0
                 return
 
@@ -272,7 +280,9 @@ class DirectorUseCase:
                 return
 
             if stop_at == cp_journal:
-                logger.debug(f"[DIRECTOR] Detenido en checkpoint 'journal:{beat_id}' ({cp_journal}/16)")
+                logger.debug(
+                    f"[DIRECTOR] Detenido en checkpoint 'journal:{beat_id}' ({cp_journal}/16)"
+                )
                 yield macro_beat, journal, llm_elapsed
                 return
 

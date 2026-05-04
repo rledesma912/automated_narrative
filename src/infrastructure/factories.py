@@ -27,7 +27,9 @@ class LLMFactory:
         selected_provider = provider or settings.llm_provider
 
         if selected_provider == "gemini":
-            logger.info(f"[FACTORY] Instanciando proveedor Gemini CLI ({settings.gemini_model_name})")
+            logger.info(
+                f"[FACTORY] Instanciando proveedor Gemini CLI ({settings.gemini_model_name})"
+            )
             return GeminiCLIAdapter()
 
         if selected_provider == "anthropic":

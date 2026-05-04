@@ -11,7 +11,6 @@ def parser():
 
 
 class TestBeatResponseParser:
-
     def test_parse_scenario_and_events(self, parser):
         """Respuesta bien formateada — extrae escenario y eventos correctamente."""
         text = (

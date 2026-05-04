@@ -10,7 +10,7 @@ from src.domain.interfaces import LLMProvider
 if TYPE_CHECKING:
     from src.application.services.debug_collector import DebugCollector
     from src.application.services.prompt_builder import PromptBuilder
-    from src.domain.models import Story
+    from src.domain.models import NarrativeAnchors, Story
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,9 @@ class RuleScenarioResolverService:
         self.normalizer = normalizer
         self._debug = debug_collector
 
-    async def resolve_distribution(self, story: "Story", anchors: "Optional[NarrativeAnchors]" = None) -> dict:
+    async def resolve_distribution(
+        self, story: "Story", anchors: "NarrativeAnchors | None" = None
+    ) -> dict:
         """Llama al LLM para obtener el mapa de distribución de reglas y escenarios."""
         role_cfg = settings.role_config("director")
         model = role_cfg.get("model") or settings.llm_model
@@ -90,7 +92,9 @@ class RuleScenarioResolverService:
             logger.debug(f"[RESOLVER] Intentando parsear: {clean_text[:200]!r}")
             data = json.loads(clean_text)
         except Exception as e:
-            logger.warning(f"[RESOLVER] Error parseando distribución: {e}. Respuesta: {text[:300]!r}. Usando fallback.")
+            logger.warning(
+                f"[RESOLVER] Error parseando distribución: {e}. Respuesta: {text[:300]!r}. Usando fallback."
+            )
             num_beats = self.prompt_builder.num_beats
             return {str(i): {"rules": [], "scenario_index": 0} for i in range(1, num_beats + 1)}
 

@@ -6,7 +6,6 @@ Si alguien "corrige" el template quitando los {{ se producirá KeyError — este
 test lo detecta.
 """
 
-
 from src.application.services import PromptBuilder
 from src.domain.models import Beat, NarrativeJournal, Story
 
@@ -31,7 +30,6 @@ def _beat() -> Beat:
 
 
 class TestJournalPromptBraces:
-
     def test_prompt_no_contiene_doble_llave_apertura(self):
         builder = PromptBuilder()
         prompt = builder.build_journal_prompt(_story(), _beat())

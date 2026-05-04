@@ -11,7 +11,6 @@ def svc() -> PersonaService:
 
 
 class TestPersonaService:
-
     def test_tercera_persona(self, svc):
         assert svc.resolve("tercera_persona") == "tercera persona"
 

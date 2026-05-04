@@ -7,6 +7,7 @@ from pathlib import Path
 from src.cli import commands
 from src.cli.exceptions import CLIError
 from src.cli.logger import logger
+from src.config import settings
 
 
 def main() -> None:
@@ -20,7 +21,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("output_stories/"),
+        default=Path(settings.output_dir),
         help="Directorio de output",
     )
     parser.add_argument(
@@ -57,7 +58,9 @@ def main() -> None:
         "--input",
         help="Archivo markdown de input (en input_stories/)",
     )
-    generate_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
+    generate_parser.add_argument(
+        "--mock", action="store_true", help="Usar Mock LLM (solo para tests)"
+    )
     generate_parser.add_argument(
         "--debug",
         action="store_true",
@@ -71,7 +74,7 @@ def main() -> None:
     generate_parser.add_argument(
         "--output",
         type=Path,
-        default=Path("output_stories/"),
+        default=Path(settings.output_dir),
         help="Directorio de output",
     )
 
@@ -81,14 +84,16 @@ def main() -> None:
     plan_parser.add_argument(
         "--output",
         type=Path,
-        default=Path("output_stories/"),
+        default=Path(settings.output_dir),
         help="Directorio de output",
     )
 
     narrate_parser = subparsers.add_parser("narrate", help="Narrar beats específicos")
     narrate_parser.add_argument("--story-id", required=True, help="UUID de la historia")
     narrate_parser.add_argument("--beats", required=True, help="Beats a narrar (csv: 1,2,3)")
-    narrate_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
+    narrate_parser.add_argument(
+        "--mock", action="store_true", help="Usar Mock LLM (solo para tests)"
+    )
 
     export_parser = subparsers.add_parser("export", help="Exportar historia a archivo")
     export_parser.add_argument("--story-id", required=True, help="UUID de la historia")
@@ -101,7 +106,7 @@ def main() -> None:
     export_parser.add_argument(
         "--output",
         type=Path,
-        default=Path("output_stories/"),
+        default=Path(settings.output_dir),
         help="Directorio de output",
     )
 

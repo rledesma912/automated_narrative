@@ -70,7 +70,10 @@ clean:
 # ── Base de datos ─────────────────────────────────────────────────────────────
 
 db:
-	@chmod +x scripts/bash/init_db.sh && ./scripts/bash/init_db.sh
+	@chmod +x scripts/bash/init_db.sh
+	@# Asegurar permisos antes de crear
+	@rm -f data/stories.db && touch data/stories.db
+	@./scripts/bash/init_db.sh
 
 db-clean:
 	@chmod +x scripts/bash/db_clean.sh && ./scripts/bash/db_clean.sh

@@ -65,6 +65,22 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
   }
 
   const storyStatus = story ? String(story.status) : "processing";
+  const regenerateMode = req.query["regenerate"] === "1" && storyStatus === "completed";
+  // Spec-220: MODO MONITOR — generación en curso disparada por otra pestaña/cliente.
+  // No abre EventSource (Slice A); polling al status. Migrará a EventSource en T4 cuando
+  // el broadcaster del backend (T2+T3) garantice idempotencia.
+  const monitorMode = storyStatus === "processing" && !regenerateMode;
+
+  // En MODO MONITOR, los beats parciales también deben cargarse para mostrar progreso
+  // (la condición original `if (story.status !== "processing")` los omitía).
+  if (monitorMode && story) {
+    try {
+      const beatsResp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}/beats`, { timeout: 5000 });
+      beats = Array.isArray(beatsResp.data) ? beatsResp.data : [];
+    } catch {
+      // Sin beats parciales — la sala mostrará solo el spinner
+    }
+  }
 
   await renderPage(res, "streaming-room", {
     title: story ? String(story.title ?? "Historia") : "Generando historia...",
@@ -74,6 +90,8 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
     story,
     beats,
     storyStatus,
+    regenerateMode,
+    monitorMode,
   });
 }
 

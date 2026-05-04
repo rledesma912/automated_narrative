@@ -27,7 +27,9 @@ def _make_story(**kwargs):
         atmosfera="terror paranormal",
         scenarios=[
             Scenario(story_id=story_id, order_index=0, name="La casa de campo de la abuela María"),
-            Scenario(story_id=story_id, order_index=1, name="La casa de campo donde ocurre la fiesta"),
+            Scenario(
+                story_id=story_id, order_index=1, name="La casa de campo donde ocurre la fiesta"
+            ),
             Scenario(story_id=story_id, order_index=2, name="Monte siniestro y prohibido"),
         ],
     )
@@ -51,6 +53,7 @@ def _beat_anchors(beat_id: int) -> dict:
     from unittest.mock import MagicMock
 
     from src.application.services.story_analyst_service import StoryAnalystService
+
     analyst = StoryAnalystService(MagicMock(), PromptBuilder())
     return analyst.resolve_beat_anchors(_ANCHORS, beat_id)
 
@@ -73,26 +76,31 @@ _MAP_ONE_RESPONSE = (
 
 
 class TestMapOneReturnValue:
-
     @pytest.mark.asyncio
     async def test_returns_macro_beat(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        result = await mapper.map_one(_make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO)
+        result = await mapper.map_one(
+            _make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO
+        )
         assert isinstance(result, MacroBeat)
 
     @pytest.mark.asyncio
     async def test_beat_number_matches(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        result = await mapper.map_one(_make_story(), 2, _beat_anchors(2), active_scenario_description=_ACTIVE_SCENARIO)
+        result = await mapper.map_one(
+            _make_story(), 2, _beat_anchors(2), active_scenario_description=_ACTIVE_SCENARIO
+        )
         assert result.number == 2
 
     @pytest.mark.asyncio
     async def test_summary_not_empty(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        result = await mapper.map_one(_make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO)
+        result = await mapper.map_one(
+            _make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO
+        )
         assert result.summary != ""
 
 
@@ -103,7 +111,9 @@ class TestMapOnePromptContent:
     async def test_prompt_contains_beat_id(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        await mapper.map_one(_make_story(), 3, _beat_anchors(3), active_scenario_description=_ACTIVE_SCENARIO)
+        await mapper.map_one(
+            _make_story(), 3, _beat_anchors(3), active_scenario_description=_ACTIVE_SCENARIO
+        )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert "3" in prompt
         assert "climax" in prompt.lower() or "clim" in prompt.lower()
@@ -114,7 +124,9 @@ class TestMapOnePromptContent:
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         anchors = _beat_anchors(1)
-        await mapper.map_one(_make_story(), 1, anchors, active_scenario_description=_ACTIVE_SCENARIO)
+        await mapper.map_one(
+            _make_story(), 1, anchors, active_scenario_description=_ACTIVE_SCENARIO
+        )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert anchors["resonance"] in prompt
 
@@ -125,7 +137,9 @@ class TestMapOnePromptContent:
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         anchors = _beat_anchors(1)
         # No debe lanzar excepción
-        await mapper.map_one(_make_story(), 1, anchors, active_scenario_description=_ACTIVE_SCENARIO)
+        await mapper.map_one(
+            _make_story(), 1, anchors, active_scenario_description=_ACTIVE_SCENARIO
+        )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert len(prompt) > 0
 
@@ -136,8 +150,11 @@ class TestMapOnePromptContent:
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         snapshot = '{"last_events": "La familia llegó al campo.", "unresolved_mysteries": ""}'
         await mapper.map_one(
-            _make_story(), 2, _beat_anchors(2),
-            prev_snapshot=snapshot, active_scenario_description=_ACTIVE_SCENARIO,
+            _make_story(),
+            2,
+            _beat_anchors(2),
+            prev_snapshot=snapshot,
+            active_scenario_description=_ACTIVE_SCENARIO,
         )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert snapshot in prompt
@@ -151,8 +168,11 @@ class TestMapOneBeat1NoPrevMemory:
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         await mapper.map_one(
-            _make_story(), 1, _beat_anchors(1),
-            prev_snapshot=None, active_scenario_description=_ACTIVE_SCENARIO,
+            _make_story(),
+            1,
+            _beat_anchors(1),
+            prev_snapshot=None,
+            active_scenario_description=_ACTIVE_SCENARIO,
         )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert "MEMORIA DEL ACTO ANTERIOR" not in prompt
@@ -164,8 +184,11 @@ class TestMapOneBeat1NoPrevMemory:
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         snapshot = '{"last_events": "Llegaron al campo."}'
         await mapper.map_one(
-            _make_story(), 2, _beat_anchors(2),
-            prev_snapshot=snapshot, active_scenario_description=_ACTIVE_SCENARIO,
+            _make_story(),
+            2,
+            _beat_anchors(2),
+            prev_snapshot=snapshot,
+            active_scenario_description=_ACTIVE_SCENARIO,
         )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert "MEMORIA DEL ACTO ANTERIOR" in prompt
@@ -178,7 +201,9 @@ class TestMapOneActiveScenarioInPrompt:
     async def test_prompt_contains_active_scenario(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        await mapper.map_one(_make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO)
+        await mapper.map_one(
+            _make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO
+        )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert _ACTIVE_SCENARIO in prompt
 
@@ -186,7 +211,9 @@ class TestMapOneActiveScenarioInPrompt:
     async def test_prompt_contains_scenario_in_context_section(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        await mapper.map_one(_make_story(), 1, _beat_anchors(1), active_scenario_description="Monte siniestro")
+        await mapper.map_one(
+            _make_story(), 1, _beat_anchors(1), active_scenario_description="Monte siniestro"
+        )
         prompt = llm.generate.call_args.kwargs["prompt"]
         assert "Monte siniestro" in prompt
 
@@ -198,7 +225,9 @@ class TestMapOneActiveScenario:
     async def test_active_scenario_populated(self):
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        result = await mapper.map_one(_make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO)
+        result = await mapper.map_one(
+            _make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO
+        )
         assert result.active_scenario_id is not None
         assert result.active_scenario_id != ""
 
@@ -207,7 +236,9 @@ class TestMapOneActiveScenario:
         """El escenario extraído de la respuesta LLM toma precedencia."""
         llm = _make_llm(_MAP_ONE_RESPONSE)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
-        result = await mapper.map_one(_make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO)
+        result = await mapper.map_one(
+            _make_story(), 1, _beat_anchors(1), active_scenario_description=_ACTIVE_SCENARIO
+        )
         assert "casa" in result.active_scenario_id.lower()
 
     @pytest.mark.asyncio
@@ -217,7 +248,9 @@ class TestMapOneActiveScenario:
         llm = _make_llm(no_scenario_response)
         mapper = SynopsisBeatMapper(llm, PromptBuilder())
         result = await mapper.map_one(
-            _make_story(), 1, _beat_anchors(1),
+            _make_story(),
+            1,
+            _beat_anchors(1),
             active_scenario_description=_ACTIVE_SCENARIO,
         )
         assert result.active_scenario_id == _ACTIVE_SCENARIO

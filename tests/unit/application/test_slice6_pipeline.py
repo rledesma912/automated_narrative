@@ -58,16 +58,19 @@ def _make_macro_beat(number=1, content="Prosa narrativa."):
 
 # ── MemoryJournalist.extract() ────────────────────────────────────────────────
 
+
 class TestMemoryJournalistExtract:
     """extract() retorna (snapshot_json, NarrativeJournal)."""
 
     @pytest.mark.asyncio
     async def test_returns_tuple_of_str_and_journal(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text='{"last_events": "Llegaron al monte.", "unresolved_mysteries": "", "physical_emotional_state": "Asustados"}',
-            elapsed_s=0.2,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text='{"last_events": "Llegaron al monte.", "unresolved_mysteries": "", "physical_emotional_state": "Asustados"}',
+                elapsed_s=0.2,
+            )
+        )
         journalist = MemoryJournalist(llm, PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(1)
@@ -80,10 +83,12 @@ class TestMemoryJournalistExtract:
     @pytest.mark.asyncio
     async def test_snapshot_is_valid_json(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text='{"last_events": "La familia entró.", "unresolved_mysteries": "X", "physical_emotional_state": "Tensos"}',
-            elapsed_s=0.2,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text='{"last_events": "La familia entró.", "unresolved_mysteries": "X", "physical_emotional_state": "Tensos"}',
+                elapsed_s=0.2,
+            )
+        )
         journalist = MemoryJournalist(llm, PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(2)
@@ -97,10 +102,12 @@ class TestMemoryJournalistExtract:
     @pytest.mark.asyncio
     async def test_snapshot_reflects_journal_fields(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text='{"last_events": "Vieron la figura.", "unresolved_mysteries": "Quién es María", "physical_emotional_state": "Paralizados"}',
-            elapsed_s=0.1,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text='{"last_events": "Vieron la figura.", "unresolved_mysteries": "Quién es María", "physical_emotional_state": "Paralizados"}',
+                elapsed_s=0.1,
+            )
+        )
         journalist = MemoryJournalist(llm, PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(3)
@@ -115,16 +122,19 @@ class TestMemoryJournalistExtract:
 
 # ── VozUseCase.narrate() ─────────────────────────────────────────────────────
 
+
 class TestVozUseCaseNarrate:
     """narrate() usa el narrative_context pre-baked del MacroBeat."""
 
     @pytest.mark.asyncio
     async def test_returns_macro_beat_and_elapsed(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text="La familia avanzó lentamente por el monte.",
-            elapsed_s=1.5,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text="La familia avanzó lentamente por el monte.",
+                elapsed_s=1.5,
+            )
+        )
         voz = VozUseCase(llm, prompt_builder=PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(1, content=None)
@@ -138,10 +148,12 @@ class TestVozUseCaseNarrate:
     @pytest.mark.asyncio
     async def test_beat_content_populated(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text="El viento susurraba entre los espinillos.",
-            elapsed_s=1.2,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text="El viento susurraba entre los espinillos.",
+                elapsed_s=1.2,
+            )
+        )
         voz = VozUseCase(llm, prompt_builder=PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(2, content=None)
@@ -155,10 +167,12 @@ class TestVozUseCaseNarrate:
     @pytest.mark.asyncio
     async def test_beat_status_completed(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text="Prosa de ejemplo.",
-            elapsed_s=0.8,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text="Prosa de ejemplo.",
+                elapsed_s=0.8,
+            )
+        )
         voz = VozUseCase(llm, prompt_builder=PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(1, content=None)
@@ -171,10 +185,12 @@ class TestVozUseCaseNarrate:
     @pytest.mark.asyncio
     async def test_uses_narrative_context_in_prompt(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(return_value=MagicMock(
-            text="Texto de prueba.",
-            elapsed_s=0.5,
-        ))
+        llm.generate = AsyncMock(
+            return_value=MagicMock(
+                text="Texto de prueba.",
+                elapsed_s=0.5,
+            )
+        )
         voz = VozUseCase(llm, prompt_builder=PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(1, content=None)
@@ -189,32 +205,49 @@ class TestVozUseCaseNarrate:
 
 # ── DirectorUseCase.execute_full() loop ───────────────────────────────────────
 
+
 class TestDirectorExecuteFullLoop:
     """execute_full() orquesta ANALYST + N×(MAPPER+NC+VOZ+JOURNAL)."""
 
     def _make_mocks(self, story):
         anchors = _make_anchors(story.id)
-        journal = NarrativeJournal(last_events="algo", unresolved_mysteries="", physical_emotional_state="")
-        snapshot = json.dumps({"last_events": "algo", "unresolved_mysteries": "", "physical_emotional_state": ""})
+        journal = NarrativeJournal(
+            last_events="algo", unresolved_mysteries="", physical_emotional_state=""
+        )
+        snapshot = json.dumps(
+            {"last_events": "algo", "unresolved_mysteries": "", "physical_emotional_state": ""}
+        )
 
         mock_analyst = MagicMock()
         mock_analyst.extract_anchors = AsyncMock(return_value=anchors)
-        mock_analyst.resolve_beat_anchors = MagicMock(return_value={"principal": "Irene llega tranquila.", "contexto": "Monte"})
+        mock_analyst.resolve_beat_anchors = MagicMock(
+            return_value={"principal": "Irene llega tranquila.", "contexto": "Monte"}
+        )
 
         mock_mapper = MagicMock()
-        mock_mapper.map_one = AsyncMock(side_effect=lambda **kw: MacroBeat(
-            number=kw["macro_beat_id"],
-            summary=f"Evento {kw['macro_beat_id']}",
-            active_scenario_id="Monte",
-            status="pending",
-        ))
+        mock_mapper.map_one = AsyncMock(
+            side_effect=lambda **kw: MacroBeat(
+                number=kw["macro_beat_id"],
+                summary=f"Evento {kw['macro_beat_id']}",
+                active_scenario_id="Monte",
+                status="pending",
+            )
+        )
 
         mock_voz = MagicMock()
-        mock_voz.narrate = AsyncMock(side_effect=lambda mb, s: (
-            MacroBeat(number=mb.number, summary=mb.summary, active_scenario_id=mb.active_scenario_id,
-                      content="Prosa.", status="completed", narrative_context=mb.narrative_context),
-            1.0,
-        ))
+        mock_voz.narrate = AsyncMock(
+            side_effect=lambda mb, _s: (
+                MacroBeat(
+                    number=mb.number,
+                    summary=mb.summary,
+                    active_scenario_id=mb.active_scenario_id,
+                    content="Prosa.",
+                    status="completed",
+                    narrative_context=mb.narrative_context,
+                ),
+                1.0,
+            )
+        )
 
         mock_journalist = MagicMock()
         mock_journalist.extract = AsyncMock(return_value=(snapshot, journal))
@@ -227,14 +260,22 @@ class TestDirectorExecuteFullLoop:
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
-            MockLLMAdapter(), PromptBuilder(),
-            voz=mock_voz, journalist=mock_journalist,
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
         )
         num_beats = director.prompt_builder.num_beats
 
         with (
-            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
-            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
         ):
             results = [item async for item in director.execute_full(story)]
 
@@ -246,13 +287,21 @@ class TestDirectorExecuteFullLoop:
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
-            MockLLMAdapter(), PromptBuilder(),
-            voz=mock_voz, journalist=mock_journalist,
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
         )
 
         with (
-            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
-            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
         ):
             results = [item async for item in director.execute_full(story)]
 
@@ -266,14 +315,22 @@ class TestDirectorExecuteFullLoop:
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
-            MockLLMAdapter(), PromptBuilder(),
-            voz=mock_voz, journalist=mock_journalist,
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
         )
         num_beats = director.prompt_builder.num_beats
 
         with (
-            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
-            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
         ):
             [item async for item in director.execute_full(story)]
 
@@ -294,13 +351,21 @@ class TestDirectorExecuteFullLoop:
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
-            MockLLMAdapter(), PromptBuilder(),
-            voz=mock_voz, journalist=mock_journalist,
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
         )
 
         with (
-            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
-            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
         ):
             results = [item async for item in director.execute_full(story)]
 
@@ -314,17 +379,27 @@ class TestDirectorExecuteFullLoop:
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
-            MockLLMAdapter(), PromptBuilder(),
-            voz=mock_voz, journalist=mock_journalist,
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
         )
         num_beats = director.prompt_builder.num_beats
 
         fired = []
         with (
-            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
-            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
         ):
-            async for _ in director.execute_full(story, on_plan_ready=lambda n, t: fired.append(n)):
+            async for _ in director.execute_full(
+                story, on_plan_ready=lambda n, _t: fired.append(n)
+            ):
                 pass
 
         assert len(fired) == 1
@@ -337,13 +412,21 @@ class TestDirectorExecuteFullLoop:
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
 
         director = DirectorUseCase(
-            MockLLMAdapter(), PromptBuilder(),
-            voz=mock_voz, journalist=mock_journalist,
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
         )
 
         with (
-            patch("src.application.services.story_analyst_service.StoryAnalystService", return_value=mock_analyst),
-            patch("src.application.use_cases.director_use_case.SynopsisBeatMapper", return_value=mock_mapper),
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
         ):
             async for _ in director.execute_full(story):
                 pass

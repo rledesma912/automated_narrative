@@ -36,7 +36,11 @@ class OllamaAdapter:
         role_cfg = settings.role_config(role) if role else {}
 
         model_name = model or role_cfg.get("model") or settings.llm_model
-        temp = temperature if temperature is not None else float(role_cfg.get("temperature", settings.llm_model_temperature))
+        temp = (
+            temperature
+            if temperature is not None
+            else float(role_cfg.get("temperature", settings.llm_model_temperature))
+        )
 
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
 
@@ -45,7 +49,9 @@ class OllamaAdapter:
             "top_p": 0.9,
             "repeat_penalty": 1.15,
             "num_ctx": int(num_ctx if num_ctx is not None else role_cfg.get("num_ctx", 4096)),
-            "num_predict": int(num_predict if num_predict is not None else role_cfg.get("num_predict", 2048)),
+            "num_predict": int(
+                num_predict if num_predict is not None else role_cfg.get("num_predict", 2048)
+            ),
         }
 
         payload: dict = {

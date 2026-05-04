@@ -166,7 +166,9 @@ class TestPromptBuilder:
         """beat_slice con sinopsis corta: devuelve primeras 2 oraciones como contexto general."""
         builder = PromptBuilder()
         sinopsis = "Primera oración. Segunda oración. Tercera oración que espoilea el final."
-        result = builder._resolve_sinopsis(sinopsis, beat_number=1, total_beats=5, strategy="beat_slice")
+        result = builder._resolve_sinopsis(
+            sinopsis, beat_number=1, total_beats=5, strategy="beat_slice"
+        )
 
         assert "Primera oración." in result
         assert "Segunda oración." in result

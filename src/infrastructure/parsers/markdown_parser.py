@@ -75,17 +75,21 @@ class MarkdownStoryParser:
                 logger.debug(
                     "[Parser] YAML frontmatter extraído: title=%r, relator=%r, "
                     "protagonista=%r, atmosfera=%r, sinopsis=%r..., reglas=%d, typed=%d",
-                    result.title, result.relator, result.protagonista[:40],
-                    result.atmosfera[:40], result.sinopsis[:60],
-                    len(result.reglas), len(result.typed_rules),
+                    result.title,
+                    result.relator,
+                    result.protagonista[:40],
+                    result.atmosfera[:40],
+                    result.sinopsis[:60],
+                    len(result.reglas),
+                    len(result.typed_rules),
                 )
                 self._validate(result, file_path.name)
                 return result
             except yaml.YAMLError as e:
                 logger.warning(
-                    "[Parser] YAML inválido en frontmatter de '%s': %s. "
-                    "Usando fallback regex.",
-                    file_path.name, e,
+                    "[Parser] YAML inválido en frontmatter de '%s': %s. Usando fallback regex.",
+                    file_path.name,
+                    e,
                 )
 
         result = self._extract_data_via_regex(content, file_path.stem)
@@ -110,12 +114,14 @@ class MarkdownStoryParser:
         for idx, p in enumerate(raw_personajes, start=1):
             if not p or not p.get("name"):
                 continue
-            personajes_full.append({
-                "id": p.get("id") or f"P{idx}",
-                "name": p.get("name", ""),
-                "role": p.get("role", ""),
-                "traits": list(p.get("traits") or []),
-            })
+            personajes_full.append(
+                {
+                    "id": p.get("id") or f"P{idx}",
+                    "name": p.get("name", ""),
+                    "role": p.get("role", ""),
+                    "traits": list(p.get("traits") or []),
+                }
+            )
 
         # storyteller_config: si viene como bloque rico, normalizar; si no, reconstruir
         sc_raw = data.get("storyteller_config") or {}
@@ -131,12 +137,14 @@ class MarkdownStoryParser:
         if sc_rules:
             for r in sc_rules:
                 text = r.get("text", "")
-                typed_rules.append({
-                    "id": r.get("id", ""),
-                    "content": text,
-                    "type": r.get("type") or None,
-                    "intensity": r.get("intensity"),
-                })
+                typed_rules.append(
+                    {
+                        "id": r.get("id", ""),
+                        "content": text,
+                        "type": r.get("type") or None,
+                        "intensity": r.get("intensity"),
+                    }
+                )
                 if text:
                     reglas.append(text)
         else:
@@ -144,12 +152,14 @@ class MarkdownStoryParser:
             if raw_rules and isinstance(raw_rules[0], dict):
                 for r in raw_rules:
                     text = r.get("text", r.get("content", ""))
-                    typed_rules.append({
-                        "id": r.get("id", ""),
-                        "content": text,
-                        "type": r.get("type"),
-                        "intensity": r.get("intensity"),
-                    })
+                    typed_rules.append(
+                        {
+                            "id": r.get("id", ""),
+                            "content": text,
+                            "type": r.get("type"),
+                            "intensity": r.get("intensity"),
+                        }
+                    )
                     if text:
                         reglas.append(text)
             else:
@@ -161,13 +171,16 @@ class MarkdownStoryParser:
             reglas = [str(r) for r in top_reglas if r]
 
         # Sinopsis: top-level → composición desde actos → vacío
-        sinopsis = (data.get("sinopsis") or "").strip() if isinstance(data.get("sinopsis"), str) else ""
+        sinopsis = (
+            (data.get("sinopsis") or "").strip() if isinstance(data.get("sinopsis"), str) else ""
+        )
         if not sinopsis:
             actos = storyteller_config.get("actos") or {}
             sinopsis = "\n\n".join(
                 v.get("text", "").strip()
                 for k in ("act_1", "act_2", "act_3", "act_4", "act_5")
-                for v in [actos.get(k)] if isinstance(v, dict) and v.get("text")
+                for v in [actos.get(k)]
+                if isinstance(v, dict) and v.get("text")
             )
         if not sinopsis:
             # Último fallback: synopsis legado
@@ -368,11 +381,7 @@ class MarkdownStoryParser:
         # Fallback al campo top-level escenarios string-separado
         raw = data.get("escenarios")
         if isinstance(raw, str) and raw:
-            return [
-                chunk.split(":")[0].strip()
-                for chunk in raw.split(";")
-                if chunk.strip()
-            ]
+            return [chunk.split(":")[0].strip() for chunk in raw.split(";") if chunk.strip()]
         if isinstance(raw, list):
             return [str(s).strip() for s in raw if s]
         return self._parse_cronologic_scenarios(data)
@@ -427,7 +436,9 @@ class MarkdownStoryParser:
         """Extrae los campos del contenido usando expresiones regulares."""
         raw_protagonista = self._extract_inline_field(content, "Protagonistas")
         raw_sinopsis = self._extract_inline_field(content, "Sinopsis")
-        raw_atmosfera = self._extract_inline_field(content, "Atmósfera") or self._extract_inline_field(content, "Atmosfera")
+        raw_atmosfera = self._extract_inline_field(
+            content, "Atmósfera"
+        ) or self._extract_inline_field(content, "Atmosfera")
 
         raw_relator = self._extract_inline_field(content, "relator")
         relator = raw_relator.split()[0] if raw_relator else "tercera_persona"
@@ -440,7 +451,9 @@ class MarkdownStoryParser:
             if raw_escenarios:
                 scenarios = [s.strip() for s in raw_escenarios.split("/") if s.strip()]
 
-        reglas = self._extract_list(content, "Las reglas de la historia") or self._extract_list(content, "Reglas")
+        reglas = self._extract_list(content, "Las reglas de la historia") or self._extract_list(
+            content, "Reglas"
+        )
 
         return MarkdownStoryData(
             title=default_title,
@@ -472,9 +485,12 @@ class MarkdownStoryParser:
     def _normalize_relator(self, relator: str) -> str:
         """Normaliza relator."""
         relator_lower = str(relator).lower().strip()
-        if "tercera" in relator_lower or "3" in relator_lower: return "tercera_persona"
-        if "primera" in relator_lower or "1" in relator_lower: return "primera_persona"
-        if "segunda" in relator_lower or "2" in relator_lower: return "segunda_persona"
+        if "tercera" in relator_lower or "3" in relator_lower:
+            return "tercera_persona"
+        if "primera" in relator_lower or "1" in relator_lower:
+            return "primera_persona"
+        if "segunda" in relator_lower or "2" in relator_lower:
+            return "segunda_persona"
         return relator.strip()
 
     def _sanitize_frontmatter(self, raw: str) -> str:
@@ -482,7 +498,7 @@ class MarkdownStoryParser:
         lines = raw.split("\n")
         result = []
         for line in lines:
-            match = re.match(r'^(\s*[\w][\w\s]*?):\s*[|>]\s+(.+)$', line)
+            match = re.match(r"^(\s*[\w][\w\s]*?):\s*[|>]\s+(.+)$", line)
             if match:
                 result.append(f"{match.group(1)}: |")
                 result.append(f"  {match.group(2)}")
@@ -499,16 +515,21 @@ class MarkdownStoryParser:
             items = []
             for line in value.splitlines():
                 line = line.strip().lstrip("- ").strip()
-                if line: items.append(line)
+                if line:
+                    items.append(line)
             return items
         return []
 
     def _validate(self, data: "MarkdownStoryData", source: str) -> None:
         """Validación de campos obligatorios."""
         missing = []
-        if not data.title: missing.append("title")
-        if not data.protagonista: missing.append("protagonista")
-        if not data.sinopsis: missing.append("sinopsis")
-        if not data.cronologic_scenarios: missing.append("escenarios")
+        if not data.title:
+            missing.append("title")
+        if not data.protagonista:
+            missing.append("protagonista")
+        if not data.sinopsis:
+            missing.append("sinopsis")
+        if not data.cronologic_scenarios:
+            missing.append("escenarios")
         if missing:
             raise ValueError(f"[Parser] Campos faltantes en '{source}': {', '.join(missing)}")

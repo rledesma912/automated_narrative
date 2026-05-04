@@ -1,6 +1,5 @@
 """Tests unitarios para DebugCollector y NullDebugCollector."""
 
-
 import pytest
 
 from src.application.services.debug_collector import (
@@ -74,7 +73,10 @@ class TestDebugCollector:
     def test_write_generates_file(self, tmp_path):
         c = DebugCollector()
         c.record(**_make_record())
-        path = c.write(tmp_path, {"title": "Test", "profile": "ollama-mistral", "provider": "ollama", "story_id": "abc"})
+        path = c.write(
+            tmp_path,
+            {"title": "Test", "profile": "ollama-mistral", "provider": "ollama", "story_id": "abc"},
+        )
         assert path.exists()
         assert path.suffix == ".md"
         assert "debug_prompts_responses_" in path.name
@@ -101,7 +103,9 @@ class TestDebugCollector:
         path = c.write(tmp_path, {})
         content = path.read_text(encoding="utf-8")
         # 3 data rows + header row + TOTAL row = 5 pipe-separated lines in table
-        table_rows = [line for line in content.splitlines() if line.startswith("| ") and "voz" in line]
+        table_rows = [
+            line for line in content.splitlines() if line.startswith("| ") and "voz" in line
+        ]
         assert len(table_rows) == 3
 
 

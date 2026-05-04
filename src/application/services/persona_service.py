@@ -4,10 +4,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class PersonaService:
     """
     Convierte la identidad del narrador en instrucciones gramaticales.
-    
+
     Prioridad:
     1. storyteller_config['voice']['person']
     2. storyteller_config['gender']
@@ -24,7 +25,7 @@ class PersonaService:
             person_map = {
                 "primera": "primera persona",
                 "segunda": "segunda persona",
-                "tercera": "tercera persona"
+                "tercera": "tercera persona",
             }
             base_person = person_map.get(person.lower(), person)
 

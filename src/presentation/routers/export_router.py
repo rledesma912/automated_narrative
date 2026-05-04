@@ -13,6 +13,7 @@ from src.utils.timezone import now_argentina
 
 router = APIRouter(tags=["Export"])
 
+
 @router.post("/stories/{story_id}/export")
 async def export_story(story_id: str) -> JSONResponse:
     """Export story to Markdown as base64."""
@@ -35,7 +36,12 @@ async def export_story(story_id: str) -> JSONResponse:
     md_b64 = base64.b64encode(md.encode("utf-8")).decode("utf-8")
 
     timestamp = now_argentina().strftime("%Y%m%d%H%M")
-    safe_title = "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_").lower()
+    safe_title = (
+        "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
+        .strip()
+        .replace(" ", "_")
+        .lower()
+    )
     filename = f"{safe_title}_{timestamp}.md"
 
     observability.record(
@@ -43,7 +49,7 @@ async def export_story(story_id: str) -> JSONResponse:
         message=f"Historia '{story.title}' exportada a Markdown",
         type="success",
         story_id=story_id,
-        story_title=story.title
+        story_title=story.title,
     )
 
     return JSONResponse(content={"filename": filename, "content_b64": md_b64})

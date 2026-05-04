@@ -45,8 +45,13 @@ class SQLStoryRepository:
                 db_rule_id = str(uuid.uuid4())
                 await conn.execute(
                     "INSERT INTO rule (id, story_id, content, type, intensity) VALUES (?, ?, ?, ?, ?)",
-                    (db_rule_id, str(story.id), r.content,
-                     r.type.value if r.type else None, r.intensity),
+                    (
+                        db_rule_id,
+                        str(story.id),
+                        r.content,
+                        r.type.value if r.type else None,
+                        r.intensity,
+                    ),
                 )
         elif story.reglas:
             for r in story.reglas:
@@ -96,13 +101,19 @@ class SQLStoryRepository:
 
         # Cargar escenarios
         from src.domain.models import Scenario
+
         cursor_scenarios = await conn.execute(
             "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
             (str(story_id),),
         )
         scenario_rows = await cursor_scenarios.fetchall()
         scenarios = [
-            Scenario(id=UUID(s["id"]), story_id=UUID(s["story_id"]), order_index=s["order_index"], name=s["name"])
+            Scenario(
+                id=UUID(s["id"]),
+                story_id=UUID(s["story_id"]),
+                order_index=s["order_index"],
+                name=s["name"],
+            )
             for s in scenario_rows
         ]
 
@@ -140,13 +151,19 @@ class SQLStoryRepository:
 
         # Cargar escenarios
         from src.domain.models import Scenario
+
         cursor_scenarios = await conn.execute(
             "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
             (story_id,),
         )
         scenario_rows = await cursor_scenarios.fetchall()
         scenarios = [
-            Scenario(id=UUID(s["id"]), story_id=UUID(s["story_id"]), order_index=s["order_index"], name=s["name"])
+            Scenario(
+                id=UUID(s["id"]),
+                story_id=UUID(s["story_id"]),
+                order_index=s["order_index"],
+                name=s["name"],
+            )
             for s in scenario_rows
         ]
 
@@ -165,6 +182,7 @@ class SQLStoryRepository:
     async def update_status(self, story_id, status: str) -> None:
         """Actualiza solo el campo status de una historia."""
         from src.infrastructure.database.connection import get_connection
+
         conn = await get_connection()
         await conn.execute(
             "UPDATE story SET status = ? WHERE id = ?",
@@ -193,13 +211,19 @@ class SQLStoryRepository:
 
             # Cargar escenarios
             from src.domain.models import Scenario
+
             cursor_scenarios = await conn.execute(
                 "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
                 (story_id,),
             )
             scenario_rows = await cursor_scenarios.fetchall()
             scenarios = [
-                Scenario(id=UUID(s["id"]), story_id=UUID(s["story_id"]), order_index=s["order_index"], name=s["name"])
+                Scenario(
+                    id=UUID(s["id"]),
+                    story_id=UUID(s["story_id"]),
+                    order_index=s["order_index"],
+                    name=s["name"],
+                )
                 for s in scenario_rows
             ]
 
@@ -270,6 +294,7 @@ class SQLStoryRepository:
     async def recover_processing_stories(self) -> int:
         """Transición masiva processing → failed tras reinicio del servidor (Spec-214 B1)."""
         import logging
+
         conn = await get_connection()
         cursor = await conn.execute(
             "UPDATE story SET status = ? WHERE status = ?",
@@ -330,13 +355,15 @@ class SQLStoryRepository:
         import uuid
 
         # Primero buscamos si ya existe un ID para este story_id
-        cursor = await conn.execute("SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),))
+        cursor = await conn.execute(
+            "SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
+        )
         row = await cursor.fetchone()
         anchor_id = row[0] if row else str(uuid.uuid4())
 
         await conn.execute(
             """INSERT OR REPLACE INTO narrative_anchors
-            (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis, 
+            (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis,
              resonance_peripeteia, resonance_residual, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
@@ -368,7 +395,9 @@ class SQLStoryRepository:
             narrative_brief=row["narrative_brief"] or "",
             storyteller_config=json.loads(raw_cfg) if raw_cfg else None,
             personajes_full=json.loads(raw_personajes) if raw_personajes else [],
-            status=StoryStatus(row["status"]) if row["status"] in [s.value for s in StoryStatus] else StoryStatus.DRAFT,
+            status=StoryStatus(row["status"])
+            if row["status"] in [s.value for s in StoryStatus]
+            else StoryStatus.DRAFT,
             file_path=row["file_path"] if "file_path" in keys else None,
         )
 
@@ -383,11 +412,13 @@ class SQLStoryRepository:
                 rule_type = RuleType(raw_type) if raw_type else None
             except ValueError:
                 rule_type = None
-            result.append(TypedRule(
-                id=r["id"],
-                story_id=UUID(story_id) if len(story_id) == 36 else story_id,  # type: ignore[arg-type]
-                content=r["content"],
-                type=rule_type,
-                intensity=raw_intensity,
-            ))
+            result.append(
+                TypedRule(
+                    id=r["id"],
+                    story_id=UUID(story_id) if len(story_id) == 36 else story_id,  # type: ignore[arg-type]
+                    content=r["content"],
+                    type=rule_type,
+                    intensity=raw_intensity,
+                )
+            )
         return result

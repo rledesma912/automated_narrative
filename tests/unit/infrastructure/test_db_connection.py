@@ -139,7 +139,11 @@ class TestDbConnection:
         columns = {row["name"] for row in rows}
         await conn.close()
         assert {
-            "id", "story_id",
-            "resonance_hamartia", "resonance_hybris", "resonance_anagnorisis",
-            "resonance_peripeteia", "resonance_residual",
+            "id",
+            "story_id",
+            "resonance_hamartia",
+            "resonance_hybris",
+            "resonance_anagnorisis",
+            "resonance_peripeteia",
+            "resonance_residual",
         }.issubset(columns)

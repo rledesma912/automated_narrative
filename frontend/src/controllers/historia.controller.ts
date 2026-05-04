@@ -131,13 +131,9 @@ export async function markdownCheckHandler(req: Request, res: Response): Promise
       );
     } else {
       res.send(
-        `<button
-          hx-get="/modales/confirmar-borrar-markdown/${storyId}"
-          hx-target="body"
-          hx-swap="beforeend"
-          class="text-sm text-yellow-400 hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
-          <i data-lucide="file-x" class="w-4 h-4"></i> Desvincular
-        </button>`,
+        `<span class="text-sm text-red-400 flex items-center gap-2">
+          <i data-lucide="file-x" class="w-4 h-4"></i> Archivo perdido
+        </span>`,
       );
     }
   } catch {
@@ -182,8 +178,16 @@ export async function verMarkdownHandler(req: Request, res: Response): Promise<v
     const filename = path.basename(story.file_path);
     const fullPath = path.join(OUTPUT_DIR, filename);
 
-    if (!fs.existsSync(fullPath)) {
-      res.redirect(`/historia/${storyId}?error=file_not_found`);
+    const fileExists = fs.existsSync(fullPath);
+
+    if (!fileExists) {
+      await renderPage(res, "visualizar_markdown", {
+        title: `Ver: ${story.title}`,
+        activePage: "gallery",
+        story,
+        content: null,
+        fileMissing: true,
+      });
       return;
     }
 
@@ -194,6 +198,7 @@ export async function verMarkdownHandler(req: Request, res: Response): Promise<v
       activePage: "gallery",
       story,
       content,
+      fileMissing: false,
     });
   } catch {
     res.redirect("/galeria");
@@ -225,11 +230,6 @@ export async function downloadMarkdownHandler(req: Request, res: Response): Prom
   }
 }
 
-export async function modalConfirmarRegenerar(req: Request, res: Response): Promise<void> {
-  const { storyId } = req.params;
-  res.render("partials/modal_regenerar", { layout: false, storyId });
-}
-
 function htmxRedirect(res: Response, req: import("express").Request, url: string): void {
   if (req.headers["hx-request"] === "true") {
     res.setHeader("HX-Redirect", url);
@@ -248,6 +248,24 @@ export async function generarDesdeHistoria(req: Request, res: Response): Promise
     return;
   }
 
+  // Spec-219: si la historia está completed, no patchear ahora — dejar que la sala
+  // muestre la pantalla de regeneración con advertencia y dispare el PATCH desde JS
+  // cuando el usuario confirme. Mantiene la regeneración no destructiva.
+  let currentStatus = "";
+  try {
+    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
+    currentStatus = String((resp.data as { status?: string })?.status ?? "");
+  } catch (err: any) {
+    const detail = err?.response?.data?.detail ?? err?.message ?? "unknown";
+    htmxRedirect(res, req, `/debug?error=regeneration_failed&detail=${encodeURIComponent(detail)}`);
+    return;
+  }
+
+  if (currentStatus === "completed") {
+    htmxRedirect(res, req, `/generar/stream/${storyId}?regenerate=1`);
+    return;
+  }
+
   try {
     await axios.patch(
       `${CORE_API_URL}/api/v1/stories/${storyId}/status`,
@@ -261,4 +279,14 @@ export async function generarDesdeHistoria(req: Request, res: Response): Promise
   }
 
   htmxRedirect(res, req, `/generar/stream/${storyId}`);
+}
+
+export async function updateFilePathHandler(req: Request, res: Response): Promise<void> {
+  const storyId = req.params.storyId as string;
+  try {
+    await updateFilePath(storyId, null);
+    res.status(200).json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Error al desvincular" });
+  }
 }
