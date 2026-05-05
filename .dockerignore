@@ -29,4 +29,3 @@ specs/
 !.env.sample
 scripts/
 logs/
-templates/

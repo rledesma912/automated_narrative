@@ -18,7 +18,6 @@ class TestVozUseCase:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -44,7 +43,6 @@ class TestVozUseCase:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -66,7 +64,6 @@ class TestVozUseCase:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -92,7 +89,6 @@ class TestVozUseCase:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -119,7 +115,6 @@ class TestVozUseCase:
             title="Test",
             protagonista="P",
             relator="primera_persona",
-            escenarios="L",
             sinopsis="S",
             atmosfera="terror",
         )
@@ -154,7 +149,6 @@ class TestVozErrorPaths:
             title="Test",
             protagonista="P",
             relator="primera_persona",
-            escenarios="L",
             sinopsis="S",
             atmosfera="terror",
         )

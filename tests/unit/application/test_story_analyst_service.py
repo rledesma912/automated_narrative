@@ -14,7 +14,6 @@ def _make_story(**kwargs):
         title="El Monte Prohibido",
         protagonista="Irene, Ricardo",
         relator="Irene",
-        escenarios="Monte de los Espinillos",
         sinopsis="La familia llega al campo. Entran al monte de noche. Ven la figura de María inmóvil.",
         atmosfera="terror paranormal",
     )

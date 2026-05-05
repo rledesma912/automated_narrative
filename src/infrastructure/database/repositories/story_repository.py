@@ -337,14 +337,12 @@ class SQLStoryRepository:
         await conn.close()
 
     async def delete(self, story_id: UUID) -> None:
-        """Hard delete: borra la historia y todas sus tablas hijas."""
+        """Hard delete: borra la historia y todas sus tablas hija."""
         conn = await get_connection()
         sid = str(story_id)
-        # Las FK tienen ON DELETE CASCADE con PRAGMA foreign_keys = ON,
-        # pero borramos explícitamente para garantizar el orden correcto.
+        await conn.execute("DELETE FROM generated_narrative WHERE story_template_id = ?", (sid,))
         await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
         await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
-        # macro_beat_rule hace CASCADE desde macro_beat
         await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
         await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
         await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))

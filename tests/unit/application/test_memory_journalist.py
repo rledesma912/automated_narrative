@@ -17,7 +17,6 @@ class TestMemoryJournalist:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )

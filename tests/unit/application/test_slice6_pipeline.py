@@ -6,7 +6,6 @@ Cubre:
 - DirectorUseCase.execute_full() loop secuencial 5 beats
 """
 
-import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,7 +24,6 @@ def _make_story(**kw):
         title="El Monte Prohibido",
         protagonista="Irene, Ricardo",
         relator="Irene",
-        escenarios="Monte de los Espinillos / La casa de la abuela",
         sinopsis="La familia llega al campo y entra al monte de noche.",
         atmosfera="terror paranormal",
         reglas=["Ricardo ignora lo sobrenatural."],
@@ -103,9 +101,7 @@ class TestMemoryJournalistExtract:
     @pytest.mark.asyncio
     async def test_journal_empty_on_parse_error(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(
-            return_value=MagicMock(text="invalid json", elapsed_s=0.1)
-        )
+        llm.generate = AsyncMock(return_value=MagicMock(text="invalid json", elapsed_s=0.1))
         journalist = MemoryJournalist(llm, PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(3)
@@ -210,9 +206,6 @@ class TestDirectorExecuteFullLoop:
         journal = NarrativeJournal(
             last_events="algo", unresolved_mysteries="", physical_emotional_state=""
         )
-        snapshot = json.dumps(
-            {"last_events": "algo", "unresolved_mysteries": "", "physical_emotional_state": ""}
-        )
 
         mock_analyst = MagicMock()
         mock_analyst.extract_anchors = AsyncMock(return_value=anchors)
@@ -246,7 +239,7 @@ class TestDirectorExecuteFullLoop:
         )
 
         mock_journalist = MagicMock()
-        mock_journalist.extract = AsyncMock(return_value=(snapshot, journal))
+        mock_journalist.extract = AsyncMock(return_value=journal)
 
         return mock_analyst, mock_mapper, mock_voz, mock_journalist, journal
 

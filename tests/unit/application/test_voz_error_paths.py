@@ -14,7 +14,6 @@ class TestVozErrorPathsCurrent:
             title="Test",
             protagonista="P",
             relator="primera_persona",
-            escenarios="L",
             sinopsis="S",
             atmosfera="terror",
         )

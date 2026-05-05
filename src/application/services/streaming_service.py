@@ -26,7 +26,7 @@ async def stream_story(
     story: Story,
     story_repo=None,
     beat_repo=None,
-    export_service=None,
+    narrative_use_case=None,
 ) -> AsyncGenerator[StreamEvent, None]:
     """Orquesta execute_full() y traduce sus yields a StreamEvent.
 
@@ -101,6 +101,16 @@ async def stream_story(
                     )
                 )
 
+            narrative_id: str | None = None
+            if narrative_use_case is not None and beats_collected:
+                try:
+                    story.beats = beats_collected
+                    narrative = await narrative_use_case.consolidate_and_save(story)
+                    narrative_id = str(narrative.id)
+                    logger.info(f"[STREAM][NARRATIVE] Variante persistida: {narrative.id}")
+                except Exception as exc:
+                    logger.warning(f"[STREAM][NARRATIVE] Fallo consolidación: {exc}")
+
             if story_repo is not None:
                 await story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
                 logger.info(f"[STREAM] Pipeline finalizado con éxito | Story: {story.id}")
@@ -112,23 +122,13 @@ async def stream_story(
                     story_title=story.title,
                 )
 
-            # Exportar MD y persistir file_path
-            file_path = None
-            if export_service is not None and beats_collected:
-                try:
-                    file_path = await export_service.export(story, beats_collected)
-                    if story_repo is not None and file_path:
-                        await story_repo.update_file_path(story.id, file_path)
-                except Exception:
-                    logger.exception("[STREAMING] Error al exportar MD")
-
             await queue.put(
                 StreamEvent(
                     event=StreamEventType.DONE,
                     data={
                         "story_id": str(story.id),
                         "total_beats": beat_number,
-                        "file_path": file_path,
+                        "narrative_id": narrative_id,
                     },
                 )
             )

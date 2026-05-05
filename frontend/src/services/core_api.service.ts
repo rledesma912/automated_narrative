@@ -62,3 +62,47 @@ export async function updateFilePath(storyId: string, filePath: string | null): 
     { timeout: 5000 },
   );
 }
+
+export interface GeneratedNarrative {
+  id: string;
+  story_template_id: string;
+  title: string;
+  content: string;
+  status: string;
+  created_at: string;
+}
+
+export async function generateNarrative(
+  storyTemplateId: string,
+  title: string,
+): Promise<GeneratedNarrative> {
+  const response = await axios.post(
+    `${CORE_API_URL}/api/v1/story-templates/${storyTemplateId}/generate-narrative?title=${encodeURIComponent(title)}`,
+    {},
+    { timeout: 30000 },
+  );
+  return response.data;
+}
+
+export async function listNarratives(storyTemplateId: string): Promise<GeneratedNarrative[]> {
+  const response = await axios.get(
+    `${CORE_API_URL}/api/v1/story-templates/${storyTemplateId}/narratives`,
+    { timeout: 5000 },
+  );
+  return response.data;
+}
+
+export async function getNarrativeText(narrativeId: string): Promise<{ text: string }> {
+  const response = await axios.get(
+    `${CORE_API_URL}/api/v1/generated-narratives/${narrativeId}/text`,
+    { timeout: 5000 },
+  );
+  return response.data;
+}
+
+export async function deleteNarrative(narrativeId: string): Promise<void> {
+  await axios.delete(
+    `${CORE_API_URL}/api/v1/generated-narratives/${narrativeId}`,
+    { timeout: 5000 },
+  );
+}

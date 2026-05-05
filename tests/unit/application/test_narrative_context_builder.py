@@ -1,12 +1,11 @@
 """Tests para build_narrative_context() y build_voz_*() (Spec-038, B3/B4/B6/B7/B10)."""
 
-import json
 import uuid
 from unittest.mock import MagicMock
 
 from src.application.services import PromptBuilder
 from src.application.services.story_analyst_service import StoryAnalystService
-from src.domain.models import MacroBeat, NarrativeAnchors, Story
+from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal, Story
 
 
 def _make_story(**kwargs):
@@ -14,7 +13,6 @@ def _make_story(**kwargs):
         title="El Monte Prohibido",
         protagonista="Irene, Ricardo, Mariano",
         relator="Irene",
-        escenarios="Monte de los Espinillos",
         sinopsis="La familia llega al campo y entra al monte de noche.",
         atmosfera="terror paranormal",
         reglas=["Ricardo ignora lo sobrenatural.", "Las apariciones no atacan físicamente."],
@@ -58,10 +56,6 @@ def _make_beat_with_nc(number: int) -> MacroBeat:
     beat.narrative_context = builder.build_narrative_context(beat, anchors)
     return beat
 
-
-from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal, Story
-
-...
 
 class TestBuildNarrativeContext:
     """B3 — build_narrative_context() produce un string con todos los insumos."""

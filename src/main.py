@@ -7,7 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
-from src.presentation.routers import beat_router, export_router, story_router, stream_router
+from src.presentation.routers import (
+    beat_router,
+    narrative_router,
+    story_router,
+    stream_router,
+)
 
 
 @asynccontextmanager
@@ -34,7 +39,7 @@ app.add_middleware(
 
 app.include_router(story_router, prefix="/api/v1")
 app.include_router(beat_router, prefix="/api/v1")
-app.include_router(export_router, prefix="/api/v1")
+app.include_router(narrative_router, prefix="/api/v1")
 app.include_router(stream_router, prefix="/api/v1")
 
 

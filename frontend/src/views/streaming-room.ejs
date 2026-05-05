@@ -269,7 +269,7 @@
 <%/* MODO SSE — generación activa                                             */%>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
 
-<div class="max-w-5xl mx-auto" id="streaming-root">
+<div class="max-w-4xl mx-auto" id="streaming-root">
 
   <%/* ── Header ────────────────────────────────────────── */%>
   <div class="flex items-center justify-between mb-12">
@@ -320,7 +320,7 @@
         <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para regenerar?</p>
         <div class="flex items-start gap-3 mb-8 p-4 border border-orange-700/50 bg-orange-950/20 text-left">
           <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-400 shrink-0 mt-0.5"></i>
-          <p class="text-orange-200 text-sm leading-relaxed">
+          <p class="text-orange-600 text-sm leading-relaxed">
             Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
           </p>
         </div>
@@ -634,7 +634,6 @@
     es = new EventSource(STREAM_URL);
 
     es.addEventListener("status", (e) => {
-      hideSpinner();
       const d = JSON.parse(e.data);
       setStatus(d.msg);
       appendLog(`🔍 ${d.msg}`);

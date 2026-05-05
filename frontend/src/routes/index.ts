@@ -5,7 +5,8 @@ import { debugPage } from "../controllers/debug.controller";
 import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData } from "../controllers/wizard.controller";
 import { submitGeneration, streamingRoomPage, getActiveStreamApi } from "../controllers/stream.controller";
-import { historiaPage, verMarkdownHandler, downloadMarkdownHandler, generarDesdeHistoria, deleteStoryHandler, exportStoryHandler, deleteMarkdownHandler, confirmDeleteModal, confirmDeleteMarkdownModal, markdownCheckHandler, updateFilePathHandler } from "../controllers/historia.controller";
+import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, updateFilePathHandler, generateNarrativeHandler } from "../controllers/historia.controller";
+import { relatosPage } from "../controllers/relatos.controller";
 
 const router = Router();
 
@@ -29,18 +30,15 @@ router.get("/internal/streaming/active",    getActiveStreamApi);
 
 // Historia (ver detalle + generar desde borrador + eliminar)
 router.get("/historia/:storyId",            historiaPage);
-router.get("/historia/:storyId/ver-markdown", verMarkdownHandler);
-router.get("/historia/:storyId/descargar-markdown", downloadMarkdownHandler);
 router.post("/historia/:storyId/generar",   generarDesdeHistoria);
-router.post("/historia/:storyId/exportar",  exportStoryHandler);
+router.post("/historia/:storyId/generar-relato", generateNarrativeHandler);
 router.delete("/internal/historia/:storyId",          deleteStoryHandler);
-router.delete("/internal/historia/:storyId/markdown", deleteMarkdownHandler);
 router.patch("/internal/historia/:storyId/file-path", updateFilePathHandler);
-
-router.get("/internal/historia/:storyId/markdown-check", markdownCheckHandler);
 
 // Modales de confirmación (HTMX)
 router.get("/modales/confirmar-borrar/:storyId", confirmDeleteModal);
-router.get("/modales/confirmar-borrar-markdown/:storyId", confirmDeleteMarkdownModal);
+
+// Nueva ruta de relatos (Spec-235)
+router.get("/historia/:storyId/relatos", relatosPage);
 
 export default router;

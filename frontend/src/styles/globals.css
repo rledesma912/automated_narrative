@@ -1,0 +1,98 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   NarrativeForge — Global CSS Architecture (Tailwind + Custom)
+   
+   Estructura:
+   1. @tailwind directives (base, components, utilities)
+   2. Custom layer components (botones, cards, etc.)
+   3. Theme variables (separadas en theme.css)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Custom Components (Elementos reutilizables)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* Botones primarios */
+  .btn-primary {
+    @apply px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase;
+    @apply hover:bg-red-800 hover:scale-105 transition-all duration-300;
+    @apply shadow-[0_0_30px_rgba(139,0,0,0.3)];
+  }
+
+  .btn-primary:hover i {
+    @apply group-hover:rotate-12 transition-transform;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-forge-surface border border-forge-border rounded-lg p-6 transition-all;
+  }
+
+  .card:hover {
+    @apply shadow-lg border-forge-accent;
+  }
+
+  /* Typography */
+  .text-heading-xl {
+    @apply text-3xl font-serif text-forge-text;
+  }
+
+  .text-heading-lg {
+    @apply text-2xl font-serif text-forge-text;
+  }
+
+  .text-body {
+    @apply text-base font-sans text-forge-text leading-relaxed;
+  }
+
+  /* Alerts / Warnings */
+  .alert-warning {
+    @apply flex items-start gap-3 p-4 border border-orange-700/50 bg-orange-950/20 text-left;
+  }
+
+  .alert-warning p {
+    @apply text-orange-600 text-sm leading-relaxed;
+  }
+
+  /* Scrollbar personalizada */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--forge-accent) var(--forge-bg);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-forge-bg;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-forge-accent rounded;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Utility Overrides & Tweaks
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Asegurar que las variables CSS se apliquen correctamente */
+html {
+  @apply scrollbar-thin;
+}
+
+body {
+  @apply bg-forge-bg text-forge-text;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    @apply hidden;
+  }
+}

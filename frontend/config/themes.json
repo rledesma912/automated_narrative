@@ -19,14 +19,14 @@
     "text": "#c8c8d8",
     "font": "mono"
   },
-  "umbral": {
-    "name": "Umbral",
-    "bg": "#0d1b12",
-    "surface": "#121e17",
-    "border": "#1a2e20",
-    "accent": "#2d6a4f",
-    "muted": "#4a7a5a",
-    "text": "#b7d4c3",
-    "font": "serif"
+  "light-contrast": {
+    "name": "Contraste Claro",
+    "bg": "#ffffff",
+    "surface": "#f8f8f8",
+    "border": "#e0e0e0",
+    "accent": "#0056b3",
+    "muted": "#666666",
+    "text": "#333333",
+    "font": "sans-serif"
   }
 }

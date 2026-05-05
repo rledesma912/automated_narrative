@@ -8,11 +8,11 @@ from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
 from src.application.services import PromptBuilder
-from src.application.services.export_service import ExportService
 from src.application.services.observability_service import observability
 from src.application.services.stream_session_manager import manager as session_manager
 from src.application.services.streaming_service import stream_story
 from src.application.use_cases.director_use_case import DirectorUseCase
+from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.config import settings
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
@@ -93,7 +93,6 @@ async def stream_generation(story_id: str):
         llm = LLMFactory.get_provider()
         prompt_builder = PromptBuilder()
         normalizer = ResponseNormalizer()
-        export_service = ExportService()
         director = DirectorUseCase(
             llm=llm,
             prompt_builder=prompt_builder,
@@ -105,7 +104,7 @@ async def stream_generation(story_id: str):
             story,
             story_repo=story_repo,
             beat_repo=beat_repo,
-            export_service=export_service,
+            narrative_use_case=GenerateNarrativesUseCase(),
         )
 
     queue, replay = await session_manager.attach(story_id, _producer_factory)
@@ -135,7 +134,14 @@ async def health_check():
 
     # SQLite
     try:
-        async with aiosqlite.connect("stories.db") as db:
+        db_url = settings.database_url
+        if db_url.startswith("sqlite+aiosqlite:///"):
+            db_path = db_url[len("sqlite+aiosqlite:///") :]
+        elif db_url.startswith("sqlite+aiosqlite://"):
+            db_path = db_url[len("sqlite+aiosqlite://") :]
+        else:
+            db_path = db_url
+        async with aiosqlite.connect(db_path) as db:
             await db.execute("SELECT 1")
         checks["sqlite"] = "ok"
     except Exception as exc:

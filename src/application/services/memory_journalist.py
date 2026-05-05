@@ -81,7 +81,6 @@ class MemoryJournalist:
         journal = await self.update_journal(story, macro_beat, previous_journal)
         return journal
 
-
     def _parse_journal(self, text: str, previous: Optional[NarrativeJournal]) -> NarrativeJournal:
         """Parsea la respuesta del LLM en journal."""
         try:

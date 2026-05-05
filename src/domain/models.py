@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import UUID4, BaseModel, Field
+from pydantic import UUID4, BaseModel, Field, field_validator
 
 from src.utils.timezone import now_argentina
 
@@ -159,15 +159,26 @@ class StoryMetadata(BaseModel):
         return bool(self.reglas or self.storyteller_config)
 
 
+class GeneratedNarrative(BaseModel):
+    """Variante narrativa generada a partir de una StoryTemplate."""
+
+    id: UUID4 = Field(default_factory=uuid.uuid4)
+    story_template_id: UUID4
+    title: str
+    content: str
+    status: StoryStatus = StoryStatus.COMPLETED
+    created_at: datetime = Field(default_factory=now_argentina)
+
+
 class Story(BaseModel):
     """Historia base."""
 
     id: UUID4 = Field(default_factory=uuid.uuid4)
-    title: str
-    protagonista: str
-    relator: str
-    sinopsis: str
-    atmosfera: str
+    title: str = Field(..., min_length=1)
+    protagonista: str = Field(..., min_length=1)
+    relator: str = Field(..., min_length=1)
+    sinopsis: str = Field(..., min_length=1)
+    atmosfera: str = Field(..., min_length=1)
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
@@ -180,6 +191,13 @@ class Story(BaseModel):
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
     file_path: Optional[str] = None
+
+    @field_validator("title", "protagonista", "relator", "sinopsis", "atmosfera", mode="before")
+    @classmethod
+    def _strip_whitespace(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
     # -- Spec 070: comportamiento de dominio --
 

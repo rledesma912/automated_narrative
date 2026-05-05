@@ -12,7 +12,6 @@ class TestStory:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -27,7 +26,6 @@ class TestStory:
             title="Test",
             protagonista="P",
             relator="R",
-            escenarios="E",
             sinopsis="S",
             atmosfera="A",
         )

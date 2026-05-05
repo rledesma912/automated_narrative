@@ -1,6 +1,5 @@
 """NarrativeContextAssembler — ensambla el narrative_context para el VOZ."""
 
-import json
 import logging
 
 from src.application.services.beat_spec_repository import BeatSpecRepository

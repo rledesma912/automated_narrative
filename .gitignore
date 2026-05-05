@@ -31,6 +31,7 @@ ENV/
 # Databases
 *.db
 !input_stories/.gitkeep
+stories.db*
 
 # Testing & Linting
 .coverage
@@ -55,4 +56,8 @@ build/
 .env.development
 .env.test
 .env.productiondata/stories.db
-stories.db
+
+# Frontend CSS (compilado, no commitear)
+frontend/public/styles.css
+frontend/public/styles.css.map
+

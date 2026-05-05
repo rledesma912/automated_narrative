@@ -15,41 +15,50 @@ SPECIFY → PLAN → TASKS → IMPLEMENT
 - No avanzar de fase sin OK explícito del usuario.
 - Ejecutar los cambios en slices incrementales siguiendo `.opencode/skills/incremental-implementation/SKILL.md`.
 - El idioma de trabajo es **español**.
+- Convención de DB: **no se generan scripts de migración**. Si cambia el esquema, actualizar `init_db()` en `src/infrastructure/database/connection.py` y recrear `data/stories.db`.
 
 ## Commands
 
 ```bash
-uv sync                                          # install dependencies
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8010  # dev server
-python -m src                                    # CLI mode
-pytest tests -v --cov=src                        # run all tests
-pytest tests/unit/application/ -v               # run a single test directory
-ruff check . && ruff format .                    # lint + format
-./scripts/bash/init_db.sh                        # initialize SQLite database
+make install                                     # uv sync + npm install
+make api                                         # uvicorn dev server (puerto 8010)
+make ui                                          # frontend Express (puerto 3000)
+make dev-all                                     # api + ui en paralelo
+make db                                          # crea data/stories.db
+make test                                        # pytest -v --cov=src
+make lint                                        # ruff check + format
+uv run python -m src generate --input <yaml>     # generación CLI completa
+uv run pytest tests/unit/application/ -v         # subdirectorio de tests
 ```
 
 ## Architecture
 
-Clean Architecture with four layers:
+Clean Architecture con cuatro capas + cli + core:
 
 ```
-domain/          → Entities (Story, MacroBeat, NarrativeAnchors, Scenario, NarrativeJournal)
-                   + Interfaces (LLMProvider, Repositories)
-application/     → Use Cases (CreateStory, Director, Voz, ListStories, GetStoryById, ListBeats, UpdateBeat)
-                   + Services (PromptBuilder Fachada, MemoryJournalist, StoryAnalystService)
-infrastructure/  → Adapters (Ollama, Anthropic, Gemini, Mock)
-                   + SQLite Repositories + MarkdownRenderer + DebugRenderer
-                   + CLIContainer (Inyección de dependencias para la CLI)
-presentation/    → FastAPI routers + Pydantic schemas
+domain/          → Entities (Story, MacroBeat, NarrativeAnchors, Scenario,
+                   NarrativeJournal, GeneratedNarrative, TypedRule)
+                   + Interfaces (LLMProvider) + streaming DTOs + exceptions
+application/     → Use Cases (CreateStory, Director, Voz, GenerateNarratives,
+                   SynopsisBeatMapper, ListBeats, UpdateBeat, GetStory, ListStories)
+                   + Services (PromptBuilder Fachada, MemoryJournalist,
+                   StoryAnalystService, RuleScenarioResolverService,
+                   NarrativeAuditor, StreamingService, StreamSessionManager,
+                   ObservabilityService)
+infrastructure/  → Adapters (Ollama, Anthropic, GeminiCLI, Mock)
+                   + SQLite Repositories + ResponseNormalizer + DebugRenderer
+                   + YamlStoryLoader/Exporter + CLIContainer (DI)
+presentation/    → FastAPI routers (story, beat, narrative, stream)
+                   + Pydantic schemas
 core/            → StoryRunner orchestrator (wires everything together)
-cli/             → CLI runner, commands, logger
+cli/             → CLI runner, commands, logger, progress reporter, exceptions
 ```
 
-The app has two entry points: `src/main.py` (FastAPI) and `src/__main__.py` (CLI via `python -m src`).
+Dos entry points: `src/main.py` (FastAPI) y `src/__main__.py` (CLI vía `python -m src`).
 
-## Core Concept: 5-Beat Sequential Story Generation (Spec-038)
+## Core Concept: 5-Beat Sequential Story Generation (Spec-180)
 
-Stories are broken into **5 macro-beats** following the 5-act structure defined in `config/llm_beats_definition.yaml`. That YAML is the single source of truth for beat count, narrative structure, and **anchor priorities** per beat.
+Las historias se descomponen en **5 macro-beats** siguiendo la estructura de 5 actos definida en `config/llm_beats_definition.yaml`. Ese YAML es la única fuente de verdad para el conteo y la estructura narrativa.
 
 **El VOZ recibe un `narrative_context` completamente pre-construido. Su única responsabilidad es generar prosa literaria.** No interpreta la sinopsis, no infiere contexto, no toma decisiones narrativas.
 
@@ -57,7 +66,7 @@ Stories are broken into **5 macro-beats** following the 5-act structure defined 
 
 | Rol | Componente | Llamadas | Responsabilidad |
 |---|---|---|---|
-| **Analyst** | `StoryAnalystService` | 1 (global) | Extrae los 4 `NarrativeAnchors` de la sinopsis (JSON estructurado) |
+| **Analyst** | `StoryAnalystService` | 1 (global) | Extrae los 5 `NarrativeAnchors` (pilares) de la sinopsis |
 | **Resolver** | `RuleScenarioResolverService` | 1 (global) | Distribuye reglas y escenarios a cada beat (JSON) |
 | **Mapper** | `SynopsisBeatMapper.map_one()` | 5 (una por beat) | Extrae qué ocurre en el beat N + identifica el escenario activo |
 | **Voz** | `VozUseCase.narrate()` | 5 (una por beat) | Expande `narrative_context` a prosa literaria |
@@ -65,7 +74,7 @@ Stories are broken into **5 macro-beats** following the 5-act structure defined 
 
 **Total: 17 llamadas LLM por historia** (1 analyst + 1 resolver + 5×3).
 
-### Los 5 Pilares de Resonancia Narrativa (Spec-081, estáticos, extraídos una sola vez)
+### Los 5 Pilares de Resonancia Narrativa (Spec-160, estáticos, extraídos una sola vez)
 
 | Campo | Estadio Freytag | Qué captura |
 |---|---|---|
@@ -75,7 +84,7 @@ Stories are broken into **5 macro-beats** following the 5-act structure defined 
 | `resonance_peripeteia` | Acción Descendente | La Trampa Espacial — el entorno como antagonista |
 | `resonance_residual` | Desenlace | La Mancha Residual — el daño observable que permanece |
 
-Mapeo 1:1: Beat N recibe el Pilar N del YAML. No hay `anchor_priorities`. Definición en `config/llm_narrative_definition.yaml`.
+Mapeo 1:1: Beat N recibe el Pilar N. No hay `anchor_priorities`. Definición canónica en `config/llm_narrative_definition.yaml`.
 
 ### El `narrative_context` (ensamblado determinístico)
 
@@ -90,7 +99,7 @@ narrative_context =
 
 Ensamblado por `PromptBuilder.build_narrative_context()` — sin LLM.
 
-## Data Flow (Spec-038)
+## Data Flow (Spec-180 + Spec-312)
 
 ```
 API/CLI → CreateStoryUseCase → DB (story record)
@@ -99,14 +108,13 @@ API/CLI → CreateStoryUseCase → DB (story record)
 
             [1] StoryAnalystService.extract_anchors()
                 → NarrativeAnchors (1 LLM call)
-                → DB (narrative_anchors table)
+                → DB (narrative_anchors)
 
             [2] RuleScenarioResolverService.resolve_distribution()
                 → rule_distribution: {beat_id: {rules, scenario_index}} (1 LLM call)
 
             Para cada beat 1..5:
-            [3a] analyst.resolve_beat_anchors()  → beat_anchors dict (sin LLM)
-                 mapper.map_one()                → MacroBeat.summary + active_scenario_id (1 LLM call)
+            [3a] mapper.map_one()                → MacroBeat.summary + active_scenario_id (1 LLM call)
                  build_narrative_context()       → MacroBeat.narrative_context (sin LLM)
                  → DB (macro_beat: summary + narrative_context)
 
@@ -114,44 +122,50 @@ API/CLI → CreateStoryUseCase → DB (story record)
                  → DB (macro_beat: content + status=completed)
 
             [3c] journalist.extract()            → MacroBeat.memory_snapshot + NarrativeJournal (1 LLM call)
-                 → DB (macro_beat: memory_snapshot, narrative_journal)
-
-          MarkdownRenderer → output_stories/
-          DebugMarkdownRenderer → output_stories/debug_*.md (si --debug activo)
+                 → DB (macro_beat.memory_snapshot, narrative_journal)
+                 ↓
+          [Spec-312] StoryRunner._consolidate_narrative(story):
+              GenerateNarrativesUseCase.consolidate_and_save()
+              → DB (generated_narrative: nueva variante UUID, "title · timestamp")
+                 ↓
+          DebugRenderer (opcional --debug) → output_stories/debug_*.md
 ```
+
+El mismo flujo aplica al pipeline web vía SSE (`stream_story` en `streaming_service.py`): tras el último beat, consolida la variante y enriquece el evento `done` con `narrative_id` antes de marcar la historia `completed`.
 
 ## LLM Provider Abstraction
 
-All LLM calls go through the `LLMProvider` protocol (`src/domain/interfaces.py`). Cuatro adapters:
+Todas las llamadas LLM atraviesan el protocolo `LLMProvider` (`src/domain/interfaces.py`). Cuatro adapters en `src/infrastructure/adapters/`:
+
 - **OllamaAdapter** — LLM local por defecto. Lee `ollama.host` del YAML.
-- **AnthropicAdapter** — API remota. Lee `anthropic.model` del YAML y `ANTHROPIC_API_KEY` del `.env`.
+- **AnthropicAdapter** (Spec-050) — API remota. Lee `anthropic.model` del YAML y `ANTHROPIC_API_KEY` del `.env`.
 - **GeminiCLIAdapter** — Gemini vía CLI. Lee `gemini.cli_command` y `gemini.model` del YAML.
-- **MockLLMAdapter** — respuestas deterministas para tests.
+- **MockLLMAdapter** — respuestas deterministas para tests; activable con `--mock` en CLI o `--provider mock`.
 
-El proveedor activo se define en el YAML (`provider: ollama|anthropic|gemini|mock`). Puede sobreescribirse con la variable de entorno `LLM_PROVIDER` solo para casos de emergencia.
+El proveedor activo se define en el perfil activo del YAML. Override de emergencia: `LLM_PROVIDER` o `--provider` en CLI.
 
-## LLM Configuration (Spec 026 + 027)
+## LLM Configuration (Spec-060 + Spec-070)
 
 **Fuente de verdad: `config/llm_core_definitions.yaml`.** Ese archivo contiene perfiles pre-configurados (provider + roles completos), filtros de respuesta y overrides por modelo. El `.env` se usa **solo** para secretos (`ANTHROPIC_API_KEY`), paths y el override opcional `LLM_PROFILE`.
 
-### Perfiles (Spec 027)
+### Perfiles (Spec-070)
 
 El YAML define múltiples perfiles bajo `profiles:`. Cada perfil es autocontenido: trae su `provider`, bloque adapter-specific (`ollama`/`anthropic`/`gemini`) y los **4 roles** (`story_analyst`, `director`, `voz`, `journal`) con todos sus params. Se activa uno con `active_profile:` en el YAML o con la env `LLM_PROFILE` (override).
 
-Perfiles incluidos: `ollama-llama31`, `ollama-mistral`, `ollama-qwen25-14b`, `ollama-mistral-nemo`, `ollama-qwen3-8b`, `ollama-gemma3-12b`, `anthropic-sonnet`, `gemini-cli`.
+Perfiles incluidos: `ollama-llama31`, `ollama-mistral`, `ollama-qwen25-14b`, `ollama-mistral-nemo`, `ollama-qwen3-8b`, `ollama-hybrid-voz-qwen3`, `ollama-gemma3-12b`, `anthropic-sonnet`, `gemini-cli`.
 
 Para agregar un perfil nuevo: copiar un bloque existente bajo `profiles:`, renombrarlo, cambiar modelos/params y activarlo con `active_profile:` o `LLM_PROFILE=<nombre>`.
 
-Precedencia de resolución: `env LLM_PROFILE` → `active_profile:` YAML → fallback `ollama-natsumura`. El resolver está en `src/config.py::_resolve_active_profile`.
+Precedencia de resolución: `env LLM_PROFILE` → `active_profile:` YAML. El resolver vive en `src/config.py`.
 
 **Convención model-por-rol**: el `model` que se envía al LLM vive en `profiles.<perfil>.roles.<rol>.model`. Los bloques adapter (`ollama.host`, `anthropic.model`, `gemini.model`) solo aportan transporte / fallback.
 
 Campos por rol (`story_analyst`, `director`, `voz`, `journal`):
 - `model`, `temperature`, `num_ctx`, `num_predict`, `stop` (lista de tokens de corte).
 
-> **Nota:** `context_strategy` fue eliminado en Spec-038. Con `narrative_context` pre-ensamblado ya no tiene sentido controlar qué fragmento de sinopsis llega al VOZ.
+> **Nota:** `context_strategy` fue eliminado en Spec-180. Con `narrative_context` pre-ensamblado ya no tiene sentido controlar qué fragmento de sinopsis llega al VOZ.
 
-Filtros (`response_filters`):
+Filtros (`response_filters`, Spec-080):
 - `thinking_tags` — bloques `<think>...</think>` que elimina `ResponseNormalizer`.
 - `strip_line_patterns` — regex por línea a descartar (encabezados markdown, separadores, preámbulos).
 - `preserve_paragraph_breaks: true` — conserva saltos `\n\n` y colapsa 3+ a 2.
@@ -159,125 +173,212 @@ Filtros (`response_filters`):
 
 `ResponseNormalizer` (`src/infrastructure/normalizers/response_normalizer.py`) se inyecta en `DirectorUseCase` y `VozUseCase` desde `StoryRunner`. Siempre normaliza el texto raw del LLM antes de persistir.
 
-## Prompt System (Spec-038)
+## Prompt System (Spec-170)
 
-Prompts viven en `config/prompts_generation/` como templates Markdown:
+Prompts viven en `config/prompts_generation/` como templates Markdown. `PromptBuilder` (`src/application/services/prompt_builder.py`) actúa como **Fachada** que delega en estrategias (`CompactStrategy`, `FrontierStrategy`) y servicios de apoyo (`PersonaService`, `TemplateLoader`). Método clave: `build_narrative_context(macro_beat, beat_anchors, prev_snapshot) → str` — determinístico, sin LLM.
 
 | Archivo | Rol | Descripción |
 |---|---|---|
 | `story_analyst_system_compact.md` | Analyst system | Curador literario — define los 5 pilares aristotélicos de resonancia |
-| `story_analyst_compact.md` | Analyst user | Extrae 5 secciones `## resonance_*` (hamartia/hybris/anagnorisis/peripeteia/residual) |
+| `story_analyst_compact.md` | Analyst user | Extrae 5 secciones `## resonance_*` |
 | `synopsis_mapper_system_compact.md` | Mapper system | Instrucciones para extracción extractiva |
 | `synopsis_mapper_one_compact.md` | Mapper user | Sinopsis + cronologic_scenarios + anclajes + beat spec → ESCENARIO + EVENTOS |
 | `voice_system_compact.md` | Voz system | `{relator}`, `{atmosfera}`, `{protagonistas}`, `{reglas}` — estable por historia |
 | `journal.md` | Journal | Extrae `{last_events}`, `{unresolved_mysteries}`, `{physical_emotional_state}` |
 
-`PromptBuilder` (`src/application/services/prompt_builder.py`) actúa como una **Fachada** que delega en estrategias especializadas (`CompactStrategy`, `FrontierStrategy`) y servicios de apoyo (`PersonaService`, `TemplateLoader`) para cargar y formatear los templates. Método clave: `build_narrative_context(macro_beat, beat_anchors, prev_snapshot) → str` — determinístico, sin LLM.
+## Web & Streaming (Spec-210)
+
+- **Frontend:** Express + EJS + HTMX (`frontend/`). Único origen para el browser. Proxy interno `/api/*` → `CORE_API_URL`.
+- **Streaming:** `stream_story()` (`src/application/services/streaming_service.py`) traduce `DirectorUseCase.execute_full()` a `StreamEvent` (`status`, `beat_start`, `beat_done`, `heartbeat`, `done`, `stream_error`). Heartbeat cada 15s (no negociable).
+- **Idempotencia:** `StreamSessionManager` (singleton) garantiza un único productor por `story_id`. Conexiones extra se atan a la misma sesión y reciben replay buffer.
+- **Wizard de autoría (Spec-220):** 5 pasos, persiste YAML canónico round-trip con `python -m src export-yaml` (Spec-302).
+- **Galería de relatos (Spec-311 + Spec-312):** lista variantes de `generated_narrative`, switcher por relato, CTA delete con confirmación HTMX.
 
 ## Key Environment Variables
 
 El `.env` solo contiene secretos y paths. Toda la config LLM vive en `config/llm_core_definitions.yaml`.
 
 ```
-ANTHROPIC_API_KEY=...                               # solo si el perfil activo usa AnthropicAdapter
-DATABASE_URL=sqlite+aiosqlite:///stories.db
+ENV=dev
+API_HOST=0.0.0.0:8010                              # host:puerto del Core API
+PORT=3010                                          # puerto reservado para Playwright
+ANTHROPIC_API_KEY=...                              # solo si el perfil activo usa AnthropicAdapter
+DATABASE_URL=sqlite+aiosqlite:///data/stories.db
 PROMPTS_DIR=./config/prompts_generation
 OUTPUT_DIR=./output_stories
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
-# LLM_PROFILE=ollama-llama31                        # opcional: pisa active_profile del YAML
-# OLLAMA_HOST=http://host.docker.internal:11434     # opcional: pisa el host del perfil (usado por la API en Docker; CLI en host cae al YAML → localhost)
+# LLM_PROFILE=ollama-llama31                       # opcional: pisa active_profile del YAML
+# OLLAMA_HOST=http://host.docker.internal:11434    # opcional: pisa el host del perfil
+```
+
+`frontend/.env` (independiente):
+```
+PORT=3000
+CORE_API_URL=http://localhost:8010
 ```
 
 ## Specs-Driven Development
 
-The `specs/` directory contains the authoritative specs for all features:
-- `specs/001_marco_sdd.md` — SDD framework, naming conventions, architectural rules (leer primero ante cualquier feature nueva)
-- `specs/026_llm_core_definitions_spec.md` — unified YAML-driven LLM config, normalizer pipeline
-- `specs/027_llm_profiles_spec.md` — pre-configured profiles (active_profile + LLM_PROFILE override)
-- `specs/030_synopsis_beat_mapper_spec.md` — SynopsisBeatMapper: extracción extractiva de beats
-- `specs/031_prompts_relato_compact.md` — sistema de prompts compact para modelos locales
-- `specs/038_anclajes_narrativos.md` — **arquitectura activa**: NarrativeAnchors, pipeline secuencial, narrative_context pre-baked (IMPLEMENTADO)
+El directorio `specs/` contiene las specs autoritativas. Lectura obligatoria al abordar una feature:
 
-All new features must follow the naming conventions and layering rules in `001_marco_sdd.md`.
+| Spec | Tema |
+|---|---|
+| `010_marco_sdd.md` | Framework SDD, naming conventions, reglas arquitecturales |
+| `040_progress_reporter_cli.md` | Reporter CLI con spinner y timing |
+| `050_anthropic_provider.md` | AnthropicAdapter |
+| `060_llm_core_definitions_spec.md` | YAML unificado + normalizer pipeline |
+| `070_llm_profiles_spec.md` | Perfiles pre-configurados + override |
+| `080_response_normalizer_scope.md` | Alcance del normalizer |
+| `120_cli_service_container_spec.md` | `CLIContainer` (DI para la CLI) |
+| `130_persistencia_campos_narrativa_spec.md` | Persistencia de campos narrativos |
+| `140_dominio_anemico_spec.md` | Lucha contra el dominio anémico |
+| `150_story_god_object_spec.md` | Refactor del `Story` god object |
+| `160_freytag_resonance_spec.md` | 5 Pilares Aristotélicos |
+| `170_prompting_asertivo_spec.md` | Prompts compact para modelos locales |
+| `180_saneamiento_architectural_narrativo.md` | Pipeline secuencial + `narrative_context` pre-baked |
+| `210_arquitectura_web_y_streaming.md` | Express + SSE + StreamSessionManager |
+| `220_motor_de_autoria_wizard_y_yaml.md` | Wizard de 5 pasos + bidireccionalidad YAML |
+| `222_journal_relacional_spec.md` | Journal relacional cross-beat |
+| `230_ciclo_de_vida_y_gestion_historias.md` | Estados de historia + artefactos |
+| `300_refactor_dominio_varios_relatos.md` | `GeneratedNarrative` (variantes) |
+| `301_limpieza_markdown_mejoras_ui.md` | Limpieza Markdown + mejoras UI |
+| `302_fix_cli_input_yaml_loader.md` | Fix `--input` YAML loader |
+| `310_limpieza_arquitectural_post_302.md` | Saneo post-302 (eliminación de renderers/parsers obsoletos) |
+| `311_fix_galeria_ver_relato_y_delete.md` | Galería: switcher de variantes + delete |
+| `312_fix_persistencia_generated_narrative.md` | Persistencia automática de `generated_narrative` desde CLI/SSE |
+
+Toda feature nueva debe respetar las convenciones de naming y layering definidas en `010_marco_sdd.md`.
 
 ## CLI Commands
 
+Argumentos reales del runner (`src/cli/runner.py`):
+
 ```bash
-python -m src generate --title "..." --protagonista "..." --sinopsis "..."
-python -m src plan <story_id>        # run only Director phase
-python -m src narrate <story_id>     # run only Voz phase
-python -m src export <story_id>      # export to Markdown
+uv run python -m src generate --input input_stories/<file>.yaml [--mock] [--debug] [--hasta <checkpoint>]
+uv run python -m src generate --title "..." --protagonist "..." --relator primera_persona|tercera_persona \
+       --escenarios "Casa/Pueblo" --sinopsis "..." --atmosfera "..."
+uv run python -m src generate --story-id <uuid>           # retoma una historia ya creada
+uv run python -m src plan     --title "..."               # solo plan
+uv run python -m src narrate  --story-id <uuid> --beats 1,2,3
+uv run python -m src export   --story-id <uuid> --format md
+uv run python -m src export-yaml <story_id>               # round-trip Story → YAML (Spec-302)
 ```
+
+Checkpoints válidos para `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal:1..5`.
 
 ## Database
 
-SQLite via `aiosqlite` (async). Cinco tablas tras migración Spec-038:
+SQLite vía `aiosqlite` (async). `init_db()` en `src/infrastructure/database/connection.py` define el esquema completo. **Ocho tablas** tras Spec-180/300/312:
 
-```
-story              — metadata (title, protagonista, relator, escenarios, sinopsis, atmosfera, status)
-narrative_anchors  — NarrativeAnchors por historia (resonance_hamartia, resonance_hybris, resonance_anagnorisis, resonance_peripeteia, resonance_residual)
-scenario           — escenarios cronológicos del input (story_id FK, order_index, name)
-macro_beat         — unidades narrativas (summary, content, status, active_scenario_id,
-                     narrative_context, memory_snapshot, technical_context)
-narrative_journal  — estado vivo cross-beat (last_events, unresolved_mysteries, physical_emotional_state)
-```
+| Tabla | Spec | Descripción |
+|---|---|---|
+| `story` | base | Metadata: title, protagonista, relator, sinopsis, atmosfera, narrative_brief, storyteller_config, personajes, status, file_path |
+| `rule` | 130 | Reglas tipadas por historia (content, type, intensity) |
+| `macro_beat` | 180 | Unidades narrativas; ver detalle abajo. Renombrada desde `beat`. |
+| `macro_beat_rule` | 130 | Tabla de unión M:N entre `macro_beat` y `rule` |
+| `scenario` | 180 | Escenarios cronológicos del input (story_id FK, order_index, name) |
+| `narrative_anchors` | 160 | Los 5 pilares por historia (`resonance_*`) |
+| `narrative_journal` | 222 | Estado vivo cross-beat (last_events, unresolved_mysteries, physical_emotional_state) |
+| `generated_narrative` | 300/312 | Variantes consolidadas del relato (UUID por corrida, title con timestamp) |
 
-Esquema de `macro_beat` (tabla renombrada desde `beat` en Spec-038):
+Esquema de `macro_beat`:
 
 | Columna | Descripción |
 |---|---|
 | `summary` | Evento del beat extraído por el Mapper |
 | `active_scenario_id` | FK → `scenario.id`; escenario activo identificado por el Mapper |
+| `active_scenario_description` | Descripción denormalizada para debugging |
 | `narrative_context` | Contexto pre-ensamblado recibido por el VOZ (persiste para debugging) |
 | `content` | Prosa generada por el VOZ |
-| `memory_snapshot` | JSON del Journalist: `{last_events, unresolved_mysteries, physical_emotional_state}` |
+| `status` | `pending` \| `in_progress` \| `completed` |
+| `type` | Tipo Freytag (`exposicion`, `accion_ascendente`, `climax`, `accion_descendente`, `desenlace`) |
+| `technical_context` | Notas técnicas opcionales del Director |
 
-Repositories in `src/infrastructure/database/` implement interfaces defined in `src/domain/interfaces/`.
+Repositorios en `src/infrastructure/database/repositories/`:
+- `SQLStoryRepository`
+- `SQLBeatRepository`
+- `SQLGeneratedNarrativeRepository` (Spec-300, poblada automáticamente desde Spec-312)
 
-## Diagrama de Secuencia — Pipeline Completo (Spec-038 + Spec-041)
+## API Endpoints (FastAPI)
+
+Todos prefijados con `/api/v1`:
 
 ```
-CLI/API     DirectorUseCase  StoryAnalystService  RuleScenarioResolver  SynopsisBeatMapper  VozUseCase  MemoryJournalist
-   │               │                  │                    │                     │               │               │
-   │  execute_full(story)             │                    │                     │               │               │
-   │──────────────>│                  │                    │                     │               │               │
-   │               │  extract_anchors()                    │                     │               │               │
-   │               │─────────────────>│                    │                     │               │               │
-   │               │  NarrativeAnchors [1 LLM call]        │                     │               │               │
-   │               │<─────────────────│                    │                     │               │               │
-   │               │                  │                    │                     │               │               │
-   │               │                  resolve_distribution(story)                │               │               │
-   │               │──────────────────────────────────────>│   [1 LLM call]      │               │               │
-   │               │                  rule_distribution (JSON por beat)          │               │               │
-   │               │<──────────────────────────────────────│                     │               │               │
-   │               │                  │                    │                     │               │               │
-   │               │════ LOOP beat 1..5 ══════════════════════════════════════════════════════════════════════════│
-   │               │                  │                    │                     │               │               │
-   │               │  resolve_beat_anchors()               │                     │               │               │
-   │               │─────────────────>│                    │                     │               │               │
-   │               │  {principal, contexto} [sin LLM]      │                     │               │               │
-   │               │<─────────────────│                    │                     │               │               │
-   │               │                  │            map_one(story, beat_id, anchors, rules, scenario)             │
-   │               │───────────────────────────────────────────────────────────>│   [1 LLM call] │               │
-   │               │                  │            MacroBeat(summary, active_scenario_id)        │               │
-   │               │<──────────────────────────────────────────────────────────│                │               │
-   │               │                  │                    │                     │               │               │
-   │               │  build_narrative_context() [sin LLM]  │                     │               │               │
-   │               │─────────────────────────────────────────────────────────────────────────────│               │
-   │               │  macro_beat.narrative_context          │                     │               │               │
-   │               │<────────────────────────────────────────────────────────────────────────────│               │
-   │               │                  │                    │                     │               │               │
-   │               │                  │              narrate(macro_beat, story) [1 LLM call]     │               │
-   │               │────────────────────────────────────────────────────────────────────────────>│               │
-   │               │                  │              MacroBeat + content                         │               │
-   │               │<────────────────────────────────────────────────────────────────────────────│               │
-   │               │                  │                    │                     │               │               │
-   │               │                  │                    │              extract(story, beat)   │  [1 LLM call] │
-   │               │──────────────────────────────────────────────────────────────────────────────────────────> │
-   │               │                  │                    │              (snapshot, journal)    │               │
-   │               │<─────────────────────────────────────────────────────────────────────────────────────────-│
-   │               │                  │                    │                     │               │               │
-   │  yield (beat, journal, elapsed)  │                    │                     │               │               │
-   │<──────────────│                  │                    │                     │               │               │
-   │               │════ FIN LOOP ════════════════════════════════════════════════════════════════════════════════│
+# story_router
+POST   /stories
+GET    /stories
+GET    /stories/{story_id}
+PATCH  /stories/{story_id}
+PATCH  /stories/{story_id}/status
+PATCH  /stories/{story_id}/file-path
+DELETE /stories/{story_id}
+
+# beat_router
+GET    /stories/{story_id}/beats
+PUT    /stories/{story_id}/beats/{beat_number}
+POST   /stories/{story_id}/beats/{beat_number}
+
+# narrative_router (Spec-300)
+POST   /story-templates/{story_template_id}/generate-narrative
+GET    /story-templates/{story_template_id}/narratives
+GET    /generated-narratives/{narrative_id}
+GET    /generated-narratives/{narrative_id}/text
+DELETE /generated-narratives/{narrative_id}
+
+# stream_router (Spec-210)
+GET    /stories/{story_id}/stream         # SSE
+GET    /stories/{story_id}/full
+GET    /health
+GET    /config/active-profile
+GET    /system/events
 ```
+
+## Diagrama de Secuencia — Pipeline Completo (Spec-180 + Spec-312)
+
+```
+CLI/API     StoryRunner   DirectorUseCase  Analyst  Resolver  Mapper  VozUseCase  MemoryJournalist  GenerateNarrativesUseCase
+   │             │              │             │         │        │         │               │                  │
+   │  run_full   │              │             │         │        │         │               │                  │
+   │────────────>│              │             │         │        │         │               │                  │
+   │             │ execute_full │             │         │        │         │               │                  │
+   │             │─────────────>│             │         │        │         │               │                  │
+   │             │              │ extract_anchors        │         │        │         │               │                  │
+   │             │              │────────────>│         │        │         │               │                  │
+   │             │              │ NarrativeAnchors [1 LLM]         │        │         │               │                  │
+   │             │              │<────────────│         │        │         │               │                  │
+   │             │              │             resolve_distribution │        │         │               │                  │
+   │             │              │──────────────────────>│        │         │               │                  │
+   │             │              │ rule_distribution [1 LLM]       │         │               │                  │
+   │             │              │<──────────────────────│        │         │               │                  │
+   │             │              │             │         │        │         │               │                  │
+   │             │              │ ════ LOOP beat 1..5 ═══════════════════════════════════════════════════════│
+   │             │              │             │         │        map_one  │         │               │                  │
+   │             │              │──────────────────────────────────>│      │ [1 LLM]│         │                  │
+   │             │              │             │         │        │ MacroBeat(summary, active_scenario_id)           │
+   │             │              │<─────────────────────────────────│       │         │               │                  │
+   │             │              │             │         │        │         │               │                  │
+   │             │              │ build_narrative_context [sin LLM]│        │         │               │                  │
+   │             │              │             │         │        │         │               │                  │
+   │             │              │             │         │        │ narrate(macro_beat) [1 LLM]                       │
+   │             │              │──────────────────────────────────────────>│         │               │                  │
+   │             │              │ MacroBeat + content                       │         │               │                  │
+   │             │              │<──────────────────────────────────────────│         │               │                  │
+   │             │              │             │         │        │         │ extract │ [1 LLM]                  │
+   │             │              │────────────────────────────────────────────────────>│                  │
+   │             │              │ (snapshot, journal)                                  │                  │
+   │             │              │<───────────────────────────────────────────────────-│                  │
+   │             │              │             │         │        │         │               │                  │
+   │             │ yield (beat, journal, elapsed)        │        │         │               │                  │
+   │             │<─────────────│             │         │        │         │               │                  │
+   │             │  beat_repo.save(...)                  │        │         │               │                  │
+   │             │              │ ════ FIN LOOP ═══════════════════════════════════════════════════════════════│
+   │             │                                                                  │                  │
+   │             │ [Spec-312] _consolidate_narrative(story)                         │                  │
+   │             │──────────────────────────────────────────────────────────────────────────────────>│
+   │             │ GeneratedNarrative (nueva variante UUID)                                          │
+   │             │<─────────────────────────────────────────────────────────────────────────────────│
+   │  Story (con beats + narrative_id)                                                              │
+   │<────────────│                                                                                   │
+```
+
+El mismo patrón aplica al pipeline web vía `stream_story()` (Spec-210), que envuelve a `DirectorUseCase.execute_full()` y emite `StreamEvent` por SSE; al finalizar invoca `consolidate_and_save()` y enriquece el evento `done` con `narrative_id`.

@@ -69,23 +69,6 @@ def generate(
     typed_rules: list[dict] = []
     personajes_full: list[dict] = []
 
-    if input_file:
-        container = CLIContainer(use_mock=use_mock, provider=provider)
-        story_data = container.markdown_parser.parse(input_file)
-
-        title = story_data.title
-        protagonista = story_data.protagonista
-        relator = story_data.relator
-        escenarios = story_data.cronologic_scenarios
-        sinopsis = story_data.sinopsis
-        atmosfera = story_data.atmosfera
-        reglas = story_data.reglas
-        storyteller_config = story_data.storyteller_config or None
-        typed_rules = story_data.typed_rules
-        personajes_full = story_data.personajes_full
-
-        logger.info(f"[COMANDOS] Cargando historia desde: {input_file}")
-
     logger.info(f"[COMANDOS] Iniciando generación de historia: {title}")
 
     try:
@@ -108,6 +91,7 @@ def generate(
                 storyteller_config=storyteller_config,
                 typed_rules=typed_rules,
                 personajes_full=personajes_full,
+                input_file=input_file,
             )
         )
     except OllamaConnectionError:
@@ -135,9 +119,29 @@ async def _generate_async(
     storyteller_config: dict | None = None,
     typed_rules: list[dict] | None = None,
     personajes_full: list[dict] | None = None,
+    input_file: str | None = None,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
+
+    if input_file:
+        from src.infrastructure.loaders import YamlStoryLoader, YamlStoryLoaderError
+
+        try:
+            loader = YamlStoryLoader()
+            dto = loader.load_from_file(Path(input_file))
+            title = dto.title
+            protagonista = dto.protagonista
+            relator = dto.relator
+            escenarios = dto.escenarios
+            sinopsis = dto.sinopsis
+            atmosfera = dto.atmosfera
+            reglas = dto.reglas
+            storyteller_config = dto.storyteller_config
+            typed_rules = dto.typed_rules
+            personajes_full = dto.personajes_full
+        except YamlStoryLoaderError as e:
+            raise ValidationError(f"Error al cargar YAML: {e}")
 
     container = CLIContainer(use_mock=use_mock, provider=provider, debug=debug)
     runner = container.story_runner(output_dir)
@@ -162,11 +166,8 @@ async def _generate_async(
 
     await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
 
-    t_export = time.perf_counter()
-    output_path = _write_markdown(story, output_dir, container.markdown_renderer)
-    container.reporter.export_done(time.perf_counter() - t_export)
-    container.reporter.done(time.perf_counter() - t_total, output_path)
-    logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
+    container.reporter.done(time.perf_counter() - t_total)
+    logger.info("[COMANDOS] Historia completada")
 
 
 def plan(
@@ -324,11 +325,8 @@ async def _generate_from_db_async(
 
     await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
 
-    t_export = time.perf_counter()
-    output_path = _write_markdown(story, output_dir, container.markdown_renderer)
-    container.reporter.export_done(time.perf_counter() - t_export)
-    container.reporter.done(time.perf_counter() - t_total, output_path)
-    logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
+    container.reporter.done(time.perf_counter() - t_total)
+    logger.info("[COMANDOS] Historia completada")
 
 
 def export_yaml(
@@ -399,7 +397,7 @@ def export_(
 async def _export_async(
     story_id: str,
     format: str,  # noqa: ARG001
-    output_dir: Path,
+    _output_dir: Path,
 ) -> None:
     """Async implementation of export."""
     await _init_database()
@@ -417,5 +415,4 @@ async def _export_async(
 
     beats = await container.beat_repo.get_by_story(story_uuid)
     story.beats = beats
-    output_path = _write_markdown(story, output_dir, container.markdown_renderer)
-    logger.info(f"[COMANDOS] Historia exportada a: {output_path}")
+    logger.info("[COMANDOS] Historia exportada (sin archivo markdown)")

@@ -44,15 +44,13 @@ function renderStatusLabel(s) {
           </div>
 
           <div class="flex items-center gap-6 flex-wrap">
-            <%/* Markdown / Exportar — verificado vía HTMX para detectar archivos borrados */%>
-            <% if (s.file_path || s.status === 'completed') { %>
-              <span hx-get="/internal/historia/<%= s.id %>/markdown-check"
-                    hx-trigger="load"
-                    hx-swap="outerHTML">
-              </span>
-            <% } %>
-
-            <% if (s.status !== 'processing') { %>
+            <% if (s.status === 'processing') { %>
+              <a href="/generar/stream/<%= s.id %>"
+                 class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2">
+                <i data-lucide="eye" class="w-4 h-4"></i> Ver avance
+              </a>
+              <span class="text-xs text-forge-muted italic">Generación en curso...</span>
+            <% } else { %>
               <a href="/generar/cargar/<%= s.id %>"
                  class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2">
                 <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
@@ -65,38 +63,44 @@ function renderStatusLabel(s) {
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
                   </button>
                 </form>
-              <% } else { %>
+                <a href="/historia/<%= s.id %>/relatos"
+                   class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2">
+                  <i data-lucide="book-open" class="w-4 h-4"></i> Ver Relato
+                </a>
+              <% } else if (s.status === 'failed') { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
                   <button type="submit"
                           class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
-                    <i data-lucide="zap" class="w-4 h-4"></i>
-                    <%= s.status === 'failed' ? 'Reintentar' : 'Generar' %>
+                    <i data-lucide="zap" class="w-4 h-4"></i> Reintentar
                   </button>
                 </form>
-              <% } %>
-
-              <% if (s.status === 'failed') { %>
                 <a href="/generar/stream/<%= s.id %>"
                    class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver avance
                 </a>
+              <% } else { %>
+                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
+                  <button type="submit"
+                          class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Generar
+                  </button>
+                </form>
               <% } %>
-            <% } else { %>
-              <a href="/generar/stream/<%= s.id %>"
-                 class="text-sm text-blue-400 hover:opacity-70 flex items-center gap-2">
-                <i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Ver generación activa
-              </a>
-            <% } %>
 
-            <button hx-get="/modales/confirmar-borrar/<%= s.id %>"
-                    hx-target="body"
-                    hx-swap="beforeend"
-                    class="text-sm text-red-400 hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0 ml-auto">
-              <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar
-            </button>
+              <button
+                type="button"
+                hx-get="/modales/confirmar-borrar/<%= s.id %>"
+                hx-target="#modal-slot"
+                hx-swap="innerHTML"
+                class="text-sm text-red-400 hover:text-red-300 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0"
+              >
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar
+              </button>
+            <% } %>
           </div>
         </div>
       <% }); %>
     </div>
   <% } %>
 </div>
+<div id="modal-slot"></div>

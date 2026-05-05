@@ -1,0 +1,75 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Theme Variables (CSS Custom Properties)
+   
+   Nota: Estos valores se sobrescriben dinámicamente desde el backend
+   mediante inyección de themeCssVars en layout.ejs.
+   
+   Este archivo sirve como fallback y documentación de las variables disponibles.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Colores principales — Fallback (se inyectan desde backend) */
+  --forge-bg: #1a1a1a;
+  --forge-surface: #2d2d2d;
+  --forge-border: #444444;
+  --forge-accent: #8b0000;
+  --forge-muted: #999999;
+  --forge-text: #ffffff;
+
+  /* Colores secundarios */
+  --orange-primary: #f58300;
+  --orange-light: #ffa500;
+  --orange-dark: #cc6600;
+
+  /* Espaciado */
+  --sidebar-width: 16rem;
+
+  /* Tipografía */
+  --font-serif: Georgia, serif;
+  --font-mono: "Courier New", monospace;
+}
+
+/* Temas adicionales (opcional) */
+
+/* Dark mode (default) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --forge-bg: #1a1a1a;
+    --forge-surface: #2d2d2d;
+    --forge-border: #444444;
+    --forge-accent: #8b0000;
+    --forge-muted: #999999;
+    --forge-text: #ffffff;
+  }
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  :root {
+    --forge-bg: #ffffff;
+    --forge-surface: #f5f5f5;
+    --forge-border: #cccccc;
+    --forge-accent: #cc0000;
+    --forge-muted: #666666;
+    --forge-text: #1a1a1a;
+  }
+}
+
+/* Atributo data-theme para soporte manual */
+html[data-theme="light"] {
+  --forge-bg: #ffffff;
+  --forge-surface: #f5f5f5;
+  --forge-border: #cccccc;
+  --forge-accent: #cc0000;
+  --forge-muted: #666666;
+  --forge-text: #1a1a1a;
+}
+
+html[data-theme="dark"] {
+  --forge-bg: #1a1a1a;
+  --forge-surface: #2d2d2d;
+  --forge-border: #444444;
+  --forge-accent: #8b0000;
+  --forge-muted: #999999;
+  --forge-text: #ffffff;
+}

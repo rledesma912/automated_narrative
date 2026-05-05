@@ -19,9 +19,10 @@ async def get_connection() -> aiosqlite.Connection:
         db_url = raw[len("sqlite+aiosqlite://") :]
     else:
         db_url = raw
-    conn = await aiosqlite.connect(db_url)
+    conn = await aiosqlite.connect(db_url, timeout=30.0)
     conn.row_factory = aiosqlite.Row
     await conn.execute("PRAGMA foreign_keys = ON")
+    await conn.execute("PRAGMA journal_mode = WAL")
     return conn
 
 
@@ -121,6 +122,18 @@ async def init_db() -> None:
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, beat_number)
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS generated_narrative (
+            id TEXT PRIMARY KEY,
+            story_template_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            status TEXT DEFAULT 'completed',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (story_template_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
 

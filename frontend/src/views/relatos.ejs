@@ -1,0 +1,153 @@
+<%
+/*
+ * Variables de entrada:
+ *   story: { id, title, ... } // La historia principal
+ *   relatos: [
+ *     { id, content, title, created_at, ... }, // Cada relato generado
+ *     // ... más relatos
+ *   ]
+ */
+%>
+<div class="max-w-5xl mx-auto">
+  <a href="/galeria" class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2 mb-4">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a Galería
+  </a>
+  <h2 class="font-serif text-3xl text-forge-accent mb-2">Relatos de <%= story.title || 'Sin título' %></h2>
+  <p class="text-forge-muted text-sm uppercase tracking-widest mb-12">Explora las diferentes versiones generadas para esta historia.</p>
+
+  <% if (!relatos || relatos.length === 0) { %>
+    <div class="border border-forge-border bg-forge-surface p-12 text-center text-forge-muted text-base">
+      <i data-lucide="notebook" class="w-12 h-12 mx-auto mb-4 text-forge-accent"></i>
+      <p>No hay relatos generados aún para esta historia.</p>
+    </div>
+  <% } else { %>
+    <div class="border-b border-forge-border mb-6">
+      <div class="flex items-center gap-2 overflow-x-auto pb-3">
+        <% relatos.forEach(function(relato, index) { %>
+          <%
+            const displayTitle = relato.title || `Relato ${index + 1}`;
+            const createdAt = new Date(relato.created_at || Date.now()).toLocaleString('es-AR', {
+              day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+            });
+          %>
+          <button
+            type="button"
+            data-relato-tab="<%= relato.id %>"
+            class="relato-tab whitespace-nowrap text-left px-4 py-2 border border-forge-border text-forge-muted text-sm hover:text-forge-text hover:border-forge-accent transition-colors"
+          >
+            <span class="block font-medium"><%= displayTitle %></span>
+            <span class="block text-xs opacity-80"><%= createdAt %></span>
+          </button>
+        <% }); %>
+      </div>
+    </div>
+
+    <% relatos.forEach(function(relato, index) { %>
+      <section
+        id="relato-panel-<%= relato.id %>"
+        data-relato-panel="<%= relato.id %>"
+        class="relato-panel border border-forge-border bg-forge-surface p-8 max-h-[calc(100vh-16rem)] overflow-y-auto <%= index === 0 ? '' : 'hidden' %>"
+      >
+        <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
+          <h3 class="text-xl font-semibold text-forge-text"><%= relato.title || `Relato ${index + 1}` %></h3>
+          <button
+            type="button"
+            onclick="copyRelatoContent('<%= relato.id %>', this)"
+            class="text-sm text-forge-accent hover:opacity-70 flex items-center gap-2 bg-transparent border-none cursor-pointer p-0"
+          >
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            Copiar Relato
+          </button>
+        </div>
+        <div id="relato-content-<%= relato.id %>" class="prose max-w-none text-forge-text whitespace-pre-wrap leading-relaxed text-base"><%= relato.content %></div>
+      </section>
+    <% }); %>
+  <% } %>
+</div>
+
+<script>
+  function selectRelato(relatoId) {
+    document.querySelectorAll('[data-relato-panel]').forEach((panel) => {
+      panel.classList.toggle('hidden', panel.getAttribute('data-relato-panel') !== relatoId);
+    });
+
+    document.querySelectorAll('[data-relato-tab]').forEach((tab) => {
+      const isActive = tab.getAttribute('data-relato-tab') === relatoId;
+      tab.classList.toggle('text-forge-text', isActive);
+      tab.classList.toggle('border-forge-accent', isActive);
+      tab.classList.toggle('bg-forge-surface', isActive);
+      tab.classList.toggle('text-forge-muted', !isActive);
+    });
+  }
+
+  function copyRelatoContent(relatoId, button) {
+    const contentElement = document.getElementById(`relato-content-${relatoId}`);
+    if (!contentElement) {
+      return;
+    }
+
+    const textToCopy = contentElement.innerText;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> ¡Copiado!';
+        button.disabled = true;
+        lucide.createIcons();
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.disabled = false;
+          lucide.createIcons();
+        }, 2000);
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('[data-relato-tab]');
+    if (tabs.length > 0) {
+      const firstId = tabs[0].getAttribute('data-relato-tab');
+      if (firstId) selectRelato(firstId);
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const relatoId = tab.getAttribute('data-relato-tab');
+        if (relatoId) selectRelato(relatoId);
+      });
+    });
+  });
+</script>
+
+<%/* Estilos básicos para el componente "prose" de Tailwind CSS si no está configurado globalmente */%>
+<style>
+.prose {
+  --tw-prose-body: #d1d1d1; /* forge-text */
+  --tw-prose-headings: #f0f0f0; /* forge-text */
+  --tw-prose-links: #e0a0a0; /* forge-accent */
+  --tw-prose-bold: #f0f0f0; /* forge-text */
+  --tw-prose-counters: #a0a0a0; /* forge-muted */
+  --tw-prose-bullets: #a0a0a0; /* forge-muted */
+  --tw-prose-quotes: #a0a0a0; /* forge-muted */
+  --tw-prose-invert-body: #a0a0a0;
+  --tw-prose-invert-headings: #d1d1d1;
+  --tw-prose-invert-links: #f0a0a0;
+  --tw-prose-invert-bold: #d1d1d1;
+  --tw-prose-invert-counters: #d1d1d1;
+  --tw-prose-invert-bullets: #d1d1d1;
+  --tw-prose-invert-quotes: #d1d1d1;
+}
+.prose p {
+  margin-bottom: 1rem; /* Default paragraph spacing */
+}
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.prose a {
+  color: inherit; /* Let it inherit from --tw-prose-links */
+  text-decoration: underline;
+}
+.prose a:hover {
+  color: var(--tw-prose-invert-links, #f0a0a0); /* Use a variant of accent */
+}
+</style>

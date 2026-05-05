@@ -17,6 +17,9 @@ from src.infrastructure.database.repositories import SQLBeatRepository, SQLStory
 from src.infrastructure.normalizers import ResponseNormalizer
 
 if TYPE_CHECKING:
+    from src.application.use_cases.generate_narratives_use_case import (
+        GenerateNarrativesUseCase,
+    )
     from src.cli.progress import ProgressReporter
 
 
@@ -32,6 +35,7 @@ class StoryRunner:
         output_dir: Path,
         reporter: "ProgressReporter | SilentReporter | None" = None,
         debug_collector: DebugCollector | None = None,
+        narrative_use_case: "GenerateNarrativesUseCase | None" = None,
     ):
         self.llm = llm_adapter
         self.story_repo = story_repo
@@ -41,6 +45,8 @@ class StoryRunner:
         self.reporter = reporter or SilentReporter()
         self.normalizer = ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
+        self.narrative_use_case = narrative_use_case
+        self.last_narrative_id: str | None = None
 
     async def run_full(
         self,
@@ -135,6 +141,9 @@ class StoryRunner:
 
         story.beats = completed
 
+        if stop_after is None and self.narrative_use_case is not None:
+            await self._consolidate_narrative(story)
+
         if story.narrative_brief:
             await self.story_repo.save_narrative_brief(story.id, story.narrative_brief)
 
@@ -195,6 +204,22 @@ class StoryRunner:
             logger.info(f"[VOZ] Beat #{beat.number} completado y guardado")
             beat_t0 = perf_counter()
 
-        story.beats = completed
+        full_beats = await self.beat_repo.get_by_story(story.id)
+        all_completed = full_beats and all(b.status == BeatStatus.COMPLETED for b in full_beats)
+        if all_completed and self.narrative_use_case is not None:
+            story.beats = full_beats
+            await self._consolidate_narrative(story)
+        else:
+            story.beats = completed
+
         logger.info(f"[ORQUESTADOR] Narración finalizada para: {story.title}")
         return story
+
+    async def _consolidate_narrative(self, story: Story) -> None:
+        """Consolida los beats narrados en `generated_narrative` (Spec-312)."""
+        try:
+            narrative = await self.narrative_use_case.consolidate_and_save(story)
+            self.last_narrative_id = str(narrative.id)
+            logger.info(f"[NARRATIVE] Variante persistida: {narrative.id}")
+        except Exception as exc:
+            logger.warning(f"[NARRATIVE] Fallo consolidación: {exc}")

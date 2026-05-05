@@ -1,6 +1,5 @@
 """Tests para NarrativeContextAssembler — Spec 063 Slice D."""
 
-import json
 import uuid
 from unittest.mock import MagicMock
 
@@ -9,7 +8,7 @@ import pytest
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.narrative_context_assembler import NarrativeContextAssembler
 from src.application.services.story_analyst_service import StoryAnalystService
-from src.domain.models import MacroBeat, NarrativeAnchors
+from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal
 
 _STORY_ID = uuid.uuid4()
 _ANCHORS = NarrativeAnchors(
@@ -84,10 +83,6 @@ class TestNarrativeContextAssemblerBasic:
         result = assembler.assemble(beat, _beat_anchors(1, repo))
         assert "FIDELIDAD" in result or "PROHIBIDO" in result
 
-
-from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal
-
-...
 
 class TestNarrativeContextAssemblerSnapshot:
     def test_sin_journal_no_incluye_seccion_memoria(self, assembler, repo):
