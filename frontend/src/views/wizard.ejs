@@ -186,9 +186,9 @@ function hasCardData(fields) {
   </div>
 
   <%/* ── Título + Subtítulo del paso ─────────────────── */%>
-  <h2 class="font-serif text-2xl text-forge-accent mb-1"><%= step.title %></h2>
+  <h2 class="heading-forge-lg mb-1"><%= step.title %></h2>
   <% if (step.subtitle) { %>
-    <p class="text-sm text-forge-muted mb-8 uppercase tracking-widest"><%= step.subtitle %></p>
+    <p class="text-forge-muted-caps mb-8"><%= step.subtitle %></p>
   <% } else { %>
     <div class="mb-6"></div>
   <% } %>
@@ -211,9 +211,9 @@ function hasCardData(fields) {
           const protagIndices = Object.keys(protagCards).sort((a,b) => Number(a)-Number(b));
           const MAX_PROTAGONISTAS = 5;
         %>
-        <div class="border border-forge-border bg-forge-surface p-6 space-y-5" id="elenco-group">
+        <div class="card-forge !p-6 space-y-5" id="elenco-group">
           <div class="border-b border-forge-border pb-3">
-            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
             <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
           </div>
 
@@ -226,7 +226,7 @@ function hasCardData(fields) {
             <div id="personaje-card-<%= idx %>"
                  class="border border-forge-border p-4<%= visible ? '' : ' hidden' %>">
               <div class="flex items-center justify-between mb-4">
-                <h4 class="text-xs uppercase tracking-widest text-forge-muted font-bold"
+                <h4 class="text-forge-muted-caps font-bold"
                     id="personaje-label-<%= idx %>">
                   PERSONAJE <%= idx %><% if (nameVal) { %> — <%= esc(nameVal) %><% } %>
                 </h4>
@@ -246,7 +246,7 @@ function hasCardData(fields) {
           <div class="flex items-center gap-4 pt-2">
             <button type="button" onclick="addPersonaje()"
                     id="btn-add-personaje"
-                    class="flex items-center gap-2 text-sm text-forge-accent hover:opacity-70 transition-opacity border border-forge-border px-4 py-2">
+                    class="btn-forge-outline">
               <i data-lucide="user-plus" class="w-4 h-4"></i> Agregar personaje
             </button>
             <span class="text-xs text-forge-muted hidden" id="msg-max-personajes">Máximo <%= MAX_PROTAGONISTAS %> personajes</span>
@@ -259,9 +259,9 @@ function hasCardData(fields) {
           const scenIndices = Object.keys(scenCards).sort((a,b) => Number(a)-Number(b));
           const MAX_ESCENARIOS = 4;
         %>
-        <div class="border border-forge-border bg-forge-surface p-6 space-y-5" id="escenarios-group">
+        <div class="card-forge !p-6 space-y-5" id="escenarios-group">
           <div class="border-b border-forge-border pb-3">
-            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
             <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
           </div>
 
@@ -273,7 +273,7 @@ function hasCardData(fields) {
             <div id="scenario-card-<%= idx %>"
                  class="border border-forge-border p-4<%= visibleS ? '' : ' hidden' %>">
               <div class="flex items-center justify-between mb-4">
-                <h4 class="text-xs uppercase tracking-widest text-forge-muted font-bold">ESCENARIO <%= idx %></h4>
+                <h4 class="text-forge-muted-caps font-bold">ESCENARIO <%= idx %></h4>
                 <button type="button"
                         onclick="askDeleteScenario('<%= idx %>')"
                         id="scenario-delete-btn-<%= idx %>"
@@ -290,7 +290,7 @@ function hasCardData(fields) {
           <div class="flex items-center gap-4 pt-2">
             <button type="button" onclick="addScenario()"
                     id="btn-add-scenario"
-                    class="flex items-center gap-2 text-sm text-forge-accent hover:opacity-70 transition-opacity border border-forge-border px-4 py-2">
+                    class="btn-forge-outline">
               <i data-lucide="map-pin" class="w-4 h-4"></i> Agregar escenario
             </button>
             <span class="text-xs text-forge-muted hidden" id="msg-max-escenarios">Máximo <%= MAX_ESCENARIOS %> escenarios</span>
@@ -303,9 +303,9 @@ function hasCardData(fields) {
           const ruleIndices = Object.keys(ruleCards).sort((a,b) => Number(a)-Number(b));
           const MAX_REGLAS = 7;
         %>
-        <div class="border border-forge-border bg-forge-surface p-6 space-y-5" id="reglas-group">
+        <div class="card-forge !p-6 space-y-5" id="reglas-group">
           <div class="border-b border-forge-border pb-3">
-            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
             <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
           </div>
 
@@ -317,7 +317,7 @@ function hasCardData(fields) {
             <div id="rule-card-<%= idx %>"
                  class="border border-forge-border p-4<%= visibleR ? '' : ' hidden' %>">
               <div class="flex items-center justify-between mb-4">
-                <h4 class="text-xs uppercase tracking-widest text-forge-muted font-bold">REGLA <%= idx %></h4>
+                <h4 class="text-forge-muted-caps font-bold">REGLA <%= idx %></h4>
                 <button type="button"
                         onclick="askDeleteRule('<%= idx %>')"
                         id="rule-delete-btn-<%= idx %>"
@@ -334,7 +334,7 @@ function hasCardData(fields) {
           <div class="flex items-center gap-4 pt-2">
             <button type="button" onclick="addRule()"
                     id="btn-add-rule"
-                    class="flex items-center gap-2 text-sm text-forge-accent hover:opacity-70 transition-opacity border border-forge-border px-4 py-2">
+                    class="btn-forge-outline">
               <i data-lucide="plus-circle" class="w-4 h-4"></i> Agregar regla
             </button>
             <span class="text-xs text-forge-muted hidden" id="msg-max-reglas">Máximo <%= MAX_REGLAS %> reglas</span>
@@ -342,9 +342,9 @@ function hasCardData(fields) {
         </div>
 
       <% } else { %>
-        <div class="border border-forge-border bg-forge-surface p-6 space-y-5">
+        <div class="card-forge !p-6 space-y-5">
           <div class="border-b border-forge-border pb-3">
-            <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold"><%= meta.title %></h3>
+            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
             <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
           </div>
           <% groupedMap[groupName].forEach(field => { %>
@@ -356,19 +356,17 @@ function hasCardData(fields) {
     <% }); %>
 
     <%/* ── Navegación ────────────────────────────────── */%>
-    <div class="flex items-center justify-between pt-4 border-t border-forge-border">
+    <div class="flex items-center justify-between pt-8 border-t border-forge-border">
       <% if (step.number > 1) { %>
         <a href="/generar/paso/<%= step.number - 1 %>"
-           class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
+           class="btn-forge-outline !px-0 !border-none">
           <i data-lucide="arrow-left" class="w-4 h-4"></i> Anterior
         </a>
       <% } else { %>
         <span></span>
       <% } %>
 
-      <button type="submit"
-              class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
-                     tracking-widest uppercase hover:opacity-80 transition-opacity">
+      <button type="submit" class="btn-forge !px-8 !py-3 !text-sm">
         <% if (isLast) { %>
           <i data-lucide="save" class="w-4 h-4"></i> Guardar y revisar
         <% } else { %>
@@ -382,16 +380,15 @@ function hasCardData(fields) {
 <%/* ── Modal de confirmación de eliminación ────────────────────────────── */%>
 <div id="delete-modal"
      class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-  <div class="bg-forge-bg border border-forge-border p-6 max-w-sm w-full mx-4">
-    <h3 class="text-sm uppercase tracking-widest text-forge-muted font-bold mb-3">Confirmar eliminación</h3>
-    <p id="delete-modal-msg" class="text-sm text-forge-text mb-5"></p>
+  <div class="card-forge !p-6 max-w-sm w-full mx-4">
+    <h3 class="text-forge-muted-caps font-bold mb-3">Confirmar eliminación</h3>
+    <p id="delete-modal-msg" class="text-forge-body !text-sm mb-5"></p>
     <div class="flex gap-3 justify-end">
-      <button type="button" onclick="closeDeleteModal()"
-              class="px-4 py-2 text-sm border border-forge-border text-forge-muted hover:text-forge-text transition-colors">
+      <button type="button" onclick="closeDeleteModal()" class="btn-forge-outline">
         Cancelar
       </button>
       <button type="button" id="delete-modal-confirm"
-              class="px-4 py-2 text-sm bg-red-900 text-red-100 hover:bg-red-800 transition-colors">
+              class="btn-forge-outline !bg-red-900 !text-red-100 !border-red-800 hover:!bg-red-800">
         Eliminar
       </button>
     </div>

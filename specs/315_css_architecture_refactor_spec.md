@@ -101,9 +101,9 @@ frontend/
 
 ### Fase 3: Cutover (ELIMINAR CDN)
 
-- [ ] **3.1** En layout.ejs: eliminar `<script src="cdn.tailwindcss.com">`
-- [ ] **3.2** En layout.ejs: eliminar `<script> tailwind.config = {...}`
-- [ ] **3.3** Tests E2E: renderizar todas las páginas
+- [x] **3.1** En layout.ejs: eliminar `<script src="cdn.tailwindcss.com">`
+- [x] **3.2** En layout.ejs: eliminar `<script> tailwind.config = {...}`
+- [x] **3.3** Tests E2E: renderizar todas las páginas
 - [ ] **3.4** Tests offline: desabilitar internet → estilos siguen cargando
 
 ### Fase 4: Optimización

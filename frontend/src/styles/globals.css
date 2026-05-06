@@ -16,46 +16,91 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* Botones primarios */
-  .btn-primary {
-    @apply px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase;
+  /* ── Botones ────────────────────────────────────────────────────────────── */
+  
+  /* Botón primario de acción (estilo "Skull" / Acción principal) */
+  .btn-forge {
+    @apply inline-flex items-center justify-center gap-3 px-10 py-4;
+    @apply bg-forge-accent text-forge-text font-serif text-lg tracking-[0.3em] uppercase;
     @apply hover:bg-red-800 hover:scale-105 transition-all duration-300;
-    @apply shadow-[0_0_30px_rgba(139,0,0,0.3)];
+    @apply shadow-[0_0_25px_rgba(139,0,0,0.25)] active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  .btn-primary:hover i {
-    @apply group-hover:rotate-12 transition-transform;
+  /* Botón secundario / Outline para acciones de lista o auxiliares */
+  .btn-forge-outline {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
+    @apply border border-forge-border text-forge-muted text-sm uppercase tracking-widest;
+    @apply hover:border-forge-accent hover:text-forge-text transition-all;
+    @apply active:scale-95;
   }
 
-  /* Cards */
-  .card {
-    @apply bg-forge-surface border border-forge-border rounded-lg p-6 transition-all;
+  /* ── Contenedores (Cards) ───────────────────────────────────────────────── */
+
+  .card-forge {
+    @apply bg-forge-surface border border-forge-border p-8 shadow-lg;
+    @apply hover:border-forge-accent transition-all duration-300;
   }
 
-  .card:hover {
-    @apply shadow-lg border-forge-accent;
+  .card-forge-active {
+    @apply card-forge ring-1 ring-forge-accent border-forge-accent scale-[1.02] z-10;
   }
 
-  /* Typography */
-  .text-heading-xl {
-    @apply text-3xl font-serif text-forge-text;
+  /* ── Tipografía Normalizada ────────────────────────────────────────────── */
+
+  .heading-forge-xl {
+    @apply font-serif text-5xl md:text-7xl text-forge-accent tracking-tighter;
   }
 
-  .text-heading-lg {
-    @apply text-2xl font-serif text-forge-text;
+  .heading-forge-lg {
+    @apply font-serif text-2xl md:text-3xl text-forge-text tracking-tight;
   }
 
-  .text-body {
-    @apply text-base font-sans text-forge-text leading-relaxed;
+  .text-forge-body {
+    @apply text-base text-forge-text leading-relaxed opacity-90;
   }
 
-  /* Alerts / Warnings */
-  .alert-warning {
-    @apply flex items-start gap-3 p-4 border border-orange-700/50 bg-orange-950/20 text-left;
+  .text-forge-muted-caps {
+    @apply text-forge-muted text-xs uppercase tracking-[0.4em];
   }
 
-  .alert-warning p {
-    @apply text-orange-600 text-sm leading-relaxed;
+  /* ── Elementos de UI ────────────────────────────────────────────────────── */
+
+  .badge-forge {
+    @apply px-2 py-0.5 bg-forge-bg border border-forge-border text-forge-accent text-[10px] font-bold uppercase tracking-widest rounded;
+  }
+
+  .nav-link-forge {
+    @apply flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 border-l-2;
+  }
+
+  .nav-link-forge-active {
+    @apply text-forge-accent border-forge-accent bg-forge-bg;
+  }
+
+  .nav-link-forge-idle {
+    @apply text-forge-muted hover:text-forge-text hover:bg-forge-bg border-transparent;
+  }
+
+  /* ── Animaciones y Transiciones HTMX ────────────────────────────────────── */
+
+  .htmx-swapping {
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+  }
+
+  .htmx-settling {
+    opacity: 0;
+  }
+
+  /* Fade-in suave al cargar contenido */
+  main {
+    animation: fadeIn 400ms ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   /* Scrollbar personalizada */
