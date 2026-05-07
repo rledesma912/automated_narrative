@@ -159,6 +159,20 @@ const personajes = story.personajes_full || [];
             Regenerar
           </button>
         </form>
+        <form method="POST" action="/historia/<%= story.id %>/generar-relato">
+          <button type="submit"
+                  class="flex items-center gap-2 px-5 py-2 border border-forge-accent text-forge-accent text-sm
+                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+            <i data-lucide="book-text" class="w-4 h-4"></i>
+            Generar Relato
+          </button>
+        </form>
+        <a href="/historia/<%= story.id %>/relatos"
+           class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
+                  tracking-widest uppercase hover:text-forge-text transition-colors">
+          <i data-lucide="library" class="w-4 h-4"></i>
+          Ver Relatos
+        </a>
       <% } else { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
           <button type="submit"

@@ -12,13 +12,12 @@ class TestStory:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
 
         assert story.title == "Test Story"
-        assert story.status == StoryStatus.PENDING
+        assert story.status == StoryStatus.DRAFT
         assert story.id is not None
 
     def test_story_default_values(self):
@@ -27,7 +26,6 @@ class TestStory:
             title="Test",
             protagonista="P",
             relator="R",
-            escenarios="E",
             sinopsis="S",
             atmosfera="A",
         )

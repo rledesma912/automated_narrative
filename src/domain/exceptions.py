@@ -30,3 +30,27 @@ class NarrativeLiteracyError(NarrativeError):
             details={"reason": reason},
         )
         self.reason = reason
+
+
+class LLMResponseError(NarrativeError):
+    """El LLM retornó una respuesta inválida o vacía."""
+
+    def __init__(self, reason: str, raw_response: str | None = None):
+        super().__init__(
+            f"Respuesta del LLM inválida: {reason}",
+            details={"reason": reason, "raw_response": raw_response},
+        )
+        self.reason = reason
+        self.raw_response = raw_response
+
+
+class DatabaseError(NarrativeError):
+    """Error de base de datos durante persistencia."""
+
+    def __init__(self, reason: str, operation: str | None = None):
+        super().__init__(
+            f"Error de base de datos: {reason}",
+            details={"reason": reason, "operation": operation},
+        )
+        self.reason = reason
+        self.operation = operation

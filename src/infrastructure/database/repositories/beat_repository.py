@@ -21,8 +21,8 @@ class SQLBeatRepository:
             """INSERT OR REPLACE INTO macro_beat
             (story_id, number, summary, content, status,
              active_scenario_id, active_scenario_description,
-             narrative_context, memory_snapshot, type, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             narrative_context, type, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story_id),
                 beat.number,
@@ -32,7 +32,6 @@ class SQLBeatRepository:
                 beat.active_scenario_id,
                 beat.active_scenario_description,
                 beat.narrative_context,
-                beat.memory_snapshot,
                 beat.beat_type.value if beat.beat_type else None,
                 beat.created_at.isoformat(),
             ),
@@ -132,6 +131,5 @@ class SQLBeatRepository:
             active_rules=active_rules,
             active_scenario_description=row["active_scenario_description"] or "",
             narrative_context=row["narrative_context"],
-            memory_snapshot=row["memory_snapshot"],
             beat_type=BeatType(raw_type) if raw_type else None,
         )

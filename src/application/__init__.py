@@ -8,9 +8,6 @@ from src.application.use_cases import (
     VozUseCase,
 )
 
-CreateStoryPlanUseCase = DirectorUseCase
-NarrateBeatUseCase = VozUseCase
-
 __all__ = [
     "StoryCreateDTO",
     "CreateStoryUseCase",
@@ -18,6 +15,4 @@ __all__ = [
     "VozUseCase",
     "PromptBuilder",
     "MemoryJournalist",
-    "CreateStoryPlanUseCase",
-    "NarrateBeatUseCase",
 ]

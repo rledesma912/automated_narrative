@@ -31,3 +31,17 @@ class BeatResponse(BaseModel):
     summary: str
     content: str = ""
     status: str = "pending"
+
+
+class GeneratedNarrativeResponse(BaseModel):
+    """Response for a generated narrative."""
+
+    id: str
+    story_template_id: str
+    title: str
+    content: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

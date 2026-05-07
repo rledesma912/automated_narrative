@@ -3,7 +3,7 @@
 import logging
 import re
 
-from src.domain.models import Beat
+from src.domain.models import Beat, BeatStatus
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def _parse_grouped(text: str) -> list[Beat]:
                     if len(current_lines) > 1
                     else current_lines[0]
                 )
-                beats.append(Beat(number=current_num, summary=summary, status="pending"))
+                beats.append(Beat(number=current_num, summary=summary, status=BeatStatus.PENDING))
             current_num = int(m.group(1))
             current_lines = []
             inline = m.group(2).strip()
@@ -74,7 +74,7 @@ def _parse_grouped(text: str) -> list[Beat]:
             if len(current_lines) > 1
             else current_lines[0]
         )
-        beats.append(Beat(number=current_num, summary=summary, status="pending"))
+        beats.append(Beat(number=current_num, summary=summary, status=BeatStatus.PENDING))
 
     return beats
 
@@ -94,7 +94,9 @@ def _parse_alt_patterns(text: str) -> list[Beat]:
                 summary = m.group(2).strip()
                 if summary and beat_number not in seen:
                     seen.add(beat_number)
-                    beats.append(Beat(number=beat_number, summary=summary, status="pending"))
+                    beats.append(
+                        Beat(number=beat_number, summary=summary, status=BeatStatus.PENDING)
+                    )
                 break
     return beats
 
@@ -116,7 +118,7 @@ def parse_beats(text: str, num_beats: int, story_id=None, caller: str = "PARSER"
             f"=== RAW RESPONSE ===\n{text}\n=== END RAW ==="
         )
         beats = [
-            Beat(number=i, summary=f"Beat #{i} generado automáticamente", status="pending")
+            Beat(number=i, summary=f"Beat #{i} generado automáticamente", status=BeatStatus.PENDING)
             for i in range(1, num_beats + 1)
         ]
     else:

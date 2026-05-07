@@ -202,7 +202,7 @@ async def test_concurrent_attach_creates_only_one_session(manager: StreamSession
         return _gen()
 
     # 10 attaches concurrentes al mismo story_id
-    results = await asyncio.gather(*[manager.attach("s1", factory) for _ in range(10)])
+    await asyncio.gather(*[manager.attach("s1", factory) for _ in range(10)])
 
     assert len(factory_calls) == 1, (
         f"factory debe invocarse 1 sola vez bajo concurrencia (fue {len(factory_calls)})"

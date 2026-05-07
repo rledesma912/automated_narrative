@@ -12,7 +12,6 @@ def create_sample_story() -> Story:
         title="El Pueblo Olvidado",
         protagonista="Carlos y María",
         relator="primera_persona",
-        escenarios="Un pueblo abandonado en las montañas",
         sinopsis="Dos hermanos regresan al pueblo donde nacieron y descubren secretos oscuros",
         atmosfera="terror_psicologico",
         reglas=["No usar nombres de personajes reales", "Mantener tensión"],

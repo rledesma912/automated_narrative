@@ -8,7 +8,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.services.narrator_retry_generator import NarratorRetryGenerator
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
+from src.domain.models import Beat, BeatStatus, MacroBeat, NarrativeJournal, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,8 @@ class VozUseCase:
     ) -> tuple[Beat, NarrativeJournal, float]:
         """Ejecuta el caso de uso."""
         role_cfg = settings.role_config("voz")
-        model = role_cfg.get("model") or settings.llm_model
-        temp = settings.voz_temperature
+        model = role_cfg.get("model", "mistral:latest")
+        temp = float(role_cfg.get("temperature", 0.6))
 
         previous_beats = previous_beats or []
         if journal is None:
@@ -104,7 +104,7 @@ class VozUseCase:
         )
 
         beat.content = clean_text
-        beat.status = "completed"
+        beat.status = BeatStatus.COMPLETED
 
         updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
 
@@ -116,8 +116,8 @@ class VozUseCase:
         Usa build_voz_user_prompt() en lugar de build_beat_prompt(). No toca el journal.
         """
         role_cfg = settings.role_config("voz")
-        model = role_cfg.get("model") or settings.llm_model
-        temp = settings.voz_temperature
+        model = role_cfg.get("model", "mistral:latest")
+        temp = float(role_cfg.get("temperature", 0.6))
 
         variant = self.prompt_builder.get_variant_name()
         if variant == "compact":
@@ -143,7 +143,7 @@ class VozUseCase:
 
         clean_text = self.normalizer.normalize(response.text, model_name=model)
         macro_beat.content = clean_text
-        macro_beat.status = "completed"
+        macro_beat.status = BeatStatus.COMPLETED
 
         self.debug_collector.record(
             role="voz",
@@ -165,7 +165,3 @@ class VozUseCase:
         )
 
         return macro_beat, response.elapsed_s
-
-
-# Alias para backwards compatibility
-NarrateBeatUseCase = VozUseCase

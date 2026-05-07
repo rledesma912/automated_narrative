@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import UUID4, BaseModel, Field
+from pydantic import UUID4, BaseModel, Field, field_validator
 
 from src.utils.timezone import now_argentina
 
@@ -27,6 +27,14 @@ class BeatType(str, Enum):
     CLIMAX = "climax"
     ACCION_DESCENDENTE = "accion_descendente"
     DESENLACE = "desenlace"
+
+
+class BeatStatus(str, Enum):
+    """Estado del ciclo de vida de un macro-beat (Spec-250)."""
+
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
 
 
 class RuleType(str, Enum):
@@ -76,23 +84,22 @@ class MacroBeat(BaseModel):
     number: int
     summary: str
     content: str = ""
-    status: str = "pending"
+    status: BeatStatus = BeatStatus.PENDING
     created_at: datetime = Field(default_factory=now_argentina)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
     active_rules: list[str] = []
     active_scenario_description: str = ""
     narrative_context: Optional[str] = None
-    memory_snapshot: Optional[str] = None
     beat_type: Optional[BeatType] = None
 
     def is_narrated(self) -> bool:
         """True si el beat tiene prosa generada y está marcado como completado."""
-        return bool(self.content and self.status == "completed")
+        return bool(self.content and self.status == BeatStatus.COMPLETED)
 
     def is_pending(self) -> bool:
         """True si el beat aún no fue narrado."""
-        return self.status == "pending"
+        return self.status == BeatStatus.PENDING
 
     def has_content(self) -> bool:
         """True si el beat tiene contenido (independientemente del status)."""
@@ -152,15 +159,26 @@ class StoryMetadata(BaseModel):
         return bool(self.reglas or self.storyteller_config)
 
 
+class GeneratedNarrative(BaseModel):
+    """Variante narrativa generada a partir de una StoryTemplate."""
+
+    id: UUID4 = Field(default_factory=uuid.uuid4)
+    story_template_id: UUID4
+    title: str
+    content: str
+    status: StoryStatus = StoryStatus.COMPLETED
+    created_at: datetime = Field(default_factory=now_argentina)
+
+
 class Story(BaseModel):
     """Historia base."""
 
     id: UUID4 = Field(default_factory=uuid.uuid4)
-    title: str
-    protagonista: str
-    relator: str
-    sinopsis: str
-    atmosfera: str
+    title: str = Field(..., min_length=1)
+    protagonista: str = Field(..., min_length=1)
+    relator: str = Field(..., min_length=1)
+    sinopsis: str = Field(..., min_length=1)
+    atmosfera: str = Field(..., min_length=1)
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
@@ -173,6 +191,13 @@ class Story(BaseModel):
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
     file_path: Optional[str] = None
+
+    @field_validator("title", "protagonista", "relator", "sinopsis", "atmosfera", mode="before")
+    @classmethod
+    def _strip_whitespace(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
     # -- Spec 070: comportamiento de dominio --
 

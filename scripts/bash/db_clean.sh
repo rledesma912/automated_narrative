@@ -1,5 +1,5 @@
 #!/bin/bash
-# Limpia todos los registros de la base de datos (respeta FK order).
+# Limpia la base de datos - acepta ID de historia para eliminación selectiva.
 
 set -e
 cd "$(dirname "$0")/../.."
@@ -11,8 +11,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}ADVERTENCIA: Esta acción eliminará todos los registros de las 5 tablas.${NC}"
-read -p "¿Estás seguro de que deseas continuar? (y/N): " confirm
+TARGET_ID="$1"
+
+if [ -n "$TARGET_ID" ]; then
+    echo -e "${YELLOW}Eliminación selectiva: historial con ID=$TARGET_ID${NC}"
+    read -p "¿Continuar? (y/N): " confirm
+else
+    echo -e "${YELLOW}ADVERTENCIA: Esta acción eliminará TODOS los registros.${NC}"
+    read -p "¿Estás seguro de que deseas continuar? (y/N): " confirm
+fi
 
 if [[ $confirm != [yY] ]]; then
     echo "Operación cancelada."
@@ -28,26 +35,47 @@ echo "Limpiando base de datos..."
 
 python3 -c "
 import sqlite3
+import sys
 
 conn = sqlite3.connect('$DB_FILE')
 cursor = conn.cursor()
 cursor.execute('PRAGMA foreign_keys = ON;')
 
-tables_order = [
-    'macro_beat_rule',
-    'rule',
-    'macro_beat',
-    'narrative_anchors',
-    'narrative_journal',
-    'scenario',
-    'story',
-]
+target_id = '$TARGET_ID' if '$TARGET_ID' else None
 
-for table in tables_order:
-    cursor.execute(f'DELETE FROM {table};')
-    print(f'Tabla {table} limpiada.')
-
-cursor.execute(\"DELETE FROM sqlite_sequence WHERE name IN ('macro_beat', 'narrative_journal');\")
+if target_id:
+    tables = [
+        'generated_narrative',
+        'macro_beat_rule',
+        'macro_beat',
+        'narrative_journal',
+        'narrative_anchors',
+        'rule',
+        'scenario',
+    ]
+    for table in tables:
+        try:
+            cursor.execute(f'DELETE FROM {table} WHERE story_id = ? OR story_template_id = ?;', (target_id, target_id))
+            print(f'Tabla {table}: eliminados', cursor.rowcount, 'registros.')
+        except sqlite3.OperationalError as e:
+            print(f'Tabla {table}: omitida ({e})')
+    cursor.execute('DELETE FROM story WHERE id = ?;', (target_id,))
+    print(f'Tabla story: eliminados', cursor.rowcount, 'registros.')
+else:
+    tables = [
+        'generated_narrative',
+        'macro_beat_rule',
+        'rule',
+        'macro_beat',
+        'narrative_anchors',
+        'narrative_journal',
+        'scenario',
+        'story',
+    ]
+    for table in tables:
+        cursor.execute(f'DELETE FROM {table};')
+        print(f'Tabla {table} limpiada.')
+    cursor.execute(\"DELETE FROM sqlite_sequence WHERE name IN ('macro_beat', 'narrative_journal');\")
 
 conn.commit()
 cursor.execute('VACUUM;')

@@ -19,6 +19,37 @@ active_profile: ollama-qwen25-14b
 #
 profiles:
 
+  ollama-qwen25-14b:
+    prompt_variant: compact
+    prompting_strategy: assertive
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    roles:
+      story_analyst:
+        model: qwen2.5:14b
+        temperature: 0.3
+        num_ctx: 6144
+        num_predict: 700
+        stop: []
+      director:
+        model: qwen2.5:14b
+        temperature: 0.4
+        num_ctx: 6144
+        num_predict: 1500
+        stop: []
+      voz:
+        model: qwen2.5:14b
+        temperature: 0.6
+        num_ctx: 6144
+        num_predict: 1500
+        stop: []
+      journal:
+        model: qwen2.5:14b
+        temperature: 0.3
+        num_ctx: 6144
+        num_predict: 500
+        stop: []
+
   ollama-llama31:
     prompt_variant: compact
     prompting_strategy: assertive
@@ -80,37 +111,6 @@ profiles:
         num_predict: 256
         stop: []
 
-  ollama-qwen25-14b:
-    prompt_variant: compact
-    prompting_strategy: assertive
-    provider: ollama
-    ollama: { host: "http://localhost:11434" }
-    roles:
-      story_analyst:
-        model: qwen2.5:14b
-        temperature: 0.3
-        num_ctx: 6144
-        num_predict: 700
-        stop: []
-      director:
-        model: qwen2.5:14b
-        temperature: 0.4
-        num_ctx: 6144
-        num_predict: 700
-        stop: []
-      voz:
-        model: qwen2.5:14b
-        temperature: 0.6
-        num_ctx: 6144
-        num_predict: 1500
-        stop: []
-      journal:
-        model: qwen2.5:14b
-        temperature: 0.3
-        num_ctx: 3072
-        num_predict: 256
-        stop: []
-
   ollama-mistral-nemo:
     prompt_variant: compact
     provider: ollama
@@ -120,7 +120,7 @@ profiles:
         model: mistral-nemo:12b-instruct-2407-q4_0
         temperature: 0.3
         num_ctx: 4096
-        num_predict: 500
+        num_predict: 600
         stop: []
       director:
         model: mistral-nemo:12b-instruct-2407-q4_0
@@ -138,7 +138,7 @@ profiles:
         model: mistral-nemo:12b-instruct-2407-q4_0
         temperature: 0.3
         num_ctx: 4096
-        num_predict: 256
+        num_predict: 500
         stop: []
 
   ollama-qwen3-8b:

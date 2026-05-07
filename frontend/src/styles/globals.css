@@ -1,0 +1,229 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   NarrativeForge — Global CSS Architecture (Tailwind + Custom)
+   
+   Estructura:
+   1. @tailwind directives (base, components, utilities)
+   2. Custom layer components (botones, cards, etc.)
+   3. Theme variables (separadas en theme.css)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Custom Components (Elementos reutilizables)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ── Botones ────────────────────────────────────────────────────────────── */
+  
+  /* Botón primario de acción (estilo "Skull" / Acción principal) */
+  .btn-forge {
+    @apply inline-flex items-center justify-center gap-3 px-10 py-4;
+    @apply bg-forge-accent text-white font-serif text-lg tracking-[0.3em] uppercase;
+    @apply hover:bg-forge-error hover:text-black hover:scale-105 transition-all duration-300;
+    @apply shadow-[0_0_25px_rgba(139,0,0,0.25)] active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botón secundario / Outline para acciones de lista o auxiliares */
+  .btn-forge-outline {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
+    @apply border border-forge-border text-forge-muted text-sm uppercase tracking-widest;
+    @apply hover:border-forge-accent hover:text-forge-text transition-all;
+    @apply active:scale-95;
+  }
+
+  /* Botón primario grande (heroes, acciones principales) */
+  .btn-forge-lg {
+    @apply inline-flex items-center justify-center gap-3 px-12 py-5;
+    @apply bg-forge-accent text-white font-serif text-lg tracking-[0.4em] uppercase;
+    @apply hover:bg-forge-error hover:text-black hover:scale-105 transition-all duration-300;
+    @apply shadow-[0_0_30px_rgba(139,0,0,0.3)] active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botón primario pequeño (inline actions) */
+  .btn-forge-sm {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3;
+    @apply bg-forge-accent text-white font-serif text-sm uppercase tracking-widest;
+    @apply hover:bg-forge-error hover:text-black hover:scale-105 transition-all duration-300;
+    @apply shadow-[0_0_20px_rgba(139,0,0,0.25)] active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Botón secundario pequeño */
+  .btn-forge-outline-sm {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
+    @apply border border-forge-border text-forge-muted text-xs uppercase tracking-widest;
+    @apply hover:border-forge-accent hover:text-forge-text transition-all;
+    @apply active:scale-95;
+  }
+
+  /* Botón de peligro / destructivo */
+  .btn-forge-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
+    @apply bg-forge-error text-white text-sm uppercase tracking-widest;
+    @apply hover:bg-forge-error hover:opacity-90 hover:scale-105 transition-all duration-300;
+    @apply shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-95;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* ── Contenedores (Cards) ───────────────────────────────────────────────── */
+
+  .card-forge {
+    @apply bg-forge-surface border border-forge-border p-8 shadow-lg;
+    @apply hover:border-forge-accent transition-all duration-300;
+  }
+
+  .card-forge-active {
+    @apply card-forge ring-1 ring-forge-accent border-forge-accent scale-[1.02] z-10;
+  }
+
+  /* ── Tipografía Normalizada ────────────────────────────────────────────── */
+
+  .heading-forge-xl {
+    @apply font-serif text-5xl md:text-7xl text-forge-accent tracking-tighter;
+  }
+
+  .heading-forge-lg {
+    @apply font-serif text-2xl md:text-3xl text-forge-text tracking-tight;
+  }
+
+  .text-forge-body {
+    @apply text-base text-forge-text leading-relaxed opacity-90;
+  }
+
+  .text-forge-muted-caps {
+    @apply text-forge-muted text-xs uppercase tracking-[0.4em];
+  }
+
+  /* ── Elementos de UI ────────────────────────────────────────────────────── */
+
+  .badge-forge {
+    @apply px-2 py-0.5 bg-forge-bg border border-forge-border text-forge-accent text-[10px] font-bold uppercase tracking-widest rounded;
+  }
+
+  .nav-link-forge {
+    @apply flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 border-l-2;
+  }
+
+  .nav-link-forge-active {
+    @apply text-forge-accent border-forge-accent bg-forge-bg;
+  }
+
+  .nav-link-forge-idle {
+    @apply text-forge-muted hover:text-forge-text hover:bg-forge-bg border-transparent;
+  }
+
+  /* ── Animaciones y Transiciones HTMX ────────────────────────────────────── */
+
+  .htmx-swapping {
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+  }
+
+  .htmx-settling {
+    opacity: 0;
+  }
+
+  /* Fade-in suave al cargar contenido */
+  main {
+    animation: fadeIn 400ms ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar personalizada */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--forge-accent) var(--forge-bg);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-forge-bg;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-forge-accent rounded;
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════════
+     Error States (Centralizados desde themes.json)
+  ════════════════════════════════════════════════════════════════════════════ */
+
+  .text-forge-error {
+    color: var(--forge-error);
+  }
+
+  .bg-forge-error {
+    background-color: var(--forge-error-bg);
+  }
+
+  .border-forge-error {
+    border-color: var(--forge-error-border);
+  }
+
+  .hover\:bg-forge-error:hover {
+    background-color: var(--forge-error-bg);
+  }
+
+  .hover\:text-forge-error:hover {
+    color: var(--forge-error);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Estados de Error Centralizados (Spec-318 §8)
+
+   Convención semántica:
+     text-forge-error   → texto rojo brillante  (--forge-error)
+     bg-forge-error     → fondo rojo oscuro     (--forge-error-bg)
+     border-forge-error → borde rojo medio      (--forge-error-border)
+
+   Se definen como utilities (no components) para que tengan precedencia
+   sobre las defaults de Tailwind y soporten la variante `!` (important).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  .text-forge-error   { color:            var(--forge-error); }
+  .bg-forge-error     { background-color: var(--forge-error-bg); }
+  .border-forge-error { border-color:     var(--forge-error-border); }
+
+  .\!text-forge-error   { color:            var(--forge-error)       !important; }
+  .\!bg-forge-error     { background-color: var(--forge-error-bg)    !important; }
+  .\!border-forge-error { border-color:     var(--forge-error-border) !important; }
+
+  .hover\:text-forge-error:hover  { color:            var(--forge-error); }
+  .hover\:bg-forge-error:hover    { background-color: var(--forge-error-bg); }
+  .hover\:\!text-forge-error:hover { color:           var(--forge-error)    !important; }
+  .hover\:\!bg-forge-error:hover   { background-color: var(--forge-error-bg) !important; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Utility Overrides & Tweaks
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Asegurar que las variables CSS se apliquen correctamente */
+html {
+  @apply scrollbar-thin;
+}
+
+body {
+  @apply bg-forge-bg text-forge-text;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    @apply hidden;
+  }
+}

@@ -23,12 +23,9 @@ const navItems = [
     <% navItems.forEach(item => { %>
       <%
         const isActive = activePage === item.page;
-        const base   = 'flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 border-l-2';
-        const state  = isActive
-          ? 'text-forge-accent border-forge-accent bg-forge-bg'
-          : 'text-forge-muted hover:text-forge-text hover:bg-forge-bg border-transparent';
+        const stateCls = isActive ? 'nav-link-forge-active' : 'nav-link-forge-idle';
       %>
-      <a href="<%= item.href %>" class="<%= base %> <%= state %>">
+      <a href="<%= item.href %>" class="nav-link-forge <%= stateCls %>">
         <i data-lucide="<%= item.icon %>" class="w-4 h-4 flex-shrink-0"></i>
         <%= item.label %>
       </a>

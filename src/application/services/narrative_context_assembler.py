@@ -1,10 +1,9 @@
 """NarrativeContextAssembler — ensambla el narrative_context para el VOZ."""
 
-import json
 import logging
 
 from src.application.services.beat_spec_repository import BeatSpecRepository
-from src.domain.models import MacroBeat
+from src.domain.models import MacroBeat, NarrativeJournal
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class NarrativeContextAssembler:
         self,
         macro_beat: MacroBeat,
         beat_anchors: dict,
-        prev_snapshot: str | None = None,
+        previous_journal: NarrativeJournal | None = None,
         cast_block: str | None = None,
     ) -> str:
         """Combina beat_spec + resonancia + evento + escenario + memoria anterior."""
@@ -66,18 +65,12 @@ class NarrativeContextAssembler:
             lines += ["", "REGLAS ESPECÍFICAS PARA ESTE ACTO:"]
             lines.extend([f"- {r}" for r in macro_beat.active_rules])
 
-        if prev_snapshot:
-            try:
-                data = json.loads(prev_snapshot)
-                last_events = data.get("last_events", "")
-                phys_state = data.get("physical_emotional_state", "")
-                lines += ["", "MEMORIA DEL ACTO ANTERIOR:"]
-                if last_events:
-                    lines.append(last_events)
-                if phys_state:
-                    lines.append(f"Estado: {phys_state}")
-            except (json.JSONDecodeError, AttributeError):
-                lines += ["", "MEMORIA DEL ACTO ANTERIOR:", str(prev_snapshot)]
+        if previous_journal and not previous_journal.is_empty():
+            lines += ["", "MEMORIA DEL ACTO ANTERIOR:"]
+            if previous_journal.last_events:
+                lines.append(previous_journal.last_events)
+            if previous_journal.physical_emotional_state:
+                lines.append(f"Estado: {previous_journal.physical_emotional_state}")
 
         lines += [
             "",

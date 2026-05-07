@@ -15,13 +15,13 @@ class TestTemplateMapper:
     @pytest.fixture
     def valid_input(self):
         return TemplateInput(
-            title="La Casa Abandonada",
-            protagonista="María",
-            relator="tercera_persona",
-            atmosfera="terror psicológico",
-            escenarios="Una casa abandonada en las afueras",
-            sinopsis="Una familia se muda a una casa embrujada",
-            reglas=["No matar personajes principales"],
+            "La Casa Abandonada",
+            "María",
+            "tercera_persona",
+            "terror psicológico",
+            "Una casa abandonada en las afueras",
+            "Una familia se muda a una casa embrujada",
+            ["No matar personajes principales"],
         )
 
     def test_map_basic_fields(self, mapper, valid_input):
@@ -51,14 +51,7 @@ class TestTemplateMapper:
 
     def test_map_relator_primera_persona(self, mapper):
         """Mapea relator primera_persona a first_person."""
-        input_data = TemplateInput(
-            title="Test",
-            protagonista="Juan",
-            relator="primera_persona",
-            atmosfera="misterio",
-            escenarios="Bosque",
-            sinopsis="Test",
-        )
+        input_data = TemplateInput("Test", "Juan", "primera_persona", "misterio", "Bosque", "Test")
 
         story = mapper.map(input_data)
 
@@ -66,14 +59,7 @@ class TestTemplateMapper:
 
     def test_map_relator_unknown(self, mapper):
         """Mantiene valor original si relator no está en mapping."""
-        input_data = TemplateInput(
-            title="Test",
-            protagonista="Juan",
-            relator="voz_narrador",
-            atmosfera="misterio",
-            escenarios="Bosque",
-            sinopsis="Test",
-        )
+        input_data = TemplateInput("Test", "Juan", "voz_narrador", "misterio", "Bosque", "Test")
 
         story = mapper.map(input_data)
 
@@ -81,14 +67,7 @@ class TestTemplateMapper:
 
     def test_map_reglas_default(self, mapper):
         """Maneja reglas None con default vacío."""
-        input_data = TemplateInput(
-            title="Test",
-            protagonista="Juan",
-            relator="tercera_persona",
-            atmosfera="misterio",
-            escenarios="Bosque",
-            sinopsis="Test",
-        )
+        input_data = TemplateInput("Test", "Juan", "tercera_persona", "misterio", "Bosque", "Test")
 
         story = mapper.map(input_data)
 

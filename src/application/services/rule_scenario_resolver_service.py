@@ -35,7 +35,7 @@ class RuleScenarioResolverService:
     ) -> dict:
         """Llama al LLM para obtener el mapa de distribución de reglas y escenarios."""
         role_cfg = settings.role_config("director")
-        model = role_cfg.get("model") or settings.llm_model
+        model = role_cfg.get("model", "mistral:latest")
         temperature = role_cfg.get("temperature", 0.2)
 
         prompt = self.prompt_builder.build_rule_resolver_prompt(story, anchors=anchors)

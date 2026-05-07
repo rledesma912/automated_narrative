@@ -9,9 +9,6 @@ from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.application.use_cases.update_beat import UpdateBeatUseCase
 from src.application.use_cases.voz_use_case import VozUseCase
 
-CreateStoryPlanUseCase = DirectorUseCase
-NarrateBeatUseCase = VozUseCase
-
 __all__ = [
     "CreateStoryUseCase",
     "DirectorUseCase",
@@ -21,6 +18,4 @@ __all__ = [
     "SynopsisBeatMapper",
     "UpdateBeatUseCase",
     "VozUseCase",
-    "CreateStoryPlanUseCase",
-    "NarrateBeatUseCase",
 ]

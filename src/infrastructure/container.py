@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from src.application.services import PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases import CreateStoryUseCase, DirectorUseCase, VozUseCase
+from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
 
@@ -85,6 +86,9 @@ class CLIContainer:
     def voz_use_case(self) -> VozUseCase:
         return VozUseCase(self.llm)
 
+    def narrative_use_case(self) -> GenerateNarrativesUseCase:
+        return GenerateNarrativesUseCase()
+
     def story_runner(self, output_dir: Path) -> "StoryRunner":
         from src.core.orchestrator import StoryRunner
 
@@ -96,4 +100,5 @@ class CLIContainer:
             output_dir=output_dir,
             reporter=self.reporter,
             debug_collector=self.debug_collector,
+            narrative_use_case=self.narrative_use_case(),
         )

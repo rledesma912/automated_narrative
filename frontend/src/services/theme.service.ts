@@ -11,6 +11,9 @@ export interface ThemeDef {
   accent: string;
   muted: string;
   text: string;
+  error?: string;
+  "error-bg"?: string;
+  "error-border"?: string;
   font: "mono" | "serif" | "sans";
 }
 
@@ -35,5 +38,8 @@ export function toCssVars(def: ThemeDef): string {
     `--forge-accent: ${def.accent}`,
     `--forge-muted: ${def.muted}`,
     `--forge-text: ${def.text}`,
+    `--forge-error: ${def.error || def.accent}`,
+    `--forge-error-bg: ${def["error-bg"] || def.surface}`,
+    `--forge-error-border: ${def["error-border"] || def.border}`,
   ].join("; ");
 }

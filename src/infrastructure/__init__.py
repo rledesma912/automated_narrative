@@ -7,14 +7,12 @@ from src.infrastructure.database.repositories import (
     SQLStoryRepository,
 )
 from src.infrastructure.normalizers import ResponseNormalizer
-from src.infrastructure.renderers import MarkdownRenderer
 
 __all__ = [
     "CLIContainer",
     "MockLLMAdapter",
     "OllamaAdapter",
     "ResponseNormalizer",
-    "MarkdownRenderer",
     "SQLBeatRepository",
     "SQLStoryRepository",
 ]

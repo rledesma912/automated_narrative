@@ -41,7 +41,6 @@ class TestSqlStoryRepository:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -58,7 +57,6 @@ class TestSqlStoryRepository:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -87,7 +85,6 @@ class TestSqlStoryRepository:
             title="Original Title",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -108,7 +105,6 @@ class TestSqlStoryRepository:
             title="Story 1",
             protagonista="P1",
             relator="primera",
-            escenarios="E1",
             sinopsis="S1",
             atmosfera="terror",
         )
@@ -116,7 +112,6 @@ class TestSqlStoryRepository:
             title="Story 2",
             protagonista="P2",
             relator="primera",
-            escenarios="E2",
             sinopsis="S2",
             atmosfera="horror",
         )

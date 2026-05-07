@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite://stories.db"
 
     # Paths
-    output_dir: str = "output_stories"
+    output_dir: str = "frontend/public/output_stories"
     prompts_dir: str = "config/prompts_generation"
     input_dir: str = "input_stories"
     beats_definition_file: str = "config/llm_beats_definition.yaml"
@@ -157,32 +157,6 @@ class Settings(BaseSettings):
     @property
     def anthropic_model(self) -> str:
         return _profile.get("anthropic", {}).get("model", "claude-sonnet-4-6")
-
-    # Compatibilidad con código que usa settings.llm_model directamente
-    @property
-    def llm_model(self) -> str:
-        return self.role_config("voz").get("model", "mistral:latest")
-
-    @property
-    def director_temperature(self) -> float:
-        return float(self.role_config("director").get("temperature", 0.4))
-
-    @property
-    def voz_temperature(self) -> float:
-        return float(self.role_config("voz").get("temperature", 0.6))
-
-    @property
-    def state_extractor_temperature(self) -> float:
-        return float(self.role_config("journal").get("temperature", 0.3))
-
-    @property
-    def state_extractor_model(self) -> str:
-        return self.role_config("journal").get("model", "mistral:latest")
-
-    # Backwards compat aliases
-    @property
-    def llm_model_temperature(self) -> float:
-        return self.voz_temperature
 
     @property
     def api_host_port(self) -> tuple[str, int]:

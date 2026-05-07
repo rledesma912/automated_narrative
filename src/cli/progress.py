@@ -57,10 +57,11 @@ class ProgressReporter:
     def export_done(self, elapsed_s: float) -> None:
         print(f"📄  Exportando Markdown...            ✓  {_fmt_time(elapsed_s)}")
 
-    def done(self, total_elapsed_s: float, output_path: Path) -> None:
+    def done(self, total_elapsed_s: float, output_path: Path | None = None) -> None:
         print("─" * 50)
         print(f"✅  Completado en {_fmt_time(total_elapsed_s)}")
-        print(f"📁  {output_path}")
+        if output_path:
+            print(f"📁  {output_path}")
 
     def error(self, msg: str, elapsed_s: float) -> None:
         self._spinner.stop()
@@ -111,7 +112,7 @@ class SilentReporter:
     def export_done(self, elapsed_s: float) -> None:
         pass
 
-    def done(self, total_elapsed_s: float, output_path: Path) -> None:
+    def done(self, total_elapsed_s: float, output_path: Path | None = None) -> None:
         pass
 
     def error(self, msg: str, elapsed_s: float) -> None:

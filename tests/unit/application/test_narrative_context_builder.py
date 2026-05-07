@@ -1,12 +1,11 @@
 """Tests para build_narrative_context() y build_voz_*() (Spec-038, B3/B4/B6/B7/B10)."""
 
-import json
 import uuid
 from unittest.mock import MagicMock
 
 from src.application.services import PromptBuilder
 from src.application.services.story_analyst_service import StoryAnalystService
-from src.domain.models import MacroBeat, NarrativeAnchors, Story
+from src.domain.models import MacroBeat, NarrativeAnchors, NarrativeJournal, Story
 
 
 def _make_story(**kwargs):
@@ -14,7 +13,6 @@ def _make_story(**kwargs):
         title="El Monte Prohibido",
         protagonista="Irene, Ricardo, Mariano",
         relator="Irene",
-        escenarios="Monte de los Espinillos",
         sinopsis="La familia llega al campo y entra al monte de noche.",
         atmosfera="terror paranormal",
         reglas=["Ricardo ignora lo sobrenatural.", "Las apariciones no atacan físicamente."],
@@ -92,32 +90,30 @@ class TestBuildNarrativeContext:
         result = builder.build_narrative_context(beat, anchors)
         assert anchors["label_voz"] in result
 
-    def test_contains_last_events_from_snapshot(self):
-        """B3 — contiene last_events del memory_snapshot anterior."""
+    def test_contains_last_events_from_journal(self):
+        """B3 — contiene last_events del journal anterior."""
         builder = PromptBuilder()
         beat = _make_beat(2)
-        snapshot = json.dumps(
-            {
-                "last_events": "La familia llegó a la fiesta.",
-                "unresolved_mysteries": "",
-                "physical_emotional_state": "Tranquilos",
-            }
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="",
+            physical_emotional_state="Tranquilos",
         )
-        result = builder.build_narrative_context(beat, _beat_anchors(2), prev_snapshot=snapshot)
+        result = builder.build_narrative_context(beat, _beat_anchors(2), previous_journal=journal)
         assert "La familia llegó a la fiesta." in result
 
     def test_beat1_has_no_prev_memory_section(self):
-        """Beat 1 sin snapshot no incluye sección MEMORIA."""
+        """Beat 1 sin journal no incluye sección MEMORIA."""
         builder = PromptBuilder()
         beat = _make_beat(1)
-        result = builder.build_narrative_context(beat, _beat_anchors(1), prev_snapshot=None)
+        result = builder.build_narrative_context(beat, _beat_anchors(1), previous_journal=None)
         assert "MEMORIA DEL ACTO ANTERIOR" not in result
 
-    def test_beat2_with_snapshot_includes_memory_section(self):
+    def test_beat2_with_journal_includes_memory_section(self):
         builder = PromptBuilder()
         beat = _make_beat(2)
-        snapshot = json.dumps({"last_events": "Algo pasó.", "physical_emotional_state": ""})
-        result = builder.build_narrative_context(beat, _beat_anchors(2), prev_snapshot=snapshot)
+        journal = NarrativeJournal(last_events="Algo pasó.", physical_emotional_state="")
+        result = builder.build_narrative_context(beat, _beat_anchors(2), previous_journal=journal)
         assert "MEMORIA DEL ACTO ANTERIOR" in result
         assert "Algo pasó." in result
 

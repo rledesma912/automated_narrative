@@ -103,7 +103,7 @@ Los filtros se configuran en la sección `response_filters` del YAML, sin tocar 
 ```mermaid
 erDiagram
     STORY ||--o{ BEAT : "contiene"
-    STORY ||--|| NARRATIVE_JOURNAL : "rastrea"
+    STORY ||--o{ NARRATIVE_JOURNAL : "evolución"
     STORY {
         uuid id PK
         string title
@@ -117,9 +117,11 @@ erDiagram
         string status
     }
     NARRATIVE_JOURNAL {
-        json last_events
-        json unresolved_mysteries
-        json physical_emotional_state
+        uuid story_id FK
+        int beat_number
+        text last_events
+        text unresolved_mysteries
+        text physical_emotional_state
     }
 ```
 

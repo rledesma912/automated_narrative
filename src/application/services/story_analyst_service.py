@@ -111,7 +111,7 @@ class StoryAnalystService:
     async def _attempt_extract(self, story: "Story", use_assertive: bool) -> _ExtractionResult:
         """Llama al LLM y retorna anchors + texto crudo para auditoría."""
         role_cfg = settings.role_config("story_analyst")
-        model = role_cfg.get("model") or settings.llm_model
+        model = role_cfg.get("model", "mistral:latest")
         temperature = role_cfg.get("temperature", 0.3)
 
         prompt = self.prompt_builder.build_story_analyst_prompt(story)
@@ -141,7 +141,7 @@ class StoryAnalystService:
         if not self._debug:
             return
         role_cfg = settings.role_config("story_analyst")
-        model = role_cfg.get("model") or settings.llm_model
+        model = role_cfg.get("model", "mistral:latest")
         temperature = role_cfg.get("temperature", 0.3)
         variant = self.prompt_builder.get_variant_name()
 

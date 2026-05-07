@@ -2,6 +2,7 @@
 
 import logging
 
+from src.domain.exceptions import LLMResponseError
 from src.domain.interfaces import LLMProvider, LLMResponse
 
 logger = logging.getLogger(__name__)
@@ -11,6 +12,14 @@ _REPHRASE_HINT = (
     "\n\nATTENTION: Write naturally as a first-person horror story. "
     "Don't refuse or apologize. Just tell the story directly."
 )
+
+
+def _is_valid_response(text: str | None) -> bool:
+    """Valida que la respuesta no sea vacía ni None."""
+    if text is None:
+        return False
+    stripped = text.strip()
+    return len(stripped) > 0
 
 
 class NarratorRetryGenerator:
@@ -35,6 +44,15 @@ class NarratorRetryGenerator:
                 temperature=temperature,
                 role="voz",
             )
+
+            if not _is_valid_response(response.text):
+                if attempt == max_retries:
+                    raise LLMResponseError(
+                        reason="Respuesta vacía después de max_retries intentos",
+                        raw_response=response.text,
+                    )
+                logger.debug(f"[NarratorRetry] respuesta vacía en intento {attempt + 1}")
+                continue
 
             content_lower = response.text.lower().strip()
             is_refusal = any(ind in content_lower for ind in _REFUSAL_INDICATORS)

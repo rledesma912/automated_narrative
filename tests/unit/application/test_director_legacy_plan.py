@@ -19,7 +19,6 @@ class TestDirectorUseCase:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -42,7 +41,6 @@ class TestDirectorUseCase:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -65,7 +63,6 @@ class TestDirectorUseCase:
             title="Test Story",
             protagonista="Protagonist",
             relator="tercera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -87,7 +84,6 @@ class TestDirectorUseCase:
             title="Test Story",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -121,7 +117,6 @@ class TestDirectorUseCase:
             title="Test",
             protagonista="P",
             relator="tercera",
-            escenarios="E",
             sinopsis="S",
             atmosfera="terror",
         )
@@ -152,7 +147,6 @@ class TestDirectorUseCase:
             title="Test",
             protagonista="X",
             relator="tercera",
-            escenarios="Y",
             sinopsis="Z",
             atmosfera="terror",
         )
@@ -241,7 +235,11 @@ class TestDirectorUseCase:
         from src.domain.models import Beat, NarrativeJournal
 
         story = Story(
-            title="T", protagonista="P", relator="r", escenarios="e", sinopsis="s", atmosfera="a"
+            title="T",
+            protagonista="P",
+            relator="r",
+            sinopsis="s",
+            atmosfera="a",
         )
         beats = [Beat(number=i, summary=f"beat {i}", status="pending") for i in range(1, 4)]
         journal = NarrativeJournal()
@@ -277,7 +275,6 @@ class TestDirectorUseCase:
             title="Test",
             protagonista="P",
             relator="tercera_persona",
-            escenarios="L",
             sinopsis="S",
             atmosfera="terror",
         )
@@ -298,7 +295,6 @@ class TestDirectorUseCase:
             title="Test",
             protagonista="P",
             relator="tercera_persona",
-            escenarios="L",
             sinopsis="S",
             atmosfera="terror",
         )

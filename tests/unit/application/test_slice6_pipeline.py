@@ -6,7 +6,6 @@ Cubre:
 - DirectorUseCase.execute_full() loop secuencial 5 beats
 """
 
-import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,7 +24,6 @@ def _make_story(**kw):
         title="El Monte Prohibido",
         protagonista="Irene, Ricardo",
         relator="Irene",
-        escenarios="Monte de los Espinillos / La casa de la abuela",
         sinopsis="La familia llega al campo y entra al monte de noche.",
         atmosfera="terror paranormal",
         reglas=["Ricardo ignora lo sobrenatural."],
@@ -60,10 +58,10 @@ def _make_macro_beat(number=1, content="Prosa narrativa."):
 
 
 class TestMemoryJournalistExtract:
-    """extract() retorna (snapshot_json, NarrativeJournal)."""
+    """extract() retorna solo NarrativeJournal (Spec-222)."""
 
     @pytest.mark.asyncio
-    async def test_returns_tuple_of_str_and_journal(self):
+    async def test_returns_narrative_journal(self):
         llm = MagicMock()
         llm.generate = AsyncMock(
             return_value=MagicMock(
@@ -75,13 +73,14 @@ class TestMemoryJournalistExtract:
         story = _make_story()
         beat = _make_macro_beat(1)
 
-        snapshot, journal = await journalist.extract(story, beat)
+        journal = await journalist.extract(story, beat)
 
-        assert isinstance(snapshot, str)
         assert isinstance(journal, NarrativeJournal)
+        assert journal.last_events == "Llegaron al monte."
+        assert journal.physical_emotional_state == "Asustados"
 
     @pytest.mark.asyncio
-    async def test_snapshot_is_valid_json(self):
+    async def test_journal_contains_all_fields(self):
         llm = MagicMock()
         llm.generate = AsyncMock(
             return_value=MagicMock(
@@ -93,31 +92,24 @@ class TestMemoryJournalistExtract:
         story = _make_story()
         beat = _make_macro_beat(2)
 
-        snapshot, _ = await journalist.extract(story, beat)
+        journal = await journalist.extract(story, beat)
 
-        data = json.loads(snapshot)
-        assert "last_events" in data
-        assert "physical_emotional_state" in data
+        assert journal.last_events == "La familia entró."
+        assert journal.unresolved_mysteries == "X"
+        assert journal.physical_emotional_state == "Tensos"
 
     @pytest.mark.asyncio
-    async def test_snapshot_reflects_journal_fields(self):
+    async def test_journal_empty_on_parse_error(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(
-            return_value=MagicMock(
-                text='{"last_events": "Vieron la figura.", "unresolved_mysteries": "Quién es María", "physical_emotional_state": "Paralizados"}',
-                elapsed_s=0.1,
-            )
-        )
+        llm.generate = AsyncMock(return_value=MagicMock(text="invalid json", elapsed_s=0.1))
         journalist = MemoryJournalist(llm, PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(3)
 
-        snapshot, journal = await journalist.extract(story, beat)
+        journal = await journalist.extract(story, beat)
 
-        data = json.loads(snapshot)
-        assert data["last_events"] == journal.last_events
-        assert data["unresolved_mysteries"] == journal.unresolved_mysteries
-        assert data["physical_emotional_state"] == journal.physical_emotional_state
+        assert isinstance(journal, NarrativeJournal)
+        assert journal.last_events == ""
 
 
 # ── VozUseCase.narrate() ─────────────────────────────────────────────────────
@@ -214,9 +206,6 @@ class TestDirectorExecuteFullLoop:
         journal = NarrativeJournal(
             last_events="algo", unresolved_mysteries="", physical_emotional_state=""
         )
-        snapshot = json.dumps(
-            {"last_events": "algo", "unresolved_mysteries": "", "physical_emotional_state": ""}
-        )
 
         mock_analyst = MagicMock()
         mock_analyst.extract_anchors = AsyncMock(return_value=anchors)
@@ -250,7 +239,7 @@ class TestDirectorExecuteFullLoop:
         )
 
         mock_journalist = MagicMock()
-        mock_journalist.extract = AsyncMock(return_value=(snapshot, journal))
+        mock_journalist.extract = AsyncMock(return_value=journal)
 
         return mock_analyst, mock_mapper, mock_voz, mock_journalist, journal
 
@@ -307,71 +296,6 @@ class TestDirectorExecuteFullLoop:
 
         numbers = [r[0].number for r in results]
         assert numbers == list(range(1, len(numbers) + 1))
-
-    @pytest.mark.asyncio
-    async def test_prev_snapshot_passed_between_beats(self):
-        """El snapshot del beat N se pasa al mapper del beat N+1."""
-        story = _make_story()
-        mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
-
-        director = DirectorUseCase(
-            MockLLMAdapter(),
-            PromptBuilder(),
-            voz=mock_voz,
-            journalist=mock_journalist,
-        )
-        num_beats = director.prompt_builder.num_beats
-
-        with (
-            patch(
-                "src.application.services.story_analyst_service.StoryAnalystService",
-                return_value=mock_analyst,
-            ),
-            patch(
-                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
-                return_value=mock_mapper,
-            ),
-        ):
-            [item async for item in director.execute_full(story)]
-
-        # map_one se llamó num_beats veces
-        assert mock_mapper.map_one.call_count == num_beats
-        # El beat 1 se llamó con prev_snapshot=None
-        first_call = mock_mapper.map_one.call_args_list[0]
-        assert first_call.kwargs.get("prev_snapshot") is None
-        # El beat 2 se llamó con un snapshot no-None
-        if num_beats > 1:
-            second_call = mock_mapper.map_one.call_args_list[1]
-            assert second_call.kwargs.get("prev_snapshot") is not None
-
-    @pytest.mark.asyncio
-    async def test_memory_snapshot_stored_in_beat(self):
-        """El MacroBeat resultante tiene memory_snapshot populado."""
-        story = _make_story()
-        mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
-
-        director = DirectorUseCase(
-            MockLLMAdapter(),
-            PromptBuilder(),
-            voz=mock_voz,
-            journalist=mock_journalist,
-        )
-
-        with (
-            patch(
-                "src.application.services.story_analyst_service.StoryAnalystService",
-                return_value=mock_analyst,
-            ),
-            patch(
-                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
-                return_value=mock_mapper,
-            ),
-        ):
-            results = [item async for item in director.execute_full(story)]
-
-        for beat, _, _ in results:
-            assert beat.memory_snapshot is not None
-            assert beat.memory_snapshot != ""
 
     @pytest.mark.asyncio
     async def test_on_plan_ready_called_with_num_beats(self):

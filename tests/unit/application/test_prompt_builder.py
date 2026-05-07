@@ -40,7 +40,6 @@ class TestPromptBuilder:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -61,7 +60,6 @@ class TestPromptBuilder:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -84,7 +82,6 @@ class TestPromptBuilder:
             title="Test",
             protagonista="Protagonist",
             relator="Irene",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror",
         )
@@ -124,7 +121,6 @@ class TestPromptBuilder:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Sinopsis única de prueba para verificar fallback.",
             atmosfera="terror",
         )
@@ -187,7 +183,6 @@ class TestPromptBuilder:
             title="Test",
             protagonista="Protagonist",
             relator="primera_persona",
-            escenarios="Location",
             sinopsis="Synopsis",
             atmosfera="terror_psicologico",
         )
@@ -207,7 +202,6 @@ class TestPromptVariants:
             title="Historia de Test",
             protagonista="Ana",
             relator="primera_persona",
-            escenarios="Casa abandonada",
             sinopsis="Una mujer investiga una casa abandonada.",
             atmosfera="terror",
         )

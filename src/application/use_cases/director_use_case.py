@@ -11,7 +11,15 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import Beat, BeatType, MacroBeat, NarrativeJournal, Story, StoryPlan
+from src.domain.models import (
+    Beat,
+    BeatStatus,
+    BeatType,
+    MacroBeat,
+    NarrativeJournal,
+    Story,
+    StoryPlan,
+)
 from src.infrastructure.normalizers import ResponseNormalizer
 
 if TYPE_CHECKING:
@@ -63,7 +71,7 @@ class DirectorUseCase:
     async def _analyze_story(self, story: Story) -> str:
         """Fase 0: expande la sinopsis en un narrative brief estructurado."""
         role_cfg = settings.role_config("story_analyst")
-        model = role_cfg.get("model") or settings.llm_model
+        model = role_cfg.get("model", "mistral:latest")
         temperature = role_cfg.get("temperature", 0.3)
 
         prompt = self.prompt_builder.build_story_analyst_prompt(story)
@@ -199,7 +207,6 @@ class DirectorUseCase:
             on_plan_ready(num_beats, plan_elapsed)
 
         journal = initial_journal
-        prev_snapshot: str | None = None
         num_beats = self.prompt_builder.num_beats
 
         for beat_id in range(1, num_beats + 1):
@@ -231,7 +238,7 @@ class DirectorUseCase:
                 story=story,
                 macro_beat_id=beat_id,
                 beat_anchors=beat_anchors,
-                prev_snapshot=prev_snapshot,
+                previous_journal=journal,
                 synopsis_slice=synopsis_slice,
                 active_rules=active_rules,
                 active_scenario_description=active_scenario_desc,
@@ -249,7 +256,7 @@ class DirectorUseCase:
                     pass
 
             if stop_at == cp_mapper:
-                macro_beat.status = "pending"
+                macro_beat.status = BeatStatus.PENDING
                 logger.debug(
                     f"[DIRECTOR] Detenido en checkpoint 'mapper:{beat_id}' ({cp_mapper}/16)"
                 )
@@ -261,7 +268,7 @@ class DirectorUseCase:
             macro_beat.active_scenario_description = active_scenario_desc
 
             macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
-                macro_beat, beat_anchors, prev_snapshot, story=story
+                macro_beat, beat_anchors, journal, story=story
             )
 
             if on_step_start:
@@ -270,11 +277,10 @@ class DirectorUseCase:
 
             if on_step_start:
                 on_step_start(f"📓  Actualizando journal beat {beat_id}/{num_beats}...")
-            prev_snapshot, journal = await journalist.extract(story, macro_beat, journal)
-            macro_beat.memory_snapshot = prev_snapshot
+            journal = await journalist.extract(story, macro_beat, journal)
 
             if stop_at == cp_voz:
-                macro_beat.status = "pending"
+                macro_beat.status = BeatStatus.PENDING
                 logger.debug(f"[DIRECTOR] Detenido en checkpoint 'voz:{beat_id}' ({cp_voz}/16)")
                 yield macro_beat, journal, llm_elapsed
                 return
@@ -312,7 +318,3 @@ class DirectorUseCase:
             )
             completed.append(beat)
             yield beat, journal, llm_elapsed
-
-
-# Alias para backwards compatibility
-CreateStoryPlanUseCase = DirectorUseCase

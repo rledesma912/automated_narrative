@@ -126,7 +126,6 @@ class TestCreateStoryUseCaseErrorPaths:
             relator="tercera_persona",
             sinopsis="S",
             atmosfera="terror",
-            escenarios=["Bosque"],
         )
 
         with pytest.raises(RuntimeError, match="DB connection lost"):

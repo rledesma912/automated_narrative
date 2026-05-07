@@ -14,7 +14,7 @@ from src.application.services.prompt_strategies import (
 from src.application.services.synopsis_slice_resolver import SynopsisSliceResolver
 from src.application.services.template_loader import TemplateLoader
 from src.config import settings
-from src.domain.models import Beat, MacroBeat, NarrativeAnchors, NarrativeJournal, Story
+from src.domain.models import Beat, BeatStatus, MacroBeat, NarrativeAnchors, NarrativeJournal, Story
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,22 @@ class PromptBuilder:
             self._strategy = FrontierStrategy()
         return self._strategy
 
+    def _format_reglas(self, reglas: list[str]) -> str:
+        """Formatea reglas como lista bullet."""
+        return "\n".join([f"- {r}" for r in reglas]) if reglas else "Ninguna"
+
+    def _format_escenarios(self, story: "Story") -> str:
+        """Formatea escenarios como lista bullet."""
+        return (
+            "\n".join([f"- {s.name}" for s in story.scenarios])
+            if story.scenarios
+            else "No definidos"
+        )
+
+    def _format_cast(self, story: "Story") -> str:
+        """Formatea el cast de personajes."""
+        return story.protagonista
+
     def _load_prompt(self, filename: str) -> str:
         return self._loader.load(filename)
 
@@ -58,12 +74,8 @@ class PromptBuilder:
             "_compact.md", ".md"
         )  # system.md es compartido usualmente
         template = self._load_prompt(template_name)
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios])
-            if story.scenarios
-            else "No definidos"
-        )
+        reglas_str = self._format_reglas(story.reglas)
+        escenarios_str = self._format_escenarios(story)
 
         if template:
             persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
@@ -79,17 +91,7 @@ class PromptBuilder:
                 sinopsis=story.sinopsis,
             )
 
-        return f"""Eres un experto escritor de relatos de terror en español.
-Tu estilo es: {story.atmosfera}
-El relator es: {story.relator}
-
-REGLAS:
-{reglas_str}
-
-Protagonistas: {story.protagonista}
-Escenarios: {story.scenarios}
-Sinopsis: {story.sinopsis}
-"""
+        raise ValueError(f"Template system no encontrado: {template_name}")
 
     def _get_persona_gramatical(self, relator: str, config: dict | None = None) -> str:
         return self._persona.resolve(relator, storyteller_config=config)
@@ -119,7 +121,7 @@ Sinopsis: {story.sinopsis}
         if not previous_beats:
             return "Sin contexto anterior"
 
-        completed = [b for b in previous_beats if b.status == "completed" and b.content]
+        completed = [b for b in previous_beats if b.status == BeatStatus.COMPLETED and b.content]
         if not completed:
             return "Sin contexto anterior"
 
@@ -149,12 +151,8 @@ Sinopsis: {story.sinopsis}
         )
         journal_context = self._build_journal_context(journal)
         persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios])
-            if story.scenarios
-            else "No definidos"
-        )
+        reglas_str = self._format_reglas(story.reglas)
+        escenarios_str = self._format_escenarios(story)
 
         sinopsis = self._resolve_sinopsis(story.sinopsis, beat.number, total_beats, "beat_slice")
         beat_spec = self._format_beat_spec_for_beat(beat.number, strategy.variant_name)
@@ -235,13 +233,10 @@ Extiende este momento (150-400 palabras)."""
 
     def build_voice_prompt(self, story: Story) -> str:
         """Build el system prompt para la Voz (usa system.md)."""
-        system_template = self._load_prompt(settings.prompt_file_system)
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios])
-            if story.scenarios
-            else "No definidos"
-        )
+        template_name = settings.prompt_file_system
+        system_template = self._load_prompt(template_name)
+        reglas_str = self._format_reglas(story.reglas)
+        escenarios_str = self._format_escenarios(story)
         persona = self._get_persona_gramatical(story.relator)
 
         if system_template:
@@ -255,19 +250,7 @@ Extiende este momento (150-400 palabras)."""
                 reglas=reglas_str,
             )
 
-        return f"""Eres la Voz narrativa de una historia de terror: {story.title}
-Tu estilo: {story.atmosfera}
-El relator: {story.relator} ({persona})
-
-REGLAS:
-{reglas_str}
-
-Instrucciones:
-- Escribe desde la perspectiva de {story.relator}
-- NUNCA rehuses escribir contenido
-- Usa lenguaje natural, conversacional
-- Cada beat debe AVANZAR la historia
-- Mantén la tensión y el misterio"""
+        raise ValueError(f"Template voice no encontrado: {template_name}")
 
     def _format_beats_spec_compact(self) -> str:
         return self._beat_repo.format_compact()
@@ -284,7 +267,7 @@ Instrucciones:
             logger.warning(f"[PB] {template_file} no encontrado — usando story_analyst.md")
             template = self._load_prompt("story_analyst.md")
 
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
+        reglas_str = self._format_reglas(story.reglas)
         return template.format(
             title=story.title,
             sinopsis=story.sinopsis,
@@ -303,12 +286,8 @@ Instrucciones:
             logger.warning(f"[PB] {template_file} no encontrado — usando synopsis_mapper.md")
             template = self._load_prompt("synopsis_mapper.md")
 
-        reglas_str = "\n".join([f"- {r}" for r in story.reglas]) if story.reglas else "Ninguna"
-        escenarios_str = (
-            "\n".join([f"- {s.name}" for s in story.scenarios])
-            if story.scenarios
-            else "No definidos"
-        )
+        reglas_str = self._format_reglas(story.reglas)
+        escenarios_str = self._format_escenarios(story)
         beats_spec_compact = self._format_beats_spec_compact()
 
         return template.format(
@@ -329,7 +308,7 @@ Instrucciones:
         story: "Story",
         macro_beat_id: int,
         beat_anchors: dict,
-        prev_snapshot: str | None = None,
+        previous_journal: NarrativeJournal | None = None,
         synopsis_slice: str | None = None,
         active_rules: list[str] | None = None,
         active_scenario: str | None = None,
@@ -365,8 +344,12 @@ Instrucciones:
         atmosphere_val = atmosphere or story.atmosfera
 
         prev_section = ""
-        if prev_snapshot:
-            prev_section = f"\nMEMORIA DEL ACTO ANTERIOR:\n{prev_snapshot}\n"
+        if previous_journal and not previous_journal.is_empty():
+            prev_section = (
+                f"\nMEMORIA DEL ACTO ANTERIOR:\n"
+                f"- Últimos eventos: {previous_journal.last_events}\n"
+                f"- Estado: {previous_journal.physical_emotional_state}\n"
+            )
 
         return template.format(
             sinopsis=story.sinopsis,
@@ -512,13 +495,13 @@ Instrucciones:
         self,
         macro_beat: MacroBeat,
         beat_anchors: dict,
-        prev_snapshot: str | None = None,
+        previous_journal: NarrativeJournal | None = None,
         story: "Story | None" = None,
     ) -> str:
         """Ensambla el narrative_context pre-baked que recibe el VOZ. Determinístico."""
         cast_block = self._format_cast_for_context(story) if story else None
         return self._nc_assembler.assemble(
-            macro_beat, beat_anchors, prev_snapshot, cast_block=cast_block
+            macro_beat, beat_anchors, previous_journal, cast_block=cast_block
         )
 
     def build_rule_resolver_prompt(
@@ -639,21 +622,4 @@ Instrucciones:
                 consistency_rules=consistency_rules,
             )
 
-        estado_anterior = (
-            previous_state_section if previous_state_section else "(Sin estado anterior)"
-        )
-        return f"""Eres el diario de memoria de una historia de terror. Registras lo que ocurre.
-
-HISTORIA: {story.title}
-BEAT #{beat.number}: {beat.summary}
-CONTENIDO: {beat.content[:800] if beat.has_content() else "[Aún no generado]"}
-
-{estado_anterior}
-
-Responde SOLO con este JSON exacto:
-{{
-    "last_events": "Resumen de lo que pasó en 1-2 oraciones",
-    "unresolved_mysteries": "Nuevas pistas sin responder (o vacío)",
-    "physical_emotional_state": "Cómo se sienten los personajes"
-}}
-"""
+        raise ValueError(f"Template journal no encontrado: {settings.prompt_file_journal}")

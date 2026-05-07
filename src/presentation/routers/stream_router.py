@@ -8,11 +8,11 @@ from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
 from src.application.services import PromptBuilder
-from src.application.services.export_service import ExportService
 from src.application.services.observability_service import observability
 from src.application.services.stream_session_manager import manager as session_manager
 from src.application.services.streaming_service import stream_story
 from src.application.use_cases.director_use_case import DirectorUseCase
+from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.config import settings
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
@@ -29,10 +29,17 @@ router = APIRouter(tags=["Streaming"])
 async def stream_generation(story_id: str):
     """Inicia (o se ata a) la generación SSE de una historia.
 
+    Spec-230: Sala Resiliente - Si la historia está en estado completed o failed,
+    el stream funciona en modo lectura: emite los beats históricos desde la DB
+    sin intentar regenerar.
+
     Spec-220: idempotencia real vía StreamSessionManager. La primera request
     arranca el productor único; las siguientes se atan a la misma sesión y
     reciben el replay buffer + flujo en vivo. Cero riesgo de doble pipeline.
     """
+    from src.domain.models import StoryStatus
+    from src.domain.streaming import StreamEvent, StreamEventType
+
     story_repo = SQLStoryRepository()
     story = await story_repo.get_by_id(UUID(story_id))
 
@@ -46,6 +53,34 @@ async def stream_generation(story_id: str):
         f"Sesión activa: {session_manager.is_active(story_id)}"
     )
 
+    beat_repo = SQLBeatRepository()
+
+    if story.status in (StoryStatus.COMPLETED, StoryStatus.FAILED):
+        logger.info(f"[STREAM] Modo lectura para historia {story_id} ({story.status.value})")
+        beats = await beat_repo.get_by_story(story.id)
+
+        async def read_only_generator():
+            yield StreamEvent(
+                event=StreamEventType.STATUS,
+                data={"msg": "Cargando beats históricos...", "step": "loading"},
+            ).to_sse()
+            for beat in beats:
+                yield StreamEvent(
+                    event=StreamEventType.BEAT_DONE,
+                    data={"number": beat.number, "content": beat.content},
+                ).to_sse()
+            yield StreamEvent(
+                event=StreamEventType.DONE,
+                data={
+                    "story_id": str(story.id),
+                    "total_beats": len(beats),
+                    "file_path": story.file_path,
+                    "read_only": True,
+                },
+            ).to_sse()
+
+        return EventSourceResponse(read_only_generator())
+
     observability.record(
         category="generation",
         message=f"Iniciando generación de '{story.title}'",
@@ -58,8 +93,6 @@ async def stream_generation(story_id: str):
         llm = LLMFactory.get_provider()
         prompt_builder = PromptBuilder()
         normalizer = ResponseNormalizer()
-        beat_repo = SQLBeatRepository()
-        export_service = ExportService()
         director = DirectorUseCase(
             llm=llm,
             prompt_builder=prompt_builder,
@@ -71,7 +104,7 @@ async def stream_generation(story_id: str):
             story,
             story_repo=story_repo,
             beat_repo=beat_repo,
-            export_service=export_service,
+            narrative_use_case=GenerateNarrativesUseCase(),
         )
 
     queue, replay = await session_manager.attach(story_id, _producer_factory)
@@ -101,7 +134,14 @@ async def health_check():
 
     # SQLite
     try:
-        async with aiosqlite.connect("stories.db") as db:
+        db_url = settings.database_url
+        if db_url.startswith("sqlite+aiosqlite:///"):
+            db_path = db_url[len("sqlite+aiosqlite:///") :]
+        elif db_url.startswith("sqlite+aiosqlite://"):
+            db_path = db_url[len("sqlite+aiosqlite://") :]
+        else:
+            db_path = db_url
+        async with aiosqlite.connect(db_path) as db:
             await db.execute("SELECT 1")
         checks["sqlite"] = "ok"
     except Exception as exc:

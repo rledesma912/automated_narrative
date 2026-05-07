@@ -9,7 +9,7 @@ beats_spec:
 
     - id: 1
       name: "exposicion"
-      word_limit: "entre 380 y 420 palabras"
+      word_limit: "entre 450 y 530 palabras"
       intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
       intensity: baja
       must:
@@ -26,7 +26,7 @@ beats_spec:
 
     - id: 2
       name: "accion_ascendente"
-      word_limit: "entre 360 y 440 palabras"
+      word_limit: "entre 450 y 530 palabras"
       intent: "activar el conflicto mediante transgresion"
       intensity: media
       must:
@@ -43,7 +43,7 @@ beats_spec:
 
     - id: 3
       name: "climax"
-      word_limit: "entre 430 y 530 palabras"
+      word_limit: "entre 450 y 530 palabras"
       intent: "forzar reconocimiento del horror"
       intensity: alta
       must:
@@ -59,7 +59,7 @@ beats_spec:
 
     - id: 4
       name: "accion_descendente"
-      word_limit: "entre 320 y 350 palabras"
+      word_limit: "entre 450 y 530 palabras"
       intent: "llevar al protagonista al colapso y reaccion"
       intensity: media-alta
       must:
@@ -75,7 +75,7 @@ beats_spec:
 
     - id: 5
       name: "desenlace"
-      word_limit: "entre 100 y 150 palabras (máxima brevedad emocional)"
+      word_limit: "entre 150 y 200 palabras (máxima brevedad emocional)"
       intent: "cerrar con brevedad emocional, escape incompleto y secuela"
       intensity: baja
       must:
