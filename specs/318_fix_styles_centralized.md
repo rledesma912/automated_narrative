@@ -268,8 +268,8 @@ Beneficio estimado: wizard.ejs baja de ~400 a ~200 líneas; un solo lugar para t
 
 ### 9.4 Estado
 
-- [ ] 9.A — wizard_card_list.ejs creado pero **no cableado** (ver §9.6 Bloqueo)
-- [ ] 9.B — migración escenarios + reglas pendiente (mismo bloqueo que 9.A)
+- [x] 9.A — wizard_card_list.ejs cableado para `personajes` (rediseño con API explícita de 15 locals; ver §9.6).
+- [x] 9.B — migración `escenarios` y `reglas` al mismo partial (3 invocaciones en `wizard.ejs:214, 238, 260`). wizard.ejs: 635 → 624 líneas (reducción modesta porque el partial es más grande que un inline mínimo, pero la duplicación entre los 3 grupos quedó eliminada).
 - [x] 9.C — extracción JS streaming-room (`public/js/streaming-room.js`, paridad 1:1 con inline)
 - [x] 9.D — extracción paneles a partials (`streaming_done_panel.ejs`, `streaming_error_panel.ejs`); cableados en `streaming-room.ejs` con `<%- include(...) %>`
 - [x] 9.E — validación SSE end-to-end:
@@ -299,13 +299,13 @@ El partial `wizard_card_list.ejs` tal como existe **no encaja con `wizard.ejs`**
 
 Pasar `pfx='personaje'` rompe `msg-max-personajes`; pasar `pfx='personajes'` rompe los IDs de cards que el JS busca.
 
-**Opciones para resolver (ninguna abordada todavía):**
+**Opciones evaluadas:**
 
 a) Refactorizar el partial para aceptar mapa explícito de IDs (`cardIdPrefix`, `msgMaxId`, `addHandler`, `deleteHandler`) en lugar de derivar todo de un único `pfx`.
 b) Renombrar IDs/handlers en `wizard.ejs` y su `<script>` para uniformar al partial.
 c) Posponer §9.A/B (es solo refactor, no cambia funcionalidad).
 
-Decisión actual: posponer (opción c). El wizard sigue funcional con los tres bloques inline; el partial queda como artefacto huérfano hasta que se aborde el rediseño.
+**Resolución (2026-05-07):** se ejecutó la **opción (a)**. El partial ahora recibe 15 locals explícitos (`groupContainerId`, `cardIdPrefix`, `deleteBtnIdPrefix`, `addBtnId`, `msgMaxId`, `addHandler`, `deleteHandler`, `itemLabel`, `addLabel`, `maxLabel`, `iconAdd`, `meta`, `indices`, `cards`, `saved` + opcional `labelIdPrefix`, `fieldNamePrefix`). Sin convenciones implícitas; cada call-site declara qué IDs usa. Tres invocaciones en `wizard.ejs:214, 238, 260` cubren personajes / escenarios / reglas con sus IDs originales preservados, así el `<script>` del wizard sigue funcionando sin cambios.
 
 ---
 

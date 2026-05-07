@@ -133,9 +133,14 @@
     animation: fadeIn 400ms ease-out forwards;
   }
 
+  /*
+   * Sólo opacity, sin transform: un translateY con `forwards` convierte a
+   * <main> en containing block y rompe `position: fixed` en cualquier modal
+   * hijo (el modal aparece anclado al main, no al viewport).
+   */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 
   /* Scrollbar personalizada */

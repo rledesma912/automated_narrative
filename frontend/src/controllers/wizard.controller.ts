@@ -129,11 +129,17 @@ export async function autoSaveField(req: Request, res: Response): Promise<void> 
     const arr = Array.isArray(fieldValue) ? fieldValue : (fieldValue ? [fieldValue] : []);
     if (arr.length > 0) {
       data[fieldName] = JSON.stringify(arr);
+    } else {
+      // Vacío = el usuario desmarcó todo o eliminó la card → purgar de sesión.
+      delete data[fieldName];
     }
   } else {
     const value = String(fieldValue ?? "");
     if (value) {
       data[fieldName] = value;
+    } else {
+      // Vacío = el usuario borró el campo o eliminó la card → purgar de sesión.
+      delete data[fieldName];
     }
   }
 

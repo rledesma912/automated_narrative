@@ -77,11 +77,17 @@
     }
   }
 
+  // Bug 7: separadas. revealLogs() solo muestra el log-container; el spinner
+  // permanece visible mientras dure la generación y se oculta solo al cierre
+  // del flujo (showDone, showError, cancelGeneration).
+  function revealLogs() {
+    const log = document.getElementById("log-container");
+    if (log) log.classList.remove("hidden");
+  }
+
   function hideSpinner() {
     const spinner = document.getElementById("initial-spinner");
     if (spinner) spinner.classList.add("hidden");
-    const log = document.getElementById("log-container");
-    if (log) log.classList.remove("hidden");
   }
 
   function appendLog(msg, isProgress = false) {
@@ -133,6 +139,7 @@
 
   function showError(msg) {
     setBadge("ERROR", "border-red-900 text-red-400");
+    hideSpinner();
 
     let displayMsg = msg;
     if (msg && (msg.includes("All connection attempts failed") || msg.includes("connection"))) {
@@ -154,6 +161,7 @@
   function showDone(filePath) {
     setBadge("COMPLETO", "border-green-900 text-green-400");
     setStatus("Historia generada con éxito");
+    hideSpinner();
 
     const panel = document.getElementById("done-panel");
     if (panel) panel.classList.remove("hidden");
@@ -279,6 +287,7 @@
     es = new EventSource(STREAM_URL);
 
     es.addEventListener("status", (e) => {
+      revealLogs();
       try {
         const d = JSON.parse(e.data);
         setStatus(d.msg);
@@ -289,7 +298,7 @@
     });
 
     es.addEventListener("beat_start", (e) => {
-      hideSpinner();
+      revealLogs();
       try {
         const d = JSON.parse(e.data);
         setBadge("GENERANDO", "border-forge-accent text-forge-accent");

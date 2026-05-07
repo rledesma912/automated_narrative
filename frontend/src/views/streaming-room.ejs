@@ -340,24 +340,26 @@
     </div>
   </div>
 
-  <%/* ── Spinner (oculto hasta iniciar) ───────────────────── */%>
-  <div id="initial-spinner" class="hidden flex flex-col items-center justify-center py-24 gap-8">
-    <div class="relative w-24 h-24">
+  <%/* ── Log de progreso estilo CLI ────────────────────── */%>
+  <%/* Bug 7: logs van ANTES del spinner para que el spinner quede visualmente */%>
+  <%/* debajo durante toda la generación (se oculta solo en done/error/cancel). */%>
+  <div id="log-container"
+       class="hidden font-mono text-sm space-y-2 bg-forge-surface border border-forge-border p-8 mb-8 shadow-inner">
+  </div>
+
+  <%/* ── Spinner (oculto hasta iniciar; permanece hasta done/error) ─────── */%>
+  <div id="initial-spinner" class="hidden flex flex-col items-center justify-center py-12 gap-6 mb-12">
+    <div class="relative w-20 h-20">
       <div class="absolute inset-0 border-4 border-forge-border rounded-full opacity-20"></div>
       <div id="spinner-spin" class="absolute inset-0 border-4 border-t-forge-accent rounded-full"></div>
-      <i id="sparkles-icon" data-lucide="sparkles" class="absolute inset-0 m-auto w-10 h-10 text-forge-accent"></i>
+      <i id="sparkles-icon" data-lucide="sparkles" class="absolute inset-0 m-auto w-8 h-8 text-forge-accent"></i>
     </div>
     <div class="text-center">
-      <p class="text-forge-text text-xl font-serif mb-2">Despertando al Narrador...</p>
+      <p class="text-forge-text text-lg font-serif mb-2">Despertando al Narrador...</p>
       <p id="processing-text" class="text-forge-muted text-xs uppercase tracking-widest">
         El LLM está procesando tu historia
       </p>
     </div>
-  </div>
-
-  <%/* ── Log de progreso estilo CLI ────────────────────── */%>
-  <div id="log-container"
-       class="hidden font-mono text-sm space-y-2 bg-forge-surface border border-forge-border p-8 mb-12 shadow-inner">
   </div>
 
   <%/* ── Paneles error/done (Spec-318 §9.D — extraídos a partials) ── */%>

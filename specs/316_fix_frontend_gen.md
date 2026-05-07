@@ -462,6 +462,13 @@ wrapper raíz del MODO SSE de `max-w-5xl` → `max-w-4xl` para consistencia con
 
 - [x] INVESTIGATE — Bug 4: diagnóstico de la causa raíz (cambio de variante sin reload).
 - [x] INVESTIGATE — Bug 5: verificar implementación del botón copiar en `relatos.ejs` y JS asociado.
+- [x] FIX — Bug 5 (re-aplicado 2026-05-08): el fix documentado en §10 se había perdido en algún merge previo (el código en disco volvió a la versión simple sin manejo de errores). Re-implementado con enfoque más robusto que el original:
+  - `try/catch` reemplazado por `.catch()` en la promise + fallback automático a `document.execCommand('copy')` con `<textarea>` temporal cuando `navigator.clipboard` no está disponible (HTTP-LAN, contextos no-seguros).
+  - Detección previa de `window.isSecureContext` para decidir vía directa o fallback sin esperar al rechazo.
+  - Feedback visual diferenciado: `check + ¡Copiado!` (ok) vs `alert-triangle + Error al copiar` (fallo).
+  - Validación de existencia del elemento y de texto no vacío antes de intentar copiar.
+  - Logs `console.warn`/`console.error` para debugging futuro.
+  - Archivo: `frontend/src/views/relatos.ejs:111-167`.
 
 ---
 
@@ -568,6 +575,7 @@ wrapper raíz del MODO SSE de `max-w-5xl` → `max-w-4xl` para consistencia con
 ## 15. Estado de bugs 9
 
 - [x] INVESTIGATE — Bug 9: mapeo de reglas del mundo en edición de historia existente.
+- [ ] INVESTIGATE — Bug 11: cancelación mid-stream no expuesta en UI durante generación normal (ver detalle al final del documento).
 
 ---
 
@@ -618,6 +626,24 @@ contenidos de los beats con `\n\n` pero sin agregar ningún título identificado
 
 ---
 
+### Bug 6 (complemento frontend, 2026-05-08) — Markdown crudo en vista web
+
+**Por qué reaparece:** el fix backend deja el `relato.content` con la forma `## Beat N - summary\n\n<prosa>`. La vista web (`relatos.ejs`) renderizaba ese contenido como `<%= relato.content %>` dentro de un `<div class="prose ... whitespace-pre-wrap">`. La clase `.prose` solo estiliza tags HTML reales (h1-h4, p, etc.); no parsea markdown. Resultado: el usuario veía `## Beat 1 - X` como **texto plano** con `##` literales y separación visual mínima — lo que se percibía como "beats pegados".
+
+El fix backend resolvió el caso del `.md` exportado, pero el navegador siguió mostrando markdown crudo.
+
+**Fix aplicado (frontend):** `frontend/src/views/relatos.ejs` (panel del relato):
+
+- Split server-side de `relato.content` con la regex `/^## (.+)$/m` → array `[preámbulo, título1, body1, título2, body2, ...]`.
+- Cada par título/body se renderiza como `<h3 class="heading-forge-lg !text-2xl !text-forge-accent mt-10 mb-4">` + `<div class="whitespace-pre-wrap">`. El primer heading lleva `mt-0` si no hay preámbulo.
+- Wrapper `<div id="relato-content-<%= relato.id %>">` se mantiene para que `copyRelatoContent` siga encontrando el elemento. `.innerText` une los `<h3>` y `<div>` con saltos de línea automáticos al copiar.
+- Caída elegante: si el contenido no tiene headers `##` (legacy o backend cambia), `sections.length === 1` y se renderiza plano sin romper nada.
+- Sin nuevas dependencias (parser ad-hoc para el formato real del backend).
+
+**Trade-off considerado:** se evaluó añadir `marked.js` para parsear todo el markdown del lado cliente, pero solo necesitamos los headings de beat — un parser inline es más predecible y elimina una dependencia.
+
+---
+
 ### Bug 7 — Spinner desaparece cuando aparecen los logs
 
 **Causa raíz identificada:**
@@ -635,6 +661,33 @@ llegaba el primer log.
 **Archivo modificado:** `frontend/src/views/streaming-room.ejs:466-476, 646`
 
 **Verificación:** Build OK (`npm run build`)
+
+---
+
+### Bug 7 (re-aplicado en 2026-05-08) — fix nunca llegó al `.js` extraído
+
+**Por qué reaparece:** el fix de §16 se documentó como aplicado en `streaming-room.ejs:466-476, 646`, pero al portar el JS al archivo extraído `frontend/public/js/streaming-room.js` (Spec-318 §9.C, commit `95adbbd`) el `hideSpinner()` original volvió a quedar como una sola función que hacía las dos cosas (ocultar spinner + mostrar logs). El `beat_start` seguía llamándolo y se reproducía exactamente el síntoma descrito.
+
+Además los logs no aparecían en el primer evento `status` (que sí llega antes que `beat_start`): los `appendLog` se acumulaban en un container `hidden`, así que cuando finalmente se hacía `revealLogs` aparecían "de golpe" varios logs juntos, reforzando la sensación de salto.
+
+**Decisión UX (2026-05-08):** se eligió la opción B del spec (spinner visible TODO el tiempo) por encima de hacerlo desaparecer al primer beat. El spinner queda como indicador continuo de "el LLM sigue trabajando" debajo de los logs.
+
+**Fix aplicado:**
+
+1. **`frontend/public/js/streaming-room.js`:**
+   - Funciones separadas: `revealLogs()` (solo muestra log-container) y `hideSpinner()` (solo oculta spinner).
+   - Listener `status` ahora llama `revealLogs()` antes del `appendLog()` → los logs aparecen desde el primer evento, no esperan al `beat_start`.
+   - Listener `beat_start` ya no llama `hideSpinner()`; llama `revealLogs()` (idempotente).
+   - `showDone()` y `showError()` ahora invocan `hideSpinner()` para ocultar el spinner al cerrar el flujo (antes solo `cancelGeneration` lo ocultaba explícitamente).
+2. **`frontend/src/views/streaming-room.ejs`:**
+   - `#log-container` movido **antes** de `#initial-spinner` en el markup (orden visual: logs arriba, spinner debajo).
+   - Spinner reducido (`py-12 gap-6`, `w-20 h-20`, `text-lg`) para no robar protagonismo cuando convive con logs.
+
+**Archivos modificados:**
+- `frontend/public/js/streaming-room.js` (revealLogs/hideSpinner separadas, listeners actualizados, hideSpinner en showDone/showError).
+- `frontend/src/views/streaming-room.ejs` (orden invertido + spinner más compacto).
+
+**Lección reusable:** cuando una spec documenta "Archivo modificado: X" pero después un refactor estructural mueve la lógica a otro archivo Y (Spec-318 §9.C extrajo el JS), conviene verificar que los fixes previos hayan migrado. Buen candidato para un check de cierre en futuras specs de extracción.
 
 ---
 
@@ -738,3 +791,53 @@ HTTPS o localhost (requisito de la Clipboard API).
   2. Click → sala en modo monitor con sidebar/footer visibles.
   3. `/historia/:id/relatos` → sidebar y footer presentes; relato largo
      scrollea internamente sin que el final quede tapado.
+
+---
+
+### Bug 10 — Tabs de relatos no funcionan en primera entrada (hx-boost vs DOMContentLoaded)
+
+**Síntoma reportado (2026-05-08):** Al navegar a `/historia/:id/relatos` desde la galería, los tabs (uno por relato) están visibles pero al hacer click no cambian el contenido del panel. Solo después de F5 funciona.
+
+**Causa raíz:** El layout `partials/layout.ejs` tiene `<body hx-boost="true">`, lo que convierte toda navegación de `<a>` en peticiones HTMX que reemplazan el body sin recargar la página. Consecuencia:
+
+- `DOMContentLoaded` **no se dispara** en una navegación hx-boost (la página ya estaba cargada).
+- El listener `htmx:afterSwap` que registraba `relatos.ejs` se enganchaba *durante* la ejecución del swap actual, demasiado tarde para captar ese mismo evento — solo servía para swaps futuros.
+- Resultado: `initRelatos()` nunca corría en la primera entrada → ni el primer tab se marcaba activo ni el handler de click delegado quedaba enganchado.
+
+F5 funcionaba porque era una navegación full-page (sin hx-boost) y `DOMContentLoaded` sí se disparaba.
+
+**Fix aplicado:** `frontend/src/views/relatos.ejs:88-114`:
+
+- `activateFirstTab()` se invoca **inmediatamente** al evaluar el script (el `<script>` está al final del body, el DOM ya existe).
+- El listener `click` delegado se mueve afuera de la función de inicialización y se protege con un flag `window.__relatosTabClickBound` para evitar duplicarse en navegaciones sucesivas (bajo hx-boost, `document` persiste entre swaps).
+- Se mantiene `htmx:afterSwap → activateFirstTab` para re-activar el primer tab si el contenido se recarga vía HTMX.
+
+**Lección reusable:** cualquier vista bajo el layout que dependa de inicialización JS al cargar debe ejecutarla *inmediatamente* dentro del script inline, no dentro de un listener `DOMContentLoaded`. Patrón a aplicar a futuros refactors si aparecen síntomas similares.
+
+---
+
+### Bug 11 — No se puede cancelar mid-stream durante una generación normal
+
+**Estado:** [ ] INVESTIGATE / SPECIFY (abierto 2026-05-08).
+
+**Descripción:** La función `cancelGeneration()` existe en `frontend/public/js/streaming-room.js:179` y funciona correctamente: cierra el EventSource, dispara un PATCH a `/api/v1/stories/:id/status` (presumiblemente para marcar la historia cancelada), y muestra el panel de error con un mensaje de cancelación. **Pero el botón que la invoca solo está renderizado dentro de `partials/streaming_error_panel.ejs`**, que solo se hace visible *después* de que ocurre un error o cuando ya se canceló.
+
+**Síntoma:** durante una generación normal en curso (status=GENERANDO, beats en progreso) no hay forma de detener el proceso desde la UI. El usuario que cambia de opinión o detecta que algo va mal solo puede:
+- Cerrar la pestaña (el backend puede no enterarse limpiamente, queda historia en `processing`).
+- Esperar a que termine.
+- Esperar a que falle.
+
+**Comportamiento esperado:** un botón "Detener generación" visible mientras `setBadge` esté en `PROCESANDO`/`GENERANDO`, oculto en `COMPLETO` y `ERROR`.
+
+**Decisiones de UX a tomar (no abordar todavía):**
+- Ubicación: ¿botón discreto al lado del badge superior? ¿CTA bajo el spinner? ¿flotante sticky bottom-right?
+- Confirmación: ¿modal de "¿Seguro? Perderás los beats ya generados"? Riesgo: agrega fricción si solo se quiere abortar rápido.
+- Estado backend tras cancel mid-stream: ¿la historia queda `failed`, `cancelled` (status nuevo), `completed` con beats parciales, o `draft`? Coordinar con `streaming_service.py` y `StreamSessionManager` (Spec-201/210). El `cancelGeneration()` actual asume un PATCH ya implementado — verificar que el endpoint exista y haga lo correcto.
+- Reintentar tras cancelar: ¿se reusa el mismo endpoint que `retryStream()` o necesita diferenciar?
+
+**Archivos involucrados:**
+- `frontend/src/views/streaming-room.ejs` — agregar botón en zona visible mientras corre el stream.
+- `frontend/public/js/streaming-room.js:179` — la función ya existe, solo necesita un nuevo caller.
+- `src/application/services/streaming_service.py` — verificar el handling del cierre de EventSource desde el cliente.
+
+**Pre-trabajo de SPECIFY:** revisar si el `StreamSessionManager` (Spec-201) tiene un mecanismo de cancelación cooperativa, o si el cierre del EventSource desde el cliente solo cancela la conexión sin avisar al productor en backend.

@@ -20,7 +20,9 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
-COPY public/ ./public/
+# public/ del builder: contiene styles.css recompilado por `npm run build:css`.
+# Copiar del host pisaría ese build con el CSS viejo del repo.
+COPY --from=builder /app/public ./public
 COPY config/ ./config/
 
 RUN mkdir -p ./public/output_stories
