@@ -13,6 +13,10 @@ export const relatosPage = async (req: Request, res: Response) => {
 
     const relatos = await getRelatosForStory(storyId);
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     await renderPage(res, "relatos", {
       story,
       relatos,

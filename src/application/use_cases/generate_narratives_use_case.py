@@ -29,9 +29,13 @@ class GenerateNarrativesUseCase:
 
     @staticmethod
     def _consolidate_content(story: Story) -> str:
-        parts = [
-            beat.content for beat in sorted(story.beats, key=lambda b: b.number) if beat.content
-        ]
+        parts = []
+        for beat in sorted(story.beats, key=lambda b: b.number):
+            if beat.content:
+                beat_title = f"Beat {beat.number}"
+                if beat.summary:
+                    beat_title += f" - {beat.summary}"
+                parts.append(f"## {beat_title}\n\n{beat.content}")
         return "\n\n".join(parts)
 
     async def consolidate_and_save(

@@ -416,6 +416,292 @@ wrapper raíz del MODO SSE de `max-w-5xl` → `max-w-4xl` para consistencia con
 - [x] TASKS — slices S0–S4 expandidos.
 - [x] IMPLEMENT — completado (2026-05-05).
 
+---
+
+## 12. Bugs adicionales identificados (2026-05-06)
+
+### Bug 4 — Reload requerido para ver contenido actualizado de relato
+
+**Descripción:** Al hacer click en una card de relato en la vista de relatos (cambio de variante), el contenido shown no se actualiza hasta que el usuario hace F5 (Refresh del navegador).
+
+**Síntoma reportado:** El usuario hace click en otra variante de relato y el texto shown sigue siendo el de la variante anterior. Tras recargar la página (F5), el contenido correcto aparece.
+
+**Comportamiento esperado:** El cambio de variante debería actualizar el contenido del relato de forma inmediata sin necesidad de recargar la página.
+
+**Archivos posiblemente relacionados:**
+- `frontend/src/views/relatos.ejs` — lógica de cambio de variante (tabs o selector).
+- `frontend/src/controllers/relatos.controller.ts` — endpoint que provee los relatos.
+
+**Hipótesis preliminar:**
+- El cambio de variante podría estar usando HTMX con cache que no se invalida.
+- La variante seleccionada se guarda en el backend pero el frontend no recibe la actualización correctamente.
+- Falta algo como `hx-target` o refresh del contenido tras el cambio.
+
+---
+
+### Bug 5 — Botón "Copiar" no funciona
+
+**Descripción:** La funcionalidad de copiar el texto del relato al portapapeles no funciona. Al hacer click en el botón de copiar, no ocurre nada (ni se copia el texto ni se muestra feedback visual).
+
+**Síntoma reportado:** El usuario hace click en el botón/icono de copiar y el texto del relato no se copia al portapapeles.
+
+**Comportamiento esperado:** Al hacer click en "Copiar", el texto del relato se copia al portapapeles y se muestra un feedback visual (ej: toast o cambio de icono) confirmando la acción.
+
+**Archivos posiblemente relacionados:**
+- `frontend/src/views/relatos.ejs` — botón de copiar y su handler.
+- `frontend/src/public/js/` — scripts de cliente para copiar.
+
+**Hipótesis preliminar:**
+- Falta el `onclick` o handler de JavaScript que realice el `navigator.clipboard.writeText()`.
+- El handler existe pero falla silenciosamente por restricciones de CORS o contexto inseguro.
+- Falta el feedback visual (`Copiado!`).
+
+---
+
+## 13. Estado de bugs adicionales
+
+- [x] INVESTIGATE — Bug 4: diagnóstico de la causa raíz (cambio de variante sin reload).
+- [x] INVESTIGATE — Bug 5: verificar implementación del botón copiar en `relatos.ejs` y JS asociado.
+
+---
+
+### Bug 6 — Beats pegados en vista de relatos
+
+**Descripción:** En la vista de relatos, el texto de los 5 beats aparece todo pegado sin separación. El usuario necesita que cada acto/beats esté separado por su título correspondiente (Acto 1, Acto 2, Acto 3, Acto 4 y Acto 5).
+
+**Síntoma reportado:** El contenido del relato se muestra como un bloque de texto continuo sin delimitadores visuales entre beats.
+
+**Comportamiento esperado:** Cada beat debería estar separado visualmente y etiquetado con su número/título (ej: "Beat 1 - [título]", "Beat 2 - [título]", etc.).
+
+**Archivos posiblemente relacionados:**
+- `frontend/src/views/relatos.ejs` — renderizado del contenido del relato.
+- Backend que genera el `relato.content` — cómo se estructura el texto de los beats.
+
+**Hipótesis preliminar:**
+- El `relato.content` se genera concatenando los beats sin separadores.
+- La separación debe hacerse en el backend al generar el narrative, o en el frontend al renderizar.
+
+---
+
+### Bug 7 — Spinner y logs en regeneración
+
+**Descripción:** Al iniciar una **regeneración** (no generación desde cero), aparece el spinner con los textos "Despertando al Narrador..." y "El LLM está procesando tu historia", pero los logs de avance no aparecen de inmediato. Recién cuando comienzan a aparecer los logs (ej: "[16:54] 🔍 Analizando sinopsis...", "[16:55] ✍️ Narrando Beat 1/5..."), el spinner desaparece.
+
+**Síntoma reportado:**
+1. Click en "Regenerar" → aparece spinner + textos (sin logs).
+2. Pasados unos segundos → aparecen los logs.
+3. Al aparecer los logs → el spinner desaparece abruptamente.
+
+**Comportamiento esperado:**
+- Al hacer click en "Regenerar", deben comenzar a aparecer los logs de inmediato (mientras el LLM procesa).
+- El spinner debería permanecer visible debajo de los logs durante todo el proceso de generación, hasta que завер completamente.
+
+**Archivos posiblemente relacionados:**
+- `frontend/src/views/streaming-room.ejs` — lógica de spinner y logs.
+- `frontend/src/controllers/stream.controller.ts` — manejo de SSE y estado de carga.
+- `frontend/src/public/js/` — scripts de cliente para streaming.
+
+**Hipótesis preliminar:**
+- El spinner se muestra durante un estado de "loading" que termina cuando llega el primer log.
+- Debería cambiarse la lógica para que el spinner sea complementario a los logs (ambos visibles), no mutuamente excluyentes.
+
+---
+
+### Bug 8 — Persistencia de cambios en wizard
+
+**Descripción:** Los cambios en los componentes del wizard de generación (textos, selecciones) no se persisten en algunos casos cuando se navega hacia adelante o hacia atrás. Cada vez que se cambia un texto o selección y pierde el foco, debe persistirse automáticamente y mostrarse en el footer que se guardó el cambio.
+
+**Síntoma reportado:**
+- El usuario completa un paso del wizard, navega al siguiente, y al volver al anterior los cambios se perdieron.
+- No hay feedback visual en el footer confirmando que los cambios se guardaron.
+
+**Comportamiento esperado:**
+- Al perder el foco de cualquier input del wizard (blur), los cambios se persisten automáticamente en backend.
+- El footer muestra un mensaje visual (ej: "✓ Guardado" o similar) confirmando la persistencia.
+
+**Archivos posiblemente relacionados:**
+- `frontend/src/views/generate/` — vistas del wizard.
+- `frontend/src/controllers/generate.controller.ts` — endpoints de guardado.
+- `frontend/src/views/partials/footer.ejs` — zona de feedback de estado.
+
+**Hipótesis preliminar:**
+- Falta hook de `onblur` o `onchange` que persista los valores.
+- El guardado solo ocurre al hacer click en "Siguiente", no al cambiar campos individuales.
+- El footer no tiene lógica para mostrar estado de "guardado".
+
+---
+
+## 14. Estado de bugs 6-8
+
+- [x] INVESTIGATE — Bug 6: cómo se estructura el contenido del relato en backend vs frontend.
+- [x] INVESTIGATE — Bug 7: lógica de spinner vs logs en streaming-room.
+- [x] INVESTIGATE — Bug 8: eventos de persistencia en wizard y feedback en footer.
+
+---
+
+### Bug 9 — Se pierden las reglas del mundo al navegar en edición de historia
+
+**Descripción:** En la vista de edición de una historia ya generada (accedida vía "Editar" o "Cargar" desde la galería), al navegar hacia adelante y hacia atrás a través de los pasos del wizard, en algún momento las **reglas del mundo** se pierden.
+
+**Síntoma reportado:**
+- El usuario edita una historia existente.
+- Al navegar entre pasos (Anterior/Siguiente), en algún momento las reglas del mundo (Reglas del universo narrativo) desaparecen del formulario.
+- Los datos se pierden aunque se haya implementado auto-guardado en Bug 8.
+
+**Comportamiento esperado:**
+- Las reglas del mundo deben persistir correctamente al navegar entre pasos, igual que los otros campos del wizard.
+- Si se pierden, debe haber un mecanismo para recuperarlas desde el backend.
+
+**Archivos posiblemente relacionados:**
+- `frontend/src/controllers/wizard.controller.ts` — carga de datos existentes.
+- `frontend/src/services/wizard.service.ts` — gestión de sesión y datos.
+- `frontend/src/services/mapper.service.ts` — mapeo de story a wizard.
+- `frontend/src/views/wizard.ejs` — renderizado de campos de reglas.
+
+**Hipótesis preliminar:**
+- El mapeo de story a wizard (`mapStoryToWizard`) no está extrayendo correctamente el campo `rules` de la story.
+- Las reglas se guardan en un formato diferente al esperado por el wizard ( ej: `story.rules` vs `wizard.rules`).
+- La sesión no está manteniendo las reglas correctamente entre pasos.
+
+---
+
+## 15. Estado de bugs 9
+
+- [x] INVESTIGATE — Bug 9: mapeo de reglas del mundo en edición de historia existente.
+
+---
+
+## 17. Fix Bug 9 (2026-05-06)
+
+### Bug 9 — Se pierden las reglas del mundo al navegar en edición
+
+**Causa raíz identificada:**
+El enlace "Anterior" en el wizard era un simple `<a>` que navegaba directamente
+sin ejecutar el submit del formulario. Aunque se había implementado auto-guardado
+en blur/change (Bug 8), al navegar hacia atrás no se guardaban los cambios del
+paso actual antes de moverse al anterior.
+
+**Fix aplicado:**
+- Cambiado el enlace "Anterior" de `<a href="...">` a `<button onclick="...">`
+- Nueva función JavaScript `saveCurrentStepAndNavigate(targetStep)` que:
+  1. Recolecta todos los valores del formulario actual (incluyendo multi-selects,
+     checkboxes y radios)
+  2. Guarda cada campo mediante auto-guardado (Promise.all)
+  3. Navega al paso destino solo después de que todos los campos estén guardados
+- Esto asegura que al navegar hacia atrás desde el paso de reglas, los cambios se
+  guardan correctamente antes de cambiar de paso
+
+**Archivos modificados:**
+- `frontend/src/views/wizard.ejs:360-365` (botón Anterior con handler)
+- `frontend/src/views/wizard.ejs:455-485` (función saveCurrentStepAndNavigate)
+
+**Verificación:** Build OK (`npm run build`)
+
+---
+
+## 16. Fix aplicado bugs 6-8 (2026-05-06)
+
+### Bug 6 — Beats pegados en vista de relatos
+
+**Causa raíz identificada:**
+La función `_consolidate_content` en `generate_narratives_use_case.py` unía los
+contenidos de los beats con `\n\n` pero sin agregar ningún título identificador.
+
+**Fix aplicado:**
+- Modificado `_consolidate_content` para incluir "## Beat X" antes de cada contenido
+- Si el beat tiene `summary`, se muestra como "Beat X - summary"
+- Esto permite que el usuario vea claramente la separación entre actos
+
+**Archivo modificado:** `src/application/use_cases/generate_narratives_use_case.py:31-42`
+
+**Verificación:** `make lint` → All checks passed
+
+---
+
+### Bug 7 — Spinner desaparece cuando aparecen los logs
+
+**Causa raíz identificada:**
+La función `hideSpinner()` ocultaba el spinner Y mostraba el log container
+simultáneamente, causando que el spinner desapareciera abruptamente cuando
+llegaba el primer log.
+
+**Fix aplicado:**
+- Dividida `hideSpinner()` en dos funciones:
+  - `showLogsContainer()`: solo muestra el log container
+  - `hideSpinner()`: solo oculta el spinner
+- Cambiada la llamada en el evento `beat_start` de `hideSpinner()` a `showLogsContainer()`
+- Ahora el spinner permanece visible debajo de los logs durante todo el proceso
+
+**Archivo modificado:** `frontend/src/views/streaming-room.ejs:466-476, 646`
+
+**Verificación:** Build OK (`npm run build`)
+
+---
+
+### Bug 8 — Persistencia de cambios en wizard
+
+**Causa raíz identificada:**
+Los datos del wizard solo se guardaban al hacer click en "Siguiente" (submit del
+formulario). Si el usuario cambiaba un valor y navegaba hacia otro paso sin hacer
+click en el botón, los cambios se perdían.
+
+**Fix aplicado:**
+1. Nuevo endpoint PATCH `/generar/paso/:step/guardar` en el wizard controller
+   - Recibe `fieldName`, `fieldValue`, `fieldType` y guarda en sesión
+2. JavaScript en wizard.ejs:
+   - Escucha eventos `blur` y `change` en todos los inputs del formulario
+   - Envía PATCH al endpoint de auto-guardado en cada cambio/blur
+3. Feedback visual en footer:
+   - Nuevo elemento `#footer-wizard-save` que muestra "✓ Guardado" durante 2 segundos
+   - Se muestra automáticamente cuando el auto-guardado succeeds
+
+**Archivos modificados:**
+- `frontend/src/controllers/wizard.controller.ts:104-128` (autoSaveField)
+- `frontend/src/routes/index.ts:22` (ruta PATCH)
+- `frontend/src/views/wizard.ejs:398-443` (listeners de auto-guardado)
+- `frontend/src/views/partials/footer.ejs:28-33` (feedback visual)
+
+**Verificación:** Build OK (`npm run build`)
+
+---
+
+## 15. Fix aplicado (2026-05-06)
+
+### Bug 4 — Cambio de variante sin actualizar contenido
+
+**Causa raíz identificada:**
+Las funciones `selectRelato` e `initRelatos` estaban encapsuladas dentro de un IIFE
+`(function() { ... })()`, lo cual podía causar problemas de scope en algunos contextos
+de navegación HTMX.
+
+**Fix aplicado:**
+- Extraídas las funciones `selectRelato` e `initRelatos` del IIFE para que queden
+  definidas en el scope global del script.
+- Mantenido el event listener de click con delegación de eventos para robustness.
+- Mantenidos los listeners `DOMContentLoaded` y `htmx:afterSwap` para inicialización.
+
+**Archivo modificado:** `frontend/src/views/relatos.ejs:68-127`
+
+---
+
+### Bug 5 — Botón copiar no funciona
+
+**Causa raíz identificada:**
+La función `copyRelatoContent` usaba `navigator.clipboard.writeText()` sin manejo
+de errores, lo que causaba fallos silenciosos (especialmente en contextos no-HTTPS
+o cuando el elemento no existía).
+
+**Fix aplicado:**
+- Agregado `try/catch` con logging de errores a consola para debugging.
+- Verificación de existencia del elemento antes de copiar.
+- Verificación de que hay texto para copiar.
+- Feedback visual mejorado en caso de error (icono de alerta + mensaje).
+
+**Archivo modificado:** `frontend/src/views/relatos.ejs:129-164`
+
+**Nota:** Si el problema persiste en producción, verificar que el sitio corra sobre
+HTTPS o localhost (requisito de la Clipboard API).
+
 ## 11. Resultado de implementación (2026-05-05)
 
 **Cambios aplicados:**
