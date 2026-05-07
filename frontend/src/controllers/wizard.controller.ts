@@ -51,14 +51,21 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
   const step = getStep(num);
   if (!step) { res.redirect("/generar/paso/1"); return; }
 
-  const data: Record<string, string> = {};
+  const existingData = getStepData(req.session as WizardSession, step.id);
+  const data: Record<string, string> = { ...existingData };
+
   for (const field of step.fields) {
-    if (field.type === "multi-select") {
-      const raw = req.body[field.name];
-      const arr = Array.isArray(raw) ? raw : (raw ? [raw as string] : []);
-      data[field.name] = JSON.stringify(arr);
-    } else {
-      data[field.name] = (req.body[field.name] ?? "").toString().trim();
+    if (req.body[field.name] !== undefined) {
+      if (field.type === "multi-select") {
+        const raw = req.body[field.name];
+        const arr = Array.isArray(raw) ? raw : (raw ? [raw as string] : []);
+        data[field.name] = JSON.stringify(arr);
+      } else {
+        const value = (req.body[field.name] ?? "").toString().trim();
+        if (value) {
+          data[field.name] = value;
+        }
+      }
     }
   }
   saveStepData(req.session as WizardSession, step.id, data);
@@ -99,4 +106,37 @@ export async function confirmPage(req: Request, res: Response): Promise<void> {
     wizard,
     storyId,
   });
+}
+
+export async function autoSaveField(req: Request, res: Response): Promise<void> {
+  const num = parseInt(req.params["step"] as string, 10);
+  const step = getStep(num);
+  if (!step) {
+    res.status(400).json({ error: "Paso inválido" });
+    return;
+  }
+
+  const { fieldName, fieldValue, fieldType } = req.body;
+  if (!fieldName) {
+    res.status(400).json({ error: "Nombre de campo requerido" });
+    return;
+  }
+
+  const existingData = getStepData(req.session as WizardSession, step.id);
+  const data: Record<string, string> = { ...existingData };
+
+  if (fieldType === "multi-select") {
+    const arr = Array.isArray(fieldValue) ? fieldValue : (fieldValue ? [fieldValue] : []);
+    if (arr.length > 0) {
+      data[fieldName] = JSON.stringify(arr);
+    }
+  } else {
+    const value = String(fieldValue ?? "");
+    if (value) {
+      data[fieldName] = value;
+    }
+  }
+
+  saveStepData(req.session as WizardSession, step.id, data);
+  res.json({ success: true, saved: { fieldName, step: num } });
 }

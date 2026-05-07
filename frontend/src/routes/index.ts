@@ -3,7 +3,7 @@ import { homePage } from "../controllers/home.controller";
 import { galleryPage } from "../controllers/gallery.controller";
 import { debugPage } from "../controllers/debug.controller";
 import { setTheme } from "../controllers/theme.controller";
-import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData } from "../controllers/wizard.controller";
+import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField } from "../controllers/wizard.controller";
 import { submitGeneration, streamingRoomPage, getActiveStreamApi } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, updateFilePathHandler, generateNarrativeHandler } from "../controllers/historia.controller";
 import { relatosPage } from "../controllers/relatos.controller";
@@ -19,6 +19,7 @@ router.post("/theme",      setTheme);
 router.get("/generar",              wizardRedirect);
 router.get("/generar/paso/:step",   showStep);
 router.post("/generar/paso/:step",  submitStep);
+router.patch("/generar/paso/:step/guardar", autoSaveField);
 router.get("/generar/confirmar",    confirmPage);
 router.get("/generar/cargar/:storyId", loadWizardData);
 
