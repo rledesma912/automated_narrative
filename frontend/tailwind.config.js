@@ -3,6 +3,15 @@ module.exports = {
   content: [
     './src/views/**/*.ejs',
     './src/public/**/*.html',
+    './src/styles/**/*.css',
+  ],
+  safelist: [
+    'btn-forge',
+    'btn-forge-lg',
+    'btn-forge-sm',
+    'btn-forge-outline',
+    'btn-forge-outline-sm',
+    'btn-forge-danger',
   ],
   theme: {
     extend: {

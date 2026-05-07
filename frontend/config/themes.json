@@ -7,6 +7,9 @@
     "accent": "#8b0000",
     "muted": "#6b7280",
     "text": "#d1d1d1",
+    "error": "#ef4444",
+    "error-bg": "#7f1d1d",
+    "error-border": "#991b1b",
     "font": "mono"
   },
   "noir": {
@@ -17,6 +20,9 @@
     "accent": "#6060aa",
     "muted": "#6b6b8a",
     "text": "#c8c8d8",
+    "error": "#f87171",
+    "error-bg": "#3f1d2d",
+    "error-border": "#5e2a3d",
     "font": "mono"
   },
   "light-contrast": {
@@ -27,6 +33,9 @@
     "accent": "#0056b3",
     "muted": "#666666",
     "text": "#333333",
+    "error": "#b91c1c",
+    "error-bg": "#fee2e2",
+    "error-border": "#fca5a5",
     "font": "sans-serif"
   }
 }

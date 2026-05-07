@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+RUN npm run build:css && npm run build
 # Las vistas EJS no se compilan — copiarlas donde el código compilado las espera
 RUN cp -r src/views dist/views
 

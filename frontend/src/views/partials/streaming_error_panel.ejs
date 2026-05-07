@@ -1,0 +1,22 @@
+<%/* ── Streaming Error Panel ── */%>
+<div id="error-panel" class="hidden mt-8 border border-forge-error bg-forge-error p-8 shadow-2xl">
+  <div class="flex items-center gap-3 mb-4">
+    <i data-lucide="alert-triangle" class="w-6 h-6 text-forge-error"></i>
+    <span class="text-forge-error text-lg font-bold uppercase tracking-widest">Conexión interrumpida</span>
+  </div>
+  <p id="error-msg" class="text-forge-error text-base mb-8 leading-relaxed opacity-90"></p>
+  <div class="flex gap-4 flex-wrap">
+    <button onclick="retryStream()"
+            class="btn-forge-sm">
+      Reintentar
+    </button>
+    <button onclick="cancelGeneration()"
+            class="btn-forge-outline !text-forge-error !border-forge-error hover:!bg-forge-error hover:!text-white">
+      <i data-lucide="square" class="w-4 h-4 inline mr-2"></i> Detener generación
+    </button>
+    <a href="/galeria"
+       class="btn-forge-outline">
+      Ver galería
+    </a>
+  </div>
+</div>
