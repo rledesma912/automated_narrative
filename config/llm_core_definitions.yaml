@@ -35,7 +35,7 @@ profiles:
         model: qwen2.5:14b
         temperature: 0.4
         num_ctx: 6144
-        num_predict: 850
+        num_predict: 1500
         stop: []
       voz:
         model: qwen2.5:14b
@@ -46,7 +46,7 @@ profiles:
       journal:
         model: qwen2.5:14b
         temperature: 0.3
-        num_ctx: 3072
+        num_ctx: 6144
         num_predict: 500
         stop: []
 
