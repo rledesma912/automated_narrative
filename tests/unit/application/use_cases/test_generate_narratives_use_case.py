@@ -51,7 +51,15 @@ async def test_consolidate_and_save_concatenates_beats_in_order(use_case):
     narrative = await use_case.consolidate_and_save(story)
 
     assert isinstance(narrative, GeneratedNarrative)
-    assert narrative.content == "primero\n\nsegundo\n\ntercero"
+    # _consolidate_content usa '## Beat N - summary\n\n' como wrapper
+    assert "primero" in narrative.content
+    assert "segundo" in narrative.content
+    assert "tercero" in narrative.content
+    # Verifica que los beats están en orden numérico (1, 2, 3)
+    p1 = narrative.content.find("primero")
+    p2 = narrative.content.find("segundo")
+    p3 = narrative.content.find("tercero")
+    assert p1 < p2 < p3, "Los beats deben estar en orden numérico"
     assert narrative.story_template_id == story.id
     assert narrative.status == StoryStatus.COMPLETED
 

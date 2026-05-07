@@ -22,13 +22,22 @@ Cada cambio se organiza en **Hitos** que agrupan **Tasks** atómicas.
 ## 2. Arquitectura del Sistema (Clean Architecture)
 El código se organiza en capas concéntricas donde las dependencias solo fluyen hacia adentro:
 
-1. **Domain:** Entidades (`Story`, `MacroBeat`, `NarrativeAnchors`), interfaces y excepciones.
+1. **Domain:** Entidades (`Story`, `MacroBeat`, `NarrativeAnchors`), interfaces, excepciones y eventos de pipeline (`PhaseEvent`, `PipelinePhaseData`).
 2. **Application:** Casos de uso (`CreateStoryUseCase`, `VozUseCase`, `GenerateNarrativesUseCase`) y servicios (`PromptBuilder`, `NarrativeAuditor`, `MemoryJournalist`).
 3. **Infrastructure:** Adapters LLM, loaders YAML, repositorios SQLite, normalizadores y exporters.
 4. **Presentation/CLI:** Entrada de usuario vía CLI y API FastAPI.
 
 ### Inyección de Dependencias (Spec-250)
 La CLI usa `CLIContainer` para resolver dependencias de infraestructura (`LLMProvider`, repositorios, loaders, exporters, `PromptBuilder`, reporter y debug collector). Esto elimina instanciación directa en comandos y permite tests unitarios con doubles.
+
+### Refactor Incremental del Core (Spec-500 S-A → S-F)
+El pipeline de generación está estructurado para permitir refactors quirúrgicos sin breaking changes:
+
+- `PhaseEvent` / `PipelinePhaseData` (`src/domain/events.py`): abstracción de eventos de fase para CLI y SSE.
+- `DirectorUseCase.prepare_story()`: fase global (analyst + resolver) extraída como método público — habilita `only-plan` y `prepare-then-narrate`.
+- `DirectorUseCase._execute_single_beat()`: ejecución de un beat (mapper + voz + journal) como método privado con checkpoints claros.
+- `StoryRunner._narrate_beats()`: loop de persistencia centralizado (save beat + save journal + reporter).
+- Inyección opcional de servicios en `DirectorUseCase` (`analyst_service`, `resolver_service`, `beat_mapper`): permite tests unitarios con mocks sin patches.
 
 ### Diagrama de Colaboración entre Clases (capas Clean Architecture)
 ```mermaid

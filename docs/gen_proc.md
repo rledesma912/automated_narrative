@@ -51,11 +51,11 @@ El pipeline produce **17 llamadas LLM** por historia: 1 Analyst + 1 Resolver + 5
 
 ---
 
-## Paso 2 — ANALYST: extracción de anclajes narrativos
+## Paso 2 — Preparación global (Spec-500 S-B)
 
-**Componente:** `StoryAnalystService.extract_anchors()` (`src/application/services/story_analyst_service.py`)
-**LLM:** 1 llamada — modelo `story_analyst` del perfil activo
-**Qué hace:** Lee la sinopsis completa y extrae los 5 Pilares de Resonancia Narrativa (Spec-081). Cada pilar mapea 1:1 a un estadio de la Pirámide de Freytag.
+**Componente:** `DirectorUseCase.prepare_story()` (`src/application/use_cases/director_use_case.py`)
+**LLM:** 2 llamadas — `story_analyst` + `director` (resolver)
+**Qué hace:** Extrae anclajes narrativos y distribuye reglas/escenarios. Disponible como método público independiente para `only-plan` o para `RegenerateBeatUseCase`.
 
 **Datos que alimentan el prompt:**
 
@@ -66,63 +66,7 @@ El pipeline produce **17 llamadas LLM** por historia: 1 Analyst + 1 Resolver + 5
 | `ATMÓSFERA` | `story.atmosfera` |
 | `SINOPSIS` (completa) | `story.sinopsis` |
 
-**Prompts usados:**
-
-El system prompt se selecciona según `effective_prompting_strategy` (Spec-170):
-
-| Estrategia | System prompt | Comportamiento |
-|------------|---------------|----------------|
-| `assertive` | `story_analyst_system_assertive.md` | Términos técnicos puros — activa esquemas preentrenados del LLM |
-| `auto` (default) | `story_analyst_system_assertive.md` → fallback a compact | Intenta assertive; reintenta con descriptive si el auditor falla |
-| `descriptive` | `story_analyst_system_compact.md` | Prompt con definiciones completas. Comportamiento legacy. |
-
-User prompt: `story_analyst_compact.md` (igual en todos los modos)
-
-**NarrativeAuditor (Spec-170):** En modos `assertive` y `auto`, `NarrativeAuditor` evalúa la respuesta antes de aceptarla con tres heurísticas: boilerplate (explica en vez de aplicar), sensoriality (densidad de imágenes concretas) y entropy (calco literal de la sinopsis). Si falla en modo `assertive` → `NarrativeLiteracyError`. Si falla en modo `auto` → reintento con prompt descriptivo.
-
-**Respuesta del LLM:** Markdown con 5 secciones `## resonance_*`
-
-**Resultado en memoria:** `NarrativeAnchors` con 5 pilares aristotélicos:
-- `resonance_hamartia` (Exposición) — La vulnerabilidad psicológica: la grieta del narrador
-- `resonance_hybris` (Acción Ascendente) — La Transgresión: la lógica que permite cruzar la frontera
-- `resonance_anagnorisis` (Clímax) — La Violación de lo Sagrado: el detalle sensorial insoportable
-- `resonance_peripeteia` (Acción Descendente) — La Trampa Espacial: el entorno como cómplice
-- `resonance_residual` (Desenlace) — La Mancha Residual: el daño observable que permanece
-
-La definición de cada pilar (concepto, guía de extracción, label_voz) vive en `config/llm_narrative_definition.yaml`.
-
-**SQLite — escrituras:**
-
-| Tabla | Columnas escritas |
-|---|---|
-| `narrative_anchors` | `story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis, resonance_peripeteia, resonance_residual` |
-
----
-
-## Paso 3 — RESOLVER: distribución de reglas y escenarios
-
-**Componente:** `RuleScenarioResolverService.resolve_distribution()` (`src/application/services/rule_scenario_resolver_service.py`)
-**LLM:** 1 llamada — modelo `director` del perfil activo
-**Qué hace:** Asigna a cada beat qué reglas activas tiene y cuál escenario le corresponde.
-
-**Datos que alimentan el prompt:**
-
-| Dato | Fuente |
-|---|---|
-| Anclajes (JSON parcial) | `NarrativeAnchors` del paso 2 |
-| Definición de los 5 actos | `config/llm_beats_definition.yaml` (via `PromptBuilder`) |
-| Reglas tipadas | `story.typed_rules` (del input) |
-| Escenarios ordenados | `story.scenarios` |
-
-**Prompts usados:**
-- System: `rule_resolver_system_compact.md`
-- User: `rule_resolver_compact.md`
-
-**Respuesta del LLM:** JSON `{"1": {"rules": [...], "scenario_id": "S1"}, ...}` — una entrada por beat
-
-**Resultado en memoria:** `rule_distribution: dict` — diccionario que el Director consulta en cada iteración del loop.
-
-**SQLite:** ninguna escritura directa en este paso.
+**Resultado en memoria:** `(narrative_anchors, rule_distribution, num_beats)`
 
 ---
 
@@ -319,10 +263,10 @@ Los pasos 4 a 7 se ejecutan en secuencia para cada beat. La salida del Journal d
 | `story` | `CreateStoryUseCase` | Paso 1 — una sola vez al inicio |
 | `rule` | `CreateStoryUseCase` | Paso 1 — una fila por regla del input |
 | `scenario` | `CreateStoryUseCase` | Paso 1 — una fila por escenario del input |
-| `narrative_anchors` | `DirectorUseCase` (via `story_repo`) | Paso 2 — una sola vez, después del Analyst |
+| `narrative_anchors` | `DirectorUseCase.prepare_story()` (via `story_repo`) | Paso 2 — una sola vez, después del Analyst |
 | `macro_beat` | `SQLBeatRepository.save()` | Paso 9 — una vez por beat (INSERT OR REPLACE) |
 | `macro_beat_rule` | `SQLBeatRepository.save()` | Paso 9 — N filas por beat según reglas activas |
-| `narrative_journal` | `StoryRunner` (via `story_repo.save_journal()`) | Paso 9 — una vez por beat |
+| `narrative_journal` | `StoryRunner._narrate_beats()` (via `story_repo.save_journal()`) | Paso 9 — una vez por beat |
 
 ---
 

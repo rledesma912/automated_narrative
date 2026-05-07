@@ -195,3 +195,4 @@ cd frontend && npm test                        # vitest del frontend
 | `300_refactor_dominio_varios_relatos.md` | `GeneratedNarrative` (variantes por historia). |
 | `311_fix_galeria_ver_relato_y_delete.md` | Galería con switcher de variantes + delete. |
 | `312_fix_persistencia_generated_narrative.md` | Persistencia automática del relato consolidado. |
+| `500_clean_code_responsability.md` | Refactor incremental del core (S-A→S-F): `PhaseEvent`, `prepare_story()`, `_execute_single_beat()`, inyección de servicios. |
