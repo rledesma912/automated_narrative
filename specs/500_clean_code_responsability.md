@@ -1,151 +1,377 @@
-# Spec-500: Saneamiento de Responsabilidades — Clean Code en el Core
+# Spec-500: Saneamiento de Responsabilidades — Clean Code en el Core (v2)
 
-**Fecha de apertura:** 6 de mayo de 2026
+**Fecha de reconstrucción:** 7 de mayo de 2026
+**Fecha de apertura original:** 6 de mayo de 2026
 **Estado:** Living / Backlog
 **Prioridad:** Variable (por slice)
-**Metodología:** SDD, refactor incremental sin cambio de comportamiento
+**Metodología:** SDD, refactor incremental sin cambio de comportamiento — zero breaking changes entre slices
 
 ---
 
 ## 1. Objetivo
 
-Spec **viva** que acumula smells de responsabilidad detectados en el código del core (`src/core/`, `src/application/`) durante el desarrollo. No es un refactor único: es un registro evolutivo. Cada smell se anota con evidencia, se prioriza, y se resuelve en un slice independiente cuando el contexto lo permite.
+Spec **viva** que acumula smells de responsabilidad detectados en el código del core
+(`src/core/`, `src/application/`) durante el desarrollo. No es un refactor único: es un
+registro evolutivo. Cada smell se resuelve en un **slice independiente** cuando el
+contexto lo permite, sin alterar el comportamiento observable del pipeline.
 
 ### Criterios de inclusión
 
-- Violaciones claras de SRP (clase que orquesta + persiste + traduce + valida).
+- Violaciones claras de SRP (clase que orquesta + persiste + traduce).
 - God objects (>300 líneas, >5 dependencias inyectadas, >3 responsabilidades distinguibles).
-- Acoplamiento excesivo entre capas (use case que conoce detalles de DB, servicio que arma SSE).
-- Métodos largos (>50 líneas) que mezclan niveles de abstracción.
-- Duplicación lógica entre el pipeline CLI y el pipeline web/SSE.
+- Métodos largos (>80 líneas) que mezclan niveles de abstracción.
+- Duplicación entre el pipeline CLI y el pipeline web/SSE.
+- Dependencias creadas internamente que impiden testing unitario.
 
 ### Criterios de exclusión
 
-- Smells ya cubiertos por specs vivas con plan propio (ej: Spec-150 trata el `Story` god object — no duplicar aquí).
+- Smells ya cubiertos por specs vivas con plan propio (312, 150, 310).
 - Code smells cosméticos sin impacto en mantenibilidad (naming menor, formato).
-- Archivos largos por su naturaleza (templates EJS, YAML de prompts) — esos van a Spec-318 §9.
+- Archivos largos por su naturaleza (templates EJS, YAML de prompts).
+- Cambios de comportamiento funcional del pipeline LLM.
+
+### Reglas del refactor
+
+1. **Tests de caracterización primero.** Antes de extraer algo, asegurar que existe
+   cobertura del comportamiento actual.
+2. **Zero breaking changes por slice.** Cada slice mantiene la misma API pública que
+   antes del cambio. Los call sites no se modifican a menos que sea estrictamente
+   necesario para el slice.
+3. **Un cambio lógico por slice.** No mezclar refactor con fix, ni refactor con feature.
+4. **Documentar al cerrar.** Cuando un smell se resuelve,marcar el bloque y documentar
+   qué se hizo en la sección de resultados.
 
 ---
 
 ## 2. Smells Detectados (Inventario)
 
-### 2.1 `StoryRunner` — Orquestador con responsabilidades difusas
+### 2.1 `DirectorUseCase` — Loop monolítico con servicios internos
 
-**Ubicación:** `src/core/story_runner.py`
+**Ubicación:** `src/application/use_cases/director_use_case.py` (320 líneas)
 
-**Síntoma:** wires the world. Construye el grafo de dependencias completo (adapters, repos, services, use cases), expone `run_full()` para CLI, e incluye `_consolidate_narrative()` (Spec-312) que persiste la variante consolidada al final del pipeline.
+**Síntoma:**
+- `execute_full()` (líneas 134-295) ejecuta las 3 fases globales + loop de 5 beats
+  donde cada iteración: crea 4 servicios internamente, ejecuta 3 LLM calls, hace
+  yield con 3 datos crudos, y tiene 5 branches de `stop_at` dispersos.
+- `VozUseCase` y `MemoryJournalist` se crean internamente en `__init__` pero otros
+  servicios (`StoryAnalystService`, `RuleScenarioResolverService`, `SynopsisBeatMapper`)
+  se crean dentro de `execute_full()` en cada ejecución.
+- Los callbacks `on_plan_ready`, `on_step_done`, `on_step_start` mezclan reporter CLI
+  con la lógica del pipeline.
 
-**Por qué es un smell:**
-- Mezcla **composition root** (DI / wiring) con **lógica de aplicación** (consolidación, manejo de errores del pipeline).
-- La consolidación (`_consolidate_narrative`) es lógica de use case, no de orquestación; vive aquí porque "es el lugar donde está la story al final".
-- Cualquier cambio en el pipeline obliga a abrir este archivo, aunque el cambio sea downstream.
+**Por qué es smell:**
+- **Testing:** no se puede testear una fase individual sin mockear todo el loop.
+- **Checkpoints:** la lógica de `stop_at` está entrelazada con el flujo — no hay forma
+  de detener en un checkpoint sin ejecutar todo el bucle.
+- **Servicios internos:** `StoryAnalystService` y `RuleScenarioResolverService` se
+  instancian en cada llamada a `execute_full` — no hay inyección, no hay test unitario.
 
-**Evidencia para acción:**
-- [ ] Confirmar `wc -l src/core/story_runner.py`
-- [ ] Listar dependencias inyectadas en su constructor
-- [ ] Identificar métodos privados que deberían vivir en un `PipelineFinalizer` o `NarrativeConsolidator`
+**Evidencia:**
 
-**Plan provisorio:**
-- Extraer composition root a `src/core/container.py` (similar al `CLIContainer` ya existente en infra, pero para el core completo).
-- Mover `_consolidate_narrative` a un nuevo `application/use_cases/finalize_story.py` (`FinalizeStoryUseCase`).
-- `StoryRunner` queda como un facade delgado: instancia container, invoca `DirectorUseCase`, invoca `FinalizeStoryUseCase`.
-
-**Relación con otras specs:** complementa Spec-150 (que trata el dominio anémico `Story`, no el orquestador).
-
----
-
-### 2.2 `DirectorUseCase.execute_full()` — Loop con tres responsabilidades por iteración
-
-**Ubicación:** `src/application/use_cases/director.py`
-
-**Síntoma:** un único método ejecuta el pipeline completo: 2 LLM calls globales (analyst + resolver) + loop de 5 beats donde cada iteración ejecuta 3 LLM calls (mapper + voz + journal) y persiste 3 veces.
-
-**Por qué es un smell:**
-- Un fallo en cualquier punto del loop deja estado parcialmente persistido sin política clara de rollback / resume.
-- La forma de "yieldear" progreso (para el reporter CLI y para SSE) está enredada con la lógica de pipeline.
-- Las dos integraciones (CLI batch + web streaming) consumen la misma `execute_full()` pero por distintos canales — y `streaming_service.py` (§2.3) reimplementa lógica de progreso.
-
-**Evidencia para acción:**
-- [ ] Medir LOC del método
-- [ ] Contar puntos de `await repo.save(...)` dentro del método
-- [ ] Listar las dependencias del use case y agruparlas por fase (analyst-phase, resolver-phase, beat-phase)
-
-**Plan provisorio:**
-- Extraer "ejecución de un beat" (`_execute_beat(beat_n, story, anchors, journal_state)`) a método público — facilita testing y resume parcial.
-- Extraer "fase global" (analyst + resolver) a método público — `prepare_story()`.
-- Definir un `BeatProgressEvent` en domain como DTO único; CLI y SSE lo consumen y traducen, sin que el use case sepa nada de SSE.
-
-**Relación:** este saneamiento es prerequisito de §2.3.
-
----
-
-### 2.3 `streaming_service.py` — Traduce eventos + maneja sesiones + decora con narrative_id
-
-**Ubicación:** `src/application/services/streaming_service.py`
-
-**Síntoma:** `stream_story()` envuelve `execute_full()`, traduce cada paso a `StreamEvent`, gestiona heartbeat (15s), y al final invoca `consolidate_and_save()` para enriquecer el evento `done` con `narrative_id`. Encima, `StreamSessionManager` (singleton) administra idempotencia, replay buffer y conexiones múltiples.
-
-**Por qué es un smell:**
-- Un solo módulo cubre **traducción de eventos** (responsabilidad de mapper) + **idempotencia / replay** (responsabilidad de session manager) + **finalización del pipeline** (responsabilidad de use case).
-- La consolidación final está duplicada: existe en `StoryRunner._consolidate_narrative` (CLI) y en `stream_story()` (web). Mismo bug, dos lugares para arreglarlo.
-- Spec-201 ya documentó 5 restricciones críticas de SSE — todas válidas, pero acumuladas en un mismo archivo.
-
-**Evidencia para acción:**
-- [ ] `wc -l src/application/services/streaming_service.py`
-- [ ] Identificar las 3 responsabilidades como bloques (traducción / sesión / finalización)
-- [ ] Verificar que `StreamSessionManager` se pueda extraer a `infrastructure/streaming/`
-
-**Plan provisorio:**
-- Extraer `StreamSessionManager` a `infrastructure/streaming/session_manager.py` (es infra, no application).
-- Crear `application/services/event_translator.py` que mapea fases del pipeline a `StreamEvent` — recibe el `BeatProgressEvent` que se introduzca en §2.2.
-- La consolidación (común a CLI y web) se invoca via `FinalizeStoryUseCase` (§2.1) — un solo lugar.
-- `stream_story()` queda como una corutina delgada que conecta: `execute_full()` → translator → session manager → SSE response.
-
-**Restricciones a preservar (Spec-201):**
-- Heartbeat con Queue, no con timer paralelo.
-- Idempotencia 409 en conexión duplicada.
-- Normalizer aplica antes de SSE (no en el cliente).
-- `stream_error` es evento, no excepción HTTP.
-- Health check antes de conectar.
-
----
-
-## 3. Cómo se usa esta spec
-
-### Al detectar un smell nuevo
-
-1. Agregar una sub-sección `2.N` con: ubicación, síntoma, por qué es smell, evidencia (checklist), plan provisorio, relación con otras specs.
-2. **No abrir refactor inmediato** — solo registrar.
-3. Cuando se vaya a abordar uno: el slice se trata como un sub-spec con su propio bloque PLAN → TASKS → IMPLEMENT.
-
-### Al cerrar un smell
-
-- Marcar el sub-bloque como **Resuelto en Spec-NNN** (linkear a la spec dedicada que lo cerró).
-- No borrar la entrada — sirve de historial de saneamiento.
-
-### Reglas de saneamiento
-
-- **No refactorizar preventivamente.** Tocar un archivo solo cuando una feature legítima lo requiera, o cuando el smell esté priorizado.
-- **No mezclar refactor con feature.** Slice de refactor es slice puro: tests verdes antes y después, mismo comportamiento observable.
-- **Tests de caracterización primero.** Antes de extraer algo, asegurar que existe cobertura del comportamiento actual.
-
----
-
-## 4. Validación Cross-Spec
-
-| Spec relacionada | Relación |
+| Check | Valor |
 |---|---|
-| Spec-150 | God object `Story` (dominio); este spec trata orquestación, no entidades |
-| Spec-180 | Define el pipeline secuencial; este spec sanea su implementación |
-| Spec-201 | 5 restricciones SSE; deben preservarse en cualquier extracción de §2.3 |
-| Spec-210 | Arquitectura web/streaming; §2.3 desempaqueta su implementación |
-| Spec-312 | Persistencia de `generated_narrative`; §2.1 y §2.3 consolidan duplicación |
-| Spec-318 §9 | Saneamiento EJS; análogo a este spec pero del lado frontend |
+| `wc -l director_use_case.py` | 320 líneas |
+| Servicios creados en `execute_full` | 3 (`StoryAnalystService`, `RuleScenarioResolverService`, `SynopsisBeatMapper`) |
+| Branches `stop_at` | 5 (`analyst`, `mapper:N`, `voz:N`, `journal:N`) |
+| Callbacks acoplados | 3 (`on_plan_ready`, `on_step_done`, `on_step_start`) |
+
+**Smells derivados ya resueltos por Spec-312:**
+
+| Item original | Estado |
+|---|---|
+| `FinalizeStoryUseCase` duplicado | **RESUELTO** — Spec-312 implementó `consolidate_and_save` canónico |
+| `consolidate_and_save` en CLI y streaming | **RESUELTO** — `StoryRunner` y `stream_story` lo invocan |
 
 ---
 
-## 5. Estado General
+### 2.2 `StoryRunner` — Duplicación de run_full / run_from_story
 
-- [ ] §2.1 StoryRunner — pendiente
-- [ ] §2.2 DirectorUseCase.execute_full() — pendiente (prerequisito de §2.3)
-- [ ] §2.3 streaming_service.py — pendiente
+**Ubicación:** `src/core/orchestrator.py` (225 líneas)
+
+**Síntoma:**
+- `run_full()` (51-168) y `run_from_story()` (170-216) comparten ~60% del mismo código:
+  crear `DirectorUseCase` → iterar beats con `async for` → guardar beat → guardar journal →
+  consolidar.
+- El `ProgressReporter` se inyecta como dependencia pero sus métodos (`step_start`,
+  `step_done`, `beat_done`) están acoplados a la estructura del loop de CLI.
+- 7 dependencias directas en el constructor.
+
+**Por qué es smell:**
+- Duplicación: cualquier cambio en el loop de beats requiere editar ambas funciones.
+- El `async for ... director.execute_full()` / `director.execute_narration()` hace que
+  `StoryRunner` conozca demasiado sobre el interior del Director.
+- Si `DirectorUseCase` expone fases públicas (slice §3.1), `StoryRunner` podría delegar
+  el loop a un use case dedicado.
+
+**Evidencia:**
+
+| Check | Valor |
+|---|---|
+| `wc -l orchestrator.py` | 225 líneas |
+| Dependencias inyectadas | 7 (`llm`, `story_repo`, `beat_repo`, `prompt_builder`, `output_dir`, `reporter`, `debug_collector`) + 1 opcional (`narrative_use_case`) |
+| Líneas duplicadas entre `run_full` y `run_from_story` | ~50 (estimado por estructura) |
+
+---
+
+### 2.3 Callbacks vs SSE — Dos mecanismos para el mismo evento
+
+**Ubicación:** `src/application/use_cases/director_use_case.py` + `src/application/services/streaming_service.py`
+
+**Síntoma:**
+- `execute_full` yield `(beat, journal, elapsed)` — evento crudo del pipeline.
+- `StoryRunner` consume esto y lo traduce a `reporter.step_start/step_done/beat_done`.
+- `stream_story` consume lo mismo y lo traduce a `StreamEvent` (STATUS, BEAT_START,
+  BEAT_DONE, HEARTBEAT, DONE).
+- Si el pipeline agrega una nueva fase, hay que modificar 3 archivos.
+
+**Por qué es smell:**
+- La traducción de eventos está duplicada en CLI y SSE.
+- `DirectorUseCase` no debería saber que existe un `ProgressReporter` ni un `StreamEvent`.
+- Los callbacks en `execute_full` fueron diseñados solo para CLI — no hay abstracción
+  de nivel de dominio.
+
+---
+
+### 2.4 Servicios internos en DirectorUseCase que impiden testing
+
+**Ubicación:** `src/application/use_cases/director_use_case.py`
+
+**Síntoma:**
+
+```python
+# Línea 163-165 — se crea en cada execute_full
+analyst = StoryAnalystService(
+    self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+)
+```
+
+```python
+# Línea 182-184 — se crea en cada execute_full
+resolver = RuleScenarioResolverService(
+    self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+)
+```
+
+**Por qué es smell:**
+- En cada ejecución se re-instancian los servicios. No hay forma de inyectar un mock
+  en tests unitarios sin parchear internamente.
+- Si `StoryAnalystService` cambia su firma, todos los tests que parchean directamente
+  rompen.
+
+---
+
+## 3. Plan de Slices (Incremental, Quirúrgico)
+
+> Cada slice se ejecuta con la disciplina de `incremental-implementation` skill:
+> implement → test → verify → commit. Ningún slice altera la API pública existente.
+
+---
+
+### Slice S-A — PhaseEvent: abstracción de eventos del pipeline
+
+**Objetivo:** Definir un DTO `PhaseEvent` que represente eventos de fase del pipeline.
+No cambiar comportamiento — solo extraer una clase nueva.
+
+**Cambio:** Agregar `src/domain/events.py` con `PhaseEvent` (Enum) y `PipelinePhaseData`
+(Dataclass). Los eventos actuales: `PLAN_READY`, `ANALYST_DONE`, `BEAT_START`,
+`BEAT_COMPLETE`, `JOURNAL_DONE`, `STEP_START`, `STEP_DONE`.
+
+**Evidencia de avance:** Tests unitarios del nuevo módulo pasan. Ningún archivo
+existente modificado.
+
+---
+
+### Slice S-B — Extraer fase global de `execute_full` → método público
+
+**Depende de:** S-A
+
+**Objetivo:** `execute_full` crea internamente `StoryAnalystService` y
+`RuleScenarioResolverService`. Extraer la lógica de la **fase global**
+(analyst + resolver → anclajes + distribución) a un método público
+`prepare_story(story) -> (anchors, rule_distribution, num_beats)`.
+
+**Cambio mínimo:**
+1. Agregar método `prepare_story(story) -> dict` en `DirectorUseCase`.
+2. `execute_full` delega la fase global a `prepare_story` internamente
+   (sin cambiar la firma pública).
+3. Agregar tests unitarios para `prepare_story`.
+
+**Criterio de éxito:** Tests existentes de `DirectorUseCase` siguen verdes. Tests
+nuevos para `prepare_story` pasan.
+
+---
+
+### Slice S-C — Extraer ejecución de un beat → método público
+
+**Depende de:** S-B
+
+**Objetivo:** El loop de beats en `execute_full` es una sola secuencia.
+Extraer `_execute_single_beat(story, beat_id, anchors, journal) -> (beat, journal, elapsed)`.
+
+**Cambio mínimo:**
+1. Agregar método privado `_execute_single_beat` que ejecuta mapper + voz + journal
+   para un beat.
+2. El loop de `execute_full` llama a `_execute_single_beat` por cada beat.
+3. Inyectar `StoryAnalystService`, `RuleScenarioResolverService`, `SynopsisBeatMapper`
+   como dependencias opcionales del constructor (si no se pasan, se crean como hoy).
+
+**Criterio de éxito:** `pytest tests/unit/application/use_cases/test_director_use_case.py`
+pasa (regresión cero). Tests nuevos para `_execute_single_beat` pasan.
+
+---
+
+### Slice S-D — Reducir dependencias de StoryRunner (refactor mínimo)
+
+**Depende de:** S-B, S-C
+
+**Objetivo:** `run_full` y `run_from_story` duplican ~60% de la lógica de loop.
+Extraer la lógica común a un método privado `_narrate_beats(story, beat_iterator)`.
+
+**Cambio mínimo:**
+1. Agregar `_narrate_beats(story, beats, initial_journal) -> list[Beat]` en `StoryRunner`.
+2. `run_full` y `run_from_story` lo invocan. La lógica de guardar beat + journal + reporter
+   queda centralizada.
+3. Mantener todas las firmas existentes. Cero call sites modificados.
+
+**Criterio de éxito:** Tests de `test_orchestrator.py` verdes. Ningún breaking change.
+
+---
+
+### Slice S-E — Adapter para reporter (decoupling)
+
+**Depende de:** S-A
+
+**Objetivo:** Eliminar el acoplamiento entre la estructura del loop de beats y el
+`ProgressReporter`. Crear un `PipelineAdapter` que traduzca `PhaseEvent` →
+llamadas a `ProgressReporter`.
+
+**Cambio mínimo:**
+1. Crear `src/core/adapters/progress_adapter.py` con interfaz `PipelineProgressListener`.
+2. `StoryRunner` inyecta un adapter que implementa la interfaz (no sabe de `ProgressReporter`).
+3. `ProgressReporter`implementa `PipelineProgressListener`.
+4. `stream_story` usa su propio adapter hacia `StreamEvent`.
+
+**Criterio de éxito:** `StoryRunner` ya no depende directamente de `ProgressReporter`.
+Tests nuevos para el adapter. Tests existentes verdes.
+
+---
+
+### Slice S-F — Injección de servicios en DirectorUseCase (testing habilitación)
+
+**Depende de:** S-B, S-C
+
+**Objetivo:** Permitir que `StoryAnalystService`, `RuleScenarioResolverService` y
+`SynopsisBeatMapper` se inyecten como dependencias opcionales del constructor.
+
+**Cambio mínimo:**
+1. Agregar parámetros opcionales al constructor: `analyst_service`, `resolver_service`,
+   `beat_mapper`.
+2. Si no se pasan, se crean internamente (comportamiento actual).
+3. Si se pasan, se usan (nuevo — habilita tests con mocks).
+4. Tests unitarios existentes y nuevos siguen verdes.
+
+**Criterio de éxito:** Se puede instanciar `DirectorUseCase` con mocks de los 3 servicios
+sin necesidad de parchear internamente.
+
+---
+
+### Slice S-G — Consolidar documentación (post-refactor)
+
+**Depende de:** S-A a S-F cerrados
+
+**Objetivo:** Actualizar documentación para reflejar la nueva arquitectura.
+
+**Archivos a actualizar:**
+
+| Archivo | Qué actualizar | Basado en |
+|---|---|---|
+| `docs/gen_proc.md` | Diagrama de secuencia — agregar `PhaseEvent` y `PipelineAdapter`. Agregar nota sobre extracción de fases. | Cambios de S-A a S-F |
+| `docs/estandar_diseno_architectural.md` | Agregar `src/domain/events.py` al ERD. Agregar `PipelineAdapter` al diagrama de colaboración. Agregar nota sobre estrategia de refactor incremental. | Cambios de S-A a S-F |
+| `README.md` | Agregar nota sobre Spec-500 y estrategia de clean code evolutiva. | Resumen del proceso |
+
+---
+
+## 4. Estado de Slices
+
+| Slice | Descripción | Depende de | Estado |
+|---|---|---|---|
+| S-A | PhaseEvent: abstracción de eventos del pipeline | — | **PENDIENTE** |
+| S-B | Extraer fase global → `prepare_story()` | S-A | **PENDIENTE** |
+| S-C | Extraer ejecución de un beat → `_execute_single_beat` | S-B | **PENDIENTE** |
+| S-D | Consolidar loop de beats en `StoryRunner` | S-B, S-C | **PENDIENTE** |
+| S-E | Adapter para reporter (decoupling) | S-A | **PENDIENTE** |
+| S-F | Inyección de servicios en DirectorUseCase | S-B, S-C | **PENDIENTE** |
+| S-G | Actualizar documentación | S-A → S-F | **PENDIENTE** |
+
+---
+
+## 5. Validación Cross-Spec
+
+| Spec | Relación | Estado |
+|---|---|---|
+| Spec-312 | Consolidación de `generated_narrative` en CLI/streaming | **RESUELTO** |
+| Spec-310 | `CLIContainer` existe; `run_full_from_dto` no implementado (queda para spec posterior) | **PARCIALMENTE RESUELTO** |
+| Spec-150 | `Story` god object saneado | **RESUELTO** |
+| Spec-180 | Arquitectura del pipeline secuencial — este spec sanea su implementación | VIGENTE |
+| Spec-201 | Restricciones SSE (heartbeat, idempotencia, etc.) | **PRESERVAR** en todos los slices |
+| Spec-210 | Arquitectura web/streaming | **PRESERVAR** en S-E |
+
+---
+
+## 6. Notas de Diseño
+
+### Sobre los callbacks originales de `execute_full`
+
+Los callbacks (`on_plan_ready`, `on_step_done`, `on_step_start`) están pensados para
+el reporter CLI. El spec **no los elimina** — son parte del contrato actual. Lo que
+se hace es:
+1. Definir `PhaseEvent` como abstracción de dominio.
+2. Permitir que `execute_full` yield `PhaseEvent` además del tuple `(beat, journal, elapsed)`.
+3. Opcionalmente, un caller puede pasar un listener que traduciría `PhaseEvent` → `ProgressReporter`.
+
+Esto es backward compatible: los callbacks existentes siguen funcionando. El nuevo
+canal (yield de `PhaseEvent`) es opt-in.
+
+### Sobre la inyección de servicios
+
+No se refactoriza a constructor full-injection de golpe. El pattern es:
+- Parámetros opcionales en constructor.
+- Si no se pasan → se crean internamente (comportamiento actual, preserva backward compat).
+- Si se pasan → se usan (habilita testing con mocks).
+- En slices futuros (post-spec-500), se puede migrar a full-injection cuando el DI container
+  soporte la construcción completa.
+
+### Sobre zero breaking changes
+
+Cada slice mantiene la misma API pública. Los únicos archivos que se modifican
+son:
+- El archivo del smell (refactor interno).
+- Tests nuevos (no se modifican tests existentes).
+- Documentación (solo en S-G).
+
+---
+
+## 7. Criterios de Cierre del Spec
+
+- [ ] S-A → S-G todos en estado **CERRADO**.
+- [ ] `make lint` pasa.
+- [ ] `make test` pasa con al menos los mismos tests que antes del refactor.
+- [ ] Documentación (`gen_proc.md`, `estandar_diseno_architectural.md`, `README.md`) actualizada.
+- [ ] Todo archivo modificado tiene tests de caracterización o tests unitarios nuevos.
+- [ ] 0 breaking changes en los call sites: `commands.py`, `stream_router.py`, tests existentes.
+
+---
+
+## 8. Resultados de Implementación (por slice)
+
+*(Se completa cuando se cierra cada slice)*
+
+| Slice | Fecha | Cambio realizado | Archivos tocados | Tests |
+|---|---|---|---|---|
+| S-A | — | — | — | — |
+| S-B | — | — | — | — |
+| S-C | — | — | — | — |
+| S-D | — | — | — | — |
+| S-E | — | — | — | — |
+| S-F | — | — | — | — |
+| S-G | — | — | — | — |
