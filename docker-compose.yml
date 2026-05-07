@@ -13,7 +13,6 @@ services:
     environment:
       # DATABASE_URL viene del .env (./data/stories.db) y resuelve a /app/data/stories.db
       # vía volume mount → compartida con el CLI corriendo en el host.
-      - OUTPUT_DIR=/app/output_stories
       # Ollama corre en el host — accesible vía host.docker.internal
       - OLLAMA_HOST=http://host.docker.internal:11434
     volumes:
