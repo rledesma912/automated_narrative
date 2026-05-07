@@ -51,11 +51,22 @@ El pipeline produce **17 llamadas LLM** por historia: 1 Analyst + 1 Resolver + 5
 
 ---
 
-## Paso 2 — ANALYST: extracción de anclajes narrativos
+## Paso 2 — Preparación global (Spec-500 S-B)
 
-**Componente:** `StoryAnalystService.extract_anchors()` (`src/application/services/story_analyst_service.py`)
-**LLM:** 1 llamada — modelo `story_analyst` del perfil activo
-**Qué hace:** Lee la sinopsis completa y extrae los 5 Pilares de Resonancia Narrativa (Spec-081). Cada pilar mapea 1:1 a un estadio de la Pirámide de Freytag.
+**Componente:** `DirectorUseCase.prepare_story()` (`src/application/use_cases/director_use_case.py`)
+**LLM:** 2 llamadas — `story_analyst` + `director` (resolver)
+**Qué hace:** Extrae anclajes narrativos y distribuye reglas/escenarios. Disponible como método público independiente para `only-plan` o para `RegenerateBeatUseCase`.
+
+**Datos que alimentan el prompt:**
+
+| Dato | Fuente |
+|---|---|
+| `PROTAGONISTAS` | `story.protagonista` |
+| `ESCENARIOS` | `story.scenarios` (lista de nombres) |
+| `ATMÓSFERA` | `story.atmosfera` |
+| `SINOPSIS` (completa) | `story.sinopsis` |
+
+**Resultado en memoria:** `(narrative_anchors, rule_distribution, num_beats)`
 
 **Datos que alimentan el prompt:**
 
@@ -319,10 +330,10 @@ Los pasos 4 a 7 se ejecutan en secuencia para cada beat. La salida del Journal d
 | `story` | `CreateStoryUseCase` | Paso 1 — una sola vez al inicio |
 | `rule` | `CreateStoryUseCase` | Paso 1 — una fila por regla del input |
 | `scenario` | `CreateStoryUseCase` | Paso 1 — una fila por escenario del input |
-| `narrative_anchors` | `DirectorUseCase` (via `story_repo`) | Paso 2 — una sola vez, después del Analyst |
+| `narrative_anchors` | `DirectorUseCase.prepare_story()` (via `story_repo`) | Paso 2 — una sola vez, después del Analyst |
 | `macro_beat` | `SQLBeatRepository.save()` | Paso 9 — una vez por beat (INSERT OR REPLACE) |
 | `macro_beat_rule` | `SQLBeatRepository.save()` | Paso 9 — N filas por beat según reglas activas |
-| `narrative_journal` | `StoryRunner` (via `story_repo.save_journal()`) | Paso 9 — una vez por beat |
+| `narrative_journal` | `StoryRunner._narrate_beats()` (via `story_repo.save_journal()`) | Paso 9 — una vez por beat |
 
 ---
 
