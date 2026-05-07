@@ -11,9 +11,7 @@ class TestPrepareStory:
     @pytest.fixture
     def mock_services(self):
         llm = MagicMock()
-        llm.generate = AsyncMock(
-            return_value=MagicMock(text="analyst response", elapsed_s=0.5)
-        )
+        llm.generate = AsyncMock(return_value=MagicMock(text="analyst response", elapsed_s=0.5))
         pb = MagicMock()
         pb.num_beats = 5
         pb.get_variant_name.return_value = "compact"
