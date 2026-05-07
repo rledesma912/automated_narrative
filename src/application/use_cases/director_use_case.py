@@ -131,6 +131,68 @@ class DirectorUseCase:
 
         return StoryPlan(story_id=story.id, title=story.title, beats=beats)
 
+    async def prepare_story(
+        self,
+        story: Story,
+        on_analyst_done: Callable[[str], None] | None = None,
+        on_resolver_done: Callable[[str], None] | None = None,
+    ) -> tuple[dict, dict, int]:
+        """Fase global: analyst + resolver → anclajes, distribución y número de beats.
+
+        Extrae los anclajes narrativos y distribuye reglas/escenarios por beat.
+        Se puede llamar independientemente de execute_full para hacer only-plan
+        o para prepare-and-narrate (regeneración por acto).
+
+        Returns:
+            (narrative_anchors, rule_distribution, num_beats)
+
+        Args:
+            story: Historia a preparar.
+            on_analyst_done: Callback cuando termina analyst (para reporter).
+            on_resolver_done: Callback cuando termina resolver (para reporter).
+        """
+        from src.application.services.rule_scenario_resolver_service import (
+            RuleScenarioResolverService,
+        )
+        from src.application.services.story_analyst_service import StoryAnalystService
+
+        analyst = StoryAnalystService(
+            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+        )
+
+        if on_analyst_done:
+            on_analyst_done("Analizando sinopsis y anclajes")
+        t_analyst = perf_counter()
+        narrative_anchors = await analyst.extract_anchors(story)
+        analyst_elapsed = perf_counter() - t_analyst
+
+        if self.story_repo is not None:
+            await self.story_repo.save_narrative_anchors(story.id, narrative_anchors)
+
+        if on_analyst_done:
+            on_analyst_done(f"Analizando sinopsis y anclajes ({analyst_elapsed:.1f}s)")
+
+        resolver = RuleScenarioResolverService(
+            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+        )
+
+        if on_resolver_done:
+            on_resolver_done("Distribuyendo reglas y escenarios")
+        t_resolver = perf_counter()
+        rule_distribution = await resolver.resolve_distribution(story, anchors=narrative_anchors)
+        resolver_elapsed = perf_counter() - t_resolver
+
+        if on_resolver_done:
+            on_resolver_done(f"Distribuyendo reglas y escenarios ({resolver_elapsed:.1f}s)")
+
+        num_beats = self.prompt_builder.num_beats
+        logger.debug(
+            f"[DIRECTOR] Anclajes extraídos → {num_beats} beats "
+            f"(analyst {analyst_elapsed:.1f}s, resolver {resolver_elapsed:.1f}s)"
+        )
+
+        return narrative_anchors, rule_distribution, num_beats
+
     async def execute_full(
         self,
         story: Story,
@@ -152,44 +214,38 @@ class DirectorUseCase:
             stop_after: Checkpoint para detener el pipeline (Spec-040).
                 Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
         """
-        from src.application.services.rule_scenario_resolver_service import (
-            RuleScenarioResolverService,
-        )
-        from src.application.services.story_analyst_service import StoryAnalystService
-
         stop_at: int | None = VALID_CHECKPOINTS.get(stop_after) if stop_after else None
-        t0 = perf_counter()
 
-        analyst = StoryAnalystService(
-            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+        def _step_start(msg: str) -> None:
+            if on_step_start:
+                on_step_start(msg)
+
+        def _analyst_done(msg: str) -> None:
+            if on_step_done:
+                on_step_done("Analizando sinopsis y anclajes", 0)
+            _step_start(msg)
+
+        def _resolver_done(msg: str) -> None:
+            if on_step_done:
+                on_step_done("Distribuyendo reglas y escenarios", 0)
+            _step_start(msg)
+
+        narrative_anchors, rule_distribution, num_beats = await self.prepare_story(
+            story,
+            on_analyst_done=_analyst_done,
+            on_resolver_done=_resolver_done,
         )
-
-        if on_step_start:
-            on_step_start("🔍  Analizando sinopsis y anclajes...")
-        t_step = perf_counter()
-        narrative_anchors = await analyst.extract_anchors(story)
-
-        if self.story_repo is not None:
-            await self.story_repo.save_narrative_anchors(story.id, narrative_anchors)
-
-        if on_step_done:
-            on_step_done("🔍  Analizando sinopsis y anclajes", perf_counter() - t_step)
 
         if stop_at == 1:
             logger.debug("[DIRECTOR] Detenido en checkpoint 'analyst' (1/16)")
             return
 
-        resolver = RuleScenarioResolverService(
+        _step_start(f"📐  Planificando {num_beats} beats...")
+        from src.application.services.story_analyst_service import StoryAnalystService
+
+        analyst = StoryAnalystService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
-
-        if on_step_start:
-            on_step_start("⚖️   Distribuyendo reglas y escenarios...")
-        t_step = perf_counter()
-        rule_distribution = await resolver.resolve_distribution(story, anchors=narrative_anchors)
-        if on_step_done:
-            on_step_done("⚖️   Distribuyendo reglas y escenarios", perf_counter() - t_step)
-
         mapper = SynopsisBeatMapper(
             self.llm,
             self.prompt_builder,
@@ -199,9 +255,8 @@ class DirectorUseCase:
         voz = self._voz
         journalist = self._journalist
 
-        num_beats = self.prompt_builder.num_beats
-        plan_elapsed = perf_counter() - t0
-        logger.debug(f"[DIRECTOR] Anclajes extraídos en {plan_elapsed:.1f}s → {num_beats} beats")
+        plan_elapsed = 0.0
+        logger.debug(f"[DIRECTOR] Anclajes extraídos → {num_beats} beats")
 
         if on_plan_ready is not None:
             on_plan_ready(num_beats, plan_elapsed)
