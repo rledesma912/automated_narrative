@@ -160,19 +160,16 @@
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
     </a>
     <% if (story) { %>
-      <a href="/historia/<%= storyId %>"
-         class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm tracking-widest uppercase hover:text-forge-text transition-colors">
+      <a href="/historia/<%= storyId %>" class="btn-forge-outline">
         <i data-lucide="book-open" class="w-4 h-4"></i> Ver historia
       </a>
       <% if (storyStatus === 'completed') { %>
-        <a href="/generar/stream/<%= storyId %>?regenerate=1"
-           class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm tracking-widest uppercase hover:opacity-80 transition-opacity">
+        <a href="/generar/stream/<%= storyId %>?regenerate=1" class="btn-forge-sm">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
         </a>
       <% } else if (storyStatus === 'failed') { %>
         <form method="POST" action="/historia/<%= storyId %>/generar">
-          <button type="submit"
-                  class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <button type="submit" class="btn-forge-sm">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
           </button>
         </form>
@@ -242,16 +239,14 @@
             Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
           </p>
         </div>
-        <button onclick="initiateRegeneration()"
-                class="px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
-          <i data-lucide="sparkles" class="w-6 h-6 inline mr-3 group-hover:rotate-12 transition-transform"></i>
+        <button onclick="initiateRegeneration()" class="btn-forge-lg group">
+          <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
           Iniciar regeneración
         </button>
       <% } else { %>
         <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
-        <button onclick="initiateGeneration()"
-                class="px-12 py-5 bg-forge-accent text-forge-text text-lg tracking-[0.4em] uppercase hover:bg-red-800 hover:scale-105 transition-all duration-300 group shadow-[0_0_30px_rgba(139,0,0,0.3)]">
-          <i data-lucide="sparkles" class="w-6 h-6 inline mr-3 group-hover:rotate-12 transition-transform"></i>
+        <button onclick="initiateGeneration()" class="btn-forge-lg group">
+          <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
           Iniciar generación
         </button>
       <% } %>

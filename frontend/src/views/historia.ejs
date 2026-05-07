@@ -127,27 +127,23 @@ const personajes = story.personajes_full || [];
     <% if (showStartButton) { %>
       <div class="flex items-center gap-4 w-full">
         <a href="/generar/stream/<%= story.id %><%= story.status === 'completed' ? '?regenerate=1' : '' %>"
-           class="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-forge-accent text-forge-text text-lg font-bold
-                  tracking-widest uppercase hover:opacity-80 transition-opacity shadow-lg">
+           class="btn-forge flex-1">
           <i data-lucide="<%= story.status === 'completed' ? 'refresh-cw' : 'zap' %>" class="w-6 h-6"></i>
           Comenzar <%= btnLabel.replace('historia', '').trim() %>
         </a>
       </div>
     <% } else if (story.status !== 'processing') { %>
-      <a href="/generar/cargar/<%= story.id %>"
-         class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
-                tracking-widest uppercase hover:text-forge-text transition-colors">
+      <a href="/generar/cargar/<%= story.id %>" class="btn-forge-outline">
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (story.status === 'completed') { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
-          <button type="submit"
-                  class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <button type="submit" class="btn-forge-sm">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Regenerar
           </button>
         </form>
+        <%/* Variante outline-accent única; YAGNI sobre crear .btn-forge-outline-accent. */%>
         <form method="POST" action="/historia/<%= story.id %>/generar-relato">
           <button type="submit"
                   class="flex items-center gap-2 px-5 py-2 border border-forge-accent text-forge-accent text-sm
@@ -156,17 +152,13 @@ const personajes = story.personajes_full || [];
             Generar Relato
           </button>
         </form>
-        <a href="/historia/<%= story.id %>/relatos"
-           class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
-                  tracking-widest uppercase hover:text-forge-text transition-colors">
+        <a href="/historia/<%= story.id %>/relatos" class="btn-forge-outline">
           <i data-lucide="library" class="w-4 h-4"></i>
           Ver Relatos
         </a>
       <% } else { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
-          <button type="submit"
-                  class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <button type="submit" class="btn-forge-sm">
             <i data-lucide="zap" class="w-4 h-4"></i>
             <%= btnLabel %>
           </button>

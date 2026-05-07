@@ -32,9 +32,11 @@ describe("relatosPage", () => {
     ]);
 
     const render = vi.fn();
+    const setHeader = vi.fn();
     const req = { params: { storyId: "story-1" } } as unknown as Request;
     const res = {
       render,
+      setHeader,
       locals: { themeCssVars: "", themeFont: "serif", activeTheme: "default", allThemes: [] },
     } as unknown as Response;
 
