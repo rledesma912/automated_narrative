@@ -268,8 +268,8 @@ Beneficio estimado: wizard.ejs baja de ~400 a ~200 líneas; un solo lugar para t
 
 ### 9.4 Estado
 
-- [ ] 9.A — wizard_card_list.ejs creado pero **no cableado** (ver §9.6 Bloqueo)
-- [ ] 9.B — migración escenarios + reglas pendiente (mismo bloqueo que 9.A)
+- [x] 9.A — wizard_card_list.ejs cableado para `personajes` (rediseño con API explícita de 15 locals; ver §9.6).
+- [x] 9.B — migración `escenarios` y `reglas` al mismo partial (3 invocaciones en `wizard.ejs:214, 238, 260`). wizard.ejs: 635 → 624 líneas (reducción modesta porque el partial es más grande que un inline mínimo, pero la duplicación entre los 3 grupos quedó eliminada).
 - [x] 9.C — extracción JS streaming-room (`public/js/streaming-room.js`, paridad 1:1 con inline)
 - [x] 9.D — extracción paneles a partials (`streaming_done_panel.ejs`, `streaming_error_panel.ejs`); cableados en `streaming-room.ejs` con `<%- include(...) %>`
 - [x] 9.E — validación SSE end-to-end:
@@ -299,13 +299,13 @@ El partial `wizard_card_list.ejs` tal como existe **no encaja con `wizard.ejs`**
 
 Pasar `pfx='personaje'` rompe `msg-max-personajes`; pasar `pfx='personajes'` rompe los IDs de cards que el JS busca.
 
-**Opciones para resolver (ninguna abordada todavía):**
+**Opciones evaluadas:**
 
 a) Refactorizar el partial para aceptar mapa explícito de IDs (`cardIdPrefix`, `msgMaxId`, `addHandler`, `deleteHandler`) en lugar de derivar todo de un único `pfx`.
 b) Renombrar IDs/handlers en `wizard.ejs` y su `<script>` para uniformar al partial.
 c) Posponer §9.A/B (es solo refactor, no cambia funcionalidad).
 
-Decisión actual: posponer (opción c). El wizard sigue funcional con los tres bloques inline; el partial queda como artefacto huérfano hasta que se aborde el rediseño.
+**Resolución (2026-05-07):** se ejecutó la **opción (a)**. El partial ahora recibe 15 locals explícitos (`groupContainerId`, `cardIdPrefix`, `deleteBtnIdPrefix`, `addBtnId`, `msgMaxId`, `addHandler`, `deleteHandler`, `itemLabel`, `addLabel`, `maxLabel`, `iconAdd`, `meta`, `indices`, `cards`, `saved` + opcional `labelIdPrefix`, `fieldNamePrefix`). Sin convenciones implícitas; cada call-site declara qué IDs usa. Tres invocaciones en `wizard.ejs:214, 238, 260` cubren personajes / escenarios / reglas con sus IDs originales preservados, así el `<script>` del wizard sigue funcionando sin cambios.
 
 ---
 
@@ -376,16 +376,118 @@ Para soportar todos los casos de uso sin romper existentes, agregar a `globals.c
 
 ### 10.5 Estado
 
-- [x] 10.A — Agregar variantes de botones (`.btn-forge-lg`, `.btn-forge-sm`, `.btn-forge-outline-sm`, `.btn-forge-danger` en `globals.css` + safelist en `tailwind.config.js`)
-- [x] 10.B — Reemplazar en streaming-room.ejs (líneas 251, 257 → `.btn-forge-sm`; 328, 335 → `.btn-forge-lg`; 366 → `.btn-forge-sm`; 397 → `.btn-forge-sm`; 401 → `.btn-forge-outline` con overrides; 577 → `.btn-forge-sm`)
-- [x] 10.C — Reemplazar en historia.ejs (líneas 140-142 → `.btn-forge-lg`; 148-150 → `.btn-forge-outline`; 155-157 → `.btn-forge-sm`; 170-172 → `.btn-forge-outline`; 175-176 → `.btn-forge-sm`)
-- [x] 10.D — Reemplazar en wizard-confirm.ejs (líneas 60-64 y 67-74 → `.btn-forge-sm`)
-- [x] 10.E — Validación final (no quedan botones inline con bg-forge-accent en vistas)
+- [x] 10.A — Variantes de botones en `globals.css:22-71` (`.btn-forge`, `.btn-forge-outline`, `.btn-forge-lg`, `.btn-forge-sm`, `.btn-forge-outline-sm`, `.btn-forge-danger`).
+- [x] 10.B — Reemplazo en `streaming-room.ejs` (re-aplicado 2026-05-08 sobre el código real, las líneas que el spec citaba antes eran obsoletas tras Spec-318 §9):
+  - "Ver historia" (link outline) → `.btn-forge-outline`
+  - 2× "Regenerar" (link/button bg-accent sm) → `.btn-forge-sm`
+  - 2× "Iniciar generación / regeneración" (px-12 py-5 lg) → `.btn-forge-lg group` (clase `group` preservada para `group-hover:rotate-12` del icono sparkles).
+- [x] 10.C — Reemplazo en `historia.ejs` (re-aplicado 2026-05-08):
+  - "Comenzar Generar/Regenerar" (px-8 py-4 hero) → `.btn-forge flex-1`
+  - "Editar" + "Ver Relatos" (outline border-muted) → `.btn-forge-outline`
+  - 2× "Regenerar"/"Generar" (bg-accent sm) → `.btn-forge-sm`
+  - **Excepción documentada**: "Generar Relato" (`historia.ejs:147-152`) usa variante outline-accent (`border-forge-accent` + `text-forge-accent`) que es la única instancia. Se dejó inline con comentario `<%/* Variante outline-accent única; YAGNI sobre crear .btn-forge-outline-accent. */%>`. Si aparece otro caso, recién crear la clase.
+- [x] 10.D — `wizard-confirm.ejs` ya usaba `.btn-forge-sm` (verificado en sesión).
+- [x] 10.E — Validación post-2026-05-08: 0 botones inline grandes restantes (regex `class="[^"]*\bpx-[0-9]+ py-[0-9]+[^"]*(uppercase|tracking)[^"]*"` filtrando `btn-forge` no devuelve nada). Los `bg-forge-accent` que persisten en `home.ejs:21,36,58` y `wizard.ejs:163,183` son **decorativos** (círculos de iconos, líneas del stepper, divs informativos), no botones — fuera del alcance del spec.
 
 ### 10.6 Checklist de Verificación
 
-- [ ] Todos los botones primarios usan `.btn-forge*`
-- [ ] Todos los botones secundarios usan `.btn-forge-outline*`
-- [ ] No hay duplicación de estilos en vistas
-- [ ] Cambio de tema actualiza correctamente todos los botones
-- [ ] Look & feel se mantiene idéntico o mejora (sin breaking changes)
+- [x] Todos los botones primarios usan `.btn-forge*` (excepto Generar Relato outline-accent documentado).
+- [x] Todos los botones secundarios usan `.btn-forge-outline*`.
+- [x] No hay duplicación de estilos en vistas (verificado por grep).
+- [ ] Cambio de tema actualiza correctamente todos los botones (validación humana pendiente).
+- [ ] Look & feel se mantiene idéntico o mejora (validación humana pendiente).
+
+---
+
+## 11. Cierre del desacoplamiento frontend (2026-05-08)
+
+Sesión dedicada a completar lo que §9 dejó a medias y limpiar deuda zombie. Resultado: **sin scripts inline grandes en vistas** (solo inyección de variables `window.X`), **botones unificados a `.btn-forge*`**, **vestigios de markdown removidos**.
+
+### 11.1 Extracciones JS (patrón Spec-318 §9.C)
+
+Cada vista con `<script>` inline real fue migrada a un archivo en `frontend/public/js/`. El patrón estándar es:
+
+```ejs
+<%/* inyección mínima de variables del servidor */%>
+<script>
+  window.X = "<%= server_var %>";
+</script>
+<script src="/js/<view>.js" defer></script>
+```
+
+El JS externo lee de `window.X` para mantener paridad 1:1.
+
+| Vista | EJS antes → después | Archivo extraído | Nota |
+|---|---|---|---|
+| `relatos.ejs` | 225 → 84 (-63%) | `relatos.js` (117 líneas) | + borrado `<style>.prose</style>` muerto que dejó Bug 6 |
+| `wizard.ejs` | 624 → 335 (-46%) | `wizard.js` (310 líneas) | mantiene `closeDeleteModal/addPersonaje/addScenario/addRule/askDelete*` como `window.X` para `onclick="..."` |
+| `historia.ejs` | 203 → 171 (-16%) | (eliminado en Slice 3.6) | `historia.js` se extrajo y luego se borró completo: era zombie de funciones markdown |
+| `partials/footer.ejs` | 94 → 40 (-57%) | `footer.js` (77 líneas) | + **fix de leak**: `window.__footerIntervalId` previene acumulación de `setInterval` bajo `hx-boost`; intervalo cambiado de 5s a 15s |
+| `streaming-room.ejs` (modo monitor) | (bloque inline 86 líneas) → eliminado | `streaming-monitor.js` (119 líneas) | + **fix de bug latente**: `DOMContentLoaded` reemplazado por ejecución inmediata + `htmx:afterSwap` (mismo patrón que Bug 10 de Spec-316) |
+
+**Estado final del JS inline (por vista):**
+
+| Vista | Inline restante | Justificación |
+|---|---|---|
+| `streaming-room.ejs` | 8 líneas | Solo `window.STREAM_URL`, `STORY_ID`, `TOTAL_BEATS`, `MONITOR_STREAM_URL` (inyección variables) |
+| `wizard.ejs` | 3 líneas | Solo `window.STEP_NUM` |
+| `partials/layout.ejs` | 23 líneas | `lucide.createIcons` + autofocus + listeners HTMX globales — pertinentes al chrome global |
+| `partials/modal_confirm.ejs` | 7 líneas | Flash modal — chico, no amerita extracción |
+
+### 11.2 Limpieza de vestigios markdown (Slice 3.6)
+
+Las funciones de gestión del archivo `.md` exportado (ver / descargar / eliminar) ya no existen funcionalmente — las rutas correspondientes habían sido removidas de `routes/index.ts` hace tiempo, pero quedaron handlers, vistas referenciadas y JS huérfanos.
+
+**Eliminado:**
+- `historia.ejs`: bloque `<% if (story.file_path) %>` con link "Ver Markdown" + botón "Eliminar Markdown" (-13 líneas).
+- `historia.js`: archivo borrado completo (sólo contenía `confirmDeleteMarkdown`).
+- `historia.controller.ts:97-170`: 3 handlers dead (`confirmDeleteMarkdownModal`, `verMarkdownHandler`, `downloadMarkdownHandler`) — 74 líneas.
+- `streaming_done_panel.ejs`: botón `<a id="download-md-btn">` "Descargar Markdown".
+- `streaming-room.js`: simplificación de `showDone(filePath)` → `showDone()` sin parámetro; 3 callers ajustados.
+
+**Auditoría:** la vista `visualizar_markdown.ejs` que el handler eliminado referenciaba **nunca existió** en `views/` — era un bug de runtime esperando ser invocado. Las rutas `/ver-markdown`, `/descargar-markdown`, `/internal/historia/:id/markdown` no estaban registradas en `routes/index.ts`. Era código zombie completo.
+
+**Imports preservados:** `fs`, `path`, `OUTPUT_DIR` siguen usados en `deleteStoryHandler` para borrar el archivo `.md` asociado al eliminar una historia (cleanup correcto).
+
+**Backend:** el SSE event `done` sigue emitiendo `file_path` en el payload desde `streaming_service.py`. El frontend ya no lo lee, pero el campo no rompe nada. Limpieza opcional de un slice backend aparte si se quiere.
+
+### 11.3 Bug latente arreglado de regalo (relatos.ejs Bug 10 reusado)
+
+**`streaming-monitor.js` (modo monitor):** el inline original usaba `window.addEventListener("DOMContentLoaded", monitorAttach)`. Bajo `<body hx-boost="true">` ese evento NO se dispara en navegaciones internas → si entrabas a la sala monitor desde otra vista (galería, historia) sin F5, **el SSE del modo monitor nunca se conectaba**. Re-aplicado el patrón ya validado en relatos.js (Bug 10 de Spec-316): ejecución inmediata del script + listener `htmx:afterSwap` para re-attach.
+
+### 11.4 Migración de botones a `.btn-forge*` (Slice 4)
+
+Ver §10.5 actualizada con el resultado real post-2026-05-08. 10 botones migrados (5 en `historia.ejs`, 5 en `streaming-room.ejs`); 1 dejado inline deliberadamente (variante outline-accent única).
+
+### 11.5 Resumen cuantitativo
+
+```
+EJS reducido:
+  relatos.ejs       225 →  84  (-141, -63%)
+  wizard.ejs        624 → 335  (-289, -46%)
+  historia.ejs      203 → 171  ( -32, -16%)
+  streaming-room    379 → 292  ( -87, -23%)
+  footer (partial)   94 →  40  ( -54, -57%)
+
+JS extraído (frontend/public/js/):
+  relatos.js          117 líneas
+  wizard.js           310 líneas
+  footer.js            77 líneas (con fix de leak)
+  streaming-monitor   119 líneas (con fix DOMContentLoaded)
+
+Código zombie eliminado:
+  historia.controller.ts   -74 líneas (3 handlers dead)
+  historia.js               -19 líneas (archivo borrado)
+  streaming_done_panel       -3 líneas (botón download)
+  streaming-room.js          -8 líneas (simplificación showDone)
+  relatos.ejs               -31 líneas (style.prose muerto)
+                          ─────────────
+                            ~135 líneas zombie eliminadas
+```
+
+### 11.6 Validación humana pendiente al cierre
+
+- Modo monitor SSE desde otra pestaña sin F5 (Slice 3.5).
+- Done-panel sin botón "Descargar Markdown" (Slice 3.6).
+- Paridad visual de botones en los 3 temas: horror / noir / light-contrast (Slice 4).
+- Footer activity widget sigue actualizando 1 vez cada 15s sin acumulación (Slice 2.5).

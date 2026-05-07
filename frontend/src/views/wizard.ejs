@@ -211,47 +211,23 @@ function hasCardData(fields) {
           const protagIndices = Object.keys(protagCards).sort((a,b) => Number(a)-Number(b));
           const MAX_PROTAGONISTAS = 5;
         %>
-        <div class="card-forge !p-6 space-y-5" id="elenco-group">
-          <div class="border-b border-forge-border pb-3">
-            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
-            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
-          </div>
-
-          <% protagIndices.forEach((idx, i) => { %>
-            <%
-              const isFirst = i === 0;
-              const visible = isFirst || hasCardData(protagCards[idx]);
-              const nameVal = saved['protagonista_' + idx + '_name'] || '';
-            %>
-            <div id="personaje-card-<%= idx %>"
-                 class="border border-forge-border p-4<%= visible ? '' : ' hidden' %>">
-              <div class="flex items-center justify-between mb-4">
-                <h4 class="text-forge-muted-caps font-bold"
-                    id="personaje-label-<%= idx %>">
-                  PERSONAJE <%= idx %><% if (nameVal) { %> — <%= esc(nameVal) %><% } %>
-                </h4>
-                <button type="button"
-                        onclick="askDeletePersonaje('<%= idx %>')"
-                        id="personaje-delete-btn-<%= idx %>"
-                        class="text-forge-muted hover:text-red-400 transition-colors<%= isFirst ? ' invisible' : '' %>">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-              <% protagCards[idx].forEach(field => { %>
-                <%- fieldHtml(field) %>
-              <% }); %>
-            </div>
-          <% }); %>
-
-          <div class="flex items-center gap-4 pt-2">
-            <button type="button" onclick="addPersonaje()"
-                    id="btn-add-personaje"
-                    class="btn-forge-outline">
-              <i data-lucide="user-plus" class="w-4 h-4"></i> Agregar personaje
-            </button>
-            <span class="text-xs text-forge-muted hidden" id="msg-max-personajes">Máximo <%= MAX_PROTAGONISTAS %> personajes</span>
-          </div>
-        </div>
+        <%- include('partials/wizard_card_list', {
+          meta, indices: protagIndices, cards: protagCards, saved,
+          itemLabel: 'PERSONAJE',
+          addLabel: 'Agregar personaje',
+          maxLabel: 'Máximo ' + MAX_PROTAGONISTAS + ' personajes',
+          iconAdd: 'user-plus',
+          addHandler: 'addPersonaje()',
+          deleteHandler: 'askDeletePersonaje',
+          groupContainerId: 'elenco-group',
+          cardIdPrefix: 'personaje-card',
+          labelIdPrefix: 'personaje-label',
+          deleteBtnIdPrefix: 'personaje-delete-btn',
+          addBtnId: 'btn-add-personaje',
+          msgMaxId: 'msg-max-personajes',
+          fieldNamePrefix: 'protagonista',
+          hasCardData, fieldHtml, esc,
+        }) %>
 
       <% } else if (groupName === 'escenarios') { %>
         <%
@@ -259,43 +235,21 @@ function hasCardData(fields) {
           const scenIndices = Object.keys(scenCards).sort((a,b) => Number(a)-Number(b));
           const MAX_ESCENARIOS = 4;
         %>
-        <div class="card-forge !p-6 space-y-5" id="escenarios-group">
-          <div class="border-b border-forge-border pb-3">
-            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
-            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
-          </div>
-
-          <% scenIndices.forEach((idx, i) => { %>
-            <%
-              const isFirstS = i === 0;
-              const visibleS = isFirstS || hasCardData(scenCards[idx]);
-            %>
-            <div id="scenario-card-<%= idx %>"
-                 class="border border-forge-border p-4<%= visibleS ? '' : ' hidden' %>">
-              <div class="flex items-center justify-between mb-4">
-                <h4 class="text-forge-muted-caps font-bold">ESCENARIO <%= idx %></h4>
-                <button type="button"
-                        onclick="askDeleteScenario('<%= idx %>')"
-                        id="scenario-delete-btn-<%= idx %>"
-                        class="text-forge-muted hover:text-red-400 transition-colors<%= isFirstS ? ' invisible' : '' %>">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-              <% scenCards[idx].forEach(field => { %>
-                <%- fieldHtml(field) %>
-              <% }); %>
-            </div>
-          <% }); %>
-
-          <div class="flex items-center gap-4 pt-2">
-            <button type="button" onclick="addScenario()"
-                    id="btn-add-scenario"
-                    class="btn-forge-outline">
-              <i data-lucide="map-pin" class="w-4 h-4"></i> Agregar escenario
-            </button>
-            <span class="text-xs text-forge-muted hidden" id="msg-max-escenarios">Máximo <%= MAX_ESCENARIOS %> escenarios</span>
-          </div>
-        </div>
+        <%- include('partials/wizard_card_list', {
+          meta, indices: scenIndices, cards: scenCards, saved,
+          itemLabel: 'ESCENARIO',
+          addLabel: 'Agregar escenario',
+          maxLabel: 'Máximo ' + MAX_ESCENARIOS + ' escenarios',
+          iconAdd: 'map-pin',
+          addHandler: 'addScenario()',
+          deleteHandler: 'askDeleteScenario',
+          groupContainerId: 'escenarios-group',
+          cardIdPrefix: 'scenario-card',
+          deleteBtnIdPrefix: 'scenario-delete-btn',
+          addBtnId: 'btn-add-scenario',
+          msgMaxId: 'msg-max-escenarios',
+          hasCardData, fieldHtml, esc,
+        }) %>
 
       <% } else if (groupName === 'reglas') { %>
         <%
@@ -303,43 +257,21 @@ function hasCardData(fields) {
           const ruleIndices = Object.keys(ruleCards).sort((a,b) => Number(a)-Number(b));
           const MAX_REGLAS = 7;
         %>
-        <div class="card-forge !p-6 space-y-5" id="reglas-group">
-          <div class="border-b border-forge-border pb-3">
-            <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
-            <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
-          </div>
-
-          <% ruleIndices.forEach((idx, i) => { %>
-            <%
-              const isFirstR = i === 0;
-              const visibleR = isFirstR || hasCardData(ruleCards[idx]);
-            %>
-            <div id="rule-card-<%= idx %>"
-                 class="border border-forge-border p-4<%= visibleR ? '' : ' hidden' %>">
-              <div class="flex items-center justify-between mb-4">
-                <h4 class="text-forge-muted-caps font-bold">REGLA <%= idx %></h4>
-                <button type="button"
-                        onclick="askDeleteRule('<%= idx %>')"
-                        id="rule-delete-btn-<%= idx %>"
-                        class="text-forge-muted hover:text-red-400 transition-colors<%= isFirstR ? ' invisible' : '' %>">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-              <% ruleCards[idx].forEach(field => { %>
-                <%- fieldHtml(field) %>
-              <% }); %>
-            </div>
-          <% }); %>
-
-          <div class="flex items-center gap-4 pt-2">
-            <button type="button" onclick="addRule()"
-                    id="btn-add-rule"
-                    class="btn-forge-outline">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i> Agregar regla
-            </button>
-            <span class="text-xs text-forge-muted hidden" id="msg-max-reglas">Máximo <%= MAX_REGLAS %> reglas</span>
-          </div>
-        </div>
+        <%- include('partials/wizard_card_list', {
+          meta, indices: ruleIndices, cards: ruleCards, saved,
+          itemLabel: 'REGLA',
+          addLabel: 'Agregar regla',
+          maxLabel: 'Máximo ' + MAX_REGLAS + ' reglas',
+          iconAdd: 'plus-circle',
+          addHandler: 'addRule()',
+          deleteHandler: 'askDeleteRule',
+          groupContainerId: 'reglas-group',
+          cardIdPrefix: 'rule-card',
+          deleteBtnIdPrefix: 'rule-delete-btn',
+          addBtnId: 'btn-add-rule',
+          msgMaxId: 'msg-max-reglas',
+          hasCardData, fieldHtml, esc,
+        }) %>
 
       <% } else { %>
         <div class="card-forge !p-6 space-y-5">
@@ -395,241 +327,9 @@ function hasCardData(fields) {
   </div>
 </div>
 
+<%/* Spec-318 §9.C — script extraído a /js/wizard.js. STEP_NUM se inyecta abajo. */%>
 <script>
-(function () {
-
-  // ── Storyteller: actualizar labels con nombres escritos ─────────────────
-  function updateStoryteller() {
-    var sel = document.querySelector('[name="storyteller_id"]');
-    if (!sel) return;
-    [1, 2, 3, 4, 5].forEach(function (n) {
-      var nameInput = document.querySelector('[name="protagonista_' + n + '_name"]');
-      var opt = sel.querySelector('option[value="protagonista_' + n + '"]');
-      if (opt && nameInput) {
-        var name = nameInput.value.trim();
-        opt.textContent = name || 'Personaje ' + n + ' (sin nombre)';
-      }
-    });
-  }
-  document.querySelectorAll('[name$="_name"]').forEach(function (el) {
-    el.addEventListener('input', updateStoryteller);
-  });
-  updateStoryteller();
-
-  // ── Modal de eliminación ─────────────────────────────────────────────────
-  var pendingDelete = null;
-
-  window.closeDeleteModal = function () {
-    pendingDelete = null;
-    document.getElementById('delete-modal').classList.add('hidden');
-  };
-
-  function openDeleteModal(msg, onConfirm) {
-    document.getElementById('delete-modal-msg').textContent = msg;
-    document.getElementById('delete-modal-confirm').onclick = function () {
-      onConfirm();
-      window.closeDeleteModal();
-    };
-    document.getElementById('delete-modal').classList.remove('hidden');
-  }
-
-  // Cierra el modal al hacer click fuera
-  document.getElementById('delete-modal').addEventListener('click', function (e) {
-    if (e.target === this) window.closeDeleteModal();
-  });
-
-  // ── Listas dinámicas: Protagonistas ─────────────────────────────────────
-  var MAX_PROTAGONISTAS = 5;
-
-  function getVisiblePersonajes() {
-    var visible = [];
-    for (var i = 1; i <= MAX_PROTAGONISTAS; i++) {
-      var card = document.getElementById('personaje-card-' + i);
-      if (card && !card.classList.contains('hidden')) visible.push(i);
-    }
-    return visible;
-  }
-
-  window.addPersonaje = function () {
-    var visible = getVisiblePersonajes();
-    if (visible.length >= MAX_PROTAGONISTAS) {
-      document.getElementById('msg-max-personajes').classList.remove('hidden');
-      return;
-    }
-    document.getElementById('msg-max-personajes').classList.add('hidden');
-
-    // Mostrar la siguiente oculta
-    for (var i = 1; i <= MAX_PROTAGONISTAS; i++) {
-      var card = document.getElementById('personaje-card-' + i);
-      if (card && card.classList.contains('hidden')) {
-        card.classList.remove('hidden');
-        // Hacer visible el botón de eliminar
-        var delBtn = document.getElementById('personaje-delete-btn-' + i);
-        if (delBtn) delBtn.classList.remove('invisible');
-        lucide.createIcons();
-        break;
-      }
-    }
-
-    var newVisible = getVisiblePersonajes();
-    if (newVisible.length >= MAX_PROTAGONISTAS) {
-      document.getElementById('msg-max-personajes').classList.remove('hidden');
-    }
-  };
-
-  window.askDeletePersonaje = function (idx) {
-    var nameInput = document.querySelector('[name="protagonista_' + idx + '_name"]');
-    var name = nameInput ? nameInput.value.trim() : '';
-    var msg = name
-      ? 'Se borrará "' + name + '" definitivamente.'
-      : 'Se borrará el Personaje ' + idx + ' definitivamente.';
-
-    openDeleteModal(msg, function () {
-      var card = document.getElementById('personaje-card-' + idx);
-      if (!card) return;
-
-      // Limpiar campos
-      card.querySelectorAll('input, textarea, select').forEach(function (el) {
-        if (el.type === 'checkbox' || el.type === 'radio') {
-          el.checked = false;
-        } else {
-          el.value = '';
-        }
-      });
-
-      // Ocultar card
-      card.classList.add('hidden');
-      document.getElementById('msg-max-personajes').classList.add('hidden');
-
-      // Actualizar storyteller labels
-      updateStoryteller();
-    });
-  };
-
-  // ── Listas dinámicas: Escenarios ─────────────────────────────────────────
-  var MAX_ESCENARIOS = 4;
-
-  function getVisibleScenarios() {
-    var visible = [];
-    for (var i = 1; i <= MAX_ESCENARIOS; i++) {
-      var card = document.getElementById('scenario-card-' + i);
-      if (card && !card.classList.contains('hidden')) visible.push(i);
-    }
-    return visible;
-  }
-
-  window.addScenario = function () {
-    var visible = getVisibleScenarios();
-    if (visible.length >= MAX_ESCENARIOS) {
-      document.getElementById('msg-max-escenarios').classList.remove('hidden');
-      return;
-    }
-    document.getElementById('msg-max-escenarios').classList.add('hidden');
-
-    for (var i = 1; i <= MAX_ESCENARIOS; i++) {
-      var card = document.getElementById('scenario-card-' + i);
-      if (card && card.classList.contains('hidden')) {
-        card.classList.remove('hidden');
-        var delBtn = document.getElementById('scenario-delete-btn-' + i);
-        if (delBtn) delBtn.classList.remove('invisible');
-        lucide.createIcons();
-        break;
-      }
-    }
-
-    var newVisible = getVisibleScenarios();
-    if (newVisible.length >= MAX_ESCENARIOS) {
-      document.getElementById('msg-max-escenarios').classList.remove('hidden');
-    }
-  };
-
-  window.askDeleteScenario = function (idx) {
-    var nameInput = document.querySelector('[name="scenario_' + idx + '_name"]');
-    var name = nameInput ? nameInput.value.trim() : '';
-    var msg = name
-      ? 'Se borrará "' + name + '" definitivamente.'
-      : 'Se borrará el Escenario ' + idx + ' definitivamente.';
-
-    openDeleteModal(msg, function () {
-      var card = document.getElementById('scenario-card-' + idx);
-      if (!card) return;
-
-      card.querySelectorAll('input, textarea, select').forEach(function (el) {
-        if (el.type === 'checkbox' || el.type === 'radio') {
-          el.checked = false;
-        } else {
-          el.value = '';
-        }
-      });
-
-      card.classList.add('hidden');
-      document.getElementById('msg-max-escenarios').classList.add('hidden');
-    });
-  };
-
-  // ── Listas dinámicas: Reglas ─────────────────────────────────────────────
-  var MAX_REGLAS = 7;
-
-  function getVisibleRules() {
-    var visible = [];
-    for (var i = 1; i <= MAX_REGLAS; i++) {
-      var card = document.getElementById('rule-card-' + i);
-      if (card && !card.classList.contains('hidden')) visible.push(i);
-    }
-    return visible;
-  }
-
-  window.addRule = function () {
-    var visible = getVisibleRules();
-    if (visible.length >= MAX_REGLAS) {
-      document.getElementById('msg-max-reglas').classList.remove('hidden');
-      return;
-    }
-    document.getElementById('msg-max-reglas').classList.add('hidden');
-
-    for (var i = 1; i <= MAX_REGLAS; i++) {
-      var card = document.getElementById('rule-card-' + i);
-      if (card && card.classList.contains('hidden')) {
-        card.classList.remove('hidden');
-        var delBtn = document.getElementById('rule-delete-btn-' + i);
-        if (delBtn) delBtn.classList.remove('invisible');
-        lucide.createIcons();
-        break;
-      }
-    }
-
-    var newVisible = getVisibleRules();
-    if (newVisible.length >= MAX_REGLAS) {
-      document.getElementById('msg-max-reglas').classList.remove('hidden');
-    }
-  };
-
-  window.askDeleteRule = function (idx) {
-    var textInput = document.querySelector('[name="rule_' + idx + '_text"]');
-    var text = textInput ? textInput.value.trim() : '';
-    var msg = text
-      ? 'Se borrará la regla "' + (text.length > 30 ? text.substring(0, 30) + '...' : text) + '" definitivamente.'
-      : 'Se borrará la Regla ' + idx + ' definitivamente.';
-
-    openDeleteModal(msg, function () {
-      var card = document.getElementById('rule-card-' + idx);
-      if (!card) return;
-
-      card.querySelectorAll('input, textarea, select').forEach(function (el) {
-        if (el.type === 'checkbox' || el.type === 'radio') {
-          el.checked = false;
-        } else {
-          el.value = '';
-        }
-      });
-
-      card.classList.add('hidden');
-      document.getElementById('msg-max-reglas').classList.add('hidden');
-    });
-  };
-
-  // Render lucide icons iniciales
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-
-}());
+  window.STEP_NUM = <%= step.number %>;
 </script>
+<script src="/js/wizard.js" defer></script>
+

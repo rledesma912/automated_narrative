@@ -119,18 +119,7 @@ const personajes = story.personajes_full || [];
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
     </a>
 
-    <% if (story.file_path) { %>
-      <a href="/historia/<%= story.id %>/ver-markdown"
-         class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-accent transition-colors">
-        <i data-lucide="file-text" class="w-4 h-4"></i> Ver Markdown
-      </a>
-      <button onclick="confirmDeleteMarkdown('<%= story.id %>')"
-              class="flex items-center gap-1 text-sm text-forge-muted hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer p-0">
-        <i data-lucide="file-minus" class="w-4 h-4"></i>
-      </button>
-    <% } %>
-
-    <% 
+    <%
   const showStartButton = typeof startGeneration !== 'undefined' && startGeneration === 1;
   const btnLabel = story.status === 'failed' ? 'Reintentar' : story.status === 'completed' ? 'Regenerar' : 'Generar historia';
 %>
@@ -138,27 +127,23 @@ const personajes = story.personajes_full || [];
     <% if (showStartButton) { %>
       <div class="flex items-center gap-4 w-full">
         <a href="/generar/stream/<%= story.id %><%= story.status === 'completed' ? '?regenerate=1' : '' %>"
-           class="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-forge-accent text-forge-text text-lg font-bold
-                  tracking-widest uppercase hover:opacity-80 transition-opacity shadow-lg">
+           class="btn-forge flex-1">
           <i data-lucide="<%= story.status === 'completed' ? 'refresh-cw' : 'zap' %>" class="w-6 h-6"></i>
           Comenzar <%= btnLabel.replace('historia', '').trim() %>
         </a>
       </div>
     <% } else if (story.status !== 'processing') { %>
-      <a href="/generar/cargar/<%= story.id %>"
-         class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
-                tracking-widest uppercase hover:text-forge-text transition-colors">
+      <a href="/generar/cargar/<%= story.id %>" class="btn-forge-outline">
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (story.status === 'completed') { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
-          <button type="submit"
-                  class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <button type="submit" class="btn-forge-sm">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Regenerar
           </button>
         </form>
+        <%/* Variante outline-accent única; YAGNI sobre crear .btn-forge-outline-accent. */%>
         <form method="POST" action="/historia/<%= story.id %>/generar-relato">
           <button type="submit"
                   class="flex items-center gap-2 px-5 py-2 border border-forge-accent text-forge-accent text-sm
@@ -167,17 +152,13 @@ const personajes = story.personajes_full || [];
             Generar Relato
           </button>
         </form>
-        <a href="/historia/<%= story.id %>/relatos"
-           class="flex items-center gap-2 px-5 py-2 border border-forge-border text-forge-muted text-sm
-                  tracking-widest uppercase hover:text-forge-text transition-colors">
+        <a href="/historia/<%= story.id %>/relatos" class="btn-forge-outline">
           <i data-lucide="library" class="w-4 h-4"></i>
           Ver Relatos
         </a>
       <% } else { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
-          <button type="submit"
-                  class="flex items-center gap-2 px-5 py-2 bg-forge-accent text-forge-text text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <button type="submit" class="btn-forge-sm">
             <i data-lucide="zap" class="w-4 h-4"></i>
             <%= btnLabel %>
           </button>
@@ -185,19 +166,6 @@ const personajes = story.personajes_full || [];
       <% } %>
     <% } %>
 
-    <script>
-      async function confirmDeleteMarkdown(storyId) {
-        if (!confirm("¿Eliminar el archivo Markdown? La historia y su configuración se conservan.")) return;
-        try {
-          const res = await fetch(`/internal/historia/${storyId}/markdown`, { method: "DELETE" });
-          if (!res.ok) throw new Error("Error al eliminar Markdown");
-          window.location.reload();
-        } catch {
-          alert("No se pudo eliminar el archivo Markdown.");
-        }
-      }
-
-    </script>
   </div>
 
 </div>

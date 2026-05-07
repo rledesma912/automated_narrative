@@ -1,44 +1,67 @@
-<%/* ── Wizard Card List (Partial reutilizable para personajes/escenarios/reglas) ── */%>
 <%
-  const pfx = locals.prefix || '';
-  const itemLabel = locals.itemLabel || 'ITEM';
-  const maxCount = locals.maxCount || 5;
-  const addHandler = locals.addHandler || 'addItem()';
-  const deleteHandler = locals.deleteHandler || 'deleteItem';
-  const iconAdd = locals.iconAdd || 'plus-circle';
-  const idxList = locals.indices || [];
-  const cardMap = locals.cards || {};
-  const meta = locals.meta || {};
-  const savedValues = locals.saved || {};
+/*
+ * Wizard Card List (Spec-318 §9.A/B — partial reutilizable)
+ *
+ * Renderiza un grupo de cards repetidas (personajes / escenarios / reglas)
+ * con botones add/delete y mensaje de máximo. Replica 1:1 el HTML que vivía
+ * inline en wizard.ejs.
+ *
+ * Locals requeridos:
+ *   meta              : { title, subtitle }
+ *   indices           : array de índices visibles/disponibles
+ *   cards             : map de idx → fields (proviene de groupFieldsByIndex)
+ *   saved             : map de campos guardados (para mostrar nombre en label)
+ *   itemLabel         : texto en mayúsculas del label de card ('PERSONAJE')
+ *   addLabel          : texto del botón ('Agregar personaje')
+ *   maxLabel          : texto del mensaje max ('Máximo 5 personajes')
+ *   iconAdd           : nombre del icono lucide ('user-plus')
+ *   addHandler        : invocación JS ('addPersonaje()')
+ *   deleteHandler     : nombre de función JS ('askDeletePersonaje')
+ *   groupContainerId  : id del div contenedor ('elenco-group')
+ *   cardIdPrefix      : prefijo de id de cada card ('personaje-card')
+ *   deleteBtnIdPrefix : prefijo de id del botón delete ('personaje-delete-btn')
+ *   addBtnId          : id del botón agregar ('btn-add-personaje')
+ *   msgMaxId          : id del mensaje max ('msg-max-personajes')
+ *
+ * Locals opcionales:
+ *   labelIdPrefix     : prefijo de id del <h4> (solo si necesita id, ej. 'personaje-label')
+ *   fieldNamePrefix   : prefijo del campo nombre ('protagonista' → busca saved['protagonista_<idx>_name'])
+ *                       Si está presente, muestra "ITEM N — Nombre" en el label.
+ *
+ * Funciones inyectadas (heredadas del scope EJS de wizard.ejs):
+ *   hasCardData(fields), fieldHtml(field), esc(str)
+ */
 %>
-
-<div class="card-forge !p-6 space-y-5" id="<%= pfx %>-group">
+<div class="card-forge !p-6 space-y-5" id="<%= groupContainerId %>">
   <div class="border-b border-forge-border pb-3">
     <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
     <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
   </div>
 
-  <% idxList.forEach((idx, i) => { %>
+  <% indices.forEach((idx, i) => { %>
     <%
       const isFirst = i === 0;
-      const visible = isFirst || hasCardData(cardMap[idx]);
-      const nameVal = savedValues[pfx + '_' + idx + '_name'] || '';
+      const visible = isFirst || hasCardData(cards[idx]);
+      const nameVal = (typeof fieldNamePrefix !== 'undefined' && fieldNamePrefix)
+        ? (saved[fieldNamePrefix + '_' + idx + '_name'] || '')
+        : '';
     %>
-    <div id="<%= pfx %>-card-<%= idx %>"
+    <div id="<%= cardIdPrefix %>-<%= idx %>"
          class="border border-forge-border p-4<%= visible ? '' : ' hidden' %>">
       <div class="flex items-center justify-between mb-4">
-        <h4 class="text-forge-muted-caps font-bold"
-            id="<%= pfx %>-label-<%= idx %>">
+        <h4 class="text-forge-muted-caps font-bold"<%
+          if (typeof labelIdPrefix !== 'undefined' && labelIdPrefix) { %>
+            id="<%= labelIdPrefix %>-<%= idx %>"<% } %>>
           <%= itemLabel %> <%= idx %><% if (nameVal) { %> — <%= esc(nameVal) %><% } %>
         </h4>
         <button type="button"
                 onclick="<%= deleteHandler %>('<%= idx %>')"
-                id="<%= pfx %>-delete-btn-<%= idx %>"
-                class="text-forge-muted hover:text-forge-error transition-colors<%= isFirst ? ' invisible' : '' %>">
+                id="<%= deleteBtnIdPrefix %>-<%= idx %>"
+                class="text-forge-muted hover:text-red-400 transition-colors<%= isFirst ? ' invisible' : '' %>">
           <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
       </div>
-      <% cardMap[idx].forEach(field => { %>
+      <% cards[idx].forEach(field => { %>
         <%- fieldHtml(field) %>
       <% }); %>
     </div>
@@ -46,10 +69,10 @@
 
   <div class="flex items-center gap-4 pt-2">
     <button type="button" onclick="<%= addHandler %>"
-            id="btn-add-<%= pfx %>"
+            id="<%= addBtnId %>"
             class="btn-forge-outline">
-      <i data-lucide="<%= iconAdd %>" class="w-4 h-4"></i> Agregar <%= itemLabel.toLowerCase() %>
+      <i data-lucide="<%= iconAdd %>" class="w-4 h-4"></i> <%= addLabel %>
     </button>
-    <span class="text-xs text-forge-muted hidden" id="msg-max-<%= pfx %>">Máximo <%= maxCount %> <%= itemLabel.toLowerCase() %>s</span>
+    <span class="text-xs text-forge-muted hidden" id="<%= msgMaxId %>"><%= maxLabel %></span>
   </div>
 </div>
