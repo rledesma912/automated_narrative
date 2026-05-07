@@ -119,18 +119,7 @@ const personajes = story.personajes_full || [];
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
     </a>
 
-    <% if (story.file_path) { %>
-      <a href="/historia/<%= story.id %>/ver-markdown"
-         class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-accent transition-colors">
-        <i data-lucide="file-text" class="w-4 h-4"></i> Ver Markdown
-      </a>
-      <button onclick="confirmDeleteMarkdown('<%= story.id %>')"
-              class="flex items-center gap-1 text-sm text-forge-muted hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer p-0">
-        <i data-lucide="file-minus" class="w-4 h-4"></i>
-      </button>
-    <% } %>
-
-    <% 
+    <%
   const showStartButton = typeof startGeneration !== 'undefined' && startGeneration === 1;
   const btnLabel = story.status === 'failed' ? 'Reintentar' : story.status === 'completed' ? 'Regenerar' : 'Generar historia';
 %>
@@ -185,19 +174,6 @@ const personajes = story.personajes_full || [];
       <% } %>
     <% } %>
 
-    <script>
-      async function confirmDeleteMarkdown(storyId) {
-        if (!confirm("¿Eliminar el archivo Markdown? La historia y su configuración se conservan.")) return;
-        try {
-          const res = await fetch(`/internal/historia/${storyId}/markdown`, { method: "DELETE" });
-          if (!res.ok) throw new Error("Error al eliminar Markdown");
-          window.location.reload();
-        } catch {
-          alert("No se pudo eliminar el archivo Markdown.");
-        }
-      }
-
-    </script>
   </div>
 
 </div>

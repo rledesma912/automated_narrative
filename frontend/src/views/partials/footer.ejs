@@ -35,60 +35,6 @@
   </div>
 </div>
 
-<script>
-  (function() {
-    let lastKnownEventTime = null;
-
-    async function checkStatus() {
-      try {
-        const res = await fetch('/internal/streaming/active');
-        if (!res.ok) {
-           updateConnStatus(false);
-           return;
-        }
-        updateConnStatus(true);
-        const data = await res.json();
-        
-        const activeContainer = document.getElementById('footer-active-content');
-        const idleContainer = document.getElementById('footer-idle-content');
-
-        if (data.active && data.story) {
-          // Hay generación activa
-          activeContainer.classList.remove('hidden');
-          idleContainer.classList.add('hidden');
-          document.getElementById('footer-story-title').textContent = data.story.title || 'Sin título';
-          document.getElementById('footer-story-link').href = `/generar/stream/${data.story.id}`;
-        } else {
-          // No hay generación activa, mostrar último evento
-          activeContainer.classList.add('hidden');
-          idleContainer.classList.remove('hidden');
-          
-          if (data.lastEvent) {
-             const event = data.lastEvent;
-             const msg = `[${event.timestamp}] ${event.message}`;
-             const el = document.getElementById('footer-last-event');
-             
-             // Si es un evento nuevo, dar feedback visual
-             if (event.timestamp !== lastKnownEventTime) {
-                el.classList.add('text-forge-accent');
-                setTimeout(() => el.classList.remove('text-forge-accent'), 2000);
-                lastKnownEventTime = event.timestamp;
-             }
-             el.textContent = msg;
-          }
-        }
-      } catch (e) {
-        updateConnStatus(false);
-      }
-    }
-
-    function updateConnStatus(online) {
-      const dot = document.getElementById('core-status-dot');
-      dot.className = online ? 'w-2 h-2 rounded-full bg-green-500' : 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
-    }
-
-    // Polling cada 5 segundos para que sea más reactivo
-    checkStatus();
-    setInterval(checkStatus, 5000);
-  })();
-</script>
+<%/* Spec-318 §9.C — script extraído a /js/footer.js (incluye guard contra */%>
+<%/* setInterval acumulado bajo hx-boost). */%>
+<script src="/js/footer.js" defer></script>

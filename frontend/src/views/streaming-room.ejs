@@ -92,93 +92,11 @@
 
 </div>
 
+<%/* Spec-318 §9.C — script extraído a /js/streaming-monitor.js. */%>
 <script>
-  // Spec-220 Slice D: MODO MONITOR usa EventSource real ahora que el broadcaster
-  // del backend (Slice C) garantiza idempotencia. Una sola pestaña dispara el
-  // pipeline; las demás se atan vía manager.attach() y reciben replay + en vivo.
-  const MONITOR_STREAM_URL = "<%= coreStreamUrl %>";
-  const MONITOR_TOTAL_BEATS = 5;
-  let monitorEs = null;
-
-  function monitorAppendLog(msg) {
-    const container = document.getElementById("monitor-log");
-    if (!container) return;
-    const time = new Date().toTimeString().slice(0, 5);
-    const el = document.createElement("div");
-    el.className = "text-forge-muted border-l-2 border-forge-accent/20 pl-4 py-1";
-    el.innerHTML = `<span class="text-forge-accent font-bold opacity-60">[${time}]</span> ${msg}`;
-    container.appendChild(el);
-    el.scrollIntoView({ behavior: "smooth", block: "end" });
-  }
-
-  function monitorSetStatus(msg) {
-    const el = document.getElementById("monitor-status");
-    if (el) el.textContent = msg;
-  }
-
-  function monitorHideSpinner() {
-    const el = document.getElementById("monitor-spinner");
-    if (el) el.classList.add("hidden");
-  }
-
-  function monitorAttach() {
-    monitorEs = new EventSource(MONITOR_STREAM_URL);
-
-    monitorEs.addEventListener("status", (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        monitorSetStatus(d.msg);
-        monitorAppendLog(`🔍 ${d.msg}`);
-      } catch { /* ignorar payload mal formado */ }
-    });
-
-    monitorEs.addEventListener("beat_start", (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        monitorSetStatus(`Narrando beat ${d.number}/${MONITOR_TOTAL_BEATS}…`);
-        monitorAppendLog(`✍️ Narrando Beat ${d.number}/${MONITOR_TOTAL_BEATS}`);
-      } catch { /* ignorar */ }
-    });
-
-    monitorEs.addEventListener("beat_done", (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        monitorAppendLog(`✅ Beat ${d.number} completado`);
-      } catch { /* ignorar */ }
-    });
-
-    // Heartbeat: solo mantener canal vivo, sin acción visual
-    monitorEs.addEventListener("heartbeat", () => { /* alive */ });
-
-    monitorEs.addEventListener("done", () => {
-      monitorAppendLog(`🏁 Historia completa — recargando…`);
-      monitorEs.close();
-      monitorEs = null;
-      // Pequeño delay para que el usuario vea el último log antes del reload
-      setTimeout(() => window.location.reload(), 800);
-    });
-
-    monitorEs.addEventListener("stream_error", (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        monitorAppendLog(`⚠️ Error en pipeline: ${d.msg ?? "desconocido"}`);
-      } catch {
-        monitorAppendLog(`⚠️ Error desconocido en el stream`);
-      }
-      monitorHideSpinner();
-      monitorSetStatus("Stream finalizado con error");
-      if (monitorEs) { monitorEs.close(); monitorEs = null; }
-    });
-
-    monitorEs.onerror = () => {
-      monitorAppendLog(`⚠️ Conexión SSE interrumpida — reintentando…`);
-      // EventSource hace auto-reconnect; no cerramos manualmente.
-    };
-  }
-
-  // Auto-arranque al cargar la página (sin requerir click del usuario).
-  window.addEventListener("DOMContentLoaded", monitorAttach);
+  window.MONITOR_STREAM_URL = "<%= coreStreamUrl %>";
 </script>
+<script src="/js/streaming-monitor.js" defer></script>
 
 <% } else if (storyStatus !== 'processing' && !regenerateMode) { %>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>

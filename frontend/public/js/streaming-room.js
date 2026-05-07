@@ -158,22 +158,13 @@
     }
   }
 
-  function showDone(filePath) {
+  function showDone() {
     setBadge("COMPLETO", "border-green-900 text-green-400");
     setStatus("Historia generada con éxito");
     hideSpinner();
 
     const panel = document.getElementById("done-panel");
     if (panel) panel.classList.remove("hidden");
-
-    if (filePath) {
-      const dlBtn = document.getElementById("download-md-btn");
-      if (dlBtn) {
-        dlBtn.href = `/historia/${STORY_ID}/descargar-markdown`;
-        dlBtn.classList.remove("hidden");
-        dlBtn.classList.add("inline-flex");
-      }
-    }
 
     if (es) {
       es.close();
@@ -335,10 +326,10 @@
     es.addEventListener("done", (e) => {
       try {
         const d = JSON.parse(e.data);
-        showDone(d.file_path);
+        showDone();
         appendLog(`🏁 Historia completa — ${d.total_beats} beats generados`);
       } catch {
-        showDone(null);
+        showDone();
       }
     });
 
@@ -353,7 +344,7 @@
 
     es.onerror = () => {
       if (beatCount === TOTAL_BEATS) {
-        showDone(null);
+        showDone();
         return;
       }
       showError("Conexión interrumpida. El servidor no responde.");
