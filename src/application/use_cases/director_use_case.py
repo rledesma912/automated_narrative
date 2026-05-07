@@ -46,6 +46,9 @@ class DirectorUseCase:
         voz: "VozUseCase | None" = None,
         journalist: MemoryJournalist | None = None,
         story_repo=None,
+        analyst_service=None,
+        resolver_service=None,
+        beat_mapper=None,
     ):
         from src.application.use_cases.voz_use_case import VozUseCase
 
@@ -54,6 +57,9 @@ class DirectorUseCase:
         self.normalizer = normalizer or ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
         self.story_repo = story_repo
+        self._analyst_service = analyst_service
+        self._resolver_service = resolver_service
+        self._beat_mapper = beat_mapper
 
         self._journalist = journalist or MemoryJournalist(
             llm,
@@ -156,7 +162,7 @@ class DirectorUseCase:
         )
         from src.application.services.story_analyst_service import StoryAnalystService
 
-        analyst = StoryAnalystService(
+        analyst = self._analyst_service or StoryAnalystService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
 
@@ -172,7 +178,7 @@ class DirectorUseCase:
         if on_analyst_done:
             on_analyst_done(f"Analizando sinopsis y anclajes ({analyst_elapsed:.1f}s)")
 
-        resolver = RuleScenarioResolverService(
+        resolver = self._resolver_service or RuleScenarioResolverService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
 
@@ -243,7 +249,7 @@ class DirectorUseCase:
         _step_start(f"📐  Planificando {num_beats} beats...")
         from src.application.services.story_analyst_service import StoryAnalystService
 
-        analyst = StoryAnalystService(
+        analyst = self._analyst_service or StoryAnalystService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
 
