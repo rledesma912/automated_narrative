@@ -48,6 +48,37 @@ class StoryRunner:
         self.narrative_use_case = narrative_use_case
         self.last_narrative_id: str | None = None
 
+    async def _narrate_beats(
+        self,
+        story: Story,
+        beat_iterator,
+    ) -> list:
+        """Centraliza el loop de narración: persistir beat + journal + reportar.
+
+        Args:
+            story: Historia en contexto.
+            beat_iterator: AsyncIterator que yield (beat, journal, llm_elapsed).
+
+        Returns:
+            Lista de beats completados.
+        """
+        completed = []
+        total = self.prompt_builder.num_beats
+        beat_t0 = perf_counter()
+
+        async for beat, journal, llm_elapsed in beat_iterator:
+            self.reporter.step_start(f"Guardando beat {beat.number}/{total}...")
+            await self.beat_repo.save(beat, story.id)
+            if journal is not None:
+                await self.story_repo.save_journal(story.id, journal, beat.number)
+            step_elapsed = perf_counter() - beat_t0
+            self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
+            completed.append(beat)
+            logger.info(f"[VOZ] Beat #{beat.number} completado y guardado")
+            beat_t0 = perf_counter()
+
+        return completed
+
     async def run_full(
         self,
         title: str,
@@ -109,26 +140,16 @@ class StoryRunner:
             story_repo=self.story_repo,
         )
 
-        completed = []
-        total = self.prompt_builder.num_beats
-        beat_t0 = perf_counter()
-
-        async for beat, journal, llm_elapsed in director.execute_full(
+        completed = await self._narrate_beats(
             story,
-            on_plan_ready=lambda n, t: self.reporter.plan_done(n, t),
-            on_step_done=lambda label, t: self.reporter.step_done(label, t),
-            on_step_start=lambda msg: self.reporter.step_start(msg),
-            stop_after=stop_after,
-        ):
-            self.reporter.step_start(f"Guardando beat {beat.number}/{total}...")
-            await self.beat_repo.save(beat, story.id)
-            if journal is not None:
-                await self.story_repo.save_journal(story.id, journal, beat.number)
-            step_elapsed = perf_counter() - beat_t0
-            self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
-            completed.append(beat)
-            logger.info(f"[VOZ] Beat #{beat.number} completado y guardado")
-            beat_t0 = perf_counter()
+            director.execute_full(
+                story,
+                on_plan_ready=lambda n, t: self.reporter.plan_done(n, t),
+                on_step_done=lambda label, t: self.reporter.step_done(label, t),
+                on_step_start=lambda msg: self.reporter.step_start(msg),
+                stop_after=stop_after,
+            ),
+        )
 
         if stop_after is not None:
             cp_ordinal = ordinal(stop_after)
@@ -189,20 +210,10 @@ class StoryRunner:
             story_repo=self.story_repo,
         )
 
-        completed = []
-        total = len(pending_beats)
-        beat_t0 = perf_counter()
-
-        async for beat, latest_journal, llm_elapsed in director.execute_narration(
-            story, pending_beats, initial_journal=journal
-        ):
-            await self.beat_repo.save(beat, story.id)
-            await self.story_repo.save_journal(story.id, latest_journal, beat.number)
-            step_elapsed = perf_counter() - beat_t0
-            self.reporter.beat_done(len(completed) + 1, total, step_elapsed, llm_elapsed)
-            completed.append(beat)
-            logger.info(f"[VOZ] Beat #{beat.number} completado y guardado")
-            beat_t0 = perf_counter()
+        completed = await self._narrate_beats(
+            story,
+            director.execute_narration(story, pending_beats, initial_journal=journal),
+        )
 
         full_beats = await self.beat_repo.get_by_story(story.id)
         all_completed = full_beats and all(b.status == BeatStatus.COMPLETED for b in full_beats)
