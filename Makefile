@@ -1,32 +1,41 @@
 .PHONY: api ui dev-all install test lint format clean help db db-clean list status export generate init
 
-API_HOST    ?= 0.0.0.0:8010
-FRONTEND_DIR = frontend
+# ── Variables y Configuración ─────────────────────────────────────────────────
+
+API_HOST     ?= 127.0.0.1:8020
+FRONTEND_DIR  = frontend
+
+# Cargar variables de desarrollo si existen (.env.dev)
+ifneq ("$(wildcard .env.dev)","")
+  include .env.dev
+  export
+endif
+
+# Extraer puerto de API_HOST para uvicorn
+API_PORT = $(shell echo $(API_HOST) | cut -d: -f2)
+API_IP   = $(shell echo $(API_HOST) | cut -d: -f1)
 
 help:
-	@echo "NarrativeForge Commands:"
+	@echo "NarrativeForge Commands (Ambiente de DESARROLLO):"
 	@echo ""
-	@echo "  Desarrollo"
-	@echo "    make api          Levanta el Core API (FastAPI, puerto 8010)"
-	@echo "    make ui          Levanta el Frontend (Node/Express, puerto 3000)"
-	@echo "    make dev-all     Levanta ambos componentes en paralelo"
-	@echo "    make install     Instala dependencias Python (uv) y Node (npm)"
+	@echo "  Desarrollo (Puertos: API $(API_PORT), UI $(PORT))"
+	@echo "    make api          Levanta el Core API con hot-reload"
+	@echo "    make ui           Levanta el Frontend con hot-reload"
+	@echo "    make dev          Levanta ambos componentes en paralelo"
+	@echo "    make install      Instala dependencias Python (uv) y Node (npm)"
 	@echo ""
 	@echo "  Calidad"
-	@echo "    make test        Ejecuta todos los tests con pytest"
-	@echo "    make lint        Ejecuta Ruff (linter + format)"
+	@echo "    make test         Ejecuta todos los tests con pytest"
+	@echo "    make lint         Ejecuta Ruff (linter + format)"
 	@echo ""
-	@echo "  Base de datos"
-	@echo "    make db          Inicializa SQLite"
-	@echo "    make db-clean    Limpia todos los registros"
+	@echo "  Base de datos (DESARROLLO)"
+	@echo "    make db           Inicializa SQLite de desarrollo"
+	@echo "    make db-clean     Limpia todos los registros de desarrollo"
 	@echo ""
 	@echo "  Historia (CLI)"
 	@echo "    make list                      Lista todas las historias"
 	@echo "    make generate ARG=<story_id>   Genera una historia"
 	@echo "    make export   ARG=<story_id>   Exporta a Markdown"
-	@echo ""
-	@echo "  Variables"
-	@echo "    API_HOST   Host:puerto del Core API (default: 0.0.0.0:8010)"
 
 # ── Dependencias ──────────────────────────────────────────────────────────────
 
@@ -37,21 +46,16 @@ install:
 # ── Desarrollo ────────────────────────────────────────────────────────────────
 
 api:
-	@host=$$(echo $(API_HOST) | cut -d: -f1); \
-	port=$$(echo $(API_HOST) | cut -d: -f2); \
-	echo "Core API → http://$$host:$$port"; \
-	uv run uvicorn src.main:app --reload --host $$host --port $$port
+	@echo "🚀 Core API (DEV) → http://$(API_IP):$(API_PORT)"
+	uv run uvicorn src.main:app --reload --host $(API_IP) --port $(API_PORT)
 
 ui:
-	@echo "Frontend UI → http://localhost:3000"
-	cd $(FRONTEND_DIR) && npm run dev
+	@echo "🚀 Frontend UI (DEV) → http://localhost:$(PORT)"
+	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) npm run dev
 
-dev-all:
-	@echo "Levantando Core API (8010) y Frontend (3000)..."
-	@trap 'kill 0' SIGINT; \
-	($(MAKE) api) & \
-	(sleep 2 && $(MAKE) ui) & \
-	wait
+dev:
+	@echo "Levantando entorno de desarrollo completo..."
+	@$(MAKE) -j 2 api ui
 
 # ── Calidad ───────────────────────────────────────────────────────────────────
 
