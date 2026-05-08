@@ -127,7 +127,6 @@ API_HOST=0.0.0.0:8010
 ANTHROPIC_API_KEY=...                              # solo si perfil usa Anthropic
 DATABASE_URL=sqlite+aiosqlite:///data/stories.db
 PROMPTS_DIR=./config/prompts_generation
-OUTPUT_DIR=./output_stories
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 # LLM_PROFILE=ollama-llama31                       # opcional: pisa active_profile
 ```

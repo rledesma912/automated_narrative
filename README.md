@@ -130,7 +130,7 @@ Tras una corrida exitosa (`generate` o el flujo SSE), se popula automáticamente
 - **Pilares aristotélicos:** `config/llm_narrative_definition.yaml`.
 - **Estructura de beats:** `config/llm_beats_definition.yaml`.
 - **Prompts:** `config/prompts_generation/*.md` (Spec-170).
-- **`.env` raíz:** sólo secretos y rutas (`ANTHROPIC_API_KEY`, `DATABASE_URL`, `OUTPUT_DIR`, `PORT`, `LLM_PROFILE` opcional).
+- **`.env` raíz:** sólo secretos y rutas (`ANTHROPIC_API_KEY`, `DATABASE_URL`, `PORT`, `LLM_PROFILE` opcional).
 - **`frontend/.env`:** `PORT` y `CORE_API_URL` (proxy hacia el Core API).
 
 ---

@@ -9,17 +9,13 @@ services:
     restart: unless-stopped
     ports:
       - "8010:8010"
-    env_file: .env
+    env_file: .env.prod
     environment:
-      # DATABASE_URL viene del .env (./data/stories.db) y resuelve a /app/data/stories.db
-      # vía volume mount → compartida con el CLI corriendo en el host.
-      - OUTPUT_DIR=/app/output_stories
-      # Ollama corre en el host — accesible vía host.docker.internal
       - OLLAMA_HOST=http://host.docker.internal:11434
     volumes:
-      - ./data:/app/data                                        # SQLite DB persistente
-      - ./frontend/public/output_stories:/app/output_stories    # Archivos MD exportados (visibles para el frontend Express)
-      - ./config:/app/config:ro                                 # Config YAML (sin rebuild al editar)
+      - ./data/prod:/app/data/prod                              # SQLite DB en prod
+      - ./frontend/public/output_stories/prod:/app/output_stories/prod # Relatos en prod
+      - ./config:/app/config:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -38,14 +34,12 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    env_file: frontend/.env
+    env_file: .env.prod
     environment:
       - NODE_ENV=production
-      # El container del frontend usa host.docker.internal para alcanzar al backend
-      - CORE_API_URL=http://host.docker.internal:8010
+      - CORE_API_URL=http://backend:8010
     volumes:
-      # Mismo directorio que el backend: los MD exportados son visibles de inmediato
-      - ./frontend/public/output_stories:/app/public/output_stories
+      - ./frontend/public/output_stories/prod:/app/public/output_stories/prod
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
