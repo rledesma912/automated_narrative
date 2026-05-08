@@ -1,0 +1,104 @@
+title: barco fantasma
+personajes_full:
+- id: P1
+  name: samuel
+  role: narrador y protagonista. es trabajador de un barco pesquero
+  traits:
+  - inseguro
+  - observador
+  - tradicional
+- id: P2
+  name: silvia
+  role: joven mujer misteriosa que el protagonista encuentra en la bodega del barco.
+  traits:
+  - ansioso
+  - sociable
+  - audaz
+protagonista: 'samuel: narrador y protagonista. es trabajador de un barco pesquero [inseguro, observador,
+  tradicional]; silvia: joven mujer misteriosa que el protagonista encuentra en la bodega del barco. [ansioso,
+  sociable, audaz]'
+relator: 'Primera persona en pasado. Narrador: samuel. Tono: dramático. Registro: coloquial: Natural y
+  diario.'
+atmosfera: terror_psicologico (historico) - ambiguo
+escenarios: 'un barco pesquero: un barco pesquero antiguo , viejo, de madera. un poco deteriorado. con
+  olor a pescado, con piso crujiente y humedo. barco grande y tenebroso. velas grandes desgastadas grisaceas
+  .'
+sinopsis: |-
+  trata de un muchacho joven, samuel, que empieza a trabajar en un barco pesquero de atun en los años 60. es un joven muy agradable, bueno,sencillo y humilde. no le encantaba el mar pero necesitaba el trabajo porque no tenia dinero. los hombres de la tripulacion del barco siempre lo mandaban para las tareas simples pero mas tediosas, como limpiar el piso de la cubierta, traerles cosas, hasta ayudar al cocinero a lavar los trastos.él para no tener problemas hacia todo lo que le pedian. al capitan no se lo veia casi nunca. hasta que un dia unos hombres de la tripulacion lo mandan a buscar una lampara de querosene   a la bodega del barco . pero como no la encuentraba por ningun lado,empieza a buscar por todos lados, y se mete en una parte mas abajo de la bodega donde nadie iba, para ver si estaba alli la lampara. habia muchas cosas inservibles,trastos, maquinaria viejas etc. todo cubierto de polvo y mal olor. busca y busca  hasta que ,tapado con cosas y lleno de moho encuentra un ataud que lo deja completamente  desconcertado. por miedo no lo quiere ni mirar. el joven era muy creyente y sentia mucho respeto por la muerte. se empieza a cuestionar que rayos hace un ataud alli. pero el miedo lo vence y sale corriendo sin la lampara.
+
+  el joven trataba de evitar a toda costa volver a la bodega para no ver el ataud. si no le quedaba de otra,  iba y buscaba rapido lo que le habian pedido y salia lo antes posible. uno de esos dias cuando fue a buscar algo en la bodega, se encontro a una joven mujer con el pelo recogido y vestido largo, antiguo. ella le dice que es la hija del capitan. era una joven muy extrovertida y audaz. le cuenta como le costó convencer a su padre , el capitan, para que la llevara en el barco. a ella le encantaba el mar. el muchacho no sabia que el capitan tenia una hija. pero, claro, habia muchas cosas que no sabia porque era nuevo. entonces se ponen a charlar y el joven le pregunta si sabia algo del ataud. ella le cuenta una historia. una historia que habia pasado hacia muchos años atras, pero en ese mismo barco. el barco tenia un capitan que se decia era muy cruel. y un dia se entera que su esposa le habia sido infiel. loco de ira trama algo aterrador. un dia la lleva a su esposa al barco con alguna excusa y en alta mar la increpa y se pelean. ella le confiesa que le habia sido infiel y el capitan, lleno de furia, la obliga a meterse dentro de un ataud que él mismo habia mandado a hacer para tal fin. clava la tapa con clavos. su idea macabra era arrojar el ataud al mar.pero cuando pone el ultimo clavo se arrepiente. ella grita y golpea desde adentro pero él ni se inmuta. se arrepiente de arrojarla al mar,y decide dejarla alli. la escucho gritar hasta que el aire del ataud se acabo y los gritos cesaron.  el joven la escuchaba atentamente con horror.
+
+  la joven podia sentir su miedo , y muy divertida, con engaños o audacia le hace abrir el ataud al joven, que estaba muerto de miedo. cuando lo abre, ve con espanto un  cadaver. tenia el pelo enmarañado en un rodete y un vestido largo exactamente igual al de la joven. el se da cuenta de la situacion, y se da vuelta para mirar a la joven,  pero ésta habia desparecido. entonces sale corriendo de la bodega temblando.
+
+  avisa a la tripulacion, mandan llamar al capitan. van a investigar,y el capitan  decide bajar el cuerpo en el proximo puerto. el joven sigue con miedo temiendo encontrarse con el espiritu de esa joven de nuevo. el habia evitado contar esa parte para no quedar como loco. trataba de no estar solo, a la bodega la habian cerrado por suerte para él. empieza a pensar que la joven le habia mentido, ella no era la hija de éste capitan. habia sido la esposa de un capitan cruel y vengativo, que ni siquiera quiso que tuviera una muerte digna arrojandola al mar ,porque sabia cuanto le gustaba el mar.
+
+  cuando llegan al puerto, bajan el ataud, las autoridades se encargan de él. el joven muy angustiado renuncia al trabajo y decide no pisar un barco nunca mas. reflecciona sobre la pobre mujer, esperando que su alma descanse en paz.
+reglas:
+- no hay celulares ni nada tecnologico.
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: samuel
+  voice_style: dramático
+  voice:
+    person: primera
+    tense: pasado
+    style: dramático
+  atmosphere:
+    genre: terror_psicologico
+    subgenre: historico
+    tone: ambiguo
+  scenarios:
+  - id: S1
+    order: 1
+    name: un barco pesquero
+    description: un barco pesquero antiguo , viejo, de madera. un poco deteriorado. con olor a pescado,
+      con piso crujiente y humedo. barco grande y tenebroso. velas grandes desgastadas grisaceas .
+  rules:
+  - id: R1
+    text: no hay celulares ni nada tecnologico.
+    type: social
+  actos:
+    act_1:
+      type: exposicion
+      text: |-
+        trata de un muchacho joven, samuel, que empieza a trabajar en un barco pesquero de atun en los años 60. es un joven muy agradable, bueno,sencillo y humilde. no le encantaba el mar pero necesitaba el trabajo porque no tenia dinero. los hombres de la tripulacion del barco siempre lo mandaban para las tareas simples pero mas tediosas, como limpiar el piso de la cubierta, traerles cosas, hasta ayudar al cocinero a lavar los trastos.él para no tener problemas hacia todo lo que le pedian. al capitan no se lo veia casi nunca. hasta que un dia unos hombres de la tripulacion lo mandan a buscar una lampara de querosene   a la bodega del barco . pero como no la encuentraba por ningun lado,empieza a buscar por todos lados, y se mete en una parte mas abajo de la bodega donde nadie iba, para ver si estaba alli la lampara. habia muchas cosas inservibles,trastos, maquinaria viejas etc. todo cubierto de polvo y mal olor. busca y busca  hasta que ,tapado con cosas y lleno de moho encuentra un ataud que lo deja completamente  desconcertado. por miedo no lo quiere ni mirar. el joven era muy creyente y sentia mucho respeto por la muerte. se empieza a cuestionar que rayos hace un ataud alli. pero el miedo lo vence y sale corriendo sin la lampara.
+    act_2:
+      type: accion_ascendente
+      text: |-
+        el joven trataba de evitar a toda costa volver a la bodega para no ver el ataud. si no le quedaba de otra,  iba y buscaba rapido lo que le habian pedido y salia lo antes posible. uno de esos dias cuando fue a buscar algo en la bodega, se encontro a una joven mujer con el pelo recogido y vestido largo, antiguo. ella le dice que es la hija del capitan. era una joven muy extrovertida y audaz. le cuenta como le costó convencer a su padre , el capitan, para que la llevara en el barco. a ella le encantaba el mar. el muchacho no sabia que el capitan tenia una hija. pero, claro, habia muchas cosas que no sabia porque era nuevo. entonces se ponen a charlar y el joven le pregunta si sabia algo del ataud. ella le cuenta una historia. una historia que habia pasado hacia muchos años atras, pero en ese mismo barco. el barco tenia un capitan que se decia era muy cruel. y un dia se entera que su esposa le habia sido infiel. loco de ira trama algo aterrador. un dia la lleva a su esposa al barco con alguna excusa y en alta mar la increpa y se pelean. ella le confiesa que le habia sido infiel y el capitan, lleno de furia, la obliga a meterse dentro de un ataud que él mismo habia mandado a hacer para tal fin. clava la tapa con clavos. su idea macabra era arrojar el ataud al mar.pero cuando pone el ultimo clavo se arrepiente. ella grita y golpea desde adentro pero él ni se inmuta. se arrepiente de arrojarla al mar,y decide dejarla alli. la escucho gritar hasta que el aire del ataud se acabo y los gritos cesaron.  el joven la escuchaba atentamente con horror.
+    act_3:
+      type: climax
+      text: |-
+        la joven podia sentir su miedo , y muy divertida, con engaños o audacia le hace abrir el ataud al joven, que estaba muerto de miedo. cuando lo abre, ve con espanto un  cadaver. tenia el pelo enmarañado en un rodete y un vestido largo exactamente igual al de la joven. el se da cuenta de la situacion, y se da vuelta para mirar a la joven,  pero ésta habia desparecido. entonces sale corriendo de la bodega temblando.
+    act_4:
+      type: accion_descendente
+      text: |-
+        avisa a la tripulacion, mandan llamar al capitan. van a investigar,y el capitan  decide bajar el cuerpo en el proximo puerto. el joven sigue con miedo temiendo encontrarse con el espiritu de esa joven de nuevo. el habia evitado contar esa parte para no quedar como loco. trataba de no estar solo, a la bodega la habian cerrado por suerte para él. empieza a pensar que la joven le habia mentido, ella no era la hija de éste capitan. habia sido la esposa de un capitan cruel y vengativo, que ni siquiera quiso que tuviera una muerte digna arrojandola al mar ,porque sabia cuanto le gustaba el mar.
+    act_5:
+      type: desenlace
+      text: |-
+        cuando llegan al puerto, bajan el ataud, las autoridades se encargan de él. el joven muy angustiado renuncia al trabajo y decide no pisar un barco nunca mas. reflecciona sobre la pobre mujer, esperando que su alma descanse en paz.
+  perception:
+    reliability: 'subjetiva: Ve lo que espera ver'
+    distortion:
+      level: 'minima: Apenas distorsiona'
+      triggers:
+      - 'panico: En pánico'
+      - 'trauma: Cuando recuerda el pasado'
+      - 'ansiedad: Cuando la ansiedad sube'
+  knowledge:
+    domain:
+      paranormal: 'bajo: Sabe poco'
+      religioso: 'alto: Sabe bastante'
+    interpretation_style: 'supersticiosa: Le teme y lo evita'
+  language:
+    register: 'coloquial: Natural y diario'
+    figurative_density: 'minima: Apenas usa'
+  bias:
+    fear_focus:
+    - 'muerte: La muerte'
+    - 'revelacion: Descubrir una verdad terrible'
+    attention_focus:
+    - 'sombras: Sombras y oscuridad'
+    - 'espacios: Espacios cerrados'
+    - 'detalles: Detalles físicos'

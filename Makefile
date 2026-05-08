@@ -1,4 +1,4 @@
-.PHONY: api ui dev-all install test lint format clean help db db-clean list status export generate init
+.PHONY: api ui dev-all install test lint format clean help db db-clean list status export generate init export-yaml
 
 # ── Variables y Configuración ─────────────────────────────────────────────────
 
@@ -35,7 +35,11 @@ help:
 	@echo "  Historia (CLI)"
 	@echo "    make list                      Lista todas las historias"
 	@echo "    make generate ARG=<story_id>   Genera una historia"
-	@echo "    make export   ARG=<story_id>   Exporta a Markdown"
+	@echo "    make export    ARG=<story_id>  Exporta a YAML canónico"
+	@echo "    make export-yaml ARG=<story_id> OUTPUT=<path> Exporta a YAML con path específico"
+	@echo ""
+	@echo "  Variables"
+	@echo "    API_HOST   Host:puerto del Core API (default: 0.0.0.0:8010)"
 
 # ── Dependencias ──────────────────────────────────────────────────────────────
 
@@ -93,7 +97,10 @@ status:
 	@chmod +x scripts/status.sh && ./scripts/status.sh $(ARG)
 
 export:
-	@chmod +x scripts/export.sh && ./scripts/export.sh $(ARG)
+	@chmod +x scripts/bash/run_export.sh && ./scripts/bash/run_export.sh $(ARG)
+
+export-yaml:
+	@chmod +x scripts/bash/run_export.sh && ./scripts/bash/run_export.sh $(ARG) $(OUTPUT)
 
 generate:
 	@chmod +x scripts/generate_story.sh && ./scripts/generate_story.sh $(ARG)
