@@ -2,8 +2,10 @@
 
 # ── Variables y Configuración ─────────────────────────────────────────────────
 
-API_HOST     ?= 127.0.0.1:8020
-FRONTEND_DIR  = frontend
+API_HOST      ?= 127.0.0.1:8020
+FRONTEND_DIR   = frontend
+PORT          ?= 3010
+DATABASE_URL   ?= sqlite+aiosqlite:///data/dev/stories.db
 
 # Cargar variables de desarrollo si existen (.env.dev)
 ifneq ("$(wildcard .env.dev)","")
@@ -51,11 +53,14 @@ install:
 
 api:
 	@echo "🚀 Core API (DEV) → http://$(API_IP):$(API_PORT)"
+	@echo "   Database: $(DATABASE_URL)"
+	@mkdir -p data/dev
+	@touch data/dev/stories.db
 	uv run uvicorn src.main:app --reload --host $(API_IP) --port $(API_PORT)
 
 ui:
 	@echo "🚀 Frontend UI (DEV) → http://localhost:$(PORT)"
-	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) npm run dev
+	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) DATABASE_URL=$(DATABASE_URL) npm run dev
 
 dev:
 	@echo "Levantando entorno de desarrollo completo..."
