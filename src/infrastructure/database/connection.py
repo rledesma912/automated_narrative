@@ -13,7 +13,9 @@ async def get_connection() -> aiosqlite.Connection:
       - `sqlite+aiosqlite:////abs.db`  → absoluto `/abs.db`
     """
     raw = settings.database_url
-    if raw.startswith("sqlite+aiosqlite:///"):
+    if raw.startswith("sqlite+aiosqlite:////"):
+        db_url = "/" + raw[len("sqlite+aiosqlite:////") :]
+    elif raw.startswith("sqlite+aiosqlite:///"):
         db_url = raw[len("sqlite+aiosqlite:///") :]
     elif raw.startswith("sqlite+aiosqlite://"):
         db_url = raw[len("sqlite+aiosqlite://") :]

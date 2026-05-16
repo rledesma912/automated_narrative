@@ -55,8 +55,8 @@ Detalles en [docs/estandar_diseno_architectural.md](docs/estandar_diseno_archite
 ### Instalación
 ```bash
 make install          # uv sync + npm install (backend + frontend)
-cp .env.example .env  # ajustar ANTHROPIC_API_KEY si aplica
-make db               # crea data/stories.db (SQLite con esquema Spec-180/300)
+# crear .env con tus secretos (ANTHROPIC_API_KEY si aplica)
+make db               # crea data/dev/stories.db (SQLite con esquema Spec-180/300)
 ```
 
 ### Modo Web (recomendado — Spec-210)
@@ -64,25 +64,28 @@ make db               # crea data/stories.db (SQLite con esquema Spec-180/300)
 Levantar ambos servicios en paralelo:
 
 ```bash
-make dev-all
+make dev
 ```
 
 O en terminales separadas:
 
 ```bash
 # Terminal 1 — Core API (FastAPI)
-make api              # → http://localhost:8010
+make api              # → http://localhost:8020
 
 # Terminal 2 — Frontend (Express + EJS + HTMX)
-make ui               # → http://localhost:3000
+make ui               # → http://localhost:3010
 ```
 
 | Componente | URL | Descripción |
 |---|---|---|
-| Frontend | http://localhost:3000 | Wizard, Streaming Room, Galería de relatos |
-| Core API | http://localhost:8010 | REST + SSE |
-| API Docs | http://localhost:8010/docs | Swagger UI |
-| Health | http://localhost:8010/api/v1/health | Diagnóstico SQLite + LLM activo |
+| Frontend | http://localhost:3010 | Wizard, Streaming Room, Galería de relatos |
+| Core API | http://localhost:8020 | REST + SSE |
+| API Docs | http://localhost:8020/docs | Swagger UI |
+| Health | http://localhost:8020/api/v1/health | Diagnóstico SQLite + LLM activo |
+
+> Estos puertos son del entorno de **desarrollo** (Spec-325). Producción corre vía
+> `docker compose up` en `:3000` (frontend) / `:8010` (API), con la DB `data/prod/stories.db`.
 
 **Flujo típico:**
 1. Wizard de 5 pasos (Spec-220) → guarda la historia como YAML y crea fila `story` en estado `draft`.
@@ -145,7 +148,7 @@ make test             # pytest -v --cov=src
 make lint             # ruff check + ruff format
 
 # Base de datos
-make db               # inicializa data/stories.db (idempotente)
+make db               # inicializa data/dev/stories.db (idempotente)
 make db-clean         # vacía todos los registros sin tirar el esquema
 make clean            # limpia __pycache__, .pytest_cache, .ruff_cache
 
@@ -157,7 +160,7 @@ make export   ARG=<id># exporta a Markdown
 ```
 
 Variables:
-- `API_HOST` — host:puerto del Core API (default `0.0.0.0:8010`).
+- `API_HOST` — host:puerto del Core API (dev: `0.0.0.0:8020`).
 
 ---
 

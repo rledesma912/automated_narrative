@@ -4,13 +4,13 @@
 echo "🚀 Levantando entorno de DESARROLLO (NarrativeForge)..."
 
 # Cargar variables de entorno de forma segura
-if [ -f .env.dev ]; then
+if [ -f .env ]; then
     set -a
-    source .env.dev
+    source .env
     set +a
-    echo "✅ Variables cargadas de .env.dev"
+    echo "✅ Variables cargadas de .env"
 else
-    echo "❌ Error: .env.dev no encontrado"
+    echo "❌ Error: .env no encontrado"
     exit 1
 fi
 

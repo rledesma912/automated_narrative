@@ -82,7 +82,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
 
     # Database
-    database_url: str = "sqlite+aiosqlite://stories.db"
+    database_url: str = "sqlite+aiosqlite:///data/dev/stories.db"
 
     # Paths
     output_dir: str = "frontend/public/output_stories"
