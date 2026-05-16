@@ -7,11 +7,8 @@ FRONTEND_DIR   = frontend
 PORT          ?= 3010
 DATABASE_URL   ?= sqlite+aiosqlite:///data/dev/stories.db
 
-# Cargar variables de desarrollo si existen (.env.dev)
-ifneq ("$(wildcard .env.dev)","")
-  include .env.dev
-  export
-endif
+# Nota (Spec-325 §3.1): el entorno de desarrollo se configura vía `.env`
+# (cargado por src/config.py). No existe `.env.dev`.
 
 # Extraer puerto de API_HOST para uvicorn
 API_PORT = $(shell echo $(API_HOST) | cut -d: -f2)
@@ -84,8 +81,8 @@ clean:
 
 db:
 	@chmod +x scripts/bash/init_db.sh
-	@# Asegurar permisos antes de crear
-	@rm -f data/stories.db && touch data/stories.db
+	@# Asegurar que la carpeta y el archivo de DEV existan antes de crear el esquema
+	@mkdir -p data/dev && touch data/dev/stories.db
 	@./scripts/bash/init_db.sh
 
 db-clean:

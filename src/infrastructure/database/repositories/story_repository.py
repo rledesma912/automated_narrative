@@ -397,9 +397,13 @@ class SQLStoryRepository:
 
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""
+        from datetime import datetime
+
         keys = row.keys()
         raw_cfg = row["storyteller_config"] if "storyteller_config" in keys else None
         raw_personajes = row["personajes"] if "personajes" in keys else None
+        raw_created_at = row["created_at"] if "created_at" in keys else None
+        created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
         return Story(
             id=UUID(row["id"]),
             title=row["title"],
@@ -414,6 +418,7 @@ class SQLStoryRepository:
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,
             file_path=row["file_path"] if "file_path" in keys else None,
+            created_at=created_at,
         )
 
     def _rows_to_typed_rules(self, rule_rows, story_id: str) -> list[TypedRule]:

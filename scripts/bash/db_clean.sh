@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")/../.."
 
-DB_FILE="data/stories.db"
+DB_FILE="data/dev/stories.db"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
