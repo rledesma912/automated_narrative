@@ -10,16 +10,16 @@ Flujo obligatorio: **SPECIFY → PLAN → TASKS → IMPLEMENT**.
 - No avanzar de fase sin OK explícito del usuario.
 - Slices incrementales (`.opencode/skills/incremental-implementation/SKILL.md`).
 - Idioma de trabajo: **español**.
-- DB: **no se generan scripts de migración**. Cambios de esquema → actualizar `init_db()` en `src/infrastructure/database/connection.py` y recrear `data/stories.db`.
+- DB: **no se generan scripts de migración**. Cambios de esquema → actualizar `init_db()` en `src/infrastructure/database/connection.py` y recrear `data/dev/stories.db`.
 
 ## Commands
 
 ```bash
 make install     # uv sync + npm install
-make api         # uvicorn dev (8010)
-make ui          # frontend Express (3000)
-make dev-all     # api + ui en paralelo
-make db          # crea data/stories.db
+make api         # uvicorn dev (8020)
+make ui          # frontend Express (3010)
+make dev         # api + ui en paralelo
+make db          # crea data/dev/stories.db
 make test        # pytest -v --cov=src
 make lint        # ruff check + format
 uv run python -m src generate --input <yaml>  # CLI completa
@@ -123,15 +123,15 @@ Templates: `story_analyst_*compact.md`, `synopsis_mapper_*compact.md`, `voice_sy
 
 ```
 ENV=dev
-API_HOST=0.0.0.0:8010
+API_HOST=0.0.0.0:8020
 ANTHROPIC_API_KEY=...                              # solo si perfil usa Anthropic
-DATABASE_URL=sqlite+aiosqlite:///data/stories.db
+DATABASE_URL=sqlite+aiosqlite:///data/dev/stories.db
 PROMPTS_DIR=./config/prompts_generation
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 # LLM_PROFILE=ollama-llama31                       # opcional: pisa active_profile
 ```
 
-`frontend/.env` independiente: `PORT=3000`, `CORE_API_URL=http://localhost:8010`.
+`frontend/.env` independiente (dev): `PORT=3010`, `CORE_API_URL=http://localhost:8020`.
 
 ## Database
 

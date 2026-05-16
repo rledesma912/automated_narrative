@@ -2,7 +2,7 @@
 
 > **Purpose:** Site map and component reference for LLM agents developing or debugging the frontend.
 > **Stack:** Express + TypeScript + EJS + Tailwind CSS + HTMX + SSE
-> **Backend Communication:** Proxies to Core API (port 8010)
+> **Backend Communication:** Proxies to Core API (port 8020 dev / 8010 prod)
 
 ## Table of Contents
 
@@ -150,7 +150,7 @@
 | `getNarrativeText(id)` | Obtener texto de narrativa | `GET /api/v1/generated-narratives/:id/text` |
 | `deleteNarrative(id)` | Eliminar narrativa | `DELETE /api/v1/generated-narratives/:id` |
 
-**Environment:** `CORE_API_URL` (default: `http://localhost:8010`)
+**Environment:** `CORE_API_URL` (dev: `http://localhost:8020`; prod/Docker: `http://backend:8010`)
 
 ### wizard.service.ts
 
@@ -393,7 +393,7 @@ flowchart TD
 sequenceDiagram
     participant Browser
     participant Express as Express (:3010)
-    participant Core as Core API (:8010)
+    participant Core as Core API (:8020 dev)
 
     Browser->>Express: GET /galeria
     Express->>Core: GET /api/v1/stories
@@ -432,7 +432,7 @@ sequenceDiagram
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `CORE_API_URL` | `http://localhost:8010` | Backend API URL |
+| `CORE_API_URL` | `http://localhost:8020` | Backend API URL (dev) |
 | `NODE_ENV` | `development` | Environment |
 | `PORT` | `3010` | Frontend server port |
 | `SESSION_SECRET` | (required) | Session encryption |
@@ -468,7 +468,7 @@ source.onmessage = (e) => { /* update UI */ };
 ### 4. Proxy Pattern
 
 ```
-Browser → Express (:3010/api/*) → Core API (:8010/api/*)
+Browser → Express (:3010/api/*) → Core API (:8020/api/*)
 ```
 
 Configurado en `middleware/api_proxy.ts`.
@@ -480,7 +480,7 @@ Configurado en `middleware/api_proxy.ts`.
 | Symptom | Check |
 |---------|-------|
 | Wizard data lost | `session.wizard` in memory vs Redis |
-| "Backend offline" | Core health at `http://localhost:8010/api/v1/health` |
+| "Backend offline" | Core health at `http://localhost:8020/api/v1/health` |
 | SSE not connecting | Proxy middleware, CORS, Core stream endpoint |
 | Session lost | Session store config, cookie settings |
 | Styles broken | Tailwind build, `theme.css` loaded |

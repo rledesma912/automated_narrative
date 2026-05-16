@@ -121,7 +121,11 @@ class SQLBeatRepository:
         rule_rows = await cursor.fetchall()
         active_rules = [r["content"] for r in rule_rows]
 
+        from datetime import datetime
+
         raw_type = row["type"] if "type" in row.keys() else None
+        raw_created_at = row["created_at"] if "created_at" in row.keys() else None
+        created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
         return MacroBeat(
             number=row["number"],
             summary=row["summary"],
@@ -132,4 +136,5 @@ class SQLBeatRepository:
             active_scenario_description=row["active_scenario_description"] or "",
             narrative_context=row["narrative_context"],
             beat_type=BeatType(raw_type) if raw_type else None,
+            created_at=created_at,
         )
