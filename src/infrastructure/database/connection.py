@@ -43,7 +43,6 @@ async def init_db() -> None:
             storyteller_config TEXT,
             personajes TEXT DEFAULT '[]',
             status TEXT DEFAULT 'pending',
-            file_path TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)

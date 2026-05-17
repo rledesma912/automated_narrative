@@ -325,16 +325,6 @@ class SQLStoryRepository:
             )
         return count
 
-    async def update_file_path(self, story_id, file_path: str | None) -> None:
-        """Persiste el path relativo del MD exportado (None para desvincular)."""
-        conn = await get_connection()
-        await conn.execute(
-            "UPDATE story SET file_path = ? WHERE id = ?",
-            (file_path, str(story_id)),
-        )
-        await conn.commit()
-        await conn.close()
-
     async def delete(self, story_id: UUID) -> None:
         """Hard delete: borra la historia y todas sus tablas hija."""
         conn = await get_connection()
@@ -405,7 +395,6 @@ class SQLStoryRepository:
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,
-            file_path=row["file_path"] if "file_path" in keys else None,
             created_at=created_at,
         )
 

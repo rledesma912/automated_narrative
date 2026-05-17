@@ -180,7 +180,6 @@ class Story(BaseModel):
     storyteller_config: Optional[dict] = None
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
-    file_path: Optional[str] = None
 
     @field_validator("title", "protagonista", "relator", "sinopsis", "atmosfera", mode="before")
     @classmethod
