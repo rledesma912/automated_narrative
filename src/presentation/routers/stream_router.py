@@ -74,7 +74,6 @@ async def stream_generation(story_id: str):
                 data={
                     "story_id": str(story.id),
                     "total_beats": len(beats),
-                    "file_path": story.file_path,
                     "read_only": True,
                 },
             ).to_sse()
