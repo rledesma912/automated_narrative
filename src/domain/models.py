@@ -122,15 +122,6 @@ class NarrativeJournal(BaseModel):
         return not (self.last_events or self.unresolved_mysteries or self.physical_emotional_state)
 
 
-class StoryPlan(BaseModel):
-    """Plan maestro de la historia."""
-
-    story_id: UUID4
-    title: str
-    beats: list[Beat] = []
-    created_at: datetime = Field(default_factory=now_argentina)
-
-
 class StoryMetadata(BaseModel):
     """Value object con los datos de input del usuario (Spec 080)."""
 

@@ -170,58 +170,6 @@ async def _generate_async(
     logger.info("[COMANDOS] Historia completada")
 
 
-def plan(
-    title: str,
-    use_mock: bool,
-    output_dir: Path,
-    provider: str | None = None,
-) -> None:
-    """Generate only the story plan (beats)."""
-    logger.info(f"[COMANDOS] Iniciando generación de plan: {title}")
-
-    try:
-        import asyncio
-
-        asyncio.run(_plan_async(title, use_mock, output_dir, provider))
-    except Exception as e:
-        logger.error(f"[COMANDOS] Error al generar el plan: {e}")
-        raise GenerationError(str(e)) from e
-
-    logger.info(f"[COMANDOS] Generación de plan completada: {title}")
-
-
-async def _plan_async(
-    title: str,
-    use_mock: bool,
-    output_dir: Path,  # noqa: ARG001
-    provider: str | None = None,
-) -> None:
-    """Async implementation of plan."""
-    await _init_database()
-
-    from src.application.dto import StoryCreateDTO
-
-    container = CLIContainer(use_mock=use_mock, provider=provider)
-    create_story = container.create_story_use_case()
-    director = container.director_use_case()
-
-    # `plan` solo recibe --title, sin sinopsis; se usan placeholders para
-    # satisfacer la validación de Story y poder ejercitar la fase global.
-    dto = StoryCreateDTO(
-        title=title,
-        protagonista=title,
-        relator="tercera_persona",
-        escenarios=[],
-        sinopsis=title,
-        atmosfera="neutra",
-        reglas=[],
-    )
-    story = await create_story.execute(dto)
-
-    _anchors, _rule_distribution, num_beats = await director.prepare_story(story)
-    logger.info(f"[COMANDOS] Plan preparado: {num_beats} beats")
-
-
 def narrate(
     story_id: str,
     beats: str,

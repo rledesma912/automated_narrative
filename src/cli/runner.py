@@ -78,16 +78,6 @@ def main() -> None:
         help="Directorio de output",
     )
 
-    plan_parser = subparsers.add_parser("plan", help="Generar solo el plan (beats)")
-    plan_parser.add_argument("--title", required=True, help="Título")
-    plan_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
-    plan_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(settings.output_dir),
-        help="Directorio de output",
-    )
-
     narrate_parser = subparsers.add_parser("narrate", help="Narrar beats específicos")
     narrate_parser.add_argument("--story-id", required=True, help="UUID de la historia")
     narrate_parser.add_argument("--beats", required=True, help="Beats a narrar (csv: 1,2,3)")
@@ -195,12 +185,6 @@ def main() -> None:
                     debug=args.debug,
                     hasta=args.hasta,
                 )
-        elif args.command == "plan":
-            commands.plan(
-                title=args.title,
-                use_mock=args.mock,
-                output_dir=args.output,
-            )
         elif args.command == "narrate":
             commands.narrate(
                 story_id=args.story_id,
