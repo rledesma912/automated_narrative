@@ -54,7 +54,9 @@ async def init_db() -> None:
             content TEXT NOT NULL,
             type TEXT,
             intensity TEXT,
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+            applies_to_beat INTEGER,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            CHECK (applies_to_beat IS NULL OR applies_to_beat >= 1)
         )
     """)
 
@@ -75,16 +77,6 @@ async def init_db() -> None:
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, number)
-        )
-    """)
-
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS macro_beat_rule (
-            macro_beat_id INTEGER NOT NULL,
-            rule_id TEXT NOT NULL,
-            PRIMARY KEY (macro_beat_id, rule_id),
-            FOREIGN KEY (macro_beat_id) REFERENCES macro_beat(id) ON DELETE CASCADE,
-            FOREIGN KEY (rule_id) REFERENCES rule(id) ON DELETE CASCADE
         )
     """)
 
