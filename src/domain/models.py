@@ -186,7 +186,6 @@ class Story(BaseModel):
     status: StoryStatus = StoryStatus.DRAFT
     created_at: datetime = Field(default_factory=now_argentina)
 
-    narrative_brief: str = ""
     storyteller_config: Optional[dict] = None
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []

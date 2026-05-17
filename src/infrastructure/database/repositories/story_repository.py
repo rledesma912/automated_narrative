@@ -18,9 +18,9 @@ class SQLStoryRepository:
 
         await conn.execute(
             """INSERT OR REPLACE INTO story
-            (id, title, protagonista, relator, sinopsis, atmosfera, narrative_brief,
+            (id, title, protagonista, relator, sinopsis, atmosfera,
              storyteller_config, personajes, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story.id),
                 story.title,
@@ -28,7 +28,6 @@ class SQLStoryRepository:
                 story.relator,
                 story.sinopsis,
                 story.atmosfera,
-                story.narrative_brief,
                 json.dumps(story.storyteller_config) if story.storyteller_config else None,
                 json.dumps(story.personajes_full),
                 story.status.value,
@@ -350,16 +349,6 @@ class SQLStoryRepository:
         await conn.commit()
         await conn.close()
 
-    async def save_narrative_brief(self, story_id, brief: str) -> None:
-        """Persiste el narrative_brief generado por el expansor."""
-        conn = await get_connection()
-        await conn.execute(
-            "UPDATE story SET narrative_brief = ? WHERE id = ?",
-            (brief, str(story_id)),
-        )
-        await conn.commit()
-        await conn.close()
-
     async def save_narrative_anchors(self, story_id, anchors) -> None:
         """Persiste los 5 anclajes de resonancia aristotélica (Spec-081)."""
         conn = await get_connection()
@@ -411,7 +400,6 @@ class SQLStoryRepository:
             relator=row["relator"],
             sinopsis=row["sinopsis"],
             atmosfera=row["atmosfera"],
-            narrative_brief=row["narrative_brief"] or "",
             storyteller_config=json.loads(raw_cfg) if raw_cfg else None,
             personajes_full=json.loads(raw_personajes) if raw_personajes else [],
             status=StoryStatus(row["status"])

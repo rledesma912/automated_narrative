@@ -40,7 +40,6 @@ async def init_db() -> None:
             relator TEXT,
             sinopsis TEXT,
             atmosfera TEXT,
-            narrative_brief TEXT DEFAULT '',
             storyteller_config TEXT,
             personajes TEXT DEFAULT '[]',
             status TEXT DEFAULT 'pending',

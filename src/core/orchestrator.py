@@ -165,9 +165,6 @@ class StoryRunner:
         if stop_after is None and self.narrative_use_case is not None:
             await self._consolidate_narrative(story)
 
-        if story.narrative_brief:
-            await self.story_repo.save_narrative_brief(story.id, story.narrative_brief)
-
         if self.debug_collector.is_active():
             story_meta = {
                 "profile": cfg.active_profile_name,
