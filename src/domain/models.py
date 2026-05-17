@@ -227,6 +227,21 @@ class Story(BaseModel):
         """True si al menos un beat tiene prosa generada."""
         return bool(self.beats) and any(b.has_content() for b in self.beats)
 
+    def active_rules_for_beat(self, beat_number: int) -> list[str]:
+        """Reglas activas de un beat, derivadas determinísticamente (Spec-190 §4.4).
+
+        Una regla aplica al beat N si es global (`applies_to_beat is None`) o está
+        anclada exactamente a ese acto (`applies_to_beat == N`). Si la historia no
+        tiene `typed_rules`, se cae a `reglas` (strings legacy), todas globales.
+        """
+        if self.typed_rules:
+            return [
+                r.content
+                for r in self.typed_rules
+                if r.applies_to_beat is None or r.applies_to_beat == beat_number
+            ]
+        return list(self.reglas)
+
     def get_beat_by_number(self, n: int) -> Beat | None:
         """Retorna el beat con ese número, o None si no existe."""
         return next((b for b in self.beats if b.number == n), None)

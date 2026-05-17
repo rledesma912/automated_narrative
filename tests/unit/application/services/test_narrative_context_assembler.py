@@ -116,12 +116,12 @@ class TestNarrativeContextAssemblerSnapshot:
 class TestNarrativeContextAssemblerReglas:
     def test_reglas_activas_se_incluyen(self, assembler, repo):
         beat = _beat(1)
-        beat.active_rules = ["No cruzar el monte de noche"]
-        result = assembler.assemble(beat, _beat_anchors(1, repo))
+        result = assembler.assemble(
+            beat, _beat_anchors(1, repo), active_rules=["No cruzar el monte de noche"]
+        )
         assert "No cruzar el monte de noche" in result
 
     def test_sin_reglas_activas_no_incluye_seccion(self, assembler, repo):
         beat = _beat(1)
-        beat.active_rules = []
-        result = assembler.assemble(beat, _beat_anchors(1, repo))
+        result = assembler.assemble(beat, _beat_anchors(1, repo), active_rules=[])
         assert "REGLAS ESPECÍFICAS" not in result

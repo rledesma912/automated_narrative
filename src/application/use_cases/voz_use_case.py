@@ -122,8 +122,9 @@ class VozUseCase:
 
         variant = self.prompt_builder.get_variant_name()
         if variant == "compact":
+            active_rules = story.active_rules_for_beat(macro_beat.number)
             system_prompt = self.prompt_builder.build_voice_system_compact(
-                story, beat_number=macro_beat.number, active_rules=macro_beat.active_rules
+                story, beat_number=macro_beat.number, active_rules=active_rules
             )
         else:
             system_prompt = self.prompt_builder.build_voice_prompt(story)

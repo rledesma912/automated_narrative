@@ -92,8 +92,8 @@ class DirectorUseCase:
             on_analyst_done: Callback cuando termina analyst (para reporter).
             on_resolver_done: Callback cuando termina resolver (para reporter).
         """
-        from src.application.services.rule_scenario_resolver_service import (
-            RuleScenarioResolverService,
+        from src.application.services.scenario_resolver_service import (
+            ScenarioResolverService,
         )
         from src.application.services.story_analyst_service import StoryAnalystService
 
@@ -113,18 +113,18 @@ class DirectorUseCase:
         if on_analyst_done:
             on_analyst_done(f"Analizando sinopsis y anclajes ({analyst_elapsed:.1f}s)")
 
-        resolver = self._resolver_service or RuleScenarioResolverService(
+        resolver = self._resolver_service or ScenarioResolverService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
 
         if on_resolver_done:
-            on_resolver_done("Distribuyendo reglas y escenarios")
+            on_resolver_done("Distribuyendo escenarios")
         t_resolver = perf_counter()
         rule_distribution = await resolver.resolve_distribution(story, anchors=narrative_anchors)
         resolver_elapsed = perf_counter() - t_resolver
 
         if on_resolver_done:
-            on_resolver_done(f"Distribuyendo reglas y escenarios ({resolver_elapsed:.1f}s)")
+            on_resolver_done(f"Distribuyendo escenarios ({resolver_elapsed:.1f}s)")
 
         num_beats = self.prompt_builder.num_beats
         logger.debug(
@@ -168,7 +168,7 @@ class DirectorUseCase:
 
         def _resolver_done(msg: str) -> None:
             if on_step_done:
-                on_step_done("Distribuyendo reglas y escenarios", 0)
+                on_step_done("Distribuyendo escenarios", 0)
             _step_start(msg)
 
         narrative_anchors, rule_distribution, num_beats = await self.prepare_story(
@@ -253,7 +253,9 @@ class DirectorUseCase:
             story.sinopsis, beat_id, num_beats
         )
         dist = rule_distribution.get(str(beat_id), {})
-        active_rules = dist.get("rules", [])
+        # Spec-190 §4.4: las reglas activas del beat se derivan determinísticamente
+        # (regla global o anclada a este acto), no las distribuye el resolver.
+        active_rules = story.active_rules_for_beat(beat_id)
         s_idx = dist.get("scenario_index", 0)
         active_scenario_desc = ""
         if story.scenarios and 0 <= s_idx < len(story.scenarios):
@@ -298,11 +300,10 @@ class DirectorUseCase:
             logger.debug(f"[DIRECTOR] Detenido en checkpoint 'mapper:{beat_id}' ({cp_mapper}/16)")
             return macro_beat, journal, 0.0
 
-        macro_beat.active_rules = active_rules
         macro_beat.active_scenario_description = active_scenario_desc
 
         macro_beat.user_prompt = self.prompt_builder.build_narrative_context(
-            macro_beat, beat_anchors, journal, story=story
+            macro_beat, beat_anchors, journal, story=story, active_rules=active_rules
         )
 
         voz = self._voz

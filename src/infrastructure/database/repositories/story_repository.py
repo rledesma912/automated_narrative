@@ -43,13 +43,15 @@ class SQLStoryRepository:
             for r in story.typed_rules:
                 db_rule_id = str(uuid.uuid4())
                 await conn.execute(
-                    "INSERT INTO rule (id, story_id, content, type, intensity) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO rule (id, story_id, content, type, intensity, applies_to_beat) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
                     (
                         db_rule_id,
                         str(story.id),
                         r.content,
                         r.type.value if r.type else None,
                         r.intensity,
+                        r.applies_to_beat,
                     ),
                 )
         elif story.reglas:
@@ -91,7 +93,7 @@ class SQLStoryRepository:
 
         # Cargar reglas
         cursor_rules = await conn.execute(
-            "SELECT id, content, type, intensity FROM rule WHERE story_id = ?",
+            "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
             (str(story_id),),
         )
         rule_rows = await cursor_rules.fetchall()
@@ -141,7 +143,7 @@ class SQLStoryRepository:
 
         # Cargar reglas
         cursor_rules = await conn.execute(
-            "SELECT id, content, type, intensity FROM rule WHERE story_id = ?",
+            "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
             (story_id,),
         )
         rule_rows = await cursor_rules.fetchall()
@@ -202,7 +204,7 @@ class SQLStoryRepository:
             story_id = row["id"]
             # Cargar reglas
             cursor_rules = await conn.execute(
-                "SELECT id, content, type, intensity FROM rule WHERE story_id = ?",
+                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
                 (story_id,),
             )
             rule_rows = await cursor_rules.fetchall()
@@ -405,6 +407,7 @@ class SQLStoryRepository:
             keys = r.keys()
             raw_type = r["type"] if "type" in keys else None
             raw_intensity = r["intensity"] if "intensity" in keys else None
+            raw_applies = r["applies_to_beat"] if "applies_to_beat" in keys else None
             try:
                 rule_type = RuleType(raw_type) if raw_type else None
             except ValueError:
@@ -416,6 +419,7 @@ class SQLStoryRepository:
                     content=r["content"],
                     type=rule_type,
                     intensity=raw_intensity,
+                    applies_to_beat=raw_applies,
                 )
             )
         return result

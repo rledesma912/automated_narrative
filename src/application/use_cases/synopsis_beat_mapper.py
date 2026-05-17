@@ -99,7 +99,6 @@ class SynopsisBeatMapper:
             status=BeatStatus.PENDING,
             active_scenario_id=final_scenario,
             active_scenario_description=active_scenario_description or "",
-            active_rules=active_rules or [],
         )
 
         self.debug_collector.record(

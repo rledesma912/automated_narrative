@@ -270,7 +270,7 @@ class TestPromptVariants:
         assert "ESCENA_UNICA_IDENTIFICADORA" in prompt[mid:]
 
 
-class TestBuildRuleResolverPromptActsEnrichment:
+class TestBuildScenarioResolverPromptActsEnrichment:
     """Spec-052: acts_json incluye intent, intensity, must y must_not del YAML."""
 
     def _story(self):
@@ -287,19 +287,19 @@ class TestBuildRuleResolverPromptActsEnrichment:
         )
 
     def _acts(self, prompt: str) -> list[dict]:
-        """Extrae la lista de acts del bloque JSON entre 'Actos:' y 'Reglas:'."""
-        block = prompt.split("Actos:\n", 1)[1].split("\n\nReglas:", 1)[0].strip()
+        """Extrae la lista de acts del bloque JSON entre 'Actos:' y 'Escenarios:'."""
+        block = prompt.split("Actos:\n", 1)[1].split("\n\nEscenarios", 1)[0].strip()
         return json.loads(block)
 
     def test_acts_json_includes_intent(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("intent" in a and a["intent"] for a in acts)
 
     def test_acts_json_includes_intensity(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         intensities = {a["type"]: a["intensity"] for a in acts}
         assert intensities["exposicion"] == "baja"
@@ -308,24 +308,24 @@ class TestBuildRuleResolverPromptActsEnrichment:
 
     def test_acts_json_includes_must(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("must" in a and isinstance(a["must"], list) and a["must"] for a in acts)
 
     def test_acts_json_includes_must_not(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("must_not" in a and isinstance(a["must_not"], list) for a in acts)
 
     def test_acts_json_excludes_anchor_priorities(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("anchor_priorities" not in a for a in acts)
 
     def test_acts_json_excludes_state_change(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("state_change" not in a for a in acts)

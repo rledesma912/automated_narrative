@@ -474,22 +474,27 @@ Extiende este momento (150-400 palabras)."""
         beat_anchors: dict,
         previous_journal: NarrativeJournal | None = None,
         story: "Story | None" = None,
+        active_rules: list[str] | None = None,
     ) -> str:
         """Ensambla el narrative_context pre-baked que recibe el VOZ. Determinístico."""
         cast_block = self._format_cast_for_context(story) if story else None
         return self._nc_assembler.assemble(
-            macro_beat, beat_anchors, previous_journal, cast_block=cast_block
+            macro_beat,
+            beat_anchors,
+            previous_journal,
+            cast_block=cast_block,
+            active_rules=active_rules,
         )
 
-    def build_rule_resolver_prompt(
+    def build_scenario_resolver_prompt(
         self, story: "Story", anchors: NarrativeAnchors | None = None
     ) -> str:
-        """Prompt para distribuir reglas y escenarios detallados."""
+        """Prompt para distribuir escenarios detallados a cada acto."""
         import json as _json
 
-        template = self._load_prompt("rule_resolver_compact.md")
+        template = self._load_prompt("scenario_resolver_compact.md")
         if not template:
-            return f"Distribuye estas reglas: {story.reglas}"
+            return f"Distribuye estos escenarios: {[s.name for s in story.scenarios or []]}"
 
         # Acts JSON: definición narrativa completa desde YAML (Spec-052)
         acts_data = [
@@ -504,23 +509,6 @@ Extiende este momento (150-400 palabras)."""
             for b in self._beats_spec
         ]
         acts_json = _json.dumps(acts_data, ensure_ascii=False, indent=2)
-
-        # Rules JSON: ID + tipo semántico + contenido (necesario para asignación inteligente)
-        if story.typed_rules:
-            rules_data = [
-                {
-                    "id": r.id,
-                    "type": r.type.value if r.type else "sin_tipo",
-                    "content": r.content[:100],
-                }
-                for r in story.typed_rules
-            ]
-        else:
-            rules_data = [
-                {"id": str(i + 1), "type": "sin_tipo", "content": r[:100]}
-                for i, r in enumerate(story.reglas)
-            ]
-        rules_json = _json.dumps(rules_data, ensure_ascii=False, indent=2)
 
         # Scenarios JSON: IDs cortos ("S1", "S2"…) + orden cronológico
         scenarios = story.scenarios or []
@@ -544,15 +532,14 @@ Extiende este momento (150-400 palabras)."""
 
         return template.format(
             acts_json=acts_json,
-            rules_json=rules_json,
             scenarios_json=scenarios_json,
             anchors_json=anchors_json,
         )
 
-    def build_rule_resolver_system(self) -> str | None:
-        """System prompt para el rule resolver."""
+    def build_scenario_resolver_system(self) -> str | None:
+        """System prompt para el scenario resolver."""
         strategy = self._get_strategy()
-        template_name = strategy.get_template_name("rule_resolver_system")
+        template_name = strategy.get_template_name("scenario_resolver_system")
         return self._load_prompt(template_name)
 
     def build_voz_user_prompt(self, macro_beat: MacroBeat) -> str:
