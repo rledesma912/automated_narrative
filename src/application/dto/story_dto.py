@@ -21,6 +21,7 @@ class StoryCreateDTO(BaseModel):
     narrator_config: Optional[dict] = None
     typed_rules: list[dict] = []
     personajes_full: list[dict] = []
+    actos: list[dict] = []
 
     @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod

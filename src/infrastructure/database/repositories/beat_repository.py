@@ -19,30 +19,57 @@ class SQLBeatRepository:
     """
 
     async def save(self, beat: MacroBeat, story_id: UUID) -> MacroBeat:
-        """Persiste un macro_beat."""
+        """Persiste un macro_beat (upsert: actualiza o inserta)."""
         conn = await get_connection()
 
-        await conn.execute(
-            """INSERT OR REPLACE INTO macro_beat
-            (story_id, number, summary, synopsis_beat, generated_act, status,
-             active_scenario_id, active_scenario_description,
-             system_prompt, user_prompt, type, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                str(story_id),
-                beat.number,
-                beat.summary,
-                beat.synopsis_beat,
-                beat.generated_act,
-                beat.status,
-                beat.active_scenario_id,
-                beat.active_scenario_description,
-                beat.system_prompt,
-                beat.user_prompt,
-                beat.beat_type.value if beat.beat_type else None,
-                beat.created_at.isoformat(),
-            ),
+        cursor = await conn.execute(
+            "SELECT id FROM macro_beat WHERE story_id = ? AND number = ?",
+            (str(story_id), beat.number),
         )
+        existing = await cursor.fetchone()
+
+        if existing:
+            await conn.execute(
+                """UPDATE macro_beat SET
+                generated_act = ?,
+                status = ?,
+                active_scenario_id = ?,
+                active_scenario_description = ?,
+                system_prompt = ?,
+                user_prompt = ?
+                WHERE story_id = ? AND number = ?""",
+                (
+                    beat.generated_act,
+                    beat.status.value,
+                    beat.active_scenario_id,
+                    beat.active_scenario_description,
+                    beat.system_prompt,
+                    beat.user_prompt,
+                    str(story_id),
+                    beat.number,
+                ),
+            )
+        else:
+            await conn.execute(
+                """INSERT INTO macro_beat
+                (story_id, number, summary, synopsis_beat, generated_act, status,
+                 active_scenario_id, active_scenario_description,
+                 system_prompt, user_prompt, type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    str(story_id),
+                    beat.number,
+                    beat.summary,
+                    beat.synopsis_beat or "",
+                    beat.generated_act,
+                    beat.status.value,
+                    beat.active_scenario_id,
+                    beat.active_scenario_description,
+                    beat.system_prompt,
+                    beat.user_prompt,
+                    beat.beat_type.value if beat.beat_type else None,
+                ),
+            )
 
         await conn.commit()
         await conn.close()

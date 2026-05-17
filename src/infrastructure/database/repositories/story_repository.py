@@ -91,6 +91,25 @@ class SQLStoryRepository:
                     (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
                 )
 
+        # Persistir beats en la tabla macro_beat (borrar y re-insertar)
+        # Spec-190 T7.1: pre-crear 5 filas macro_beat al guardar la historia
+        await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (str(story.id),))
+        if story.beats:
+            for b in story.beats:
+                await conn.execute(
+                    """INSERT INTO macro_beat
+                    (story_id, number, summary, synopsis_beat, type, status)
+                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (
+                        str(story.id),
+                        b.number,
+                        b.summary,
+                        b.synopsis_beat or "",
+                        b.beat_type.value if b.beat_type else None,
+                        b.status.value,
+                    ),
+                )
+
         await conn.commit()
         await conn.close()
 
