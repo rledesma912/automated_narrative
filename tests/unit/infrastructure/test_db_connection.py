@@ -93,7 +93,6 @@ class TestDbConnection:
             "summary",
             "content",
             "status",
-            "technical_context",
             "active_scenario_id",
             "narrative_context",
             "created_at",

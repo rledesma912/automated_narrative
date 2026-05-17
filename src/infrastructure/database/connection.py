@@ -68,7 +68,6 @@ async def init_db() -> None:
             summary TEXT NOT NULL,
             content TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
-            technical_context TEXT,
             active_scenario_id TEXT,
             active_scenario_description TEXT,
             narrative_context TEXT,
