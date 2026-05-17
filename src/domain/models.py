@@ -83,19 +83,22 @@ class MacroBeat(BaseModel):
 
     number: int
     summary: str
-    content: str = ""
+    generated_act: str = ""
     status: BeatStatus = BeatStatus.PENDING
     created_at: datetime = Field(default_factory=now_argentina)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
     active_rules: list[str] = []
     active_scenario_description: str = ""
-    narrative_context: Optional[str] = None
+    user_prompt: Optional[str] = None
     beat_type: Optional[BeatType] = None
+    # Spec 190 (Slice 3): trazabilidad de prompting + input del usuario
+    system_prompt: Optional[str] = None
+    synopsis_beat: Optional[str] = None
 
     def is_narrated(self) -> bool:
         """True si el beat tiene prosa generada y está marcado como completado."""
-        return bool(self.content and self.status == BeatStatus.COMPLETED)
+        return bool(self.generated_act and self.status == BeatStatus.COMPLETED)
 
     def is_pending(self) -> bool:
         """True si el beat aún no fue narrado."""
@@ -103,7 +106,7 @@ class MacroBeat(BaseModel):
 
     def has_content(self) -> bool:
         """True si el beat tiene contenido (independientemente del status)."""
-        return bool(self.content)
+        return bool(self.generated_act)
 
 
 # Alias de compatibilidad — se mantiene mientras los tests y repos migran a MacroBeat

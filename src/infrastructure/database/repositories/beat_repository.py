@@ -19,19 +19,21 @@ class SQLBeatRepository:
         # 1. Insertar/Reemplazar el beat (sin active_rules que ahora es una tabla de unión)
         cursor = await conn.execute(
             """INSERT OR REPLACE INTO macro_beat
-            (story_id, number, summary, content, status,
+            (story_id, number, summary, synopsis_beat, generated_act, status,
              active_scenario_id, active_scenario_description,
-             narrative_context, type, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             system_prompt, user_prompt, type, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story_id),
                 beat.number,
                 beat.summary,
-                beat.content,
+                beat.synopsis_beat,
+                beat.generated_act,
                 beat.status,
                 beat.active_scenario_id,
                 beat.active_scenario_description,
-                beat.narrative_context,
+                beat.system_prompt,
+                beat.user_prompt,
                 beat.beat_type.value if beat.beat_type else None,
                 beat.created_at.isoformat(),
             ),
@@ -129,12 +131,14 @@ class SQLBeatRepository:
         return MacroBeat(
             number=row["number"],
             summary=row["summary"],
-            content=row["content"] or "",
+            generated_act=row["generated_act"] or "",
             status=row["status"],
             active_scenario_id=row["active_scenario_id"],
             active_rules=active_rules,
             active_scenario_description=row["active_scenario_description"] or "",
-            narrative_context=row["narrative_context"],
+            user_prompt=row["user_prompt"],
+            system_prompt=row["system_prompt"] if "system_prompt" in row.keys() else None,
+            synopsis_beat=row["synopsis_beat"] if "synopsis_beat" in row.keys() else None,
             beat_type=BeatType(raw_type) if raw_type else None,
             created_at=created_at,
         )
