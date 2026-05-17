@@ -78,7 +78,7 @@ class PromptBuilder:
         escenarios_str = self._format_escenarios(story)
 
         if template:
-            persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
+            persona = self._get_persona_gramatical(story.relator, config=story.narrator_config)
             return template.format(
                 title=story.title,
                 atmosfera=story.atmosfera,
@@ -94,7 +94,7 @@ class PromptBuilder:
         raise ValueError(f"Template system no encontrado: {template_name}")
 
     def _get_persona_gramatical(self, relator: str, config: dict | None = None) -> str:
-        return self._persona.resolve(relator, storyteller_config=config)
+        return self._persona.resolve(relator, narrator_config=config)
 
     def _build_journal_context(self, journal: NarrativeJournal | None) -> str:
         """Construye el contexto del journal para el prompt."""
@@ -153,7 +153,7 @@ class PromptBuilder:
             previous_beats, max_chars=strategy.max_context_chars
         )
         journal_context = self._build_journal_context(journal)
-        persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
+        persona = self._get_persona_gramatical(story.relator, config=story.narrator_config)
         reglas_str = self._format_reglas(story.reglas)
         escenarios_str = self._format_escenarios(story)
 
@@ -348,8 +348,8 @@ Extiende este momento (150-400 palabras)."""
     def get_beat_info(self, beat_id: int) -> dict:
         return self._beat_repo.get_by_id(beat_id)
 
-    def _build_storyteller_block(self, config: dict) -> str:
-        """Formatea storyteller_config completo para el prompt (Spec-070/180)."""
+    def _build_narrator_block(self, config: dict) -> str:
+        """Formatea narrator_config completo para el prompt (Spec-070/180)."""
         if not config:
             return ""
         lines = ["== Perfil del Narrador =="]
@@ -435,14 +435,14 @@ Extiende este momento (150-400 palabras)."""
             return None
         rules = active_rules if active_rules is not None else story.reglas
         reglas_str = "\n".join(f"- {r}" for r in rules) if rules else "Ninguna"
-        storyteller_config_block = self._build_storyteller_block(story.storyteller_config or {})
+        narrator_config_block = self._build_narrator_block(story.narrator_config or {})
         word_limit = self._beat_repo.get_word_limit(beat_number, "entre 350 y 430 palabras")
         return system.format(
             relator=story.relator,
             atmosfera=story.atmosfera,
             protagonistas=self._format_cast(story),
             reglas=reglas_str,
-            storyteller_config_block=storyteller_config_block,
+            narrator_config_block=narrator_config_block,
             word_limit=word_limit,
         )
 

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from src.application.dto import StoryCreateDTO
+from src.application.services.narrator_config_sanitizer import sanitize_narrator_config
 from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
 from src.application.use_cases.create_story import CreateStoryUseCase
@@ -36,17 +37,25 @@ def get_story_by_id_use_case(repo=Depends(_story_repo)) -> GetStoryByIdUseCase:
 def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
     """Traduce StoryCreateRequest (capa presentación) → StoryCreateDTO (capa aplicación).
 
-    Resuelve tres incompatibilidades entre capas:
-    1. escenarios: str → list[str]  (usa storyteller_config.scenarios si existe)
-    2. typed_rules: ausente en request → list[dict] desde storyteller_config.rules
+    Resuelve incompatibilidades entre capas:
+    1. escenarios: str → list[str]  (usa narrator_config.scenarios si existe)
+       y escenarios_full con description desde narrator_config.scenarios
+    2. typed_rules: ausente en request → list[dict] desde narrator_config.rules
     3. rules[].text → content  (campo renombrado entre frontend y use case)
+    4. narrator_config persistido se depura (Spec-190 §4.3).
     """
-    sc: dict = req.storyteller_config or {}
+    sc: dict = req.narrator_config or {}
 
-    # 1. Escenarios: preferir estructura rica de storyteller_config, fallback al string
+    # 1. Escenarios: preferir estructura rica de narrator_config, fallback al string
     raw_scenarios: list[dict] = sc.get("scenarios") or []
+    escenarios_full: list[dict] = []
     if raw_scenarios:
         escenarios_list = [s.get("name", "") for s in raw_scenarios if s.get("name")]
+        escenarios_full = [
+            {"name": s.get("name", ""), "description": s.get("description", "")}
+            for s in raw_scenarios
+            if s.get("name")
+        ]
     else:
         escenarios_list = [
             chunk.split(":")[0].strip()
@@ -54,7 +63,7 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
             if chunk.strip()
         ]
 
-    # 2. Typed rules: desde storyteller_config.rules, mapeando text → content
+    # 2. Typed rules: desde narrator_config.rules, mapeando text → content
     raw_rules: list[dict] = sc.get("rules") or []
     typed_rules = [
         {
@@ -71,10 +80,13 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
         protagonista=req.protagonista,
         relator=req.relator,
         escenarios=escenarios_list,
+        escenarios_full=escenarios_full,
         sinopsis=req.sinopsis,
-        atmosfera=req.atmosfera,
+        genero=req.genero,
+        subgenero=req.subgenero,
+        tono=req.tono,
         reglas=req.reglas,
-        storyteller_config=req.storyteller_config,
+        narrator_config=sanitize_narrator_config(req.narrator_config),
         typed_rules=typed_rules,
         personajes_full=req.personajes_full,
     )
@@ -122,7 +134,9 @@ async def list_stories(
             title=s.title,
             status=s.status.value,
             created_at=s.created_at,
-            atmosfera=s.atmosfera,
+            genero=s.genero,
+            subgenero=s.subgenero,
+            tono=s.tono,
             protagonista=s.protagonista,
         )
         for s in stories
@@ -189,12 +203,24 @@ async def update_story(
     story.protagonista = dto.protagonista
     story.relator = dto.relator
     story.sinopsis = dto.sinopsis
-    story.atmosfera = dto.atmosfera
+    story.genero = dto.genero
+    story.subgenero = dto.subgenero
+    story.tono = dto.tono
     story.reglas = dto.reglas
-    story.storyteller_config = dto.storyteller_config
+    story.narrator_config = dto.narrator_config
     story.personajes_full = dto.personajes_full or []
 
-    if dto.escenarios:
+    if dto.escenarios_full:
+        story.scenarios = [
+            Scenario(
+                story_id=story.id,
+                order_index=i,
+                name=s.get("name", ""),
+                description=s.get("description", ""),
+            )
+            for i, s in enumerate(dto.escenarios_full)
+        ]
+    elif dto.escenarios:
         story.scenarios = [
             Scenario(story_id=story.id, order_index=i, name=name)
             for i, name in enumerate(dto.escenarios)
@@ -256,10 +282,12 @@ async def get_story(
         title=story.title,
         status=story.status.value,
         created_at=story.created_at,
-        atmosfera=story.atmosfera,
+        genero=story.genero,
+        subgenero=story.subgenero,
+        tono=story.tono,
         protagonista=story.protagonista,
         relator=story.relator,
         sinopsis=story.sinopsis,
-        storyteller_config=story.storyteller_config,
+        narrator_config=story.narrator_config,
         personajes_full=story.personajes_full,
     )

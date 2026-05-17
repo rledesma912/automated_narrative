@@ -51,8 +51,8 @@ def main() -> None:
     generate_parser.add_argument("--escenarios", help="Escenario(s)")
     generate_parser.add_argument("--sinopsis", help="Sinopsis de la historia")
     generate_parser.add_argument(
-        "--atmosfera",
-        help="Atmósfera de la historia",
+        "--genero",
+        help="Género de la historia (atmósfera). El YAML (--input) trae además subgénero y tono.",
     )
     generate_parser.add_argument(
         "--input",
@@ -123,7 +123,7 @@ def main() -> None:
                     relator="",
                     escenarios="",
                     sinopsis="",
-                    atmosfera="",
+                    genero="",
                     use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
@@ -142,8 +142,8 @@ def main() -> None:
                     campos_faltantes.append("--escenarios")
                 if not args.sinopsis:
                     campos_faltantes.append("--sinopsis")
-                if not args.atmosfera:
-                    campos_faltantes.append("--atmosfera")
+                if not args.genero:
+                    campos_faltantes.append("--genero")
 
                 if campos_faltantes:
                     print(
@@ -162,7 +162,7 @@ def main() -> None:
                     relator=args.relator or "tercera_persona",
                     escenarios=args.escenarios,
                     sinopsis=args.sinopsis,
-                    atmosfera=args.atmosfera,
+                    genero=args.genero,
                     use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,

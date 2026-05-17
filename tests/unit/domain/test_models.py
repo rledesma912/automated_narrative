@@ -13,7 +13,7 @@ class TestStory:
             protagonista="Protagonist",
             relator="tercera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         assert story.title == "Test Story"
@@ -27,7 +27,7 @@ class TestStory:
             protagonista="P",
             relator="R",
             sinopsis="S",
-            atmosfera="A",
+            genero="A",
         )
 
         assert story.beats == []
@@ -123,7 +123,7 @@ class TestStoryBehavior:
             protagonista="P",
             relator="tercera_persona",
             sinopsis="S",
-            atmosfera="a",
+            genero="a",
             beats=beats or [],
         )
 
@@ -202,9 +202,11 @@ class TestStoryMetadata:
             protagonista="Irene",
             relator="tercera_persona",
             sinopsis="Una historia de terror.",
-            atmosfera="oscura",
+            genero="terror",
+            subgenero="psicologico",
+            tono="oscuro",
             reglas=["Regla A"],
-            storyteller_config={"voz": "primera"},
+            narrator_config={"voz": "primera"},
         )
         defaults.update(kwargs)
         return Story(**defaults)
@@ -221,34 +223,36 @@ class TestStoryMetadata:
         m = StoryMetadata.from_story(self._story())
         assert m.sinopsis == "Una historia de terror."
 
-    def test_from_story_copia_atmosfera(self):
+    def test_from_story_copia_genero_subgenero_tono(self):
         m = StoryMetadata.from_story(self._story())
-        assert m.atmosfera == "oscura"
+        assert m.genero == "terror"
+        assert m.subgenero == "psicologico"
+        assert m.tono == "oscuro"
 
     def test_from_story_copia_reglas(self):
         m = StoryMetadata.from_story(self._story())
         assert m.reglas == ["Regla A"]
 
-    def test_from_story_copia_storyteller_config(self):
+    def test_from_story_copia_narrator_config(self):
         m = StoryMetadata.from_story(self._story())
-        assert m.storyteller_config == {"voz": "primera"}
+        assert m.narrator_config == {"voz": "primera"}
 
     def test_has_rules_true_con_reglas(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", atmosfera="a", reglas=["x"])
+        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", genero="g", reglas=["x"])
         assert m.has_rules() is True
 
-    def test_has_rules_true_con_storyteller_config(self):
+    def test_has_rules_true_con_narrator_config(self):
         m = StoryMetadata(
             protagonista="P",
             relator="r",
             sinopsis="s",
-            atmosfera="a",
-            storyteller_config={"k": "v"},
+            genero="a",
+            narrator_config={"k": "v"},
         )
         assert m.has_rules() is True
 
     def test_has_rules_false_sin_nada(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", atmosfera="a")
+        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", genero="a")
         assert m.has_rules() is False
 
 
@@ -259,7 +263,7 @@ class TestStoryAggregate:
             protagonista="P",
             relator="tercera_persona",
             sinopsis="S",
-            atmosfera="a",
+            genero="a",
             beats=beats or [],
         )
 

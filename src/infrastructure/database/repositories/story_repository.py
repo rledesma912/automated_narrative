@@ -18,17 +18,19 @@ class SQLStoryRepository:
 
         await conn.execute(
             """INSERT OR REPLACE INTO story
-            (id, title, protagonista, relator, sinopsis, atmosfera,
-             storyteller_config, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (id, title, protagonista, relator, sinopsis, genero, subgenero, tono,
+             narrator_config, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story.id),
                 story.title,
                 story.protagonista,
                 story.relator,
                 story.sinopsis,
-                story.atmosfera,
-                json.dumps(story.storyteller_config) if story.storyteller_config else None,
+                story.genero,
+                story.subgenero,
+                story.tono,
+                json.dumps(story.narrator_config) if story.narrator_config else None,
                 story.status.value,
                 story.created_at.isoformat(),
             ),
@@ -84,8 +86,9 @@ class SQLStoryRepository:
         if story.scenarios:
             for s in story.scenarios:
                 await conn.execute(
-                    "INSERT INTO scenario (id, story_id, order_index, name) VALUES (?, ?, ?, ?)",
-                    (str(s.id), str(story.id), s.order_index, s.name),
+                    "INSERT INTO scenario (id, story_id, order_index, name, description) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
                 )
 
         await conn.commit()
@@ -131,6 +134,7 @@ class SQLStoryRepository:
                 story_id=UUID(s["story_id"]),
                 order_index=s["order_index"],
                 name=s["name"],
+                description=(s["description"] if "description" in s.keys() else "") or "",
             )
             for s in scenario_rows
         ]
@@ -184,6 +188,7 @@ class SQLStoryRepository:
                 story_id=UUID(s["story_id"]),
                 order_index=s["order_index"],
                 name=s["name"],
+                description=(s["description"] if "description" in s.keys() else "") or "",
             )
             for s in scenario_rows
         ]
@@ -434,7 +439,7 @@ class SQLStoryRepository:
         from datetime import datetime
 
         keys = row.keys()
-        raw_cfg = row["storyteller_config"] if "storyteller_config" in keys else None
+        raw_cfg = row["narrator_config"] if "narrator_config" in keys else None
         raw_created_at = row["created_at"] if "created_at" in keys else None
         created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
         return Story(
@@ -443,8 +448,10 @@ class SQLStoryRepository:
             protagonista=row["protagonista"],
             relator=row["relator"],
             sinopsis=row["sinopsis"],
-            atmosfera=row["atmosfera"],
-            storyteller_config=json.loads(raw_cfg) if raw_cfg else None,
+            genero=(row["genero"] if "genero" in keys else "") or "",
+            subgenero=(row["subgenero"] if "subgenero" in keys else "") or "",
+            tono=(row["tono"] if "tono" in keys else "") or "",
+            narrator_config=json.loads(raw_cfg) if raw_cfg else None,
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,

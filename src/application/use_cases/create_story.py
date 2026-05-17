@@ -22,15 +22,28 @@ class CreateStoryUseCase:
             protagonista=dto.protagonista,
             relator=dto.relator,
             sinopsis=dto.sinopsis,
-            atmosfera=dto.atmosfera,
+            genero=dto.genero,
+            subgenero=dto.subgenero,
+            tono=dto.tono,
             reglas=dto.reglas,
             status=initial_status,
-            storyteller_config=dto.storyteller_config,
+            narrator_config=dto.narrator_config,
             personajes_full=dto.personajes_full,
         )
 
-        # Crear objetos Scenario
-        if dto.escenarios:
+        # Crear objetos Scenario. Si el DTO trae escenarios_full (con
+        # description), se prefiere; si no, se cae a la lista de nombres.
+        if dto.escenarios_full:
+            story.scenarios = [
+                Scenario(
+                    story_id=story.id,
+                    order_index=i,
+                    name=s.get("name", ""),
+                    description=s.get("description", ""),
+                )
+                for i, s in enumerate(dto.escenarios_full)
+            ]
+        elif dto.escenarios:
             story.scenarios = [
                 Scenario(story_id=story.id, order_index=i, name=name)
                 for i, name in enumerate(dto.escenarios)

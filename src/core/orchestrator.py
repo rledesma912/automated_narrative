@@ -86,12 +86,15 @@ class StoryRunner:
         relator: str,
         escenarios: list[str] | str,
         sinopsis: str,
-        atmosfera: str,
+        genero: str = "",
+        subgenero: str = "",
+        tono: str = "",
         reglas: list[str] | None = None,
         stop_after: str | None = None,
-        storyteller_config: dict | None = None,
+        narrator_config: dict | None = None,
         typed_rules: list[dict] | None = None,
         personajes_full: list[dict] | None = None,
+        escenarios_full: list[dict] | None = None,
     ) -> Story:
         """Flujo completo: crear story + plan + narrar todos los beats.
 
@@ -122,10 +125,13 @@ class StoryRunner:
             protagonista=protagonista,
             relator=relator,
             escenarios=escenarios_list,
+            escenarios_full=escenarios_full or [],
             sinopsis=sinopsis,
-            atmosfera=atmosfera,
+            genero=genero,
+            subgenero=subgenero,
+            tono=tono,
             reglas=reglas or [],
-            storyteller_config=storyteller_config,
+            narrator_config=narrator_config,
             typed_rules=typed_rules or [],
             personajes_full=personajes_full or [],
         )
@@ -173,7 +179,7 @@ class StoryRunner:
                 "title": title,
                 "protagonista": protagonista,
                 "sinopsis": sinopsis,
-                "atmosfera": atmosfera,
+                "atmosfera": story.atmosfera,
                 "relator": relator,
             }
             try:

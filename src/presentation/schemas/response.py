@@ -12,11 +12,13 @@ class StoryResponse(BaseModel):
     title: str
     status: str
     created_at: datetime
-    atmosfera: str | None = None
+    genero: str | None = None
+    subgenero: str | None = None
+    tono: str | None = None
     protagonista: str | None = None
     relator: str | None = None
     sinopsis: str | None = None
-    storyteller_config: dict | None = None
+    narrator_config: dict | None = None
     personajes_full: list | None = None
 
     class Config:

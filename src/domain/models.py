@@ -83,6 +83,7 @@ class Scenario(BaseModel):
     story_id: UUID4
     order_index: int
     name: str
+    description: str = ""
 
 
 class MacroBeat(BaseModel):
@@ -137,9 +138,11 @@ class StoryMetadata(BaseModel):
     protagonista: str
     relator: str
     sinopsis: str
-    atmosfera: str
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
     reglas: list[str] = []
-    storyteller_config: Optional[dict] = None
+    narrator_config: Optional[dict] = None
     personajes_full: list[dict] = []
 
     @classmethod
@@ -148,15 +151,17 @@ class StoryMetadata(BaseModel):
             protagonista=story.protagonista,
             relator=story.relator,
             sinopsis=story.sinopsis,
-            atmosfera=story.atmosfera,
+            genero=story.genero,
+            subgenero=story.subgenero,
+            tono=story.tono,
             reglas=story.reglas,
-            storyteller_config=story.storyteller_config,
+            narrator_config=story.narrator_config,
             personajes_full=story.personajes_full,
         )
 
     def has_rules(self) -> bool:
         """True si hay reglas de narrativa o configuración de narrador."""
-        return bool(self.reglas or self.storyteller_config)
+        return bool(self.reglas or self.narrator_config)
 
 
 class GeneratedNarrative(BaseModel):
@@ -178,7 +183,9 @@ class Story(BaseModel):
     protagonista: str = Field(..., min_length=1)
     relator: str = Field(..., min_length=1)
     sinopsis: str = Field(..., min_length=1)
-    atmosfera: str = Field(..., min_length=1)
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
@@ -186,16 +193,28 @@ class Story(BaseModel):
     status: StoryStatus = StoryStatus.DRAFT
     created_at: datetime = Field(default_factory=now_argentina)
 
-    storyteller_config: Optional[dict] = None
+    narrator_config: Optional[dict] = None
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
 
-    @field_validator("title", "protagonista", "relator", "sinopsis", "atmosfera", mode="before")
+    @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod
     def _strip_whitespace(cls, v: str) -> str:
         if isinstance(v, str):
             return v.strip()
         return v
+
+    @property
+    def atmosfera(self) -> str:
+        """String de atmósfera derivado de genero/subgenero/tono (Spec-190 §T6.3).
+
+        Formato: `genero (subgenero) - tono`. Sustituye a la columna `atmosfera`
+        eliminada; los prompts que necesitan un único string lo consumen por acá.
+        """
+        genero = self.genero or ""
+        subgenero = f" ({self.subgenero})" if self.subgenero else ""
+        tono = f" - {self.tono}" if self.tono else ""
+        return f"{genero}{subgenero}{tono}".strip()
 
     # -- Spec 070: comportamiento de dominio --
 

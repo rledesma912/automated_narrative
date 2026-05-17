@@ -13,9 +13,11 @@ class StoryCreateRequest(BaseModel):
     relator: str
     escenarios: str
     sinopsis: str
-    atmosfera: str
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
     reglas: list[str] = Field(default_factory=list)
-    storyteller_config: Optional[dict] = None
+    narrator_config: Optional[dict] = None
     personajes_full: list[dict] = Field(default_factory=list)
 
 

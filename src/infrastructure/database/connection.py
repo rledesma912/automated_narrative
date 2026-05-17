@@ -39,8 +39,10 @@ async def init_db() -> None:
             protagonista TEXT,
             relator TEXT,
             sinopsis TEXT,
-            atmosfera TEXT,
-            storyteller_config TEXT,
+            genero TEXT,
+            subgenero TEXT,
+            tono TEXT,
+            narrator_config TEXT,
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
@@ -97,6 +99,7 @@ async def init_db() -> None:
             story_id TEXT NOT NULL,
             order_index INTEGER NOT NULL,
             name TEXT NOT NULL,
+            description TEXT DEFAULT '',
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)

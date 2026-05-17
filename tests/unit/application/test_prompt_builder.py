@@ -20,7 +20,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="tercera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
             reglas=["Sin miedo"],
             scenarios=[Scenario(story_id=story_id, order_index=0, name="Location")],
         )
@@ -41,7 +41,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         beat = Beat(number=1, summary="El protagonista entra a la casa")
@@ -61,7 +61,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         beat1 = Beat(
@@ -85,7 +85,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="Irene",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         beat = Beat(number=1, summary="Llegan a la casa")
@@ -105,7 +105,7 @@ class TestPromptBuilder:
             protagonista="Ricardo, Irene",
             relator="Irene",
             sinopsis="SINOPSIS_UNICA_IDENTIFICADORA_XYZ",
-            atmosfera="terror folclórico",
+            genero="terror folclórico",
         )
         beat = Beat(number=1, summary="La advertencia de la abuela")
 
@@ -124,7 +124,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Sinopsis única de prueba para verificar fallback.",
-            atmosfera="terror",
+            genero="terror",
         )
         beat = Beat(number=1, summary="Inicio")
 
@@ -186,7 +186,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror_psicologico",
+            genero="terror_psicologico",
         )
 
         builder = PromptBuilder()
@@ -205,7 +205,7 @@ class TestPromptVariants:
             protagonista="Ana",
             relator="primera_persona",
             sinopsis="Una mujer investiga una casa abandonada.",
-            atmosfera="terror",
+            genero="terror",
         )
 
     def test_compact_variant_loads_compact_voice_template(self):
@@ -281,7 +281,7 @@ class TestBuildScenarioResolverPromptActsEnrichment:
             protagonista="P",
             relator="tercera_persona",
             sinopsis="S",
-            atmosfera="a",
+            genero="a",
             reglas=["regla 1"],
             scenarios=[Scenario(story_id=sid, order_index=0, name="Escenario A")],
         )

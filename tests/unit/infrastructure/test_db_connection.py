@@ -70,7 +70,10 @@ class TestDbConnection:
             "protagonista",
             "relator",
             "sinopsis",
-            "atmosfera",
+            "genero",
+            "subgenero",
+            "tono",
+            "narrator_config",
             "status",
             "created_at",
         }

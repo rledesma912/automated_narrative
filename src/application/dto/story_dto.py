@@ -12,14 +12,17 @@ class StoryCreateDTO(BaseModel):
     protagonista: str = Field(..., min_length=1)
     relator: str = Field(..., min_length=1)
     escenarios: list[str] = []
+    escenarios_full: list[dict] = []
     sinopsis: str = Field(..., min_length=1)
-    atmosfera: str = Field(..., min_length=1)
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
     reglas: list[str] = []
-    storyteller_config: Optional[dict] = None
+    narrator_config: Optional[dict] = None
     typed_rules: list[dict] = []
     personajes_full: list[dict] = []
 
-    @field_validator("title", "protagonista", "relator", "sinopsis", "atmosfera", mode="before")
+    @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod
     def _strip_whitespace(cls, v: str) -> str:
         if isinstance(v, str):

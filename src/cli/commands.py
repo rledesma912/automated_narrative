@@ -32,7 +32,7 @@ def generate(
     relator: str,
     escenarios: str,
     sinopsis: str,
-    atmosfera: str,
+    genero: str,
     use_mock: bool,
     output_dir: Path,
     input_file: str | None = None,
@@ -47,7 +47,7 @@ def generate(
             Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
     """
     reglas: list[str] = []
-    storyteller_config: dict | None = None
+    narrator_config: dict | None = None
     typed_rules: list[dict] = []
     personajes_full: list[dict] = []
 
@@ -63,14 +63,14 @@ def generate(
                 relator,
                 escenarios,
                 sinopsis,
-                atmosfera,
+                genero,
                 use_mock,
                 output_dir,
                 provider,
                 reglas,
                 debug=debug,
                 hasta=hasta,
-                storyteller_config=storyteller_config,
+                narrator_config=narrator_config,
                 typed_rules=typed_rules,
                 personajes_full=personajes_full,
                 input_file=input_file,
@@ -91,17 +91,20 @@ async def _generate_async(
     relator: str,
     escenarios: str,
     sinopsis: str,
-    atmosfera: str,
+    genero: str,
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
     reglas: list[str] | None = None,
     debug: bool = False,
     hasta: str | None = None,
-    storyteller_config: dict | None = None,
+    narrator_config: dict | None = None,
     typed_rules: list[dict] | None = None,
     personajes_full: list[dict] | None = None,
     input_file: str | None = None,
+    subgenero: str = "",
+    tono: str = "",
+    escenarios_full: list[dict] | None = None,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
@@ -116,10 +119,13 @@ async def _generate_async(
             protagonista = dto.protagonista
             relator = dto.relator
             escenarios = dto.escenarios
+            escenarios_full = dto.escenarios_full
             sinopsis = dto.sinopsis
-            atmosfera = dto.atmosfera
+            genero = dto.genero
+            subgenero = dto.subgenero
+            tono = dto.tono
             reglas = dto.reglas
-            storyteller_config = dto.storyteller_config
+            narrator_config = dto.narrator_config
             typed_rules = dto.typed_rules
             personajes_full = dto.personajes_full
         except YamlStoryLoaderError as e:
@@ -138,12 +144,15 @@ async def _generate_async(
         relator=relator,
         escenarios=escenarios,
         sinopsis=sinopsis,
-        atmosfera=atmosfera,
+        genero=genero,
+        subgenero=subgenero,
+        tono=tono,
         reglas=reglas or [],
         stop_after=hasta,
-        storyteller_config=storyteller_config,
+        narrator_config=narrator_config,
         typed_rules=typed_rules or [],
         personajes_full=personajes_full or [],
+        escenarios_full=escenarios_full or [],
     )
 
     await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
