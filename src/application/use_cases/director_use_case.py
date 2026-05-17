@@ -301,7 +301,7 @@ class DirectorUseCase:
         macro_beat.active_rules = active_rules
         macro_beat.active_scenario_description = active_scenario_desc
 
-        macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
+        macro_beat.user_prompt = self.prompt_builder.build_narrative_context(
             macro_beat, beat_anchors, journal, story=story
         )
 

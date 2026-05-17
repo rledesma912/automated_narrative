@@ -121,14 +121,17 @@ class PromptBuilder:
         if not previous_beats:
             return "Sin contexto anterior"
 
-        completed = [b for b in previous_beats if b.status == BeatStatus.COMPLETED and b.content]
+        completed = [
+            b for b in previous_beats if b.status == BeatStatus.COMPLETED and b.generated_act
+        ]
         if not completed:
             return "Sin contexto anterior"
 
         last_2 = completed[-2:]
         context_parts = []
         for b in last_2:
-            content = b.content[:max_chars] + "..." if len(b.content) > max_chars else b.content
+            act = b.generated_act
+            content = act[:max_chars] + "..." if len(act) > max_chars else act
             context_parts.append(content)
 
         return "\n\n".join(context_parts)
@@ -554,7 +557,7 @@ Extiende este momento (150-400 palabras)."""
 
     def build_voz_user_prompt(self, macro_beat: MacroBeat) -> str:
         """User prompt para VOZ (nueva arquitectura): solo contiene narrative_context."""
-        nc = macro_beat.narrative_context or ""
+        nc = macro_beat.user_prompt or ""
         return f"{nc}\n\nEscribí el fragmento del relato para este acto."
 
     def build_journal_prompt(
@@ -592,7 +595,7 @@ Extiende este momento (150-400 palabras)."""
                 previous_state_section=previous_state_section,
                 beat_number=beat.number,
                 beat_summary=beat.summary,
-                beat_content=beat.content[:800] if beat.has_content() else "[Aún no generado]",
+                beat_content=beat.generated_act[:800] if beat.has_content() else "[Aún no generado]",
                 consistency_rules=consistency_rules,
             )
 

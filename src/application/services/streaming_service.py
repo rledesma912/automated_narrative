@@ -97,7 +97,7 @@ async def stream_story(
                 await queue.put(
                     StreamEvent(
                         event=StreamEventType.BEAT_DONE,
-                        data={"number": beat_number, "content": macro_beat.content},
+                        data={"number": beat_number, "content": macro_beat.generated_act},
                     )
                 )
 
