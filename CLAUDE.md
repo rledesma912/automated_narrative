@@ -135,9 +135,16 @@ BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 
 ## Database
 
-SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Ocho tablas** (Spec-180/300/312):
+SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Ocho tablas** (Spec-190):
 
-`story`, `rule`, `macro_beat` (con `summary`, `active_scenario_id`, `narrative_context`, `content`, `status`, `type`, `memory_snapshot`), `macro_beat_rule` (M:N), `scenario`, `narrative_anchors` (5 pilares), `narrative_journal` (estado vivo cross-beat), `generated_narrative` (variantes consolidadas).
+- `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, tono, narrator_config (JSON), status, created_at
+- `character`: id, story_id, name, role, traits (JSON), order_index
+- `rule`: id, story_id, content, type, intensity, applies_to_beat
+- `macro_beat`: id, story_id, number, summary, synopsis_beat, generated_act, status, active_scenario_id, active_scenario_description, system_prompt, user_prompt, type
+- `scenario`: id, story_id, order_index, name, description
+- `narrative_anchors`: id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis, resonance_peripeteia, resonance_residual
+- `narrative_journal`: id, story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state
+- `generated_narrative`: id, story_template_id, title, content, status
 
 Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`.
 
@@ -146,9 +153,7 @@ Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQL
 ```bash
 uv run python -m src generate --input <yaml> [--mock] [--debug] [--hasta <checkpoint>]
 uv run python -m src generate --story-id <uuid>           # retoma historia
-uv run python -m src plan --title "..."
 uv run python -m src narrate --story-id <uuid> --beats 1,2,3
-uv run python -m src export --story-id <uuid> --format md
 uv run python -m src export-yaml <story_id>               # round-trip Story → YAML
 ```
 
