@@ -19,8 +19,8 @@ class SQLStoryRepository:
         await conn.execute(
             """INSERT OR REPLACE INTO story
             (id, title, protagonista, relator, sinopsis, atmosfera,
-             storyteller_config, personajes, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             storyteller_config, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 str(story.id),
                 story.title,
@@ -29,11 +29,28 @@ class SQLStoryRepository:
                 story.sinopsis,
                 story.atmosfera,
                 json.dumps(story.storyteller_config) if story.storyteller_config else None,
-                json.dumps(story.personajes_full),
                 story.status.value,
                 story.created_at.isoformat(),
             ),
         )
+
+        # Persistir personajes en la tabla character (borrar y re-insertar).
+        # El id de DB es un UUID fresco, igual que en rule/scenario; el id
+        # corto del YAML (P1, P2…) es story-scoped y se conserva solo en memoria.
+        await conn.execute("DELETE FROM character WHERE story_id = ?", (str(story.id),))
+        for idx, p in enumerate(story.personajes_full or [], start=1):
+            await conn.execute(
+                "INSERT INTO character (id, story_id, name, role, traits, order_index) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    str(uuid.uuid4()),
+                    str(story.id),
+                    p.get("name", ""),
+                    p.get("role", ""),
+                    json.dumps(list(p.get("traits") or [])),
+                    idx,
+                ),
+            )
 
         # Persistir reglas en la tabla rule (borrar y re-insertar)
         # Siempre se genera un UUID fresco como PK de DB para evitar colisiones entre historias.
@@ -118,12 +135,15 @@ class SQLStoryRepository:
             for s in scenario_rows
         ]
 
+        personajes = await self._load_personajes(conn, str(story_id))
+
         await conn.close()
 
         story = self._row_to_story(row)
         story.reglas = reglas
         story.typed_rules = typed_rules
         story.scenarios = scenarios
+        story.personajes_full = personajes
         return story
 
     async def get_by_string_id(self, story_id: str) -> Story | None:
@@ -168,12 +188,15 @@ class SQLStoryRepository:
             for s in scenario_rows
         ]
 
+        personajes = await self._load_personajes(conn, story_id)
+
         await conn.close()
 
         story = self._row_to_story(row)
         story.reglas = reglas
         story.typed_rules = typed_rules
         story.scenarios = scenarios
+        story.personajes_full = personajes
         return story
 
     async def update(self, story: Story) -> Story:
@@ -228,10 +251,13 @@ class SQLStoryRepository:
                 for s in scenario_rows
             ]
 
+            personajes = await self._load_personajes(conn, story_id)
+
             story = self._row_to_story(row)
             story.reglas = reglas
             story.typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
             story.scenarios = scenarios
+            story.personajes_full = personajes
             stories.append(story)
 
         await conn.close()
@@ -337,6 +363,7 @@ class SQLStoryRepository:
         await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
         await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
         await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))
+        await conn.execute("DELETE FROM character WHERE story_id = ?", (sid,))
         await conn.execute("DELETE FROM story WHERE id = ?", (sid,))
         await conn.commit()
         await conn.close()
@@ -376,13 +403,38 @@ class SQLStoryRepository:
         await conn.commit()
         await conn.close()
 
+    async def _load_personajes(self, conn, story_id: str) -> list[dict]:
+        """Carga los personajes de una historia desde la tabla character.
+
+        Reconstruye el id corto story-scoped (P1, P2…) desde order_index, ya
+        que no se persiste: la tabla guarda un UUID como PK (convención de
+        rule/scenario). El resultado alimenta `Story.personajes_full`.
+        """
+        cursor = await conn.execute(
+            "SELECT name, role, traits, order_index FROM character "
+            "WHERE story_id = ? ORDER BY order_index",
+            (story_id,),
+        )
+        rows = await cursor.fetchall()
+        personajes = []
+        for c in rows:
+            raw_traits = c["traits"]
+            personajes.append(
+                {
+                    "id": f"P{c['order_index']}",
+                    "name": c["name"],
+                    "role": c["role"] or "",
+                    "traits": json.loads(raw_traits) if raw_traits else [],
+                }
+            )
+        return personajes
+
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""
         from datetime import datetime
 
         keys = row.keys()
         raw_cfg = row["storyteller_config"] if "storyteller_config" in keys else None
-        raw_personajes = row["personajes"] if "personajes" in keys else None
         raw_created_at = row["created_at"] if "created_at" in keys else None
         created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
         return Story(
@@ -393,7 +445,6 @@ class SQLStoryRepository:
             sinopsis=row["sinopsis"],
             atmosfera=row["atmosfera"],
             storyteller_config=json.loads(raw_cfg) if raw_cfg else None,
-            personajes_full=json.loads(raw_personajes) if raw_personajes else [],
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,
