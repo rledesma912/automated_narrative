@@ -9,7 +9,6 @@ from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.services.checkpoint import VALID_CHECKPOINTS, ordinal
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
-from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import (
     Beat,
@@ -18,7 +17,6 @@ from src.domain.models import (
     MacroBeat,
     NarrativeJournal,
     Story,
-    StoryPlan,
 )
 from src.infrastructure.normalizers import ResponseNormalizer
 
@@ -32,7 +30,7 @@ class DirectorUseCase:
     """Orquestador de la generación de historias punta a punta.
 
     Responsabilidades:
-    - execute()           → planificación solamente (CLI `plan`)
+    - prepare_story()     → fase global analyst + resolver (planificación)
     - execute_full()      → plan + narración + journal, beat-by-beat (AsyncGenerator)
     - execute_narration() → narración sobre beats pre-existentes (AsyncGenerator)
     """
@@ -73,69 +71,6 @@ class DirectorUseCase:
             normalizer=self.normalizer,
             debug_collector=self.debug_collector,
         )
-
-    async def _analyze_story(self, story: Story) -> str:
-        """Fase 0: expande la sinopsis en un narrative brief estructurado."""
-        role_cfg = settings.role_config("story_analyst")
-        model = role_cfg.get("model", "mistral:latest")
-        temperature = role_cfg.get("temperature", 0.3)
-
-        prompt = self.prompt_builder.build_story_analyst_prompt(story)
-        system_prompt = self.prompt_builder.build_story_analyst_system()
-        response = await self.llm.generate(
-            prompt=prompt,
-            system_prompt=system_prompt,
-            model=model,
-            temperature=temperature,
-            role="story_analyst",
-        )
-
-        brief = self.normalizer.normalize(response.text, model_name=model).strip()
-
-        variant = self.prompt_builder.get_variant_name()
-        self.debug_collector.record(
-            role="story_analyst",
-            beat_number=None,
-            source_component=DebugCollector.source_label(self),
-            model=model,
-            temperature=temperature,
-            num_ctx=role_cfg.get("num_ctx"),
-            num_predict=role_cfg.get("num_predict"),
-            system_prompt=system_prompt,
-            user_prompt=prompt,
-            raw_response=response.text,
-            normalized_response=brief,
-            parser_result="n/a",
-            elapsed_s=response.elapsed_s,
-            system_prompt_file="story_analyst_system_compact.md" if variant == "compact" else "n/a",
-            user_prompt_file="story_analyst_compact.md"
-            if variant == "compact"
-            else "story_analyst.md",
-        )
-
-        story.narrative_brief = brief
-        logger.debug(f"[DIRECTOR] Narrative brief generado: {len(brief)} chars")
-        return brief
-
-    async def execute(self, story: Story) -> StoryPlan:
-        """Planificación solamente. Usado por CLI `plan`."""
-        mapper = SynopsisBeatMapper(
-            self.llm,
-            self.prompt_builder,
-            normalizer=self.normalizer,
-            debug_collector=self.debug_collector,
-        )
-
-        logger.debug(
-            f"[DIRECTOR] Planificación via mapper — "
-            f"prompt_builder={self.prompt_builder.__class__.__name__}",
-        )
-
-        brief = await self._analyze_story(story)
-        beats = await mapper.map(story, narrative_brief=brief)
-        logger.debug(f"[DIRECTOR] Plan generado: {len(beats)} beats")
-
-        return StoryPlan(story_id=story.id, title=story.title, beats=beats)
 
     async def prepare_story(
         self,

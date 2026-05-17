@@ -199,21 +199,27 @@ async def _plan_async(
     """Async implementation of plan."""
     await _init_database()
 
+    from src.application.dto import StoryCreateDTO
+
     container = CLIContainer(use_mock=use_mock, provider=provider)
     create_story = container.create_story_use_case()
-    create_plan = container.director_use_case()
+    director = container.director_use_case()
 
-    story = await create_story.execute(
+    # `plan` solo recibe --title, sin sinopsis; se usan placeholders para
+    # satisfacer la validación de Story y poder ejercitar la fase global.
+    dto = StoryCreateDTO(
         title=title,
-        protagonista="",
+        protagonista=title,
         relator="tercera_persona",
-        escenarios="",
-        sinopsis="",
-        atmosfera="",
+        escenarios=[],
+        sinopsis=title,
+        atmosfera="neutra",
+        reglas=[],
     )
+    story = await create_story.execute(dto)
 
-    plan_result = await create_plan.execute(story)
-    logger.info(f"[COMANDOS] Se han generado {len(plan_result.beats)} beats")
+    _anchors, _rule_distribution, num_beats = await director.prepare_story(story)
+    logger.info(f"[COMANDOS] Plan preparado: {num_beats} beats")
 
 
 def narrate(

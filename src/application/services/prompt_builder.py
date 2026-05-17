@@ -277,32 +277,6 @@ Extiende este momento (150-400 palabras)."""
             reglas=reglas_str,
         )
 
-    def build_synopsis_mapper_prompt(self, story: "Story", narrative_brief: str = "") -> str:
-        """Prompt principal del SynopsisBeatMapper, selecciona variante por perfil."""
-        strategy = self._get_strategy()
-        template_file = strategy.get_template_name("synopsis_mapper")
-        template = self._load_prompt(template_file)
-        if not template:
-            logger.warning(f"[PB] {template_file} no encontrado — usando synopsis_mapper.md")
-            template = self._load_prompt("synopsis_mapper.md")
-
-        reglas_str = self._format_reglas(story.reglas)
-        escenarios_str = self._format_escenarios(story)
-        beats_spec_compact = self._format_beats_spec_compact()
-
-        return template.format(
-            title=story.title,
-            sinopsis=story.sinopsis,
-            protagonistas=story.protagonista,
-            relator=story.relator,
-            escenarios=escenarios_str,
-            atmosfera=story.atmosfera,
-            reglas=reglas_str,
-            num_beats=self.num_beats,
-            beats_spec_compact=beats_spec_compact,
-            narrative_brief=narrative_brief,
-        )
-
     def build_synopsis_mapper_one_prompt(
         self,
         story: "Story",
