@@ -11,7 +11,6 @@ export interface Story {
   protagonista?: string;
   relator?: string;
   sinopsis?: string;
-  file_path?: string;
 }
 
 export interface Relato {

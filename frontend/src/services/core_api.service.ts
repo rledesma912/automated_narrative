@@ -55,14 +55,6 @@ export async function updateStory(
   return response.data;
 }
 
-export async function updateFilePath(storyId: string, filePath: string | null): Promise<void> {
-  await axios.patch(
-    `${CORE_API_URL}/api/v1/stories/${storyId}/file-path`,
-    { file_path: filePath },
-    { timeout: 5000 },
-  );
-}
-
 export interface GeneratedNarrative {
   id: string;
   story_template_id: string;
