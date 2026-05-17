@@ -16,24 +16,6 @@ from src.config import settings
 from src.domain.models import StoryStatus
 from src.infrastructure.container import CLIContainer
 from src.infrastructure.database.connection import init_db
-from src.utils.timezone import now_argentina
-
-
-def _write_markdown(story, output_dir: Path, renderer) -> Path:
-    """Renderiza la historia a Markdown y la escribe en output_dir. Retorna la ruta."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    md_content = renderer.render(story)
-    timestamp = now_argentina().strftime("%Y%m%d%H%M")
-    safe_title = (
-        "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
-        .strip()
-        .replace(" ", "_")
-        .lower()
-    )
-    output_path = output_dir / f"{safe_title}_{timestamp}.md"
-    output_path.write_text(md_content, encoding="utf-8")
-    return output_path
 
 
 async def _init_database() -> None:
@@ -324,49 +306,3 @@ async def _export_yaml_async(story_id: str, output: Path | None) -> None:
     written = exporter.export_to_file(story, output)
     logger.info(f"[COMANDOS] YAML exportado a: {written}")
     print(f"YAML escrito en: {written}")
-
-
-def export_(
-    story_id: str,
-    format: str,
-    output_dir: Path,
-    provider: str | None = None,  # noqa: ARG001
-) -> None:
-    """Export story to file."""
-    logger.info(f"[COMANDOS] Iniciando exportación para historia: {story_id}")
-
-    try:
-        import asyncio
-
-        asyncio.run(_export_async(story_id, format, output_dir))
-    except StoryNotFoundError:
-        raise
-    except Exception as e:
-        logger.error(f"[COMANDOS] Error en la exportación: {e}")
-        raise ExportError(str(e))
-
-    logger.info(f"[COMANDOS] Exportación completada para historia: {story_id}")
-
-
-async def _export_async(
-    story_id: str,
-    format: str,  # noqa: ARG001
-    _output_dir: Path,
-) -> None:
-    """Async implementation of export."""
-    await _init_database()
-
-    try:
-        story_uuid = UUID(story_id)
-    except ValueError:
-        raise ValidationError(f"Formato de UUID inválido: {story_id}")
-
-    container = CLIContainer()
-
-    story = await container.story_repo.get_by_id(story_uuid)
-    if not story:
-        raise StoryNotFoundError(story_id)
-
-    beats = await container.beat_repo.get_by_story(story_uuid)
-    story.beats = beats
-    logger.info("[COMANDOS] Historia exportada (sin archivo markdown)")

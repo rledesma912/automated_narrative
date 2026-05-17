@@ -85,21 +85,6 @@ def main() -> None:
         "--mock", action="store_true", help="Usar Mock LLM (solo para tests)"
     )
 
-    export_parser = subparsers.add_parser("export", help="Exportar historia a archivo")
-    export_parser.add_argument("--story-id", required=True, help="UUID de la historia")
-    export_parser.add_argument(
-        "--format",
-        default="markdown",
-        choices=["markdown", "json"],
-        help="Formato de export",
-    )
-    export_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(settings.output_dir),
-        help="Directorio de output",
-    )
-
     export_yaml_parser = subparsers.add_parser(
         "export-yaml",
         help="Exportar una historia a YAML canónico (Spec-217). Round-trip con generate --input.",
@@ -190,12 +175,6 @@ def main() -> None:
                 story_id=args.story_id,
                 beats=args.beats,
                 use_mock=args.mock,
-            )
-        elif args.command == "export":
-            commands.export_(
-                story_id=args.story_id,
-                format=args.format,
-                output_dir=args.output,
             )
         elif args.command == "export-yaml":
             commands.export_yaml(
