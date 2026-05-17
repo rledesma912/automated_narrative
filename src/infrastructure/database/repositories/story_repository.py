@@ -160,6 +160,8 @@ class SQLStoryRepository:
 
         personajes = await self._load_personajes(conn, str(story_id))
 
+        beats = await self._load_beats(conn, str(story_id))
+
         await conn.close()
 
         story = self._row_to_story(row)
@@ -167,6 +169,7 @@ class SQLStoryRepository:
         story.typed_rules = typed_rules
         story.scenarios = scenarios
         story.personajes_full = personajes
+        story.beats = beats
         return story
 
     async def get_by_string_id(self, story_id: str) -> Story | None:
@@ -452,6 +455,38 @@ class SQLStoryRepository:
                 }
             )
         return personajes
+
+    async def _load_beats(self, conn, story_id: str) -> list:
+        """Carga los beats de una historia desde la tabla macro_beat."""
+        from src.domain.models import BeatStatus, MacroBeat
+
+        cursor = await conn.execute(
+            "SELECT number, summary, synopsis_beat, type, status FROM macro_beat "
+            "WHERE story_id = ? ORDER BY number",
+            (story_id,),
+        )
+        rows = await cursor.fetchall()
+        beats = []
+        for b in rows:
+            raw_type = b["type"] if "type" in b.keys() else None
+            beat_type = None
+            if raw_type:
+                try:
+                    from src.domain.models import BeatType
+
+                    beat_type = BeatType(raw_type)
+                except ValueError:
+                    pass
+            beats.append(
+                MacroBeat(
+                    number=b["number"],
+                    summary=b["summary"] or "",
+                    synopsis_beat=b["synopsis_beat"] if "synopsis_beat" in b.keys() else None,
+                    beat_type=beat_type,
+                    status=BeatStatus(b["status"]) if b["status"] else BeatStatus.PENDING,
+                )
+            )
+        return beats
 
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""
