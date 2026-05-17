@@ -36,7 +36,7 @@ async def list_beats(
         BeatResponse(
             number=b.number,
             summary=b.summary,
-            content=b.content,
+            content=b.generated_act,
             status=b.status,
         )
         for b in beats
@@ -84,6 +84,6 @@ async def generate_beat(story_id: str, beat_number: int):
     return BeatResponse(
         number=generated_beat.number,
         summary=generated_beat.summary,
-        content=generated_beat.content,
+        content=generated_beat.generated_act,
         status=generated_beat.status,
     )
