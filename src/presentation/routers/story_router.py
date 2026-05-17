@@ -1,12 +1,12 @@
 """Story router."""
 
-from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from src.application.dto import StoryCreateDTO
+from src.application.services.narrator_config_sanitizer import sanitize_narrator_config
 from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
 from src.application.use_cases.create_story import CreateStoryUseCase
@@ -37,17 +37,25 @@ def get_story_by_id_use_case(repo=Depends(_story_repo)) -> GetStoryByIdUseCase:
 def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
     """Traduce StoryCreateRequest (capa presentación) → StoryCreateDTO (capa aplicación).
 
-    Resuelve tres incompatibilidades entre capas:
-    1. escenarios: str → list[str]  (usa storyteller_config.scenarios si existe)
-    2. typed_rules: ausente en request → list[dict] desde storyteller_config.rules
+    Resuelve incompatibilidades entre capas:
+    1. escenarios: str → list[str]  (usa narrator_config.scenarios si existe)
+       y escenarios_full con description desde narrator_config.scenarios
+    2. typed_rules: ausente en request → list[dict] desde narrator_config.rules
     3. rules[].text → content  (campo renombrado entre frontend y use case)
+    4. narrator_config persistido se depura (Spec-190 §4.3).
     """
-    sc: dict = req.storyteller_config or {}
+    sc: dict = req.narrator_config or {}
 
-    # 1. Escenarios: preferir estructura rica de storyteller_config, fallback al string
+    # 1. Escenarios: preferir estructura rica de narrator_config, fallback al string
     raw_scenarios: list[dict] = sc.get("scenarios") or []
+    escenarios_full: list[dict] = []
     if raw_scenarios:
         escenarios_list = [s.get("name", "") for s in raw_scenarios if s.get("name")]
+        escenarios_full = [
+            {"name": s.get("name", ""), "description": s.get("description", "")}
+            for s in raw_scenarios
+            if s.get("name")
+        ]
     else:
         escenarios_list = [
             chunk.split(":")[0].strip()
@@ -55,7 +63,7 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
             if chunk.strip()
         ]
 
-    # 2. Typed rules: desde storyteller_config.rules, mapeando text → content
+    # 2. Typed rules: desde narrator_config.rules, mapeando text → content
     raw_rules: list[dict] = sc.get("rules") or []
     typed_rules = [
         {
@@ -72,10 +80,13 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
         protagonista=req.protagonista,
         relator=req.relator,
         escenarios=escenarios_list,
+        escenarios_full=escenarios_full,
         sinopsis=req.sinopsis,
-        atmosfera=req.atmosfera,
+        genero=req.genero,
+        subgenero=req.subgenero,
+        tono=req.tono,
         reglas=req.reglas,
-        storyteller_config=req.storyteller_config,
+        narrator_config=sanitize_narrator_config(req.narrator_config),
         typed_rules=typed_rules,
         personajes_full=req.personajes_full,
     )
@@ -115,36 +126,21 @@ async def create_story(
 async def list_stories(
     use_case: ListStoriesUseCase = Depends(get_list_stories_use_case),
 ):
-    """List all stories.
-
-    Spec-230: Verificación de integridad - si file_path apunta a un archivo
-    que no existe físicamente, se desvincula (null) para que la UI no muestre
-    links rotos. Soporta directorios nuevo (frontend/public/output_stories) y
-    viejo (output_stories) para compatibilidad.
-    """
-    from pathlib import Path as PathLib
-
+    """List all stories."""
     stories = await use_case.execute()
-    result = []
-    for s in stories:
-        verified_file_path = s.file_path
-        if s.file_path:
-            new_path = PathLib("frontend/public") / s.file_path
-            old_path = PathLib(s.file_path)
-            if not new_path.exists() and not old_path.exists():
-                verified_file_path = None
-        result.append(
-            StoryResponse(
-                id=str(s.id),
-                title=s.title,
-                status=s.status.value,
-                created_at=s.created_at,
-                atmosfera=s.atmosfera,
-                protagonista=s.protagonista,
-                file_path=verified_file_path,
-            )
+    return [
+        StoryResponse(
+            id=str(s.id),
+            title=s.title,
+            status=s.status.value,
+            created_at=s.created_at,
+            genero=s.genero,
+            subgenero=s.subgenero,
+            tono=s.tono,
+            protagonista=s.protagonista,
         )
-    return result
+        for s in stories
+    ]
 
 
 _PATCHABLE_STATUSES = {"draft", "pending", "failed", "processing"}
@@ -159,7 +155,7 @@ async def update_story_status(
     """Actualiza el status de una historia. Solo permite transiciones a estados seguros.
 
     Si la transición es a `processing` (regeneración), se ejecuta limpieza inmediata
-    de artefactos y archivo MD físico ANTES del UPDATE de status (Spec-216).
+    de artefactos ANTES del UPDATE de status (Spec-216).
     """
     new_status = body.get("status", "")
     if new_status not in _PATCHABLE_STATUSES:
@@ -172,16 +168,6 @@ async def update_story_status(
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     if new_status == "processing":
-        if story.file_path:
-            md_file = Path("frontend/public") / story.file_path
-            if md_file.exists():
-                md_file.unlink()
-                observability.record(
-                    "system",
-                    f"Archivo físico eliminado: {story.file_path}",
-                    story_id=story_id,
-                )
-            await repo.update_file_path(story.id, None)
         await repo.clear_story_artifacts(story.id)
         observability.record(
             category="generation",
@@ -217,12 +203,24 @@ async def update_story(
     story.protagonista = dto.protagonista
     story.relator = dto.relator
     story.sinopsis = dto.sinopsis
-    story.atmosfera = dto.atmosfera
+    story.genero = dto.genero
+    story.subgenero = dto.subgenero
+    story.tono = dto.tono
     story.reglas = dto.reglas
-    story.storyteller_config = dto.storyteller_config
+    story.narrator_config = dto.narrator_config
     story.personajes_full = dto.personajes_full or []
 
-    if dto.escenarios:
+    if dto.escenarios_full:
+        story.scenarios = [
+            Scenario(
+                story_id=story.id,
+                order_index=i,
+                name=s.get("name", ""),
+                description=s.get("description", ""),
+            )
+            for i, s in enumerate(dto.escenarios_full)
+        ]
+    elif dto.escenarios:
         story.scenarios = [
             Scenario(story_id=story.id, order_index=i, name=name)
             for i, name in enumerate(dto.escenarios)
@@ -253,43 +251,15 @@ async def update_story(
     )
 
 
-@router.patch("/stories/{story_id}/file-path", status_code=200)
-async def update_file_path(
-    story_id: str,
-    body: dict,
-    repo: SQLStoryRepository = Depends(_story_repo),
-):
-    """Actualiza o desvincula la ruta del archivo exportado (null para desvincular)."""
-    file_path: str | None = body.get("file_path")  # None si el cliente envía null
-    story = await repo.get_by_id(UUID(story_id))
-    if not story:
-        raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
-    await repo.update_file_path(story.id, file_path)
-    observability.record(
-        category="database",
-        message=f"file_path actualizado: {file_path!r}",
-        story_id=story_id,
-    )
-    return {"id": story_id, "file_path": file_path}
-
-
 @router.delete("/stories/{story_id}", status_code=204)
 async def delete_story(
     story_id: str,
     repo: SQLStoryRepository = Depends(_story_repo),
 ):
-    """Hard delete: borra historia, beats y archivo MD físico."""
+    """Hard delete: borra historia y beats."""
     story = await repo.get_by_id(UUID(story_id))
     if not story:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
-
-    if story.file_path:
-        md_file = Path("frontend/public") / story.file_path
-        if md_file.exists():
-            md_file.unlink()
-            observability.record(
-                "system", f"Archivo físico eliminado: {story.file_path}", story_id=story_id
-            )
 
     await repo.delete(UUID(story_id))
     observability.record(
@@ -312,11 +282,12 @@ async def get_story(
         title=story.title,
         status=story.status.value,
         created_at=story.created_at,
-        atmosfera=story.atmosfera,
+        genero=story.genero,
+        subgenero=story.subgenero,
+        tono=story.tono,
         protagonista=story.protagonista,
         relator=story.relator,
         sinopsis=story.sinopsis,
-        storyteller_config=story.storyteller_config,
+        narrator_config=story.narrator_config,
         personajes_full=story.personajes_full,
-        file_path=story.file_path,
     )

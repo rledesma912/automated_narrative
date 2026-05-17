@@ -16,4 +16,4 @@ INSTRUCCIONES:
 - **Zoom Sensorial (Evitar Repetición):** Prohibido parafrasear o repetir los eventos del fragmento para alcanzar la extensión pedida. Debes expandir la prosa mediante el detalle sensorial: describe el peso de los objetos, las texturas, los olores, la luz y los sonidos del entorno. La profundidad se logra con la mirada observadora del narrador, no repitiendo hechos o sentimientos. Esto es vital para la calidad del audio final (TTS).
 - No rompas el personaje. No repitas lo que ya fue narrado.
 - Los nombres de los personajes son exactos. Usá siempre los de la lista — nunca inventes variantes ni nombres similares.
-{storyteller_config_block}
+{narrator_config_block}

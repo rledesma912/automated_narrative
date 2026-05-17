@@ -14,7 +14,6 @@ from src.domain.models import (
     NarrativeJournal,
     Story,
     StoryMetadata,
-    StoryPlan,
     StoryStatus,
 )
 
@@ -27,7 +26,6 @@ __all__ = [
     "Story",
     "StoryMetadata",
     "StoryNotFoundError",
-    "StoryPlan",
     "StoryRepository",
     "StoryStatus",
 ]

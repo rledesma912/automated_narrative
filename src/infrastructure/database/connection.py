@@ -39,13 +39,24 @@ async def init_db() -> None:
             protagonista TEXT,
             relator TEXT,
             sinopsis TEXT,
-            atmosfera TEXT,
-            narrative_brief TEXT DEFAULT '',
-            storyteller_config TEXT,
-            personajes TEXT DEFAULT '[]',
+            genero TEXT,
+            subgenero TEXT,
+            tono TEXT,
+            narrator_config TEXT,
             status TEXT DEFAULT 'pending',
-            file_path TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS character (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT,
+            traits TEXT DEFAULT '[]',
+            order_index INTEGER NOT NULL,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
 
@@ -56,7 +67,9 @@ async def init_db() -> None:
             content TEXT NOT NULL,
             type TEXT,
             intensity TEXT,
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+            applies_to_beat INTEGER,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            CHECK (applies_to_beat IS NULL OR applies_to_beat >= 1)
         )
     """)
 
@@ -66,26 +79,17 @@ async def init_db() -> None:
             story_id TEXT NOT NULL,
             number INTEGER NOT NULL,
             summary TEXT NOT NULL,
-            content TEXT DEFAULT '',
+            synopsis_beat TEXT,
+            generated_act TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
-            technical_context TEXT,
             active_scenario_id TEXT,
             active_scenario_description TEXT,
-            narrative_context TEXT,
+            system_prompt TEXT,
+            user_prompt TEXT,
             type TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, number)
-        )
-    """)
-
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS macro_beat_rule (
-            macro_beat_id INTEGER NOT NULL,
-            rule_id TEXT NOT NULL,
-            PRIMARY KEY (macro_beat_id, rule_id),
-            FOREIGN KEY (macro_beat_id) REFERENCES macro_beat(id) ON DELETE CASCADE,
-            FOREIGN KEY (rule_id) REFERENCES rule(id) ON DELETE CASCADE
         )
     """)
 
@@ -95,6 +99,7 @@ async def init_db() -> None:
             story_id TEXT NOT NULL,
             order_index INTEGER NOT NULL,
             name TEXT NOT NULL,
+            description TEXT DEFAULT '',
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)

@@ -38,7 +38,7 @@ async def stream_story(
         beat_start → inicio de cada beat
         beat_done  → beat persistido en DB + emitido al cliente
         heartbeat  → cada 15s de inactividad para mantener la conexión viva
-        done       → pipeline completo (incluye file_path si se exportó MD)
+        done       → pipeline completo (incluye narrative_id de la variante consolidada)
         error      → cualquier excepción (puede ocurrir a mitad de conexión)
     """
     queue: asyncio.Queue[StreamEvent | object] = asyncio.Queue()
@@ -97,7 +97,7 @@ async def stream_story(
                 await queue.put(
                     StreamEvent(
                         event=StreamEventType.BEAT_DONE,
-                        data={"number": beat_number, "content": macro_beat.content},
+                        data={"number": beat_number, "content": macro_beat.generated_act},
                     )
                 )
 

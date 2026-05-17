@@ -19,6 +19,7 @@ profiles:
   ollama-llama31:      { provider: ollama,    ollama: {...},    roles: {...} }
   ollama-mistral:      { provider: ollama,    ollama: {...},    roles: {...} }
   anthropic-sonnet:    { provider: anthropic, anthropic: {...}, roles: {...} }
+  anthropic-opus-voz:  { provider: anthropic, anthropic: {...}, roles: {...} }  # híbrido: voz=Opus 4.7, resto=Sonnet 4.6
   gemini-pro:          { provider: gemini,    gemini: {...},    roles: {...} }
   gemini-mixto:        { provider: gemini,    gemini: {...},    roles: {...} }
 

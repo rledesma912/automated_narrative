@@ -24,8 +24,13 @@ class NarrativeContextAssembler:
         beat_anchors: dict,
         previous_journal: NarrativeJournal | None = None,
         cast_block: str | None = None,
+        active_rules: list[str] | None = None,
     ) -> str:
-        """Combina beat_spec + resonancia + evento + escenario + memoria anterior."""
+        """Combina beat_spec + resonancia + evento + escenario + memoria anterior.
+
+        Spec-190 §4.4: `active_rules` se deriva determinísticamente (regla global
+        o anclada a este acto) y se pasa explícito; ya no se persiste per-beat.
+        """
         beat_spec = self._beat_repo.get_by_id(macro_beat.number)
         sc = beat_spec.get("state_change", {})
         must_not_items = beat_spec.get("must_not", [])
@@ -61,9 +66,9 @@ class NarrativeContextAssembler:
                 "── FIN GUÍA DE VOZ ──",
             ]
 
-        if macro_beat.active_rules:
+        if active_rules:
             lines += ["", "REGLAS ESPECÍFICAS PARA ESTE ACTO:"]
-            lines.extend([f"- {r}" for r in macro_beat.active_rules])
+            lines.extend([f"- {r}" for r in active_rules])
 
         if previous_journal and not previous_journal.is_empty():
             lines += ["", "MEMORIA DEL ACTO ANTERIOR:"]

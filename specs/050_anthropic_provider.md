@@ -1,5 +1,11 @@
 # Spec 020: Anthropic API Provider
 
+> **Estado:** implementado. Claude Opus 4.7 está en uso productivo vía el perfil
+> híbrido `anthropic-opus-voz` (rol `voz` con `claude-opus-4-7`, resto de roles
+> con `claude-sonnet-4-6`). Ver `config/llm_core_definitions.yaml` y Spec-070.
+> El `AnthropicAdapter` omite `temperature` para modelos con prefijo
+> `claude-opus-4` (`_NO_SAMPLING_PREFIXES`).
+
 ## Objetivo
 
 Incorporar Anthropic API (claude-opus-4-7 u otros modelos cloud de Anthropic) como

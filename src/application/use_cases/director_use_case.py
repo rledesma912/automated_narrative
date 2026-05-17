@@ -9,7 +9,6 @@ from src.application.services import MemoryJournalist, PromptBuilder
 from src.application.services.checkpoint import VALID_CHECKPOINTS, ordinal
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
-from src.config import settings
 from src.domain.interfaces import LLMProvider
 from src.domain.models import (
     Beat,
@@ -18,7 +17,6 @@ from src.domain.models import (
     MacroBeat,
     NarrativeJournal,
     Story,
-    StoryPlan,
 )
 from src.infrastructure.normalizers import ResponseNormalizer
 
@@ -32,7 +30,7 @@ class DirectorUseCase:
     """Orquestador de la generación de historias punta a punta.
 
     Responsabilidades:
-    - execute()           → planificación solamente (CLI `plan`)
+    - prepare_story()     → fase global analyst + resolver (planificación)
     - execute_full()      → plan + narración + journal, beat-by-beat (AsyncGenerator)
     - execute_narration() → narración sobre beats pre-existentes (AsyncGenerator)
     """
@@ -74,69 +72,6 @@ class DirectorUseCase:
             debug_collector=self.debug_collector,
         )
 
-    async def _analyze_story(self, story: Story) -> str:
-        """Fase 0: expande la sinopsis en un narrative brief estructurado."""
-        role_cfg = settings.role_config("story_analyst")
-        model = role_cfg.get("model", "mistral:latest")
-        temperature = role_cfg.get("temperature", 0.3)
-
-        prompt = self.prompt_builder.build_story_analyst_prompt(story)
-        system_prompt = self.prompt_builder.build_story_analyst_system()
-        response = await self.llm.generate(
-            prompt=prompt,
-            system_prompt=system_prompt,
-            model=model,
-            temperature=temperature,
-            role="story_analyst",
-        )
-
-        brief = self.normalizer.normalize(response.text, model_name=model).strip()
-
-        variant = self.prompt_builder.get_variant_name()
-        self.debug_collector.record(
-            role="story_analyst",
-            beat_number=None,
-            source_component=DebugCollector.source_label(self),
-            model=model,
-            temperature=temperature,
-            num_ctx=role_cfg.get("num_ctx"),
-            num_predict=role_cfg.get("num_predict"),
-            system_prompt=system_prompt,
-            user_prompt=prompt,
-            raw_response=response.text,
-            normalized_response=brief,
-            parser_result="n/a",
-            elapsed_s=response.elapsed_s,
-            system_prompt_file="story_analyst_system_compact.md" if variant == "compact" else "n/a",
-            user_prompt_file="story_analyst_compact.md"
-            if variant == "compact"
-            else "story_analyst.md",
-        )
-
-        story.narrative_brief = brief
-        logger.debug(f"[DIRECTOR] Narrative brief generado: {len(brief)} chars")
-        return brief
-
-    async def execute(self, story: Story) -> StoryPlan:
-        """Planificación solamente. Usado por CLI `plan`."""
-        mapper = SynopsisBeatMapper(
-            self.llm,
-            self.prompt_builder,
-            normalizer=self.normalizer,
-            debug_collector=self.debug_collector,
-        )
-
-        logger.debug(
-            f"[DIRECTOR] Planificación via mapper — "
-            f"prompt_builder={self.prompt_builder.__class__.__name__}",
-        )
-
-        brief = await self._analyze_story(story)
-        beats = await mapper.map(story, narrative_brief=brief)
-        logger.debug(f"[DIRECTOR] Plan generado: {len(beats)} beats")
-
-        return StoryPlan(story_id=story.id, title=story.title, beats=beats)
-
     async def prepare_story(
         self,
         story: Story,
@@ -157,8 +92,8 @@ class DirectorUseCase:
             on_analyst_done: Callback cuando termina analyst (para reporter).
             on_resolver_done: Callback cuando termina resolver (para reporter).
         """
-        from src.application.services.rule_scenario_resolver_service import (
-            RuleScenarioResolverService,
+        from src.application.services.scenario_resolver_service import (
+            ScenarioResolverService,
         )
         from src.application.services.story_analyst_service import StoryAnalystService
 
@@ -178,18 +113,18 @@ class DirectorUseCase:
         if on_analyst_done:
             on_analyst_done(f"Analizando sinopsis y anclajes ({analyst_elapsed:.1f}s)")
 
-        resolver = self._resolver_service or RuleScenarioResolverService(
+        resolver = self._resolver_service or ScenarioResolverService(
             self.llm, self.prompt_builder, self.normalizer, self.debug_collector
         )
 
         if on_resolver_done:
-            on_resolver_done("Distribuyendo reglas y escenarios")
+            on_resolver_done("Distribuyendo escenarios")
         t_resolver = perf_counter()
         rule_distribution = await resolver.resolve_distribution(story, anchors=narrative_anchors)
         resolver_elapsed = perf_counter() - t_resolver
 
         if on_resolver_done:
-            on_resolver_done(f"Distribuyendo reglas y escenarios ({resolver_elapsed:.1f}s)")
+            on_resolver_done(f"Distribuyendo escenarios ({resolver_elapsed:.1f}s)")
 
         num_beats = self.prompt_builder.num_beats
         logger.debug(
@@ -233,7 +168,7 @@ class DirectorUseCase:
 
         def _resolver_done(msg: str) -> None:
             if on_step_done:
-                on_step_done("Distribuyendo reglas y escenarios", 0)
+                on_step_done("Distribuyendo escenarios", 0)
             _step_start(msg)
 
         narrative_anchors, rule_distribution, num_beats = await self.prepare_story(
@@ -318,7 +253,9 @@ class DirectorUseCase:
             story.sinopsis, beat_id, num_beats
         )
         dist = rule_distribution.get(str(beat_id), {})
-        active_rules = dist.get("rules", [])
+        # Spec-190 §4.4: las reglas activas del beat se derivan determinísticamente
+        # (regla global o anclada a este acto), no las distribuye el resolver.
+        active_rules = story.active_rules_for_beat(beat_id)
         s_idx = dist.get("scenario_index", 0)
         active_scenario_desc = ""
         if story.scenarios and 0 <= s_idx < len(story.scenarios):
@@ -363,11 +300,10 @@ class DirectorUseCase:
             logger.debug(f"[DIRECTOR] Detenido en checkpoint 'mapper:{beat_id}' ({cp_mapper}/16)")
             return macro_beat, journal, 0.0
 
-        macro_beat.active_rules = active_rules
         macro_beat.active_scenario_description = active_scenario_desc
 
-        macro_beat.narrative_context = self.prompt_builder.build_narrative_context(
-            macro_beat, beat_anchors, journal, story=story
+        macro_beat.user_prompt = self.prompt_builder.build_narrative_context(
+            macro_beat, beat_anchors, journal, story=story, active_rules=active_rules
         )
 
         voz = self._voz

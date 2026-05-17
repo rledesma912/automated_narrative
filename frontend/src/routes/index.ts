@@ -5,7 +5,7 @@ import { debugPage } from "../controllers/debug.controller";
 import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField } from "../controllers/wizard.controller";
 import { submitGeneration, streamingRoomPage, getActiveStreamApi } from "../controllers/stream.controller";
-import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, updateFilePathHandler, generateNarrativeHandler } from "../controllers/historia.controller";
+import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
 import { relatosPage } from "../controllers/relatos.controller";
 
 const router = Router();
@@ -34,7 +34,6 @@ router.get("/historia/:storyId",            historiaPage);
 router.post("/historia/:storyId/generar",   generarDesdeHistoria);
 router.post("/historia/:storyId/generar-relato", generateNarrativeHandler);
 router.delete("/internal/historia/:storyId",          deleteStoryHandler);
-router.patch("/internal/historia/:storyId/file-path", updateFilePathHandler);
 
 // Modales de confirmación (HTMX)
 router.get("/modales/confirmar-borrar/:storyId", confirmDeleteModal);

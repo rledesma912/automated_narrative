@@ -103,7 +103,8 @@ class VozUseCase:
             user_prompt_file="voice_compact.md" if variant == "compact" else "voice.md",
         )
 
-        beat.content = clean_text
+        beat.system_prompt = system_prompt
+        beat.generated_act = clean_text
         beat.status = BeatStatus.COMPLETED
 
         updated_journal = await self.memory_journalist.update_journal(story, beat, journal)
@@ -111,7 +112,7 @@ class VozUseCase:
         return beat, updated_journal, response.elapsed_s
 
     async def narrate(self, macro_beat: MacroBeat, story: Story) -> tuple[MacroBeat, float]:
-        """Narra un macro-beat que ya tiene narrative_context pre-ensamblado (Spec-038).
+        """Narra un macro-beat que ya tiene user_prompt pre-ensamblado (Spec-038).
 
         Usa build_voz_user_prompt() en lugar de build_beat_prompt(). No toca el journal.
         """
@@ -121,8 +122,9 @@ class VozUseCase:
 
         variant = self.prompt_builder.get_variant_name()
         if variant == "compact":
+            active_rules = story.active_rules_for_beat(macro_beat.number)
             system_prompt = self.prompt_builder.build_voice_system_compact(
-                story, beat_number=macro_beat.number, active_rules=macro_beat.active_rules
+                story, beat_number=macro_beat.number, active_rules=active_rules
             )
         else:
             system_prompt = self.prompt_builder.build_voice_prompt(story)
@@ -131,7 +133,7 @@ class VozUseCase:
 
         logger.debug(
             f"[VOZ] narrate beat={macro_beat.number} model={model} "
-            f"nc={len(macro_beat.narrative_context or '')} chars"
+            f"nc={len(macro_beat.user_prompt or '')} chars"
         )
 
         response = await self.retry_generator.generate_with_retry(
@@ -142,7 +144,8 @@ class VozUseCase:
         )
 
         clean_text = self.normalizer.normalize(response.text, model_name=model)
-        macro_beat.content = clean_text
+        macro_beat.system_prompt = system_prompt
+        macro_beat.generated_act = clean_text
         macro_beat.status = BeatStatus.COMPLETED
 
         self.debug_collector.record(
@@ -159,7 +162,7 @@ class VozUseCase:
             normalized_response=clean_text,
             parser_result="n/a",
             elapsed_s=response.elapsed_s,
-            narrative_context=macro_beat.narrative_context,
+            narrative_context=macro_beat.user_prompt,
             system_prompt_file="voice_system_compact.md" if variant == "compact" else None,
             user_prompt_file="(narrative_context inline)",
         )

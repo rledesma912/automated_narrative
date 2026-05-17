@@ -1,0 +1,51 @@
+Sete el flujo con gemini-cli en llm_core_definitions.yaml para generar el relato de El Galpon (3e142427-5ae7-4cf4-b91d-9592641b9adb) de la fecha 16-05-2026 23:04 pero el relato no esta del todo solido con
+  Gemini, raro porque es potente. Lo que necesito es una funcionalidad que me ayude a enteder que le llega al componente de VOZ en cada generación de BEAT. Quiero poder consultar una historia ya generada,
+  filtrada por uuid de historia y analizar los prompts y memoria y resumen que le llegan más el acto generado. Ese será un Spec.
+
+
+  ----------
+
+
+  Necesito un nuevo spec. Quiero cambiar la estructura de la base de datos y por concecuencia el código asociado. Voy a dictarte algunas reglas y luego de tu analisis lo discutimos para generar el nuevo spec con el modelo relacional definitivo.
+  1.El campo narrative_brief de la tabla story perece ser sin uso. Verifica y quizas convenga eliminarlo.
+  2.¿El campo storytreller_config (JSON) de la tabla story llega a los prompts? ¿Qué uso tiene? Es entender, para modificar, porque considero que los campos scenarios, rules, y actos deberían ir a otras tablas con constraints correspondientes lo demás lo dejariamos así si tiene buena utilidad. (De hecho ya hay una tabla rule y hay una tabla MACRO_BEAT_RULE que entiendo serían lo mismo).
+  3.¿Para que está la propiedad atmosphere en el JSON de storytreller_config de la tabla story si también esta el campo atmosfera, habría que normalizar eso.
+  4.El campo personajes de la tabla story quizas convenga llevarlo a una tabla con constraints correspondientes.
+  5. La tabla MACRO_BEAT_RULE no tiene un uso real porque las reglas quedan asignadas a un acto pero eso no lo refleja el esquema. En tal caso la tabla de reglas podrían tener un campo que se completa en la fase de análisis del proceso y que asocie a qué acto/beat el sistema decidió asociarlo.
+  6.El campo file_path de la tabla story parece no tener utilidad.
+  7.Quizas en la tabla macro_beat podríamos sumar el campo de la sinopsis que inyecta el usuario? De modo que en esta tabla quede cada registro de cada beat. Y me gustaría cambiar el nombre de context por generated_act
+  8.El campo technical_context parece no tener utilidad.
+  9. El campo narrative_context sería el user prompt? ¿Y el system_prompt donde queda?
+  Discutamos los puntos que consideres de forma simple y asertiva
+
+Respuestas para la interacción
+==============================
+
+1.OK
+2.Acepto tu recomendación
+3.Acepto tu normalización
+4.Ok, nueva tabla para personajes.
+5.Aquí hay matices, porque actualmente una regla puede ser global o puntual para aplicar en varios actos pero no se como lo está resolviendo el código en el DIRECTOR. Creo que me parece que sería más simple que las reglas apliquen durante todo el relato ¿Qué opinas? Se crítico y no me des por mi lado porque sí.
+6.Eliminemos porque la exportación a markdown ya no es requerimiento. Si queda doc o spec actualicemos.
+7.Ok, y confirmo content -> generated_act
+8.eliminarlo
+9.Quiero persistir tambien el system_prompt
+Preguntas para cerrar el modelo:
+1. Tenemos que discutirlo ¿Qué consecuencias tiene?
+2. Confirmo
+3. system_prompt -> persistir macro_beat
+4. El resto de storyteller_config lo dejamos como está actualmente
+
+---
+
+Punto 5, comprendido. Acepto 5a) y no conservar los tipos que no aplican. Las reglas entonces serán globales o de acto en el que aplican. Que el usuario pueda decir a que acto en el frontend, así simplificamos la tarea para el RuleScenarioResolverService. Por consecuencia eliminar macro_beat_rule, de acuerdo.
+
+---
+
+Una pregunta más antes de generar el spec. Si la responsabilidad de RuleScenarioResolverService se simplifica no estamos en un buen momento para redistribuir en dos clases? atendiendo a los valores de SOLID, DRY, KISS, IDD, etcétera?
+
+---
+
+Observación honesta, fuera de alcance: se podría discutir si la distribución de escenarios también puede ser determinística (los escenarios ya tienen order_index) y eliminar la llamada LLM del resolver por completo. Pero eso es otra decisión, otro spec — no lo metería en el 190 para no inflar el slice.
+
+

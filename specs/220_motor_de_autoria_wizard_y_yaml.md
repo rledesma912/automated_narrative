@@ -13,7 +13,7 @@ El proceso de creación de historias se guía a través de un stepper interactiv
 ## 2. Lógica del Stepper y Persistencia
 - **Navegación No Lineal:** El usuario puede volver a cualquier paso anterior haciendo clic en los indicadores del stepper, siempre que ya los haya alcanzado.
 - **Persistencia Temprana:** Al avanzar del Paso 5 a la pantalla de confirmación, los datos se guardan automáticamente en la base de datos (POST si es nueva, PATCH si es edición) en estado `DRAFT`.
-- **Rehidratación:** El botón "Editar" en la galería carga una historia existente en el Wizard, mapeando el JSON de `storyteller_config` a los campos del formulario.
+- **Rehidratación:** El botón "Editar" en la galería carga una historia existente en el Wizard, mapeando el JSON de `narrator_config` a los campos del formulario.
 
 ## 3. Definición Dinámica (UI Definitions)
 El archivo `ui_definitions.yaml` es la fuente de verdad única para los formularios:
@@ -23,7 +23,7 @@ El archivo `ui_definitions.yaml` es la fuente de verdad única para los formular
 
 ## 4. Bidireccionalidad YAML (CLI ↔ Wizard)
 El sistema mantiene una paridad total entre el Wizard y el formato YAML para el CLI:
-- **YAML Canónico:** Refleja exactamente la estructura del `storyteller_config`.
+- **YAML Canónico:** Refleja exactamente la estructura del `narrator_config` (depurado de `storyteller_config`).
 - **Parser Robusto:** El `MarkdownStoryParser` (ahora orientado a YAML) asegura que las historias creadas por CLI se puedan editar en el Wizard sin pérdida de campos.
 - **Exportación:** Comando CLI `export-yaml` para volcar cualquier historia de la base de datos a un archivo editable que puede ser re-importado.
 

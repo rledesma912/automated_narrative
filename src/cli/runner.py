@@ -51,8 +51,8 @@ def main() -> None:
     generate_parser.add_argument("--escenarios", help="Escenario(s)")
     generate_parser.add_argument("--sinopsis", help="Sinopsis de la historia")
     generate_parser.add_argument(
-        "--atmosfera",
-        help="Atmósfera de la historia",
+        "--genero",
+        help="Género de la historia (atmósfera). El YAML (--input) trae además subgénero y tono.",
     )
     generate_parser.add_argument(
         "--input",
@@ -78,36 +78,11 @@ def main() -> None:
         help="Directorio de output",
     )
 
-    plan_parser = subparsers.add_parser("plan", help="Generar solo el plan (beats)")
-    plan_parser.add_argument("--title", required=True, help="Título")
-    plan_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
-    plan_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(settings.output_dir),
-        help="Directorio de output",
-    )
-
     narrate_parser = subparsers.add_parser("narrate", help="Narrar beats específicos")
     narrate_parser.add_argument("--story-id", required=True, help="UUID de la historia")
     narrate_parser.add_argument("--beats", required=True, help="Beats a narrar (csv: 1,2,3)")
     narrate_parser.add_argument(
         "--mock", action="store_true", help="Usar Mock LLM (solo para tests)"
-    )
-
-    export_parser = subparsers.add_parser("export", help="Exportar historia a archivo")
-    export_parser.add_argument("--story-id", required=True, help="UUID de la historia")
-    export_parser.add_argument(
-        "--format",
-        default="markdown",
-        choices=["markdown", "json"],
-        help="Formato de export",
-    )
-    export_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(settings.output_dir),
-        help="Directorio de output",
     )
 
     export_yaml_parser = subparsers.add_parser(
@@ -148,7 +123,7 @@ def main() -> None:
                     relator="",
                     escenarios="",
                     sinopsis="",
-                    atmosfera="",
+                    genero="",
                     use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
@@ -167,8 +142,8 @@ def main() -> None:
                     campos_faltantes.append("--escenarios")
                 if not args.sinopsis:
                     campos_faltantes.append("--sinopsis")
-                if not args.atmosfera:
-                    campos_faltantes.append("--atmosfera")
+                if not args.genero:
+                    campos_faltantes.append("--genero")
 
                 if campos_faltantes:
                     print(
@@ -187,7 +162,7 @@ def main() -> None:
                     relator=args.relator or "tercera_persona",
                     escenarios=args.escenarios,
                     sinopsis=args.sinopsis,
-                    atmosfera=args.atmosfera,
+                    genero=args.genero,
                     use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
@@ -195,23 +170,11 @@ def main() -> None:
                     debug=args.debug,
                     hasta=args.hasta,
                 )
-        elif args.command == "plan":
-            commands.plan(
-                title=args.title,
-                use_mock=args.mock,
-                output_dir=args.output,
-            )
         elif args.command == "narrate":
             commands.narrate(
                 story_id=args.story_id,
                 beats=args.beats,
                 use_mock=args.mock,
-            )
-        elif args.command == "export":
-            commands.export_(
-                story_id=args.story_id,
-                format=args.format,
-                output_dir=args.output,
             )
         elif args.command == "export-yaml":
             commands.export_yaml(

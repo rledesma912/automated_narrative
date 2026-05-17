@@ -18,7 +18,7 @@ class TestGenerateAsyncInput:
 protagonista: Protagonista de prueba
 relator: tercera_persona
 sinopsis: Sinopsis de prueba para test
-atmosfera: terror
+genero: terror
 """
             )
             f.flush()
@@ -55,7 +55,7 @@ atmosfera: terror
                 assert call_kwargs["title"] == "Historia Test"
                 assert call_kwargs["protagonista"] == "Protagonista de prueba"
                 assert call_kwargs["sinopsis"] == "Sinopsis de prueba para test"
-                assert call_kwargs["atmosfera"] == "terror"
+                assert call_kwargs["genero"] == "terror"
 
         Path(yaml_path).unlink()
 

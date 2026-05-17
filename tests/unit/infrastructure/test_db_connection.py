@@ -70,7 +70,10 @@ class TestDbConnection:
             "protagonista",
             "relator",
             "sinopsis",
-            "atmosfera",
+            "genero",
+            "subgenero",
+            "tono",
+            "narrator_config",
             "status",
             "created_at",
         }
@@ -91,11 +94,12 @@ class TestDbConnection:
             "story_id",
             "number",
             "summary",
-            "content",
+            "synopsis_beat",
+            "generated_act",
             "status",
-            "technical_context",
             "active_scenario_id",
-            "narrative_context",
+            "system_prompt",
+            "user_prompt",
             "created_at",
         }
         assert required.issubset(columns), f"Missing: {required - columns}"

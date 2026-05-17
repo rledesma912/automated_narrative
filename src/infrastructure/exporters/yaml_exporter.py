@@ -3,6 +3,10 @@
 El YAML producido es input válido del comando `generate --input` (round-trip
 bidireccional) y refleja 1:1 la estructura interna de `storyteller_config`
 que `mapStoryToWizard()` consume para rehidratar el wizard del frontend.
+
+Spec-190 §T6.2: el `narrator_config` persistido ya no contiene `atmosphere`,
+`scenarios`, `rules` ni `actos`. El exporter los reconstruye dentro del bloque
+`storyteller_config` del YAML desde las columnas/tablas correspondientes.
 """
 
 from __future__ import annotations
@@ -53,7 +57,7 @@ class YamlStoryExporter:
     # ── Construcción del documento ───────────────────────────────────────────
 
     def _build_document(self, story: Story) -> dict[str, Any]:
-        sc = story.storyteller_config or {}
+        sc = story.narrator_config or {}
         personajes = self._build_personajes(story)
 
         return {
@@ -82,16 +86,11 @@ class YamlStoryExporter:
         return out
 
     def _derive_escenarios_str(self, sc: dict, story: Story) -> str:
-        scenarios = sc.get("scenarios") or []
-        if scenarios:
-            parts = []
-            for s in scenarios:
-                name = s.get("name", "")
-                desc = s.get("description", "")
-                parts.append(f"{name}: {desc}" if desc else name)
-            return "; ".join(parts)
         if story.scenarios:
-            return "; ".join(s.name for s in story.scenarios)
+            parts = []
+            for s in story.scenarios:
+                parts.append(f"{s.name}: {s.description}" if s.description else s.name)
+            return "; ".join(parts)
         return ""
 
     def _build_storyteller_config(self, sc: dict, story: Story) -> dict[str, Any]:
@@ -110,9 +109,9 @@ class YamlStoryExporter:
                 "style": sc.get("voice", {}).get("style") or sc.get("voice_style") or "intimista",
             },
             "atmosphere": {
-                "genre": sc.get("atmosphere", {}).get("genre", ""),
-                "subgenre": sc.get("atmosphere", {}).get("subgenre", ""),
-                "tone": sc.get("atmosphere", {}).get("tone", ""),
+                "genre": story.genero,
+                "subgenre": story.subgenero,
+                "tone": story.tono,
             },
             "scenarios": scenarios,
             "rules": rules,
@@ -150,22 +149,10 @@ class YamlStoryExporter:
         }
 
     def _build_scenarios(self, sc: dict, story: Story) -> list[dict[str, Any]]:
-        rich = sc.get("scenarios") or []
-        if rich:
-            out = []
-            for idx, s in enumerate(rich, start=1):
-                out.append(
-                    {
-                        "id": s.get("id") or f"S{idx}",
-                        "order": s.get("order", idx),
-                        "name": s.get("name", ""),
-                        "description": s.get("description", ""),
-                    }
-                )
-            return out
-        # Fallback: derivar desde story.scenarios (sin description)
+        # Spec-190 §T6.2: los escenarios viven en la tabla `scenario` (con
+        # description), ya no dentro del JSON narrator_config.
         return [
-            {"id": f"S{i}", "order": i, "name": s.name, "description": ""}
+            {"id": f"S{i}", "order": i, "name": s.name, "description": s.description or ""}
             for i, s in enumerate(story.scenarios or [], start=1)
         ]
 

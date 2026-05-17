@@ -67,14 +67,13 @@ async def stream_generation(story_id: str):
             for beat in beats:
                 yield StreamEvent(
                     event=StreamEventType.BEAT_DONE,
-                    data={"number": beat.number, "content": beat.content},
+                    data={"number": beat.number, "content": beat.generated_act},
                 ).to_sse()
             yield StreamEvent(
                 event=StreamEventType.DONE,
                 data={
                     "story_id": str(story.id),
                     "total_beats": len(beats),
-                    "file_path": story.file_path,
                     "read_only": True,
                 },
             ).to_sse()
@@ -217,7 +216,7 @@ async def get_story_full(story_id: str):
             {
                 "number": b.number,
                 "summary": b.summary,
-                "content": b.content,
+                "content": b.generated_act,
                 "status": b.status,
                 "beat_type": b.beat_type.value if b.beat_type else None,
             }

@@ -46,7 +46,6 @@ target_id = '$TARGET_ID' if '$TARGET_ID' else None
 if target_id:
     tables = [
         'generated_narrative',
-        'macro_beat_rule',
         'macro_beat',
         'narrative_journal',
         'narrative_anchors',
@@ -64,7 +63,6 @@ if target_id:
 else:
     tables = [
         'generated_narrative',
-        'macro_beat_rule',
         'rule',
         'macro_beat',
         'narrative_anchors',

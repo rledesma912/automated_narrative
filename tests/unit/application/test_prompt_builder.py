@@ -20,7 +20,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="tercera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
             reglas=["Sin miedo"],
             scenarios=[Scenario(story_id=story_id, order_index=0, name="Location")],
         )
@@ -41,7 +41,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         beat = Beat(number=1, summary="El protagonista entra a la casa")
@@ -61,11 +61,13 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         beat1 = Beat(
-            number=1, summary="El protagonista llega a la puerta", content="Llegó a la puerta."
+            number=1,
+            summary="El protagonista llega a la puerta",
+            generated_act="Llegó a la puerta.",
         )
         beat2 = Beat(number=2, summary="El protagonista sube las escaleras")
 
@@ -83,7 +85,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="Irene",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         beat = Beat(number=1, summary="Llegan a la casa")
@@ -103,7 +105,7 @@ class TestPromptBuilder:
             protagonista="Ricardo, Irene",
             relator="Irene",
             sinopsis="SINOPSIS_UNICA_IDENTIFICADORA_XYZ",
-            atmosfera="terror folclórico",
+            genero="terror folclórico",
         )
         beat = Beat(number=1, summary="La advertencia de la abuela")
 
@@ -122,7 +124,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Sinopsis única de prueba para verificar fallback.",
-            atmosfera="terror",
+            genero="terror",
         )
         beat = Beat(number=1, summary="Inicio")
 
@@ -184,7 +186,7 @@ class TestPromptBuilder:
             protagonista="Protagonist",
             relator="primera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror_psicologico",
+            genero="terror_psicologico",
         )
 
         builder = PromptBuilder()
@@ -203,7 +205,7 @@ class TestPromptVariants:
             protagonista="Ana",
             relator="primera_persona",
             sinopsis="Una mujer investiga una casa abandonada.",
-            atmosfera="terror",
+            genero="terror",
         )
 
     def test_compact_variant_loads_compact_voice_template(self):
@@ -222,7 +224,7 @@ class TestPromptVariants:
 
         builder = PromptBuilder()
         long_content = "x" * 600
-        beat = Beat(number=1, summary="s", content=long_content, status="completed")
+        beat = Beat(number=1, summary="s", generated_act=long_content, status="completed")
         result = builder._build_previous_context([beat], max_chars=500)
         assert len(result) < 600
         assert "x" * 500 in result
@@ -232,7 +234,7 @@ class TestPromptVariants:
 
         builder = PromptBuilder()
         long_content = "x" * 300
-        beat = Beat(number=1, summary="s", content=long_content, status="completed")
+        beat = Beat(number=1, summary="s", generated_act=long_content, status="completed")
         result = builder._build_previous_context([beat], max_chars=150)
         assert "x" * 150 in result
         assert "x" * 151 not in result
@@ -268,7 +270,7 @@ class TestPromptVariants:
         assert "ESCENA_UNICA_IDENTIFICADORA" in prompt[mid:]
 
 
-class TestBuildRuleResolverPromptActsEnrichment:
+class TestBuildScenarioResolverPromptActsEnrichment:
     """Spec-052: acts_json incluye intent, intensity, must y must_not del YAML."""
 
     def _story(self):
@@ -279,25 +281,25 @@ class TestBuildRuleResolverPromptActsEnrichment:
             protagonista="P",
             relator="tercera_persona",
             sinopsis="S",
-            atmosfera="a",
+            genero="a",
             reglas=["regla 1"],
             scenarios=[Scenario(story_id=sid, order_index=0, name="Escenario A")],
         )
 
     def _acts(self, prompt: str) -> list[dict]:
-        """Extrae la lista de acts del bloque JSON entre 'Actos:' y 'Reglas:'."""
-        block = prompt.split("Actos:\n", 1)[1].split("\n\nReglas:", 1)[0].strip()
+        """Extrae la lista de acts del bloque JSON entre 'Actos:' y 'Escenarios:'."""
+        block = prompt.split("Actos:\n", 1)[1].split("\n\nEscenarios", 1)[0].strip()
         return json.loads(block)
 
     def test_acts_json_includes_intent(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("intent" in a and a["intent"] for a in acts)
 
     def test_acts_json_includes_intensity(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         intensities = {a["type"]: a["intensity"] for a in acts}
         assert intensities["exposicion"] == "baja"
@@ -306,24 +308,24 @@ class TestBuildRuleResolverPromptActsEnrichment:
 
     def test_acts_json_includes_must(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("must" in a and isinstance(a["must"], list) and a["must"] for a in acts)
 
     def test_acts_json_includes_must_not(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("must_not" in a and isinstance(a["must_not"], list) for a in acts)
 
     def test_acts_json_excludes_anchor_priorities(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("anchor_priorities" not in a for a in acts)
 
     def test_acts_json_excludes_state_change(self):
         builder = PromptBuilder()
-        prompt = builder.build_rule_resolver_prompt(self._story())
+        prompt = builder.build_scenario_resolver_prompt(self._story())
         acts = self._acts(prompt)
         assert all("state_change" not in a for a in acts)
