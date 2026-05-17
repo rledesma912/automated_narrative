@@ -140,7 +140,7 @@ class TestStoryRunner:
         beats = await beat_repo.get_by_story(story.id)
         completed_beats = [b for b in beats if b.status == "completed"]
         assert len(completed_beats) > 0
-        assert any(b.content != "" for b in completed_beats)
+        assert any(b.generated_act != "" for b in completed_beats)
 
     # ── Spec-312: persistencia automática de generated_narrative ──────────────
 

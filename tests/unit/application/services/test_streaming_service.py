@@ -20,7 +20,7 @@ def _make_beat(n: int) -> MacroBeat:
     return MacroBeat(
         number=n,
         summary=f"sum {n}",
-        content=f"prosa {n}",
+        generated_act=f"prosa {n}",
         status=BeatStatus.COMPLETED,
         beat_type=BeatType.EXPOSICION,
     )

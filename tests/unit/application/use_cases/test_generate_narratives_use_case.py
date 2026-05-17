@@ -25,7 +25,7 @@ def _make_beat(number: int, content: str) -> MacroBeat:
     return MacroBeat(
         number=number,
         summary=f"summary {number}",
-        content=content,
+        generated_act=content,
         status=BeatStatus.COMPLETED,
     )
 

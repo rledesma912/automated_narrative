@@ -121,7 +121,7 @@ class TestDirectorExecuteNarration:
                 Beat(
                     number=beat.number,
                     summary=beat.summary,
-                    content="narrativa",
+                    generated_act="narrativa",
                     status="completed",
                 ),
                 journal,

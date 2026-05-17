@@ -45,18 +45,18 @@ class TestBeat:
         assert beat.number == 1
         assert beat.summary == "Test beat"
         assert beat.status == "pending"
-        assert beat.content == ""
+        assert beat.generated_act == ""
 
     def test_beat_with_content(self):
         """Test beat with content."""
         beat = Beat(
             number=1,
             summary="Test summary",
-            content="Generated content",
+            generated_act="Generated content",
             status="completed",
         )
 
-        assert beat.content == "Generated content"
+        assert beat.generated_act == "Generated content"
         assert beat.status == "completed"
 
 
@@ -84,7 +84,7 @@ class TestNarrativeJournal:
 
 class TestMacroBeatBehavior:
     def test_is_narrated_true_cuando_content_y_completed(self):
-        beat = MacroBeat(number=1, summary="T", content="Prosa generada.", status="completed")
+        beat = MacroBeat(number=1, summary="T", generated_act="Prosa generada.", status="completed")
         assert beat.is_narrated() is True
 
     def test_is_narrated_false_sin_content(self):
@@ -92,7 +92,7 @@ class TestMacroBeatBehavior:
         assert beat.is_narrated() is False
 
     def test_is_narrated_false_sin_status_completed(self):
-        beat = MacroBeat(number=1, summary="T", content="Prosa", status="pending")
+        beat = MacroBeat(number=1, summary="T", generated_act="Prosa", status="pending")
         assert beat.is_narrated() is False
 
     def test_is_pending_true_por_defecto(self):
@@ -104,7 +104,7 @@ class TestMacroBeatBehavior:
         assert beat.is_pending() is False
 
     def test_has_content_true_con_texto(self):
-        beat = MacroBeat(number=1, summary="T", content="Algo")
+        beat = MacroBeat(number=1, summary="T", generated_act="Algo")
         assert beat.has_content() is True
 
     def test_has_content_false_sin_texto(self):
@@ -112,7 +112,7 @@ class TestMacroBeatBehavior:
         assert beat.has_content() is False
 
     def test_has_content_independiente_del_status(self):
-        beat = MacroBeat(number=1, summary="T", content="Algo", status="pending")
+        beat = MacroBeat(number=1, summary="T", generated_act="Algo", status="pending")
         assert beat.has_content() is True
 
 
@@ -143,7 +143,7 @@ class TestStoryBehavior:
 
     def test_get_pending_beats_retorna_pendientes(self):
         beats = [
-            MacroBeat(number=1, summary="A", content="X", status="completed"),
+            MacroBeat(number=1, summary="A", generated_act="X", status="completed"),
             MacroBeat(number=2, summary="B"),
             MacroBeat(number=3, summary="C"),
         ]
@@ -154,8 +154,8 @@ class TestStoryBehavior:
 
     def test_get_completed_beats_retorna_narrados(self):
         beats = [
-            MacroBeat(number=1, summary="A", content="X", status="completed"),
-            MacroBeat(number=2, summary="B", content="Y", status="completed"),
+            MacroBeat(number=1, summary="A", generated_act="X", status="completed"),
+            MacroBeat(number=2, summary="B", generated_act="Y", status="completed"),
             MacroBeat(number=3, summary="C"),
         ]
         story = self._story(beats)
@@ -165,7 +165,8 @@ class TestStoryBehavior:
 
     def test_get_pending_beats_vacio_si_todos_narrados(self):
         beats = [
-            MacroBeat(number=i, summary="A", content="X", status="completed") for i in range(1, 4)
+            MacroBeat(number=i, summary="A", generated_act="X", status="completed")
+            for i in range(1, 4)
         ]
         assert self._story(beats).get_pending_beats() == []
 
@@ -280,7 +281,7 @@ class TestStoryAggregate:
         assert story.has_content is False
 
     def test_has_content_true_con_beat_narrado(self):
-        story = self._story([MacroBeat(number=1, summary="T", content="Prosa")])
+        story = self._story([MacroBeat(number=1, summary="T", generated_act="Prosa")])
         assert story.has_content is True
 
     def test_get_beat_by_number_existe(self):

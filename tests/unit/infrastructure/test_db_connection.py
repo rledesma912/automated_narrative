@@ -91,10 +91,12 @@ class TestDbConnection:
             "story_id",
             "number",
             "summary",
-            "content",
+            "synopsis_beat",
+            "generated_act",
             "status",
             "active_scenario_id",
-            "narrative_context",
+            "system_prompt",
+            "user_prompt",
             "created_at",
         }
         assert required.issubset(columns), f"Missing: {required - columns}"

@@ -31,7 +31,7 @@ class TestVozUseCase:
         result_beat, result_journal, llm_elapsed = await use_case.execute(story, beat)
 
         assert isinstance(result_beat, Beat)
-        assert result_beat.content == "Contenido generado"
+        assert result_beat.generated_act == "Contenido generado"
         assert result_beat.status == "completed"
         assert isinstance(result_journal, NarrativeJournal)
         assert isinstance(llm_elapsed, float)
@@ -54,7 +54,7 @@ class TestVozUseCase:
 
         result_beat, _, _ = await use_case.execute(story, beat)
 
-        assert result_beat.content == "El jeep se detuvo en la entrada..."
+        assert result_beat.generated_act == "El jeep se detuvo en la entrada..."
         assert result_beat.status == "completed"
 
     @pytest.mark.asyncio
@@ -69,8 +69,8 @@ class TestVozUseCase:
         )
 
         previous_beats = [
-            Beat(number=1, summary="Beat 1", content="Contenido 1", status="completed"),
-            Beat(number=2, summary="Beat 2", content="Contenido 2", status="completed"),
+            Beat(number=1, summary="Beat 1", generated_act="Contenido 1", status="completed"),
+            Beat(number=2, summary="Beat 2", generated_act="Contenido 2", status="completed"),
         ]
 
         beat = Beat(number=3, summary="Beat 3", status="pending")
@@ -138,7 +138,7 @@ class TestVozUseCase:
 
         assert spy.calls, "Normalizer no fue invocado"
         assert spy.calls[0][0] == raw
-        assert result_beat.content == "CONTENIDO LIMPIO"
+        assert result_beat.generated_act == "CONTENIDO LIMPIO"
 
 
 class TestVozErrorPaths:
@@ -186,7 +186,7 @@ class TestVozErrorPaths:
         result_beat, _, _ = await use_case.execute(self._make_story(), beat)
 
         assert call_count >= 2, "Debe haber reintentado al detectar refusal"
-        assert "molino" in result_beat.content
+        assert "molino" in result_beat.generated_act
 
     @pytest.mark.asyncio
     async def test_voz_malformed_response_is_normalized(self):
@@ -204,8 +204,8 @@ class TestVozErrorPaths:
         use_case = VozUseCase(mock_llm, normalizer=StripHeadingsNormalizer())
         result_beat, _, _ = await use_case.execute(self._make_story(), beat)
 
-        assert not result_beat.content.startswith("##")
-        assert "Texto del relato." in result_beat.content
+        assert not result_beat.generated_act.startswith("##")
+        assert "Texto del relato." in result_beat.generated_act
 
     @pytest.mark.asyncio
     async def test_voz_narrate_empty_response(self):
@@ -217,7 +217,7 @@ class TestVozErrorPaths:
             number=1,
             summary="algo",
             status="pending",
-            narrative_context="Contexto de prueba",
+            user_prompt="Contexto de prueba",
         )
         use_case = VozUseCase(mock_llm)
         with pytest.raises(LLMResponseError):

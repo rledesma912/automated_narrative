@@ -21,7 +21,7 @@ class TestMemoryJournalist:
             atmosfera="terror",
         )
 
-        beat = Beat(number=1, summary="El protagonista entra", content="Contenido de prueba")
+        beat = Beat(number=1, summary="El protagonista entra", generated_act="Contenido de prueba")
 
         mock_llm = MockLLMAdapter(
             fixed_response='{"last_events": "Entraron a la casa", "unresolved_mysteries": "", "physical_emotional_state": "Nervioso"}'

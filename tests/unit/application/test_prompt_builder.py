@@ -65,7 +65,9 @@ class TestPromptBuilder:
         )
 
         beat1 = Beat(
-            number=1, summary="El protagonista llega a la puerta", content="Llegó a la puerta."
+            number=1,
+            summary="El protagonista llega a la puerta",
+            generated_act="Llegó a la puerta.",
         )
         beat2 = Beat(number=2, summary="El protagonista sube las escaleras")
 
@@ -222,7 +224,7 @@ class TestPromptVariants:
 
         builder = PromptBuilder()
         long_content = "x" * 600
-        beat = Beat(number=1, summary="s", content=long_content, status="completed")
+        beat = Beat(number=1, summary="s", generated_act=long_content, status="completed")
         result = builder._build_previous_context([beat], max_chars=500)
         assert len(result) < 600
         assert "x" * 500 in result
@@ -232,7 +234,7 @@ class TestPromptVariants:
 
         builder = PromptBuilder()
         long_content = "x" * 300
-        beat = Beat(number=1, summary="s", content=long_content, status="completed")
+        beat = Beat(number=1, summary="s", generated_act=long_content, status="completed")
         result = builder._build_previous_context([beat], max_chars=150)
         assert "x" * 150 in result
         assert "x" * 151 not in result

@@ -49,8 +49,8 @@ def _make_macro_beat(number=1, content="Prosa narrativa."):
         summary=f"Evento del acto {number}.",
         active_scenario_id="Monte de los Espinillos",
         status="completed" if content else "pending",
-        content=content or "",
-        narrative_context=f"ACTO {number}: contexto pre-baked.",
+        generated_act=content or "",
+        user_prompt=f"ACTO {number}: contexto pre-baked.",
     )
 
 
@@ -153,8 +153,8 @@ class TestVozUseCaseNarrate:
 
         result_beat, _ = await voz.narrate(beat, story)
 
-        assert result_beat.content != ""
-        assert result_beat.content is not None
+        assert result_beat.generated_act != ""
+        assert result_beat.generated_act is not None
 
     @pytest.mark.asyncio
     async def test_beat_status_completed(self):
@@ -186,7 +186,7 @@ class TestVozUseCaseNarrate:
         voz = VozUseCase(llm, prompt_builder=PromptBuilder())
         story = _make_story()
         beat = _make_macro_beat(1, content=None)
-        beat.narrative_context = "ACTO 1: contenido específico único"
+        beat.user_prompt = "ACTO 1: contenido específico único"
         beat.status = "pending"
 
         await voz.narrate(beat, story)
@@ -230,9 +230,9 @@ class TestDirectorExecuteFullLoop:
                     number=mb.number,
                     summary=mb.summary,
                     active_scenario_id=mb.active_scenario_id,
-                    content="Prosa.",
+                    generated_act="Prosa.",
                     status="completed",
-                    narrative_context=mb.narrative_context,
+                    user_prompt=mb.user_prompt,
                 ),
                 1.0,
             )
