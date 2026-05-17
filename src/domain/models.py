@@ -38,24 +38,31 @@ class BeatStatus(str, Enum):
 
 
 class RuleType(str, Enum):
-    """Categoría semántica de una regla narrativa (Spec-043)."""
+    """Categoría semántica de una regla narrativa (Spec-043).
+
+    Spec-190 §4.4: lo temporal (eventos, acciones de personaje) no es regla —
+    va en `macro_beat.synopsis_beat`. Quedan las categorías estables.
+    """
 
     PSICOLOGICA = "psicologica"
     ENTORNO = "entorno"
-    EVENTO = "evento"
     FENOMENO = "fenomeno"
-    ACCION_PERSONAJE = "accion_personaje"
     INDICADOR = "indicador"
 
 
 class TypedRule(BaseModel):
-    """Regla narrativa con semántica explícita (Spec-043)."""
+    """Regla narrativa con semántica explícita (Spec-043).
+
+    Spec-190 §4.4: `applies_to_beat` define el alcance — `None` = regla global
+    (aplica a los 5 actos); `1..N` = regla anclada a ese acto.
+    """
 
     id: str
     story_id: UUID4
     content: str
     type: Optional[RuleType] = None
     intensity: Optional[str] = None
+    applies_to_beat: Optional[int] = None
 
 
 class NarrativeAnchors(BaseModel):
@@ -88,7 +95,6 @@ class MacroBeat(BaseModel):
     created_at: datetime = Field(default_factory=now_argentina)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
-    active_rules: list[str] = []
     active_scenario_description: str = ""
     user_prompt: Optional[str] = None
     beat_type: Optional[BeatType] = None
