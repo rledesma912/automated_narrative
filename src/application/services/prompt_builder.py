@@ -595,7 +595,9 @@ Extiende este momento (150-400 palabras)."""
                 previous_state_section=previous_state_section,
                 beat_number=beat.number,
                 beat_summary=beat.summary,
-                beat_content=beat.generated_act[:800] if beat.has_content() else "[Aún no generado]",
+                beat_content=beat.generated_act[:800]
+                if beat.has_content()
+                else "[Aún no generado]",
                 consistency_rules=consistency_rules,
             )
 
