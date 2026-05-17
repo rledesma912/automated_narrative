@@ -41,9 +41,20 @@ async def init_db() -> None:
             sinopsis TEXT,
             atmosfera TEXT,
             storyteller_config TEXT,
-            personajes TEXT DEFAULT '[]',
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS character (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT,
+            traits TEXT DEFAULT '[]',
+            order_index INTEGER NOT NULL,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
 
