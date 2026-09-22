@@ -325,6 +325,7 @@ Extiende este momento (150-400 palabras)."""
             prev_section = (
                 f"\nMEMORIA DEL ACTO ANTERIOR:\n"
                 f"- Últimos eventos: {previous_journal.last_events}\n"
+                f"- Misterios sin resolver: {previous_journal.unresolved_mysteries}\n"
                 f"- Estado: {previous_journal.physical_emotional_state}\n"
             )
 

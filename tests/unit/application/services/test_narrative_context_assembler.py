@@ -112,6 +112,26 @@ class TestNarrativeContextAssemblerSnapshot:
         result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
         assert "MEMORIA DEL ACTO ANTERIOR" not in result
 
+    def test_con_journal_incluye_unresolved_mysteries(self, assembler, repo):
+        beat = _beat(2)
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="Algo se movió en el granero.",
+            physical_emotional_state="Tranquilos",
+        )
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
+        assert "Misterios sin resolver: Algo se movió en el granero." in result
+
+    def test_unresolved_mysteries_vacio_no_agrega_linea(self, assembler, repo):
+        beat = _beat(2)
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="",
+            physical_emotional_state="Tranquilos",
+        )
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
+        assert "Misterios sin resolver" not in result
+
 
 class TestNarrativeContextAssemblerReglas:
     def test_reglas_activas_se_incluyen(self, assembler, repo):

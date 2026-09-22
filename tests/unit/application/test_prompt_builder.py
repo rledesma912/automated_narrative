@@ -5,7 +5,7 @@ import uuid
 from unittest.mock import patch
 
 from src.application.services import PromptBuilder
-from src.domain.models import Scenario, Story
+from src.domain.models import NarrativeJournal, Scenario, Story
 
 
 class TestPromptBuilder:
@@ -194,6 +194,31 @@ class TestPromptBuilder:
 
         assert "terror_psicologico" in prompt
         assert "primera_persona" in prompt
+
+    def test_synopsis_mapper_one_prompt_incluye_unresolved_mysteries(self):
+        """El prev_section del mapper debe propagar unresolved_mysteries (Spec-420)."""
+        story = Story(
+            title="Test",
+            protagonista="Protagonist",
+            relator="tercera_persona",
+            sinopsis="Synopsis",
+            genero="terror",
+        )
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="Algo se movió en el granero.",
+            physical_emotional_state="Tranquilos",
+        )
+
+        builder = PromptBuilder()
+        prompt = builder.build_synopsis_mapper_one_prompt(
+            story=story,
+            macro_beat_id=2,
+            beat_anchors={"resonance": "test"},
+            previous_journal=journal,
+        )
+
+        assert "Misterios sin resolver: Algo se movió en el granero." in prompt
 
 
 class TestPromptVariants:

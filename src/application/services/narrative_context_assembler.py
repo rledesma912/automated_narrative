@@ -74,6 +74,8 @@ class NarrativeContextAssembler:
             lines += ["", "MEMORIA DEL ACTO ANTERIOR:"]
             if previous_journal.last_events:
                 lines.append(previous_journal.last_events)
+            if previous_journal.unresolved_mysteries:
+                lines.append(f"Misterios sin resolver: {previous_journal.unresolved_mysteries}")
             if previous_journal.physical_emotional_state:
                 lines.append(f"Estado: {previous_journal.physical_emotional_state}")
 
