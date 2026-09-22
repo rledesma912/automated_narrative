@@ -57,7 +57,7 @@ api:
 
 ui:
 	@echo "🚀 Frontend UI (DEV) → http://localhost:$(PORT)"
-	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) DATABASE_URL=$(DATABASE_URL) npm run dev
+	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) DATABASE_URL=$(DATABASE_URL) npm run build:css && npm run dev
 
 dev:
 	@echo "Levantando entorno de desarrollo completo..."

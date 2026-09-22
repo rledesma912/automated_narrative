@@ -5,7 +5,7 @@
   "scripts": {
     "build:css": "tailwindcss -i ./src/styles/globals.css -o ./public/styles.css",
     "watch:css": "tailwindcss -i ./src/styles/globals.css -o ./public/styles.css --watch",
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
+    "dev": "concurrently \"npm run watch:css\" \"nodemon --watch src --ext ts --exec ts-node src/server.ts\"",
     "build": "tsc",
     "start": "node dist/server.js",
     "prestart": "npm run build:css",
@@ -27,12 +27,13 @@
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.60.0",
     "@types/ejs": "^3.1.5",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.5",
     "@types/supertest": "^6.0.3",
     "autoprefixer": "^10.4.16",
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.9",
     "postcss": "^8.4.31",
     "supertest": "^7.2.2",
