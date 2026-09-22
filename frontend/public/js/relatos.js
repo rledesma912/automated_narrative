@@ -13,7 +13,9 @@
 
   function selectRelato(relatoId) {
     document.querySelectorAll("[data-relato-panel]").forEach((panel) => {
-      panel.classList.toggle("hidden", panel.getAttribute("data-relato-panel") !== relatoId);
+      const isTarget = panel.getAttribute("data-relato-panel") === relatoId;
+      panel.classList.toggle("hidden", !isTarget);
+      panel.classList.toggle("active", isTarget);
     });
 
     document.querySelectorAll("[data-relato-tab]").forEach((tab) => {

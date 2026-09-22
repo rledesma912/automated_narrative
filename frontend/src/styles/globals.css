@@ -81,6 +81,13 @@
     @apply card-forge ring-1 ring-forge-accent border-forge-accent scale-[1.02] z-10;
   }
 
+  /* ── Relato Panel Activo ────────────────────────────────────────────── */
+
+  .relato-panel.active {
+    @apply border-2 border-forge-accent outline-2 outline-forge-accent outline-offset-[-1px];
+    box-shadow: 0 0 20px rgba(139, 115, 85, 0.3), 0 4px 16px rgb(0 0 0 / 0.3);
+  }
+
   /* ── Tipografía Normalizada ────────────────────────────────────────────── */
 
   .heading-forge-xl {
