@@ -30,7 +30,6 @@ class TestPrepareStory:
         ):
             with patch(
                 "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
                 return_value={"1": {"scenario_id": "S1"}},
             ):
                 anchors, distribution, num_beats = await director.prepare_story(MagicMock())
@@ -66,7 +65,6 @@ class TestPrepareStory:
         ):
             with patch(
                 "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
                 return_value={"1": {"scenario_id": "S1"}},
             ) as mock_resolve:
                 director = DirectorUseCase(llm=llm, prompt_builder=pb)
@@ -88,7 +86,6 @@ class TestPrepareStory:
         ):
             with patch(
                 "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
                 return_value={},
             ):
                 director = DirectorUseCase(llm=llm, prompt_builder=pb)
@@ -113,7 +110,6 @@ class TestPrepareStory:
         ):
             with patch(
                 "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
                 return_value={},
             ):
                 director = DirectorUseCase(llm=llm, prompt_builder=pb)

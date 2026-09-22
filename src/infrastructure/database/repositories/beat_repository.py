@@ -40,7 +40,7 @@ class SQLBeatRepository:
                 WHERE story_id = ? AND number = ?""",
                 (
                     beat.generated_act,
-                    beat.status.value,
+                    beat.status.value if hasattr(beat.status, "value") else str(beat.status),
                     beat.active_scenario_id,
                     beat.active_scenario_description,
                     beat.system_prompt,
@@ -62,12 +62,14 @@ class SQLBeatRepository:
                     beat.summary,
                     beat.synopsis_beat or "",
                     beat.generated_act,
-                    beat.status.value,
+                    beat.status.value if hasattr(beat.status, "value") else str(beat.status),
                     beat.active_scenario_id,
                     beat.active_scenario_description,
                     beat.system_prompt,
                     beat.user_prompt,
-                    beat.beat_type.value if beat.beat_type else None,
+                    beat.beat_type.value
+                    if beat.beat_type and hasattr(beat.beat_type, "value")
+                    else (beat.beat_type or None),
                 ),
             )
 

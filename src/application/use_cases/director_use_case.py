@@ -114,13 +114,13 @@ class DirectorUseCase:
             on_analyst_done(f"Analizando sinopsis y anclajes ({analyst_elapsed:.1f}s)")
 
         resolver = self._resolver_service or ScenarioResolverService(
-            self.llm, self.prompt_builder, self.normalizer, self.debug_collector
+            prompt_builder=self.prompt_builder
         )
 
         if on_resolver_done:
             on_resolver_done("Distribuyendo escenarios")
         t_resolver = perf_counter()
-        rule_distribution = await resolver.resolve_distribution(story, anchors=narrative_anchors)
+        rule_distribution = resolver.resolve_distribution(story)
         resolver_elapsed = perf_counter() - t_resolver
 
         if on_resolver_done:
