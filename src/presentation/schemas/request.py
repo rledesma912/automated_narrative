@@ -1,6 +1,7 @@
 """Request schemas."""
 
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -25,3 +26,9 @@ class BeatUpdateRequest(BaseModel):
     """Request for updating a beat."""
 
     summary: str
+
+
+class BeatRegenerateRequest(BaseModel):
+    """Request para regenerar solo la Voz de un beat (Spec-430)."""
+
+    narrative_id: UUID

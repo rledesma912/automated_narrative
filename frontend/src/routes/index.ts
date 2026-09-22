@@ -6,7 +6,7 @@ import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField } from "../controllers/wizard.controller";
 import { submitGeneration, streamingRoomPage, getActiveStreamApi } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
-import { relatosPage } from "../controllers/relatos.controller";
+import { relatosPage, regenerarActoAction } from "../controllers/relatos.controller";
 
 const router = Router();
 
@@ -40,5 +40,9 @@ router.get("/modales/confirmar-borrar/:storyId", confirmDeleteModal);
 
 // Nueva ruta de relatos (Spec-235)
 router.get("/historia/:storyId/relatos", relatosPage);
+router.post(
+  "/historia/:storyId/relatos/:narrativeId/actos/:actoNumero/regenerar",
+  regenerarActoAction
+);
 
 export default router;

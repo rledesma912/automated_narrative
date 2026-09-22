@@ -47,3 +47,23 @@ export const getRelatosForStory = async (storyId: string): Promise<Relato[]> => 
     return [];
   }
 };
+
+export interface BeatRegenerateResult {
+  beat: { number: number; summary: string; content: string; status: string };
+  narrative_id: string;
+  narrative_content: string;
+}
+
+/** Regenera solo la Voz (prosa) de un acto puntual (Spec-430). 1 llamada LLM. */
+export const regenerateActoVoz = async (
+  storyId: string,
+  narrativeId: string,
+  actoNumero: number
+): Promise<BeatRegenerateResult> => {
+  const response = await axios.post<BeatRegenerateResult>(
+    `${CORE_API_URL}/api/v1/stories/${storyId}/beats/${actoNumero}/regenerate-voz`,
+    { narrative_id: narrativeId },
+    { timeout: 120000 }
+  );
+  return response.data;
+};

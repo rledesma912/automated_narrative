@@ -4,7 +4,14 @@ import json
 import uuid
 from uuid import UUID
 
-from src.domain.models import NarrativeJournal, RuleType, Story, StoryStatus, TypedRule
+from src.domain.models import (
+    NarrativeAnchors,
+    NarrativeJournal,
+    RuleType,
+    Story,
+    StoryStatus,
+    TypedRule,
+)
 from src.infrastructure.database.connection import get_connection
 from src.utils.timezone import now_argentina
 
@@ -430,6 +437,27 @@ class SQLStoryRepository:
         await conn.commit()
         await conn.close()
 
+    async def get_narrative_anchors(self, story_id: UUID) -> NarrativeAnchors | None:
+        """Lee los 5 anclajes de resonancia persistidos (Spec-081/Spec-430)."""
+        conn = await get_connection()
+        cursor = await conn.execute(
+            "SELECT * FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
+        )
+        row = await cursor.fetchone()
+        await conn.close()
+
+        if not row:
+            return None
+
+        return NarrativeAnchors(
+            story_id=story_id,
+            resonance_hamartia=row["resonance_hamartia"],
+            resonance_hybris=row["resonance_hybris"],
+            resonance_anagnorisis=row["resonance_anagnorisis"],
+            resonance_peripeteia=row["resonance_peripeteia"],
+            resonance_residual=row["resonance_residual"],
+        )
+
     async def _load_personajes(self, conn, story_id: str) -> list[dict]:
         """Carga los personajes de una historia desde la tabla character.
 
@@ -461,7 +489,8 @@ class SQLStoryRepository:
         from src.domain.models import BeatStatus, MacroBeat
 
         cursor = await conn.execute(
-            "SELECT number, summary, synopsis_beat, type, status FROM macro_beat "
+            "SELECT number, summary, synopsis_beat, type, status, "
+            "generated_act, active_scenario_id FROM macro_beat "
             "WHERE story_id = ? ORDER BY number",
             (story_id,),
         )
@@ -484,6 +513,10 @@ class SQLStoryRepository:
                     synopsis_beat=b["synopsis_beat"] if "synopsis_beat" in b.keys() else None,
                     beat_type=beat_type,
                     status=BeatStatus(b["status"]) if b["status"] else BeatStatus.PENDING,
+                    generated_act=b["generated_act"] or "",
+                    active_scenario_id=b["active_scenario_id"]
+                    if "active_scenario_id" in b.keys()
+                    else None,
                 )
             )
         return beats

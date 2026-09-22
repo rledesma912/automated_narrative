@@ -32,10 +32,7 @@ class GenerateNarrativesUseCase:
         parts = []
         for beat in sorted(story.beats, key=lambda b: b.number):
             if beat.generated_act:
-                beat_title = f"Beat {beat.number}"
-                if beat.summary:
-                    beat_title += f" - {beat.summary}"
-                parts.append(f"## {beat_title}\n\n{beat.generated_act}")
+                parts.append(f"## Acto {beat.number}\n\n{beat.generated_act.strip()}")
         return "\n\n".join(parts)
 
     async def consolidate_and_save(
@@ -59,6 +56,21 @@ class GenerateNarrativesUseCase:
             content=full_content,
             status=StoryStatus.COMPLETED,
         )
+        return await self.narrative_repo.save(narrative)
+
+    async def update_content(self, narrative_id: UUID, story: Story) -> GeneratedNarrative:
+        """Reconsolida `story.beats` y sobrescribe una variante existente (Spec-430).
+
+        A diferencia de consolidate_and_save() (que siempre crea fila nueva), este
+        método preserva id/título/fecha — pensado para regeneración parcial por acto.
+        """
+        narrative = await self.narrative_repo.get_by_id(narrative_id)
+        if not narrative:
+            raise ValueError(f"Relato generado no encontrado: {narrative_id}")
+        if narrative.story_template_id != story.id:
+            raise ValueError(f"El relato {narrative_id} no pertenece a la historia {story.id}")
+
+        narrative.content = self._consolidate_content(story)
         return await self.narrative_repo.save(narrative)
 
     async def generate_from_existing_beats(self, story_id: UUID, title: str) -> GeneratedNarrative:
