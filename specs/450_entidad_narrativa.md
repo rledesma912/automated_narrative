@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 implementado (pendiente commit + deploy)
+**Estado:** IMPLEMENT — S0 desplegado; sigue S1
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
