@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** PLAN — SPECIFY aprobada (2026-09-23); plan pendiente de OK para pasar a TASKS
+**Estado:** TASKS — PLAN aprobado (2026-09-23); tareas pendientes de OK para pasar a IMPLEMENT
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -118,6 +118,7 @@ La graduación vive en `config/llm_beats_definition.yaml` (fuente de verdad de b
 
 - Solo estas reglas de revelación pasan a depender del `reveal_level` **de la entidad principal** (en el YAML, variantes por nivel; el resto de `must`/`must_not` queda fijo).
 - **Sin entidades, los beats quedan exactamente como hoy** (se usa la variante actual).
+- **Queda fija (decidido 2026-09-23):** beat 3 `must_not: "explicar origen o reglas completas del fenomeno"`. Revelar a la entidad (nombre, naturaleza, descripción) no es explicar su origen; vale para todos los niveles, incluido `explicita`.
 
 ---
 
@@ -260,4 +261,109 @@ S0 Catálogo de naturalezas ─▶ S1 Dominio + persistencia + API + YAML ─┬
 | Cambiar el YAML de beats altera historias sin entidades | Snapshot byte a byte antes y después (S2) + regresión de los 17 prompts con mock (S3). |
 | Editar una historia borra el estado del journal de entidades | `entity_journal` cuelga de `story`, no de `entity`; test en S1. |
 | El E2E de guardado de Spec-460 recorre el paso 4 | El grupo arranca vacío (sin cards), no agrega obligatorios. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + pytest + tsc + Vitest + Playwright en verde → commit (y despliegue donde se indica) con tu OK.
+
+### S0 — Catálogo de naturalezas (backend)
+
+- [ ] **T0.1:** Tablas y seed.
+  - Acceptance: `init_db()` crea `entity_nature` y `genre_entity_nature` y siembra las 10 naturalezas y el mapeo del PLAN con upsert (`ON CONFLICT DO UPDATE` de `label`/`order_index` en naturalezas; `INSERT OR IGNORE` en el mapeo). `desconocida` en los 8 géneros. Corre sobre una DB existente sin tocar sus datos.
+  - Verify: pytest — 2 corridas = mismas filas; cambiar una etiqueta en el seed y re-correr la actualiza; DB con historias previas conserva sus filas.
+  - Files: `src/infrastructure/database/seeds/entity_natures.py` (nuevo), `src/infrastructure/database/connection.py`
+- [ ] **T0.2:** Catálogo en la API.
+  - Acceptance: `GET /api/v1/catalog/genres` suma `entity_natures: [{id, label}]` por género, ordenadas por `order_index`; `SQLGenreRepository` expone `natures_of(genre_id)` y `nature_allowed(genre_id, nature_id)`.
+  - Verify: pytest del repo y del router (forma de la respuesta; `suspenso` → humano, culto, desconocida).
+  - Files: `src/domain/models.py` (`EntityNature`, `Genre.entity_natures`), `src/domain/interfaces.py`, `src/infrastructure/database/repositories/genre_repository.py`, `src/presentation/routers/catalog_router.py`
+- [ ] **Checkpoint S0:** lint + pytest + Vitest (el `catalog.service` del frontend tolera el campo nuevo) → commit + despliegue (aditivo).
+
+### S1 — Dominio, persistencia, API y YAML
+
+- [ ] **T1.1:** Dominio.
+  - Acceptance: `Entity` (name, nature_id, description, manifestations, limits, reveal_level ∈ {nunca, insinuada, progresiva, explicita}, default `insinuada`); `Story.entities: list[Entity]` (máx. 3) y `Story.principal_entity`. Topes: name 60, description 400, manifestations 300, limits 300 → error de validación.
+  - Verify: pytest `tests/unit/domain/test_models.py` (4 entidades → error; tope excedido → error; principal = primera; sin entidades → `None`).
+  - Files: `src/domain/models.py`
+- [ ] **T1.2:** Persistencia.
+  - Acceptance: tabla `entity` (esquema §1); `save()` y `update_inputs()` borran y reinsertan con `order_index`; `get_by_id()`/listados cargan `entities` ordenadas. Tabla `entity_journal` creada (se usa en S3).
+  - Verify: pytest de integración — round-trip con 0, 1 y 3 entidades; editar una historia no borra filas de `entity_journal`; borrar la historia las borra (cascade).
+  - Files: `src/infrastructure/database/connection.py`, `src/infrastructure/database/repositories/story_repository.py`
+- [ ] **T1.3:** API.
+  - Acceptance: `narrator_config.entities` entra por `POST`/`PATCH /stories` y sale en la respuesta (`storyteller_config.entities`); naturaleza que no corresponde al género → 422 legible (`ensure_valid_entities`, junto a `ensure_valid_genre`); más de 3 o tope excedido → 422.
+  - Verify: pytest `tests/unit/presentation/routers/test_story_router.py` (alta, edición, 422 por naturaleza/cantidad/largo).
+  - Files: `src/presentation/schemas/request.py`, `src/presentation/schemas/response.py`, `src/presentation/routers/story_router.py`, `src/application/dto/story_dto.py`, `src/application/use_cases/create_story.py`, `src/application/services/narrator_config_sanitizer.py`
+- [ ] **T1.4:** YAML.
+  - Acceptance: `YamlStoryLoader` lee `storyteller_config.entities`; el exporter las escribe; `export-yaml` → `import-yaml` conserva las entidades; `generate --input` las acepta.
+  - Verify: pytest (round-trip YAML con 2 entidades; YAML sin `entities` → historia sin entidades).
+  - Files: `src/infrastructure/loaders/yaml_loader.py`, `src/infrastructure/exporters/yaml_exporter.py`, `src/cli/commands.py`
+- [ ] **Checkpoint S1:** lint + pytest → commit (sin despliegue: nadie carga entidades todavía).
+
+### S2 — Beats: revelación por nivel
+
+- [ ] **T2.1:** Snapshot de hoy.
+  - Acceptance: test que congela, para los 5 beats, la salida de `format_for_beat` (compact y frontier), de `NarrativeContextAssembler.assemble()` con un `MacroBeat` fijo y del `acts_json` del resolver. Se escribe **antes** de tocar el YAML.
+  - Verify: pytest en verde contra el código actual.
+  - Files: `tests/unit/application/test_beat_reveal_snapshot.py` (nuevo) + fixture de snapshot
+- [ ] **T2.2:** `reveal_rules` y `entity_exposure` en el YAML.
+  - Acceptance: las 3 reglas de §2 salen de `must`/`must_not` y pasan a `reveal_rules` con `default` + overrides (`explicita` sin los `must_not` de los beats 1 y 2; `nunca` sin el `must` de presencia del beat 3); cada beat suma `entity_exposure` con los 4 niveles (tabla §2; beat 5 de `nunca` = "lo que decida el acto 5"). La regla de origen del beat 3 queda fija.
+  - Verify: el snapshot de T2.1 sigue idéntico.
+  - Files: `config/llm_beats_definition.yaml`
+- [ ] **T2.3:** Resolución por nivel.
+  - Acceptance: `BeatSpecRepository.get_by_id(beat_id, reveal_level=None)` y `format_for_beat(..., reveal_level=None)` devuelven el beat resuelto; sin nivel = `default`; `exposure_for(beat_id, reveal_level)` devuelve el texto de exposición.
+  - Verify: pytest — sin nivel = snapshot; `explicita` beat 1 sin «confirmar lo paranormal»; `nunca` beat 3 sin «mostrar amenaza o presencia directa»; `insinuada` = default.
+  - Files: `src/application/services/beat_spec_repository.py`
+- [ ] **Checkpoint S2:** lint + pytest → commit.
+
+### S3 — Pipeline
+
+- [ ] **T3.1:** Regresión cero (antes de tocar prompts).
+  - Acceptance: test que corre el pipeline completo con `MockLLMAdapter` sobre una historia sin entidades y congela los 17 prompts (system + user).
+  - Verify: pytest en verde contra el código actual y al final del slice.
+  - Files: `tests/integration/test_pipeline_prompts_snapshot.py` (nuevo)
+- [ ] **T3.2:** Analyst y Mapper.
+  - Acceptance: bloque «AMENAZA» con las fichas (principal primero) en `story_analyst_*compact.md` y `synopsis_mapper_*compact.md`, solo si hay entidades; el Mapper suma la exposición del beat por entidad; Resolver y Mapper usan el beat resuelto con el nivel de la principal.
+  - Verify: pytest de `PromptBuilder` (con entidades: bloque presente y en orden; sin entidades: T3.1 idéntico).
+  - Files: `src/application/services/prompt_builder.py`, `config/prompts_generation/story_analyst_compact.md`, `config/prompts_generation/synopsis_mapper_one_compact.md`
+- [ ] **T3.3:** Voz.
+  - Acceptance: `NarrativeContextAssembler.assemble()` recibe las entidades y el nivel de la principal: bloque «AMENAZA EN ESTE ACTO» con solo la exposición graduada de cada entidad (nunca la ficha completa); `PROHIBIDO`/`Efecto buscado` salen del beat resuelto; `entity_state` del acto anterior en la memoria.
+  - Verify: pytest (con `nunca` en el beat 1 no aparecen nombre ni naturaleza; con `explicita` sí; sin entidades = snapshot).
+  - Files: `src/application/services/narrative_context_assembler.py`, `src/application/services/prompt_builder.py`
+- [ ] **T3.4:** Journal.
+  - Acceptance: `journal.md` pide `entity_state` solo si hay entidades; `NarrativeJournal.entity_state` opcional; `save_journal()` lo guarda en `entity_journal` y `get_journal()` lo devuelve; llega a la Voz del beat siguiente y a la regeneración de un acto (Spec-430).
+  - Verify: pytest (parseo con y sin la clave; persistencia; `RegenerateBeatVozUseCase` recibe el estado).
+  - Files: `config/prompts_generation/journal.md`, `src/application/services/memory_journalist.py`, `src/domain/models.py`, `src/infrastructure/database/repositories/story_repository.py`
+- [ ] **T3.5:** Medición de tokens.
+  - Acceptance: script que arma los prompts de los 5 roles con 0, 1 y 3 entidades (campos al tope) y reporta tokens estimados vs `num_ctx` de cada rol del perfil activo; resultado anotado en la spec. Si un rol se pasa, se ajustan topes o se resume la ficha para ese rol antes de cerrar el slice.
+  - Verify: salida del script en la spec.
+  - Files: `scripts/measure_entity_prompts.py` (nuevo)
+- [ ] **Checkpoint S3:** lint + pytest (T3.1 idéntico) → commit (despliegue junto con S4).
+
+### S4 — Wizard «La Amenaza»
+
+- [ ] **T4.1:** Definición y render.
+  - Acceptance: grupo `amenaza` en el paso 4 con `wizard_card_list` (máx. 3, **arranca vacío**, card 1 «ENTIDAD 1 — PRINCIPAL»); campos `entity_N_name|nature|description|manifestations|limits|reveal` con `maxlength` según topes; `entity_N_nature` con `source: entity_natures` filtrado en el servidor por el género de la sesión (sin género → deshabilitado con aviso).
+  - Verify: Vitest de la vista (filtrado por género; sin género; card list vacía por defecto).
+  - Files: `frontend/config/ui_definitions.yaml`, `frontend/src/views/wizard.ejs`, `frontend/src/views/partials/wizard_card_list.ejs`, `frontend/src/controllers/wizard.controller.ts`, `frontend/src/services/catalog.service.ts`, `frontend/public/js/wizard.js`
+- [ ] **T4.2:** Validación del paso.
+  - Acceptance: `submitStep` descarta una naturaleza que no corresponde al género (como el subgénero en Spec-440); una card con naturaleza vacía se marca con error.
+  - Verify: Vitest del controller.
+  - Files: `frontend/src/controllers/wizard.controller.ts`
+- [ ] **T4.3:** Mapeo ida y vuelta + confirmación.
+  - Acceptance: `mapWizardToCore()` → `narrator_config.entities` (solo cards con naturaleza, en orden); `mapStoryToWizard()` rehidrata; la confirmación lista las entidades con su nivel.
+  - Verify: Vitest `mapper.service.test.ts` (0, 1 y 3 entidades; round-trip).
+  - Files: `frontend/src/services/mapper.service.ts`, `frontend/src/services/wizard.service.ts`, `frontend/src/views/wizard-confirm.ejs`
+- [ ] **T4.4:** E2E.
+  - Acceptance: agregar 2 entidades → guardar → editar → rehidratadas; cambiar el género a uno donde la naturaleza no corresponde → queda sin naturaleza; el E2E de guardado de Spec-460 sigue en verde sin cambios.
+  - Verify: Playwright `tests/e2e/entities.spec.ts` (nuevo) + suite completa.
+- [ ] **Checkpoint S4:** lint + pytest + tsc + Vitest + Playwright → commit + **despliegue de S2+S3+S4** (backend y frontend; `init_db()` crea las tablas en prod al arrancar).
+
+### S5 — Evaluación
+
+- [ ] **T5.1:** Generar `el_monte_prohibido.yaml` con el perfil activo, sin entidades y con entidades (principal `insinuada` + una secundaria), y comparar a mano: coherencia de nombre/aspecto/poderes entre actos, respeto del nivel de revelación por beat, uso de los límites. Resultado y ejemplos anotados en la spec.
+
+### S6 — Documentación y cierre
+
+- [ ] **T6.1:** `CLAUDE.md` (tablas nuevas, fórmula del `narrative_context`, journal, wizard, catálogo), notas en Spec-180 y Spec-220, Spec-450 → DONE.
 
