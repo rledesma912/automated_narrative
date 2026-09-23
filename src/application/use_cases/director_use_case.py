@@ -10,6 +10,7 @@ from src.application.services.checkpoint import VALID_CHECKPOINTS, ordinal
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.synopsis_beat_mapper import SynopsisBeatMapper
 from src.domain.interfaces import LLMProvider
+from src.domain.jobs import JobStage
 from src.domain.models import (
     Beat,
     BeatStatus,
@@ -142,6 +143,7 @@ class DirectorUseCase:
         on_step_done: Callable[[str, float], None] | None = None,
         on_step_start: Callable[[str], None] | None = None,
         stop_after: str | None = None,
+        on_stage: Callable[[JobStage, int | None], None] | None = None,
     ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
         """Orquestación punta a punta (Spec-038): ANALYST → 5×(MAPPER+NC+VOZ+JOURNAL).
 
@@ -154,6 +156,8 @@ class DirectorUseCase:
             on_step_done: Callback para pasos intermedios (Spec-043).
             stop_after: Checkpoint para detener el pipeline (Spec-040).
                 Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
+            on_stage: Callback estructurado `(etapa, beat)` al iniciar cada etapa
+                (Spec-460). `beat` es None en analyst/resolver.
         """
         stop_at: int | None = VALID_CHECKPOINTS.get(stop_after) if stop_after else None
 
@@ -161,16 +165,29 @@ class DirectorUseCase:
             if on_step_start:
                 on_step_start(msg)
 
+        def _stage(stage: JobStage, beat: int | None = None) -> None:
+            if on_stage:
+                on_stage(stage, beat)
+
         def _analyst_done(msg: str) -> None:
             if on_step_done:
                 on_step_done("Analizando sinopsis y anclajes", 0)
             _step_start(msg)
 
+        # prepare_story llama cada callback dos veces (al iniciar y al terminar la
+        # fase): la primera llamada de _resolver_done marca el inicio del resolver.
+        resolver_started = False
+
         def _resolver_done(msg: str) -> None:
+            nonlocal resolver_started
+            if not resolver_started:
+                resolver_started = True
+                _stage(JobStage.RESOLVER)
             if on_step_done:
                 on_step_done("Distribuyendo escenarios", 0)
             _step_start(msg)
 
+        _stage(JobStage.ANALYST)
         narrative_anchors, rule_distribution, num_beats = await self.prepare_story(
             story,
             on_analyst_done=_analyst_done,
@@ -207,6 +224,7 @@ class DirectorUseCase:
                 journal=journal,
                 stop_at=stop_at,
                 on_step_start=on_step_start,
+                on_stage=on_stage,
             )
             yield macro_beat, journal, llm_elapsed
 
@@ -221,6 +239,7 @@ class DirectorUseCase:
         journal: NarrativeJournal | None,
         stop_at: int | None,
         on_step_start: Callable[[str], None] | None = None,
+        on_stage: Callable[[JobStage, int | None], None] | None = None,
     ) -> tuple[MacroBeat, NarrativeJournal, float]:
         """Ejecuta una iteración completa de beat: MAPPER → VOZ → JOURNAL.
 
@@ -266,6 +285,8 @@ class DirectorUseCase:
         beat_intent = beat_info.get("intent", "")
         beat_intensity = beat_info.get("intensity", "")
 
+        if on_stage:
+            on_stage(JobStage.MAPPER, beat_id)
         if on_step_start:
             on_step_start(f"📐  Mapeando beat {beat_id}/{num_beats}...")
 
@@ -309,10 +330,14 @@ class DirectorUseCase:
         voz = self._voz
         journalist = self._journalist
 
+        if on_stage:
+            on_stage(JobStage.VOZ, beat_id)
         if on_step_start:
             on_step_start(f"✍️   Narrando beat {beat_id}/{num_beats}...")
         macro_beat, llm_elapsed = await voz.narrate(macro_beat, story)
 
+        if on_stage:
+            on_stage(JobStage.JOURNAL, beat_id)
         if on_step_start:
             on_step_start(f"📓  Actualizando journal beat {beat_id}/{num_beats}...")
         journal = await journalist.extract(story, macro_beat, journal)

@@ -289,7 +289,7 @@ class _FakeDirector:
         self._beats = beats
         self._delay = delay
 
-    async def execute_full(self, story):
+    async def execute_full(self, story, **_kwargs):
         for n in range(1, self._beats + 1):
             await asyncio.sleep(self._delay)  # "llamada LLM"
             yield SimpleNamespace(beat_type=None, generated_act=f"acto {n}"), None, 0.0

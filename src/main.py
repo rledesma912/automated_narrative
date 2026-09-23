@@ -14,6 +14,7 @@ from src.presentation.routers import (
     story_router,
     stream_router,
 )
+from src.presentation.runtime import job_manager
 
 
 @asynccontextmanager
@@ -22,6 +23,7 @@ async def lifespan(_app: FastAPI):
     await SQLStoryRepository().recover_processing_stories()
     await SQLJobRepository().recover_interrupted()
     yield
+    await job_manager.shutdown()
 
 
 app = FastAPI(

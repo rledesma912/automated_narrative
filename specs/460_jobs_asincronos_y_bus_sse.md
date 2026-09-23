@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 y S1 hechos
+**Estado:** IMPLEMENT — S0, S1 y S2 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -403,38 +403,40 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S2 — `JobManager` + `EventBus` (sin HTTP)
 
-- [ ] **T2.1:** `StreamEvent` con `id` y eventos de ciclo de vida.
+- [x] **T2.1:** `StreamEvent` con `id` y eventos de ciclo de vida.
   - Acceptance: campo opcional `id: int | None`; `to_sse()` lo incluye si existe; nuevos tipos `job_started`, `job_progress`, `job_done`, `job_failed`, `snapshot`. Los tipos existentes no cambian (`stream_error` se mantiene).
   - Verify: `uv run pytest tests/unit/domain -k streaming -v`
   - Files: `src/domain/streaming.py`
-- [ ] **T2.2:** `stream_story` informa la etapa.
+- [x] **T2.2:** `stream_story` informa la etapa.
   - Acceptance: los eventos `status` llevan `stage` ∈ `JobStage` (hoy `step` solo usa `analyst`/`mapper`) y `beat`; se agrega `consolidando` antes de consolidar. Heartbeat intacto (Spec-201).
+  - Implementado: `DirectorUseCase.execute_full(on_stage=...)` — callback estructurado `(JobStage, beat)` junto al `on_step_start` de texto (CLI, sin cambios). `prepare_story` llama cada callback dos veces (inicio/fin): `resolver` se emite en la primera. `stream_story` lo traduce con `stage_event()` (`msg`, `step` legado, `stage`, `beat`, `total_beats`).
   - Verify: `uv run pytest tests/unit/application/services/test_streaming_service.py -v`
   - Files: `src/application/services/streaming_service.py`
-- [ ] **T2.3:** `EventBus`.
+- [x] **T2.3:** `EventBus`.
   - Acceptance: canales por nombre (`global`, `job:<id>`); `publish()` asigna id monotónico por canal y guarda los últimos N (no heartbeats); `subscribe(channel, last_event_id=None)` devuelve `(queue, replay)` con solo los eventos posteriores a `last_event_id`; `unsubscribe()`; `drop(channel)`.
   - Verify: `uv run pytest tests/unit/application/services/test_event_bus.py -v` (fan-out a 2 suscriptores, replay por id, heartbeats fuera del buffer).
   - Files: `src/application/services/event_bus.py` + test
-- [ ] **T2.4:** `JobManager.submit()` para `full_generation`.
+- [x] **T2.4:** `JobManager.submit()` para `full_generation`.
   - Acceptance: crea el job en DB (`queued`); si ya hay uno activo para la historia → `JobAlreadyActive(job_id)`; lanza la `Task` independiente de consumidores; publica en `job:<id>` todos los eventos de `stream_story` y en `global` `job_started` / `job_progress` (con cada cambio de `stage`/`beat`) / `job_done` / `job_failed`; persiste el progreso en DB.
   - Verify: test con `MockLLMAdapter`: secuencia completa de eventos en ambos canales; segundo `submit` → excepción con el mismo `job_id`.
   - Files: `src/application/services/job_manager.py`, `tests/unit/application/services/test_job_manager.py`
-- [ ] **T2.5:** Regeneración atómica.
+- [x] **T2.5:** Regeneración atómica.
   - Acceptance: `submit(..., regenerate=True)` ejecuta la limpieza de Spec-216/219 (la misma que hoy dispara `PATCH status=processing`) dentro del job, antes del pipeline.
   - Verify: test: beats/journal/anchors previos se borran solo cuando arranca el job.
   - Files: `job_manager.py` (reusa la lógica de `update_story_status`)
-- [ ] **T2.6:** Cancelación real.
+- [x] **T2.6:** Cancelación real.
   - Acceptance: `cancel(job_id)` → `task.cancel()`; el job queda `failed` con `error="cancelada por el usuario"`; la historia queda `failed` y **no** pasa a `completed`; se publica `job_failed`.
   - Verify: test con productor lento; **T0.2 portado a `JobManager` pasa a verde**.
   - Files: `job_manager.py` + test
-- [ ] **T2.7:** Limpieza por TTL y `snapshot`.
+- [x] **T2.7:** Limpieza por TTL y `snapshot`.
   - Acceptance: el canal `job:<id>` se descarta N minutos después de terminar, haya o no consumidores; un `submit` nuevo tras terminar crea job nuevo; `snapshot()` devuelve jobs activos + terminados hace < 60 s.
   - Verify: test con TTL corto; **T0.1 portado pasa a verde**.
   - Files: `job_manager.py` + test
-- [ ] **T2.8:** Singleton y ciclo de vida.
+- [x] **T2.8:** Singleton y ciclo de vida.
   - Acceptance: instancia única del módulo; en el cierre del `lifespan` se cancelan los jobs vivos (quedan `failed` con "interrumpida por reinicio").
-  - Files: `job_manager.py`, `src/main.py`
-- [ ] **Checkpoint S2:** `make lint && make test`. La app funciona igual (los routers todavía no usan el `JobManager`).
+  - Implementado en `src/presentation/runtime.py` (composition root: la capa de aplicación no importa repos de infraestructura), no en `job_manager.py`.
+  - Files: `src/presentation/runtime.py`, `src/main.py`
+- [x] **Checkpoint S2:** `make lint && make test`. La app funciona igual (los routers todavía no usan el `JobManager`).
 
 ### S3 — API de jobs + `/stream` legado sobre `JobManager`
 

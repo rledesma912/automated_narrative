@@ -298,6 +298,42 @@ class TestDirectorExecuteFullLoop:
         assert numbers == list(range(1, len(numbers) + 1))
 
     @pytest.mark.asyncio
+    async def test_on_stage_informa_cada_etapa_en_orden(self):
+        """Spec-460 T2.2: callback estructurado (etapa, beat) por cada etapa."""
+        from src.domain.jobs import JobStage
+
+        story = _make_story()
+        mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)
+        director = DirectorUseCase(
+            MockLLMAdapter(),
+            PromptBuilder(),
+            voz=mock_voz,
+            journalist=mock_journalist,
+        )
+        num_beats = director.prompt_builder.num_beats
+        stages: list[tuple[JobStage, int | None]] = []
+
+        with (
+            patch(
+                "src.application.services.story_analyst_service.StoryAnalystService",
+                return_value=mock_analyst,
+            ),
+            patch(
+                "src.application.use_cases.director_use_case.SynopsisBeatMapper",
+                return_value=mock_mapper,
+            ),
+        ):
+            async for _ in director.execute_full(
+                story, on_stage=lambda st, b: stages.append((st, b))
+            ):
+                pass
+
+        expected = [(JobStage.ANALYST, None), (JobStage.RESOLVER, None)]
+        for n in range(1, num_beats + 1):
+            expected += [(JobStage.MAPPER, n), (JobStage.VOZ, n), (JobStage.JOURNAL, n)]
+        assert stages == expected
+
+    @pytest.mark.asyncio
     async def test_on_plan_ready_called_with_num_beats(self):
         story = _make_story()
         mock_analyst, mock_mapper, mock_voz, mock_journalist, _ = self._make_mocks(story)

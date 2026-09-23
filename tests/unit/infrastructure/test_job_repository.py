@@ -59,15 +59,16 @@ async def test_get_inexistente_devuelve_none(repo: SQLJobRepository):
 
 async def test_ciclo_de_vida_completo(repo: SQLJobRepository):
     story_id = await _story()
-    job = await repo.create(_job(story_id, total_beats=5))
+    job = await repo.create(_job(story_id))
     narrative_id = uuid.uuid4()
 
     await repo.mark_running(job.id)
-    await repo.update_progress(job.id, JobStage.VOZ, 3)
+    await repo.update_progress(job.id, JobStage.VOZ, 3, total_beats=5)
+    await repo.update_progress(job.id, JobStage.JOURNAL, 3)  # sin total: no lo pisa
     running = await repo.get(job.id)
     assert running.status == JobStatus.RUNNING
     assert running.started_at is not None
-    assert (running.stage, running.beat) == (JobStage.VOZ, 3)
+    assert (running.stage, running.beat, running.total_beats) == (JobStage.JOURNAL, 3, 5)
 
     await repo.finish(job.id, JobStatus.DONE, narrative_id=narrative_id)
     done = await repo.get(job.id)

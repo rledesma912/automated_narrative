@@ -136,3 +136,59 @@ async def test_stream_continues_emitting_done_when_narrative_save_fails():
     assert len(done_events) == 1
     assert done_events[0].data["narrative_id"] is None
     assert error_events == []
+
+
+@pytest.mark.asyncio
+async def test_stream_emite_status_con_etapa_estructurada():
+    """Spec-460 T2.2: cada etapa del director llega como `status` con stage/beat/total."""
+    from src.domain.jobs import JobStage
+
+    director = MagicMock()
+    director.prompt_builder.num_beats = 2
+
+    async def _execute_full(_story, on_stage=None, **_kwargs):
+        on_stage(JobStage.ANALYST, None)
+        on_stage(JobStage.RESOLVER, None)
+        for i in range(1, 3):
+            for stage in (JobStage.MAPPER, JobStage.VOZ, JobStage.JOURNAL):
+                on_stage(stage, i)
+            yield _make_beat(i), None, 0.0
+
+    director.execute_full = _execute_full
+    story = _make_story()
+    narrative_uc = MagicMock()
+    narrative_uc.consolidate_and_save = AsyncMock(
+        return_value=GeneratedNarrative(
+            story_template_id=story.id, title="auto", content="x", status=StoryStatus.COMPLETED
+        )
+    )
+
+    events = await _collect_events(
+        stream_story(
+            director,
+            story,
+            story_repo=_fake_story_repo(),
+            beat_repo=_fake_beat_repo(),
+            narrative_use_case=narrative_uc,
+        )
+    )
+
+    statuses = [e.data for e in events if e.event == StreamEventType.STATUS]
+    assert [(d["stage"], d["beat"]) for d in statuses] == [
+        ("analyst", None),
+        ("resolver", None),
+        ("mapper", 1),
+        ("voz", 1),
+        ("journal", 1),
+        ("mapper", 2),
+        ("voz", 2),
+        ("journal", 2),
+        ("consolidando", None),
+    ]
+    assert all(d["total_beats"] == 2 for d in statuses)
+    assert statuses[3]["msg"] == "Narrando acto 1 de 2..."
+    assert statuses[3]["step"] == "voz"  # campo legado que usa la sala
+    # El orden relativo se mantiene: cada beat_done llega después de sus etapas.
+    kinds = [e.event for e in events]
+    assert kinds.index(StreamEventType.BEAT_DONE) > kinds.index(StreamEventType.STATUS)
+    assert kinds[-1] == StreamEventType.DONE

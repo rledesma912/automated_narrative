@@ -5,13 +5,17 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from src.domain.jobs import ACTIVE_JOB_STATUSES, Job, JobStage, JobStatus
+from src.domain.jobs import (
+    ACTIVE_JOB_STATUSES,
+    INTERRUPTED_ERROR,
+    Job,
+    JobStage,
+    JobStatus,
+)
 from src.infrastructure.database.connection import get_connection
 from src.utils.timezone import now_argentina
 
 logger = logging.getLogger(__name__)
-
-INTERRUPTED_ERROR = "interrumpida por reinicio"
 
 _ACTIVE = tuple(s.value for s in ACTIVE_JOB_STATUSES)
 _ACTIVE_SQL = f"status IN ({', '.join('?' for _ in _ACTIVE)})"
@@ -60,8 +64,13 @@ class SQLJobRepository:
             job_id, status=JobStatus.RUNNING.value, started_at=now_argentina().isoformat()
         )
 
-    async def update_progress(self, job_id: UUID, stage: JobStage, beat: int | None) -> None:
-        await self._update(job_id, stage=stage.value, beat=beat)
+    async def update_progress(
+        self, job_id: UUID, stage: JobStage, beat: int | None, total_beats: int | None = None
+    ) -> None:
+        fields = {"stage": stage.value, "beat": beat}
+        if total_beats is not None:
+            fields["total_beats"] = total_beats
+        await self._update(job_id, **fields)
 
     async def finish(
         self,

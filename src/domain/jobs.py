@@ -31,6 +31,11 @@ class JobStatus(str, Enum):
 
 ACTIVE_JOB_STATUSES = (JobStatus.QUEUED, JobStatus.RUNNING)
 
+# Motivos de fallo que no vienen del pipeline.
+CANCELLED_ERROR = "cancelada por el usuario"
+INTERRUPTED_ERROR = "interrumpida por reinicio"
+NO_RESULT_ERROR = "el pipeline terminó sin resultado"
+
 
 class JobStage(str, Enum):
     """Etapa del pipeline en la que está el job."""
