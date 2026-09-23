@@ -28,8 +28,8 @@ describe('Theme CSS Variables — Error States', () => {
     expect(theme['error-border']).toBeDefined();
   });
 
-  it('noir theme tiene error vars', () => {
-    const theme = themes['noir'] as ThemeDef;
+  it('earthy theme tiene error vars', () => {
+    const theme = themes['earthy'] as ThemeDef;
     expect(theme.error).toBeDefined();
     expect(theme['error-bg']).toBeDefined();
     expect(theme['error-border']).toBeDefined();
@@ -43,7 +43,7 @@ describe('Theme CSS Variables — Error States', () => {
   });
 
   it('todos los themes tienen las 3 variables de error', () => {
-    const keys = ['horror', 'noir', 'light-contrast'];
+    const keys = ['horror', 'earthy', 'light-contrast'];
     
     keys.forEach((key) => {
       const theme = themes[key] as ThemeDef;
@@ -56,7 +56,7 @@ describe('Theme CSS Variables — Error States', () => {
 
 describe('Theme CSS Variables — Backward Compatibility', () => {
   it('todos los themes tienen las variables base', () => {
-    const keys = ['horror', 'noir', 'light-contrast'];
+    const keys = ['horror', 'earthy', 'light-contrast'];
     
     keys.forEach((key) => {
       const theme = themes[key] as ThemeDef;
