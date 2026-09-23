@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S3 desplegados; S0–S5 desplegados; sigue S6
+**Estado:** DONE (2026-09-23) — S0–S6 completos; S0–S5 desplegados en prod
 
 ---
 
@@ -448,7 +448,7 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S6 — Documentación y cierre
 
-- [ ] **T6.1:** `CLAUDE.md` (tablas `genre`/`subgenre`, FK, `/catalog/genres`, `import-yaml`, regla de edición, tipos de regla), nota en Spec-220, Spec-440 → DONE.
+- [x] **T6.1:** `CLAUDE.md` (tablas `genre`/`subgenre`, FK, `/catalog/genres`, `import-yaml`, regla de edición, tipos de regla), nota en Spec-220, Spec-440 → DONE.
 
 ---
 

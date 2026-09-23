@@ -2,6 +2,15 @@
 
 > **Actualizado por Spec-460 §2.5 (2026-09-22):** el wizard ya no genera ni guarda en silencio al pasar el último paso. La confirmación tiene un único "Guardar historia" (`POST /generar/guardar`, errores visibles) y la generación se lanza desde la galería o la ficha como job. Se eliminó `POST /generar/submit`.
 
+> **Actualizado por Spec-440 (2026-09-23):**
+> - **Géneros:** el catálogo vive en la DB (`genre`/`subgenre`, FK compuesta en `story`) y el wizard lo lee de `GET /api/v1/catalog/genres`. Subgénero dependiente del género (`source: genre_catalog`, `depends_on`); par inválido → 422.
+> - **Narrador:** el combo "quién cuenta la historia" lista solo personajes con nombre (`source: characters`), se preselecciona si hay uno solo y se valida en el POST del paso.
+> - **Rasgos:** lista única con ancla YAML (`&character_traits`), 18 rasgos (se sumaron miedoso, curioso, impulsivo y desconfiado).
+> - **Contrato:** la sesión y el DTO al Core usan IDs limpios (`genero`, `subgenero`, `tono`, `narrator_config`); la rehidratación acepta el formato legado `"id: Etiqueta"`. Tipos de regla = `RuleType` del dominio.
+> - **Edición:** se pueden editar historias ya generadas; lo generado se conserva hasta regenerar. Con un job activo → 409.
+> - **Layout:** wizard compacto para 1080p (`width: half` para campos que comparten fila).
+> - **YAML:** `import-yaml` (crea borradores) y `export-yaml --all` completan el round-trip.
+
 
 ## 1. El Wizard de 5 Pasos
 El proceso de creación de historias se guía a través de un stepper interactivo que captura la configuración semántica rica de la narrativa.
@@ -10,12 +19,12 @@ El proceso de creación de historias se guía a través de un stepper interactiv
 1.  **Configuración:** Título, género, subgénero y tono atmosférico.
 2.  **Personajes:** Elenco dinámico (hasta 5 protagonistas) con roles y rasgos. Selección del narrador (storyteller).
 3.  **Voz:** Configuración avanzada del estilo narrativo (percepción, conocimiento, lenguaje, sesgo).
-4.  **Mundo:** Lista dinámica de escenarios (hasta 5) y reglas del mundo.
+4.  **Mundo:** Lista dinámica de escenarios (hasta 4) y reglas del mundo (hasta 7).
 5.  **Trama:** Definición de la sinopsis estructurada en **5 Actos** (basados en la Pirámide de Freytag: Exposición, Acción Ascendente, Clímax, Acción Descendente y Desenlace).
 
 ## 2. Lógica del Stepper y Persistencia
 - **Navegación No Lineal:** El usuario puede volver a cualquier paso anterior haciendo clic en los indicadores del stepper, siempre que ya los haya alcanzado.
-- **Persistencia Temprana:** Al avanzar del Paso 5 a la pantalla de confirmación, los datos se guardan automáticamente en la base de datos (POST si es nueva, PATCH si es edición) en estado `DRAFT`.
+- **Persistencia:** cada campo se auto-guarda en la sesión (`PATCH /generar/paso/:n/guardar`). En la base se guarda recién con "Guardar historia" en la confirmación (POST si es nueva, PATCH si es edición), en estado `DRAFT` (Spec-460 §2.5).
 - **Rehidratación:** El botón "Editar" en la galería carga una historia existente en el Wizard, mapeando el JSON de `narrator_config` a los campos del formulario.
 
 ## 3. Definición Dinámica (UI Definitions)

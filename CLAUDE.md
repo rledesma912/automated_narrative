@@ -122,7 +122,12 @@ Templates: `story_analyst_*compact.md`, `synopsis_mapper_*compact.md`, `voice_sy
 - **Jobs (Spec-460):** generar y regenerar un acto son jobs (`generation_job`). `JobManager` (singleton en `src/presentation/runtime.py`) corre cada job como `asyncio.Task`: cerrar la pestaña no lo detiene, `POST /jobs/{id}/cancel` sí. Un solo job activo por historia (lock + índice único parcial) → 409 con el job existente. Al arrancar, los jobs que quedaron activos pasan a `failed` ("interrumpida por reinicio").
 - **Eventos (Spec-460):** `EventBus` en memoria con canales `job:<id>` (detalle, lo usa la sala) y `global` (ciclo de vida `job_*`, lo usa todo el resto). Ids por canal → reconexión con `Last-Event-ID`. Ningún GET arranca trabajo.
 - **Cliente:** `public/js/event-bus.js` abre 1 `EventSource` global por pestaña (en `<head>`, sobrevive a hx-boost; se cierra en la sala) y re-emite `forge:*` en el DOM. Consumidores: banda de generación, pie (estado del Core), botones `[data-generation-trigger]` (`generation-guard.js`), galería en vivo y paneles atados a un job. Heartbeat 15s no negociable.
-- **Wizard de autoría (Spec-220):** 5 pasos; termina en "Guardar historia" (solo guarda); la generación se lanza desde la galería o la ficha. Round-trip YAML con `python -m src export-yaml` (Spec-302).
+- **Wizard de autoría (Spec-220 + Spec-440):** 5 pasos definidos en `frontend/config/ui_definitions.yaml`; termina en "Guardar historia" (solo guarda); la generación se lanza desde la galería o la ficha. Round-trip YAML con `python -m src export-yaml` / `import-yaml` (Spec-302, Spec-440).
+  - Opciones dinámicas por `source:` — `genre_catalog` (Género → Subgénero desde `GET /catalog/genres`, `depends_on`; value = ID) y `characters` (el narrador lista solo personajes con nombre; `submitStep` lo valida → 422 con el paso re-renderizado).
+  - Los rasgos de personaje son una sola lista con ancla YAML (`&character_traits`). `width: half` pone campos contiguos en la misma fila desde `lg`.
+  - La sesión guarda IDs limpios (`mapWizardToCore` manda `genero`/`subgenero`/`tono`/`narrator_config`); la rehidratación acepta también el formato legado `"id: Etiqueta"`.
+  - Tipos de regla = `RuleType` del dominio (`psicologica`, `entorno`, `fenomeno`, `indicador`); legado del wizard: `paranormal`→`fenomeno`, `social`→`entorno`, `evento`→sin tipo.
+  - Se pueden editar historias ya generadas (lo generado se conserva; hay que regenerar para verlo reflejado); con un job activo, `PATCH` → 409.
 - **Galería (Spec-311 + Spec-312):** lista variantes de `generated_narrative` por relato + delete con confirmación HTMX.
 
 ## Environment Variables
@@ -141,9 +146,11 @@ BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 
 ## Database
 
-SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Nueve tablas** (Spec-190 + Spec-460):
+SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Once tablas** (Spec-190 + Spec-460 + Spec-440):
 
-- `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, tono, narrator_config (JSON), status, created_at
+- `genre`: id, label, order_index — catálogo sembrado por `init_db()` desde `src/infrastructure/database/seeds/genre_catalog.py` (idempotente)
+- `subgenre`: genre_id, id, label, order_index — PK compuesta (`otro` existe en cada género)
+- `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, tono, narrator_config (JSON), status, created_at — FK `genero` → `genre` y FK compuesta `(genero, subgenero)` → `subgenre`; par inválido → 422 (`ensure_valid_genre`)
 - `character`: id, story_id, name, role, traits (JSON), order_index
 - `rule`: id, story_id, content, type, intensity, applies_to_beat
 - `macro_beat`: id, story_id, number, summary, synopsis_beat, generated_act, status, active_scenario_id, active_scenario_description, system_prompt, user_prompt, type
@@ -153,7 +160,7 @@ SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.
 - `generated_narrative`: id, story_template_id, title, content, status
 - `generation_job`: id, story_id, kind (`full_generation`|`regenerate_voz`), status, stage, beat, total_beats, params (JSON), error, narrative_id, created_at, started_at, finished_at — índice único parcial: 1 job activo por historia
 
-Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`.
+Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`, `SQLGenreRepository`.
 
 ## CLI Commands
 
@@ -162,13 +169,17 @@ uv run python -m src generate --input <yaml> [--mock] [--debug] [--hasta <checkp
 uv run python -m src generate --story-id <uuid>           # retoma historia
 uv run python -m src narrate --story-id <uuid> --beats 1,2,3
 uv run python -m src export-yaml <story_id>               # round-trip Story → YAML
+uv run python -m src export-yaml --all --output-dir <dir> # todas las historias
+uv run python -m src import-yaml <archivos...> [--descartar-subgenero-invalido]
+                                                          # crea borradores, sin generar
 ```
 
 Checkpoints `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal:1..5`.
 
 ## API Endpoints (FastAPI, prefijo `/api/v1`)
 
-- `story_router` — CRUD `/stories`, PATCH `status` y `file-path`.
+- `story_router` — CRUD `/stories` (`PATCH /stories/{id}` edita también generadas; 409 con job activo; 422 si el par género/subgénero no existe), PATCH `status` y `file-path`.
+- `catalog_router` (Spec-440) — `GET /catalog/genres` (géneros con sus subgéneros, ordenados).
 - `beat_router` — `GET/PUT /stories/{id}/beats[/{n}]`.
 - `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id}; 202/409), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
 - `events_router` (Spec-460) — `GET /events` (SSE global: `snapshot` + `job_*` + heartbeat).
@@ -177,4 +188,4 @@ Checkpoints `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal
 
 ## Specs
 
-Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `500_clean_code_responsability.md` (smells acumulados del core).
+Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros + wizard), `500_clean_code_responsability.md` (smells acumulados del core).
