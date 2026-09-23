@@ -4,7 +4,7 @@ import { galleryPage } from "../controllers/gallery.controller";
 import { debugPage } from "../controllers/debug.controller";
 import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField } from "../controllers/wizard.controller";
-import { submitGeneration, streamingRoomPage, getActiveStreamApi } from "../controllers/stream.controller";
+import { submitGeneration, streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
 import { relatosPage, regenerarActoAction } from "../controllers/relatos.controller";
 
@@ -27,7 +27,6 @@ router.get("/generar/cargar/:storyId", loadWizardData);
 router.post("/generar/submit",              submitGeneration);
 router.get("/generar/stream/:storyId",      streamingRoomPage);
 // Spec-221 T0: rutas Express renombradas a /internal/* para liberar /api/* al proxy del backend.
-router.get("/internal/streaming/active",    getActiveStreamApi);
 
 // Historia (ver detalle + generar desde borrador + eliminar)
 router.get("/historia/:storyId",            historiaPage);

@@ -28,6 +28,11 @@ const navItems = [
       <a href="<%= item.href %>" class="nav-link-forge <%= stateCls %>">
         <i data-lucide="<%= item.icon %>" class="w-4 h-4 flex-shrink-0"></i>
         <%= item.label %>
+        <% if (item.page === 'generate') { %>
+          <%/* Spec-460: punto pulsante mientras hay generaciones en curso */%>
+          <span data-forge-jobs-dot title="Hay una generación en curso"
+                class="hidden ml-auto generation-banner__pulse !w-2 !h-2"></span>
+        <% } %>
       </a>
     <% }); %>
   </nav>

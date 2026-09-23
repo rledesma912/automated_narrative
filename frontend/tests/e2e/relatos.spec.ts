@@ -19,7 +19,9 @@ test.describe("Vista de Relatos", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto(`/historia/${STORY_ID}/relatos`);
-    await page.waitForLoadState("networkidle");
+    // No "networkidle": el canal global de eventos (Spec-460) mantiene una
+    // conexión SSE abierta en todas las páginas, así que la red nunca queda ociosa.
+    await page.locator("[data-relato-panel]").first().waitFor();
   });
 
   test("primer panel tiene clase active al cargar", async ({ page }) => {

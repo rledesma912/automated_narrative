@@ -345,9 +345,13 @@
       }
     });
 
-    // Heartbeat: mantiene canal vivo, sin acción visual.
+    // Heartbeat: mantiene el canal vivo. En la sala no hay canal global, así que
+    // la sala avisa al pie que el Core responde (Spec-460).
     es.addEventListener("heartbeat", () => {
-      /* alive */
+      document.dispatchEvent(new CustomEvent("forge:core-status", { detail: { alive: true } }));
+    });
+    es.addEventListener("open", () => {
+      document.dispatchEvent(new CustomEvent("forge:core-status", { detail: { alive: true } }));
     });
 
     es.addEventListener("done", (e) => {

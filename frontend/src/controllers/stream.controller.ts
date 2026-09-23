@@ -87,25 +87,3 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
     activeJobId,
   });
 }
-
-export async function getActiveStreamApi(req: Request, res: Response): Promise<void> {
-  const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
-  try {
-    // Buscamos historias con estado 'processing' en la API Core
-    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories`, { timeout: 3000 });
-    const stories = resp.data as any[];
-    const activeStory = stories.find(s => s.status === "processing");
-
-    // También pedimos el último evento del sistema
-    const eventResp = await axios.get(`${CORE_API_URL}/api/v1/system/events?limit=1`, { timeout: 2000 });
-    const lastEvent = eventResp.data[0] || null;
-
-    res.json({ 
-      active: !!activeStory, 
-      story: activeStory || null,
-      lastEvent: lastEvent
-    });
-  } catch {
-    res.status(500).json({ error: "No se pudo consultar el estado de streaming" });
-  }
-}

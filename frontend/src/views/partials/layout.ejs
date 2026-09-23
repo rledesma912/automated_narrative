@@ -9,6 +9,11 @@
   <link rel="stylesheet" href="/styles.css">
 
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <%/* Spec-460: canal global de eventos + componentes que lo consumen. En <head>
+       con defer: sobreviven a las navegaciones de hx-boost (1 SSE por pestaña). */%>
+  <script src="/js/event-bus.js" defer></script>
+  <script src="/js/generation-banner.js" defer></script>
+  <script src="/js/footer.js" defer></script>
 
   <style>
     :root { 
@@ -26,6 +31,7 @@
   <%- include('sidebar', { activePage, activeTheme, allThemes }) %>
 
   <main class="flex-1 overflow-y-auto p-12 pb-24">
+    <%- include('generation_banner') %>
     <%- body %>
   </main>
 

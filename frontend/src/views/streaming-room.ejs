@@ -96,6 +96,8 @@
 <%/* MODO SSE — generación activa (job en curso) o por iniciar                 */%>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
 
+<%/* Spec-460: la sala tiene su propia conexión SSE (detalle del job): sin canal global. */%>
+<div data-forge-no-global-events hidden></div>
 <div class="max-w-4xl mx-auto" id="streaming-root">
 
   <%/* ── Header ────────────────────────────────────────── */%>

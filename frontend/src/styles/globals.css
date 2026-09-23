@@ -88,6 +88,40 @@
     box-shadow: 0 0 20px rgba(139, 115, 85, 0.3), 0 4px 16px rgb(0 0 0 / 0.3);
   }
 
+  /* ── Banda de generación (Spec-460) ───────────────────────────────────── */
+  /* Los colores forge son var() sin canal alfa: el tinte usa color-mix. */
+
+  /* <main> tiene p-12: un sticky top-0 se pegaría al borde del padding (48px más
+     abajo) y taparía el contenido. -top-12 lo pega al borde real del área. */
+  .generation-banner {
+    @apply sticky -top-12 z-30 -mx-12 -mt-12 mb-8 border-b border-forge-accent;
+    background: color-mix(in srgb, var(--forge-accent) 15%, var(--forge-bg));
+  }
+
+  .generation-banner--failed {
+    border-color: #b91c1c;
+    background: color-mix(in srgb, #b91c1c 18%, var(--forge-bg));
+  }
+
+  .generation-banner__bar {
+    @apply h-1 mt-2 bg-forge-border overflow-hidden;
+  }
+
+  .generation-banner__progress {
+    @apply h-full bg-forge-accent;
+    transition: width 0.6s ease;
+  }
+
+  .generation-banner__pulse {
+    @apply w-3 h-3 rounded-full bg-forge-accent shrink-0;
+    animation: forge-pulse 1.4s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .generation-banner__pulse { animation: none; }
+    .generation-banner__progress { transition: none; }
+  }
+
   /* ── Tipografía Normalizada ────────────────────────────────────────────── */
 
   .heading-forge-xl {
@@ -238,4 +272,9 @@ body {
   .no-print {
     @apply hidden;
   }
+}
+
+@keyframes forge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
 }

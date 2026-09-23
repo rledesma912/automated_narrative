@@ -50,7 +50,7 @@ export default defineConfig({
           },
         },
         {
-          command: "npx ts-node src/server.ts",
+          command: "npm run build:css && npx ts-node src/server.ts",
           url: `http://127.0.0.1:${UI_PORT}/`,
           reuseExistingServer: false,
           timeout: 60 * 1000,

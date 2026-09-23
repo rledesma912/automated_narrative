@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 a S4 hechos
+**Estado:** IMPLEMENT — S0 a S5 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -497,31 +497,38 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S5 — Canal global, banda y pie
 
-- [ ] **T5.1:** `GET /api/v1/events`.
+- [x] **T5.1:** `GET /api/v1/events`.
   - Acceptance: al conectar emite `snapshot`; después, `job_*` en vivo y `heartbeat` cada 15 s; soporta `Last-Event-ID`.
   - Verify: `uv run pytest tests/unit/presentation/routers/test_events_router.py -v`
   - Files: `src/presentation/routers/events_router.py`, `__init__.py`, `main.py`
-- [ ] **T5.2:** Passthrough del canal global en Express.
+- [x] **T5.2:** Passthrough del canal global en Express.
   - Acceptance: `/api/v1/events` llega sin bufferizar (el primer evento en < 1 s).
   - Verify: `cd frontend && npx vitest run tests/integration/proxy_sse.test.ts`
   - Files: `frontend/tests/integration/proxy_sse.test.ts` (y `api_proxy.ts` solo si hiciera falta)
-- [ ] **T5.3:** `event-bus.js`.
+- [x] **T5.3:** `event-bus.js`.
   - Acceptance: abre un único `EventSource('/api/v1/events')` por pestaña (guard en `window` contra `hx-boost`); **no** lo abre en la sala (`data-page="streaming-room"`); re-emite `forge:job-started|progress|done|failed|snapshot` y `forge:core-alive`; mantiene en `window.__forgeJobs` el estado de los jobs activos.
   - Files: `frontend/public/js/event-bus.js`, `frontend/src/views/partials/layout.ejs`
-- [ ] **T5.4:** Banda de generación.
+- [x] **T5.4:** Banda de generación.
   - Acceptance: estados de §2.4 (oculta / `running` / `done` / `failed`); "Ver progreso" es un `<a>` real con `hx-boost="false"` que solo existe con `job_id`; `role="status"` + `aria-live="polite"`; `prefers-reduced-motion`; "y N más" si hay varios jobs.
   - Files: `frontend/src/views/partials/generation_banner.ejs`, `frontend/public/js/generation-banner.js`, `layout.ejs`, `frontend/src/styles/globals.css`
-- [ ] **T5.5:** Punto pulsante en el sidebar.
+- [x] **T5.5:** Punto pulsante en el sidebar.
   - Acceptance: el ítem "Nuevo relato" muestra el punto mientras hay jobs activos.
   - Files: `frontend/src/views/partials/sidebar.ejs`, `generation-banner.js`
-- [ ] **T5.6:** Pie simplificado.
+- [x] **T5.6:** Pie simplificado.
   - Acceptance: se elimina el bloque "Generando"; el indicador del Core se pone verde con `forge:core-alive` (heartbeat en los últimos 20 s) y rojo si no llega; se eliminan el polling de `footer.js`, la ruta `/internal/streaming/active` y `getActiveStreamApi`.
   - Files: `footer.ejs`, `footer.js`, `frontend/src/routes/index.ts`, `stream.controller.ts`
-- [ ] **T5.7:** E2E de la banda.
+- [x] **T5.7:** E2E de la banda.
   - Acceptance: con un job iniciado desde otra página, la banda aparece en < 1 s con título y acto N/5; "Ver progreso" navega a la sala; al terminar muestra "está lista"; en Network hay 1 `EventSource` y ninguna consulta periódica; sin jobs no aparece "GENERANDO".
   - Verify: `npx playwright test generation-banner.spec.ts`
   - Files: `frontend/tests/e2e/generation-banner.spec.ts`
-- [ ] **Checkpoint S5:** suites completas. **Resueltos: "GENERANDO" poco visible y "Ver progreso" que no hace nada.**
+- [x] **Checkpoint S5:** suites completas. **Resueltos: "GENERANDO" poco visible y "Ver progreso" que no hace nada.**
+  - Implementado / notas:
+    - `event-bus.js`, `generation-banner.js` y `footer.js` se cargan en `<head>` con `defer`: bajo hx-boost el head no se re-ejecuta, así que la conexión SSE sobrevive a las navegaciones (1 sola por pestaña, verificado en E2E) y los listeners no se acumulan.
+    - Verificación visual (captura): con `sticky top-0` la banda quedaba 48 px abajo y tapaba el título (`<main>` tiene `p-12` y Chrome mide el sticky desde el borde del padding); se usa `-top-12`.
+    - La banda muestra "lista/falló" solo para jobs vistos en vivo en la pestaña; los `recent` del snapshot no se muestran (evita avisos viejos al recargar).
+    - El pie conserva "Actividad" (último evento de jobs) sin polling.
+    - **Tailwind**: `content` no escaneaba `public/js/`: clases usadas solo en scripts no existían en el CSS (el punto verde/rojo del Core nunca cambió de color; `animate-pulse` de la sala no animaba). Se agregó `./public/js/**/*.js`. Además, los colores `forge` son `var()` sin canal alfa, así que `bg-forge-accent/15` y similares no generan nada: la banda usa `color-mix()` en `globals.css`.
+    - E2E: `relatos.spec.ts` esperaba `networkidle`, que nunca llega con una conexión SSE abierta; ahora espera el elemento. `cutover-no-cdn.test.ts` exigía exactamente 1 script en `<head>`; ahora verifica su intención (el único externo es HTMX, el resto son `/js/*` propios).
 
 ### S6 — Botones en estado ocupado + guardar/generar desacoplados
 
