@@ -3,7 +3,7 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class StoryCreateRequest(BaseModel):
@@ -18,7 +18,11 @@ class StoryCreateRequest(BaseModel):
     subgenero: str = ""
     tono: str = ""
     reglas: list[str] = Field(default_factory=list)
-    narrator_config: Optional[dict] = None
+    # El wizard web lo envía como `storyteller_config` (mismo nombre que el YAML).
+    narrator_config: Optional[dict] = Field(
+        default=None,
+        validation_alias=AliasChoices("narrator_config", "storyteller_config"),
+    )
     personajes_full: list[dict] = Field(default_factory=list)
 
 

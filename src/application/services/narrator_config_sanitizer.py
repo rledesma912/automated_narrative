@@ -19,3 +19,32 @@ def sanitize_narrator_config(raw: dict | None) -> dict | None:
     if not raw:
         return raw
     return {k: v for k, v in raw.items() if k not in _DROPPED_KEYS}
+
+
+def extract_atmosphere(raw: dict | None) -> tuple[str, str, str]:
+    """Devuelve `(genero, subgenero, tono)` desde `atmosphere` del config crudo."""
+    atmosphere = (raw or {}).get("atmosphere") or {}
+    return (
+        atmosphere.get("genre", "") or "",
+        atmosphere.get("subgenre", "") or "",
+        atmosphere.get("tone", "") or "",
+    )
+
+
+def extract_actos(raw: dict | None) -> list[dict]:
+    """Devuelve los 5 actos de `actos` del config crudo como `number`/`type`/`synopsis`.
+
+    Un acto ausente se devuelve con valores vacíos.
+    """
+    actos = (raw or {}).get("actos") or {}
+    result = []
+    for i in range(1, 6):
+        act_data = actos.get(f"act_{i}", {})
+        result.append(
+            {
+                "number": i,
+                "type": act_data.get("type", ""),
+                "synopsis": act_data.get("text", ""),
+            }
+        )
+    return result

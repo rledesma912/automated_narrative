@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from src.application.dto import StoryCreateDTO
-from src.application.services.narrator_config_sanitizer import sanitize_narrator_config
+from src.application.services.narrator_config_sanitizer import (
+    extract_actos,
+    extract_atmosphere,
+    sanitize_narrator_config,
+)
 from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
 from src.application.use_cases.create_story import CreateStoryUseCase
@@ -43,8 +47,11 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
     2. typed_rules: ausente en request → list[dict] desde narrator_config.rules
     3. rules[].text → content  (campo renombrado entre frontend y use case)
     4. narrator_config persistido se depura (Spec-190 §4.3).
+    5. genero/subgenero/tono y actos: si no vienen explícitos, se derivan de
+       narrator_config.atmosphere / .actos (mismo criterio que YamlStoryLoader).
     """
     sc: dict = req.narrator_config or {}
+    genero, subgenero, tono = extract_atmosphere(sc)
 
     # 1. Escenarios: preferir estructura rica de narrator_config, fallback al string
     raw_scenarios: list[dict] = sc.get("scenarios") or []
@@ -82,13 +89,14 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
         escenarios=escenarios_list,
         escenarios_full=escenarios_full,
         sinopsis=req.sinopsis,
-        genero=req.genero,
-        subgenero=req.subgenero,
-        tono=req.tono,
+        genero=req.genero or genero,
+        subgenero=req.subgenero or subgenero,
+        tono=req.tono or tono,
         reglas=req.reglas,
         narrator_config=sanitize_narrator_config(req.narrator_config),
         typed_rules=typed_rules,
         personajes_full=req.personajes_full,
+        actos=extract_actos(sc) if sc.get("actos") else [],
     )
 
 

@@ -6,7 +6,10 @@ import yaml
 from pydantic import ValidationError
 
 from src.application.dto import StoryCreateDTO
-from src.application.services.narrator_config_sanitizer import sanitize_narrator_config
+from src.application.services.narrator_config_sanitizer import (
+    extract_actos,
+    sanitize_narrator_config,
+)
 from src.config import settings
 
 
@@ -163,28 +166,8 @@ class YamlStoryLoader:
         ]
 
     def _extract_actos(self, storyteller_config: dict) -> list[dict]:
-        """Extrae los 5 actos de storyteller_config.
-
-        Args:
-            storyteller_config: Diccionario con la configuración del narrador.
-
-        Returns:
-            Lista de 5 diccionarios con 'number', 'type' y 'synopsis'.
-            Si un acto no existe, devuelve dict con valores vacíos.
-        """
-        actos = storyteller_config.get("actos", {})
-        result = []
-        for i in range(1, 6):
-            act_key = f"act_{i}"
-            act_data = actos.get(act_key, {})
-            result.append(
-                {
-                    "number": i,
-                    "type": act_data.get("type", ""),
-                    "synopsis": act_data.get("text", ""),
-                }
-            )
-        return result
+        """Extrae los 5 actos de storyteller_config (ver `extract_actos`)."""
+        return extract_actos(storyteller_config)
 
     def _parse_atmosfera(
         self, atmosphere: dict, legacy_atmosfera: str, genero_top: str = ""
