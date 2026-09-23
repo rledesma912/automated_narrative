@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); sigue S2
+**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); S2 commiteado; sigue S3
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -302,19 +302,23 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S2 — Beats: revelación por nivel
 
-- [ ] **T2.1:** Snapshot de hoy.
+- [x] **T2.1:** Snapshot de hoy.
   - Acceptance: test que congela, para los 5 beats, la salida de `format_for_beat` (compact y frontier), de `NarrativeContextAssembler.assemble()` con un `MacroBeat` fijo y del `acts_json` del resolver. Se escribe **antes** de tocar el YAML.
   - Verify: pytest en verde contra el código actual.
   - Files: `tests/unit/application/test_beat_reveal_snapshot.py` (nuevo) + fixture de snapshot
-- [ ] **T2.2:** `reveal_rules` y `entity_exposure` en el YAML.
+- [x] **T2.2:** `reveal_rules` y `entity_exposure` en el YAML.
   - Acceptance: las 3 reglas de §2 salen de `must`/`must_not` y pasan a `reveal_rules` con `default` + overrides (`explicita` sin los `must_not` de los beats 1 y 2; `nunca` sin el `must` de presencia del beat 3); cada beat suma `entity_exposure` con los 4 niveles (tabla §2; beat 5 de `nunca` = "lo que decida el acto 5"). La regla de origen del beat 3 queda fija.
   - Verify: el snapshot de T2.1 sigue idéntico.
   - Files: `config/llm_beats_definition.yaml`
-- [ ] **T2.3:** Resolución por nivel.
+- [x] **T2.3:** Resolución por nivel.
   - Acceptance: `BeatSpecRepository.get_by_id(beat_id, reveal_level=None)` y `format_for_beat(..., reveal_level=None)` devuelven el beat resuelto; sin nivel = `default`; `exposure_for(beat_id, reveal_level)` devuelve el texto de exposición.
   - Verify: pytest — sin nivel = snapshot; `explicita` beat 1 sin «confirmar lo paranormal»; `nunca` beat 3 sin «mostrar amenaza o presencia directa»; `insinuada` = default.
   - Files: `src/application/services/beat_spec_repository.py`
-- [ ] **Checkpoint S2:** lint + pytest → commit.
+- [x] **Notas de S2 (2026-09-23):**
+  - **Exposiciones en el YAML:** además de `entity_exposure` por beat, el YAML define un vocabulario común `entity_exposures` (señales, manifestación parcial, revelación, presencia, huella, …) con `show` (campos de la ficha que ve la Voz) y `guide` (instrucción). Así S3 no decide qué campos mostrar: lo dice el YAML. `nunca` en el beat 3 no queda vacío: reemplaza la presencia directa por «mostrar señales intensas de la amenaza sin confirmar qué es» (fila de la tabla §2).
+  - **`get_all()` también se resuelve:** el resolver arma su `acts_json` con `get_all()`; sin resolver habría perdido las reglas movidas. El snapshot lo cubre.
+  - **Bug evitado:** `str(RevealLevel.NUNCA)` da `"RevealLevel.NUNCA"` en Python 3.11+; el nivel se normaliza con `.value`.
+- [x] **Checkpoint S2:** lint + pytest → commit.
 
 ### S3 — Pipeline
 

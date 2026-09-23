@@ -1,0 +1,245 @@
+{
+  "get_all": [
+    {
+      "id": 1,
+      "name": "exposicion",
+      "intent": "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil",
+      "intensity": "baja",
+      "must": [
+        "presentar situacion base del narrador",
+        "introducir una anomalia sutil",
+        "incluir regla, advertencia o limite implicito"
+      ],
+      "must_not": [
+        "confirmar lo paranormal"
+      ],
+      "state_change": {
+        "from": "estabilidad",
+        "to": "incomodidad leve"
+      },
+      "success_signal": [
+        "quien escucha el relato percibe que algo no encaja pero no sabe que"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    {
+      "id": 2,
+      "name": "accion_ascendente",
+      "intent": "activar el conflicto mediante transgresion",
+      "intensity": "media",
+      "must": [
+        "romper la regla o ignorar la advertencia",
+        "mostrar un evento anomalo concreto",
+        "intentar explicacion racional"
+      ],
+      "must_not": [
+        "aceptar lo paranormal como hecho"
+      ],
+      "state_change": {
+        "from": "incomodidad",
+        "to": "inquietud concreta"
+      },
+      "success_signal": [
+        "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    {
+      "id": 3,
+      "name": "climax",
+      "intent": "forzar reconocimiento del horror",
+      "intensity": "alta",
+      "must": [
+        "invalidar explicacion racional",
+        "mostrar amenaza o presencia directa"
+      ],
+      "must_not": [
+        "explicar origen o reglas completas del fenomeno"
+      ],
+      "state_change": {
+        "from": "negacion",
+        "to": "reconocimiento"
+      },
+      "success_signal": [
+        "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    {
+      "id": 4,
+      "name": "accion_descendente",
+      "intent": "llevar al protagonista al colapso y reaccion",
+      "intensity": "media-alta",
+      "must": [
+        "perdida de control o desorientacion",
+        "intento de escape o respuesta (instinto, fe, memoria)"
+      ],
+      "must_not": [
+        "resolución fácil del conflicto"
+      ],
+      "state_change": {
+        "from": "reconocimiento",
+        "to": "desesperacion"
+      },
+      "success_signal": [
+        "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    {
+      "id": 5,
+      "name": "desenlace",
+      "intent": "cerrar con brevedad emocional, escape incompleto y secuela",
+      "intensity": "baja",
+      "must": [
+        "salida rapida o alejamiento del peligro",
+        "marca persistente o evidencia ambigua",
+        "reflexion final corta y contundente"
+      ],
+      "must_not": [
+        "cerrar completamente el misterio"
+      ],
+      "state_change": {
+        "from": "desesperacion",
+        "to": "calma inestable"
+      },
+      "success_signal": [
+        "quien escucha el relato queda con la sensacion de que el horror no termino"
+      ],
+      "word_limit": "entre 150 y 200 palabras (máxima brevedad emocional)"
+    }
+  ],
+  "beat_1": {
+    "get_by_id": {
+      "id": 1,
+      "name": "exposicion",
+      "intent": "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil",
+      "intensity": "baja",
+      "must": [
+        "presentar situacion base del narrador",
+        "introducir una anomalia sutil",
+        "incluir regla, advertencia o limite implicito"
+      ],
+      "must_not": [
+        "confirmar lo paranormal"
+      ],
+      "state_change": {
+        "from": "estabilidad",
+        "to": "incomodidad leve"
+      },
+      "success_signal": [
+        "quien escucha el relato percibe que algo no encaja pero no sabe que"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    "compact": "Acto 1 — exposicion: establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil\nArco emocional: estabilidad → incomodidad leve\nDebe incluir: presentar situacion base del narrador / introducir una anomalia sutil / incluir regla, advertencia o limite implicito\nPROHIBIDO en este acto: confirmar lo paranormal\nObjetivo del fragmento: quien escucha el relato percibe que algo no encaja pero no sabe que",
+    "frontier": "Debe incluir:\n- presentar situacion base del narrador\n- introducir una anomalia sutil\n- incluir regla, advertencia o limite implicito\nNo debe incluir:\n- confirmar lo paranormal\nTransición emocional: estabilidad → incomodidad leve\nSeñal de éxito: quien escucha el relato percibe que algo no encaja pero no sabe que",
+    "assemble": "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):\nRosa hace algo en el acto 1.\n\nPERSONAJES:\n- Rosa\n\nESCENARIO: S1\nACTO: exposicion — establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil\nINTENSIDAD: baja\nARCO EMOCIONAL: estabilidad → incomodidad leve\n\n── GUÍA DE VOZ (perspectiva del narrador — NO son eventos adicionales) ──\n\nLA GRIETA:\nLa grieta.\n── FIN GUÍA DE VOZ ──\n\nREGLAS ESPECÍFICAS PARA ESTE ACTO:\n- Nadie entra de noche\n\nFIDELIDAD: Narrá SOLO lo que está en EVENTO DE ESTE MOMENTO.\nNo inventés eventos, objetos, diálogos ni signos específicos que no estén listados.\nSi un evento menciona algo vago ('ciertos signos'), narrás la PERCEPCIÓN del narrador, no manifestaciones concretas inventadas.\nLos nombres propios de los EVENTOS son exactos: usá esos términos, nunca sinónimos ni variantes.\nLos verbos de EVENTO son exactos: 'llega' = llegada física, no despertar; 'sale' = partida; 'sulki' es sulki, no auto. No reformulés.\nPROHIBIDO: confirmar lo paranormal\nEfecto buscado: quien escucha el relato percibe que algo no encaja pero no sabe que"
+  },
+  "beat_2": {
+    "get_by_id": {
+      "id": 2,
+      "name": "accion_ascendente",
+      "intent": "activar el conflicto mediante transgresion",
+      "intensity": "media",
+      "must": [
+        "romper la regla o ignorar la advertencia",
+        "mostrar un evento anomalo concreto",
+        "intentar explicacion racional"
+      ],
+      "must_not": [
+        "aceptar lo paranormal como hecho"
+      ],
+      "state_change": {
+        "from": "incomodidad",
+        "to": "inquietud concreta"
+      },
+      "success_signal": [
+        "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    "compact": "Acto 2 — accion_ascendente: activar el conflicto mediante transgresion\nArco emocional: incomodidad → inquietud concreta\nDebe incluir: romper la regla o ignorar la advertencia / mostrar un evento anomalo concreto / intentar explicacion racional\nPROHIBIDO en este acto: aceptar lo paranormal como hecho\nObjetivo del fragmento: quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional",
+    "frontier": "Debe incluir:\n- romper la regla o ignorar la advertencia\n- mostrar un evento anomalo concreto\n- intentar explicacion racional\nNo debe incluir:\n- aceptar lo paranormal como hecho\nTransición emocional: incomodidad → inquietud concreta\nSeñal de éxito: quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional",
+    "assemble": "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):\nRosa hace algo en el acto 2.\n\nPERSONAJES:\n- Rosa\n\nESCENARIO: S1\nACTO: accion_ascendente — activar el conflicto mediante transgresion\nINTENSIDAD: media\nARCO EMOCIONAL: incomodidad → inquietud concreta\n\n── GUÍA DE VOZ (perspectiva del narrador — NO son eventos adicionales) ──\n\nLA GRIETA:\nLa grieta.\n── FIN GUÍA DE VOZ ──\n\nREGLAS ESPECÍFICAS PARA ESTE ACTO:\n- Nadie entra de noche\n\nMEMORIA DEL ACTO ANTERIOR:\nRosa cerró el galpón.\nMisterios sin resolver: ¿Quién silbaba?\nEstado: Cansada\n\nFIDELIDAD: Narrá SOLO lo que está en EVENTO DE ESTE MOMENTO.\nNo inventés eventos, objetos, diálogos ni signos específicos que no estén listados.\nSi un evento menciona algo vago ('ciertos signos'), narrás la PERCEPCIÓN del narrador, no manifestaciones concretas inventadas.\nLos nombres propios de los EVENTOS son exactos: usá esos términos, nunca sinónimos ni variantes.\nLos verbos de EVENTO son exactos: 'llega' = llegada física, no despertar; 'sale' = partida; 'sulki' es sulki, no auto. No reformulés.\nPROHIBIDO: aceptar lo paranormal como hecho\nEfecto buscado: quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
+  },
+  "beat_3": {
+    "get_by_id": {
+      "id": 3,
+      "name": "climax",
+      "intent": "forzar reconocimiento del horror",
+      "intensity": "alta",
+      "must": [
+        "invalidar explicacion racional",
+        "mostrar amenaza o presencia directa"
+      ],
+      "must_not": [
+        "explicar origen o reglas completas del fenomeno"
+      ],
+      "state_change": {
+        "from": "negacion",
+        "to": "reconocimiento"
+      },
+      "success_signal": [
+        "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    "compact": "Acto 3 — climax: forzar reconocimiento del horror\nArco emocional: negacion → reconocimiento\nDebe incluir: invalidar explicacion racional / mostrar amenaza o presencia directa\nPROHIBIDO en este acto: explicar origen o reglas completas del fenomeno\nObjetivo del fragmento: quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta",
+    "frontier": "Debe incluir:\n- invalidar explicacion racional\n- mostrar amenaza o presencia directa\nNo debe incluir:\n- explicar origen o reglas completas del fenomeno\nTransición emocional: negacion → reconocimiento\nSeñal de éxito: quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta",
+    "assemble": "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):\nRosa hace algo en el acto 3.\n\nPERSONAJES:\n- Rosa\n\nESCENARIO: S1\nACTO: climax — forzar reconocimiento del horror\nINTENSIDAD: alta\nARCO EMOCIONAL: negacion → reconocimiento\n\n── GUÍA DE VOZ (perspectiva del narrador — NO son eventos adicionales) ──\n\nLA GRIETA:\nLa grieta.\n── FIN GUÍA DE VOZ ──\n\nREGLAS ESPECÍFICAS PARA ESTE ACTO:\n- Nadie entra de noche\n\nMEMORIA DEL ACTO ANTERIOR:\nRosa cerró el galpón.\nMisterios sin resolver: ¿Quién silbaba?\nEstado: Cansada\n\nFIDELIDAD: Narrá SOLO lo que está en EVENTO DE ESTE MOMENTO.\nNo inventés eventos, objetos, diálogos ni signos específicos que no estén listados.\nSi un evento menciona algo vago ('ciertos signos'), narrás la PERCEPCIÓN del narrador, no manifestaciones concretas inventadas.\nLos nombres propios de los EVENTOS son exactos: usá esos términos, nunca sinónimos ni variantes.\nLos verbos de EVENTO son exactos: 'llega' = llegada física, no despertar; 'sale' = partida; 'sulki' es sulki, no auto. No reformulés.\nPROHIBIDO: explicar origen o reglas completas del fenomeno\nEfecto buscado: quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
+  },
+  "beat_4": {
+    "get_by_id": {
+      "id": 4,
+      "name": "accion_descendente",
+      "intent": "llevar al protagonista al colapso y reaccion",
+      "intensity": "media-alta",
+      "must": [
+        "perdida de control o desorientacion",
+        "intento de escape o respuesta (instinto, fe, memoria)"
+      ],
+      "must_not": [
+        "resolución fácil del conflicto"
+      ],
+      "state_change": {
+        "from": "reconocimiento",
+        "to": "desesperacion"
+      },
+      "success_signal": [
+        "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
+      ],
+      "word_limit": "entre 450 y 530 palabras"
+    },
+    "compact": "Acto 4 — accion_descendente: llevar al protagonista al colapso y reaccion\nArco emocional: reconocimiento → desesperacion\nDebe incluir: perdida de control o desorientacion / intento de escape o respuesta (instinto, fe, memoria)\nPROHIBIDO en este acto: resolución fácil del conflicto\nObjetivo del fragmento: quien escucha el relato siente que la situacion empeora antes de cualquier mejora",
+    "frontier": "Debe incluir:\n- perdida de control o desorientacion\n- intento de escape o respuesta (instinto, fe, memoria)\nNo debe incluir:\n- resolución fácil del conflicto\nTransición emocional: reconocimiento → desesperacion\nSeñal de éxito: quien escucha el relato siente que la situacion empeora antes de cualquier mejora",
+    "assemble": "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):\nRosa hace algo en el acto 4.\n\nPERSONAJES:\n- Rosa\n\nESCENARIO: S1\nACTO: accion_descendente — llevar al protagonista al colapso y reaccion\nINTENSIDAD: media-alta\nARCO EMOCIONAL: reconocimiento → desesperacion\n\n── GUÍA DE VOZ (perspectiva del narrador — NO son eventos adicionales) ──\n\nLA GRIETA:\nLa grieta.\n── FIN GUÍA DE VOZ ──\n\nREGLAS ESPECÍFICAS PARA ESTE ACTO:\n- Nadie entra de noche\n\nMEMORIA DEL ACTO ANTERIOR:\nRosa cerró el galpón.\nMisterios sin resolver: ¿Quién silbaba?\nEstado: Cansada\n\nFIDELIDAD: Narrá SOLO lo que está en EVENTO DE ESTE MOMENTO.\nNo inventés eventos, objetos, diálogos ni signos específicos que no estén listados.\nSi un evento menciona algo vago ('ciertos signos'), narrás la PERCEPCIÓN del narrador, no manifestaciones concretas inventadas.\nLos nombres propios de los EVENTOS son exactos: usá esos términos, nunca sinónimos ni variantes.\nLos verbos de EVENTO son exactos: 'llega' = llegada física, no despertar; 'sale' = partida; 'sulki' es sulki, no auto. No reformulés.\nPROHIBIDO: resolución fácil del conflicto\nEfecto buscado: quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
+  },
+  "beat_5": {
+    "get_by_id": {
+      "id": 5,
+      "name": "desenlace",
+      "intent": "cerrar con brevedad emocional, escape incompleto y secuela",
+      "intensity": "baja",
+      "must": [
+        "salida rapida o alejamiento del peligro",
+        "marca persistente o evidencia ambigua",
+        "reflexion final corta y contundente"
+      ],
+      "must_not": [
+        "cerrar completamente el misterio"
+      ],
+      "state_change": {
+        "from": "desesperacion",
+        "to": "calma inestable"
+      },
+      "success_signal": [
+        "quien escucha el relato queda con la sensacion de que el horror no termino"
+      ],
+      "word_limit": "entre 150 y 200 palabras (máxima brevedad emocional)"
+    },
+    "compact": "Acto 5 — desenlace: cerrar con brevedad emocional, escape incompleto y secuela\nArco emocional: desesperacion → calma inestable\nDebe incluir: salida rapida o alejamiento del peligro / marca persistente o evidencia ambigua / reflexion final corta y contundente\nPROHIBIDO en este acto: cerrar completamente el misterio\nObjetivo del fragmento: quien escucha el relato queda con la sensacion de que el horror no termino",
+    "frontier": "Debe incluir:\n- salida rapida o alejamiento del peligro\n- marca persistente o evidencia ambigua\n- reflexion final corta y contundente\nNo debe incluir:\n- cerrar completamente el misterio\nTransición emocional: desesperacion → calma inestable\nSeñal de éxito: quien escucha el relato queda con la sensacion de que el horror no termino",
+    "assemble": "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):\nRosa hace algo en el acto 5.\n\nPERSONAJES:\n- Rosa\n\nESCENARIO: S1\nACTO: desenlace — cerrar con brevedad emocional, escape incompleto y secuela\nINTENSIDAD: baja\nARCO EMOCIONAL: desesperacion → calma inestable\n\n── GUÍA DE VOZ (perspectiva del narrador — NO son eventos adicionales) ──\n\nLA GRIETA:\nLa grieta.\n── FIN GUÍA DE VOZ ──\n\nREGLAS ESPECÍFICAS PARA ESTE ACTO:\n- Nadie entra de noche\n\nMEMORIA DEL ACTO ANTERIOR:\nRosa cerró el galpón.\nMisterios sin resolver: ¿Quién silbaba?\nEstado: Cansada\n\nFIDELIDAD: Narrá SOLO lo que está en EVENTO DE ESTE MOMENTO.\nNo inventés eventos, objetos, diálogos ni signos específicos que no estén listados.\nSi un evento menciona algo vago ('ciertos signos'), narrás la PERCEPCIÓN del narrador, no manifestaciones concretas inventadas.\nLos nombres propios de los EVENTOS son exactos: usá esos términos, nunca sinónimos ni variantes.\nLos verbos de EVENTO son exactos: 'llega' = llegada física, no despertar; 'sale' = partida; 'sulki' es sulki, no auto. No reformulés.\nPROHIBIDO: cerrar completamente el misterio\nEfecto buscado: quien escucha el relato queda con la sensacion de que el horror no termino"
+  }
+}
