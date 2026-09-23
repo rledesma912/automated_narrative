@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 hecho
+**Estado:** IMPLEMENT — S0 y S1 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -383,23 +383,23 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S1 — Dominio y persistencia de jobs
 
-- [ ] **T1.1:** Modelos de dominio del job.
+- [x] **T1.1:** Modelos de dominio del job.
   - Acceptance: `JobKind` (`full_generation`, `regenerate_voz`), `JobStatus` (`queued`, `running`, `done`, `failed`), `JobStage` (`analyst`, `resolver`, `mapper`, `voz`, `journal`, `consolidando`), `Job` con `id, story_id, kind, status, stage, beat, total_beats, params, error, narrative_id, created_at, started_at, finished_at` y `is_active`.
   - Verify: `uv run pytest tests/unit/domain/test_jobs.py -v`
   - Files: `src/domain/jobs.py`, `tests/unit/domain/test_jobs.py`
-- [ ] **T1.2:** Tabla `generation_job` en `init_db()`.
-  - Acceptance: columnas de T1.1 (`params` como JSON); FK `story_id → story(id) ON DELETE CASCADE`; índice `(story_id, status)`.
-  - Verify: `uv run pytest tests/unit/infrastructure/test_db_connection.py -v`; borrar y recrear `data/dev/stories.db` (`make db`).
+- [x] **T1.2:** Tabla `generation_job` en `init_db()`.
+  - Acceptance: columnas de T1.1 (`params` como JSON); FK `story_id → story(id) ON DELETE CASCADE`; índice `(story_id, status)`; **índice único parcial** `(story_id) WHERE status IN (queued, running)`: un solo job activo por historia garantizado por la DB.
+  - Verify: `uv run pytest tests/unit/infrastructure/test_db_connection.py -v`. Tabla nueva = cambio aditivo: `CREATE TABLE IF NOT EXISTS` la crea al arrancar, **no hace falta recrear la DB** (verificado en dev: historias intactas).
   - Files: `src/infrastructure/database/connection.py`, `tests/unit/infrastructure/test_db_connection.py`
-- [ ] **T1.3:** `SQLJobRepository`.
+- [x] **T1.3:** `SQLJobRepository`.
   - Acceptance: `create`, `mark_running`, `update_progress(stage, beat)`, `finish(status, error, narrative_id)`, `get`, `get_active_for_story`, `list_active`, `list_recent(since)`.
   - Verify: `uv run pytest tests/unit/infrastructure/test_job_repository.py -v`
   - Files: `src/infrastructure/database/repositories/job_repository.py` (+ export en `__init__.py`), `tests/unit/infrastructure/test_job_repository.py`
-- [ ] **T1.4:** Recuperación al arrancar.
-  - Acceptance: `recover_processing_stories()` también pasa los jobs `queued`/`running` a `failed` con `error="interrumpida por reinicio"`.
+- [x] **T1.4:** Recuperación al arrancar.
+  - Acceptance: `SQLJobRepository.recover_interrupted()` pasa los jobs `queued`/`running` a `failed` con `error="interrumpida por reinicio"`; `main.py::lifespan` lo llama junto a `recover_processing_stories()`.
   - Verify: test del repo con un job `running` precargado.
   - Files: `story_repository.py` (o `job_repository.py` + llamada en `main.py::lifespan`)
-- [ ] **Checkpoint S1:** `make lint && make test`. La app funciona igual que hoy.
+- [x] **Checkpoint S1:** `make lint && make test`. La app funciona igual que hoy.
 
 ### S2 — `JobManager` + `EventBus` (sin HTTP)
 

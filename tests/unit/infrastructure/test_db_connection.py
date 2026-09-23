@@ -150,3 +150,50 @@ class TestDbConnection:
             "resonance_peripeteia",
             "resonance_residual",
         }.issubset(columns)
+
+    @pytest.mark.asyncio
+    async def test_generation_job_table_has_correct_columns(self, temp_db_path, setup_db):
+        """Spec-460 T1.2: tabla generation_job."""
+        conn = await get_connection()
+        cursor = await conn.execute("PRAGMA table_info(generation_job)")
+        columns = {row["name"] for row in await cursor.fetchall()}
+        await conn.close()
+
+        required = {
+            "id",
+            "story_id",
+            "kind",
+            "status",
+            "stage",
+            "beat",
+            "total_beats",
+            "params",
+            "error",
+            "narrative_id",
+            "created_at",
+            "started_at",
+            "finished_at",
+        }
+        assert required.issubset(columns), f"Missing: {required - columns}"
+
+    @pytest.mark.asyncio
+    async def test_generation_job_un_solo_job_activo_por_historia(self, temp_db_path, setup_db):
+        """Spec-460 T1.2: el índice único parcial rechaza un segundo job activo."""
+        import sqlite3
+
+        conn = await get_connection()
+        await conn.execute("INSERT INTO story (id, title) VALUES ('s1', 't')")
+        insert = (
+            "INSERT INTO generation_job (id, story_id, kind, status, created_at) "
+            "VALUES (?, 's1', 'full_generation', ?, '2026-09-22T00:00:00')"
+        )
+        await conn.execute(insert, ("j1", "done"))
+        await conn.execute(insert, ("j2", "running"))  # un terminado + un activo: OK
+        with pytest.raises(sqlite3.IntegrityError):
+            await conn.execute(insert, ("j3", "queued"))
+        await conn.close()
+
+    @pytest.mark.asyncio
+    async def test_init_db_es_idempotente(self, temp_db_path, setup_db):
+        """init_db() se ejecuta en cada arranque: correrlo de nuevo no falla."""
+        await init_db()

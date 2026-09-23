@@ -144,5 +144,34 @@ async def init_db() -> None:
         )
     """)
 
+    # Spec-460: jobs de generación asíncrona.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS generation_job (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued',
+            stage TEXT,
+            beat INTEGER,
+            total_beats INTEGER,
+            params TEXT DEFAULT '{}',
+            error TEXT,
+            narrative_id TEXT,
+            created_at TEXT NOT NULL,
+            started_at TEXT,
+            finished_at TEXT,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+        )
+    """)
+    await conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_generation_job_story_status
+        ON generation_job(story_id, status)
+    """)
+    # Un solo job activo por historia: la idempotencia también la garantiza la DB.
+    await conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_generation_job_active_story
+        ON generation_job(story_id) WHERE status IN ('queued', 'running')
+    """)
+
     await conn.commit()
     await conn.close()

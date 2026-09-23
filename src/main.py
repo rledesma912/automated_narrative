@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.infrastructure.database.connection import init_db
+from src.infrastructure.database.repositories.job_repository import SQLJobRepository
 from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
 from src.presentation.routers import (
     beat_router,
@@ -19,6 +20,7 @@ from src.presentation.routers import (
 async def lifespan(_app: FastAPI):
     await init_db()
     await SQLStoryRepository().recover_processing_stories()
+    await SQLJobRepository().recover_interrupted()
     yield
 
 
