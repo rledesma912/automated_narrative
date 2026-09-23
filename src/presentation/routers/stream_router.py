@@ -7,7 +7,6 @@ import aiosqlite
 from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from src.application.services.observability_service import observability
 from src.config import settings
 from src.infrastructure.database.repositories import (
     SQLBeatRepository,
@@ -197,9 +196,3 @@ async def get_active_profile():
         "provider": settings.llm_provider,
         "roles": roles,
     }
-
-
-@router.get("/system/events")
-async def get_system_events(limit: int = 10):
-    """Devuelve el historial de eventos del sistema."""
-    return observability.get_history(limit)

@@ -22,6 +22,10 @@ make dev         # api + ui en paralelo
 make db          # crea data/dev/stories.db
 make test        # pytest -v --cov=src
 make lint        # ruff check + format
+cd frontend && npm test               # Vitest (unit + integración del proxy)
+cd frontend && npx playwright test    # E2E: levanta su propio Core (:8021, DB descartable
+                                      # sembrada desde data/dev, LLM mock) + UI (:3021).
+                                      # Con BASE_URL=... usa un frontend existente.
 uv run python -m src generate --input <yaml>  # CLI completa
 ```
 
@@ -32,10 +36,11 @@ Clean Architecture con cuatro capas + cli + core:
 ```
 domain/          → Entities, Interfaces (LLMProvider), DTOs streaming, exceptions
 application/     → Use Cases + Services (PromptBuilder, StoryAnalyst, MemoryJournalist,
-                   RuleScenarioResolver, StreamingService, StreamSessionManager)
+                   RuleScenarioResolver, StreamingService, JobManager, EventBus)
 infrastructure/  → Adapters (Ollama/Anthropic/Gemini/Mock) + SQLite repos +
                    ResponseNormalizer + YamlStoryLoader/Exporter + CLIContainer (DI)
-presentation/    → FastAPI routers (story, beat, narrative, stream) + Pydantic schemas
+presentation/    → FastAPI routers (story, beat, narrative, stream, job, events) + Pydantic
+                   schemas + runtime.py (singletons JobManager/EventBus)
 core/            → StoryRunner orchestrator
 cli/             → CLI runner, commands, logger, progress reporter
 ```
@@ -86,7 +91,7 @@ API/CLI → CreateStoryUseCase → DB
                                        → generated_narrative (variante UUID)
 ```
 
-Mismo flujo en pipeline web vía `stream_story()` en `streaming_service.py`: traduce el pipeline a SSE (`status`, `beat_start`, `beat_done`, `heartbeat`, `done`, `stream_error`), tras último beat consolida y enriquece `done` con `narrative_id`. Heartbeat cada 15s.
+En la web el mismo flujo corre como **job** (Spec-460): `POST /stories/{id}/jobs` → `JobManager` lanza una `asyncio.Task` independiente de la conexión que consume `stream_story()` (`streaming_service.py`). `stream_story` traduce el pipeline a eventos (`status` con `stage`/`beat`/`total_beats`, `beat_start`, `beat_done`, `heartbeat`, `done`, `stream_error`), tras el último beat consolida y enriquece `done` con `narrative_id`. Heartbeat cada 15s.
 
 ## LLM Provider Abstraction
 
@@ -114,9 +119,10 @@ Templates: `story_analyst_*compact.md`, `synopsis_mapper_*compact.md`, `voice_sy
 ## Web & Streaming (Spec-210)
 
 - **Frontend:** Express + EJS + HTMX en `frontend/`. Único origen para el browser. Proxy interno `/api/*` → `CORE_API_URL`.
-- **Streaming:** `stream_story()` envuelve `DirectorUseCase.execute_full()` y emite SSE. Heartbeat 15s no negociable.
-- **Idempotencia:** `StreamSessionManager` (singleton) garantiza un único productor por `story_id`; conexiones extra reciben replay buffer.
-- **Wizard de autoría (Spec-220):** 5 pasos, round-trip YAML con `python -m src export-yaml` (Spec-302).
+- **Jobs (Spec-460):** generar y regenerar un acto son jobs (`generation_job`). `JobManager` (singleton en `src/presentation/runtime.py`) corre cada job como `asyncio.Task`: cerrar la pestaña no lo detiene, `POST /jobs/{id}/cancel` sí. Un solo job activo por historia (lock + índice único parcial) → 409 con el job existente. Al arrancar, los jobs que quedaron activos pasan a `failed` ("interrumpida por reinicio").
+- **Eventos (Spec-460):** `EventBus` en memoria con canales `job:<id>` (detalle, lo usa la sala) y `global` (ciclo de vida `job_*`, lo usa todo el resto). Ids por canal → reconexión con `Last-Event-ID`. Ningún GET arranca trabajo.
+- **Cliente:** `public/js/event-bus.js` abre 1 `EventSource` global por pestaña (en `<head>`, sobrevive a hx-boost; se cierra en la sala) y re-emite `forge:*` en el DOM. Consumidores: banda de generación, pie (estado del Core), botones `[data-generation-trigger]` (`generation-guard.js`), galería en vivo y paneles atados a un job. Heartbeat 15s no negociable.
+- **Wizard de autoría (Spec-220):** 5 pasos; termina en "Guardar historia" (solo guarda); la generación se lanza desde la galería o la ficha. Round-trip YAML con `python -m src export-yaml` (Spec-302).
 - **Galería (Spec-311 + Spec-312):** lista variantes de `generated_narrative` por relato + delete con confirmación HTMX.
 
 ## Environment Variables
@@ -135,7 +141,7 @@ BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 
 ## Database
 
-SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Ocho tablas** (Spec-190):
+SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Nueve tablas** (Spec-190 + Spec-460):
 
 - `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, tono, narrator_config (JSON), status, created_at
 - `character`: id, story_id, name, role, traits (JSON), order_index
@@ -145,8 +151,9 @@ SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.
 - `narrative_anchors`: id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis, resonance_peripeteia, resonance_residual
 - `narrative_journal`: id, story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state
 - `generated_narrative`: id, story_template_id, title, content, status
+- `generation_job`: id, story_id, kind (`full_generation`|`regenerate_voz`), status, stage, beat, total_beats, params (JSON), error, narrative_id, created_at, started_at, finished_at — índice único parcial: 1 job activo por historia
 
-Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`.
+Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`.
 
 ## CLI Commands
 
@@ -162,10 +169,12 @@ Checkpoints `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal
 ## API Endpoints (FastAPI, prefijo `/api/v1`)
 
 - `story_router` — CRUD `/stories`, PATCH `status` y `file-path`.
-- `beat_router` — `GET/PUT/POST /stories/{id}/beats[/{n}]`.
+- `beat_router` — `GET/PUT /stories/{id}/beats[/{n}]`.
+- `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id}; 202/409), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
+- `events_router` (Spec-460) — `GET /events` (SSE global: `snapshot` + `job_*` + heartbeat).
 - `narrative_router` (Spec-300) — `/story-templates/{id}/narratives`, `/generated-narratives/{id}` (GET/DELETE/text).
-- `stream_router` (Spec-210) — `GET /stories/{id}/stream` (SSE), `/full`, `/health`, `/config/active-profile`, `/system/events`.
+- `stream_router` (Spec-210) — `GET /stories/{id}/stream` (SSE de **solo lectura**: se ata al job activo o reproduce los beats), `/full`, `/health`, `/config/active-profile`.
 
 ## Specs
 
-Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `500_clean_code_responsability.md` (smells acumulados del core).
+Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `500_clean_code_responsability.md` (smells acumulados del core).

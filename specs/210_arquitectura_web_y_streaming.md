@@ -17,6 +17,9 @@ El navegador solo se comunica con el servidor Express. Todas las llamadas al Cor
 - **Configuración:** El proxy desactiva el buffering y la compresión para permitir el flujo SSE sin interrupciones.
 
 ## 4. Arquitectura de Streaming (Broadcaster)
+
+> **Reemplazado por Spec-460 (2026-09-22).** `StreamSessionManager` y el "modo monitor" ya no existen: la generación es un job (`JobManager` + tabla `generation_job`), los eventos van por un `EventBus` con canal por job y canal global (`GET /api/v1/events`), y `GET /stories/{id}/stream` es de solo lectura. Ver `specs/460_jobs_asincronos_y_bus_sse.md`. Lo que sigue queda como registro histórico.
+
 Para garantizar la integridad y eficiencia, el sistema utiliza un **StreamSessionManager** (Singleton) en el backend:
 - **Idempotencia:** Solo existe un pipeline de generación (productor LLM) por cada `story_id`.
 - **Multi-consumidor:** Múltiples pestañas pueden observar la misma generación. El manager distribuye los eventos a todos los clientes conectados.

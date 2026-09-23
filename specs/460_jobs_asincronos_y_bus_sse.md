@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 a S7 hechos
+**Estado:** DONE (2026-09-22) — S0 a S8 implementados y verificados; S0–S7 desplegados, S8 pendiente de despliegue
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -588,28 +588,30 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S8 — Limpieza y documentación
 
-- [ ] **T8.1:** Eliminar `StreamSessionManager`.
+- [x] **T8.1:** Eliminar `StreamSessionManager`.
   - Acceptance: se borran `stream_session_manager.py` y sus tests (los escenarios útiles de `tests/integration/test_stream_broadcaster.py` quedan migrados a `JobManager`); no quedan imports.
+  - Resultado: borrados `stream_session_manager.py`, `test_stream_session_manager.py` (incluye los 2 `xfail` de S0, cuyas versiones contra `JobManager` pasan) y `test_stream_broadcaster.py` (productor único, replay, fan-out y error ya cubiertos por `test_job_manager.py` y `test_event_bus.py`).
   - Verify: `grep -rn stream_session_manager src tests` vacío; `make test`.
-- [ ] **T8.2:** Decidir `/system/events`.
+- [x] **T8.2:** Decidir `/system/events`.
   - Acceptance: si solo lo usa `/debug`, se mantiene y se documenta; si nadie lo usa, se elimina.
-- [ ] **T8.3:** Documentación.
+  - Resultado: nadie lo usaba (el pie lo consultaba hasta S5; `/debug` no) → **eliminado**. `observability.record()` se mantiene porque además escribe en el log.
+- [x] **T8.3:** Documentación.
   - Acceptance: `CLAUDE.md` (*Web & Streaming*, *Data Flow*, *API Endpoints*, tablas de *Database*) actualizado; Spec-210/220 con nota "reemplazado por Spec-460"; Spec-460 → `DONE` con el checklist tildado.
-- [ ] **Checkpoint final:** `make lint`, `make test`, `cd frontend && npm test && npx playwright test`, y prueba manual completa en `storymaker.test`.
+- [x] **Checkpoint final:** `make lint`, `make test`, `cd frontend && npm test && npx playwright test`, y prueba manual completa en `storymaker.test`.
 
 ### Checklist de criterios de aceptación (§3)
 
-- [ ] Recargar la sala 5 veces → 1 solo job (T4.6)
-- [ ] `POST /jobs` con job activo → 409 + redirección (T3.1, T6.4)
-- [ ] Regenerar acto vuelve en < 500 ms (T7.4)
-- [ ] Banda en < 1 s sin polling (T5.7)
-- [ ] Cerrar pestaña a mitad → el job termina; "Regenerar" crea job nuevo (T2.7)
-- [ ] Reinicio del Core → job `failed` "interrumpida" (T1.4, T2.8)
-- [ ] Reconexión con `Last-Event-ID` sin duplicados (T3.3)
-- [ ] Botón ocupado < 100 ms, doble click = 1 POST (T6.5)
-- [ ] Sin jobs no aparece "GENERANDO" (T5.7)
-- [ ] Wizard guarda con error visible; generar solo desde galería/ficha (T6.4b, T6.4c)
-- [ ] "Ver progreso" siempre navega (T5.7)
+- [x] Recargar la sala 5 veces → 1 solo job (T4.6)
+- [x] `POST /jobs` con job activo → 409 + redirección (T3.1, T6.4)
+- [x] Regenerar acto vuelve en < 500 ms (T7.4)
+- [x] Banda en < 1 s sin polling (T5.7)
+- [x] Cerrar pestaña a mitad → el job termina; "Regenerar" crea job nuevo (T2.7)
+- [x] Reinicio del Core → job `failed` "interrumpida" (T1.4, T2.8)
+- [x] Reconexión con `Last-Event-ID` sin duplicados (T3.3)
+- [x] Botón ocupado < 100 ms, doble click = 1 POST (T6.5)
+- [x] Sin jobs no aparece "GENERANDO" (T5.7)
+- [x] Wizard guarda con error visible; generar solo desde galería/ficha (T6.4b, T6.4c)
+- [x] "Ver progreso" siempre navega (T5.7)
 
 ---
 

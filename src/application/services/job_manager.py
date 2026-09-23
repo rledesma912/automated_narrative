@@ -1,6 +1,6 @@
 """JobManager — ejecuta jobs de generación en background (Spec-460).
 
-Reemplaza a StreamSessionManager. Cada job corre como una `asyncio.Task` propia,
+Reemplazó a StreamSessionManager (Spec-220). Cada job corre como una `asyncio.Task` propia,
 independiente de cualquier conexión HTTP: cerrar la pestaña no lo detiene, y
 cancelarlo (`cancel()`) sí lo detiene de verdad.
 

@@ -1,5 +1,8 @@
 # Spec-220: Motor de Autoría (Wizard y Configuración)
 
+> **Actualizado por Spec-460 §2.5 (2026-09-22):** el wizard ya no genera ni guarda en silencio al pasar el último paso. La confirmación tiene un único "Guardar historia" (`POST /generar/guardar`, errores visibles) y la generación se lanza desde la galería o la ficha como job. Se eliminó `POST /generar/submit`.
+
+
 ## 1. El Wizard de 5 Pasos
 El proceso de creación de historias se guía a través de un stepper interactivo que captura la configuración semántica rica de la narrativa.
 

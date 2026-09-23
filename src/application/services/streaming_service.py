@@ -72,10 +72,9 @@ async def stream_story(
     # ── Productor principal ───────────────────────────────────────────────────
     async def _main_producer():
         try:
-            # Spec-220: la limpieza canónica de artefactos vive en update_story_status
-            # (Spec-216 Slice A). La idempotencia del SSE la garantiza StreamSessionManager:
-            # un solo productor por story_id, las conexiones extra se atan a la sesión
-            # existente. Sin necesidad de salvaguardas defensivas acá.
+            # Spec-460: la limpieza de artefactos previos la hace el JobManager antes de
+            # correr el pipeline, y la idempotencia (un solo job activo por historia) la
+            # garantizan el JobManager y un índice único en generation_job.
             if story_repo is not None:
                 await story_repo.update_status(story.id, "processing")
 
