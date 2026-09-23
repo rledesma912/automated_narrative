@@ -93,11 +93,15 @@ class YamlStoryExporter:
             return "; ".join(parts)
         return ""
 
+    def authoring_config(self, story: Story) -> dict[str, Any]:
+        """`storyteller_config` completo (mismo que el YAML) para rehidratar el wizard."""
+        return self._build_storyteller_config(story.narrator_config or {}, story)
+
     def _build_storyteller_config(self, sc: dict, story: Story) -> dict[str, Any]:
         """Reconstruye el bloque canónico, completando lo que falte desde Story."""
         scenarios = self._build_scenarios(sc, story)
         rules = self._build_rules(sc, story)
-        actos = self._build_actos(sc)
+        actos = self._build_actos(sc, story)
 
         return {
             "storyteller_id": sc.get("storyteller_id") or "P1",
@@ -188,8 +192,18 @@ class YamlStoryExporter:
             for i, txt in enumerate(story.reglas or [], start=1)
         ]
 
-    def _build_actos(self, sc: dict) -> dict[str, dict[str, Any]]:
+    def _build_actos(self, sc: dict, story: Story) -> dict[str, dict[str, Any]]:
+        """Texto de cada acto, de la fuente más fiel disponible (Spec-440 §8).
+
+        1. `narrator_config.actos` (historias viejas: el JSON aún los traía);
+        2. `macro_beat.synopsis_beat` (donde los guarda CreateStoryUseCase);
+        3. `sinopsis` partida en 5 párrafos (el wizard la arma uniendo los actos
+           con una línea en blanco; tras una generación web es la única copia).
+        """
         actos_raw = sc.get("actos") or {}
+        by_beat = {b.number: (b.synopsis_beat or "") for b in (story.beats or [])}
+        paragraphs = [p.strip() for p in (story.sinopsis or "").split("\n\n") if p.strip()]
+        from_sinopsis = paragraphs if len(paragraphs) == 5 else []
         canonical_keys = [
             ("act_1", "exposicion"),
             ("act_2", "accion_ascendente"),
@@ -198,9 +212,13 @@ class YamlStoryExporter:
             ("act_5", "desenlace"),
         ]
         out: dict[str, dict[str, Any]] = {}
-        for key, default_type in canonical_keys:
+        for number, (key, default_type) in enumerate(canonical_keys, start=1):
             block = actos_raw.get(key) or {}
             text = block.get("text", "") if isinstance(block, dict) else str(block)
+            if not text:
+                text = by_beat.get(number, "")
+            if not text and from_sinopsis:
+                text = from_sinopsis[number - 1]
             out[key] = {
                 "type": (block.get("type") if isinstance(block, dict) else None) or default_type,
                 "text": _LiteralStr(text) if text else "",

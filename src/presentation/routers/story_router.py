@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
 from src.application.dto import StoryCreateDTO
 from src.application.services.narrator_config_sanitizer import (
@@ -15,7 +15,8 @@ from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
 from src.application.use_cases.create_story import CreateStoryUseCase
 from src.domain.models import StoryStatus
-from src.infrastructure.database.repositories import SQLStoryRepository
+from src.infrastructure.database.repositories import SQLJobRepository, SQLStoryRepository
+from src.infrastructure.exporters import YamlStoryExporter
 from src.presentation.schemas.request import StoryCreateRequest
 from src.presentation.schemas.response import StoryResponse
 
@@ -193,7 +194,7 @@ async def update_story(
     request: StoryCreateRequest,
     repo: SQLStoryRepository = Depends(_story_repo),
 ):
-    """Actualiza datos de una historia en estado draft (Spec-214 F2)."""
+    """Actualiza los datos de entrada de una historia (Spec-214 F2, Spec-440 §8)."""
     from uuid import uuid4
 
     from src.domain.models import RuleType, Scenario, TypedRule
@@ -201,9 +202,16 @@ async def update_story(
     story = await repo.get_by_id(UUID(story_id))
     if not story:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
-    if story.status != StoryStatus.DRAFT:
-        raise HTTPException(
-            status_code=422, detail="Solo se pueden editar historias en estado draft"
+    # Spec-440 §8: se editan borradores y también historias generadas o fallidas;
+    # no mientras haya una generación en curso.
+    active = await SQLJobRepository().get_active_for_story(story.id)
+    if active is not None or story.status == StoryStatus.PROCESSING:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": "Hay una generación en curso; esperá a que termine para editar",
+                "job_id": str(active.id) if active else None,
+            },
         )
 
     dto = _request_to_dto(request)
@@ -253,7 +261,9 @@ async def update_story(
             )
         story.typed_rules = typed
 
-    await repo.save(story)
+    # update_inputs y no save(): save() hace INSERT OR REPLACE y reescribe los actos,
+    # lo que borraría en cascada todo lo generado de una historia ya generada.
+    await repo.update_inputs(story)
     return StoryResponse(
         id=str(story.id), title=story.title, status=story.status.value, created_at=story.created_at
     )
@@ -297,5 +307,6 @@ async def get_story(
         relator=story.relator,
         sinopsis=story.sinopsis,
         narrator_config=story.narrator_config,
+        storyteller_config=YamlStoryExporter().authoring_config(story),
         personajes_full=story.personajes_full,
     )

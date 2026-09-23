@@ -67,6 +67,32 @@ describe("saveWizardStory", () => {
     expect(res.redirect).toHaveBeenCalledWith("/galeria?success=saved&guardada=s-9");
   });
 
+  it("editar una historia ya generada avisa que hay que regenerar", async () => {
+    update.mockResolvedValue({ id: "s-9", status: "completed" });
+    const res = makeRes();
+
+    await saveWizardStory(
+      { session: { wizard: WIZARD, wizard_story_id: "s-9" } } as unknown as Request,
+      res,
+    );
+
+    expect(res.redirect).toHaveBeenCalledWith("/galeria?success=saved_regenerar&guardada=s-9");
+  });
+
+  it("con una generación en curso (409) muestra el aviso del Core", async () => {
+    update.mockRejectedValue(
+      axiosError(409, "Hay una generación en curso; esperá a que termine para editar"),
+    );
+    const res = makeRes();
+
+    await saveWizardStory(
+      { session: { wizard: WIZARD, wizard_story_id: "s-9" } } as unknown as Request,
+      res,
+    );
+
+    expect(render.mock.calls[0]![2].saveError).toMatch(/generación en curso/);
+  });
+
   it("error de validación del Core: se muestra en la confirmación (no se oculta)", async () => {
     create.mockRejectedValue(
       axiosError(422, [
@@ -85,7 +111,7 @@ describe("saveWizardStory", () => {
     expect(locals.saveError).toBe("title: Field required · sinopsis: String too short");
   });
 
-  it("error con detail de texto (p.ej. editar una historia que no es borrador)", async () => {
+  it("error con detail de texto: se muestra tal cual", async () => {
     update.mockRejectedValue(axiosError(422, "Solo se pueden editar historias en estado draft"));
     const res = makeRes();
 

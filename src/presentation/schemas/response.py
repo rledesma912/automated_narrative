@@ -19,6 +19,9 @@ class StoryResponse(BaseModel):
     relator: str | None = None
     sinopsis: str | None = None
     narrator_config: dict | None = None
+    # Spec-440 §8: vista de autoría completa (atmósfera, escenarios, reglas, actos,
+    # narrador) para rehidratar el wizard al editar. Solo en GET /stories/{id}.
+    storyteller_config: dict | None = None
     personajes_full: list | None = None
 
     class Config:

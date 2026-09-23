@@ -43,60 +43,7 @@ class SQLStoryRepository:
             ),
         )
 
-        # Persistir personajes en la tabla character (borrar y re-insertar).
-        # El id de DB es un UUID fresco, igual que en rule/scenario; el id
-        # corto del YAML (P1, P2…) es story-scoped y se conserva solo en memoria.
-        await conn.execute("DELETE FROM character WHERE story_id = ?", (str(story.id),))
-        for idx, p in enumerate(story.personajes_full or [], start=1):
-            await conn.execute(
-                "INSERT INTO character (id, story_id, name, role, traits, order_index) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    str(uuid.uuid4()),
-                    str(story.id),
-                    p.get("name", ""),
-                    p.get("role", ""),
-                    json.dumps(list(p.get("traits") or [])),
-                    idx,
-                ),
-            )
-
-        # Persistir reglas en la tabla rule (borrar y re-insertar)
-        # Siempre se genera un UUID fresco como PK de DB para evitar colisiones entre historias.
-        # El r.id lógico ("R1", "R2"…) vive solo en TypedRule, no en la tabla.
-        await conn.execute("DELETE FROM rule WHERE story_id = ?", (str(story.id),))
-        if story.typed_rules:
-            for r in story.typed_rules:
-                db_rule_id = str(uuid.uuid4())
-                await conn.execute(
-                    "INSERT INTO rule (id, story_id, content, type, intensity, applies_to_beat) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (
-                        db_rule_id,
-                        str(story.id),
-                        r.content,
-                        r.type.value if r.type else None,
-                        r.intensity,
-                        r.applies_to_beat,
-                    ),
-                )
-        elif story.reglas:
-            for r in story.reglas:
-                rule_id = str(uuid.uuid4())
-                await conn.execute(
-                    "INSERT INTO rule (id, story_id, content) VALUES (?, ?, ?)",
-                    (rule_id, str(story.id), r),
-                )
-
-        # Persistir escenarios en la tabla scenario (borrar y re-insertar)
-        await conn.execute("DELETE FROM scenario WHERE story_id = ?", (str(story.id),))
-        if story.scenarios:
-            for s in story.scenarios:
-                await conn.execute(
-                    "INSERT INTO scenario (id, story_id, order_index, name, description) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
-                )
+        await self._write_inputs(conn, story)
 
         # Persistir beats en la tabla macro_beat (borrar y re-insertar)
         # Spec-190 T7.1: pre-crear 5 filas macro_beat al guardar la historia
@@ -232,6 +179,94 @@ class SQLStoryRepository:
         story.scenarios = scenarios
         story.personajes_full = personajes
         return story
+
+    async def update_inputs(self, story: Story) -> Story:
+        """Actualiza solo los datos de entrada de una historia (Spec-440 §8).
+
+        A diferencia de `save()`, no toca lo generado: nada de `INSERT OR REPLACE`
+        sobre `story` (con FKs en cascada borraría actos, journal, anclas, relatos
+        y jobs) ni reescritura de `macro_beat`. Tampoco cambia `status`.
+        """
+        conn = await get_connection()
+        try:
+            await conn.execute(
+                """UPDATE story SET title = ?, protagonista = ?, relator = ?, sinopsis = ?,
+                   genero = ?, subgenero = ?, tono = ?, narrator_config = ?
+                   WHERE id = ?""",
+                (
+                    story.title,
+                    story.protagonista,
+                    story.relator,
+                    story.sinopsis,
+                    story.genero,
+                    story.subgenero,
+                    story.tono,
+                    json.dumps(story.narrator_config) if story.narrator_config else None,
+                    str(story.id),
+                ),
+            )
+            await self._write_inputs(conn, story)
+            await conn.commit()
+        finally:
+            await conn.close()
+        return story
+
+    async def _write_inputs(self, conn, story: Story) -> None:
+        """Personajes, reglas y escenarios: borrar y re-insertar (datos de entrada)."""
+        # Persistir personajes en la tabla character (borrar y re-insertar).
+        # El id de DB es un UUID fresco, igual que en rule/scenario; el id
+        # corto del YAML (P1, P2…) es story-scoped y se conserva solo en memoria.
+        await conn.execute("DELETE FROM character WHERE story_id = ?", (str(story.id),))
+        for idx, p in enumerate(story.personajes_full or [], start=1):
+            await conn.execute(
+                "INSERT INTO character (id, story_id, name, role, traits, order_index) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    str(uuid.uuid4()),
+                    str(story.id),
+                    p.get("name", ""),
+                    p.get("role", ""),
+                    json.dumps(list(p.get("traits") or [])),
+                    idx,
+                ),
+            )
+
+        # Persistir reglas en la tabla rule (borrar y re-insertar)
+        # Siempre se genera un UUID fresco como PK de DB para evitar colisiones entre historias.
+        # El r.id lógico ("R1", "R2"…) vive solo en TypedRule, no en la tabla.
+        await conn.execute("DELETE FROM rule WHERE story_id = ?", (str(story.id),))
+        if story.typed_rules:
+            for r in story.typed_rules:
+                db_rule_id = str(uuid.uuid4())
+                await conn.execute(
+                    "INSERT INTO rule (id, story_id, content, type, intensity, applies_to_beat) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        db_rule_id,
+                        str(story.id),
+                        r.content,
+                        r.type.value if r.type else None,
+                        r.intensity,
+                        r.applies_to_beat,
+                    ),
+                )
+        elif story.reglas:
+            for r in story.reglas:
+                rule_id = str(uuid.uuid4())
+                await conn.execute(
+                    "INSERT INTO rule (id, story_id, content) VALUES (?, ?, ?)",
+                    (rule_id, str(story.id), r),
+                )
+
+        # Persistir escenarios en la tabla scenario (borrar y re-insertar)
+        await conn.execute("DELETE FROM scenario WHERE story_id = ?", (str(story.id),))
+        if story.scenarios:
+            for s in story.scenarios:
+                await conn.execute(
+                    "INSERT INTO scenario (id, story_id, order_index, name, description) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
+                )
 
     async def update(self, story: Story) -> Story:
         """Update a story."""

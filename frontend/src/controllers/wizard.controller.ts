@@ -108,13 +108,18 @@ export async function saveWizardStory(req: Request, res: Response): Promise<void
 
   try {
     let storyId = session.wizard_story_id;
+    let flash = "saved";
     if (storyId) {
-      await updateStory(storyId, coreDto);
+      const updated = (await updateStory(storyId, coreDto)) as { status?: string };
+      // Spec-440 §8: editar una historia generada no cambia lo ya narrado.
+      if (updated?.status === "completed" || updated?.status === "failed") {
+        flash = "saved_regenerar";
+      }
     } else {
       storyId = (await createStory(coreDto, "save")).id;
       session.wizard_story_id = storyId;
     }
-    res.redirect(`/galeria?success=saved&guardada=${encodeURIComponent(storyId)}`);
+    res.redirect(`/galeria?success=${flash}&guardada=${encodeURIComponent(storyId)}`);
   } catch (err: unknown) {
     res.status(422);
     await renderPage(res, "wizard-confirm", {

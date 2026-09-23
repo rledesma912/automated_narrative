@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** TASKS — pendiente de OK para IMPLEMENT
+**Estado:** IMPLEMENT — S0 hecho
 
 ---
 
@@ -339,18 +339,24 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S0 — Editar historias ya generadas (§8)
 
-- [ ] **T0.1:** Regla de edición en la API.
+- [x] **T0.1:** Regla de edición en la API.
   - Acceptance: `PATCH /stories/{id}` acepta `draft`, `completed` y `failed`; con job activo → 409 `{detail, job_id}`; no toca `macro_beat`, `narrative_journal`, `narrative_anchors`, `generated_narrative` ni `status`.
   - Verify: `uv run pytest tests/integration/test_story_edit.py -q` (editar completada conserva beats/relatos/estado; 409 con job activo; historia inexistente 404).
   - Files: `src/presentation/routers/story_router.py`, `tests/integration/test_story_edit.py` (nuevo)
-- [ ] **T0.2:** Aviso tras editar una historia generada.
+- [x] **T0.2:** Aviso tras editar una historia generada.
   - Acceptance: `saveWizardStory` con historia `completed`/`failed` redirige con `success=saved_regenerar` → toast "Guardada. Regenerala para aplicar los cambios"; con borrador, el aviso actual. Error 409 → mensaje "Hay una generación en curso; esperá a que termine" en la confirmación.
   - Verify: Vitest `wizard.controller.test.ts` (3 casos nuevos).
   - Files: `frontend/src/controllers/wizard.controller.ts`, `frontend/src/controllers/gallery.controller.ts`
-- [ ] **T0.3:** E2E de edición.
+- [x] **T0.3:** E2E de edición.
   - Acceptance: galería → Editar historia completada → cambiar título → Guardar → aviso de regenerar; la ficha muestra el título nuevo y los relatos siguen.
   - Verify: `npx playwright test story-edit.spec.ts`
   - Files: `frontend/tests/e2e/story-edit.spec.ts` (nuevo)
+- [x] **T0.4 (hallazgos de S0):** editar de verdad requería tres arreglos que no estaban en el plan.
+  - **Pérdida de datos:** `SQLStoryRepository.save()` hace `INSERT OR REPLACE INTO story` (con FKs en cascada borra actos narrados, journal, anclas, relatos y jobs) y reescribe `macro_beat` sin `generated_act`. Con la regla relajada, editar una historia generada la dejaba sin nada (reproducido en test). Nuevo `update_inputs()`: `UPDATE` de la fila + personajes/reglas/escenarios; no toca lo generado ni el `status`. `PATCH` lo usa.
+  - **Wizard vacío al editar:** `GET /stories/{id}` no devolvía `storyteller_config` (solo el `narrator_config` sanitizado: sin escenarios, reglas, actos ni atmósfera), y `mapStoryToWizard` lee `storyteller_config`. Ahora devuelve la vista de autoría completa (`YamlStoryExporter.authoring_config`).
+  - **Actos perdidos en el export:** `_build_actos` leía `narrator_config.actos`, que se sanitiza al guardar. Ahora: `narrator_config.actos` → `macro_beat.synopsis_beat` → `sinopsis` en 5 párrafos (tras una generación web es la única copia). Impacta también la recarga de S2 (`export-yaml`).
+  - Verify: `tests/integration/test_story_edit.py` (7 tests) + E2E.
+- [x] **Checkpoint S0:** lint + pytest 617 + tsc + Vitest 61 + Playwright 18 (×2).
 
 ### S1 — Contrato wizard → API (§4 pendiente + §9)
 

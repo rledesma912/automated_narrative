@@ -9,6 +9,7 @@ const FLASH_MESSAGES: Record<string, string> = {
   export_failed: "No se pudo generar el Markdown. Intenta de nuevo.",
   load_failed:   "No se pudo cargar la historia.",
   saved:         "Historia guardada. Podés generarla desde acá.",
+  saved_regenerar: "Guardada. Regenerala para aplicar los cambios.",
 };
 
 export async function galleryPage(req: Request, res: Response): Promise<void> {
