@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S3 desplegados; S0–S4 desplegados; sigue S5
+**Estado:** IMPLEMENT — S0–S3 desplegados; S0–S4 desplegados; S5 implementado (pendiente commit + deploy)
 
 ---
 
@@ -441,9 +441,10 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S5 — Wizard compacto para 1080p (§1)
 
-- [ ] **T5.1:** Clases de la tabla §1 en `wizard.ejs` (sin tocar `.card-forge` global); radios de 5 opciones en 2 columnas.
-- [ ] **T5.2:** Copy: "evoluciona", "fija", "auditivas".
-- [ ] **T5.3:** Playwright: viewport 1920×960 → botón "Siguiente" del paso 1 visible sin scroll; 1366×768 sin scroll horizontal; captura para revisión visual.
+- [x] **T5.1:** Clases de la tabla §1 en `wizard.ejs` (sin tocar `.card-forge` global); radios de 5 opciones en 2 columnas.
+- [x] **T5.2:** Copy: "evoluciona", "fija", "auditivas".
+- [x] **T5.3:** Playwright: viewport 1920×960 → botón "Siguiente" del paso 1 visible sin scroll; 1366×768 sin scroll horizontal; captura para revisión visual.
+- **Nota de implementación (2026-09-23):** con solo la tabla de §1 el paso 1 seguía scrolleando 83px en 1920×960 (el scroll es del `<main>`, `p-12 pb-24`) y el pie fijo tapaba «Siguiente». Se agregó `width: half` en `ui_definitions.yaml`: campos `half` contiguos comparten fila desde `lg` (Género + Subgénero). Además los radios muestran solo la etiqueta (antes «id: Etiqueta»). El E2E mide `scrollHeight <= clientHeight` del `<main>` y que el botón termine por encima del pie.
 
 ### S6 — Documentación y cierre
 

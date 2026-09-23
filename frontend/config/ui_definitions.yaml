@@ -18,6 +18,7 @@ steps:
         group: "atmosphere"
         # Spec-440 §2: opciones del catálogo del Core (GET /api/v1/catalog/genres).
         source: genre_catalog
+        width: half
 
       - name: atmosphere_subgenre
         type: select
@@ -27,12 +28,13 @@ steps:
         # Solo los subgéneros del género elegido.
         source: genre_catalog
         depends_on: atmosfera
+        width: half
 
       - name: atmosphere_tone
         type: radio
-        label: "Cómo evolve la tensión"
+        label: "Cómo evoluciona la tensión"
         subtitle: "El tono narrativo de la historia"
-        hint: "Cómo evolve la tensión a lo largo de toda la historia"
+        hint: "Cómo evoluciona la tensión a lo largo de toda la historia"
         group: "atmosphere"
         options:
           - "creciente: Creciente y opresivo"
@@ -330,7 +332,7 @@ steps:
         type: multi-select
         label: "Presta atención a"
         subtitle: "A qué le dedica energía mental"
-        hint: "En qué se fixa el narrador (busca pistas visuales/auditvas)"
+        hint: "En qué se fija el narrador (busca pistas visuales/auditivas)"
         group: "sesgos"
         options:
           - "sonidos: Sonidos y ruidos"

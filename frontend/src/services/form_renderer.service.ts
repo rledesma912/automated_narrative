@@ -20,6 +20,7 @@ interface RawField {
   default?: string;
   source?: "genre_catalog" | "characters";
   depends_on?: string;
+  width?: "half";
 }
 
 interface RawStep {
@@ -49,6 +50,7 @@ function parseField(raw: RawField): WizardField {
     default:     raw.default,
     source:      raw.source,
     depends_on:  raw.depends_on,
+    width:       raw.width,
   };
 }
 

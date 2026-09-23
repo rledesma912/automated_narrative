@@ -22,6 +22,8 @@ export interface WizardField {
   source?: "genre_catalog" | "characters";
   /** Campo del que dependen las opciones (subgénero → género). */
   depends_on?: string;
+  /** `half`: comparte fila con el campo `half` contiguo en pantallas anchas (Spec-440 §1). */
+  width?: "half";
 }
 
 export interface WizardStep {

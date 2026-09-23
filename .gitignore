@@ -75,3 +75,5 @@ frontend/public/styles.css.map
 
 # Artefactos del MCP de Playwright (snapshots/logs de pruebas manuales)
 .playwright-mcp/
+frontend/test-results/
+frontend/playwright-report/

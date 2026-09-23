@@ -44,7 +44,7 @@ step.fields.filter(f => f.group).forEach(f => {
   groupedMap[f.group].push(f);
 });
 
-const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge-text text-lg px-4 py-3 focus:outline-none focus:border-forge-accent transition-colors placeholder:text-forge-muted';
+const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge-text text-base px-3 py-2 focus:outline-none focus:border-forge-accent transition-colors placeholder:text-forge-muted';
 
 // Spec-440 §2: género/subgénero desde el catálogo del Core. El value es el ID.
 const CATALOG = (typeof genreCatalog !== 'undefined' && genreCatalog) || null;
@@ -115,14 +115,14 @@ function fieldHtml(field) {
   const reqAttr   = field.required ? ' required' : '';
   const ph        = esc(field.placeholder || '');
 
-  let html = '<div class="mb-5">';
+  let html = '<div class="mb-4">';
 
-  html += `<label class="block text-lg font-semibold text-forge-text mb-1">${esc(field.label)}`;
+  html += `<label class="block text-base font-semibold text-forge-text mb-0.5">${esc(field.label)}`;
   if (field.required) html += ' <span class="text-forge-accent">*</span>';
   html += '</label>';
 
   if (field.subtitle) {
-    html += `<p class="text-sm text-forge-muted mb-2">${esc(field.subtitle)}</p>`;
+    html += `<p class="text-xs text-forge-muted mb-1.5">${esc(field.subtitle)}</p>`;
   }
 
   if (field.type === 'textarea') {
@@ -146,12 +146,17 @@ function fieldHtml(field) {
     html += '</select>';
 
   } else if (field.type === 'radio') {
-    html += '<div class="space-y-2 mt-2">';
-    (Array.isArray(field.options) ? field.options : []).forEach(opt => {
+    // Spec-440 §1: 5+ opciones en 2 columnas para no alargar la card.
+    const radioOpts = Array.isArray(field.options) ? field.options : [];
+    const radioCls  = radioOpts.length >= 5 ? 'grid sm:grid-cols-2 gap-x-6 gap-y-1.5' : 'space-y-1.5';
+    html += `<div class="${radioCls} mt-2">`;
+    radioOpts.forEach(opt => {
       const chk = effective === opt ? ' checked' : '';
+      const parts = opt.split(':');
+      const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
       html += '<label class="flex items-center gap-3 cursor-pointer">';
       html += `<input type="radio" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
-      html += `<span class="text-base text-forge-text">${esc(opt)}</span>`;
+      html += `<span class="text-sm text-forge-text">${esc(label)}</span>`;
       html += '</label>';
     });
     html += '</div>';
@@ -164,7 +169,7 @@ function fieldHtml(field) {
       const chk = msArr.includes(opt) ? ' checked' : '';
       html += '<label class="flex items-center gap-2 cursor-pointer">';
       html += `<input type="checkbox" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
-      html += `<span class="text-base text-forge-text">${label}</span>`;
+      html += `<span class="text-sm text-forge-text">${label}</span>`;
       html += '</label>';
     });
     html += '</div>';
@@ -184,6 +189,22 @@ function fieldHtml(field) {
   }
 
   html += '</div>';
+  return html;
+}
+
+// Spec-440 §1: campos `width: half` contiguos comparten fila en pantallas anchas.
+function fieldsHtml(fields) {
+  let html = '';
+  for (let i = 0; i < fields.length; i++) {
+    if (fields[i].width === 'half') {
+      html += '<div class="grid lg:grid-cols-2 gap-x-6">';
+      while (i < fields.length && fields[i].width === 'half') html += fieldHtml(fields[i++]);
+      html += '</div>';
+      i--;
+    } else {
+      html += fieldHtml(fields[i]);
+    }
+  }
   return html;
 }
 
@@ -217,7 +238,7 @@ function hasCardData(fields) {
 <div class="w-[85vw] max-w-5xl mx-auto">
 
   <%/* ── Stepper header ─────────────────────────────── */%>
-  <div class="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
+  <div class="flex items-center gap-0 mb-6 overflow-x-auto pb-2">
     <% steps.forEach((s, i) => { %>
       <%
         const done   = s.number < step.number;
@@ -249,15 +270,15 @@ function hasCardData(fields) {
   </div>
 
   <%/* ── Título + Subtítulo del paso ─────────────────── */%>
-  <h2 class="heading-forge-lg mb-1"><%= step.title %></h2>
+  <h2 class="heading-forge-lg !text-2xl mb-1"><%= step.title %></h2>
   <% if (step.subtitle) { %>
-    <p class="text-forge-muted-caps mb-8"><%= step.subtitle %></p>
+    <p class="text-forge-muted-caps mb-5"><%= step.subtitle %></p>
   <% } else { %>
     <div class="mb-6"></div>
   <% } %>
 
   <%/* ── Formulario ───────────────────────────────────── */%>
-  <form method="POST" action="/generar/paso/<%= step.number %>" class="space-y-6">
+  <form method="POST" action="/generar/paso/<%= step.number %>" class="space-y-5">
 
     <%/* -- Campos sin grupo */%>
     <% ungrouped.forEach(field => { %>
@@ -337,21 +358,19 @@ function hasCardData(fields) {
         }) %>
 
       <% } else { %>
-        <div class="card-forge !p-6 space-y-5">
+        <div class="card-forge !p-5 space-y-4">
           <div class="border-b border-forge-border pb-3">
             <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
             <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
           </div>
-          <% groupedMap[groupName].forEach(field => { %>
-            <%- fieldHtml(field) %>
-          <% }); %>
+          <%- fieldsHtml(groupedMap[groupName]) %>
         </div>
       <% } %>
 
     <% }); %>
 
     <%/* ── Navegación ────────────────────────────────── */%>
-    <div class="flex items-center justify-between pt-8 border-t border-forge-border">
+    <div class="flex items-center justify-between pt-6 border-t border-forge-border">
       <% if (step.number > 1) { %>
         <a href="/generar/paso/<%= step.number - 1 %>"
            class="btn-forge-outline !px-0 !border-none">
