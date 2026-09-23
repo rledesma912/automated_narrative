@@ -15,5 +15,6 @@ def get_list_genres_use_case() -> ListGenresUseCase:
 
 @router.get("/catalog/genres", response_model=list[Genre])
 async def list_genres(use_case: ListGenresUseCase = Depends(get_list_genres_use_case)):
-    """`[{id, label, subgenres: [{id, label}]}]`, ordenado por `order_index`."""
+    """`[{id, label, subgenres: [{id, label}], entity_natures: [{id, label}]}]`,
+    todo ordenado por `order_index` (Spec-440 §2, Spec-450 §1)."""
     return await use_case.execute()

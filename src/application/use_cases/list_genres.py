@@ -11,5 +11,5 @@ class ListGenresUseCase:
         self.genre_repository = genre_repository
 
     async def execute(self) -> list[Genre]:
-        """Géneros y subgéneros ordenados por `order_index`."""
+        """Géneros con subgéneros y naturalezas de entidad, ordenados por `order_index`."""
         return await self.genre_repository.list_with_subgenres()

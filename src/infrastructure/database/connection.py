@@ -3,6 +3,7 @@
 import aiosqlite
 
 from src.config import settings
+from src.infrastructure.database.seeds.entity_natures import genre_nature_rows, nature_rows
 from src.infrastructure.database.seeds.genre_catalog import genre_rows, subgenre_rows
 
 
@@ -57,6 +58,33 @@ async def init_db() -> None:
     await conn.executemany(
         "INSERT OR IGNORE INTO subgenre (genre_id, id, label, order_index) VALUES (?, ?, ?, ?)",
         subgenre_rows(),
+    )
+
+    # Spec-450 §1: naturalezas de entidad. El seed manda (upsert); el mapeo solo agrega.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS entity_nature (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            order_index INTEGER NOT NULL
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS genre_entity_nature (
+            genre_id TEXT NOT NULL,
+            nature_id TEXT NOT NULL,
+            PRIMARY KEY (genre_id, nature_id),
+            FOREIGN KEY (genre_id) REFERENCES genre(id),
+            FOREIGN KEY (nature_id) REFERENCES entity_nature(id)
+        )
+    """)
+    await conn.executemany(
+        "INSERT INTO entity_nature (id, label, order_index) VALUES (?, ?, ?) "
+        "ON CONFLICT(id) DO UPDATE SET label = excluded.label, order_index = excluded.order_index",
+        nature_rows(),
+    )
+    await conn.executemany(
+        "INSERT OR IGNORE INTO genre_entity_nature (genre_id, nature_id) VALUES (?, ?)",
+        genre_nature_rows(),
     )
 
     # genero/subgenero vacíos se guardan NULL: la FK compuesta no se verifica con un NULL.

@@ -103,3 +103,30 @@ async def test_integrity_error_residual_es_422(client, monkeypatch):
 
     assert resp.status_code == 422
     assert "género/subgénero" in resp.json()["detail"]
+
+
+async def test_catalogo_trae_naturalezas_por_genero(client):
+    """Spec-450 T0.2."""
+    genres = {g["id"]: g for g in (await client.get("/api/v1/catalog/genres")).json()}
+
+    assert genres["suspenso"]["entity_natures"] == [
+        {"id": "humano", "label": "Humano (asesino, acosador)"},
+        {"id": "culto", "label": "Culto / colectivo"},
+        {"id": "desconocida", "label": "Desconocida / ambigua"},
+    ]
+    for g in genres.values():
+        assert g["entity_natures"][-1]["id"] == "desconocida"
+
+
+@pytest.mark.usefixtures("client")  # DB temporal con init_db()
+async def test_repo_naturalezas_de_un_genero():
+    from src.infrastructure.database.repositories import SQLGenreRepository
+
+    repo = SQLGenreRepository()
+    ids = [n.id for n in await repo.natures_of("folk_horror")]
+
+    # Orden del catálogo (order_index), no el del mapeo.
+    assert ids == ["espiritu", "demonio", "culto", "lugar", "folklorica", "desconocida"]
+    assert await repo.natures_of("inventado") == []
+    assert await repo.nature_allowed("folk_horror", "folklorica")
+    assert not await repo.nature_allowed("suspenso", "demonio")

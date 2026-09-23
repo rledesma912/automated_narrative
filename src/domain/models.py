@@ -73,12 +73,21 @@ class Subgenre(BaseModel):
     label: str
 
 
+class EntityNature(BaseModel):
+    """Naturaleza de una entidad narrativa: espíritu, culto, criatura… (Spec-450 §1)."""
+
+    id: str
+    label: str
+
+
 class Genre(BaseModel):
-    """Género del catálogo con sus subgéneros ordenados (Spec-440 §2)."""
+    """Género del catálogo con sus subgéneros y las naturalezas de entidad que admite,
+    ambos ordenados (Spec-440 §2, Spec-450 §1)."""
 
     id: str
     label: str
     subgenres: list[Subgenre] = Field(default_factory=list)
+    entity_natures: list[EntityNature] = Field(default_factory=list)
 
 
 class TypedRule(BaseModel):

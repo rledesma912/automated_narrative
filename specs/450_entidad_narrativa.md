@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** TASKS — PLAN aprobado (2026-09-23); tareas pendientes de OK para pasar a IMPLEMENT
+**Estado:** IMPLEMENT — S0 implementado (pendiente commit + deploy)
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -270,15 +270,15 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S0 — Catálogo de naturalezas (backend)
 
-- [ ] **T0.1:** Tablas y seed.
+- [x] **T0.1:** Tablas y seed.
   - Acceptance: `init_db()` crea `entity_nature` y `genre_entity_nature` y siembra las 10 naturalezas y el mapeo del PLAN con upsert (`ON CONFLICT DO UPDATE` de `label`/`order_index` en naturalezas; `INSERT OR IGNORE` en el mapeo). `desconocida` en los 8 géneros. Corre sobre una DB existente sin tocar sus datos.
   - Verify: pytest — 2 corridas = mismas filas; cambiar una etiqueta en el seed y re-correr la actualiza; DB con historias previas conserva sus filas.
   - Files: `src/infrastructure/database/seeds/entity_natures.py` (nuevo), `src/infrastructure/database/connection.py`
-- [ ] **T0.2:** Catálogo en la API.
+- [x] **T0.2:** Catálogo en la API.
   - Acceptance: `GET /api/v1/catalog/genres` suma `entity_natures: [{id, label}]` por género, ordenadas por `order_index`; `SQLGenreRepository` expone `natures_of(genre_id)` y `nature_allowed(genre_id, nature_id)`.
   - Verify: pytest del repo y del router (forma de la respuesta; `suspenso` → humano, culto, desconocida).
   - Files: `src/domain/models.py` (`EntityNature`, `Genre.entity_natures`), `src/domain/interfaces.py`, `src/infrastructure/database/repositories/genre_repository.py`, `src/presentation/routers/catalog_router.py`
-- [ ] **Checkpoint S0:** lint + pytest + Vitest (el `catalog.service` del frontend tolera el campo nuevo) → commit + despliegue (aditivo).
+- [x] **Checkpoint S0:** lint + pytest + Vitest (el `catalog.service` del frontend tolera el campo nuevo) → commit + despliegue (aditivo).
 
 ### S1 — Dominio, persistencia, API y YAML
 

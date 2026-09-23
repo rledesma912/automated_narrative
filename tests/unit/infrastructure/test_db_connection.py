@@ -252,3 +252,52 @@ class TestGenreCatalog:
                 "INSERT INTO story (id, title, genero, subgenero) VALUES ('x', 't', ?, ?)",
                 (genero, subgenero),
             )
+
+
+class TestEntityNatureCatalog:
+    """Spec-450 T0.1: naturalezas de entidad y su mapeo por género."""
+
+    @pytest.fixture
+    async def conn(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'c.db'}")
+        await init_db()
+        conn = await get_connection()
+        yield conn
+        await conn.close()
+
+    async def _rows(self, conn, sql: str) -> list[tuple]:
+        cursor = await conn.execute(sql)
+        return [tuple(r) for r in await cursor.fetchall()]
+
+    async def test_seed_10_naturalezas_y_desconocida_en_los_8_generos(self, conn):
+        assert len(await self._rows(conn, "SELECT id FROM entity_nature")) == 10
+        genres = await self._rows(
+            conn, "SELECT genre_id FROM genre_entity_nature WHERE nature_id = 'desconocida'"
+        )
+        assert len(genres) == 8
+
+    async def test_seed_idempotente(self, conn):
+        before = await self._rows(conn, "SELECT * FROM genre_entity_nature ORDER BY 1, 2")
+        await init_db()
+        assert await self._rows(conn, "SELECT * FROM genre_entity_nature ORDER BY 1, 2") == before
+        assert len(await self._rows(conn, "SELECT id FROM entity_nature")) == 10
+
+    async def test_el_seed_manda_sobre_la_db(self, conn, monkeypatch):
+        """Cambiar una etiqueta en el seed la actualiza en una DB existente."""
+        from src.infrastructure.database.seeds import entity_natures
+
+        rows = [
+            ("demonio", "Demonio / poseedor", 2) if r[0] == "demonio" else r
+            for r in entity_natures.nature_rows()
+        ]
+        monkeypatch.setattr("src.infrastructure.database.connection.nature_rows", lambda: rows)
+        await init_db()
+        assert await self._rows(conn, "SELECT label FROM entity_nature WHERE id = 'demonio'") == [
+            ("Demonio / poseedor",)
+        ]
+
+    async def test_db_existente_conserva_sus_historias(self, conn):
+        await conn.execute("INSERT INTO story (id, title) VALUES ('s1', 'previa')")
+        await conn.commit()
+        await init_db()
+        assert await self._rows(conn, "SELECT title FROM story") == [("previa",)]
