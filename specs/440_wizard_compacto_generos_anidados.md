@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 y S1 desplegados; S2 hecho (se despliega con S3)
+**Estado:** IMPLEMENT — S0–S3 hechos (S2+S3 se despliegan juntos con la recarga de prod)
 
 ---
 
@@ -417,12 +417,17 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S3 — Combos Género → Subgénero (frontend, §2)
 
-- [ ] **T3.1:** `catalog.service.ts` con caché en memoria (TTL 5 min) y manejo de Core caído.
-- [ ] **T3.2:** `ui_definitions.yaml`: `atmosfera` y `atmosphere_subgenre` con `source: genre_catalog` y `depends_on: atmosfera`; `form_renderer.service.ts` lo soporta.
-- [ ] **T3.3:** `wizard.ejs`: catálogo embebido (`<script type="application/json" id="genre-catalog">`), subgéneros del género guardado, sin género → `disabled` con "Elegí primero el tipo de horror"; Core caído → ambos `disabled` con aviso.
-- [ ] **T3.4:** `wizard.js`: al cambiar de género repuebla el subgénero; si el valor actual no pertenece, lo resetea y guarda ambos (auto-save).
-- [ ] **T3.5:** `mapStoryToWizard()`: subgénero que no pertenece al género → vacío.
-- [ ] **T3.6:** Tests: Vitest (servicio: caché, Core caído) + Playwright (filtrado de `body_horror`, reset al cambiar, rehidratación de `folk_horror/rural`).
+- [x] **T3.1:** `catalog.service.ts` con caché en memoria (TTL 5 min) y manejo de Core caído.
+- [x] **T3.2:** `ui_definitions.yaml`: `atmosfera` y `atmosphere_subgenre` con `source: genre_catalog` y `depends_on: atmosfera`; `form_renderer.service.ts` lo soporta.
+- [x] **T3.3:** `wizard.ejs`: catálogo embebido (`<script type="application/json" id="genre-catalog">`), subgéneros del género guardado, sin género → `disabled` con "Elegí primero el tipo de horror"; Core caído → ambos `disabled` con aviso.
+- [x] **T3.4:** `wizard.js`: al cambiar de género repuebla el subgénero; si el valor actual no pertenece, lo resetea y guarda ambos (auto-save).
+- [x] **T3.5:** `mapStoryToWizard()`: subgénero que no pertenece al género → vacío.
+- [x] **T3.6:** Tests: Vitest (servicio: caché, Core caído) + Playwright (filtrado de `body_horror`, reset al cambiar, rehidratación de `folk_horror/rural`).
+- [x] **Notas de S3:**
+  - Los combos del catálogo usan el **ID** como `value` (no "id: Etiqueta"); el mapper, la rehidratación y el render aceptan también el formato legado de sesiones viejas. La confirmación muestra la etiqueta del catálogo.
+  - `submitStep` descarta el subgénero si quedó vacío (combo reseteado o deshabilitado) o si no pertenece al género; con el Core caído no toca nada.
+  - Si el Core cae con el catálogo ya cacheado, se sigue usando la última copia.
+- [x] **Checkpoint S3:** lint + pytest 652 + tsc + Vitest 90 + Playwright 21 (×2).
 
 ### S4 — Rasgos nuevos + narrador dinámico (§3, §5)
 

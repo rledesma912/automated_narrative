@@ -1,8 +1,17 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { STEPS, getStep, saveStepData, getStepData, WizardData, mapStoryToWizard } from "../services/wizard.service";
+import {
+  STEPS,
+  getStep,
+  saveStepData,
+  getStepData,
+  WizardData,
+  WizardField,
+  mapStoryToWizard,
+} from "../services/wizard.service";
 import { mapWizardToCore } from "../services/mapper.service";
 import { createStory, updateStory } from "../services/core_api.service";
+import { getGenreCatalog, subgenresOf } from "../services/catalog.service";
 import { renderPage } from "../utils/render";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
@@ -14,7 +23,10 @@ export async function loadWizardData(req: Request, res: Response): Promise<void>
   try {
     const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
     const session = req.session as WizardSession;
-    session.wizard = mapStoryToWizard(resp.data as Record<string, unknown>);
+    session.wizard = mapStoryToWizard(
+      resp.data as Record<string, unknown>,
+      (await getGenreCatalog()) ?? undefined,
+    );
     session.wizard_story_id = storyId;
     res.redirect("/generar/paso/1");
   } catch {
@@ -23,11 +35,15 @@ export async function loadWizardData(req: Request, res: Response): Promise<void>
 }
 
 
-function stepLocals(req: Request, stepNumber: number) {
+async function stepLocals(req: Request, stepNumber: number) {
   const step   = getStep(stepNumber)!;
   const saved  = getStepData(req.session as WizardSession, step.id);
   const isLast = stepNumber === STEPS.length;
-  return { step, saved, steps: STEPS, isLast };
+  // Spec-440 §2: solo se consulta el Core si el paso tiene combos del catálogo.
+  const genreCatalog = step.fields.some((f) => f.source === "genre_catalog")
+    ? await getGenreCatalog()
+    : null;
+  return { step, saved, steps: STEPS, isLast, genreCatalog };
 }
 
 export function wizardRedirect(req: Request, res: Response): void {
@@ -42,7 +58,7 @@ export async function showStep(req: Request, res: Response): Promise<void> {
   await renderPage(res, "wizard", {
     title: "Generar Historia",
     activePage: "generate",
-    ...stepLocals(req, num),
+    ...(await stepLocals(req, num)),
   });
 }
 
@@ -68,12 +84,40 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
       }
     }
   }
+  await dropInvalidSubgenre(step.fields, data);
   saveStepData(req.session as WizardSession, step.id, data);
 
   const next = num + 1;
   // Spec-460 §2.5: el último paso ya no guarda en silencio; se guarda con el
   // botón explícito "Guardar historia" de la confirmación.
   res.redirect(next > STEPS.length ? "/generar/confirmar" : `/generar/paso/${next}`);
+}
+
+/**
+ * Spec-440 §2: el subgénero sale de la sesión si quedó vacío (combo reseteado
+ * o deshabilitado, que no se envía) o si no pertenece al género elegido.
+ */
+async function dropInvalidSubgenre(
+  fields: WizardField[],
+  data: Record<string, string>,
+): Promise<void> {
+  for (const field of fields) {
+    if (field.source !== "genre_catalog" || !field.depends_on) continue;
+    const value = optionValueId(data[field.name]);
+    if (!value) {
+      delete data[field.name];
+      continue;
+    }
+    const catalog = await getGenreCatalog();
+    const parent = optionValueId(data[field.depends_on]);
+    if (catalog && !subgenresOf(catalog, parent).some((s) => s.id === value)) {
+      delete data[field.name];
+    }
+  }
+}
+
+function optionValueId(value: string | undefined): string {
+  return (value ?? "").split(":")[0].trim();
 }
 
 /** Mensaje legible de un error del Core (detail string, lista de Pydantic o red). */
@@ -129,6 +173,7 @@ export async function saveWizardStory(req: Request, res: Response): Promise<void
       wizard: session.wizard,
       storyId: session.wizard_story_id ?? null,
       saveError: coreErrorMessage(err),
+      genreCatalog: await getGenreCatalog(),
     });
   }
 }
@@ -145,6 +190,7 @@ export async function confirmPage(req: Request, res: Response): Promise<void> {
     wizard,
     storyId,
     saveError: null,
+    genreCatalog: await getGenreCatalog(),
   });
 }
 

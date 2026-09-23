@@ -44,6 +44,46 @@ step.fields.filter(f => f.group).forEach(f => {
 
 const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge-text text-lg px-4 py-3 focus:outline-none focus:border-forge-accent transition-colors placeholder:text-forge-muted';
 
+// Spec-440 §2: género/subgénero desde el catálogo del Core. El value es el ID.
+const CATALOG = (typeof genreCatalog !== 'undefined' && genreCatalog) || null;
+const MSG_SIN_GENERO   = 'Elegí primero el tipo de horror';
+const MSG_SIN_CATALOGO = 'No se pudo cargar el catálogo de géneros. Recargá la página en unos segundos.';
+
+function idOf(value) {
+  return String(value || '').split(':')[0].trim();
+}
+
+function catalogSelectHtml(field, effective) {
+  const reqAttr = field.required ? ' required' : '';
+  const dataAttrs = ` data-catalog-field="${esc(field.name)}"`
+    + (field.depends_on ? ` data-depends-on="${esc(field.depends_on)}"` : '');
+  let options = [];
+  let placeholder = 'Seleccioná...';
+  if (!CATALOG) {
+    placeholder = MSG_SIN_CATALOGO;
+  } else if (field.depends_on) {
+    const parent = CATALOG.find(g => g.id === idOf(saved[field.depends_on]));
+    if (parent) options = parent.subgenres;
+    else placeholder = MSG_SIN_GENERO;
+  } else {
+    options = CATALOG;
+  }
+  const current = idOf(effective);
+  const selected = options.some(o => o.id === current) ? current : '';
+  const disabled = options.length === 0 ? ' disabled' : '';
+
+  let html = `<select name="${esc(field.name)}"${reqAttr}${disabled}${dataAttrs} class="${CLS_INPUT} disabled:opacity-50 disabled:cursor-not-allowed">`;
+  html += `<option value="" disabled${!selected ? ' selected' : ''}>${esc(placeholder)}</option>`;
+  options.forEach(o => {
+    html += `<option value="${esc(o.id)}"${o.id === selected ? ' selected' : ''}>${esc(o.label)}</option>`;
+  });
+  html += '</select>';
+  if (!CATALOG && !field.depends_on) {
+    html += `<p role="alert" class="text-sm text-red-400 mt-2" data-catalog-error>${esc(MSG_SIN_CATALOGO)}</p>`;
+  }
+  return html;
+}
+
 function fieldHtml(field) {
   const sv        = saved[field.name] || '';
   const effective = sv || field.default || '';
@@ -63,6 +103,9 @@ function fieldHtml(field) {
 
   if (field.type === 'textarea') {
     html += `<textarea name="${esc(field.name)}" rows="${field.rows || 3}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT} resize-none">${esc(sv)}</textarea>`;
+
+  } else if (field.type === 'select' && field.source === 'genre_catalog') {
+    html += catalogSelectHtml(field, effective);
 
   } else if (field.type === 'select') {
     const isStoryteller = field.name === 'storyteller_id';
@@ -332,5 +375,9 @@ function hasCardData(fields) {
 <script>
   window.STEP_NUM = <%= step.number %>;
 </script>
+<% if (CATALOG) { %>
+  <%/* Spec-440 §2: wizard.js repuebla el subgénero al cambiar el género. */%>
+  <script type="application/json" id="genre-catalog"><%- JSON.stringify(CATALOG).replace(/</g, '\\u003c') %></script>
+<% } %>
 <script src="/js/wizard.js" defer></script>
 

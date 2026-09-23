@@ -16,30 +16,17 @@ steps:
         subtitle: "El género principal de la historia"
         required: true
         group: "atmosphere"
-        options:
-          - "terror_psicologico: Terror Psicológico"
-          - "horror_cosmico: Horror Cósmico (Lovecraftiano)"
-          - "terror_gotico: Terror Gótico"
-          - "body_horror: Horror Corporal (Body Horror)"
-          - "paranormal: Fenómenos Paranormales"
-          - "folk_horror: Terror Rural (Leyendas de campo)"
-          - "suspenso: Suspenso / Thriller"
-          - "terror_supervivencia: Terror de Supervivencia"
+        # Spec-440 §2: opciones del catálogo del Core (GET /api/v1/catalog/genres).
+        source: genre_catalog
 
       - name: atmosphere_subgenre
         type: select
         label: "Qué estilo de horror"
         subtitle: "El subgénero o estilo específico"
         group: "atmosphere"
-        options:
-          - "rural: Leyendas del campo"
-          - "gotico: Gótico (Atmósfera lúgubre)"
-          - "leyenda_urbana: Leyendas urbanas"
-          - "historico: Época pasada / Histórico"
-          - "scifi: Ciencia Ficción / Futurista"
-          - "psicologico: Psicológico / Interior"
-          - "sobrenatural: Sobrenatural"
-          - "otro: Otro estilo"
+        # Solo los subgéneros del género elegido.
+        source: genre_catalog
+        depends_on: atmosfera
 
       - name: atmosphere_tone
         type: radio

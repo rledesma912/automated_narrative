@@ -4,6 +4,13 @@ vi.mock("../../../src/services/core_api.service", () => ({
   createStory: vi.fn(),
   updateStory: vi.fn(),
 }));
+vi.mock("../../../src/services/catalog.service", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../src/services/catalog.service")>()),
+  getGenreCatalog: vi.fn(async () => [
+    { id: "folk_horror", label: "Terror Rural", subgenres: [{ id: "rural", label: "Leyendas del campo" }] },
+    { id: "body_horror", label: "Horror Corporal", subgenres: [{ id: "contagio", label: "Contagio" }] },
+  ]),
+}));
 vi.mock("../../../src/utils/render", () => ({
   renderPage: vi.fn(async () => undefined),
 }));
@@ -159,5 +166,44 @@ describe("submitStep (último paso)", () => {
     expect(res.redirect).toHaveBeenCalledWith("/generar/confirmar");
     expect(create).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+/** Spec-440 §2: el subgénero no sobrevive si no corresponde al género. */
+describe("submitStep (paso 1: género → subgénero)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function submitStep1(body: Record<string, string>, saved: Record<string, string> = {}) {
+    const session: Record<string, any> = { wizard: { step_config_title: saved } };
+    await submitStep({ params: { step: "1" }, body, session } as unknown as Request, makeRes());
+    return session.wizard.step_config_title as Record<string, string>;
+  }
+
+  it("par válido: se guardan género y subgénero", async () => {
+    const data = await submitStep1({ title: "t", atmosfera: "folk_horror", atmosphere_subgenre: "rural" });
+    expect(data).toMatchObject({ atmosfera: "folk_horror", atmosphere_subgenre: "rural" });
+  });
+
+  it("subgénero de otro género: se descarta", async () => {
+    const data = await submitStep1({ title: "t", atmosfera: "body_horror", atmosphere_subgenre: "rural" });
+    expect(data.atmosfera).toBe("body_horror");
+    expect(data).not.toHaveProperty("atmosphere_subgenre");
+  });
+
+  it("combo deshabilitado (no se envía): se borra el subgénero viejo de la sesión", async () => {
+    const data = await submitStep1(
+      { title: "t", atmosfera: "body_horror" },
+      { atmosfera: "folk_horror", atmosphere_subgenre: "rural" },
+    );
+    expect(data).not.toHaveProperty("atmosphere_subgenre");
+  });
+
+  it("acepta el formato legado «id: Etiqueta»", async () => {
+    const data = await submitStep1({
+      title: "t",
+      atmosfera: "folk_horror: Terror Rural (Leyendas de campo)",
+      atmosphere_subgenre: "rural: Leyendas del campo",
+    });
+    expect(data.atmosphere_subgenre).toBe("rural: Leyendas del campo");
   });
 });

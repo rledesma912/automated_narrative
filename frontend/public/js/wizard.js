@@ -6,6 +6,7 @@
  *  - Modal de eliminación con confirmación (closeDeleteModal global).
  *  - Listas dinámicas: addPersonaje/addScenario/addRule + askDelete* para cada uno.
  *  - Auto-save por campo (Spec-220): PATCH a /generar/paso/<step>/guardar en blur/change.
+ *  - Combos Género → Subgénero desde el catálogo embebido (Spec-440 §2).
  *
  * Lee `window.STEP_NUM` (inyectado por un <script> inline previo en wizard.ejs).
  *
@@ -292,6 +293,57 @@
       autoSaveField(name, el.value, el.type);
     }
   }
+
+  // ── Género → Subgénero (Spec-440 §2) ─────────────────────────────────────
+  // Al cambiar el género se repuebla el subgénero con los suyos; si el valor
+  // actual no pertenece al nuevo género, vuelve a "Seleccioná..." y se guardan
+  // ambos campos en sesión.
+  var catalogEl = document.getElementById("genre-catalog");
+  var genreCatalog = [];
+  try {
+    genreCatalog = catalogEl ? JSON.parse(catalogEl.textContent || "[]") : [];
+  } catch (e) {
+    genreCatalog = [];
+  }
+
+  function fillSubgenres(sub, genreId) {
+    var genre = genreCatalog.find(function (g) {
+      return g.id === genreId;
+    });
+    var subgenres = genre ? genre.subgenres : [];
+    var current = sub.value;
+    var keep = subgenres.some(function (s) {
+      return s.id === current;
+    });
+    sub.innerHTML = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.textContent = genre ? "Seleccioná..." : "Elegí primero el tipo de horror";
+    sub.appendChild(placeholder);
+    subgenres.forEach(function (s) {
+      var opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.label;
+      sub.appendChild(opt);
+    });
+    sub.disabled = subgenres.length === 0;
+    sub.value = keep ? current : "";
+    if (!keep) placeholder.selected = true;
+    return keep;
+  }
+
+  document.querySelectorAll("select[data-depends-on]").forEach(function (sub) {
+    var parent = document.querySelector('[name="' + sub.dataset.dependsOn + '"]');
+    if (!parent) return;
+    parent.addEventListener("change", function () {
+      autoSaveField(parent.name, parent.value, "select");
+      if (!fillSubgenres(sub, parent.value)) autoSaveField(sub.name, "", "select");
+    });
+    sub.addEventListener("change", function () {
+      autoSaveField(sub.name, sub.value, "select");
+    });
+  });
 
   if (formEl) {
     formEl.querySelectorAll("input, textarea, select").forEach(function (el) {

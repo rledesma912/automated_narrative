@@ -6,8 +6,22 @@
  *   storyId: string | null — ID de la historia ya guardada (edición: se actualiza)
  *   saveError: string | null — error del Core al guardar (Spec-460 §2.5: nunca se oculta)
  */
+// Spec-440 §2: género y subgénero se guardan como ID; se muestran con su etiqueta.
+function catalogLabel(field, id) {
+  const catalog = (typeof genreCatalog !== 'undefined' && genreCatalog) || [];
+  if (!field.depends_on) return (catalog.find(g => g.id === id) || {}).label;
+  const stepData = Object.values(wizard).find(d => d && d[field.depends_on]) || {};
+  const parentId = String(stepData[field.depends_on] || '').split(':')[0].trim();
+  const genre = catalog.find(g => g.id === parentId);
+  return ((genre && genre.subgenres) || []).find(s => s.id === id)?.label;
+}
+
 function displayValue(field, rawVal) {
   if (!rawVal) return '—';
+  if (field.source === 'genre_catalog') {
+    const id = String(rawVal).split(':')[0].trim();
+    return catalogLabel(field, id) || rawVal;
+  }
   if (field.type === 'multi-select') {
     try {
       const arr = JSON.parse(rawVal);

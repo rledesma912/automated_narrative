@@ -173,3 +173,35 @@ describe("mapStoryToWizard (Spec-440 T1.2)", () => {
     expect(again.relator).toBe(dto.relator);
   });
 });
+
+describe("mapStoryToWizard con catálogo (Spec-440 T3.5)", () => {
+  const catalog = [
+    { id: "folk_horror", label: "Terror Rural", subgenres: [{ id: "rural", label: "Leyendas del campo" }] },
+    { id: "body_horror", label: "Horror Corporal", subgenres: [{ id: "contagio", label: "Contagio" }] },
+  ];
+  const story = (genre: string, subgenre: string) => ({
+    title: "t",
+    storyteller_config: { atmosphere: { genre, subgenre, tone: "" } },
+  });
+
+  it("par válido: ambos combos precargados", () => {
+    const t = mapStoryToWizard(story("folk_horror", "rural"), catalog).step_config_title!;
+    expect([t.atmosfera, t.atmosphere_subgenre]).toEqual(["folk_horror", "rural"]);
+  });
+
+  it("subgénero que no pertenece al género → vacío", () => {
+    const t = mapStoryToWizard(story("body_horror", "rural"), catalog).step_config_title!;
+    expect([t.atmosfera, t.atmosphere_subgenre]).toEqual(["body_horror", ""]);
+  });
+
+  it("género desconocido → ambos vacíos", () => {
+    const t = mapStoryToWizard(story("terror", "rural"), catalog).step_config_title!;
+    expect([t.atmosfera, t.atmosphere_subgenre]).toEqual(["", ""]);
+  });
+
+  it("sin catálogo (Core caído) no toca nada", () => {
+    const t = mapStoryToWizard(story("body_horror", "rural")).step_config_title!;
+    expect([t.atmosfera, t.atmosphere_subgenre]).toEqual(["body_horror", "rural"]);
+  });
+});
+

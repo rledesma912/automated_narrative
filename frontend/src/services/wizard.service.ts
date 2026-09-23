@@ -1,5 +1,6 @@
 import { Session } from "express-session";
 import { loadSteps } from "./form_renderer.service";
+import type { CatalogGenre } from "./catalog.service";
 
 export interface WizardField {
   name: string;
@@ -14,6 +15,10 @@ export interface WizardField {
   note?: string;
   group?: string;
   default?: string;
+  /** Opciones dinámicas: `genre_catalog` = catálogo de géneros del Core (Spec-440 §2). */
+  source?: "genre_catalog";
+  /** Campo del que dependen las opciones (subgénero → género). */
+  depends_on?: string;
 }
 
 export interface WizardStep {
@@ -84,8 +89,14 @@ function reverseJsonArray(fieldName: string, ids: string[]): string {
   return JSON.stringify(ids.map((id) => reverseOption(fieldName, id)));
 }
 
-/** Reconstruye el objeto session.wizard a partir de la respuesta de la API Core. */
-export function mapStoryToWizard(story: Record<string, unknown>): WizardData {
+/**
+ * Reconstruye el objeto session.wizard a partir de la respuesta de la API Core.
+ * Con `catalog`, un subgénero que no pertenece al género queda vacío (Spec-440 §2).
+ */
+export function mapStoryToWizard(
+  story: Record<string, unknown>,
+  catalog?: CatalogGenre[],
+): WizardData {
   const sc = (story["storyteller_config"] as Record<string, any>) ?? {};
   const atm = sc["atmosphere"] ?? {};
   const perception = sc["perception"] ?? {};
@@ -107,6 +118,13 @@ export function mapStoryToWizard(story: Record<string, unknown>): WizardData {
     atmosphere_subgenre: reverseOption("atmosphere_subgenre", atm["subgenre"] ?? ""),
     atmosphere_tone:     reverseOption("atmosphere_tone",     atm["tone"]     || storyAtmosfera),
   };
+  if (catalog) {
+    const genre = catalog.find((g) => g.id === stepTitle.atmosfera);
+    if (!genre) stepTitle.atmosfera = ""; // p. ej. el string legado `atmosfera`
+    if (!genre?.subgenres.some((s) => s.id === stepTitle.atmosphere_subgenre)) {
+      stepTitle.atmosphere_subgenre = "";
+    }
+  }
 
   // ── step_config_personajes ───────────────────────────────────────────────
   // Usar índice en lugar de .find por id: personajes_full del Core no siempre tiene campo id.
