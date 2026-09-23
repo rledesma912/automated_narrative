@@ -356,6 +356,7 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
   - **Wizard vacío al editar:** `GET /stories/{id}` no devolvía `storyteller_config` (solo el `narrator_config` sanitizado: sin escenarios, reglas, actos ni atmósfera), y `mapStoryToWizard` lee `storyteller_config`. Ahora devuelve la vista de autoría completa (`YamlStoryExporter.authoring_config`).
   - **Actos perdidos en el export:** `_build_actos` leía `narrator_config.actos`, que se sanitiza al guardar. Ahora: `narrator_config.actos` → `macro_beat.synopsis_beat` → `sinopsis` en 5 párrafos (tras una generación web es la única copia). Impacta también la recarga de S2 (`export-yaml`).
   - Verify: `tests/integration/test_story_edit.py` (7 tests) + E2E.
+- [x] **T0.5 (pedido 2026-09-23):** en la galería el título deja de ser link; la vista de la historia se abre con un botón «Vista» (primero de las acciones, en todos los estados). Verify: Vitest `gallery.view.test.ts`.
 - [x] **Checkpoint S0:** lint + pytest 617 + tsc + Vitest 61 + Playwright 18 (×2).
 
 ### S1 — Contrato wizard → API (§4 pendiente + §9)

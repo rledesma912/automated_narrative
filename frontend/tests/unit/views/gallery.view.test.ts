@@ -24,4 +24,19 @@ describe("gallery view", () => {
     expect(html).toContain('id="modal-slot"');
     expect(html).toContain("Ver Relato");
   });
+
+  it.each(["draft", "processing", "completed", "failed"])(
+    "ofrece el botón «Vista» y el título no es link (%s)",
+    async (status) => {
+      const html = await ejs.renderFile(viewPath, {
+        stories: [
+          { id: "story-1", title: "La casa", status, created_at: "2026-05-05T10:00:00.000Z" },
+        ],
+      });
+
+      expect(html).toMatch(/<a href="\/historia\/story-1"[^>]*>\s*<i[^>]*><\/i> Vista\s*<\/a>/);
+      expect(html.match(/href="\/historia\/story-1"/g)).toHaveLength(1);
+      expect(html).not.toMatch(/<a[^>]*>\s*<h3/);
+    }
+  );
 });
