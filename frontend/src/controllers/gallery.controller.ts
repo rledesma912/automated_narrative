@@ -8,6 +8,7 @@ const FLASH_MESSAGES: Record<string, string> = {
   export_ok:     "Markdown generado correctamente.",
   export_failed: "No se pudo generar el Markdown. Intenta de nuevo.",
   load_failed:   "No se pudo cargar la historia.",
+  saved:         "Historia guardada. Podés generarla desde acá.",
 };
 
 export async function galleryPage(req: Request, res: Response): Promise<void> {
@@ -28,5 +29,7 @@ export async function galleryPage(req: Request, res: Response): Promise<void> {
     stories,
     flashMsg:  flashKey ? (FLASH_MESSAGES[flashKey] ?? null) : null,
     flashType,
+    // Spec-460 §2.5: tarjeta resaltada tras guardar desde el wizard.
+    savedId:   (req.query["guardada"] as string | undefined) ?? null,
   });
 }

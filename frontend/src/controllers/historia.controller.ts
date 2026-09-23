@@ -7,8 +7,6 @@ const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
 
 export async function historiaPage(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params;
-  const startParam = req.query.start as string;
-  const startGeneration = startParam === "1" ? 1 : 0;
 
   try {
     const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
@@ -17,7 +15,6 @@ export async function historiaPage(req: Request, res: Response): Promise<void> {
       activePage: "gallery",
       story: resp.data,
       pageError: req.query.error ?? null,
-      startGeneration,
     });
   } catch {
     res.redirect("/galeria");

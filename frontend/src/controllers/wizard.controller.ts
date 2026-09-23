@@ -71,26 +71,60 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
   saveStepData(req.session as WizardSession, step.id, data);
 
   const next = num + 1;
-  if (next > STEPS.length) {
-    // Último paso: persistir en DB (POST si nuevo, PATCH si ya existe)
-    const session = req.session as WizardSession;
-    const wizard  = session.wizard ?? {};
-    const coreDto = mapWizardToCore(wizard) as unknown as Record<string, unknown>;
+  // Spec-460 §2.5: el último paso ya no guarda en silencio; se guarda con el
+  // botón explícito "Guardar historia" de la confirmación.
+  res.redirect(next > STEPS.length ? "/generar/confirmar" : `/generar/paso/${next}`);
+}
 
-    try {
-      if (session.wizard_story_id) {
-        await updateStory(session.wizard_story_id, coreDto);
-      } else {
-        const story = await createStory(coreDto, "save");
-        session.wizard_story_id = story.id;
-      }
-    } catch {
-      // Si la persistencia falla, igual avanzamos a confirmar
+/** Mensaje legible de un error del Core (detail string, lista de Pydantic o red). */
+function coreErrorMessage(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const detail = (err.response?.data as { detail?: unknown } | undefined)?.detail;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      return detail
+        .map((d: { loc?: unknown[]; msg?: string }) =>
+          [Array.isArray(d.loc) ? d.loc.slice(1).join(".") : "", d.msg].filter(Boolean).join(": "),
+        )
+        .join(" · ");
     }
+    if (!err.response) return "El servidor no responde. Verificá que el Core esté levantado.";
+    return `Error ${err.response.status} del servidor`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
 
-    res.redirect("/generar/confirmar");
-  } else {
-    res.redirect(`/generar/paso/${next}`);
+/**
+ * "Guardar historia" (Spec-460 §2.5): POST si es nueva, PATCH si se está editando.
+ * Éxito → galería con la tarjeta resaltada. Error → la confirmación lo muestra.
+ */
+export async function saveWizardStory(req: Request, res: Response): Promise<void> {
+  const session = req.session as WizardSession;
+  if (!session.wizard || Object.keys(session.wizard).length === 0) {
+    res.redirect("/generar/paso/1");
+    return;
+  }
+  const coreDto = mapWizardToCore(session.wizard) as unknown as Record<string, unknown>;
+
+  try {
+    let storyId = session.wizard_story_id;
+    if (storyId) {
+      await updateStory(storyId, coreDto);
+    } else {
+      storyId = (await createStory(coreDto, "save")).id;
+      session.wizard_story_id = storyId;
+    }
+    res.redirect(`/galeria?success=saved&guardada=${encodeURIComponent(storyId)}`);
+  } catch (err: unknown) {
+    res.status(422);
+    await renderPage(res, "wizard-confirm", {
+      title: "Confirmar Historia",
+      activePage: "generate",
+      steps: STEPS,
+      wizard: session.wizard,
+      storyId: session.wizard_story_id ?? null,
+      saveError: coreErrorMessage(err),
+    });
   }
 }
 
@@ -105,6 +139,7 @@ export async function confirmPage(req: Request, res: Response): Promise<void> {
     steps: STEPS,
     wizard,
     storyId,
+    saveError: null,
   });
 }
 

@@ -300,7 +300,8 @@ function hasCardData(fields) {
 
       <button type="submit" class="btn-forge !px-8 !py-3 !text-sm">
         <% if (isLast) { %>
-          <i data-lucide="save" class="w-4 h-4"></i> Guardar y revisar
+          <%/* Spec-460 §2.5: se guarda en la confirmación, con "Guardar historia". */%>
+          Revisar <i data-lucide="arrow-right" class="w-4 h-4"></i>
         <% } else { %>
           Siguiente <i data-lucide="arrow-right" class="w-4 h-4"></i>
         <% } %>

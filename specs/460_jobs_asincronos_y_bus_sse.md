@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 a S5 hechos
+**Estado:** IMPLEMENT — S0 a S6 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -532,30 +532,36 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S6 — Botones en estado ocupado + guardar/generar desacoplados
 
-- [ ] **T6.1:** `generation-guard.js`.
+- [x] **T6.1:** `generation-guard.js`.
   - Acceptance: todo `[data-generation-trigger]` al hacer submit/click deshabilita todos los triggers de la página, muestra spinner + `data-busy-label` en < 100 ms; se restaura en `pageshow` con `persisted`; escucha `forge:job-started` / `forge:job-done` / `forge:job-failed` de su `data-story-id`.
   - Files: `frontend/public/js/generation-guard.js`, `layout.ejs`
-- [ ] **T6.2:** Marcar los botones.
+- [x] **T6.2:** Marcar los botones.
   - Acceptance: "Generar/Regenerar/Reintentar/Comenzar" en `gallery.ejs`, `historia.ejs` y `streaming-room.ejs` con `data-generation-trigger`, `data-story-id` y `data-busy-label`.
   - Files: esas 3 vistas
-- [ ] **T6.3:** Estado inicial server-side.
+- [x] **T6.3:** Estado inicial server-side.
   - Acceptance: si la historia tiene un job activo, los botones se renderizan deshabilitados como "Generando…" con link "Ver progreso".
   - Files: `historia.controller.ts`, `historia.ejs`, `wizard.controller.ts`, `wizard-confirm.ejs`
-- [ ] **T6.4:** Express crea el job y maneja el 409.
+- [x] **T6.4:** Express crea el job y maneja el 409.
   - Acceptance: `generarDesdeHistoria` hace `POST /jobs` y redirige a la sala; ante 409 redirige a la sala del job existente, sin mostrar error. Se mantiene la confirmación de regeneración (Spec-219).
   - Files: `historia.controller.ts`
-- [ ] **T6.4b:** Wizard termina en "Guardar historia" (§2.5).
+- [x] **T6.4b:** Wizard termina en "Guardar historia" (§2.5).
   - Acceptance: `wizard-confirm.ejs` muestra solo "Guardar historia"; POST/PATCH explícito; éxito → galería con aviso y tarjeta resaltada; error del Core → visible en la confirmación; `submitStep` ya no guarda en silencio al pasar el último paso; se elimina `POST /generar/submit` y `submitGeneration`.
   - Verify: Vitest del controller (éxito, 422, Core caído) + Playwright del flujo completo del wizard.
   - Files: `wizard.controller.ts`, `stream.controller.ts`, `wizard-confirm.ejs`, `routes/index.ts`, `gallery.ejs`, `gallery.controller.ts`
-- [ ] **T6.4c:** Generar desde la galería.
+- [x] **T6.4c:** Generar desde la galería.
   - Acceptance: tarjetas `draft`/`pending`/`failed` con "Generar"/"Reintentar" y `completed` con "Regenerar", todas con `data-generation-trigger`; con un job activo la tarjeta muestra "Generando · Acto N/5" en vivo (`forge:job-progress`) y "Ver avance"; al terminar se actualiza el badge de estado sin recargar.
   - Verify: Playwright con backend mock.
   - Files: `gallery.ejs`, `frontend/public/js/generation-banner.js` (o `gallery.js`)
-- [ ] **T6.5:** E2E de botones.
+- [x] **T6.5:** E2E de botones.
   - Acceptance: doble click en "Generar historia" → 1 solo POST (contado con `page.on("request")`); volver atrás desde la sala → botón utilizable.
   - Files: `frontend/tests/e2e/generation-guard.spec.ts`
-- [ ] **Checkpoint S6:** suites completas. **Resueltos: botón que sigue habilitado; guardar y generar desacoplados.**
+- [x] **Checkpoint S6:** suites completas. **Resueltos: botón que sigue habilitado; guardar y generar desacoplados.**
+  - Implementado / notas:
+    - `generation-guard.js` en `<head>`: el disparador se marca "pendiente" en el mismo tick del click/submit (un doble click dispara los dos eventos antes de cualquier `setTimeout`; con el bloqueo diferido pasaban 2 POST). El cambio visual se aplica en el tick siguiente.
+    - Galería en vivo: se recarga (`htmx.ajax` + `select`) con el **primer avance** del job, no con `job_started`: en ese instante la historia todavía figura `completed`/`draft`.
+    - Ficha: estado "Generando… + Ver progreso" con job en curso; se eliminó el botón "Comenzar" (`?start=1`, código muerto que además quedaba roto tras S4).
+    - Wizard: el último paso dice "Revisar" (ya no guarda); la confirmación solo tiene "Guardar historia" (`POST /generar/guardar`); errores del Core visibles (incluye 422 de Pydantic). Se eliminaron `POST /generar/submit` y `submitGeneration`.
+    - Pendiente de decisión: `PATCH /stories/{id}` solo permite editar borradores ("Solo se pueden editar historias en estado draft"). Antes el wizard tragaba ese error; ahora se muestra.
 
 ### S7 — Regenerar acto como job
 

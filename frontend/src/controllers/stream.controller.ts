@@ -1,55 +1,7 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { WizardData } from "../services/wizard.service";
-import { mapWizardToCore } from "../services/mapper.service";
-import {
-  createStory,
-  checkCoreHealth,
-  getActiveJob,
-  startGeneration,
-} from "../services/core_api.service";
+import { getActiveJob } from "../services/core_api.service";
 import { renderPage } from "../utils/render";
-
-type WizardSession = Request["session"] & { wizard?: WizardData };
-
-export async function submitGeneration(req: Request, res: Response): Promise<void> {
-  const action = (req.body as Record<string, string>)["action"] ?? "generate";
-
-  // Solo verificar salud si vamos a generar
-  if (action === "generate") {
-    const health = await checkCoreHealth();
-    if (!health.reachable || health.status !== "healthy") {
-      res.redirect("/debug?error=backend_offline");
-      return;
-    }
-  }
-
-  const wizard = (req.session as WizardSession).wizard ?? {};
-  const coreDto = mapWizardToCore(wizard);
-
-  try {
-    const story = await createStory(
-      coreDto as unknown as Record<string, unknown>,
-      action,
-    );
-
-    if (action === "save") {
-      const isAjax = req.query["format"] === "json";
-      if (isAjax) {
-        res.json({ id: story.id });
-        return;
-      }
-      res.redirect(`/historia/${story.id}`);
-    } else {
-      // Spec-460: la generación arranca como job en el servidor; la sala se ata.
-      await startGeneration(story.id);
-      res.redirect(`/generar/stream/${story.id}`);
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    res.redirect(`/generar/confirmar?error=${encodeURIComponent(msg)}`);
-  }
-}
 
 export async function streamingRoomPage(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params as { storyId: string };

@@ -153,13 +153,15 @@
             Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
           </p>
         </div>
-        <button onclick="initiateRegeneration()" class="btn-forge-lg group">
+        <button type="button" onclick="initiateRegeneration()" class="btn-forge-lg group"
+                data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Iniciando regeneración...">
           <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
           Iniciar regeneración
         </button>
       <% } else { %>
         <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
-        <button onclick="initiateGeneration()" class="btn-forge-lg group">
+        <button type="button" onclick="initiateGeneration()" class="btn-forge-lg group"
+                data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Iniciando generación...">
           <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
           Iniciar generación
         </button>
