@@ -185,7 +185,10 @@ class JobManager:
             error = self._cancel_reasons.pop(job.id, CANCELLED_ERROR)
             status = JobStatus.FAILED
             self._publish_error(channel, error, cancelled=True)
-            await self._stories.update_status(story.id, StoryStatus.FAILED.value)
+            # Solo una generación completa deja la historia a medias; cancelar la
+            # regeneración de un acto no invalida la historia ya generada.
+            if job.kind == JobKind.FULL_GENERATION:
+                await self._stories.update_status(story.id, StoryStatus.FAILED.value)
         except Exception as exc:  # noqa: BLE001 — cualquier fallo deja el job en failed
             logger.exception("[JOB] Falló el job %s", job.id)
             status, error = JobStatus.FAILED, str(exc)
@@ -258,4 +261,5 @@ class JobManager:
             "total_beats": job.total_beats,
             "narrative_id": str(job.narrative_id) if job.narrative_id else None,
             "error": job.error,
+            "params": job.params,
         }

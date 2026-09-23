@@ -139,12 +139,123 @@ async def test_post_job_historia_inexistente_404(client):
     assert resp.status_code == 404
 
 
-async def test_post_job_regenerate_voz_todavia_no_soportado(client):
+async def _generated_story(client) -> tuple[str, str]:
+    """Historia generada completa (mock) → (story_id, narrative_id)."""
     story_id = await _create_story(client)
+    job_id = (await client.post(f"/api/v1/stories/{story_id}/jobs", json={})).json()["job_id"]
+    await job_manager.wait(uuid.UUID(job_id))
+    job = (await client.get(f"/api/v1/jobs/{job_id}")).json()
+    return story_id, job["narrative_id"]
 
-    resp = await client.post(f"/api/v1/stories/{story_id}/jobs", json={"kind": "regenerate_voz"})
+
+async def test_regenerate_voz_responde_al_instante_y_actualiza_el_relato(client):
+    story_id, narrative_id = await _generated_story(client)
+
+    resp = await client.post(
+        f"/api/v1/stories/{story_id}/jobs",
+        json={"kind": "regenerate_voz", "beat": 2, "narrative_id": narrative_id},
+    )
+
+    assert resp.status_code == 202
+    body = resp.json()
+    assert (body["kind"], body["status"]) == ("regenerate_voz", "queued")
+    await job_manager.wait(uuid.UUID(body["job_id"]))
+    job = (await client.get(f"/api/v1/jobs/{body['job_id']}")).json()
+    assert (job["status"], job["stage"], job["beat"]) == ("done", "voz", 2)
+    assert job["narrative_id"] == narrative_id
+    story = (await client.get(f"/api/v1/stories/{story_id}")).json()
+    assert story["status"] == "completed"  # re-narrar un acto no cambia el estado
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [{}, {"beat": 2}, {"narrative_id": str(uuid.uuid4())}],
+    ids=["sin-datos", "sin-relato", "sin-acto"],
+)
+async def test_regenerate_voz_requiere_acto_y_relato(client, extra):
+    story_id, _ = await _generated_story(client)
+
+    resp = await client.post(
+        f"/api/v1/stories/{story_id}/jobs", json={"kind": "regenerate_voz", **extra}
+    )
 
     assert resp.status_code == 422
+
+
+async def test_regenerate_voz_de_acto_no_narrado_422(client):
+    story_id = await _create_story(client)  # borrador: sin actos narrados
+
+    resp = await client.post(
+        f"/api/v1/stories/{story_id}/jobs",
+        json={"kind": "regenerate_voz", "beat": 1, "narrative_id": str(uuid.uuid4())},
+    )
+
+    assert resp.status_code == 422
+    assert "no está narrado" in resp.json()["detail"]
+
+
+async def test_regenerate_voz_con_relato_de_otra_historia_404(client):
+    story_id, _ = await _generated_story(client)
+    _, ajeno = await _generated_story(client)
+
+    resp = await client.post(
+        f"/api/v1/stories/{story_id}/jobs",
+        json={"kind": "regenerate_voz", "beat": 1, "narrative_id": ajeno},
+    )
+
+    assert resp.status_code == 404
+
+
+async def test_regenerate_voz_con_otro_job_activo_409(client, monkeypatch):
+    story_id, narrative_id = await _generated_story(client)
+    block = asyncio.Event()
+
+    def _runner(_story):
+        async def _gen() -> AsyncIterator[StreamEvent]:
+            await block.wait()
+            yield StreamEvent(event=StreamEventType.DONE, data={})
+
+        return _gen
+
+    monkeypatch.setattr(generation, "full_generation_runner", _runner)
+    active = (await client.post(f"/api/v1/stories/{story_id}/jobs", json={})).json()
+
+    resp = await client.post(
+        f"/api/v1/stories/{story_id}/jobs",
+        json={"kind": "regenerate_voz", "beat": 1, "narrative_id": narrative_id},
+    )
+
+    assert resp.status_code == 409
+    assert resp.json()["job_id"] == active["job_id"]
+    block.set()
+    await job_manager.wait(uuid.UUID(active["job_id"]))
+
+
+async def test_cancelar_regenerate_voz_no_marca_la_historia_como_fallida(client, monkeypatch):
+    story_id, narrative_id = await _generated_story(client)
+    block = asyncio.Event()
+
+    def _runner(_story, _beat, _narrative_id):
+        async def _gen() -> AsyncIterator[StreamEvent]:
+            await block.wait()
+            yield StreamEvent(event=StreamEventType.DONE, data={})
+
+        return _gen
+
+    monkeypatch.setattr(generation, "regenerate_voz_runner", _runner)
+    job_id = (
+        await client.post(
+            f"/api/v1/stories/{story_id}/jobs",
+            json={"kind": "regenerate_voz", "beat": 1, "narrative_id": narrative_id},
+        )
+    ).json()["job_id"]
+    await asyncio.sleep(0.05)
+
+    resp = await client.post(f"/api/v1/jobs/{job_id}/cancel")
+
+    assert resp.json()["status"] == "failed"
+    story = (await client.get(f"/api/v1/stories/{story_id}")).json()
+    assert story["status"] == "completed"
 
 
 # ── GET /stories/{id}/jobs/active ─────────────────────────────────────────────

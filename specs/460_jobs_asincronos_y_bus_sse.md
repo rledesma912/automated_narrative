@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 a S6 hechos
+**Estado:** IMPLEMENT — S0 a S7 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -565,20 +565,26 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S7 — Regenerar acto como job
 
-- [ ] **T7.1:** `kind=regenerate_voz` en `JobManager`.
+- [x] **T7.1:** `kind=regenerate_voz` en `JobManager`.
   - Acceptance: envuelve `RegenerateBeatVozUseCase`; `params = {beat, narrative_id}`; publica `job_started` → `job_progress(stage=voz, beat=N)` → `job_done` con `narrative_id`; misma idempotencia por historia.
   - Verify: tests del job con mock LLM.
   - Files: `job_manager.py`, `tests/unit/application/services/test_job_manager.py`
-- [ ] **T7.2:** API.
+- [x] **T7.2:** API.
   - Acceptance: `POST /stories/{id}/jobs` acepta `{kind: "regenerate_voz", beat, narrative_id}` con validación (400 si falta algo); se elimina `POST /stories/{id}/beats/{n}/regenerate-voz` síncrono y se migran sus tests.
   - Files: `job_router.py`, `beat_router.py`, `tests/unit/presentation/routers/test_beat_router.py`
-- [ ] **T7.3:** Frontend de relatos.
+- [x] **T7.3:** Frontend de relatos.
   - Acceptance: `regenerarActoAction` hace POST → 202 y devuelve el panel en estado "Regenerando acto N…" (con `data-job-id`); con `forge:job-done` de ese job, `htmx.ajax` recarga solo ese panel; con `forge:job-failed`, muestra el error en el panel.
   - Files: `frontend/src/controllers/relatos.controller.ts`, `core_api.service.ts`, `partials/relato_panel.ejs`, `frontend/public/js/relatos.js`
-- [ ] **T7.4:** E2E.
+- [x] **T7.4:** E2E.
   - Acceptance: el request de regenerar vuelve en < 500 ms; el panel se actualiza solo; los tests de `relatos.spec.ts` y `relatos-switcher.spec.ts` siguen pasando.
   - Files: `frontend/tests/e2e/relatos.spec.ts`
-- [ ] **Checkpoint S7:** suites completas. **D2 cerrado.**
+- [x] **Checkpoint S7:** suites completas. **D2 cerrado.**
+  - Implementado / notas:
+    - Validación inmediata en `POST /jobs` (`regenerate_voz`): faltan `beat`/`narrative_id` → 422; acto no narrado → 422; relato inexistente o de otra historia → 404; otro job activo → 409.
+    - Cancelar un `regenerate_voz` **no** marca la historia `failed` (solo la generación completa la deja a medias). El payload global incluye `params` (acto) para la banda.
+    - El panel responde con "Regenerando el acto N…" atado al job (`data-refresh-on-job`) y se recarga con `GET /historia/:id/relatos/:narrativeId/panel` (con `?error=` si falla). Si el job termina antes de que el panel llegue al DOM, se recarga al insertarse (`htmx:afterSwap`).
+    - La banda muestra "Regenerando el acto N" y "Ver progreso" lleva a la vista de relatos (no a la sala).
+    - Visto en el seed de dev: el relato "Test Spec430" de "El monte prohibido" no tiene acto 2 (beat 2 `pending`, restos de pruebas de Spec-430). El E2E usa los actos existentes.
 
 ### S8 — Limpieza y documentación
 

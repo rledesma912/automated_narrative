@@ -29,6 +29,9 @@
   const dismissed = new Set(); // job_id de avisos cerrados (esta pestaña)
 
   function stepText(job) {
+    if (job.kind === "regenerate_voz") {
+      return `Regenerando el acto ${(job.params && job.params.beat) || job.beat || ""}`.trim();
+    }
     const stage = STAGES[job.stage];
     if (!stage) return "Iniciando...";
     if (job.stage === "consolidando" || !job.beat) return stage.label;
@@ -85,7 +88,11 @@
       setText(panel, "[data-banner-more]", running.length > 1 ? `y ${running.length - 1} más` : "");
       setText(panel, "[data-banner-step]", stepText(job));
       panel.querySelector("[data-banner-progress]").style.width = `${progressPct(job)}%`;
-      panel.querySelector("[data-banner-link]").href = `/generar/stream/${job.story_id}`;
+      // Regenerar un acto se sigue en la vista de relatos, no en la sala.
+      panel.querySelector("[data-banner-link]").href =
+        job.kind === "regenerate_voz"
+          ? `/historia/${job.story_id}/relatos`
+          : `/generar/stream/${job.story_id}`;
       showState(banner, "running");
       return;
     }

@@ -34,13 +34,12 @@ class BeatUpdateRequest(BaseModel):
     summary: str
 
 
-class BeatRegenerateRequest(BaseModel):
-    """Request para regenerar solo la Voz de un beat (Spec-430)."""
-
-    narrative_id: UUID
-
-
 class JobCreateRequest(BaseModel):
-    """Request para lanzar un job de generación (Spec-460)."""
+    """Request para lanzar un job (Spec-460).
+
+    `regenerate_voz` requiere `beat` y `narrative_id` (Spec-430).
+    """
 
     kind: JobKind = JobKind.FULL_GENERATION
+    beat: int | None = None
+    narrative_id: UUID | None = None

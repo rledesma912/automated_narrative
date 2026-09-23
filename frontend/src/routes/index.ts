@@ -6,7 +6,7 @@ import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField, saveWizardStory } from "../controllers/wizard.controller";
 import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
-import { relatosPage, regenerarActoAction } from "../controllers/relatos.controller";
+import { relatosPage, regenerarActoAction, relatoPanelFragment } from "../controllers/relatos.controller";
 
 const router = Router();
 
@@ -43,5 +43,6 @@ router.post(
   "/historia/:storyId/relatos/:narrativeId/actos/:actoNumero/regenerar",
   regenerarActoAction
 );
+router.get("/historia/:storyId/relatos/:narrativeId/panel", relatoPanelFragment);
 
 export default router;

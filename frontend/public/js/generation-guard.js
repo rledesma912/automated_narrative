@@ -13,6 +13,9 @@
  *    lo muestra, y cuando termina o falla; los elementos
  *    [data-job-progress="<story_id>"] muestran "Acto N de 5 · etapa" en vivo.
  *
+ * 3) Fragmentos atados a un job: [data-refresh-on-job="<job_id>"] se recarga
+ *    (data-refresh-url → data-refresh-target) cuando ese job termina o falla.
+ *
  * Se carga en <head> con defer: listeners únicos por pestaña, válidos para
  * cualquier body que llegue por hx-boost.
  */
@@ -145,9 +148,31 @@
     }
   });
 
+  // ── Fragmentos atados a un job ────────────────────────────────────────────
+  // [data-refresh-on-job="<job_id>"] (p.ej. el panel de un relato mientras se
+  // regenera un acto) se recarga con data-refresh-url cuando el job termina;
+  // si falló, con ?error=<motivo>.
+  function refreshBound(job) {
+    const error = job.status === "failed" ? job.error || "falló" : null;
+    document.querySelectorAll(`[data-refresh-on-job="${job.job_id}"]`).forEach((el) => {
+      if (!window.htmx || el.dataset.refreshing === "1") return;
+      el.dataset.refreshing = "1";
+      const url = el.dataset.refreshUrl + (error ? `?error=${encodeURIComponent(error)}` : "");
+      window.htmx.ajax("GET", url, { target: el.dataset.refreshTarget, swap: "outerHTML" });
+    });
+  }
+
+  // El job pudo terminar antes de que el fragmento llegara al DOM (respuesta rápida).
+  function catchUpBound() {
+    if (!window.ForgeEvents || !document.querySelector("[data-refresh-on-job]")) return;
+    window.ForgeEvents.finishedJobs().forEach(({ job }) => refreshBound(job));
+  }
+  document.addEventListener("htmx:afterSwap", catchUpBound);
+
   ["forge:job-done", "forge:job-failed"].forEach((name) => {
     document.addEventListener(name, (e) => {
       triggers(e.detail.story_id).forEach(restore);
+      refreshBound(e.detail);
       refreshLiveLists();
     });
   });

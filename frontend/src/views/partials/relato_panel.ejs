@@ -9,7 +9,11 @@
  *   relato: { id, content, title, created_at, ... }
  *   displayTitle: string
  *   isActive: boolean
+ *   regenerating: { acto, jobId } | null — acto re-narrándose como job (Spec-460 S7)
+ *   panelError: string | null — error al lanzar o completar la regeneración
  */
+const regen = (typeof regenerating !== 'undefined' && regenerating) ? regenerating : null;
+const errorMsg = (typeof panelError !== 'undefined' && panelError) ? panelError : null;
 const sections = (relato.content || '').split(/^## (.+)$/m);
 const preamble = (sections[0] || '').trim();
 
@@ -40,6 +44,23 @@ function extractActNumber(title) {
       Copiar Relato
     </button>
   </div>
+  <% if (regen) { %>
+    <%/* Se recarga solo cuando termina el job (generation-guard.js). */%>
+    <div role="status" aria-live="polite"
+         class="flex items-center gap-3 mb-6 px-4 py-3 border border-forge-accent text-sm text-forge-text"
+         data-refresh-on-job="<%= regen.jobId %>"
+         data-refresh-url="/historia/<%= story.id %>/relatos/<%= relato.id %>/panel"
+         data-refresh-target="#relato-panel-<%= relato.id %>">
+      <span class="generation-banner__pulse" aria-hidden="true"></span>
+      Regenerando el acto <%= regen.acto %>… el relato se actualiza solo al terminar.
+    </div>
+  <% } %>
+  <% if (errorMsg) { %>
+    <div role="alert" class="flex items-start gap-3 mb-6 px-4 py-3 border border-red-800 text-sm text-red-400">
+      <i data-lucide="x-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+      <span data-panel-error><%= errorMsg %></span>
+    </div>
+  <% } %>
   <div id="relato-content-<%= relato.id %>" class="text-forge-text leading-relaxed text-base">
     <% if (preamble) { %>
       <div class="whitespace-pre-wrap"><%= preamble %></div>
@@ -51,7 +72,10 @@ function extractActNumber(title) {
         <% if (actNumber) { %>
           <button
             type="button"
-            class="btn-forge-outline !text-xs !py-1 !px-2 shrink-0"
+            class="btn-forge-outline !text-xs !py-1 !px-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            <%= regen ? 'disabled' : '' %>
+            data-regenerar-acto="<%= actNumber %>"
+            hx-disabled-elt="this"
             hx-post="/historia/<%= story.id %>/relatos/<%= relato.id %>/actos/<%= actNumber %>/regenerar"
             hx-target="#relato-panel-<%= relato.id %>"
             hx-swap="outerHTML"

@@ -34,14 +34,6 @@ class BeatResponse(BaseModel):
     status: str = "pending"
 
 
-class BeatRegenerateResponse(BaseModel):
-    """Response tras regenerar la Voz de un beat (Spec-430)."""
-
-    beat: BeatResponse
-    narrative_id: str
-    narrative_content: str
-
-
 class GeneratedNarrativeResponse(BaseModel):
     """Response for a generated narrative."""
 

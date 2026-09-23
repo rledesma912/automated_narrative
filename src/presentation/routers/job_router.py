@@ -13,10 +13,11 @@ from src.domain.jobs import Job, JobKind, JobStatus
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.database.repositories import (
     SQLBeatRepository,
+    SQLGeneratedNarrativeRepository,
     SQLJobRepository,
     SQLStoryRepository,
 )
-from src.presentation.generation import submit_full_generation
+from src.presentation.generation import submit_full_generation, submit_regenerate_voz
 from src.presentation.runtime import event_bus, job_manager
 from src.presentation.schemas.request import JobCreateRequest
 from src.presentation.schemas.response import JobResponse
@@ -62,17 +63,35 @@ async def _get_job_or_404(job_id: str) -> Job:
 
 @router.post("/stories/{story_id}/jobs", status_code=202, response_model=JobResponse)
 async def create_job(story_id: str, request: JobCreateRequest):
-    """Lanza un job sobre la historia y responde al instante (202)."""
+    """Lanza un job sobre la historia y responde al instante (202).
+
+    - `full_generation`: pipeline completo.
+    - `regenerate_voz`: re-narra la Voz del acto `beat` del relato `narrative_id`.
+    """
     story = await SQLStoryRepository().get_by_id(UUID(story_id))
     if story is None:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
-    if request.kind != JobKind.FULL_GENERATION:
-        raise HTTPException(status_code=422, detail=f"Tipo de job no soportado: {request.kind}")
     try:
-        job = await submit_full_generation(story)
+        if request.kind == JobKind.REGENERATE_VOZ:
+            await _validate_regenerate_voz(story, request)
+            job = await submit_regenerate_voz(story, request.beat, request.narrative_id)
+        else:
+            job = await submit_full_generation(story)
     except JobAlreadyActiveError as exc:
         return _already_active(exc.job_id)
     return _to_response(job)
+
+
+async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:
+    """Chequeos previos para responder al instante en vez de fallar dentro del job."""
+    if request.beat is None or request.narrative_id is None:
+        raise HTTPException(status_code=422, detail="regenerate_voz requiere beat y narrative_id")
+    beat = next((b for b in story.beats if b.number == request.beat), None)
+    if beat is None or not beat.has_content():
+        raise HTTPException(status_code=422, detail=f"El acto {request.beat} no está narrado")
+    narrative = await SQLGeneratedNarrativeRepository().get_by_id(request.narrative_id)
+    if narrative is None or narrative.story_template_id != story.id:
+        raise HTTPException(status_code=404, detail="Relato no encontrado para esta historia")
 
 
 @router.get("/stories/{story_id}/jobs/active", response_model=JobResponse)
