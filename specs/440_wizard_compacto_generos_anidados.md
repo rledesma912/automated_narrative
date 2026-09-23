@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S3 desplegados; S4 implementado (pendiente commit + deploy); sigue S5
+**Estado:** IMPLEMENT — S0–S3 desplegados; S0–S4 desplegados; sigue S5
 
 ---
 
