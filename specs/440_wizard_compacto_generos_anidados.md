@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** PLAN — pendiente de OK (3 preguntas abiertas)
+**Estado:** TASKS — pendiente de OK para IMPLEMENT
 
 ---
 
@@ -12,7 +12,7 @@
 2. "Achicar sólo un poco" = reducir tipografía, paddings y espaciados de los campos del wizard (~15-20 % de altura), **sin** cambiar el ancho del contenedor ni la estructura de pasos.
 3. La compactación aplica a **todos los pasos** del wizard (comparten `fieldHtml()` en `wizard.ejs`), no solo al paso 1.
 4. Se mantienen los **8 géneros** actuales (mismos IDs). Lo que cambia es el catálogo de subgéneros, que pasa a depender del género.
-5. El catálogo de géneros es **dominio de datos**: vive en la DB (tablas `genre` / `subgenre`) y lo gestiona el backend. `story.genero` / `story.subgenero` siguen guardando **IDs**, ahora con FK al catálogo. Hay cambio de esquema → `init_db()` + recrear `stories.db` (sin migraciones).
+5. El catálogo de géneros es **dominio de datos**: vive en la DB (tablas `genre` / `subgenre`) y lo gestiona el backend. `story.genero` / `story.subgenero` siguen guardando **IDs**, ahora con FK al catálogo. Hay cambio de esquema → `init_db()` + recrear `stories.db` (sin migraciones; recarga por `export-yaml` → `import-yaml`, ver Decisiones del plan).
 6. El subgénero sigue siendo **opcional**. `otro: Otro estilo` existe en todos los géneros.
 7. Los prompts siguen recibiendo `story.atmosfera` tal cual hoy (IDs). Enriquecer prompts con labels/descripciones del catálogo queda fuera de alcance.
 
@@ -319,11 +319,112 @@ S1 Contrato wizard → API ───────┼─▶ S2 Catálogo de géner
 
 ---
 
-## OPEN QUESTIONS (antes de TASKS)
+## DECISIONES DEL PLAN (2026-09-23)
 
-1. **Integridad del catálogo.** La FK compuesta `story(genero, subgenero) → subgenre` obliga a recrear las bases (cambia una tabla existente): en prod se re-cargan los 3 borradores sin pérdida, pero en **dev se pierden los actos y relatos** de "El monte prohibido" y "La ofrenda" (semilla de los E2E). **Recomiendo** validar en la capa de aplicación (API, CLI/YAML) con tablas nuevas aditivas, sin FK en `story`: el catálogo sigue viviendo en la DB y no se pierde nada. ¿OK, o preferís la FK y recrear?
-2. **Tipos de regla (§9).** Propuesta: el wizard ofrece los 4 del dominio — `entorno` "Del lugar", `psicologica` "De la mente", `fenomeno` "Sobrenatural", `indicador` "Señal o indicio" — y los valores viejos se mapean: `paranormal` → `fenomeno`, `social` → `entorno`, `evento` → sin tipo (Spec-190: los eventos no son reglas, van en los actos). ¿Te cierra, o preferís sumar `social` al dominio?
-3. **Editar generadas (§8).** ¿OK con que editar no borre lo generado ni cambie el estado, y que el aviso sugiera regenerar?
+1. **Integridad del catálogo: FK compuesta y recrear las bases.** Se aceptan las consecuencias: en dev se pierden actos, journal y relatos de las historias existentes (se re-importan como borradores); en prod hay 3 borradores y se re-importan sin pérdida. Para no escribir scripts de migración, la recarga usa el round-trip de Spec-302: `export-yaml` → recrear DB → **`import-yaml`** (comando nuevo).
+2. **Tipos de regla:** el wizard ofrece los 4 de `RuleType` (`entorno` "Del lugar", `psicologica` "De la mente", `fenomeno` "Sobrenatural", `indicador` "Señal o indicio"); valores viejos: `paranormal` → `fenomeno`, `social` → `entorno`, `evento` → sin tipo.
+3. **Editar historias generadas:** no borra lo generado ni cambia el `status`; el aviso sugiere regenerar.
+
+### Ajustes al PLAN por la decisión 1
+
+- **S2** suma: FK en `story`; `NULL` en vez de `''` para género/subgénero vacíos; `import-yaml` y `export-yaml --all`; semilla propia del arnés E2E (ya no copia `data/dev/stories.db`, que se recrea); procedimiento de recarga de dev y prod.
+- **Pares inválidos existentes** ("la pena del colectivo" `horror_cosmico/rural`, "barco fantasma" `terror_psicologico/historico`): la FK los rechazaría. `import-yaml --descartar-subgenero-invalido` los importa con el subgénero vacío (género válido, sin subgénero) y avisa; se elige uno válido después en el wizard.
+- **Tipos de regla perdidos:** las reglas `social` de "barco fantasma" y "el galpon" quedaron sin tipo en prod al recuperarlas. En la recarga de prod (T2.9) esas dos se re-importan desde el backup original (`social` → `entorno` por el mapeo de S1).
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + pytest + tsc + Vitest + Playwright en verde → commit y despliegue con tu OK.
+
+### S0 — Editar historias ya generadas (§8)
+
+- [ ] **T0.1:** Regla de edición en la API.
+  - Acceptance: `PATCH /stories/{id}` acepta `draft`, `completed` y `failed`; con job activo → 409 `{detail, job_id}`; no toca `macro_beat`, `narrative_journal`, `narrative_anchors`, `generated_narrative` ni `status`.
+  - Verify: `uv run pytest tests/integration/test_story_edit.py -q` (editar completada conserva beats/relatos/estado; 409 con job activo; historia inexistente 404).
+  - Files: `src/presentation/routers/story_router.py`, `tests/integration/test_story_edit.py` (nuevo)
+- [ ] **T0.2:** Aviso tras editar una historia generada.
+  - Acceptance: `saveWizardStory` con historia `completed`/`failed` redirige con `success=saved_regenerar` → toast "Guardada. Regenerala para aplicar los cambios"; con borrador, el aviso actual. Error 409 → mensaje "Hay una generación en curso; esperá a que termine" en la confirmación.
+  - Verify: Vitest `wizard.controller.test.ts` (3 casos nuevos).
+  - Files: `frontend/src/controllers/wizard.controller.ts`, `frontend/src/controllers/gallery.controller.ts`
+- [ ] **T0.3:** E2E de edición.
+  - Acceptance: galería → Editar historia completada → cambiar título → Guardar → aviso de regenerar; la ficha muestra el título nuevo y los relatos siguen.
+  - Verify: `npx playwright test story-edit.spec.ts`
+  - Files: `frontend/tests/e2e/story-edit.spec.ts` (nuevo)
+
+### S1 — Contrato wizard → API (§4 pendiente + §9)
+
+- [ ] **T1.1:** `mapWizardToCore()` con IDs y campos explícitos.
+  - Acceptance: envía `genero`, `subgenero`, `tono` y `narrator_config` (ya no `storyteller_config` ni `atmosfera`); `perception`/`knowledge`/`language`/`bias` y el `Registro` del `relator` solo con IDs (`poco_confiable`, no "poco_confiable: A veces…").
+  - Verify: Vitest `mapper.service.test.ts` (nuevo): payload exacto para un wizard completo.
+  - Files: `frontend/src/services/mapper.service.ts`
+- [ ] **T1.2:** Rehidratación con ambos formatos.
+  - Acceptance: `mapStoryToWizard()` reconoce valores guardados como ID o como legado "id: Etiqueta" y los lleva a la opción correcta del combo.
+  - Verify: Vitest (historia legado y nueva → mismo wizard).
+  - Files: `frontend/src/services/wizard.service.ts`
+- [ ] **T1.3:** Tipos de regla alineados con `RuleType`.
+  - Acceptance: `ui_definitions.yaml` ofrece los 4 tipos del dominio (lista única con ancla YAML); `RuleType.from_raw()` en el dominio mapea `paranormal`→`fenomeno`, `social`→`entorno`, `evento`/desconocido→`None`, y lo usan `_request_to_dto`, `CreateStoryUseCase`, `YamlStoryLoader` y el repo al leer.
+  - Verify: pytest `tests/unit/domain/test_models.py` (mapeo) + integración (POST con `social` → guardado `entorno`).
+  - Files: `src/domain/models.py`, `src/presentation/routers/story_router.py`, `src/application/use_cases/create_story.py`, `src/infrastructure/loaders/yaml_loader.py`, `src/infrastructure/database/repositories/story_repository.py`, `frontend/config/ui_definitions.yaml`
+- [ ] **T1.4:** E2E del contrato.
+  - Acceptance: wizard completo → la historia guardada tiene `narrator_config` con IDs limpios y la regla con su tipo.
+  - Files: `frontend/tests/e2e/generation-guard.spec.ts` (extender el test de guardado)
+
+### S2 — Catálogo de géneros en la DB + recarga (§2)
+
+- [ ] **T2.1:** Esquema.
+  - Acceptance: tablas `genre` y `subgenre` (PK `(genre_id, id)`) en `init_db()`; seed v2 idempotente (`INSERT OR IGNORE`) desde `src/infrastructure/database/seeds/genre_catalog.py`; `story` con `FOREIGN KEY (genero) → genre(id)` y `FOREIGN KEY (genero, subgenero) → subgenre(genre_id, id)`; los repos escriben `NULL` (no `''`) cuando no hay género/subgénero y el dominio sigue exponiendo `""`.
+  - Verify: pytest `test_db_connection.py` (8 géneros, 50 subgéneros, seed idempotente, FK rechaza par inválido, `NULL` pasa).
+  - Files: `src/infrastructure/database/connection.py`, `src/infrastructure/database/seeds/genre_catalog.py` (nuevo), `src/infrastructure/database/repositories/story_repository.py`
+- [ ] **T2.2:** `GenreRepository` y validación.
+  - Acceptance: entidades `Genre`/`Subgenre`, protocolo `GenreRepository` (`list_with_subgenres`, `exists`), `SQLGenreRepository`; par inválido → 422 legible en `POST`/`PATCH /stories` y error claro en `YamlStoryLoader`; `IntegrityError` residual → 422 (nunca 500).
+  - Verify: pytest (válido, inválido, género sin subgénero, `otro`, 422 del API).
+  - Files: `src/domain/models.py`, `src/domain/interfaces.py`, `src/infrastructure/database/repositories/genre_repository.py` (nuevo), `src/application/use_cases/create_story.py`, `src/presentation/routers/story_router.py`, `src/infrastructure/loaders/yaml_loader.py`
+- [ ] **T2.3:** `GET /api/v1/catalog/genres`.
+  - Acceptance: `[{id, label, subgenres: [{id, label}]}]` ordenado por `order_index`.
+  - Files: `src/presentation/routers/catalog_router.py` (nuevo), `src/main.py`, `src/application/use_cases/list_genres.py` (nuevo)
+- [ ] **T2.4:** CLI `import-yaml` y `export-yaml --all`.
+  - Acceptance: `python -m src import-yaml <archivos...> [--descartar-subgenero-invalido]` crea cada historia como borrador **sin llamar al LLM**; `export-yaml --all --output-dir DIR` exporta todas. Round-trip export → import conserva personajes, escenarios, reglas tipadas, actos, narrador y atmósfera.
+  - Verify: pytest (round-trip; par inválido sin flag → error; con flag → subgénero vacío + aviso).
+  - Files: `src/cli/runner.py`, `src/cli/commands.py`
+- [ ] **T2.5:** `input_stories/barco_fantasma.yaml` con par válido (`paranormal/fantasmas`, según §2).
+- [ ] **T2.6:** Semilla propia del arnés E2E.
+  - Acceptance: `run_api_mock.py` arranca con DB vacía, importa `input_stories/*.yaml` y genera cada una con el LLM mock (historias `completed` con relato); ya no copia `data/dev/stories.db`. Los E2E buscan las historias por título vía API (sin IDs fijos).
+  - Verify: `npx playwright test` completo en verde.
+  - Files: `tests/e2e_support/run_api_mock.py`, `frontend/playwright.config.ts`, `frontend/tests/e2e/*.spec.ts`
+- [ ] **T2.7:** Recarga de dev.
+  - Acceptance: backup de `data/dev/stories.db` → `export-yaml --all` → `make db` → `import-yaml`; las 2 historias quedan como borradores con sus datos.
+- [ ] **T2.8:** Tests de catálogo en integración.
+  - Acceptance: `test_job_api.py` / `test_story_router.py` usan pares válidos; nuevo `test_catalog_api.py`.
+- [ ] **T2.9:** Recarga de prod (en el despliegue de S2).
+  - Acceptance: sin jobs activos → backup → `export-yaml --all` dentro de `narrative-api` → recrear `data/prod/stories.db` → `import-yaml --descartar-subgenero-invalido` ("la pena del colectivo"); "barco fantasma" y "el galpon" desde el backup original (recupera los tipos `social` → `entorno`). Verificación de las 3 historias como en la recuperación del 2026-09-22.
+
+### S3 — Combos Género → Subgénero (frontend, §2)
+
+- [ ] **T3.1:** `catalog.service.ts` con caché en memoria (TTL 5 min) y manejo de Core caído.
+- [ ] **T3.2:** `ui_definitions.yaml`: `atmosfera` y `atmosphere_subgenre` con `source: genre_catalog` y `depends_on: atmosfera`; `form_renderer.service.ts` lo soporta.
+- [ ] **T3.3:** `wizard.ejs`: catálogo embebido (`<script type="application/json" id="genre-catalog">`), subgéneros del género guardado, sin género → `disabled` con "Elegí primero el tipo de horror"; Core caído → ambos `disabled` con aviso.
+- [ ] **T3.4:** `wizard.js`: al cambiar de género repuebla el subgénero; si el valor actual no pertenece, lo resetea y guarda ambos (auto-save).
+- [ ] **T3.5:** `mapStoryToWizard()`: subgénero que no pertenece al género → vacío.
+- [ ] **T3.6:** Tests: Vitest (servicio: caché, Core caído) + Playwright (filtrado de `body_horror`, reset al cambiar, rehidratación de `folk_horror/rural`).
+
+### S4 — Rasgos nuevos + narrador dinámico (§3, §5)
+
+- [ ] **T4.1:** Lista de rasgos única con ancla YAML + `miedoso`, `curioso`, `impulsivo`, `desconfiado`; grilla `sm:grid-cols-3 lg:grid-cols-4`.
+- [ ] **T4.2:** `storyteller_id` con `source: characters`: el combo lista solo personajes con nombre (JS en `input`/agregar/borrar); 1 solo → preseleccionado; ninguno → `disabled` "Primero nombrá un personaje"; el narrador borrado → reset + auto-save.
+- [ ] **T4.3:** Mismo filtro en el render server-side del paso 2.
+- [ ] **T4.4:** Validación en `submitStep`: `storyteller_id` debe apuntar a un personaje con nombre; si no, re-render con error.
+- [ ] **T4.5:** Tests: Vitest (anclas YAML, validación del paso) + Playwright (1 personaje → 1 opción preseleccionada; agregar/borrar actualiza).
+
+### S5 — Wizard compacto para 1080p (§1)
+
+- [ ] **T5.1:** Clases de la tabla §1 en `wizard.ejs` (sin tocar `.card-forge` global); radios de 5 opciones en 2 columnas.
+- [ ] **T5.2:** Copy: "evoluciona", "fija", "auditivas".
+- [ ] **T5.3:** Playwright: viewport 1920×960 → botón "Siguiente" del paso 1 visible sin scroll; 1366×768 sin scroll horizontal; captura para revisión visual.
+
+### S6 — Documentación y cierre
+
+- [ ] **T6.1:** `CLAUDE.md` (tablas `genre`/`subgenre`, FK, `/catalog/genres`, `import-yaml`, regla de edición, tipos de regla), nota en Spec-220, Spec-440 → DONE.
 
 ---
 
