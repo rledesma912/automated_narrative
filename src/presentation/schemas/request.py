@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, Field
 
+from src.domain.jobs import JobKind
+
 
 class StoryCreateRequest(BaseModel):
     """Request for creating a story."""
@@ -36,3 +38,9 @@ class BeatRegenerateRequest(BaseModel):
     """Request para regenerar solo la Voz de un beat (Spec-430)."""
 
     narrative_id: UUID
+
+
+class JobCreateRequest(BaseModel):
+    """Request para lanzar un job de generación (Spec-460)."""
+
+    kind: JobKind = JobKind.FULL_GENERATION

@@ -4,19 +4,19 @@ import logging
 from uuid import UUID
 
 import aiosqlite
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from src.application.services import PromptBuilder
+from src.application.services.job_manager import JobAlreadyActiveError
 from src.application.services.observability_service import observability
-from src.application.services.stream_session_manager import manager as session_manager
-from src.application.services.streaming_service import stream_story
-from src.application.use_cases.director_use_case import DirectorUseCase
-from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.config import settings
-from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
-from src.infrastructure.factories import LLMFactory
-from src.infrastructure.normalizers import ResponseNormalizer
+from src.infrastructure.database.repositories import (
+    SQLBeatRepository,
+    SQLJobRepository,
+    SQLStoryRepository,
+)
+from src.presentation.generation import submit_full_generation
+from src.presentation.routers.job_router import parse_last_event_id, stream_job_events
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Streaming"])
@@ -26,16 +26,14 @@ router = APIRouter(tags=["Streaming"])
 
 
 @router.get("/stories/{story_id}/stream")
-async def stream_generation(story_id: str):
-    """Inicia (o se ata a) la generación SSE de una historia.
+async def stream_generation(story_id: str, last_event_id: str | None = Header(None)):
+    """SSE legado de la generación de una historia (Spec-201/230, sobre jobs Spec-460).
 
-    Spec-230: Sala Resiliente - Si la historia está en estado completed o failed,
-    el stream funciona en modo lectura: emite los beats históricos desde la DB
-    sin intentar regenerar.
-
-    Spec-220: idempotencia real vía StreamSessionManager. La primera request
-    arranca el productor único; las siguientes se atan a la misma sesión y
-    reciben el replay buffer + flujo en vivo. Cero riesgo de doble pipeline.
+    - Si la historia tiene un job activo, se ata a su canal (replay + en vivo).
+    - Spec-230 Sala Resiliente: `completed`/`failed` sin job activo → modo lectura
+      con los beats históricos desde la DB.
+    - Si no, arranca la generación como job (comportamiento legado; en Spec-460 S4
+      la sala pasa a crear el job con POST y este endpoint queda de solo lectura).
     """
     from src.domain.models import StoryStatus
     from src.domain.streaming import StreamEvent, StreamEventType
@@ -47,17 +45,15 @@ async def stream_generation(story_id: str):
         logger.warning(f"SSE Request failed: Story {story_id} not found.")
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
+    job = await SQLJobRepository().get_active_for_story(story.id)
     logger.info(
         f"[STREAM] Inicio de petición SSE | Story: {story_id} | "
-        f"Status actual: {story.status.value} | "
-        f"Sesión activa: {session_manager.is_active(story_id)}"
+        f"Status actual: {story.status.value} | Job activo: {job.id if job else None}"
     )
 
-    beat_repo = SQLBeatRepository()
-
-    if story.status in (StoryStatus.COMPLETED, StoryStatus.FAILED):
+    if job is None and story.status in (StoryStatus.COMPLETED, StoryStatus.FAILED):
         logger.info(f"[STREAM] Modo lectura para historia {story_id} ({story.status.value})")
-        beats = await beat_repo.get_by_story(story.id)
+        beats = await SQLBeatRepository().get_by_story(story.id)
 
         async def read_only_generator():
             yield StreamEvent(
@@ -80,47 +76,13 @@ async def stream_generation(story_id: str):
 
         return EventSourceResponse(read_only_generator())
 
-    observability.record(
-        category="generation",
-        message=f"Iniciando generación de '{story.title}'",
-        story_id=story_id,
-        story_title=story.title,
-    )
-
-    def _producer_factory():
-        """Construye el productor único (solo se invoca en la primera attach por story_id)."""
-        llm = LLMFactory.get_provider()
-        prompt_builder = PromptBuilder()
-        normalizer = ResponseNormalizer()
-        director = DirectorUseCase(
-            llm=llm,
-            prompt_builder=prompt_builder,
-            normalizer=normalizer,
-            story_repo=story_repo,
-        )
-        return stream_story(
-            director,
-            story,
-            story_repo=story_repo,
-            beat_repo=beat_repo,
-            narrative_use_case=GenerateNarrativesUseCase(),
-        )
-
-    queue, replay = await session_manager.attach(story_id, _producer_factory)
-
-    async def event_generator():
+    if job is None:
         try:
-            for event in replay:
-                yield event.to_sse()
-            while True:
-                event = await queue.get()
-                yield event.to_sse()
-                if event.event.value in ("done", "stream_error"):
-                    break
-        finally:
-            await session_manager.detach(story_id, queue)
+            job = await submit_full_generation(story)
+        except JobAlreadyActiveError as exc:  # otra conexión ganó la carrera
+            job = await SQLJobRepository().get(exc.job_id)
 
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(stream_job_events(job, parse_last_event_id(last_event_id)))
 
 
 # ── Hito 4a: /health mejorado ─────────────────────────────────────────────────

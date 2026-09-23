@@ -72,3 +72,6 @@ frontend/public/output_stories/*
 frontend/public/styles.css
 frontend/public/styles.css.map
 
+
+# Artefactos del MCP de Playwright (snapshots/logs de pruebas manuales)
+.playwright-mcp/

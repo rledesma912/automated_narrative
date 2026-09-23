@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0, S1 y S2 hechos
+**Estado:** IMPLEMENT — S0 a S3 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -440,23 +440,27 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S3 — API de jobs + `/stream` legado sobre `JobManager`
 
-- [ ] **T3.1:** `POST /api/v1/stories/{id}/jobs`.
-  - Acceptance: body `{kind: "full_generation", regenerate?: bool}` → `202 {job_id, status}`; historia inexistente → 404; job activo → `409 {detail, job_id}`.
+- [x] **T3.1:** `POST /api/v1/stories/{id}/jobs`.
+  - Acceptance: body `{kind: "full_generation"}` → `202 {job_id, status}`; historia inexistente → 404; job activo → `409 {detail, job_id}`.
+  - Implementado sin flag `regenerate`: `full_generation` **siempre** limpia los artefactos previos dentro del job (hoy el frontend hace `PATCH status=processing` antes de toda generación, también en borradores). Verificado que no se pierde el texto de los actos: el director corta `story.sinopsis` por párrafos, no lee `macro_beat.synopsis_beat`. La confirmación de Spec-219 queda en la UI. `regenerate_voz` → 422 hasta S7.
   - Verify: `uv run pytest tests/unit/presentation/routers/test_job_router.py -v`
   - Files: `src/presentation/routers/job_router.py`, `src/presentation/schemas/{request,response}.py`, `src/presentation/routers/__init__.py`, `src/main.py`
-- [ ] **T3.2:** `GET /api/v1/jobs/{id}` y `POST /api/v1/jobs/{id}/cancel`.
-  - Acceptance: el GET devuelve el estado del job desde DB; el cancel sobre un job activo → 202, sobre uno terminado → 409.
+- [x] **T3.2:** `GET /api/v1/jobs/{id}` y `POST /api/v1/jobs/{id}/cancel`.
+  - Acceptance: el GET devuelve el estado del job desde DB; el cancel sobre un job activo → **200 con el job ya `failed`** (la cancelación es síncrona: espera a que el pipeline se detenga), sobre uno terminado → 409.
   - Verify: tests del router.
   - Files: `job_router.py`
-- [ ] **T3.3:** `GET /api/v1/jobs/{id}/events` (SSE de detalle).
+- [x] **T3.3:** `GET /api/v1/jobs/{id}/events` (SSE de detalle).
   - Acceptance: `EventSourceResponse` sobre `EventBus.subscribe("job:<id>", Last-Event-ID)`; cada evento lleva `id:`; cierra tras `done`/`stream_error`; job terminado y canal ya descartado → reproduce los beats desde DB y cierra; **nunca crea jobs**.
   - Verify: test con `httpx.AsyncClient` + mock LLM: reconectar con `Last-Event-ID` no repite eventos.
   - Files: `job_router.py`
-- [ ] **T3.4:** `GET /stories/{id}/stream` legado sobre `JobManager`.
+- [x] **T3.4:** `GET /stories/{id}/stream` legado sobre `JobManager`.
   - Acceptance: mismo contrato de eventos que hoy; si no hay job activo y la historia no está `completed`/`failed`, crea uno vía `JobManager` (comportamiento legado temporal); si hay uno, se ata a su canal. `StreamSessionManager` deja de usarse en el router.
   - Verify: la sala actual genera una historia completa sin cambios en el frontend (prueba manual con `--mock`); los tests del router existentes pasan.
   - Files: `src/presentation/routers/stream_router.py`
-- [ ] **Checkpoint S3:** `make lint && make test` + prueba manual en la web: generar, regenerar y cancelar funcionan como antes.
+- [x] **Checkpoint S3:** `make lint && make test` + prueba manual en la web: generar, regenerar y cancelar funcionan como antes.
+  - Verificado con el frontend **sin cambios** (API de prueba con LLM mock lento + copia de la DB dev, Playwright): regenerar desde la ficha → confirmación Spec-219 → 5 actos + consolidación → `completed`; recargar la sala a mitad de camino no duplica jobs.
+  - Visto para S4: la sala loguea "Narrando Beat N" **después** de las etapas del beat, porque `stream_story` emite `beat_start` cuando el beat ya terminó (preexistente; ahora se nota por los eventos de etapa).
+  - "Cancelar" desde la sala sigue sin detener el job hasta S4 (el frontend todavía hace `PATCH status=failed`, no `POST /jobs/{id}/cancel`).
 
 ### S4 — Sala de streaming sobre jobs
 
