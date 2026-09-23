@@ -3,6 +3,7 @@
 import aiosqlite
 
 from src.config import settings
+from src.infrastructure.database.seeds.genre_catalog import genre_rows, subgenre_rows
 
 
 async def get_connection() -> aiosqlite.Connection:
@@ -32,6 +33,33 @@ async def init_db() -> None:
     """Initialize database tables."""
     conn = await get_connection()
 
+    # Spec-440 §2: catálogo de géneros. La PK compuesta permite `otro` en cada género.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS genre (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            order_index INTEGER NOT NULL
+        )
+    """)
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS subgenre (
+            genre_id TEXT NOT NULL,
+            id TEXT NOT NULL,
+            label TEXT NOT NULL,
+            order_index INTEGER NOT NULL,
+            PRIMARY KEY (genre_id, id),
+            FOREIGN KEY (genre_id) REFERENCES genre(id) ON DELETE RESTRICT
+        )
+    """)
+    await conn.executemany(
+        "INSERT OR IGNORE INTO genre (id, label, order_index) VALUES (?, ?, ?)", genre_rows()
+    )
+    await conn.executemany(
+        "INSERT OR IGNORE INTO subgenre (genre_id, id, label, order_index) VALUES (?, ?, ?, ?)",
+        subgenre_rows(),
+    )
+
+    # genero/subgenero vacíos se guardan NULL: la FK compuesta no se verifica con un NULL.
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS story (
             id TEXT PRIMARY KEY,
@@ -44,7 +72,9 @@ async def init_db() -> None:
             tono TEXT,
             narrator_config TEXT,
             status TEXT DEFAULT 'pending',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (genero) REFERENCES genre(id),
+            FOREIGN KEY (genero, subgenero) REFERENCES subgenre(genre_id, id)
         )
     """)
 

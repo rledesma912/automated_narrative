@@ -22,50 +22,53 @@ class SQLStoryRepository:
     async def save(self, story: Story) -> Story:
         """Save a story."""
         conn = await get_connection()
+        # try/finally: una conexión sin cerrar (p. ej. la FK del catálogo rechaza el
+        # INSERT) deja vivo el hilo de aiosqlite.
+        try:
+            await conn.execute(
+                """INSERT OR REPLACE INTO story
+                (id, title, protagonista, relator, sinopsis, genero, subgenero, tono,
+                 narrator_config, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    str(story.id),
+                    story.title,
+                    story.protagonista,
+                    story.relator,
+                    story.sinopsis,
+                    story.genero or None,  # NULL: la FK del catálogo rechaza ""
+                    story.subgenero or None,
+                    story.tono,
+                    json.dumps(story.narrator_config) if story.narrator_config else None,
+                    story.status.value,
+                    story.created_at.isoformat(),
+                ),
+            )
 
-        await conn.execute(
-            """INSERT OR REPLACE INTO story
-            (id, title, protagonista, relator, sinopsis, genero, subgenero, tono,
-             narrator_config, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                str(story.id),
-                story.title,
-                story.protagonista,
-                story.relator,
-                story.sinopsis,
-                story.genero,
-                story.subgenero,
-                story.tono,
-                json.dumps(story.narrator_config) if story.narrator_config else None,
-                story.status.value,
-                story.created_at.isoformat(),
-            ),
-        )
+            await self._write_inputs(conn, story)
 
-        await self._write_inputs(conn, story)
+            # Persistir beats en la tabla macro_beat (borrar y re-insertar)
+            # Spec-190 T7.1: pre-crear 5 filas macro_beat al guardar la historia
+            await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (str(story.id),))
+            if story.beats:
+                for b in story.beats:
+                    await conn.execute(
+                        """INSERT INTO macro_beat
+                        (story_id, number, summary, synopsis_beat, type, status)
+                        VALUES (?, ?, ?, ?, ?, ?)""",
+                        (
+                            str(story.id),
+                            b.number,
+                            b.summary,
+                            b.synopsis_beat or "",
+                            b.beat_type.value if b.beat_type else None,
+                            b.status.value,
+                        ),
+                    )
 
-        # Persistir beats en la tabla macro_beat (borrar y re-insertar)
-        # Spec-190 T7.1: pre-crear 5 filas macro_beat al guardar la historia
-        await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (str(story.id),))
-        if story.beats:
-            for b in story.beats:
-                await conn.execute(
-                    """INSERT INTO macro_beat
-                    (story_id, number, summary, synopsis_beat, type, status)
-                    VALUES (?, ?, ?, ?, ?, ?)""",
-                    (
-                        str(story.id),
-                        b.number,
-                        b.summary,
-                        b.synopsis_beat or "",
-                        b.beat_type.value if b.beat_type else None,
-                        b.status.value,
-                    ),
-                )
-
-        await conn.commit()
-        await conn.close()
+            await conn.commit()
+        finally:
+            await conn.close()
 
         return story
 
@@ -198,8 +201,8 @@ class SQLStoryRepository:
                     story.protagonista,
                     story.relator,
                     story.sinopsis,
-                    story.genero,
-                    story.subgenero,
+                    story.genero or None,  # NULL: la FK del catálogo rechaza ""
+                    story.subgenero or None,
                     story.tono,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
                     str(story.id),

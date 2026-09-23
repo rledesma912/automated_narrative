@@ -66,6 +66,21 @@ class RuleType(str, Enum):
 _LEGACY_RULE_TYPES = {"paranormal": "fenomeno", "social": "entorno"}
 
 
+class Subgenre(BaseModel):
+    """Subgénero del catálogo (Spec-440 §2). El id se repite entre géneros (`otro`)."""
+
+    id: str
+    label: str
+
+
+class Genre(BaseModel):
+    """Género del catálogo con sus subgéneros ordenados (Spec-440 §2)."""
+
+    id: str
+    label: str
+    subgenres: list[Subgenre] = Field(default_factory=list)
+
+
 class TypedRule(BaseModel):
     """Regla narrativa con semántica explícita (Spec-043).
 

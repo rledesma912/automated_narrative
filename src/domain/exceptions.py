@@ -54,3 +54,16 @@ class DatabaseError(NarrativeError):
         )
         self.reason = reason
         self.operation = operation
+
+
+class InvalidGenreError(NarrativeError):
+    """Género o par género/subgénero que no está en el catálogo (Spec-440 §2)."""
+
+    def __init__(self, genero: str, subgenero: str = ""):
+        if subgenero:
+            msg = f"El subgénero '{subgenero}' no corresponde al género '{genero}'"
+        else:
+            msg = f"El género '{genero}' no existe en el catálogo"
+        super().__init__(msg, details={"genero": genero, "subgenero": subgenero})
+        self.genero = genero
+        self.subgenero = subgenero

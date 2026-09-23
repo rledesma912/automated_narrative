@@ -84,7 +84,7 @@ class TestStoryRunner:
             "tercera_persona",
             [],
             "Synopsis",
-            "terror",
+            "terror_psicologico",
         )
 
         assert story is not None
@@ -109,7 +109,7 @@ class TestStoryRunner:
             "tercera_persona",
             [],
             "Synopsis",
-            "terror",
+            "terror_psicologico",
         )
 
         beats = await beat_repo.get_by_story(story.id)
@@ -134,7 +134,7 @@ class TestStoryRunner:
             "tercera_persona",
             [],
             "Synopsis",
-            "terror",
+            "terror_psicologico",
         )
 
         beats = await beat_repo.get_by_story(story.id)
@@ -165,7 +165,7 @@ class TestStoryRunner:
             "tercera_persona",
             [],
             "Synopsis",
-            "terror",
+            "terror_psicologico",
         )
 
         narratives = await SQLGeneratedNarrativeRepository().get_by_story_template_id(story.id)
@@ -195,7 +195,7 @@ class TestStoryRunner:
             "tercera_persona",
             [],
             "Synopsis",
-            "terror",
+            "terror_psicologico",
             stop_after="analyst",
         )
 
@@ -226,7 +226,7 @@ class TestStoryRunner:
             "tercera_persona",
             [],
             "Synopsis",
-            "terror",
+            "terror_psicologico",
         )
 
         assert story is not None

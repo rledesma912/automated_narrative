@@ -143,7 +143,7 @@ class TestSqlStoryRepository:
             protagonista="P",
             relator="primera_persona",
             sinopsis="S",
-            genero="terror",
+            genero="terror_psicologico",
         )
         await repo.save(story)
 
@@ -173,7 +173,7 @@ class TestSqlStoryRepository:
             protagonista="P",
             relator="primera_persona",
             sinopsis="S",
-            genero="terror",
+            genero="terror_psicologico",
         )
         await repo.save(story)
 

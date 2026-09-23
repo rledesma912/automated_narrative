@@ -11,7 +11,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases import CreateStoryUseCase, DirectorUseCase
 from src.cli.logger import logger
 from src.cli.progress import SilentReporter
-from src.domain.interfaces import LLMProvider
+from src.domain.interfaces import GenreRepository, LLMProvider
 from src.domain.models import BeatStatus, Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.normalizers import ResponseNormalizer
@@ -36,6 +36,7 @@ class StoryRunner:
         reporter: "ProgressReporter | SilentReporter | None" = None,
         debug_collector: DebugCollector | None = None,
         narrative_use_case: "GenerateNarrativesUseCase | None" = None,
+        genre_repo: GenreRepository | None = None,
     ):
         self.llm = llm_adapter
         self.story_repo = story_repo
@@ -46,6 +47,7 @@ class StoryRunner:
         self.normalizer = ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
         self.narrative_use_case = narrative_use_case
+        self.genre_repo = genre_repo
         self.last_narrative_id: str | None = None
 
     async def _narrate_beats(
@@ -114,7 +116,7 @@ class StoryRunner:
             f"voz={cfg.role_config('voz').get('model')}"
         )
 
-        create_story = CreateStoryUseCase(self.story_repo)
+        create_story = CreateStoryUseCase(self.story_repo, self.genre_repo)
         escenarios_list = (
             escenarios
             if isinstance(escenarios, list)

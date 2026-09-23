@@ -8,6 +8,7 @@ from src.cli import commands
 from src.cli.exceptions import CLIError
 from src.cli.logger import logger
 from src.config import settings
+from src.domain.exceptions import InvalidGenreError
 
 
 def main() -> None:
@@ -91,13 +92,36 @@ def main() -> None:
     )
     export_yaml_parser.add_argument(
         "story_id",
-        help="UUID de la historia a exportar",
+        nargs="?",
+        help="UUID de la historia a exportar (o --all)",
+    )
+    export_yaml_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Exportar todas las historias (requiere --output-dir)",
+    )
+    export_yaml_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Directorio de salida para --all",
     )
     export_yaml_parser.add_argument(
         "--output",
         type=Path,
         default=None,
         help="Path de salida (default: input_stories/<slug>.yaml)",
+    )
+
+    import_yaml_parser = subparsers.add_parser(
+        "import-yaml",
+        help="Crear historias como borrador desde YAML, sin generar (Spec-440).",
+    )
+    import_yaml_parser.add_argument("files", nargs="+", type=Path, help="Archivos YAML")
+    import_yaml_parser.add_argument(
+        "--descartar-subgenero-invalido",
+        action="store_true",
+        help="Si el subgénero no corresponde al género, importar sin subgénero (con aviso)",
     )
 
     args = parser.parse_args()
@@ -177,14 +201,24 @@ def main() -> None:
                 use_mock=args.mock,
             )
         elif args.command == "export-yaml":
-            commands.export_yaml(
-                story_id=args.story_id,
-                output=args.output,
-            )
+            if args.all:
+                if args.output_dir is None:
+                    export_yaml_parser.error("--all requiere --output-dir")
+                commands.export_all_yaml(args.output_dir)
+            elif args.story_id:
+                commands.export_yaml(story_id=args.story_id, output=args.output)
+            else:
+                export_yaml_parser.error("indicá un story_id o --all")
+        elif args.command == "import-yaml":
+            commands.import_yaml(args.files, args.descartar_subgenero_invalido)
     except CLIError as e:
         logger.error(f"[CLI] {e.message}")
         print(f"Error: {e.message}", file=sys.stderr)
         sys.exit(e.exit_code)
+    except InvalidGenreError as e:
+        logger.error(f"[CLI] {e.message}")
+        print(f"Error de validación: {e.message}", file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         logger.error(f"[ERROR_INESPERADO] {str(e)}")
         print(f"Error inesperado: {str(e)}", file=sys.stderr)

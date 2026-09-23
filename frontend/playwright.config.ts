@@ -4,8 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Por defecto Playwright levanta su propio entorno (Spec-460 S4):
- *   - Core en :8021 con DB descartable sembrada desde data/dev/stories.db y
- *     LLM mock con demora (tests/e2e_support/run_api_mock.py);
+ *   - Core en :8021 con DB descartable sembrada desde input_stories/ (cada
+ *     historia generada con el mock, Spec-440 T2.6) y LLM mock con demora
+ *     (tests/e2e_support/run_api_mock.py);
  *   - frontend en :3021 apuntando a ese Core.
  * Así los E2E no dependen de lo que esté corriendo en la máquina.
  *
@@ -43,7 +44,6 @@ export default defineConfig({
           timeout: 60 * 1000,
           env: {
             E2E_DB: path.join(os.tmpdir(), "narrativeforge-e2e.db"),
-            E2E_SEED_DB: path.join(REPO_ROOT, "data", "dev", "stories.db"),
             E2E_LLM_DELAY: "0.15",
             E2E_API_PORT: String(API_PORT),
             PYTHONPATH: REPO_ROOT,

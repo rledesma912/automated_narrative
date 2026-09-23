@@ -1,11 +1,15 @@
 import { test, expect } from "@playwright/test";
 
-const STORY_ID = process.env.TEST_STORY_ID || "af608048-88a0-4234-b756-8867c1b64092";
+import { storyIdByTitle } from "./support/stories";
+
+// Contra un frontend real (BASE_URL) se puede fijar la historia con TEST_STORY_ID.
+let STORY_ID = process.env.TEST_STORY_ID || "";
 
 test.describe("Vista de Relatos", () => {
   // Con el arnés propio (DB descartable) nos aseguramos de tener 2+ relatos para
   // probar el cambio de pestaña. Contra un frontend real (BASE_URL) no se crean datos.
   test.beforeAll(async ({ request }) => {
+    if (!STORY_ID) STORY_ID = await storyIdByTitle(request, "El monte prohibido");
     if (process.env.BASE_URL) return;
     const list = await request.get(`/api/v1/story-templates/${STORY_ID}/narratives`);
     const relatos = (await list.json()) as unknown[];

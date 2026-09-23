@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { storyIdByTitle } from "./support/stories";
 
 /**
  * Sala de generación sobre jobs (Spec-460 S4).
@@ -7,7 +8,10 @@ import { test, expect, type Page } from "@playwright/test";
  * mock con demora (~0.15 s por llamada, 17 llamadas por historia).
  * Usa "La ofrenda" del seed; los tests de relatos usan otra historia.
  */
-const STORY_ID = "314a7ca8-2695-470f-af34-b8b913f56528";
+let STORY_ID = ""; // "La ofrenda" de la semilla
+test.beforeAll(async ({ request }) => {
+  STORY_ID = await storyIdByTitle(request, "La ofrenda");
+});
 
 test.describe.configure({ mode: "serial" });
 test.skip(!!process.env.BASE_URL, "Genera historias: solo contra el arnés con DB descartable");

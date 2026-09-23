@@ -1,5 +1,6 @@
 """Story router."""
 
+import sqlite3
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,9 +14,14 @@ from src.application.services.narrator_config_sanitizer import (
 )
 from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
-from src.application.use_cases.create_story import CreateStoryUseCase
+from src.application.use_cases.create_story import CreateStoryUseCase, ensure_valid_genre
+from src.domain.exceptions import InvalidGenreError
 from src.domain.models import StoryStatus
-from src.infrastructure.database.repositories import SQLJobRepository, SQLStoryRepository
+from src.infrastructure.database.repositories import (
+    SQLGenreRepository,
+    SQLJobRepository,
+    SQLStoryRepository,
+)
 from src.infrastructure.exporters import YamlStoryExporter
 from src.presentation.schemas.request import StoryCreateRequest
 from src.presentation.schemas.response import StoryResponse
@@ -28,7 +34,16 @@ def _story_repo() -> SQLStoryRepository:
 
 
 def get_create_story_use_case(repo=Depends(_story_repo)) -> CreateStoryUseCase:
-    return CreateStoryUseCase(repo)
+    return CreateStoryUseCase(repo, SQLGenreRepository())
+
+
+def _genre_error(e: Exception) -> HTTPException:
+    """Par género/subgénero inválido → 422 legible, nunca 500 (Spec-440 §2)."""
+    if isinstance(e, InvalidGenreError):
+        return HTTPException(status_code=422, detail=e.message)
+    return HTTPException(
+        status_code=422, detail=f"Datos rechazados por la base (género/subgénero): {e}"
+    )
 
 
 def get_list_stories_use_case(repo=Depends(_story_repo)) -> ListStoriesUseCase:
@@ -127,6 +142,8 @@ async def create_story(
             status=story.status.value,
             created_at=story.created_at,
         )
+    except (InvalidGenreError, sqlite3.IntegrityError) as e:
+        raise _genre_error(e)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -215,6 +232,10 @@ async def update_story(
         )
 
     dto = _request_to_dto(request)
+    try:
+        await ensure_valid_genre(SQLGenreRepository(), dto.genero, dto.subgenero)
+    except InvalidGenreError as e:
+        raise _genre_error(e)
     story.title = dto.title
     story.protagonista = dto.protagonista
     story.relator = dto.relator
@@ -260,7 +281,10 @@ async def update_story(
 
     # update_inputs y no save(): save() hace INSERT OR REPLACE y reescribe los actos,
     # lo que borraría en cascada todo lo generado de una historia ya generada.
-    await repo.update_inputs(story)
+    try:
+        await repo.update_inputs(story)
+    except sqlite3.IntegrityError as e:
+        raise _genre_error(e)
     return StoryResponse(
         id=str(story.id), title=story.title, status=story.status.value, created_at=story.created_at
     )

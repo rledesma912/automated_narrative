@@ -3,20 +3,31 @@
 from uuid import uuid4
 
 from src.application.dto import StoryCreateDTO
-from src.domain.interfaces import StoryRepository
+from src.domain.exceptions import InvalidGenreError
+from src.domain.interfaces import GenreRepository, StoryRepository
 from src.domain.models import BeatType, MacroBeat, RuleType, Scenario, Story, StoryStatus, TypedRule
 
 
 class CreateStoryUseCase:
     """Caso de uso para crear una historia."""
 
-    def __init__(self, story_repository: StoryRepository):
+    def __init__(
+        self,
+        story_repository: StoryRepository,
+        genre_repository: GenreRepository | None = None,
+    ):
         self.story_repository = story_repository
+        self.genre_repository = genre_repository
 
     async def execute(
         self, dto: StoryCreateDTO, initial_status: StoryStatus = StoryStatus.DRAFT
     ) -> Story:
-        """Crea una nueva historia."""
+        """Crea una nueva historia.
+
+        Raises:
+            InvalidGenreError: el par género/subgénero no está en el catálogo.
+        """
+        await ensure_valid_genre(self.genre_repository, dto.genero, dto.subgenero)
         story = Story(
             title=dto.title,
             protagonista=dto.protagonista,
@@ -87,3 +98,18 @@ class CreateStoryUseCase:
             story.beats = beats
 
         return await self.story_repository.save(story)
+
+
+async def ensure_valid_genre(
+    genre_repository: GenreRepository | None, genero: str, subgenero: str
+) -> None:
+    """Valida contra el catálogo antes de persistir (Spec-440 §2).
+
+    La FK de `story` es la última línea de defensa; esto da un error legible.
+    Sin repositorio (tests, usos sin catálogo) no valida.
+    """
+    if genre_repository is None:
+        return
+    if not await genre_repository.exists(genero, subgenero):
+        valid_genre = await genre_repository.exists(genero)
+        raise InvalidGenreError(genero, subgenero if valid_genre else "")

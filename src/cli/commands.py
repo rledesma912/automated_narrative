@@ -291,6 +291,15 @@ def export_yaml(
         raise ExportError(str(e)) from e
 
 
+def _safe_title(title: str) -> str:
+    return (
+        "".join(c for c in title if c.isalnum() or c in (" ", "-", "_"))
+        .strip()
+        .replace(" ", "_")
+        .lower()
+    )
+
+
 async def _export_yaml_async(story_id: str, output: Path | None) -> None:
     """Async impl de export-yaml."""
     await _init_database()
@@ -303,15 +312,90 @@ async def _export_yaml_async(story_id: str, output: Path | None) -> None:
     from src.infrastructure.exporters import YamlStoryExporter
 
     if output is None:
-        safe_title = (
-            "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
-            .strip()
-            .replace(" ", "_")
-            .lower()
-        )
-        output = Path(settings.input_dir) / f"{safe_title}.yaml"
+        output = Path(settings.input_dir) / f"{_safe_title(story.title)}.yaml"
 
     exporter = YamlStoryExporter()
     written = exporter.export_to_file(story, output)
     logger.info(f"[COMANDOS] YAML exportado a: {written}")
     print(f"YAML escrito en: {written}")
+
+
+def export_all_yaml(output_dir: Path) -> None:
+    """Exporta todas las historias a `output_dir`, una por archivo (Spec-440 T2.4)."""
+    logger.info(f"[COMANDOS] Iniciando export-yaml --all en: {output_dir}")
+    try:
+        import asyncio
+
+        asyncio.run(_export_all_yaml_async(output_dir))
+    except Exception as e:
+        logger.error(f"[COMANDOS] Error en export-yaml --all: {e}")
+        raise ExportError(str(e)) from e
+
+
+async def _export_all_yaml_async(output_dir: Path) -> None:
+    from src.infrastructure.exporters import YamlStoryExporter
+
+    await _init_database()
+    container = CLIContainer()
+    exporter = YamlStoryExporter()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    used: set[str] = set()
+    for summary in await container.story_repo.list_all():
+        story = await container.story_repo.get_by_id(summary.id)
+        if story is None:
+            continue
+        name = _safe_title(story.title) or "historia"
+        if name in used:  # títulos repetidos: se desambigua con el id
+            name = f"{name}_{str(story.id)[:8]}"
+        used.add(name)
+        written = exporter.export_to_file(story, output_dir / f"{name}.yaml")
+        print(f"YAML escrito en: {written}")
+
+
+def import_yaml(files: list[Path], drop_invalid_subgenre: bool = False) -> None:
+    """Crea cada historia del YAML como borrador, sin llamar al LLM (Spec-440 T2.4).
+
+    Con `drop_invalid_subgenre`, un subgénero que no corresponde a su género se
+    descarta (queda el género) con un aviso, en vez de rechazar el archivo.
+    """
+    import asyncio
+
+    failed = asyncio.run(_import_yaml_async(files, drop_invalid_subgenre))
+    if failed:
+        raise ValidationError(f"{failed} de {len(files)} archivo(s) no se importaron")
+
+
+async def _import_yaml_async(files: list[Path], drop_invalid_subgenre: bool) -> int:
+    from src.application.use_cases.create_story import CreateStoryUseCase
+    from src.domain.exceptions import InvalidGenreError
+    from src.infrastructure.database.repositories import SQLGenreRepository
+    from src.infrastructure.loaders import YamlStoryLoader, YamlStoryLoaderError
+
+    await _init_database()
+    genres = SQLGenreRepository()
+    use_case = CreateStoryUseCase(CLIContainer().story_repo, genres)
+    loader = YamlStoryLoader()
+    failed = 0
+    for path in files:
+        try:
+            # Relativo al cwd si existe; si no, el loader lo busca en input_dir.
+            dto = loader.load_from_file(path.resolve() if path.exists() else path)
+            if (
+                drop_invalid_subgenre
+                and dto.subgenero
+                and await genres.exists(dto.genero)
+                and not await genres.exists(dto.genero, dto.subgenero)
+            ):
+                print(
+                    f"Aviso: {path}: se descarta el subgénero '{dto.subgenero}' "
+                    f"(no corresponde a '{dto.genero}'); elegí uno válido en el wizard."
+                )
+                dto.subgenero = ""
+            story = await use_case.execute(dto, initial_status=StoryStatus.DRAFT)
+            print(f"Importada: {story.title} ({story.id})")
+        except (YamlStoryLoaderError, InvalidGenreError) as e:
+            failed += 1
+            message = e.message if isinstance(e, InvalidGenreError) else str(e)
+            logger.error(f"[COMANDOS] import-yaml {path}: {message}")
+            print(f"Error: {path}: {message}")
+    return failed

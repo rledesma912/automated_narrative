@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { storyIdByTitle } from "./support/stories";
 
 /**
  * Banda de generación + canal global (Spec-460 S5).
@@ -7,7 +8,10 @@ import { test, expect, type Page } from "@playwright/test";
  * El job se lanza por API, como si viniera de otra pestaña: la página tiene que
  * enterarse sola, sin polling.
  */
-const STORY_ID = "314a7ca8-2695-470f-af34-b8b913f56528"; // "La ofrenda" del seed
+let STORY_ID = ""; // "La ofrenda" de la semilla
+test.beforeAll(async ({ request }) => {
+  STORY_ID = await storyIdByTitle(request, "La ofrenda");
+});
 
 test.describe.configure({ mode: "serial" });
 test.skip(!!process.env.BASE_URL, "Genera historias: solo contra el arnés con DB descartable");

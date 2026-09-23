@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from src.domain.models import Beat, Story
+from src.domain.models import Beat, Genre, Story
 
 
 @dataclass
@@ -73,6 +73,18 @@ class StoryRepository(Protocol):
 
     async def list_all(self) -> list[Story]:
         """List all stories."""
+        ...
+
+
+class GenreRepository(Protocol):
+    """Catálogo de géneros y subgéneros (Spec-440 §2). Solo lectura."""
+
+    async def list_with_subgenres(self) -> list[Genre]:
+        """Géneros con sus subgéneros, ambos por `order_index`."""
+        ...
+
+    async def exists(self, genero: str, subgenero: str = "") -> bool:
+        """True si el par es válido. Sin género, o género sin subgénero, alcanza con el género."""
         ...
 
 

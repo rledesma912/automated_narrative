@@ -1,10 +1,14 @@
 import { test, expect } from "@playwright/test";
+import { storyIdByTitle } from "./support/stories";
 
 /**
  * Editar una historia ya generada (Spec-440 §8, S0).
  * Arnés de playwright.config.ts: "El monte prohibido" del seed está completa y con relatos.
  */
-const STORY_ID = "af608048-88a0-4234-b756-8867c1b64092";
+let STORY_ID = ""; // "El monte prohibido" de la semilla
+test.beforeAll(async ({ request }) => {
+  STORY_ID = await storyIdByTitle(request, "El monte prohibido");
+});
 
 test.skip(!!process.env.BASE_URL, "Modifica historias: solo contra el arnés con DB descartable");
 

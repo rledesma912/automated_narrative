@@ -19,7 +19,7 @@ protagonista: 'samuel: narrador y protagonista. es trabajador de un barco pesque
   sociable, audaz]'
 relator: 'Primera persona en pasado. Narrador: samuel. Tono: dramático. Registro: coloquial: Natural y
   diario.'
-atmosfera: terror_psicologico (historico) - ambiguo
+atmosfera: paranormal (fantasmas) - ambiguo
 escenarios: 'un barco pesquero: un barco pesquero antiguo , viejo, de madera. un poco deteriorado. con
   olor a pescado, con piso crujiente y humedo. barco grande y tenebroso. velas grandes desgastadas grisaceas
   .'
@@ -44,8 +44,8 @@ storyteller_config:
     tense: pasado
     style: dramático
   atmosphere:
-    genre: terror_psicologico
-    subgenre: historico
+    genre: paranormal
+    subgenre: fantasmas
     tone: ambiguo
   scenarios:
   - id: S1

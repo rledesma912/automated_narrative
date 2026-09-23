@@ -9,7 +9,11 @@ from src.application.services import PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases import CreateStoryUseCase, DirectorUseCase, VozUseCase
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
-from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
+from src.infrastructure.database.repositories import (
+    SQLBeatRepository,
+    SQLGenreRepository,
+    SQLStoryRepository,
+)
 from src.infrastructure.factories import LLMFactory
 
 if TYPE_CHECKING:
@@ -78,7 +82,7 @@ class CLIContainer:
         return self._debug_collector
 
     def create_story_use_case(self) -> CreateStoryUseCase:
-        return CreateStoryUseCase(self.story_repo)
+        return CreateStoryUseCase(self.story_repo, SQLGenreRepository())
 
     def director_use_case(self) -> DirectorUseCase:
         return DirectorUseCase(self.llm, self.prompt_builder)
@@ -101,4 +105,5 @@ class CLIContainer:
             reporter=self.reporter,
             debug_collector=self.debug_collector,
             narrative_use_case=self.narrative_use_case(),
+            genre_repo=SQLGenreRepository(),
         )

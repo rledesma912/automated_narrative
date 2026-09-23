@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 y S1 hechos
+**Estado:** IMPLEMENT — S0 y S1 desplegados; S2 hecho (se despliega con S3)
 
 ---
 
@@ -381,32 +381,39 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S2 — Catálogo de géneros en la DB + recarga (§2)
 
-- [ ] **T2.1:** Esquema.
+- [x] **T2.1:** Esquema.
   - Acceptance: tablas `genre` y `subgenre` (PK `(genre_id, id)`) en `init_db()`; seed v2 idempotente (`INSERT OR IGNORE`) desde `src/infrastructure/database/seeds/genre_catalog.py`; `story` con `FOREIGN KEY (genero) → genre(id)` y `FOREIGN KEY (genero, subgenero) → subgenre(genre_id, id)`; los repos escriben `NULL` (no `''`) cuando no hay género/subgénero y el dominio sigue exponiendo `""`.
   - Verify: pytest `test_db_connection.py` (8 géneros, 50 subgéneros, seed idempotente, FK rechaza par inválido, `NULL` pasa).
   - Files: `src/infrastructure/database/connection.py`, `src/infrastructure/database/seeds/genre_catalog.py` (nuevo), `src/infrastructure/database/repositories/story_repository.py`
-- [ ] **T2.2:** `GenreRepository` y validación.
+- [x] **T2.2:** `GenreRepository` y validación.
   - Acceptance: entidades `Genre`/`Subgenre`, protocolo `GenreRepository` (`list_with_subgenres`, `exists`), `SQLGenreRepository`; par inválido → 422 legible en `POST`/`PATCH /stories` y error claro en `YamlStoryLoader`; `IntegrityError` residual → 422 (nunca 500).
   - Verify: pytest (válido, inválido, género sin subgénero, `otro`, 422 del API).
   - Files: `src/domain/models.py`, `src/domain/interfaces.py`, `src/infrastructure/database/repositories/genre_repository.py` (nuevo), `src/application/use_cases/create_story.py`, `src/presentation/routers/story_router.py`, `src/infrastructure/loaders/yaml_loader.py`
-- [ ] **T2.3:** `GET /api/v1/catalog/genres`.
+- [x] **T2.3:** `GET /api/v1/catalog/genres`.
   - Acceptance: `[{id, label, subgenres: [{id, label}]}]` ordenado por `order_index`.
   - Files: `src/presentation/routers/catalog_router.py` (nuevo), `src/main.py`, `src/application/use_cases/list_genres.py` (nuevo)
-- [ ] **T2.4:** CLI `import-yaml` y `export-yaml --all`.
+- [x] **T2.4:** CLI `import-yaml` y `export-yaml --all`.
   - Acceptance: `python -m src import-yaml <archivos...> [--descartar-subgenero-invalido]` crea cada historia como borrador **sin llamar al LLM**; `export-yaml --all --output-dir DIR` exporta todas. Round-trip export → import conserva personajes, escenarios, reglas tipadas, actos, narrador y atmósfera.
   - Verify: pytest (round-trip; par inválido sin flag → error; con flag → subgénero vacío + aviso).
   - Files: `src/cli/runner.py`, `src/cli/commands.py`
-- [ ] **T2.5:** `input_stories/barco_fantasma.yaml` con par válido (`paranormal/fantasmas`, según §2).
-- [ ] **T2.6:** Semilla propia del arnés E2E.
+- [x] **T2.5:** `input_stories/barco_fantasma.yaml` con par válido (`paranormal/fantasmas`, según §2).
+- [x] **T2.6:** Semilla propia del arnés E2E.
   - Acceptance: `run_api_mock.py` arranca con DB vacía, importa `input_stories/*.yaml` y genera cada una con el LLM mock (historias `completed` con relato); ya no copia `data/dev/stories.db`. Los E2E buscan las historias por título vía API (sin IDs fijos).
   - Verify: `npx playwright test` completo en verde.
   - Files: `tests/e2e_support/run_api_mock.py`, `frontend/playwright.config.ts`, `frontend/tests/e2e/*.spec.ts`
-- [ ] **T2.7:** Recarga de dev.
+- [x] **T2.7:** Recarga de dev.
   - Acceptance: backup de `data/dev/stories.db` → `export-yaml --all` → `make db` → `import-yaml`; las 2 historias quedan como borradores con sus datos.
-- [ ] **T2.8:** Tests de catálogo en integración.
+- [x] **T2.8:** Tests de catálogo en integración.
   - Acceptance: `test_job_api.py` / `test_story_router.py` usan pares válidos; nuevo `test_catalog_api.py`.
-- [ ] **T2.9:** Recarga de prod (en el despliegue de S2).
+- [ ] **T2.9:** Recarga de prod (**se hace en el despliegue de S3**, ver notas).
   - Acceptance: sin jobs activos → backup → `export-yaml --all` dentro de `narrative-api` → recrear `data/prod/stories.db` → `import-yaml --descartar-subgenero-invalido` ("la pena del colectivo"); "barco fantasma" y "el galpon" desde el backup original (recupera los tipos `social` → `entorno`). Verificación de las 3 historias como en la recuperación del 2026-09-22.
+- [x] **Notas de S2 (2026-09-23):**
+  - **Despliegue diferido a S3:** el wizard todavía ofrece los subgéneros planos viejos; de ellos solo `otro` (con cualquier género), `rural` (Terror Rural) y `leyenda_urbana` (Paranormal) existen en el catálogo v2. Desplegar S2 solo haría que guardar desde el wizard diera 422 en casi todos los casos. S2 y S3 salen juntos, con la recarga de prod (T2.9).
+  - **Validación del YAML:** `YamlStoryLoader` no tiene acceso a la DB; la validación ocurre en `CreateStoryUseCase` (vía `ensure_valid_genre`) antes de persistir, y el CLI la muestra como "Error de validación" (exit 2).
+  - **Fuga de conexión:** `SQLStoryRepository.save()` no cerraba la conexión si el `INSERT` fallaba (p. ej. por la FK) y el hilo de aiosqlite colgaba el proceso. Ahora `try/finally`.
+  - **Semilla E2E:** `seed_e2e_db.py` corre en un subproceso (el `JobManager` guarda un `asyncio.Lock` y no debe cruzar loops) y usa un texto de mock distinto del servidor para que regenerar un acto produzca un cambio visible.
+  - **Recarga de dev (T2.7):** backup en `data/dev/backups/stories-20260923-0739-pre-spec440-s2.db` y YAML en `data/dev/backups/export-20260923-0739/`. "La ofrenda" no tenía actos en ningún lado (JSON sanitizado, `synopsis_beat` vacío, sinopsis de 15 párrafos) → se importó desde `input_stories/la_ofrenda.yaml` (idéntica salvo los actos). Antes de T2.9, verificar que el export de prod traiga los 5 actos con texto.
+- [x] **Checkpoint S2:** lint + pytest 652 + tsc + Vitest 73 + Playwright 18 (×2).
 
 ### S3 — Combos Género → Subgénero (frontend, §2)
 

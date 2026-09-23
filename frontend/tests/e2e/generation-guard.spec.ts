@@ -1,10 +1,14 @@
 import { test, expect, type Page } from "@playwright/test";
+import { storyIdByTitle } from "./support/stories";
 
 /**
  * Guardar / generar desacoplados + botones en estado ocupado (Spec-460 S6).
  * Arnés de playwright.config.ts (Core con DB descartable + LLM mock con demora).
  */
-const OFRENDA = "314a7ca8-2695-470f-af34-b8b913f56528"; // "La ofrenda" del seed
+let OFRENDA = ""; // "La ofrenda" de la semilla
+test.beforeAll(async ({ request }) => {
+  OFRENDA = await storyIdByTitle(request, "La ofrenda");
+});
 
 test.describe.configure({ mode: "serial" });
 test.skip(!!process.env.BASE_URL, "Crea y genera historias: solo contra el arnés");

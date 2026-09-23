@@ -1,10 +1,14 @@
 import { test, expect } from "@playwright/test";
+import { storyIdByTitle } from "./support/stories";
 
 /**
  * Regenerar un acto como job (Spec-460 S7): el request vuelve al instante y el
  * panel se actualiza solo cuando termina. Arnés con LLM mock (texto fijo).
  */
-const STORY_ID = "af608048-88a0-4234-b756-8867c1b64092"; // "El monte prohibido" del seed
+let STORY_ID = ""; // "El monte prohibido" de la semilla
+test.beforeAll(async ({ request }) => {
+  STORY_ID = await storyIdByTitle(request, "El monte prohibido");
+});
 
 test.describe.configure({ mode: "serial" });
 test.skip(!!process.env.BASE_URL, "Modifica relatos: solo contra el arnés con DB descartable");

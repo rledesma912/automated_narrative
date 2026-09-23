@@ -197,3 +197,58 @@ class TestDbConnection:
     async def test_init_db_es_idempotente(self, temp_db_path, setup_db):
         """init_db() se ejecuta en cada arranque: correrlo de nuevo no falla."""
         await init_db()
+
+
+class TestGenreCatalog:
+    """Spec-440 T2.1: catálogo de géneros en la DB y FK compuesta en `story`."""
+
+    @pytest.fixture
+    async def conn(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'c.db'}")
+        await init_db()
+        conn = await get_connection()
+        yield conn
+        await conn.close()
+
+    async def _count(self, conn, table: str) -> int:
+        cursor = await conn.execute(f"SELECT COUNT(*) FROM {table}")
+        (n,) = await cursor.fetchone()
+        return n
+
+    async def test_seed_8_generos_y_50_subgeneros(self, conn):
+        assert await self._count(conn, "genre") == 8
+        assert await self._count(conn, "subgenre") == 50
+        cursor = await conn.execute("SELECT COUNT(*) FROM subgenre WHERE id = 'otro'")
+        assert (await cursor.fetchone())[0] == 8
+
+    async def test_seed_idempotente(self, conn):
+        await init_db()
+        assert await self._count(conn, "genre") == 8
+        assert await self._count(conn, "subgenre") == 50
+
+    async def test_la_db_manda_sobre_el_seed(self, conn):
+        await conn.execute("UPDATE genre SET label = 'Editado' WHERE id = 'suspenso'")
+        await conn.commit()
+        await init_db()
+        cursor = await conn.execute("SELECT label FROM genre WHERE id = 'suspenso'")
+        assert (await cursor.fetchone())[0] == "Editado"
+
+    async def test_par_valido_y_nulls_pasan(self, conn):
+        insert = "INSERT INTO story (id, title, genero, subgenero) VALUES (?, 't', ?, ?)"
+        await conn.execute(insert, ("s1", "folk_horror", "rural"))
+        await conn.execute(insert, ("s2", "body_horror", "otro"))
+        await conn.execute(insert, ("s3", "suspenso", None))  # género sin subgénero
+        await conn.execute(insert, ("s4", None, None))
+
+    @pytest.mark.parametrize(
+        ("genero", "subgenero"),
+        [("body_horror", "rural"), ("inventado", None), ("terror_psicologico", "historico")],
+    )
+    async def test_fk_rechaza_par_invalido(self, conn, genero, subgenero):
+        import sqlite3
+
+        with pytest.raises(sqlite3.IntegrityError):
+            await conn.execute(
+                "INSERT INTO story (id, title, genero, subgenero) VALUES ('x', 't', ?, ?)",
+                (genero, subgenero),
+            )
