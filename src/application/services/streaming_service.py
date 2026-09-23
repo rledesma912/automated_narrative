@@ -79,7 +79,19 @@ async def stream_story(
             if story_repo is not None:
                 await story_repo.update_status(story.id, "processing")
 
+            started_beats: set[int] = set()
+
+            def _beat_start(number: int, beat_type: str = "") -> StreamEvent:
+                started_beats.add(number)
+                return StreamEvent(
+                    event=StreamEventType.BEAT_START,
+                    data={"number": number, "type": beat_type},
+                )
+
             def _on_stage(stage: JobStage, beat: int | None) -> None:
+                # beat_start sale al empezar el beat (mapper), no cuando ya terminó.
+                if stage == JobStage.MAPPER and beat is not None and beat not in started_beats:
+                    queue.put_nowait(_beat_start(beat))
                 queue.put_nowait(stage_event(stage, beat, num_beats))
 
             beat_number = 0
@@ -90,15 +102,13 @@ async def stream_story(
                 beat_number += 1
                 beats_collected.append(macro_beat)
 
-                await queue.put(
-                    StreamEvent(
-                        event=StreamEventType.BEAT_START,
-                        data={
-                            "number": beat_number,
-                            "type": macro_beat.beat_type.value if macro_beat.beat_type else "",
-                        },
+                if beat_number not in started_beats:  # director sin on_stage
+                    await queue.put(
+                        _beat_start(
+                            beat_number,
+                            macro_beat.beat_type.value if macro_beat.beat_type else "",
+                        )
                     )
-                )
 
                 # Persistir beat y journal en DB antes de emitir al cliente
                 if beat_repo is not None:

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import axios from "axios";
 import { renderPage } from "../utils/render";
-import { checkCoreHealth, deleteStory } from "../services/core_api.service";
+import { checkCoreHealth, deleteStory, startGeneration } from "../services/core_api.service";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
 
@@ -116,12 +116,9 @@ export async function generarDesdeHistoria(req: Request, res: Response): Promise
     return;
   }
 
+  // Spec-460: lanza la generación como job (un 409 = ya hay una en curso: vamos a su sala).
   try {
-    await axios.patch(
-      `${CORE_API_URL}/api/v1/stories/${storyId}/status`,
-      { status: "processing" },
-      { timeout: 5000 },
-    );
+    await startGeneration(String(storyId));
   } catch (err: any) {
     const detail = err?.response?.data?.detail ?? err?.message ?? "unknown";
     htmxRedirect(res, req, `/debug?error=regeneration_failed&detail=${encodeURIComponent(detail)}`);

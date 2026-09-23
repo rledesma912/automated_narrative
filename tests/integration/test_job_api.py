@@ -147,6 +147,23 @@ async def test_post_job_regenerate_voz_todavia_no_soportado(client):
     assert resp.status_code == 422
 
 
+# ── GET /stories/{id}/jobs/active ─────────────────────────────────────────────
+
+
+async def test_job_activo_de_la_historia(client, hold):
+    story_id = await _create_story(client)
+    assert (await client.get(f"/api/v1/stories/{story_id}/jobs/active")).status_code == 404
+    job_id = (await client.post(f"/api/v1/stories/{story_id}/jobs", json={})).json()["job_id"]
+
+    resp = await client.get(f"/api/v1/stories/{story_id}/jobs/active")
+
+    assert resp.status_code == 200
+    assert resp.json()["job_id"] == job_id
+    hold.set()
+    await job_manager.wait(uuid.UUID(job_id))
+    assert (await client.get(f"/api/v1/stories/{story_id}/jobs/active")).status_code == 404
+
+
 # ── GET /jobs/{id} y cancel ───────────────────────────────────────────────────
 
 
@@ -229,19 +246,27 @@ async def test_events_de_job_inexistente_404_y_no_crea_nada(client):
 # ── /stories/{id}/stream legado sobre JobManager ──────────────────────────────
 
 
-async def test_stream_legado_genera_via_job_y_despues_queda_de_lectura(client):
+async def test_stream_nunca_crea_jobs(client):
+    """D1 cerrado: abrir el SSE de una historia no arranca ninguna generación."""
     story_id = await _create_story(client)
+
+    events = _parse_sse((await client.get(f"/api/v1/stories/{story_id}/stream")).text)
+
+    assert events[-1]["event"] == "stream_error"
+    assert await _job_rows(story_id) == 0
+
+
+async def test_stream_de_historia_completa_es_de_lectura(client):
+    story_id = await _create_story(client)
+    job_id = (await client.post(f"/api/v1/stories/{story_id}/jobs", json={})).json()["job_id"]
+    await job_manager.wait(uuid.UUID(job_id))
 
     events = _parse_sse((await client.get(f"/api/v1/stories/{story_id}/stream")).text)
 
     assert [e["event"] for e in events].count("beat_done") == 5
     assert events[-1]["event"] == "done"
-    assert events[-1]["data"]["narrative_id"] is not None
+    assert events[-1]["data"]["read_only"] is True
     assert await _job_rows(story_id) == 1
-
-    again = _parse_sse((await client.get(f"/api/v1/stories/{story_id}/stream")).text)
-    assert again[-1]["data"]["read_only"] is True
-    assert await _job_rows(story_id) == 1  # la historia completa no se regenera
 
 
 async def test_stream_legado_se_ata_al_job_activo(client, hold):

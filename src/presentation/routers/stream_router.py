@@ -7,7 +7,6 @@ import aiosqlite
 from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from src.application.services.job_manager import JobAlreadyActiveError
 from src.application.services.observability_service import observability
 from src.config import settings
 from src.infrastructure.database.repositories import (
@@ -15,7 +14,6 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
-from src.presentation.generation import submit_full_generation
 from src.presentation.routers.job_router import parse_last_event_id, stream_job_events
 
 logger = logging.getLogger(__name__)
@@ -27,62 +25,54 @@ router = APIRouter(tags=["Streaming"])
 
 @router.get("/stories/{story_id}/stream")
 async def stream_generation(story_id: str, last_event_id: str | None = Header(None)):
-    """SSE legado de la generación de una historia (Spec-201/230, sobre jobs Spec-460).
+    """SSE de solo lectura de una historia (Spec-201/230; Spec-460 S4).
 
-    - Si la historia tiene un job activo, se ata a su canal (replay + en vivo).
-    - Spec-230 Sala Resiliente: `completed`/`failed` sin job activo → modo lectura
-      con los beats históricos desde la DB.
-    - Si no, arranca la generación como job (comportamiento legado; en Spec-460 S4
-      la sala pasa a crear el job con POST y este endpoint queda de solo lectura).
+    Nunca arranca trabajo: la generación se lanza con `POST /stories/{id}/jobs`.
+    - Con un job activo: se ata a su canal (replay + en vivo).
+    - Sin job activo: reproduce los beats históricos desde la DB (Spec-230) y cierra
+      con `done` si la historia está completa, o `stream_error` si no hay nada en curso.
     """
     from src.domain.models import StoryStatus
     from src.domain.streaming import StreamEvent, StreamEventType
 
-    story_repo = SQLStoryRepository()
-    story = await story_repo.get_by_id(UUID(story_id))
-
+    story = await SQLStoryRepository().get_by_id(UUID(story_id))
     if not story:
         logger.warning(f"SSE Request failed: Story {story_id} not found.")
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     job = await SQLJobRepository().get_active_for_story(story.id)
     logger.info(
-        f"[STREAM] Inicio de petición SSE | Story: {story_id} | "
-        f"Status actual: {story.status.value} | Job activo: {job.id if job else None}"
+        f"[STREAM] Petición SSE | Story: {story_id} | Status: {story.status.value} | "
+        f"Job activo: {job.id if job else None}"
     )
+    if job is not None:
+        return EventSourceResponse(stream_job_events(job, parse_last_event_id(last_event_id)))
 
-    if job is None and story.status in (StoryStatus.COMPLETED, StoryStatus.FAILED):
-        logger.info(f"[STREAM] Modo lectura para historia {story_id} ({story.status.value})")
-        beats = await SQLBeatRepository().get_by_story(story.id)
+    beats = await SQLBeatRepository().get_by_story(story.id)
 
-        async def read_only_generator():
-            yield StreamEvent(
-                event=StreamEventType.STATUS,
-                data={"msg": "Cargando beats históricos...", "step": "loading"},
-            ).to_sse()
-            for beat in beats:
+    async def read_only_generator():
+        yield StreamEvent(
+            event=StreamEventType.STATUS,
+            data={"msg": "Cargando beats históricos...", "step": "loading"},
+        ).to_sse()
+        for beat in beats:
+            if beat.generated_act:
                 yield StreamEvent(
                     event=StreamEventType.BEAT_DONE,
                     data={"number": beat.number, "content": beat.generated_act},
                 ).to_sse()
+        if story.status == StoryStatus.COMPLETED:
             yield StreamEvent(
                 event=StreamEventType.DONE,
-                data={
-                    "story_id": str(story.id),
-                    "total_beats": len(beats),
-                    "read_only": True,
-                },
+                data={"story_id": str(story.id), "total_beats": len(beats), "read_only": True},
+            ).to_sse()
+        else:
+            yield StreamEvent(
+                event=StreamEventType.ERROR,
+                data={"msg": "No hay una generación en curso para esta historia"},
             ).to_sse()
 
-        return EventSourceResponse(read_only_generator())
-
-    if job is None:
-        try:
-            job = await submit_full_generation(story)
-        except JobAlreadyActiveError as exc:  # otra conexión ganó la carrera
-            job = await SQLJobRepository().get(exc.job_id)
-
-    return EventSourceResponse(stream_job_events(job, parse_last_event_id(last_event_id)))
+    return EventSourceResponse(read_only_generator())
 
 
 # ── Hito 4a: /health mejorado ─────────────────────────────────────────────────

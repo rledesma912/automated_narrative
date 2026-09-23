@@ -75,6 +75,18 @@ async def create_job(story_id: str, request: JobCreateRequest):
     return _to_response(job)
 
 
+@router.get("/stories/{story_id}/jobs/active", response_model=JobResponse)
+async def get_active_job(story_id: str):
+    """Job en curso de la historia (404 si no hay)."""
+    try:
+        job = await SQLJobRepository().get_active_for_story(UUID(story_id))
+    except ValueError:
+        job = None
+    if job is None:
+        raise HTTPException(status_code=404, detail="La historia no tiene un job en curso")
+    return _to_response(job)
+
+
 @router.get("/jobs/{job_id}", response_model=JobResponse)
 async def get_job(job_id: str):
     return _to_response(await _get_job_or_404(job_id))

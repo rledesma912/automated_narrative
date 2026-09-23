@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** IMPLEMENT — S0 a S3 hechos
+**Estado:** IMPLEMENT — S0 a S4 hechos
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -464,27 +464,36 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S4 — Sala de streaming sobre jobs
 
-- [ ] **T4.1:** `streamingRoomPage` conoce el job activo.
+- [x] **T4.1:** `streamingRoomPage` conoce el job activo.
   - Acceptance: el controller consulta el job activo de la historia y lo pasa a la vista (`activeJobId`); desaparece el cálculo de `monitorMode` basado en `story.status`.
   - Files: `frontend/src/controllers/stream.controller.ts`, `frontend/src/services/core_api.service.ts`
-- [ ] **T4.2:** "Comenzar" y "Regenerar" crean el job.
+- [x] **T4.2:** "Comenzar" y "Regenerar" crean el job.
   - Acceptance: `initiateGeneration()` / `initiateRegeneration()` hacen `POST /api/v1/stories/{id}/jobs` (`regenerate: true` en el segundo) y abren `EventSource('/api/v1/jobs/{job_id}/events')`; ante 409 se atan al `job_id` devuelto; se elimina el `PATCH status=processing`.
   - Files: `frontend/public/js/streaming-room.js`, `frontend/src/views/streaming-room.ejs`
-- [ ] **T4.3:** Modo monitor sin polling.
+- [x] **T4.3:** Modo monitor sin polling.
   - Acceptance: si hay `activeJobId`, la sala se conecta directo a su canal de detalle y recibe el replay; se elimina el polling de status.
   - Files: `streaming-room.js`, `streaming-room.ejs`
-- [ ] **T4.4:** "Cancelar" cancela.
+- [x] **T4.4:** "Cancelar" cancela.
   - Acceptance: `cancelGeneration()` → `POST /api/v1/jobs/{id}/cancel`; se elimina el `PATCH status=failed`.
   - Files: `streaming-room.js`
-- [ ] **T4.5:** `/stories/{id}/stream` a solo lectura.
+- [x] **T4.5:** `/stories/{id}/stream` a solo lectura.
   - Acceptance: el GET nunca crea jobs; con job activo se ata a él; sin job, reproduce el histórico.
   - Verify: test: GET sobre una historia `pending` sin job → no se crea ninguna fila en `generation_job`.
   - Files: `src/presentation/routers/stream_router.py`
-- [ ] **T4.6:** E2E de la sala.
+- [x] **T4.6:** E2E de la sala.
   - Acceptance: con backend mock: generar → 5 `beat_done` → `done`; recargar a mitad de camino → sigue el mismo job; cancelar → el badge pasa a cancelada y no llegan más beats.
   - Verify: `cd frontend && npx playwright test streaming-room.spec.ts`
   - Files: `frontend/tests/e2e/streaming-room.spec.ts`, `frontend/tests/helpers/mock_backend.ts` (helper de SSE)
-- [ ] **Checkpoint S4:** `make test`, `cd frontend && npm test && npx playwright test`. **D1 y D7 cerrados en uso real.**
+- [x] **Checkpoint S4:** `make test`, `cd frontend && npm test && npx playwright test`. **D1 y D7 cerrados en uso real.**
+  - Implementado / desvíos:
+    - Nuevo `GET /stories/{id}/jobs/active` (el controller lo usa para `activeJobId`).
+    - **Modo monitor eliminado**: con un job activo la sala usa el modo principal y se ata sola (tiene "Cancelar"). Se borró `streaming-monitor.js`. Corrección al diagnóstico D3: el monitor no hacía polling, usaba EventSource contra `/stream`.
+    - "Cancelar" solo existía en el panel de error: se agregó un botón visible mientras la generación corre.
+    - Adelantado de T6.4: `generarDesdeHistoria` y `submitGeneration(action=generate)` lanzan el job en el servidor (`startGeneration`) y redirigen a la sala; se eliminó el `PATCH status=processing`. Esto arregla el wizard: "Generar historia" creaba un borrador y la sala lo mostraba en modo lectura, **sin forma de iniciar la generación**.
+    - `beat_start` sale al empezar el mapeo del acto (antes salía cuando el acto ya había terminado); respaldo al final del beat si el director no informa etapas.
+    - `/stories/{id}/stream` sin job y sin completar → `stream_error` ("No hay una generación en curso").
+    - **Arnés E2E**: `playwright.config.ts` levanta su propio Core (`tests/e2e_support/run_api_mock.py`: DB descartable sembrada desde `data/dev/stories.db`, LLM mock con demora) y frontend en :8021/:3021. Antes apuntaba a :3010 con `reuseExistingServer`, que en esta máquina es un `browser-sync` de otro proyecto. Con `BASE_URL` se usa un frontend existente.
+    - `relatos.spec.ts`: el test de cambio de pestaña se salteaba siempre (la DB dev tiene 1 relato); con el arnés crea el 2º relato antes y corre.
 
 ### S5 — Canal global, banda y pie
 

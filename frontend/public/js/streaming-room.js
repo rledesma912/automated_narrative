@@ -1,12 +1,19 @@
 /**
  * Streaming Room Client (Spec-318 §9.C)
  *
- * Paridad 1:1 con el <script> inline original de streaming-room.ejs.
- * Lee STREAM_URL, STORY_ID y TOTAL_BEATS desde window.* (inyectadas
+ * Lee STORY_ID, TOTAL_BEATS y ACTIVE_JOB_ID desde window.* (inyectadas
  * por un <script> previo del template antes de cargar este archivo).
  *
- * Eventos SSE consumidos (Spec-210):
- *   status, beat_start, beat_done, heartbeat, done, stream_error
+ * Spec-460: la generación es un job del servidor.
+ *   - Iniciar/Regenerar → POST /api/v1/stories/{id}/jobs (202; 409 = ya hay uno
+ *     en curso → nos atamos a ese).
+ *   - Avance → EventSource /api/v1/jobs/{job_id}/events (replay + en vivo; ante
+ *     un corte el browser reconecta solo y retoma con Last-Event-ID).
+ *   - Cancelar → POST /api/v1/jobs/{job_id}/cancel (detiene el pipeline).
+ *   - Si al cargar ya hay un job activo (ACTIVE_JOB_ID), la sala se ata sola.
+ *
+ * Eventos SSE consumidos (Spec-210 + Spec-460):
+ *   status (con stage/beat), beat_start, beat_done, heartbeat, done, stream_error
  *
  * Handlers expuestos a window (los botones del template los referencian
  * con onclick="..."):
@@ -15,12 +22,17 @@
 (function () {
   "use strict";
 
-  const STREAM_URL = window.STREAM_URL;
   const STORY_ID = window.STORY_ID;
   const TOTAL_BEATS = window.TOTAL_BEATS || 5;
 
   let beatCount = 0;
   let es = null;
+  let currentJobId = window.ACTIVE_JOB_ID || null;
+  let cancelling = false;
+
+  function jobEventsUrl(jobId) {
+    return `/api/v1/jobs/${jobId}/events`;
+  }
   const loadingIntervals = {};
 
   /* ── UI helpers ────────────────────────────────────────────────────────── */
@@ -176,19 +188,18 @@
   /* ── Acciones del usuario ──────────────────────────────────────────────── */
 
   async function cancelGeneration() {
+    cancelling = true;
     if (es) {
       es.close();
       es = null;
     }
-    try {
-      // Spec-221: path relativo, mismo origen → Express proxia /api/* al backend.
-      await fetch(`/api/v1/stories/${STORY_ID}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "failed" }),
-      });
-    } catch {
-      /* ignorar — el backend lo resolverá por cancelación del SSE */
+    if (currentJobId) {
+      try {
+        // Spec-460: cancela el job en el servidor (detiene el pipeline LLM).
+        await fetch(`/api/v1/jobs/${currentJobId}/cancel`, { method: "POST" });
+      } catch {
+        /* sin red: el job sigue; la sala muestra igual el estado cancelado */
+      }
     }
 
     const initialSpinner = document.getElementById("initial-spinner");
@@ -197,6 +208,7 @@
     if (logContainer) logContainer.classList.add("hidden");
     const errorPanel = document.getElementById("error-panel");
     if (errorPanel) errorPanel.classList.remove("hidden");
+    setBadge("CANCELADA", "border-forge-border text-forge-muted");
 
     const errorMsg = document.getElementById("error-msg");
     if (errorMsg) errorMsg.textContent = "La generación fue cancelada antes de completarse.";
@@ -215,49 +227,61 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  function retryStream() {
+  // Reintentar: si el job sigue en curso nos volvemos a atar; si terminó, se
+  // lanza uno nuevo.
+  async function retryStream() {
     activateAnimations();
     const errorPanel = document.getElementById("error-panel");
     if (errorPanel) errorPanel.classList.add("hidden");
-    startStream();
+    if (currentJobId) {
+      try {
+        const resp = await fetch(`/api/v1/jobs/${currentJobId}`);
+        const job = resp.ok ? await resp.json() : null;
+        if (job && (job.status === "queued" || job.status === "running")) {
+          startStream(currentJobId);
+          return;
+        }
+      } catch {
+        /* sin red: intentamos lanzar uno nuevo */
+      }
+    }
+    startJob();
   }
 
-  function initiateGeneration() {
+  function showStarting() {
     const startPanel = document.getElementById("start-panel");
     if (startPanel) startPanel.classList.add("hidden");
     const initialSpinner = document.getElementById("initial-spinner");
     if (initialSpinner) initialSpinner.classList.remove("hidden");
     if (window.lucide) lucide.createIcons();
-    startStream();
   }
 
-  // Spec-219: regeneración no destructiva — el PATCH (que dispara la limpieza
-  // de beats/journal/anchors/MD por Spec-216) solo se ejecuta cuando el usuario
-  // confirma desde acá. Hasta este click, la historia mantiene status=completed.
-  async function initiateRegeneration() {
-    const startPanel = document.getElementById("start-panel");
-    if (startPanel) startPanel.classList.add("hidden");
-    const initialSpinner = document.getElementById("initial-spinner");
-    if (initialSpinner) initialSpinner.classList.remove("hidden");
-    if (window.lucide) lucide.createIcons();
-
+  // Crea el job en el servidor y se ata a su canal. Un 409 significa que ya hay
+  // una generación en curso para la historia: nos atamos a esa.
+  async function startJob() {
+    showStarting();
+    setBadge("INICIANDO", "border-forge-border text-forge-muted");
     try {
-      const resp = await fetch(`/api/v1/stories/${STORY_ID}/status`, {
-        method: "PATCH",
+      const resp = await fetch(`/api/v1/stories/${STORY_ID}/jobs`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "processing" }),
+        body: JSON.stringify({ kind: "full_generation" }),
       });
-      if (!resp.ok) {
-        const detail = await resp.text();
-        showError(`No se pudo iniciar la regeneración: ${detail || resp.status}`);
+      const body = await resp.json().catch(() => ({}));
+      if ((resp.status === 202 || resp.status === 409) && body.job_id) {
+        startStream(body.job_id);
         return;
       }
+      showError(`No se pudo iniciar la generación: ${body.detail || resp.status}`);
     } catch {
-      showError("Error de red al iniciar la regeneración. Verificá la conexión con el servidor.");
-      return;
+      showError("Error de red al iniciar la generación. Verificá la conexión con el servidor.");
     }
-    startStream();
   }
+
+  // Spec-219: la regeneración sigue pidiendo confirmación en la UI; la limpieza
+  // de la generación anterior la hace el job al arrancar (Spec-460).
+  const initiateGeneration = startJob;
+  const initiateRegeneration = startJob;
 
   function activateAnimations() {
     const spin = document.getElementById("spinner-spin");
@@ -270,12 +294,14 @@
 
   /* ── SSE ───────────────────────────────────────────────────────────────── */
 
-  function startStream() {
+  function startStream(jobId) {
+    currentJobId = jobId;
+    cancelling = false;
     activateAnimations();
     setBadge("CONECTANDO", "border-forge-border text-forge-muted");
     setStatus("Conectando con el sistema...");
 
-    es = new EventSource(STREAM_URL);
+    es = new EventSource(jobEventsUrl(jobId));
 
     es.addEventListener("status", (e) => {
       revealLogs();
@@ -283,19 +309,20 @@
         const d = JSON.parse(e.data);
         setStatus(d.msg);
         appendLog(`🔍 ${d.msg}`);
+        if (d.stage) setBadge("GENERANDO", "border-forge-accent text-forge-accent");
       } catch {
         /* payload mal formado — ignorar */
       }
     });
 
+    // beat_start abre el beat (llega antes de sus etapas): solo marca el punto;
+    // el log ya muestra cada etapa ("Mapeando/Narrando acto N...").
     es.addEventListener("beat_start", (e) => {
       revealLogs();
       try {
         const d = JSON.parse(e.data);
         setBadge("GENERANDO", "border-forge-accent text-forge-accent");
-        setStatus(`Narrando beat ${d.number} de ${TOTAL_BEATS}...`);
         markDot(d.number, "active");
-        appendLog(`✍️ Narrando Beat ${d.number}/${TOTAL_BEATS}`, true);
       } catch {
         /* ignorar */
       }
@@ -327,13 +354,14 @@
       try {
         const d = JSON.parse(e.data);
         showDone();
-        appendLog(`🏁 Historia completa — ${d.total_beats} beats generados`);
+        appendLog(`🏁 Historia completa — ${d.total_beats ?? beatCount} beats generados`);
       } catch {
         showDone();
       }
     });
 
     es.addEventListener("stream_error", (e) => {
+      if (cancelling) return; // el panel de cancelación ya está a la vista
       try {
         const d = JSON.parse(e.data);
         showError(d.msg ?? "Error desconocido en el pipeline");
@@ -343,12 +371,24 @@
     });
 
     es.onerror = () => {
+      if (!es) return;
+      // CONNECTING: el browser reintenta solo y retoma con Last-Event-ID.
+      if (es.readyState === EventSource.CONNECTING) {
+        setStatus("Conexión interrumpida — reconectando...");
+        return;
+      }
       if (beatCount === TOTAL_BEATS) {
         showDone();
         return;
       }
       showError("Conexión interrumpida. El servidor no responde.");
     };
+  }
+
+  // Si al cargar la sala ya hay un job en curso, nos atamos sin pedir confirmación.
+  if (currentJobId) {
+    showStarting();
+    startStream(currentJobId);
   }
 
   /* ── Exposición a window (onclick handlers del template) ───────────────── */

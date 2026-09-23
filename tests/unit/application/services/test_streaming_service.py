@@ -188,7 +188,34 @@ async def test_stream_emite_status_con_etapa_estructurada():
     assert all(d["total_beats"] == 2 for d in statuses)
     assert statuses[3]["msg"] == "Narrando acto 1 de 2..."
     assert statuses[3]["step"] == "voz"  # campo legado que usa la sala
-    # El orden relativo se mantiene: cada beat_done llega después de sus etapas.
-    kinds = [e.event for e in events]
-    assert kinds.index(StreamEventType.BEAT_DONE) > kinds.index(StreamEventType.STATUS)
-    assert kinds[-1] == StreamEventType.DONE
+    # beat_start abre cada beat (antes de sus etapas) y beat_done lo cierra.
+    beat_1 = [
+        (e.event.value, e.data.get("stage"))
+        for e in events
+        if e.event != StreamEventType.HEARTBEAT and e.data.get("number", e.data.get("beat")) == 1
+    ]
+    assert beat_1 == [
+        ("beat_start", None),
+        ("status", "mapper"),
+        ("status", "voz"),
+        ("status", "journal"),
+        ("beat_done", None),
+    ]
+    assert [e.event for e in events].count(StreamEventType.BEAT_START) == 2
+    assert events[-1].event == StreamEventType.DONE
+
+
+@pytest.mark.asyncio
+async def test_director_sin_on_stage_igual_emite_beat_start():
+    """Compat: si el director no informa etapas, beat_start sale al terminar el beat."""
+    events = await _collect_events(
+        stream_story(
+            _fake_director(num_beats=3),
+            _make_story(),
+            story_repo=_fake_story_repo(),
+            beat_repo=_fake_beat_repo(),
+        )
+    )
+
+    starts = [e.data["number"] for e in events if e.event == StreamEventType.BEAT_START]
+    assert starts == [1, 2, 3]

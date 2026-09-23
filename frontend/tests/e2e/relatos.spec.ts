@@ -3,6 +3,20 @@ import { test, expect } from "@playwright/test";
 const STORY_ID = process.env.TEST_STORY_ID || "af608048-88a0-4234-b756-8867c1b64092";
 
 test.describe("Vista de Relatos", () => {
+  // Con el arnés propio (DB descartable) nos aseguramos de tener 2+ relatos para
+  // probar el cambio de pestaña. Contra un frontend real (BASE_URL) no se crean datos.
+  test.beforeAll(async ({ request }) => {
+    if (process.env.BASE_URL) return;
+    const list = await request.get(`/api/v1/story-templates/${STORY_ID}/narratives`);
+    const relatos = (await list.json()) as unknown[];
+    for (let i = relatos.length; i < 2; i++) {
+      const created = await request.post(
+        `/api/v1/story-templates/${STORY_ID}/generate-narrative?title=${encodeURIComponent(`E2E ${i + 1}`)}`,
+      );
+      expect(created.ok()).toBeTruthy();
+    }
+  });
+
   test.beforeEach(async ({ page }) => {
     await page.goto(`/historia/${STORY_ID}/relatos`);
     await page.waitForLoadState("networkidle");
