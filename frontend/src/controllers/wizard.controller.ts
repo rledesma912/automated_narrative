@@ -8,6 +8,7 @@ import {
   WizardData,
   WizardField,
   mapStoryToWizard,
+  namedCharacters,
 } from "../services/wizard.service";
 import { mapWizardToCore } from "../services/mapper.service";
 import { createStory, updateStory } from "../services/core_api.service";
@@ -35,7 +36,11 @@ export async function loadWizardData(req: Request, res: Response): Promise<void>
 }
 
 
-async function stepLocals(req: Request, stepNumber: number) {
+async function stepLocals(
+  req: Request,
+  stepNumber: number,
+  fieldErrors: Record<string, string> = {},
+) {
   const step   = getStep(stepNumber)!;
   const saved  = getStepData(req.session as WizardSession, step.id);
   const isLast = stepNumber === STEPS.length;
@@ -43,7 +48,8 @@ async function stepLocals(req: Request, stepNumber: number) {
   const genreCatalog = step.fields.some((f) => f.source === "genre_catalog")
     ? await getGenreCatalog()
     : null;
-  return { step, saved, steps: STEPS, isLast, genreCatalog };
+  const characters = namedCharacters(saved);
+  return { step, saved, steps: STEPS, isLast, genreCatalog, characters, fieldErrors };
 }
 
 export function wizardRedirect(req: Request, res: Response): void {
@@ -80,12 +86,26 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
         const value = (req.body[field.name] ?? "").toString().trim();
         if (value) {
           data[field.name] = value;
+        } else {
+          // Campo vaciado (p. ej. el nombre de un personaje borrado): mismo criterio que el auto-save.
+          delete data[field.name];
         }
       }
     }
   }
   await dropInvalidSubgenre(step.fields, data);
+  const fieldErrors = invalidCharacterRefs(step.fields, data);
   saveStepData(req.session as WizardSession, step.id, data);
+
+  if (Object.keys(fieldErrors).length > 0) {
+    res.status(422);
+    await renderPage(res, "wizard", {
+      title: "Generar Historia",
+      activePage: "generate",
+      ...(await stepLocals(req, num, fieldErrors)),
+    });
+    return;
+  }
 
   const next = num + 1;
   // Spec-460 §2.5: el último paso ya no guarda en silencio; se guarda con el
@@ -114,6 +134,28 @@ async function dropInvalidSubgenre(
       delete data[field.name];
     }
   }
+}
+
+const MSG_NARRADOR_INVALIDO = "Elegí uno de los personajes con nombre.";
+
+/**
+ * Spec-440 §5: un campo `source: characters` debe apuntar a un personaje con
+ * nombre. Si no, se descarta de la sesión y se devuelve el error del campo.
+ */
+function invalidCharacterRefs(
+  fields: WizardField[],
+  data: Record<string, string>,
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  const valid = namedCharacters(data).map((c) => c.value);
+  for (const field of fields) {
+    if (field.source !== "characters") continue;
+    if (!valid.includes(optionValueId(data[field.name]))) {
+      delete data[field.name];
+      errors[field.name] = MSG_NARRADOR_INVALIDO;
+    }
+  }
+  return errors;
 }
 
 function optionValueId(value: string | undefined): string {

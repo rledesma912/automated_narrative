@@ -5,6 +5,8 @@
  *   step:    WizardStep    — paso activo
  *   saved:   Record<string, string> — datos guardados en sesión para este paso
  *   isLast:  boolean
+ *   characters:  { value, label }[] — personajes con nombre (Spec-440 §5)
+ *   fieldErrors: Record<string, string> — errores por campo del POST del paso
  */
 
 const GROUP_META = {
@@ -48,6 +50,28 @@ const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge
 const CATALOG = (typeof genreCatalog !== 'undefined' && genreCatalog) || null;
 const MSG_SIN_GENERO   = 'Elegí primero el tipo de horror';
 const MSG_SIN_CATALOGO = 'No se pudo cargar el catálogo de géneros. Recargá la página en unos segundos.';
+
+// Spec-440 §5: "quién cuenta la historia" lista solo los personajes con nombre.
+const CHARACTERS   = (typeof characters !== 'undefined' && characters) || [];
+const FIELD_ERRORS = (typeof fieldErrors !== 'undefined' && fieldErrors) || {};
+const MSG_SIN_PERSONAJES = 'Primero nombrá un personaje';
+
+function characterSelectHtml(field, effective) {
+  const reqAttr = field.required ? ' required' : '';
+  const current = idOf(effective);
+  let selected = CHARACTERS.some(c => c.value === current) ? current : '';
+  if (!selected && CHARACTERS.length === 1) selected = CHARACTERS[0].value;
+  const disabled = CHARACTERS.length === 0 ? ' disabled' : '';
+  const placeholder = CHARACTERS.length === 0 ? MSG_SIN_PERSONAJES : 'Seleccioná...';
+
+  let html = `<select name="${esc(field.name)}"${reqAttr}${disabled} data-characters-field class="${CLS_INPUT} disabled:opacity-50 disabled:cursor-not-allowed">`;
+  html += `<option value="" disabled${!selected ? ' selected' : ''}>${esc(placeholder)}</option>`;
+  CHARACTERS.forEach(c => {
+    html += `<option value="${esc(c.value)}"${c.value === selected ? ' selected' : ''}>${esc(c.label)}</option>`;
+  });
+  html += '</select>';
+  return html;
+}
 
 function idOf(value) {
   return String(value || '').split(':')[0].trim();
@@ -107,24 +131,17 @@ function fieldHtml(field) {
   } else if (field.type === 'select' && field.source === 'genre_catalog') {
     html += catalogSelectHtml(field, effective);
 
+  } else if (field.type === 'select' && field.source === 'characters') {
+    html += characterSelectHtml(field, effective);
+
   } else if (field.type === 'select') {
-    const isStoryteller = field.name === 'storyteller_id';
     html += `<select name="${esc(field.name)}"${reqAttr} class="${CLS_INPUT}">`;
     html += `<option value="" disabled${!effective ? ' selected' : ''}>Seleccioná...</option>`;
     (Array.isArray(field.options) ? field.options : []).forEach(opt => {
       const parts = opt.split(':');
-      const val   = parts[0].trim();
       const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
-
       const sel = effective === opt ? ' selected' : '';
-      let displayLabel;
-      if (isStoryteller) {
-        const idx = val.replace('protagonista_', '');
-        displayLabel = `Personaje ${idx}`;
-      } else {
-        displayLabel = label;
-      }
-      html += `<option value="${esc(opt)}"${sel}>${displayLabel}</option>`;
+      html += `<option value="${esc(opt)}"${sel}>${label}</option>`;
     });
     html += '</select>';
 
@@ -140,7 +157,7 @@ function fieldHtml(field) {
     html += '</div>';
 
   } else if (field.type === 'multi-select') {
-    html += '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">';
+    html += '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">';
     (Array.isArray(field.options) ? field.options : []).forEach(opt => {
       const parts = opt.split(':');
       const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
@@ -156,6 +173,9 @@ function fieldHtml(field) {
     html += `<input type="text" name="${esc(field.name)}" value="${esc(sv)}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT}" />`;
   }
 
+  if (FIELD_ERRORS[field.name]) {
+    html += `<p role="alert" class="text-sm text-red-400 mt-2" data-field-error="${esc(field.name)}">${esc(FIELD_ERRORS[field.name])}</p>`;
+  }
   if (field.note) {
     html += `<p class="text-xs text-forge-muted mt-2 italic">${esc(field.note)}</p>`;
   }

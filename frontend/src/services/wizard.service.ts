@@ -15,8 +15,11 @@ export interface WizardField {
   note?: string;
   group?: string;
   default?: string;
-  /** Opciones dinámicas: `genre_catalog` = catálogo de géneros del Core (Spec-440 §2). */
-  source?: "genre_catalog";
+  /**
+   * Opciones dinámicas: `genre_catalog` = catálogo de géneros del Core (Spec-440 §2);
+   * `characters` = personajes con nombre del mismo paso (Spec-440 §5).
+   */
+  source?: "genre_catalog" | "characters";
   /** Campo del que dependen las opciones (subgénero → género). */
   depends_on?: string;
 }
@@ -58,6 +61,23 @@ export function getStepData(
   stepId: string
 ): Record<string, string> {
   return session.wizard?.[stepId] ?? {};
+}
+
+export interface CharacterOption {
+  value: string; // "protagonista_N"
+  label: string; // nombre escrito
+}
+
+const MAX_PERSONAJES = 5;
+
+/** Personajes con nombre, en orden: las opciones de "quién cuenta la historia" (Spec-440 §5). */
+export function namedCharacters(data: Record<string, string>): CharacterOption[] {
+  const options: CharacterOption[] = [];
+  for (let i = 1; i <= MAX_PERSONAJES; i++) {
+    const name = (data[`protagonista_${i}_name`] ?? "").trim();
+    if (name) options.push({ value: `protagonista_${i}`, label: name });
+  }
+  return options;
 }
 
 /**

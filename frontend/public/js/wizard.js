@@ -2,7 +2,7 @@
  * Wizard Client (extraído de wizard.ejs siguiendo el patrón de Spec-318 §9.C).
  *
  * Maneja:
- *  - Storyteller labels: refleja nombres de personajes en el <select> storyteller_id.
+ *  - Narrador (Spec-440 §5): el <select> storyteller_id lista solo personajes con nombre.
  *  - Modal de eliminación con confirmación (closeDeleteModal global).
  *  - Listas dinámicas: addPersonaje/addScenario/addRule + askDelete* para cada uno.
  *  - Auto-save por campo (Spec-220): PATCH a /generar/paso/<step>/guardar en blur/change.
@@ -18,24 +18,6 @@
   "use strict";
 
   const STEP_NUM = window.STEP_NUM;
-
-  // ── Storyteller: actualizar labels con nombres escritos ──────────────────
-  function updateStoryteller() {
-    var sel = document.querySelector('[name="storyteller_id"]');
-    if (!sel) return;
-    [1, 2, 3, 4, 5].forEach(function (n) {
-      var nameInput = document.querySelector('[name="protagonista_' + n + '_name"]');
-      var opt = sel.querySelector('option[value="protagonista_' + n + '"]');
-      if (opt && nameInput) {
-        var name = nameInput.value.trim();
-        opt.textContent = name || "Personaje " + n + " (sin nombre)";
-      }
-    });
-  }
-  document.querySelectorAll('[name$="_name"]').forEach(function (el) {
-    el.addEventListener("input", updateStoryteller);
-  });
-  updateStoryteller();
 
   // ── Modal de eliminación ─────────────────────────────────────────────────
   var pendingDelete = null;
@@ -92,6 +74,7 @@
         break;
       }
     }
+    updateStoryteller();
 
     var newVisible = getVisiblePersonajes();
     if (newVisible.length >= MAX_PROTAGONISTAS) {
@@ -126,6 +109,54 @@
       updateStoryteller();
     });
   };
+
+  // ── Narrador: solo personajes visibles y con nombre (Spec-440 §5) ────────
+  // Mismo criterio que el render del servidor (wizard.ejs). Si el elegido deja
+  // de existir → "Seleccioná..."; con un único personaje se preselecciona.
+  // Cada cambio de valor se guarda en sesión.
+  function namedPersonajes() {
+    return getVisiblePersonajes()
+      .map(function (i) {
+        var input = document.querySelector('[name="protagonista_' + i + '_name"]');
+        return { value: "protagonista_" + i, label: input ? input.value.trim() : "" };
+      })
+      .filter(function (c) {
+        return c.label !== "";
+      });
+  }
+
+  function updateStoryteller() {
+    var sel = document.querySelector("select[data-characters-field]");
+    if (!sel) return;
+    var chars = namedPersonajes();
+    var current = sel.value;
+
+    sel.innerHTML = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.textContent = chars.length ? "Seleccioná..." : "Primero nombrá un personaje";
+    sel.appendChild(placeholder);
+    chars.forEach(function (c) {
+      var opt = document.createElement("option");
+      opt.value = c.value;
+      opt.textContent = c.label;
+      sel.appendChild(opt);
+    });
+
+    var keep = chars.some(function (c) {
+      return c.value === current;
+    });
+    var next = keep ? current : chars.length === 1 ? chars[0].value : "";
+    sel.value = next;
+    if (!next) placeholder.selected = true;
+    sel.disabled = chars.length === 0;
+    if (next !== current) autoSaveField(sel.name, next, "select");
+  }
+
+  document.querySelectorAll('[name^="protagonista_"][name$="_name"]').forEach(function (el) {
+    el.addEventListener("input", updateStoryteller);
+  });
 
   // ── Listas dinámicas: Escenarios ─────────────────────────────────────────
   var MAX_ESCENARIOS = 4;
@@ -344,6 +375,8 @@
       autoSaveField(sub.name, sub.value, "select");
     });
   });
+
+  updateStoryteller();
 
   if (formEl) {
     formEl.querySelectorAll("input, textarea, select").forEach(function (el) {

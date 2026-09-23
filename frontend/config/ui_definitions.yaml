@@ -67,7 +67,8 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
+        # Spec-440 §3: lista única; el resto de los personajes la reusa (*character_traits).
+        options: &character_traits
           - "inseguro: Inseguro"
           - "ansioso: Ansioso"
           - "observador: Observador"
@@ -78,10 +79,14 @@ steps:
           - "disciplinado: Disciplinado"
           - "sociable: Sociable"
           - "audaz: Audaz / Valiente"
+          - "miedoso: Miedoso / Temeroso"
           - "cooperativo: Cooperativo"
           - "reservado: Reservado"
           - "protector: Protector"
           - "terco: Obstinado / Terco"
+          - "curioso: Curioso"
+          - "impulsivo: Impulsivo"
+          - "desconfiado: Desconfiado"
 
       - name: protagonista_2_name
         type: text
@@ -103,21 +108,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: protagonista_3_name
         type: text
@@ -139,21 +130,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: protagonista_4_name
         type: text
@@ -173,21 +150,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: protagonista_5_name
         type: text
@@ -207,21 +170,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: storyteller_id
         type: select
@@ -230,12 +179,8 @@ steps:
         note: "Elegí uno de los personajes que definiste arriba"
         group: "narrador"
         required: true
-        options:
-          - protagonista_1
-          - protagonista_2
-          - protagonista_3
-          - protagonista_4
-          - protagonista_5
+        # Spec-440 §5: opciones = personajes con nombre del mismo paso.
+        source: characters
 
       - name: voice_style
         type: radio

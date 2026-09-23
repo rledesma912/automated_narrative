@@ -18,7 +18,7 @@ interface RawField {
   note?: string;
   group?: string;
   default?: string;
-  source?: "genre_catalog";
+  source?: "genre_catalog" | "characters";
   depends_on?: string;
 }
 

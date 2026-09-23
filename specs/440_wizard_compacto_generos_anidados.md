@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S3 desplegados; sigue S4
+**Estado:** IMPLEMENT — S0–S3 desplegados; S4 implementado (pendiente commit + deploy); sigue S5
 
 ---
 
@@ -433,11 +433,11 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S4 — Rasgos nuevos + narrador dinámico (§3, §5)
 
-- [ ] **T4.1:** Lista de rasgos única con ancla YAML + `miedoso`, `curioso`, `impulsivo`, `desconfiado`; grilla `sm:grid-cols-3 lg:grid-cols-4`.
-- [ ] **T4.2:** `storyteller_id` con `source: characters`: el combo lista solo personajes con nombre (JS en `input`/agregar/borrar); 1 solo → preseleccionado; ninguno → `disabled` "Primero nombrá un personaje"; el narrador borrado → reset + auto-save.
-- [ ] **T4.3:** Mismo filtro en el render server-side del paso 2.
-- [ ] **T4.4:** Validación en `submitStep`: `storyteller_id` debe apuntar a un personaje con nombre; si no, re-render con error.
-- [ ] **T4.5:** Tests: Vitest (anclas YAML, validación del paso) + Playwright (1 personaje → 1 opción preseleccionada; agregar/borrar actualiza).
+- [x] **T4.1:** Lista de rasgos única con ancla YAML + `miedoso`, `curioso`, `impulsivo`, `desconfiado`; grilla `sm:grid-cols-3 lg:grid-cols-4`.
+- [x] **T4.2:** `storyteller_id` con `source: characters`: el combo lista solo personajes con nombre (JS en `input`/agregar/borrar); 1 solo → preseleccionado; ninguno → `disabled` "Primero nombrá un personaje"; el narrador borrado → reset + auto-save.
+- [x] **T4.3:** Mismo filtro en el render server-side del paso 2.
+- [x] **T4.4:** Validación en `submitStep`: `storyteller_id` debe apuntar a un personaje con nombre; si no, re-render con error.
+- [x] **T4.5:** Tests: Vitest (anclas YAML, validación del paso) + Playwright (1 personaje → 1 opción preseleccionada; agregar/borrar actualiza).
 
 ### S5 — Wizard compacto para 1080p (§1)
 

@@ -207,3 +207,49 @@ describe("submitStep (paso 1: género → subgénero)", () => {
     expect(data.atmosphere_subgenre).toBe("rural: Leyendas del campo");
   });
 });
+
+/** Spec-440 T4.4: el narrador debe ser un personaje con nombre. */
+describe("submitStep (paso 2: narrador)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  async function submitStep2(body: Record<string, string>, saved: Record<string, string> = {}) {
+    const session: Record<string, any> = { wizard: { step_config_personajes: saved } };
+    const res = makeRes();
+    await submitStep({ params: { step: "2" }, body, session } as unknown as Request, res);
+    return { res, data: session.wizard.step_config_personajes as Record<string, string> };
+  }
+
+  it("narrador válido: avanza al paso 3", async () => {
+    const { res, data } = await submitStep2({
+      protagonista_1_name: "Irene",
+      protagonista_1_role: "Narradora",
+      storyteller_id: "protagonista_1",
+    });
+    expect(res.redirect).toHaveBeenCalledWith("/generar/paso/3");
+    expect(data.storyteller_id).toBe("protagonista_1");
+  });
+
+  it("narrador sin nombre: re-renderiza el paso con error y lo descarta", async () => {
+    const { res, data } = await submitStep2({
+      protagonista_1_name: "Irene",
+      storyteller_id: "protagonista_2",
+    });
+    expect(res.redirect).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(data).not.toHaveProperty("storyteller_id");
+    expect(data.protagonista_1_name).toBe("Irene");
+    const locals = render.mock.calls[0][2];
+    expect(locals.fieldErrors).toEqual({ storyteller_id: "Elegí uno de los personajes con nombre." });
+    expect(locals.characters).toEqual([{ value: "protagonista_1", label: "Irene" }]);
+  });
+
+  it("combo deshabilitado (no se envía) con un narrador viejo cuyo personaje se borró", async () => {
+    const { res, data } = await submitStep2(
+      { protagonista_1_name: "Irene", protagonista_2_name: "" },
+      { protagonista_2_name: "Tito", storyteller_id: "protagonista_2" },
+    );
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(data).not.toHaveProperty("protagonista_2_name");
+    expect(data).not.toHaveProperty("storyteller_id");
+  });
+});

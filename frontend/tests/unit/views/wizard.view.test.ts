@@ -50,3 +50,49 @@ describe("wizard paso 1 — género y subgénero", () => {
     expect(html).not.toContain('id="genre-catalog"');
   });
 });
+
+/** Spec-440 T4.3: "quién cuenta la historia" filtrado en el render del servidor. */
+describe("wizard paso 2 — narrador", () => {
+  const step2 = STEPS[1];
+
+  function render2(
+    saved: Record<string, string>,
+    characters: { value: string; label: string }[],
+    fieldErrors: Record<string, string> = {},
+  ) {
+    return ejs.renderFile(viewPath, { steps: STEPS, step: step2, saved, isLast: false, characters, fieldErrors });
+  }
+
+  it("1 personaje: una sola opción con su nombre, preseleccionada", async () => {
+    const sel = selectHtml(
+      await render2({ protagonista_1_name: "Irene" }, [{ value: "protagonista_1", label: "Irene" }]),
+      "storyteller_id",
+    );
+    expect(sel.match(/<option value="protagonista_/g)).toHaveLength(1);
+    expect(sel).toContain('<option value="protagonista_1" selected>Irene</option>');
+    expect(sel).not.toContain("Personaje");
+  });
+
+  it("varios personajes: conserva el narrador guardado", async () => {
+    const sel = selectHtml(
+      await render2({ storyteller_id: "protagonista_3" }, [
+        { value: "protagonista_1", label: "Irene" },
+        { value: "protagonista_3", label: "Ricardo" },
+      ]),
+      "storyteller_id",
+    );
+    expect(sel).toContain('<option value="protagonista_3" selected>Ricardo</option>');
+    expect(sel).toContain('<option value="protagonista_1">Irene</option>');
+  });
+
+  it("sin personajes con nombre: deshabilitado con aviso", async () => {
+    const sel = selectHtml(await render2({}, []), "storyteller_id");
+    expect(sel).toMatch(/<select name="storyteller_id"[^>]* disabled/);
+    expect(sel).toContain("Primero nombrá un personaje");
+  });
+
+  it("muestra el error del campo devuelto por el POST", async () => {
+    const html = await render2({}, [], { storyteller_id: "Elegí uno de los personajes con nombre." });
+    expect(html).toContain('data-field-error="storyteller_id">Elegí uno de los personajes con nombre.</p>');
+  });
+});
