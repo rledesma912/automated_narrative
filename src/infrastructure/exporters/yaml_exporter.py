@@ -5,8 +5,9 @@ bidireccional) y refleja 1:1 la estructura interna de `storyteller_config`
 que `mapStoryToWizard()` consume para rehidratar el wizard del frontend.
 
 Spec-190 §T6.2: el `narrator_config` persistido ya no contiene `atmosphere`,
-`scenarios`, `rules` ni `actos`. El exporter los reconstruye dentro del bloque
-`storyteller_config` del YAML desde las columnas/tablas correspondientes.
+`scenarios`, `rules` ni `actos` (ni `entities`, Spec-450). El exporter los
+reconstruye dentro del bloque `storyteller_config` del YAML desde las
+columnas/tablas correspondientes.
 """
 
 from __future__ import annotations
@@ -119,6 +120,7 @@ class YamlStoryExporter:
             },
             "scenarios": scenarios,
             "rules": rules,
+            "entities": self._build_entities(story),
             "actos": actos,
             "perception": {
                 "reliability": sc.get("perception", {}).get("reliability", "subjetiva"),
@@ -158,6 +160,20 @@ class YamlStoryExporter:
         return [
             {"id": f"S{i}", "order": i, "name": s.name, "description": s.description or ""}
             for i, s in enumerate(story.scenarios or [], start=1)
+        ]
+
+    def _build_entities(self, story: Story) -> list[dict[str, Any]]:
+        # Spec-450: viven en la tabla `entity`; la primera es la principal.
+        return [
+            {
+                "name": e.name,
+                "nature": e.nature_id,
+                "description": e.description,
+                "manifestations": e.manifestations,
+                "limits": e.limits,
+                "reveal_level": e.reveal_level.value,
+            }
+            for e in story.entities
         ]
 
     def _build_rules(self, sc: dict, story: Story) -> list[dict[str, Any]]:

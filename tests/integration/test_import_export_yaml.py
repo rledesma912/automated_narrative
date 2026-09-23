@@ -42,6 +42,18 @@ _PAYLOAD = {
             {"id": "R2", "text": "Los perros no ladran", "type": "social"},
         ],
         "actos": _ACTOS,
+        # Spec-450 T1.4: las entidades también hacen el round-trip.
+        "entities": [
+            {
+                "name": "La Mala Hora",
+                "nature": "folklorica",
+                "description": "Aparece a la siesta",
+                "manifestations": "Olor a azufre",
+                "limits": "No cruza el agua",
+                "reveal_level": "insinuada",
+            },
+            {"name": "", "nature": "culto", "reveal_level": "explicita"},
+        ],
         "perception": {"reliability": "poco_confiable"},
         "language": {"register": "rural_tradicional", "figurative_density": "media"},
     },
@@ -99,6 +111,11 @@ async def test_round_trip_export_import_conserva_la_autoria(monkeypatch, tmp_pat
     config = after["Round trip"]["config"]
     assert [r["type"] for r in config["rules"]] == ["fenomeno", "entorno"]  # social → entorno
     assert [a["text"] for a in config["actos"].values()] == [a["text"] for a in _ACTOS.values()]
+    assert [(e["name"], e["nature"], e["reveal_level"]) for e in config["entities"]] == [
+        ("La Mala Hora", "folklorica", "insinuada"),
+        ("", "culto", "explicita"),
+    ]
+    assert config["entities"][0]["limits"] == "No cruza el agua"
 
 
 def _write_yaml(path: Path, genero: str, subgenero: str) -> Path:

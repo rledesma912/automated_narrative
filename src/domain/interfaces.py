@@ -92,7 +92,7 @@ class GenreRepository(Protocol):
         ...
 
     async def nature_allowed(self, genre_id: str, nature_id: str) -> bool:
-        """True si la naturaleza corresponde al género."""
+        """True si la naturaleza corresponde al género; sin género, si existe en el catálogo."""
         ...
 
 

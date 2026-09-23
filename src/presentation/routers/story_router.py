@@ -14,8 +14,13 @@ from src.application.services.narrator_config_sanitizer import (
 )
 from src.application.services.observability_service import observability
 from src.application.use_cases import GetStoryByIdUseCase, ListStoriesUseCase
-from src.application.use_cases.create_story import CreateStoryUseCase, ensure_valid_genre
-from src.domain.exceptions import InvalidGenreError
+from src.application.use_cases.create_story import (
+    CreateStoryUseCase,
+    build_entities,
+    ensure_valid_entities,
+    ensure_valid_genre,
+)
+from src.domain.exceptions import InvalidStoryInputError
 from src.domain.models import StoryStatus
 from src.infrastructure.database.repositories import (
     SQLGenreRepository,
@@ -37,12 +42,13 @@ def get_create_story_use_case(repo=Depends(_story_repo)) -> CreateStoryUseCase:
     return CreateStoryUseCase(repo, SQLGenreRepository())
 
 
-def _genre_error(e: Exception) -> HTTPException:
-    """Par género/subgénero inválido → 422 legible, nunca 500 (Spec-440 §2)."""
-    if isinstance(e, InvalidGenreError):
+def _input_error(e: Exception) -> HTTPException:
+    """Género/subgénero o entidades inválidos → 422 legible, nunca 500 (Spec-440 §2, Spec-450)."""
+    if isinstance(e, InvalidStoryInputError):
         return HTTPException(status_code=422, detail=e.message)
     return HTTPException(
-        status_code=422, detail=f"Datos rechazados por la base (género/subgénero): {e}"
+        status_code=422,
+        detail=f"Datos rechazados por la base (género/subgénero o naturaleza de entidad): {e}",
     )
 
 
@@ -65,6 +71,7 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
     4. narrator_config persistido se depura (Spec-190 §4.3).
     5. genero/subgenero/tono y actos: si no vienen explícitos, se derivan de
        narrator_config.atmosphere / .actos (mismo criterio que YamlStoryLoader).
+    6. entities: desde narrator_config.entities (Spec-450).
     """
     sc: dict = req.narrator_config or {}
     genero, subgenero, tono = extract_atmosphere(sc)
@@ -113,6 +120,7 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
         typed_rules=typed_rules,
         personajes_full=req.personajes_full,
         actos=extract_actos(sc) if sc.get("actos") else [],
+        entities=list(sc.get("entities") or []),
     )
 
 
@@ -142,8 +150,8 @@ async def create_story(
             status=story.status.value,
             created_at=story.created_at,
         )
-    except (InvalidGenreError, sqlite3.IntegrityError) as e:
-        raise _genre_error(e)
+    except (InvalidStoryInputError, sqlite3.IntegrityError) as e:
+        raise _input_error(e)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -232,10 +240,13 @@ async def update_story(
         )
 
     dto = _request_to_dto(request)
+    genres = SQLGenreRepository()
     try:
-        await ensure_valid_genre(SQLGenreRepository(), dto.genero, dto.subgenero)
-    except InvalidGenreError as e:
-        raise _genre_error(e)
+        await ensure_valid_genre(genres, dto.genero, dto.subgenero)
+        entities = build_entities(story.id, dto.entities)
+        await ensure_valid_entities(genres, dto.genero, entities)
+    except InvalidStoryInputError as e:
+        raise _input_error(e)
     story.title = dto.title
     story.protagonista = dto.protagonista
     story.relator = dto.relator
@@ -246,6 +257,7 @@ async def update_story(
     story.reglas = dto.reglas
     story.narrator_config = dto.narrator_config
     story.personajes_full = dto.personajes_full or []
+    story.entities = entities
 
     if dto.escenarios_full:
         story.scenarios = [
@@ -284,7 +296,7 @@ async def update_story(
     try:
         await repo.update_inputs(story)
     except sqlite3.IntegrityError as e:
-        raise _genre_error(e)
+        raise _input_error(e)
     return StoryResponse(
         id=str(story.id), title=story.title, status=story.status.value, created_at=story.created_at
     )

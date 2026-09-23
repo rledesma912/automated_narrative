@@ -22,6 +22,9 @@ class StoryCreateDTO(BaseModel):
     typed_rules: list[dict] = []
     personajes_full: list[dict] = []
     actos: list[dict] = []
+    # Spec-450: `{name, nature, description, manifestations, limits, reveal_level}`;
+    # la primera es la principal.
+    entities: list[dict] = []
 
     @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod

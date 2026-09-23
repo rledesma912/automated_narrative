@@ -90,6 +90,41 @@ class Genre(BaseModel):
     entity_natures: list[EntityNature] = Field(default_factory=list)
 
 
+class RevealLevel(str, Enum):
+    """Cuánto se muestra de una entidad a lo largo de los 5 actos (Spec-450 §2)."""
+
+    NUNCA = "nunca"
+    INSINUADA = "insinuada"
+    PROGRESIVA = "progresiva"
+    EXPLICITA = "explicita"
+
+
+MAX_ENTITIES = 3
+
+
+class Entity(BaseModel):
+    """Entidad narrativa: la amenaza de la historia (Spec-450 §1).
+
+    La de `order_index = 0` es la principal: gobierna las reglas de revelación de
+    los beats. Los topes de largo cuidan el contexto de los modelos locales.
+    """
+
+    id: UUID4 = Field(default_factory=uuid.uuid4)
+    story_id: UUID4
+    order_index: int
+    name: str = Field("", max_length=60)
+    nature_id: str = Field(..., min_length=1)
+    description: str = Field("", max_length=400)
+    manifestations: str = Field("", max_length=300)
+    limits: str = Field("", max_length=300)
+    reveal_level: RevealLevel = RevealLevel.INSINUADA
+
+    @field_validator("name", "nature_id", "description", "manifestations", "limits", mode="before")
+    @classmethod
+    def _strip(cls, v):
+        return v.strip() if isinstance(v, str) else v
+
+
 class TypedRule(BaseModel):
     """Regla narrativa con semántica explícita (Spec-043).
 
@@ -229,6 +264,7 @@ class Story(BaseModel):
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
+    entities: list[Entity] = []
     journal: NarrativeJournal = Field(default_factory=NarrativeJournal)
     status: StoryStatus = StoryStatus.DRAFT
     created_at: datetime = Field(default_factory=now_argentina)
@@ -255,6 +291,11 @@ class Story(BaseModel):
         subgenero = f" ({self.subgenero})" if self.subgenero else ""
         tono = f" - {self.tono}" if self.tono else ""
         return f"{genero}{subgenero}{tono}".strip()
+
+    @property
+    def principal_entity(self) -> Optional[Entity]:
+        """La entidad principal (la primera) o `None` si no hay (Spec-450)."""
+        return self.entities[0] if self.entities else None
 
     # -- Spec 070: comportamiento de dominio --
 

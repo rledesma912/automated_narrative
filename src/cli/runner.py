@@ -8,7 +8,7 @@ from src.cli import commands
 from src.cli.exceptions import CLIError
 from src.cli.logger import logger
 from src.config import settings
-from src.domain.exceptions import InvalidGenreError
+from src.domain.exceptions import InvalidStoryInputError
 
 
 def main() -> None:
@@ -215,7 +215,7 @@ def main() -> None:
         logger.error(f"[CLI] {e.message}")
         print(f"Error: {e.message}", file=sys.stderr)
         sys.exit(e.exit_code)
-    except InvalidGenreError as e:
+    except InvalidStoryInputError as e:
         logger.error(f"[CLI] {e.message}")
         print(f"Error de validación: {e.message}", file=sys.stderr)
         sys.exit(2)

@@ -106,6 +106,37 @@ async def init_db() -> None:
         )
     """)
 
+    # Spec-450 §1: entidades (máx. 3 por historia; order_index 0 = principal).
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS entity (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL,
+            order_index INTEGER NOT NULL,
+            name TEXT,
+            nature_id TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            manifestations TEXT DEFAULT '',
+            limits TEXT DEFAULT '',
+            reveal_level TEXT NOT NULL DEFAULT 'insinuada',
+            UNIQUE (story_id, order_index),
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            FOREIGN KEY (nature_id) REFERENCES entity_nature(id)
+        )
+    """)
+    # Estado de las entidades por beat (lo escribe el Journal, Spec-450 §3). Cuelga
+    # de `story` y no de `entity`: editar la historia reinserta las entidades con
+    # ids nuevos y el estado del journal debe sobrevivir.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS entity_journal (
+            id TEXT PRIMARY KEY,
+            story_id TEXT NOT NULL,
+            beat_number INTEGER NOT NULL,
+            entity_state TEXT NOT NULL DEFAULT '',
+            UNIQUE (story_id, beat_number),
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+        )
+    """)
+
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS character (
             id TEXT PRIMARY KEY,

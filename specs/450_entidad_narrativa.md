@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 desplegado; sigue S1
+**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); sigue S2
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -282,23 +282,23 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S1 — Dominio, persistencia, API y YAML
 
-- [ ] **T1.1:** Dominio.
+- [x] **T1.1:** Dominio.
   - Acceptance: `Entity` (name, nature_id, description, manifestations, limits, reveal_level ∈ {nunca, insinuada, progresiva, explicita}, default `insinuada`); `Story.entities: list[Entity]` (máx. 3) y `Story.principal_entity`. Topes: name 60, description 400, manifestations 300, limits 300 → error de validación.
   - Verify: pytest `tests/unit/domain/test_models.py` (4 entidades → error; tope excedido → error; principal = primera; sin entidades → `None`).
   - Files: `src/domain/models.py`
-- [ ] **T1.2:** Persistencia.
+- [x] **T1.2:** Persistencia.
   - Acceptance: tabla `entity` (esquema §1); `save()` y `update_inputs()` borran y reinsertan con `order_index`; `get_by_id()`/listados cargan `entities` ordenadas. Tabla `entity_journal` creada (se usa en S3).
   - Verify: pytest de integración — round-trip con 0, 1 y 3 entidades; editar una historia no borra filas de `entity_journal`; borrar la historia las borra (cascade).
   - Files: `src/infrastructure/database/connection.py`, `src/infrastructure/database/repositories/story_repository.py`
-- [ ] **T1.3:** API.
+- [x] **T1.3:** API.
   - Acceptance: `narrator_config.entities` entra por `POST`/`PATCH /stories` y sale en la respuesta (`storyteller_config.entities`); naturaleza que no corresponde al género → 422 legible (`ensure_valid_entities`, junto a `ensure_valid_genre`); más de 3 o tope excedido → 422.
   - Verify: pytest `tests/unit/presentation/routers/test_story_router.py` (alta, edición, 422 por naturaleza/cantidad/largo).
   - Files: `src/presentation/schemas/request.py`, `src/presentation/schemas/response.py`, `src/presentation/routers/story_router.py`, `src/application/dto/story_dto.py`, `src/application/use_cases/create_story.py`, `src/application/services/narrator_config_sanitizer.py`
-- [ ] **T1.4:** YAML.
+- [x] **T1.4:** YAML.
   - Acceptance: `YamlStoryLoader` lee `storyteller_config.entities`; el exporter las escribe; `export-yaml` → `import-yaml` conserva las entidades; `generate --input` las acepta.
   - Verify: pytest (round-trip YAML con 2 entidades; YAML sin `entities` → historia sin entidades).
   - Files: `src/infrastructure/loaders/yaml_loader.py`, `src/infrastructure/exporters/yaml_exporter.py`, `src/cli/commands.py`
-- [ ] **Checkpoint S1:** lint + pytest → commit (sin despliegue: nadie carga entidades todavía).
+- [x] **Checkpoint S1:** lint + pytest → commit (sin despliegue: nadie carga entidades todavía).
 
 ### S2 — Beats: revelación por nivel
 

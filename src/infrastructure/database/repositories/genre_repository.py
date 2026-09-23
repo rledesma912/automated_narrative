@@ -56,10 +56,15 @@ class SQLGenreRepository:
     async def nature_allowed(self, genre_id: str, nature_id: str) -> bool:
         conn = await get_connection()
         try:
-            cursor = await conn.execute(
-                "SELECT 1 FROM genre_entity_nature WHERE genre_id = ? AND nature_id = ?",
-                (genre_id, nature_id),
-            )
+            if genre_id:
+                cursor = await conn.execute(
+                    "SELECT 1 FROM genre_entity_nature WHERE genre_id = ? AND nature_id = ?",
+                    (genre_id, nature_id),
+                )
+            else:
+                cursor = await conn.execute(
+                    "SELECT 1 FROM entity_nature WHERE id = ?", (nature_id,)
+                )
             return await cursor.fetchone() is not None
         finally:
             await conn.close()

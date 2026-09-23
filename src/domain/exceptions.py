@@ -56,7 +56,14 @@ class DatabaseError(NarrativeError):
         self.operation = operation
 
 
-class InvalidGenreError(NarrativeError):
+class InvalidStoryInputError(NarrativeError):
+    """Datos de entrada de una historia rechazados por el catálogo o el dominio.
+
+    La API la responde como 422 y el CLI como "Error de validación".
+    """
+
+
+class InvalidGenreError(InvalidStoryInputError):
     """Género o par género/subgénero que no está en el catálogo (Spec-440 §2)."""
 
     def __init__(self, genero: str, subgenero: str = ""):
@@ -67,3 +74,10 @@ class InvalidGenreError(NarrativeError):
         super().__init__(msg, details={"genero": genero, "subgenero": subgenero})
         self.genero = genero
         self.subgenero = subgenero
+
+
+class InvalidEntityError(InvalidStoryInputError):
+    """Entidades narrativas inválidas: cantidad, largo, nivel o naturaleza (Spec-450 §1)."""
+
+    def __init__(self, message: str):
+        super().__init__(message)

@@ -367,7 +367,7 @@ def import_yaml(files: list[Path], drop_invalid_subgenre: bool = False) -> None:
 
 async def _import_yaml_async(files: list[Path], drop_invalid_subgenre: bool) -> int:
     from src.application.use_cases.create_story import CreateStoryUseCase
-    from src.domain.exceptions import InvalidGenreError
+    from src.domain.exceptions import InvalidStoryInputError
     from src.infrastructure.database.repositories import SQLGenreRepository
     from src.infrastructure.loaders import YamlStoryLoader, YamlStoryLoaderError
 
@@ -393,9 +393,9 @@ async def _import_yaml_async(files: list[Path], drop_invalid_subgenre: bool) -> 
                 dto.subgenero = ""
             story = await use_case.execute(dto, initial_status=StoryStatus.DRAFT)
             print(f"Importada: {story.title} ({story.id})")
-        except (YamlStoryLoaderError, InvalidGenreError) as e:
+        except (YamlStoryLoaderError, InvalidStoryInputError) as e:
             failed += 1
-            message = e.message if isinstance(e, InvalidGenreError) else str(e)
+            message = e.message if isinstance(e, InvalidStoryInputError) else str(e)
             logger.error(f"[COMANDOS] import-yaml {path}: {message}")
             print(f"Error: {path}: {message}")
     return failed

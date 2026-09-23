@@ -5,6 +5,7 @@ import uuid
 from uuid import UUID
 
 from src.domain.models import (
+    Entity,
     NarrativeAnchors,
     NarrativeJournal,
     RuleType,
@@ -116,6 +117,7 @@ class SQLStoryRepository:
         ]
 
         personajes = await self._load_personajes(conn, str(story_id))
+        entities = await self._load_entities(conn, str(story_id))
 
         beats = await self._load_beats(conn, str(story_id))
 
@@ -125,6 +127,7 @@ class SQLStoryRepository:
         story.reglas = reglas
         story.typed_rules = typed_rules
         story.scenarios = scenarios
+        story.entities = entities
         story.personajes_full = personajes
         story.beats = beats
         return story
@@ -173,6 +176,7 @@ class SQLStoryRepository:
         ]
 
         personajes = await self._load_personajes(conn, story_id)
+        entities = await self._load_entities(conn, story_id)
 
         await conn.close()
 
@@ -180,6 +184,7 @@ class SQLStoryRepository:
         story.reglas = reglas
         story.typed_rules = typed_rules
         story.scenarios = scenarios
+        story.entities = entities
         story.personajes_full = personajes
         return story
 
@@ -215,7 +220,7 @@ class SQLStoryRepository:
         return story
 
     async def _write_inputs(self, conn, story: Story) -> None:
-        """Personajes, reglas y escenarios: borrar y re-insertar (datos de entrada)."""
+        """Personajes, reglas, escenarios y entidades: borrar y re-insertar (datos de entrada)."""
         # Persistir personajes en la tabla character (borrar y re-insertar).
         # El id de DB es un UUID fresco, igual que en rule/scenario; el id
         # corto del YAML (P1, P2…) es story-scoped y se conserva solo en memoria.
@@ -270,6 +275,45 @@ class SQLStoryRepository:
                     "VALUES (?, ?, ?, ?, ?)",
                     (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
                 )
+
+        # Spec-450: entidades (borrar y re-insertar). `entity_journal` no depende de
+        # estos ids, así que editar la historia no pierde el estado del journal.
+        await conn.execute("DELETE FROM entity WHERE story_id = ?", (str(story.id),))
+        for e in story.entities:
+            await conn.execute(
+                "INSERT INTO entity (id, story_id, order_index, name, nature_id, description, "
+                "manifestations, limits, reveal_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    str(e.id),
+                    str(story.id),
+                    e.order_index,
+                    e.name,
+                    e.nature_id,
+                    e.description,
+                    e.manifestations,
+                    e.limits,
+                    e.reveal_level.value,
+                ),
+            )
+
+    async def _load_entities(self, conn, story_id: str) -> list[Entity]:
+        cursor = await conn.execute(
+            "SELECT * FROM entity WHERE story_id = ? ORDER BY order_index", (story_id,)
+        )
+        return [
+            Entity(
+                id=UUID(r["id"]),
+                story_id=UUID(r["story_id"]),
+                order_index=r["order_index"],
+                name=r["name"] or "",
+                nature_id=r["nature_id"],
+                description=r["description"] or "",
+                manifestations=r["manifestations"] or "",
+                limits=r["limits"] or "",
+                reveal_level=r["reveal_level"],
+            )
+            for r in await cursor.fetchall()
+        ]
 
     async def update(self, story: Story) -> Story:
         """Update a story."""
@@ -329,6 +373,7 @@ class SQLStoryRepository:
             story.reglas = reglas
             story.typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
             story.scenarios = scenarios
+            story.entities = await self._load_entities(conn, story_id)
             story.personajes_full = personajes
             stories.append(story)
 

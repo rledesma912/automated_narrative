@@ -78,6 +78,7 @@ class YamlStoryLoader:
                 narrator_config=sanitize_narrator_config(data.get("storyteller_config")),
                 typed_rules=self._extract_typed_rules(data),
                 actos=actos_full,
+                entities=list(sc.get("entities") or []),
             )
         except ValidationError as e:
             raise YamlStoryLoaderError(f"Validación de campos: {e}")
@@ -109,6 +110,7 @@ class YamlStoryLoader:
                 narrator_config=sanitize_narrator_config(data.get("storyteller_config")),
                 typed_rules=self._extract_typed_rules(data),
                 actos=actos_full,
+                entities=list(sc.get("entities") or []),
             )
         except ValidationError as e:
             raise YamlStoryLoaderError(f"Validación de campos: {e}")
