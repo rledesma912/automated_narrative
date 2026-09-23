@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S3 hechos (S2+S3 se despliegan juntos con la recarga de prod)
+**Estado:** IMPLEMENT — S0–S3 desplegados; sigue S4
 
 ---
 
@@ -405,7 +405,7 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
   - Acceptance: backup de `data/dev/stories.db` → `export-yaml --all` → `make db` → `import-yaml`; las 2 historias quedan como borradores con sus datos.
 - [x] **T2.8:** Tests de catálogo en integración.
   - Acceptance: `test_job_api.py` / `test_story_router.py` usan pares válidos; nuevo `test_catalog_api.py`.
-- [ ] **T2.9:** Recarga de prod (**se hace en el despliegue de S3**, ver notas).
+- [x] **T2.9:** Recarga de prod (**hecha en el despliegue de S3**, ver notas).
   - Acceptance: sin jobs activos → backup → `export-yaml --all` dentro de `narrative-api` → recrear `data/prod/stories.db` → `import-yaml --descartar-subgenero-invalido` ("la pena del colectivo"); "barco fantasma" y "el galpon" desde el backup original (recupera los tipos `social` → `entorno`). Verificación de las 3 historias como en la recuperación del 2026-09-22.
 - [x] **Notas de S2 (2026-09-23):**
   - **Despliegue diferido a S3:** el wizard todavía ofrece los subgéneros planos viejos; de ellos solo `otro` (con cualquier género), `rural` (Terror Rural) y `leyenda_urbana` (Paranormal) existen en el catálogo v2. Desplegar S2 solo haría que guardar desde el wizard diera 422 en casi todos los casos. S2 y S3 salen juntos, con la recarga de prod (T2.9).
@@ -427,6 +427,8 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
   - Los combos del catálogo usan el **ID** como `value` (no "id: Etiqueta"); el mapper, la rehidratación y el render aceptan también el formato legado de sesiones viejas. La confirmación muestra la etiqueta del catálogo.
   - `submitStep` descarta el subgénero si quedó vacío (combo reseteado o deshabilitado) o si no pertenece al género; con el Core caído no toca nada.
   - Si el Core cae con el catálogo ya cacheado, se sigue usando la última copia.
+- [x] **Despliegue S2+S3 y recarga de prod (2026-09-23):** prod detenido → backup en `data/prod/backup_2026-09-23/` (DB + YAML) → `export-yaml --all` con el código nuevo sobre una copia (los 3 con sus 5 actos) → las reglas `social` de "barco fantasma" y "el galpon" (sin tipo desde la recuperación; el backup `original/` tampoco lo tenía, salió de `historia_*.md`) → `entorno` → DB recreada + `import-yaml --descartar-subgenero-invalido` ("barco fantasma" queda `terror_psicologico` y "la pena del colectivo" `horror_cosmico`, ambas sin subgénero: elegirlo en el wizard) → `docker compose up -d --build`. Verificado: catálogo 8/50, 3 borradores con personajes, escenarios, reglas tipadas y actos; `POST` con par inválido → 422; editar "el galpon" precarga `folk_horror`/`rural`.
+  - Hallazgo: `export-yaml` contra el backup `original/` (esquema pre-Spec-190, sin `rule.applies_to_beat`) falla, y la primera vez el proceso quedó colgado: otra conexión que no se cierra ante una excepción en un camino de lectura del repo. Anotado, fuera de S3.
 - [x] **Checkpoint S3:** lint + pytest 652 + tsc + Vitest 90 + Playwright 21 (×2).
 
 ### S4 — Rasgos nuevos + narrador dinámico (§3, §5)
