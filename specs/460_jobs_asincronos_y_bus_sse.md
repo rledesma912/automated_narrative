@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** TASKS — pendiente de OK para IMPLEMENT
+**Estado:** IMPLEMENT — S0 hecho
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---
@@ -59,9 +59,9 @@ Criterio: usar lo que el proyecto ya tiene instalado. **No se agrega ninguna dep
 | D2 | **Regenerar acto bloquea la request** durante la llamada LLM (con Ollama pueden ser decenas de segundos). El usuario no ve progreso y el request puede cortarse por timeout. | `beat_router.py::regenerate_beat_voz` (síncrono); `relatos.controller.ts::regenerarActoAction` |
 | D3 | **Estado global y modo monitor por polling:** el pie consulta cada 15 s y cada consulta trae **todas** las historias + el último evento. La sala en "modo monitor" (generación iniciada en otra pestaña) también consulta el status en vez de escuchar eventos. | `footer.js`, `stream.controller.ts::getActiveStreamApi`, `streamingRoomPage` (`monitorMode`) |
 | D4 | **Estado "activo" inferido de `story.status`:** al arrancar, `recover_processing_stories()` ya pasa `processing → failed` (Spec-214). Pero "hay una generación" se deduce del status de la historia, no de un trabajo real en curso, y no hay historial de ejecuciones. | `main.py::lifespan`, `getActiveStreamApi` |
-| D5 | **Sesión huérfana (a confirmar):** `detach()` solo borra la sesión si terminó **y** no quedan consumidores. Si el usuario cierra la pestaña a mitad de camino, el productor termina sin nadie conectado y la sesión nunca se borra. Un "Regenerar" posterior se ata a la sesión vieja: recibe el `done` del replay y no genera nada. | `stream_session_manager.py::detach` |
+| D5 | **Sesión huérfana (confirmado en S0):** `detach()` solo borra la sesión si terminó **y** no quedan consumidores. Si el usuario cierra la pestaña a mitad de camino, el productor termina sin nadie conectado y la sesión nunca se borra. Un "Regenerar" posterior se ata a la sesión vieja: recibe el `done` del replay y no genera nada. | `stream_session_manager.py::detach` |
 | D6 | **Sin reanudación:** los eventos no llevan `id:`, así que al reconectar se reenvía todo el replay y no hay `Last-Event-ID`. | `StreamEvent.to_sse()` |
-| D7 | **"Cancelar" no cancela (a confirmar):** `cancelGeneration()` cierra el `EventSource` y hace `PATCH status=failed`, pero la tarea productora es independiente de la conexión y **sigue llamando al LLM**. Al terminar, `stream_story` pone `status=completed` y pisa el `failed`. | `streaming-room.js::cancelGeneration`; `StreamSession.start_producer` |
+| D7 | **"Cancelar" no cancela (confirmado en S0: estados `processing → failed → completed`):** `cancelGeneration()` cierra el `EventSource` y hace `PATCH status=failed`, pero la tarea productora es independiente de la conexión y **sigue llamando al LLM**. Al terminar, `stream_story` pone `status=completed` y pisa el `failed`. | `streaming-room.js::cancelGeneration`; `StreamSession.start_producer` |
 
 ---
 
@@ -371,15 +371,15 @@ Formato: cada tarea tiene **Acceptance** (qué tiene que ser cierto), **Verify**
 
 ### S0 — Confirmar D5 y D7
 
-- [ ] **T0.1:** Test que reproduce D5 (sesión huérfana).
+- [x] **T0.1:** Test que reproduce D5 (sesión huérfana).
   - Acceptance: el productor termina con 0 consumidores → un `attach()` posterior para el mismo `story_id` **debería** arrancar un productor nuevo. El test falla hoy (queda atado a la sesión vieja).
   - Verify: `uv run pytest tests/unit/application/services/test_stream_session_manager.py -k huerfana -v` → FAIL esperado.
   - Files: `tests/unit/application/services/test_stream_session_manager.py`
-- [ ] **T0.2:** Test que reproduce D7 (cancelar no cancela).
+- [x] **T0.2:** Test que reproduce D7 (cancelar no cancela).
   - Acceptance: con un productor lento, desconectar al único consumidor + marcar la historia `failed` → el productor **no debería** seguir emitiendo ni pasar la historia a `completed`. El test falla hoy.
   - Verify: `... -k cancelar -v` → FAIL esperado.
   - Files: ídem T0.1
-- [ ] **Checkpoint S0:** si alguno **no** falla, se corrige el diagnóstico (D5/D7) antes de seguir. Los tests se marcan `xfail(strict=True)` hasta S2.
+- [x] **Checkpoint S0:** si alguno **no** falla, se corrige el diagnóstico (D5/D7) antes de seguir. Los tests se marcan `xfail(strict=True)` hasta S2.
 
 ### S1 — Dominio y persistencia de jobs
 

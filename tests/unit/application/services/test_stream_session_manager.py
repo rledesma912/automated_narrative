@@ -5,6 +5,7 @@ asyncio_mode = "auto" en pyproject.toml → no se necesita @pytest.mark.asyncio.
 
 import asyncio
 from collections.abc import AsyncIterator
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,6 +13,7 @@ from src.application.services.stream_session_manager import (
     REPLAY_BUFFER_MAXLEN,
     StreamSessionManager,
 )
+from src.application.services.streaming_service import stream_story
 from src.domain.streaming import StreamEvent, StreamEventType
 
 
@@ -240,3 +242,95 @@ async def test_replay_buffer_respects_maxlen(manager: StreamSessionManager):
 
     block.set()
     await asyncio.sleep(0.05)
+
+
+# ── Spec-460 S0: reproducción de D5 y D7 ─────────────────────────────────────
+# Documentan bugs del modelo actual. Los resuelve el JobManager (Spec-460 S2);
+# versiones equivalentes contra JobManager pasan a verde en T2.6 y T2.7.
+
+
+@pytest.mark.xfail(strict=True, reason="Spec-460 D5: bug confirmado; lo resuelve JobManager (T2.7)")
+async def test_sesion_huerfana_no_bloquea_una_generacion_nueva(manager: StreamSessionManager):
+    """D5: el único consumidor se va antes del DONE (pestaña cerrada) y el
+    productor termina solo. Un attach posterior debe arrancar un productor nuevo,
+    no atarse a la sesión terminada (hoy recibe el DONE viejo y no genera nada)."""
+    block = asyncio.Event()
+    calls: list[str] = []
+
+    def first_factory() -> AsyncIterator[StreamEvent]:
+        calls.append("primera")
+
+        async def _gen() -> AsyncIterator[StreamEvent]:
+            await block.wait()
+            yield _evt(StreamEventType.DONE, {"run": 1})
+
+        return _gen()
+
+    def second_factory() -> AsyncIterator[StreamEvent]:
+        calls.append("segunda")
+        return _gen_events([_evt(StreamEventType.DONE, {"run": 2})])
+
+    queue, _ = await manager.attach("s1", first_factory)
+    await manager.detach("s1", queue)  # pestaña cerrada a mitad de camino
+    block.set()  # el productor termina sin consumidores
+    await asyncio.sleep(0.05)
+
+    await manager.attach("s1", second_factory)  # "Regenerar"
+    await asyncio.sleep(0.05)
+
+    assert calls == ["primera", "segunda"], "la regeneración debe arrancar un productor nuevo"
+
+
+class _FakeDirector:
+    """Director con pipeline lento: un beat cada `delay` segundos."""
+
+    def __init__(self, beats: int = 5, delay: float = 0.05) -> None:
+        self.prompt_builder = SimpleNamespace(num_beats=beats)
+        self._beats = beats
+        self._delay = delay
+
+    async def execute_full(self, story):
+        for n in range(1, self._beats + 1):
+            await asyncio.sleep(self._delay)  # "llamada LLM"
+            yield SimpleNamespace(beat_type=None, generated_act=f"acto {n}"), None, 0.0
+
+
+class _FakeStoryRepo:
+    def __init__(self) -> None:
+        self.statuses: list[str] = []
+
+    async def update_status(self, story_id, status) -> None:
+        self.statuses.append(getattr(status, "value", status))
+
+
+class _FakeBeatRepo:
+    def __init__(self) -> None:
+        self.saved: list[str] = []
+
+    async def save(self, beat, story_id) -> None:
+        self.saved.append(beat.generated_act)
+
+
+@pytest.mark.xfail(strict=True, reason="Spec-460 D7: bug confirmado; lo resuelve JobManager (T2.6)")
+async def test_cancelar_detiene_el_pipeline_y_no_pisa_el_estado(manager: StreamSessionManager):
+    """D7: "Cancelar" hoy = cerrar el EventSource + PATCH status=failed.
+    El pipeline debería detenerse y la historia quedar `failed`. Hoy el productor
+    sigue llamando al LLM y al terminar pisa el estado con `completed`."""
+    story = SimpleNamespace(id="s1", title="t")
+    story_repo, beat_repo = _FakeStoryRepo(), _FakeBeatRepo()
+
+    def factory() -> AsyncIterator[StreamEvent]:
+        return stream_story(_FakeDirector(), story, story_repo=story_repo, beat_repo=beat_repo)
+
+    queue, _ = await manager.attach("s1", factory)
+    await asyncio.sleep(0.12)  # ~2 beats narrados
+
+    # cancelGeneration() del frontend:
+    await manager.detach("s1", queue)
+    await story_repo.update_status(story.id, "failed")
+    beats_al_cancelar = len(beat_repo.saved)
+
+    await asyncio.sleep(0.4)  # tiempo de sobra para que el pipeline termine si sigue vivo
+
+    assert len(beat_repo.saved) == beats_al_cancelar, "no deben narrarse beats tras cancelar"
+    assert story_repo.statuses[-1] == "failed", f"estado final: {story_repo.statuses}"
