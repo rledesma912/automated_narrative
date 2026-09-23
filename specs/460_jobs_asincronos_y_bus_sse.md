@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development) — arquitectura
-**Estado:** DONE (2026-09-22) — S0 a S8 implementados y verificados; S0–S7 desplegados, S8 pendiente de despliegue
+**Estado:** DONE (2026-09-22) — S0 a S8 implementados, verificados y desplegados
 **Relación:** evoluciona Spec-201/210 (streaming) y Spec-220 (StreamSessionManager). Absorbe el §6 "Feedback de generación" que estaba en Spec-440.
 
 ---

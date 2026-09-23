@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — decisiones tomadas; se implementa después de Spec-460
+**Estado:** PLAN — pendiente de OK (3 preguntas abiertas)
 
 ---
 
@@ -235,6 +235,98 @@ Se trata en **Spec-450** (`specs/450_entidad_narrativa.md`). Esta spec no crea e
 
 ---
 
+## 8. EDITAR HISTORIAS YA GENERADAS (decisión 2026-09-22)
+
+Hoy `PATCH /stories/{id}` responde 422 si la historia no es `draft` ("Solo se pueden editar historias en estado draft"). Hasta Spec-460 el wizard tragaba ese error: editar una historia completada **nunca se guardaba**, sin aviso. Decisión del usuario: **permitir editar historias generadas**.
+
+- `PATCH /stories/{id}` acepta `draft`, `completed` y `failed`. Con un **job activo** → 409 (no se editan datos mientras se generan).
+- Editar **no borra** lo generado (actos, journal, relatos) ni cambia el `status`: los cambios se aplican en la próxima generación.
+- Tras guardar una historia `completed`, la galería avisa: "Guardada. Regenerala para aplicar los cambios".
+
+## 9. HALLAZGO: TIPOS DE REGLA DEL WIZARD ≠ DOMINIO (2026-09-22)
+
+El wizard ofrece `entorno`, `psicologica`, `paranormal`, `evento`, `social`; el dominio (`RuleType`) acepta `psicologica`, `entorno`, `fenomeno`, `indicador`. Los tres que no coinciden se guardan **en silencio como `None`** (visto al recuperar "barco fantasma" y "el galpon": sus reglas `social` quedaron sin tipo). Se resuelve en S1 (contrato wizard → API). Mapeo propuesto en Open Questions.
+
+---
+
+## PLAN
+
+### Estrategia
+
+Slices verticales, cada uno desplegable. Primero lo que corrige pérdida de datos (editar, contrato), después el catálogo (backend → frontend) y al final lo visual. Al cerrar cada slice: lint + pytest + Vitest + Playwright en verde, commit y despliegue con tu OK.
+
+### Mapa
+
+```
+S0 Editar historias generadas ──┐
+S1 Contrato wizard → API ───────┼─▶ S2 Catálogo de géneros (backend) ─▶ S3 Combos dependientes (frontend)
+                                │                                                   │
+                                └─▶ S4 Rasgos + narrador dinámico ◀─────────────────┘
+                                                   │
+                                                   ▼
+                                        S5 Wizard compacto (1080p) ─▶ S6 Docs + DONE
+```
+
+### S0 — Editar historias ya generadas (§8)
+
+- **Qué:** relajar la regla de `PATCH /stories/{id}` (draft/completed/failed; 409 con job activo); aviso en la galería tras editar una historia generada.
+- **Stack:** FastAPI (`story_router`), `SQLJobRepository.get_active_for_story`; controller Express + flash de la galería.
+- **Verificación:** pytest (editar completada conserva beats/relatos/status; 409 con job activo); Vitest (mensaje); Playwright (editar → guardar → aviso; datos cambiados en la ficha).
+
+### S1 — Contrato wizard → API (§4 pendiente + §9)
+
+- **Qué:** `mapWizardToCore()` envía `genero`/`subgenero`/`tono` y `narrator_config` explícitos, y **solo IDs** en `perception`/`knowledge`/`language`/`bias`/`relator` (hoy van como "id: Etiqueta"). `mapStoryToWizard()` acepta ambos formatos (IDs y legado "id: Etiqueta") al rehidratar. Tipos de regla alineados con `RuleType` (§9) en `ui_definitions.yaml` + mapeo de los valores viejos.
+- **Stack:** TypeScript (`mapper.service.ts`, `wizard.service.ts`), YAML de UI; backend sin cambios salvo el mapeo de tipos de regla viejos en `_request_to_dto` / `YamlStoryLoader` si se decide mapearlos.
+- **Verificación:** Vitest del mapper (payload exacto; rehidratación de ambos formatos); pytest del mapeo de tipos; E2E: wizard completo → la historia guardada tiene IDs limpios y reglas tipadas.
+
+### S2 — Catálogo de géneros en la DB (backend, §2)
+
+- **Qué:** tablas `genre`/`subgenre` + seed v2 en `init_db()` (`INSERT OR IGNORE`, idempotente); `GenreRepository` (`list_with_subgenres`, `exists`); validación de `(genero, subgenero)` en create/update (API → 422 legible) y en `YamlStoryLoader`; `GET /api/v1/catalog/genres`.
+- **Integridad (ver Open Questions §1):** propuesta = validación en la capa de aplicación + tablas nuevas **aditivas** (sin tocar `story`) → **sin recrear bases**.
+- **Stack:** SQLite/aiosqlite, FastAPI, pydantic; seed como constante Python.
+- **Verificación:** pytest (seed idempotente: 8 géneros / 50 subgéneros; par inválido → 422; género sin subgénero válido; `otro` en todos; endpoint ordenado).
+
+### S3 — Combos Género → Subgénero (frontend, §2)
+
+- **Qué:** `catalog.service.ts` (GET al Core con caché en memoria); `ui_definitions.yaml` con `source: genre_catalog` / `depends_on`; `wizard.ejs` renderiza subgéneros del género guardado (sin género → `disabled` con aviso); `wizard.js` repuebla y resetea al cambiar de género (auto-save de ambos); rehidratación: subgénero inválido → vacío (caso "la pena del colectivo": `horror_cosmico/rural`, y "barco fantasma": `terror_psicologico/historico`). Core caído → combos deshabilitados con aviso, sin 500.
+- **Stack:** Express/TypeScript, EJS, JS vanilla, `<script type="application/json">` con el catálogo embebido.
+- **Verificación:** Vitest (servicio con caché y Core caído); Playwright (filtrado, reset, rehidratación, subgénero inválido vacío).
+
+### S4 — Rasgos nuevos + narrador dinámico (§3, §5)
+
+- **Qué:** lista de rasgos única con ancla YAML + `miedoso`, `curioso`, `impulsivo`, `desconfiado`; combo "quién cuenta la historia" solo con personajes creados y con nombre (JS + render server-side + validación en el POST del paso).
+- **Stack:** YAML (`js-yaml` soporta anclas), EJS, JS vanilla, controller Express.
+- **Verificación:** Vitest (parser de YAML con anclas; validación del paso); Playwright (1 personaje → 1 opción preseleccionada; agregar/borrar actualiza el combo).
+
+### S5 — Wizard compacto para 1080p (§1)
+
+- **Qué:** tipografías/paddings/espaciados de la tabla §1, radios de 5 opciones en 2 columnas, correcciones de copy ("evoluciona", "fija", "auditivas").
+- **Stack:** Tailwind (clases en `wizard.ejs`, sin tocar `.card-forge` global).
+- **Verificación:** Playwright con viewport 1920×960 (paso 1 sin scroll) y 1366×768 (sin scroll horizontal) + captura para revisión visual.
+
+### S6 — Documentación y cierre
+
+- **Qué:** `CLAUDE.md` (tablas del catálogo, endpoint, reglas de edición), notas en Spec-220, Spec-440 → DONE.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| Cambiar el wizard rompe el E2E de guardado de Spec-460 (usa `selectOption({ index: 1 })`) | Se actualiza en S3/S4 junto con el cambio. |
+| Datos existentes con pares género/subgénero inválidos | No se bloquea la lectura: el wizard los muestra vacíos para elegir uno válido; solo se valida al guardar. |
+| Valores legado "id: Etiqueta" en historias ya guardadas | La rehidratación acepta ambos formatos (S1). |
+| El seed de E2E depende de `data/dev/stories.db` | Sin recrear bases (S2 aditivo) no cambia. |
+
+---
+
+## OPEN QUESTIONS (antes de TASKS)
+
+1. **Integridad del catálogo.** La FK compuesta `story(genero, subgenero) → subgenre` obliga a recrear las bases (cambia una tabla existente): en prod se re-cargan los 3 borradores sin pérdida, pero en **dev se pierden los actos y relatos** de "El monte prohibido" y "La ofrenda" (semilla de los E2E). **Recomiendo** validar en la capa de aplicación (API, CLI/YAML) con tablas nuevas aditivas, sin FK en `story`: el catálogo sigue viviendo en la DB y no se pierde nada. ¿OK, o preferís la FK y recrear?
+2. **Tipos de regla (§9).** Propuesta: el wizard ofrece los 4 del dominio — `entorno` "Del lugar", `psicologica` "De la mente", `fenomeno` "Sobrenatural", `indicador` "Señal o indicio" — y los valores viejos se mapean: `paranormal` → `fenomeno`, `social` → `entorno`, `evento` → sin tipo (Spec-190: los eventos no son reglas, van en los actos). ¿Te cierra, o preferís sumar `social` al dominio?
+3. **Editar generadas (§8).** ¿OK con que editar no borre lo generado ni cambie el estado, y que el aviso sugiera regenerar?
+
+---
+
 ## COMMANDS
 
 ```bash
@@ -306,4 +398,5 @@ frontend/tests/e2e/wizard.spec.ts                      # NUEVO
 - Hallazgo §4 (contrato frontend ↔ API): **incluido en esta spec**.
 - Taxonomía v2: **aprobada**.
 - Gestión del catálogo: **seed + lectura** (sin CRUD por ahora).
-- Orden: se implementa **después de Spec-460**.
+- Orden: se implementa **después de Spec-460** (460 DONE el 2026-09-22).
+- Editar historias generadas: **sí** (§8, 2026-09-22).
