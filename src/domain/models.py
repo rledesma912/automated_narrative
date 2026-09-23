@@ -49,6 +49,22 @@ class RuleType(str, Enum):
     FENOMENO = "fenomeno"
     INDICADOR = "indicador"
 
+    @classmethod
+    def from_raw(cls, raw: Optional[str]) -> Optional["RuleType"]:
+        """Tipo desde texto libre. Acepta los valores que el wizard ofrecía antes
+        de alinearse con el dominio (Spec-440 §9): `paranormal` → `fenomeno`,
+        `social` → `entorno`; `evento` o desconocido → `None`.
+        """
+        value = (raw or "").split(":")[0].strip().lower()
+        value = _LEGACY_RULE_TYPES.get(value, value)
+        try:
+            return cls(value) if value else None
+        except ValueError:
+            return None
+
+
+_LEGACY_RULE_TYPES = {"paranormal": "fenomeno", "social": "entorno"}
+
 
 class TypedRule(BaseModel):
     """Regla narrativa con semántica explícita (Spec-043).

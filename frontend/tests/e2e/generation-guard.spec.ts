@@ -34,9 +34,15 @@ test("el wizard termina en «Guardar historia» y vuelve a la galería resaltada
   await page.fill('[name="protagonista_1_role"]', "Narradora");
   await page.locator('[name="storyteller_id"]').selectOption({ index: 1 });
   await next(page);
-  await next(page); // paso 3: sin obligatorios
+  // paso 3: sin obligatorios; se eligen valores para verificar el contrato (Spec-440 S1)
+  await page
+    .locator('[name="perception_reliability"]')
+    .selectOption("poco_confiable: A veces ve bien, a veces no");
+  await page.locator('[name="language_register"][value="rural_tradicional: Del campo"]').check();
+  await next(page);
   await page.fill('[name="scenario_1_name"]', "La casa");
   await page.fill('[name="rule_1_text"]', "Los espejos muestran el pasado");
+  await page.locator('[name="rule_1_type"]').selectOption("fenomeno: Sobrenatural");
   await next(page);
   for (const name of [
     "acto_1_exposicion",
@@ -63,7 +69,14 @@ test("el wizard termina en «Guardar historia» y vuelve a la galería resaltada
 
   const story = await (await page.request.get(`/api/v1/stories/${savedStoryId}`)).json();
   expect(story.status).toBe("draft");
-  expect(story.genero).not.toBe(""); // contrato wizard → API (Spec-440 §4)
+  // Contrato wizard → API (Spec-440 §4 y §9): campos explícitos, solo IDs, reglas tipadas.
+  expect(story.genero).not.toBe("");
+  expect(story.genero).not.toContain(":");
+  const sc = story.storyteller_config;
+  expect(sc.perception.reliability).toBe("poco_confiable");
+  expect(sc.language.register).toBe("rural_tradicional");
+  expect(sc.rules[0]).toMatchObject({ text: "Los espejos muestran el pasado", type: "fenomeno" });
+  expect(story.relator).toContain("Registro: rural_tradicional.");
 });
 
 test("doble click en «Generar» de la galería envía un solo pedido", async ({ page }) => {

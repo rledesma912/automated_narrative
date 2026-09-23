@@ -1,6 +1,16 @@
 """Tests for domain models."""
 
-from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryMetadata, StoryStatus
+import pytest
+
+from src.domain.models import (
+    Beat,
+    MacroBeat,
+    NarrativeJournal,
+    RuleType,
+    Story,
+    StoryMetadata,
+    StoryStatus,
+)
 
 
 class TestStory:
@@ -315,3 +325,27 @@ class TestStoryAggregate:
 
     def test_get_last_beat_none_sin_beats(self):
         assert self._story().get_last_beat() is None
+
+
+class TestRuleTypeFromRaw:
+    """Spec-440 §9: tipos del wizard viejo mapeados al dominio."""
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("entorno", RuleType.ENTORNO),
+            ("psicologica", RuleType.PSICOLOGICA),
+            ("fenomeno", RuleType.FENOMENO),
+            ("indicador", RuleType.INDICADOR),
+            ("paranormal", RuleType.FENOMENO),
+            ("social", RuleType.ENTORNO),
+            ("social: Social", RuleType.ENTORNO),
+            ("Fenomeno", RuleType.FENOMENO),
+            ("evento", None),
+            ("inventado", None),
+            ("", None),
+            (None, None),
+        ],
+    )
+    def test_mapeo(self, raw, expected):
+        assert RuleType.from_raw(raw) is expected

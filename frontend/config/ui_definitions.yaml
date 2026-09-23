@@ -482,12 +482,12 @@ steps:
         type: select
         label: "Tipo de regla 1"
         group: "reglas"
-        options:
+        # Tipos de RuleType (Spec-440 §9). Lista única, el resto la referencia.
+        options: &rule_types
           - "entorno: Del lugar"
           - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+          - "fenomeno: Sobrenatural"
+          - "indicador: Señal o indicio"
 
       - name: rule_2_text
         type: textarea
@@ -500,12 +500,7 @@ steps:
         type: select
         label: "Tipo de regla 2"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_3_text
         type: textarea
@@ -518,12 +513,7 @@ steps:
         type: select
         label: "Tipo de regla 3"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_4_text
         type: textarea
@@ -536,12 +526,7 @@ steps:
         type: select
         label: "Tipo de regla 4"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_5_text
         type: textarea
@@ -554,12 +539,7 @@ steps:
         type: select
         label: "Tipo de regla 5"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_6_text
         type: textarea
@@ -572,12 +552,7 @@ steps:
         type: select
         label: "Tipo de regla 6"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_7_text
         type: textarea
@@ -590,12 +565,7 @@ steps:
         type: select
         label: "Tipo de regla 7"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
   - id: step_plot
     title: "La Trama"

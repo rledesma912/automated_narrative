@@ -179,3 +179,28 @@ async def test_la_vista_de_autoria_sobrevive_a_una_generacion(client):
     story = (await client.get(f"/api/v1/stories/{story_id}")).json()
 
     _assert_authoring(story["storyteller_config"])
+
+
+async def _rule_types(story_id: str) -> dict[str, str | None]:
+    conn = await get_connection()
+    cursor = await conn.execute("SELECT content, type FROM rule WHERE story_id = ?", (story_id,))
+    rows = await cursor.fetchall()
+    await conn.close()
+    return {content: type_ for content, type_ in rows}
+
+
+async def test_tipos_de_regla_viejos_se_guardan_mapeados(client):
+    """Spec-440 §9: social → entorno, paranormal → fenomeno, evento → sin tipo."""
+    payload = json.loads(json.dumps(_PAYLOAD))
+    payload["storyteller_config"]["rules"] = [
+        {"id": "R1", "text": "Regla social", "type": "social"},
+        {"id": "R2", "text": "Regla paranormal", "type": "paranormal"},
+        {"id": "R3", "text": "Regla evento", "type": "evento"},
+    ]
+    story_id = (await client.post("/api/v1/stories?action=save", json=payload)).json()["id"]
+
+    assert await _rule_types(story_id) == {
+        "Regla social": "entorno",
+        "Regla paranormal": "fenomeno",
+        "Regla evento": None,
+    }

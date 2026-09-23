@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 hecho
+**Estado:** IMPLEMENT — S0 y S1 hechos
 
 ---
 
@@ -360,21 +360,23 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S1 — Contrato wizard → API (§4 pendiente + §9)
 
-- [ ] **T1.1:** `mapWizardToCore()` con IDs y campos explícitos.
+- [x] **T1.1:** `mapWizardToCore()` con IDs y campos explícitos.
   - Acceptance: envía `genero`, `subgenero`, `tono` y `narrator_config` (ya no `storyteller_config` ni `atmosfera`); `perception`/`knowledge`/`language`/`bias` y el `Registro` del `relator` solo con IDs (`poco_confiable`, no "poco_confiable: A veces…").
   - Verify: Vitest `mapper.service.test.ts` (nuevo): payload exacto para un wizard completo.
   - Files: `frontend/src/services/mapper.service.ts`
-- [ ] **T1.2:** Rehidratación con ambos formatos.
+- [x] **T1.2:** Rehidratación con ambos formatos.
   - Acceptance: `mapStoryToWizard()` reconoce valores guardados como ID o como legado "id: Etiqueta" y los lleva a la opción correcta del combo.
   - Verify: Vitest (historia legado y nueva → mismo wizard).
   - Files: `frontend/src/services/wizard.service.ts`
-- [ ] **T1.3:** Tipos de regla alineados con `RuleType`.
+- [x] **T1.3:** Tipos de regla alineados con `RuleType`.
   - Acceptance: `ui_definitions.yaml` ofrece los 4 tipos del dominio (lista única con ancla YAML); `RuleType.from_raw()` en el dominio mapea `paranormal`→`fenomeno`, `social`→`entorno`, `evento`/desconocido→`None`, y lo usan `_request_to_dto`, `CreateStoryUseCase`, `YamlStoryLoader` y el repo al leer.
   - Verify: pytest `tests/unit/domain/test_models.py` (mapeo) + integración (POST con `social` → guardado `entorno`).
   - Files: `src/domain/models.py`, `src/presentation/routers/story_router.py`, `src/application/use_cases/create_story.py`, `src/infrastructure/loaders/yaml_loader.py`, `src/infrastructure/database/repositories/story_repository.py`, `frontend/config/ui_definitions.yaml`
-- [ ] **T1.4:** E2E del contrato.
+- [x] **T1.4:** E2E del contrato.
   - Acceptance: wizard completo → la historia guardada tiene `narrator_config` con IDs limpios y la regla con su tipo.
   - Files: `frontend/tests/e2e/generation-guard.spec.ts` (extender el test de guardado)
+- [x] **Notas de S1:** `YamlStoryLoader` no cambia: pasa el tipo crudo y `CreateStoryUseCase` lo resuelve con `RuleType.from_raw()` (también acepta "id: Etiqueta" y mayúsculas). La rehidratación además mapea `paranormal`/`social` al combo nuevo; `evento` queda sin selección. Se deja de enviar `actos` suelto (el API lo toma de `narrator_config.actos`).
+- [x] **Checkpoint S1:** lint + pytest 630 + tsc + Vitest 69 + Playwright 18.
 
 ### S2 — Catálogo de géneros en la DB + recarga (§2)
 

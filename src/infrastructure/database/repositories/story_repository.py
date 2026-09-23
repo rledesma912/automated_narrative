@@ -588,10 +588,7 @@ class SQLStoryRepository:
             raw_type = r["type"] if "type" in keys else None
             raw_intensity = r["intensity"] if "intensity" in keys else None
             raw_applies = r["applies_to_beat"] if "applies_to_beat" in keys else None
-            try:
-                rule_type = RuleType(raw_type) if raw_type else None
-            except ValueError:
-                rule_type = None
+            rule_type = RuleType.from_raw(raw_type)
             result.append(
                 TypedRule(
                     id=r["id"],

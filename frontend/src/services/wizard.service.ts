@@ -55,8 +55,12 @@ export function getStepData(
   return session.wizard?.[stepId] ?? {};
 }
 
-/** Dado un fieldName y un ID limpio ("folk_horror"), devuelve el string completo del YAML ("folk_horror: Terror Rural…"). */
-export function reverseOption(fieldName: string, id: string): string {
+/**
+ * Dado un fieldName y un valor guardado, devuelve el string completo del YAML ("folk_horror: Terror Rural…").
+ * Acepta el ID limpio ("folk_horror") y el formato legado "id: Etiqueta" (Spec-440 §4).
+ */
+export function reverseOption(fieldName: string, value: string): string {
+  const id = (value ?? "").split(":")[0].trim();
   if (!id) return "";
   for (const step of STEPS) {
     const field = step.fields.find((f) => f.name === fieldName);
@@ -67,6 +71,12 @@ export function reverseOption(fieldName: string, id: string): string {
   }
   return id;
 }
+
+/** Tipos de regla que el wizard ofrecía antes de alinearse con RuleType (Spec-440 §9). */
+const LEGACY_RULE_TYPES: Record<string, string> = {
+  paranormal: "fenomeno",
+  social: "entorno",
+};
 
 /** Convierte un array de IDs limpios a un JSON string de strings completos, listo para session.wizard. */
 function reverseJsonArray(fieldName: string, ids: string[]): string {
@@ -147,7 +157,10 @@ export function mapStoryToWizard(story: Record<string, unknown>): WizardData {
   for (let i = 1; i <= 7; i++) {
     const r = rules[i - 1];
     stepWorld[`rule_${i}_text`] = r?.text ?? "";
-    stepWorld[`rule_${i}_type`] = r?.type ? reverseOption("rule_1_type", r.type) : "";
+    const ruleType = (r?.type ?? "").split(":")[0].trim();
+    stepWorld[`rule_${i}_type`] = ruleType
+      ? reverseOption("rule_1_type", LEGACY_RULE_TYPES[ruleType] ?? ruleType)
+      : "";
   }
 
   // ── step_plot ────────────────────────────────────────────────────────────

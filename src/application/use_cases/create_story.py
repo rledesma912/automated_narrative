@@ -54,10 +54,7 @@ class CreateStoryUseCase:
             typed = []
             for r in dto.typed_rules:
                 raw_type = r.get("type")
-                try:
-                    rule_type = RuleType(raw_type) if raw_type else None
-                except ValueError:
-                    rule_type = None
+                rule_type = RuleType.from_raw(raw_type)
                 typed.append(
                     TypedRule(
                         id=r.get("id") or str(uuid4()),
