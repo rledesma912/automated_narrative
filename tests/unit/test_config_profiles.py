@@ -122,3 +122,38 @@ class TestResolveActiveProfile:
         assert "provider" in profile
         assert "roles" in profile
         assert "prompt_variant" in profile
+
+
+class TestRoleProvider:
+    """Spec-480 T0.1: proveedor por rol."""
+
+    def _use(self, monkeypatch, profile: dict) -> None:
+        import src.config as config
+
+        monkeypatch.setattr(config, "_profile", profile)
+
+    def test_sin_provider_en_el_rol_usa_el_del_perfil(self, monkeypatch):
+        from src.config import settings
+
+        self._use(monkeypatch, {"provider": "ollama", "roles": {"voz": {"model": "m"}}})
+        assert settings.role_provider("voz") == "ollama"
+        assert settings.llm_providers == {"ollama"}
+
+    def test_perfil_mixto(self, monkeypatch):
+        from src.config import settings
+
+        self._use(
+            monkeypatch,
+            {
+                "provider": "ollama",
+                "roles": {
+                    "story_analyst": {"model": "gemma3:12b"},
+                    "director": {"model": "gemma3:12b"},
+                    "voz": {"provider": "anthropic", "model": "claude-sonnet-5"},
+                    "journal": {"model": "gemma3:12b"},
+                },
+            },
+        )
+        assert settings.role_provider("voz") == "anthropic"
+        assert settings.role_provider("journal") == "ollama"
+        assert settings.llm_providers == {"ollama", "anthropic"}

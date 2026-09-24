@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** TASKS — PLAN aprobado (2026-09-24); tareas pendientes de OK para pasar a IMPLEMENT
+**Estado:** IMPLEMENT — S0 commiteada; sigue S1
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -151,19 +151,19 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S0 — Proveedor por rol
 
-- [ ] **T0.1:** Config por rol.
+- [x] **T0.1:** Config por rol.
   - Acceptance: `settings.role_provider(rol)` → `roles.<rol>.provider` o el `provider` del perfil; `settings.llm_providers` → conjunto de proveedores en uso por los 4 roles.
   - Verify: pytest con un `llm_core_definitions` de prueba (perfil de un proveedor; perfil mixto).
   - Files: `src/config.py`, `tests/unit/test_config_profiles.py`
-- [ ] **T0.2:** `RoleRoutingAdapter`.
+- [x] **T0.2:** `RoleRoutingAdapter`.
   - Acceptance: despacha por `role` (sin rol / rol desconocido → por defecto), pasa todos los argumentos tal cual, `close()` una vez por adapter distinto.
   - Verify: pytest con adapters falsos que registran las llamadas.
   - Files: `src/infrastructure/adapters/role_routing_adapter.py`, `src/infrastructure/adapters/__init__.py`, `tests/unit/infrastructure/test_role_routing_adapter.py`
-- [ ] **T0.3:** `LLMFactory`.
+- [x] **T0.3:** `LLMFactory`.
   - Acceptance: un solo proveedor → el mismo tipo de adapter que hoy; mezcla → `RoleRoutingAdapter` con un adapter por proveedor (compartido entre roles); `use_mock` y `provider=` explícito sin cambios.
   - Verify: pytest (`tests/unit/infrastructure/test_llm_factory.py`), sin crear clientes reales (Anthropic con key falsa, sin requests).
   - Files: `src/infrastructure/factories.py`
-- [ ] **Checkpoint S0:** lint + pytest → commit.
+- [x] **Checkpoint S0:** lint + pytest → commit.
 
 ### S1 — AnthropicAdapter al día
 

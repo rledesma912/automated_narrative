@@ -23,6 +23,10 @@ def _load_llm_core() -> dict:
         return yaml.safe_load(f) or {}
 
 
+# Roles del pipeline que llaman al LLM (cada uno puede tener su proveedor, Spec-480).
+LLM_ROLES = ("story_analyst", "director", "voz", "journal")
+
+
 def _resolve_active_profile(core: dict, env_override: str | None) -> tuple[str, dict]:
     """Resuelve el perfil activo aplicando precedencia: env → yaml → fallback.
 
@@ -126,6 +130,15 @@ class Settings(BaseSettings):
     def role_config(self, role: str) -> dict:
         """Config de un rol específico (director | voz | journal) del perfil activo."""
         return self.llm_role_config.get(role, {})
+
+    def role_provider(self, role: str) -> str:
+        """Proveedor de un rol (Spec-480): `roles.<rol>.provider` o el del perfil."""
+        return self.role_config(role).get("provider") or self.llm_provider
+
+    @property
+    def llm_providers(self) -> set[str]:
+        """Proveedores en uso por los roles del perfil activo (Spec-480)."""
+        return {self.role_provider(role) for role in LLM_ROLES}
 
     def active_profile_config(self) -> dict:
         """Bloque completo del perfil activo (provider, prompt_variant, roles, etc.)."""
