@@ -40,3 +40,21 @@ describe("gallery view", () => {
     }
   );
 });
+
+describe("fecha de la galería", () => {
+  it("se muestra en hora de Argentina aunque el proceso corra en UTC", async () => {
+    const tz = process.env.TZ;
+    process.env.TZ = "UTC"; // como el contenedor
+    try {
+      const html = await ejs.renderFile(viewPath, {
+        stories: [
+          { id: "s1", title: "t", status: "draft", created_at: "2026-09-23T08:17:52.373051-03:00" },
+        ],
+      });
+      expect(html).toContain("23/09/2026, 08:17");
+      expect(html).not.toContain("11:17");
+    } finally {
+      process.env.TZ = tz;
+    }
+  });
+});

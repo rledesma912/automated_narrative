@@ -27,7 +27,8 @@
           <%
             const displayTitle = relato.title || `Relato ${index + 1}`;
             const createdAt = new Date(relato.created_at || Date.now()).toLocaleString('es-AR', {
-              day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+              day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+              timeZone: 'America/Argentina/Buenos_Aires', // el contenedor corre en UTC
             });
           %>
           <button

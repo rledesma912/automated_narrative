@@ -28,7 +28,7 @@ const personajes = story.personajes_full || [];
     <div>
       <h2 class="font-serif text-2xl text-forge-accent mb-1"><%= story.title || 'Sin título' %></h2>
       <p class="text-forge-muted text-xs uppercase tracking-widest">
-        <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+        <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' }) %>
       </p>
     </div>
     <span class="text-[10px] font-bold uppercase tracking-widest shrink-0 <%= sl.cls %>">
