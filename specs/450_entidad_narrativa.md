@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S5 completos; S5 desplegada con la recarga del backend (2026-09-23); sigue S6
+**Estado:** DONE (2026-09-23) — S0–S6 completos; todo desplegado en prod
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -420,5 +420,5 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S6 — Documentación y cierre
 
-- [ ] **T6.1:** `CLAUDE.md` (tablas nuevas, fórmula del `narrative_context`, journal, wizard, catálogo), notas en Spec-180 y Spec-220, Spec-450 → DONE.
+- [x] **T6.1:** `CLAUDE.md` (tablas nuevas, fórmula del `narrative_context`, journal, wizard, catálogo), notas en Spec-180 y Spec-220, Spec-450 → DONE.
 

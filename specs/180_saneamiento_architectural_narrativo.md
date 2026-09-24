@@ -1,5 +1,7 @@
 # Spec-180: Saneamiento Arquitectural y Desacoplamiento Narrativo
 
+> **Actualizado por Spec-450 (2026-09-23):** el `narrative_context` suma un bloque opcional de entidades: `beat_spec + resonance + synopsis_event + active_scenario + entity_exposure + memory_snapshot`. Con entidades, `must`/`must_not` de revelación salen de `reveal_rules` según el `reveal_level` de la entidad principal y la Voz recibe solo los campos que permite la exposición del acto; el Journal suma `entity_state` (tabla `entity_journal`). Sin entidades, los prompts son idénticos a los de antes (snapshots en `tests/fixtures/snapshots/`). Desde Spec-410 el resolver es determinístico: 16 llamadas LLM por historia, no 17.
+
 ## 1. Problema Narrativo y Técnico
 El sistema actual presenta acoplamiento y rigidez en la gestión de la identidad narrativa:
 1. **Identidad Acoplada**: `PersonaService` intenta resolver géneros gramaticales mediante listas fijas de nombres, lo cual es ineficiente y no escala.

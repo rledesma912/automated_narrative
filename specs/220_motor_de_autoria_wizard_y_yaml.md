@@ -2,6 +2,8 @@
 
 > **Actualizado por Spec-460 §2.5 (2026-09-22):** el wizard ya no genera ni guarda en silencio al pasar el último paso. La confirmación tiene un único "Guardar historia" (`POST /generar/guardar`, errores visibles) y la generación se lanza desde la galería o la ficha como job. Se eliminó `POST /generar/submit`.
 
+> **Actualizado por Spec-450 (2026-09-23):** el paso 4 (*El Mundo*) suma el grupo opcional «La Amenaza»: hasta 3 entidades (la primera es la principal) con naturaleza filtrada por el género del paso 1 (`source: entity_natures`), topes de largo (`maxlength`) y nivel de revelación. Round-trip en `storyteller_config.entities` (wizard, API, `export-yaml` / `import-yaml`, `generate --input`).
+
 > **Actualizado por Spec-440 (2026-09-23):**
 > - **Géneros:** el catálogo vive en la DB (`genre`/`subgenre`, FK compuesta en `story`) y el wizard lo lee de `GET /api/v1/catalog/genres`. Subgénero dependiente del género (`source: genre_catalog`, `depends_on`); par inválido → 422.
 > - **Narrador:** el combo "quién cuenta la historia" lista solo personajes con nombre (`source: characters`), se preselecciona si hay uno solo y se valida en el POST del paso.
