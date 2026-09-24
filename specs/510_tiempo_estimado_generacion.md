@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** PLAN — pendiente de revisión (SPECIFY aprobado 2026-09-24)
+**Estado:** TASKS — pendiente de revisión (SPECIFY y PLAN aprobados 2026-09-24)
 **Roadmap:** EV-6 (mostrar cuánto va a tardar antes de generar). Último evolutivo del alcance acordado.
 
 ---
@@ -158,3 +158,93 @@ Medir con `gemma3:12b` en una DB temporal un relato completo y una regeneración
 | Los pesos de etapa de `progress` no reflejan el tiempo real (la Voz tarda más que el Mapper). | La mezcla con la estimación suaviza el efecto. En S4 se comparan avance y tiempo reales; si difieren mucho, se propone ajustar los pesos (preguntando antes, §BOUNDARIES). |
 | Una llamada más al Core por página. | Solo en 4 rutas y con timeout corto; si falla, la página se ve como hoy. |
 | Un job que tarda mucho más (Ollama cargando el modelo en frío). | «tardando más de lo habitual» en vez de números; la mediana amortigua un caso aislado en el historial. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make lint` + `make test` + Vitest (+ Playwright completo desde S1, que toca el banner de todas las páginas) en verde → commit con tu OK.
+
+### S0 — Estimación en el Core
+
+- [ ] **T0.1:** Valor inicial por perfil.
+  - Acceptance: `settings.estimated_seconds(kind)` → `profiles.<activo>.estimated_seconds.<kind>`; sin bloque o sin la clave → `DEFAULT_ESTIMATED_SECONDS[kind]` (240 / 60); valor no numérico o ≤ 0 → default.
+  - Verify: pytest con un `llm_core_definitions` de prueba (con bloque, sin bloque, valor inválido).
+  - Files: `src/config.py`, `tests/unit/test_config_profiles.py`
+- [ ] **T0.2:** Historial de jobs terminados.
+  - Acceptance: `SQLJobRepository.list_finished(kind, limit=50)` → jobs `completed` de ese `kind` con `started_at` y `finished_at`, del más nuevo al más viejo; excluye `failed`, `cancelled` y los activos.
+  - Verify: pytest sobre una DB temporal con jobs de todos los estados y los dos kinds.
+  - Files: `src/infrastructure/database/repositories/job_repository.py`, `tests/unit/infrastructure/test_job_repository.py`
+- [ ] **T0.3:** `JobDurationEstimator`.
+  - Acceptance: `estimate(kind, profile)` → `Estimate(seconds, source, samples)`: mediana (entera, en segundos) de las últimas 5 duraciones válidas del `profile` (`params.profile`); descarta < 5 s y jobs sin perfil; con < 2 válidas → valor inicial con `source="default"` y `samples` = las válidas.
+  - Verify: pytest con repo falso (0, 1, 2, 7 muestras; otro perfil; otro kind; duraciones < 5 s; mediana par e impar).
+  - Files: `src/application/services/job_duration_estimator.py`, `tests/unit/application/services/test_job_duration_estimator.py`
+- [ ] **T0.4:** La estimación viaja en el job.
+  - Acceptance: al crear un job, `params` suma `profile` (perfil activo) y `estimated_seconds`, sin pisar `beat`/`narrative_id` de `regenerate_voz`; `JobManager._payload` y `JobResponse` suman `started_at`, `finished_at` (ISO o `null`) y `elapsed_seconds` (entero; `null` si no arrancó; hasta `finished_at` si terminó).
+  - Verify: pytest de `JobManager` (params y payload en `job_started` / `job_progress` / `job_done`) y del `GET /jobs/{id}`.
+  - Files: `src/application/services/job_manager.py`, `src/presentation/routers/job_router.py`, `src/presentation/schemas/response.py`, `tests/unit/application/services/test_job_manager.py`, `tests/integration/test_job_api.py`
+- [ ] **T0.5:** Endpoint de estimaciones.
+  - Acceptance: `GET /api/v1/jobs/estimates` → `{full_generation: {seconds, source, samples}, regenerate_voz: {...}}` con el perfil activo; sin historial, `source="default"`.
+  - Verify: pytest de API (sin historial; con 2 jobs `completed` del perfil activo sembrados en la DB → `source="history"`).
+  - Files: `src/presentation/routers/job_router.py`, `tests/integration/test_job_api.py`
+- [ ] **Checkpoint S0:** lint + pytest + Vitest → commit.
+
+### S1 — Lógica del cliente
+
+- [ ] **T1.1:** `eta.js`.
+  - Acceptance: `public/js/eta.js` (UMD: `window.ForgeEta` / `module.exports`) con `STAGES` y `progress(job)` idénticos a los del banner actual (pesos y casos: `consolidando` → 1, sin etapa o sin acto → 0,03, tope 0,99); `remainingSeconds(estimated, elapsed, p)` según §2.3 (`p < 0,15` → `estimated − elapsed`; si no, mezcla); `formatRemaining(s)` → «faltan ≈ N min» (≥ 90 s, redondeo al minuto), «falta ≈ 1 min» (30–89 s), «falta menos de 1 min» (1–29 s), «tardando más de lo habitual» (≤ 0), `""` sin estimación; `formatDuration(s)` → «42 s» / «3 min 42 s» / «12 min»; `formatEstimate(s)` → «≈ N min» (mínimo 1).
+  - Verify: Vitest con tabla de casos por función (incluidos `p` = 0, `p` = 1, `estimated` nulo, valores negativos y no numéricos).
+  - Files: `frontend/public/js/eta.js`, `frontend/tests/unit/public/eta.test.ts`
+- [ ] **T1.2:** El banner usa `eta.js`.
+  - Acceptance: `eta.js` cargado en `<head>` antes de `generation-banner.js`; el banner llama a `ForgeEta.progress` y ya no define `STAGES`/`progressPct` propios; sin cambios visibles.
+  - Verify: Vitest de vista del layout (orden de scripts) + E2E existentes (`generation-banner.spec.ts`) en verde.
+  - Files: `frontend/src/views/partials/layout.ejs`, `frontend/public/js/generation-banner.js`
+- [ ] **Checkpoint S1:** lint + pytest + Vitest + Playwright → commit.
+
+### S2 — Durante y al terminar
+
+- [ ] **T2.1:** Restante en el banner.
+  - Acceptance: en estado `running`, `data-banner-step` = `stepText(job)` + « — » + `formatRemaining(...)` (sin sufijo si no hay estimación); el tiempo transcurrido es `elapsed_seconds` del último evento más el tiempo local desde que llegó; se recalcula en cada evento y cada 15 s mientras haya un job `running` (el intervalo se limpia cuando no queda ninguno).
+  - Verify: E2E con el LLM mock y un job con `estimated_seconds` grande (el texto contiene «faltan ≈»).
+  - Files: `frontend/public/js/generation-banner.js`, `frontend/tests/e2e/generation-banner.spec.ts`
+- [ ] **T2.2:** «Lista en…» en el banner.
+  - Acceptance: estado `done` → «<título> está lista · en 3 min 42 s» (`formatDuration(finished_at − started_at)`); sin tiempos, como hoy.
+  - Verify: E2E (el aviso final contiene «está lista · en»).
+  - Files: `frontend/src/views/partials/generation_banner.ejs`, `frontend/public/js/generation-banner.js`, `frontend/tests/e2e/generation-banner.spec.ts`
+- [ ] **T2.3:** Restante y duración en la sala.
+  - Acceptance: al conectar a un job, la sala pide `GET /api/v1/jobs/{id}` y muestra bajo `#status-line` el restante (misma función y el mismo tick de 15 s que el banner); en `done`, el panel final dice «Lista en …».
+  - Verify: E2E en `streaming-room.spec.ts` (restante visible durante; «Lista en» al final).
+  - Files: `frontend/public/js/streaming-room.js`, `frontend/src/views/streaming-room.ejs`, `frontend/src/views/partials/streaming_done_panel.ejs`, `frontend/tests/e2e/streaming-room.spec.ts`
+- [ ] **Checkpoint S2:** lint + pytest + Vitest + Playwright → commit.
+
+### S3 — Antes de lanzar
+
+- [ ] **T3.1:** Middleware y helper.
+  - Acceptance: `loadEstimates` pide `GET /api/v1/jobs/estimates` (timeout 1,5 s) y deja `res.locals.estimates` (`null` si falla o tarda, sin romper la página); `formatEstimate(seconds)` en TS con el mismo resultado que `eta.js` (disponible en las vistas vía `res.locals`); montado solo en las rutas de galería, ficha, sala y relatos (página y fragmentos del panel).
+  - Verify: Vitest del middleware (Core ok, Core con error, Core lento) y test de paridad `formatEstimate` TS ↔ `eta.js`.
+  - Files: `frontend/src/middleware/estimates.middleware.ts`, `frontend/src/services/core_api.service.ts`, `frontend/src/utils/eta.ts`, `frontend/src/routes/index.ts`, `frontend/tests/unit/middleware/estimates.middleware.test.ts`
+- [ ] **T3.2:** Textos en las vistas.
+  - Acceptance: «≈ N min» junto a Generar / Reintentar / Regenerar (galería y ficha); en la sala, «Tarda ≈ N min. Podés cerrar la pestaña: sigue generándose.» (la segunda frase siempre); regenerar un acto: `hx-confirm` con «Tarda ≈ N min.»; sin `estimates`, todo como hoy salvo la frase de la pestaña.
+  - Verify: Vitest de vistas (galería, ficha, sala, panel de relatos) con y sin `estimates`.
+  - Files: `frontend/src/views/gallery.ejs`, `frontend/src/views/historia.ejs`, `frontend/src/views/streaming-room.ejs`, `frontend/src/views/partials/relato_panel.ejs`, tests de vista correspondientes
+- [ ] **T3.3:** E2E.
+  - Acceptance: la galería muestra «≈ … min» junto a «Generar»; la sala de una historia completada muestra la confirmación con la estimación y la frase de la pestaña.
+  - Verify: `npx playwright test --reporter=line` completo.
+  - Files: `frontend/tests/e2e/estimates.spec.ts`
+- [ ] **Checkpoint S3:** lint + pytest + Vitest + Playwright → commit.
+
+### S4 — Valores iniciales y cierre
+
+- [ ] **T4.1:** Medir con `gemma3:12b`.
+  - Acceptance: en una DB temporal, un relato completo y una regeneración de acto por la API de jobs (script en el scratchpad, en background); duración de cada uno y, para el relato completo, el avance de `progress` contra el tiempo real por etapa. Resultados en la sección RESULTADOS de esta spec.
+  - Verify: script de medición.
+  - Files: `specs/510_tiempo_estimado_generacion.md`
+- [ ] **T4.2:** Cargar los valores iniciales.
+  - Acceptance: `estimated_seconds` con los valores medidos (redondeados a 10 s) en `ollama-gemma3-12b` y en el híbrido `ollama-gemma3-12b-voz-sonnet5`; si el avance por etapa difiere mucho del tiempo real, se propone el ajuste de pesos (sin aplicarlo sin OK).
+  - Verify: `GET /jobs/estimates` en dev devuelve los valores medidos con `source="default"`.
+  - Files: `config/llm_core_definitions.yaml`
+- [ ] **T4.3:** Docs y cierre.
+  - Acceptance: `CLAUDE.md` (endpoint, `estimated_seconds` del perfil, `eta.js`), spec en DONE, roadmap EV-6 hecho.
+  - Verify: lectura.
+  - Files: `CLAUDE.md`, `specs/510_tiempo_estimado_generacion.md`
+- [ ] **Checkpoint S4:** suite completa en verde → commit → push → PR `feat/ev-6-tiempo-estimado` → `development`.
