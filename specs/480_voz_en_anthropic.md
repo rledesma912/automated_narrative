@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** PLAN — SPECIFY aprobada (2026-09-24); plan pendiente de OK para pasar a TASKS
+**Estado:** TASKS — PLAN aprobado (2026-09-24); tareas pendientes de OK para pasar a IMPLEMENT
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -142,4 +142,64 @@ S0 Proveedor por rol ─▶ S1 AnthropicAdapter al día ─▶ S2 Perfil híbrid
 | La versión 0.96 del SDK no acepta algún parámetro nuevo | Los parámetros que el SDK no tipa (`output_config`) van por `extra_body`, verificado en el test. |
 | El ruteo rompe perfiles existentes | Con un solo proveedor, `LLMFactory` devuelve exactamente el mismo adapter que hoy (test). |
 | Un gasto accidental | El perfil híbrido no se activa; `evaluate_voice.py` exige `--yes` con un proveedor pago; los tests nunca crean un cliente real. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + pytest (+ Playwright en S2, que toca endpoints que usa el frontend) en verde → commit con tu OK. **Ninguna tarea hace llamadas reales a la API de Anthropic.**
+
+### S0 — Proveedor por rol
+
+- [ ] **T0.1:** Config por rol.
+  - Acceptance: `settings.role_provider(rol)` → `roles.<rol>.provider` o el `provider` del perfil; `settings.llm_providers` → conjunto de proveedores en uso por los 4 roles.
+  - Verify: pytest con un `llm_core_definitions` de prueba (perfil de un proveedor; perfil mixto).
+  - Files: `src/config.py`, `tests/unit/test_config_profiles.py`
+- [ ] **T0.2:** `RoleRoutingAdapter`.
+  - Acceptance: despacha por `role` (sin rol / rol desconocido → por defecto), pasa todos los argumentos tal cual, `close()` una vez por adapter distinto.
+  - Verify: pytest con adapters falsos que registran las llamadas.
+  - Files: `src/infrastructure/adapters/role_routing_adapter.py`, `src/infrastructure/adapters/__init__.py`, `tests/unit/infrastructure/test_role_routing_adapter.py`
+- [ ] **T0.3:** `LLMFactory`.
+  - Acceptance: un solo proveedor → el mismo tipo de adapter que hoy; mezcla → `RoleRoutingAdapter` con un adapter por proveedor (compartido entre roles); `use_mock` y `provider=` explícito sin cambios.
+  - Verify: pytest (`tests/unit/infrastructure/test_llm_factory.py`), sin crear clientes reales (Anthropic con key falsa, sin requests).
+  - Files: `src/infrastructure/factories.py`
+- [ ] **Checkpoint S0:** lint + pytest → commit.
+
+### S1 — AnthropicAdapter al día
+
+- [ ] **T1.1:** Cliente simulado para tests.
+  - Acceptance: un doble de `AsyncAnthropic().messages.create` que registra los kwargs y devuelve un `anthropic.types.Message` real (bloques `ThinkingBlock`/`TextBlock`, `Usage`, `stop_reason`, `stop_details`).
+  - Files: `tests/support/fake_anthropic.py`
+- [ ] **T1.2:** Request.
+  - Acceptance: sin `temperature` para los modelos sin sampling (Sonnet 5, Opus 5, Opus 4.7/4.8, Fable); `thinking` según el rol (`adaptive` / `disabled` explícito / sin valor → no se manda); `effort` → `output_config` (por `extra_body` si el SDK 0.96 no lo tipa); `max_tokens` = `num_predict` del rol (mínimo 16000 con pensamiento adaptativo); modelo del rol.
+  - Verify: pytest sobre los kwargs registrados por el doble.
+  - Files: `src/infrastructure/adapters/anthropic_adapter.py`, `tests/unit/infrastructure/test_anthropic_adapter.py`
+- [ ] **T1.3:** Respuesta.
+  - Acceptance: texto = bloques `text` concatenados (aunque el primero sea `thinking`); `refusal` → `LLMRefusalError` con la categoría; `max_tokens` → error; `LLMResponse.input_tokens` / `output_tokens` desde `usage`; errores del SDK con cadena específica.
+  - Verify: pytest con respuestas simuladas de cada caso.
+  - Files: `src/infrastructure/adapters/anthropic_adapter.py`, `src/domain/interfaces.py`, `src/domain/exceptions.py`
+- [ ] **Checkpoint S1:** lint + pytest → commit.
+
+### S2 — Perfil híbrido, health y evaluación preparada
+
+- [ ] **T2.1:** Perfil `ollama-gemma3-12b-voz-sonnet5` (sin activar) y baja de `anthropic-opus-voz`.
+  - Verify: pytest (el perfil carga; la Voz es `anthropic`/`claude-sonnet-5`, el resto `ollama`; `active_profile` sigue siendo `ollama-gemma3-12b`).
+  - Files: `config/llm_core_definitions.yaml`
+- [ ] **T2.2:** `/health` y `/config/active-profile` por rol.
+  - Acceptance: health verifica cada proveedor en uso (Ollama responde, Anthropic tiene key); active-profile muestra `provider` por rol.
+  - Verify: pytest de los endpoints con el perfil local y con el híbrido.
+  - Files: `src/presentation/routers/stream_router.py`
+- [ ] **T2.3:** Pipeline completo con el perfil híbrido.
+  - Acceptance: un job con el perfil híbrido manda las 5 llamadas de la Voz al cliente de Anthropic simulado (con el system prompt compact de Spec-470) y el resto al mock local; el relato se consolida.
+  - Verify: pytest de integración (`tests/integration/test_hybrid_profile.py`).
+- [ ] **T2.4:** `evaluate_voice.py --profile … --yes`.
+  - Acceptance: `--profile` cambia el perfil solo dentro del proceso; con un proveedor pago y sin `--yes`, termina sin generar y muestra el costo estimado; con `--yes`, reporta el costo real por relato (`usage` de la Voz × US$ 2 / 10 por millón).
+  - Verify: pytest con el cliente simulado (costo calculado a partir del `usage` simulado); sin corrida real.
+  - Files: `scripts/evaluate_voice.py`, `tests/unit/scripts/test_evaluate_voice.py`
+- [ ] **Checkpoint S2:** lint + pytest + Playwright → commit.
+
+### S3 — Documentación y cierre
+
+- [ ] **T3.1:** `CLAUDE.md` (proveedor por rol, perfil híbrido, evaluación con costo y `--yes`), notas en Spec-060/070, Spec-480 → DONE con la evaluación real como pendiente (costo estimado).
+- [ ] **T3.2:** Deploy del backend (con tu OK) y verificación de que el perfil activo sigue siendo el local (`/config/active-profile`).
 
