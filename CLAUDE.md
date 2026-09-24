@@ -119,6 +119,7 @@ Provider activo: definido en perfil del YAML. Override: `LLM_PROVIDER` env o `--
 - Activación: `active_profile:` en YAML o `LLM_PROFILE=<nombre>` (env tiene precedencia). Resolver en `src/config.py`.
 - Convención model-por-rol: el `model` que se envía al LLM vive en `profiles.<perfil>.roles.<rol>.model`.
 - Perfil híbrido `ollama-gemma3-12b-voz-sonnet5` (Spec-480): la Voz en `claude-sonnet-5`, el resto en `gemma3:12b`. **No activo**; cuesta ~US$ 0,08 por relato (~US$ 0,13 con `thinking: adaptive`). Evaluarlo con `scripts/evaluate_voice.py --profile ollama-gemma3-12b-voz-sonnet5 --yes` (sin `--yes` solo muestra el costo estimado y no genera).
+- **Duración estimada (Spec-510):** `profiles.<perfil>.estimated_seconds: {full_generation, regenerate_voz}` es el valor inicial; con historial manda la mediana de los últimos 5 jobs `done` del mismo tipo y perfil (`JobDurationEstimator`, descarta < 5 s = corridas con el mock). Sin el bloque: 240 / 60 s (`DEFAULT_ESTIMATED_SECONDS`).
 - Filtros (`response_filters`, Spec-080): `thinking_tags`, `strip_line_patterns`, `preserve_paragraph_breaks`, `model_overrides` por substring de modelo. Aplicados por `ResponseNormalizer` antes de persistir.
 
 Detalle completo: Spec-060, Spec-070.
@@ -149,6 +150,7 @@ Templates: `story_analyst_*compact.md`, `synopsis_mapper_*compact.md`, `voice_sy
   - Se pueden editar historias ya generadas (lo generado se conserva; hay que regenerar para verlo reflejado); con un job activo, `PATCH` → 409.
 - **Galería (Spec-311 + Spec-312):** lista variantes de `generated_narrative` por relato + delete con confirmación HTMX.
 - **Exportar para el TTS (Spec-490):** «Descargar .md» en el panel de cada variante (`relato_panel.ejs`, `hx-boost="false"`) baja el relato en el formato que lee `audiogen` (proyecto TTS del usuario): `# título`, `## Acto N`, un párrafo por línea y `[pause=1500]` entre actos. `narrative_script_formatter.py` quita lo que `audiogen` saltearía en silencio (líneas que empiezan con `#`/`-`/`*`/`>`: guion de diálogo → raya, énfasis, citas, separadores); el contrato está en `test_narrative_script_audiogen_contract.py`. «Copiar Relato» copia solo los `[data-copy-part]` (rótulos y prosa, sin botones).
+- **Tiempo estimado (Spec-510):** cada job guarda en `params` su `profile` y `estimated_seconds`; el payload y `JobResponse` traen `started_at`, `finished_at` y `elapsed_seconds`. `public/js/eta.js` (`window.ForgeEta`, UMD testeable en Vitest) calcula avance y tiempo restante (mezcla la estimación con el ritmo real; redondeado, nunca negativo: «tardando más de lo habitual»); lo usan el banner y la sala (tick de 15 s; `event-bus.js` marca `received_at` para no depender del reloj del Core). Antes de lanzar, el middleware `loadEstimates` (solo galería, ficha, sala y relatos; timeout 1,5 s) deja «≈ N min» en `res.locals.estimateLabels` → partial `estimate.ejs`, confirmación de la sala y `hx-confirm` de regenerar un acto.
 
 ## Environment Variables
 
@@ -205,11 +207,11 @@ Checkpoints `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal
 - `story_router` — CRUD `/stories` (`PATCH /stories/{id}` edita también generadas; 409 con job activo; 422 si el par género/subgénero no existe o las entidades son inválidas: más de 3, campo largo o naturaleza de otro género), PATCH `status` y `file-path`.
 - `catalog_router` (Spec-440, Spec-450) — `GET /catalog/genres` (géneros con sus subgéneros y sus `entity_natures`, ordenados).
 - `beat_router` — `GET/PUT /stories/{id}/beats[/{n}]`.
-- `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id}; 202/409), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
+- `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id}; 202/409), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `GET /jobs/estimates` (Spec-510), `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
 - `events_router` (Spec-460) — `GET /events` (SSE global: `snapshot` + `job_*` + heartbeat).
 - `narrative_router` (Spec-300) — `/story-templates/{id}/narratives`, `/generated-narratives/{id}` (GET/DELETE/text), `/generated-narratives/{id}/export.md` (Spec-490: descarga para el TTS).
 - `stream_router` (Spec-210) — `GET /stories/{id}/stream` (SSE de **solo lectura**: se ata al job activo o reproduce los beats), `/full`, `/health`, `/config/active-profile`.
 
 ## Specs
 
-Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros + wizard), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `500_clean_code_responsability.md` (smells acumulados del core).
+Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros + wizard), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `500_clean_code_responsability.md` (smells acumulados del core).

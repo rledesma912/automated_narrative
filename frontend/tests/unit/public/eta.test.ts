@@ -82,6 +82,11 @@ describe("remainingFor", () => {
     expect(eta.remainingFor(job, 20)).toBe(40);
   });
 
+  it("al consolidar dice que falta poco, aunque se haya pasado de lo estimado", () => {
+    const job = { kind: "full_generation", stage: "consolidando", params: { estimated_seconds: 200 } };
+    expect(eta.formatRemaining(eta.remainingFor(job, 260))).toBe("falta menos de 1 min");
+  });
+
   it("sin estimación en el job → null", () => {
     expect(eta.remainingFor({ kind: "full_generation", params: {} }, 20)).toBeNull();
     expect(eta.remainingFor({ kind: "full_generation" }, 20)).toBeNull();

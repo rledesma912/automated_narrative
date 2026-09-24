@@ -71,6 +71,8 @@
   /** Restante de un job a partir de lo que trae su payload. */
   function remainingFor(job, elapsed) {
     const estimated = job && job.params ? job.params.estimated_seconds : null;
+    // Consolidar es instantáneo: no es «tardando más», es el final.
+    if (job && job.stage === "consolidando" && isPositive(estimated)) return 1;
     const p = job && job.kind === "full_generation" ? progress(job) : 0;
     return remainingSeconds(estimated, elapsed, p);
   }

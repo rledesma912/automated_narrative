@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** TASKS — pendiente de revisión (SPECIFY y PLAN aprobados 2026-09-24)
+**Estado:** DONE (2026-09-24) — valores iniciales medidos con `gemma3:12b`; pesos de etapa sin cambios, recomendación a confirmar (ver RESULTADOS)
 **Roadmap:** EV-6 (mostrar cuánto va a tardar antes de generar). Último evolutivo del alcance acordado.
 
 ---
@@ -236,16 +236,40 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S4 — Valores iniciales y cierre
 
-- [ ] **T4.1:** Medir con `gemma3:12b`.
+- [x] **T4.1:** Medir con `gemma3:12b`.
   - Acceptance: en una DB temporal, un relato completo y una regeneración de acto por la API de jobs (script en el scratchpad, en background); duración de cada uno y, para el relato completo, el avance de `progress` contra el tiempo real por etapa. Resultados en la sección RESULTADOS de esta spec.
   - Verify: script de medición.
   - Files: `specs/510_tiempo_estimado_generacion.md`
-- [ ] **T4.2:** Cargar los valores iniciales.
+- [x] **T4.2:** Cargar los valores iniciales.
   - Acceptance: `estimated_seconds` con los valores medidos (redondeados a 10 s) en `ollama-gemma3-12b` y en el híbrido `ollama-gemma3-12b-voz-sonnet5`; si el avance por etapa difiere mucho del tiempo real, se propone el ajuste de pesos (sin aplicarlo sin OK).
   - Verify: `GET /jobs/estimates` en dev devuelve los valores medidos con `source="default"`.
   - Files: `config/llm_core_definitions.yaml`
-- [ ] **T4.3:** Docs y cierre.
+- [x] **T4.3:** Docs y cierre.
   - Acceptance: `CLAUDE.md` (endpoint, `estimated_seconds` del perfil, `eta.js`), spec en DONE, roadmap EV-6 hecho.
   - Verify: lectura.
   - Files: `CLAUDE.md`, `specs/510_tiempo_estimado_generacion.md`
-- [ ] **Checkpoint S4:** suite completa en verde → commit → push → PR `feat/ev-6-tiempo-estimado` → `development`.
+- [x] **Checkpoint S4:** suite completa en verde → commit → push → PR `feat/ev-6-tiempo-estimado` → `development`.
+
+---
+
+## RESULTADOS (2026-09-24)
+
+**T4.1: medición con `gemma3:12b`** («El monte prohibido», sin entidades, DB temporal, modelo ya cargado en Ollama):
+
+| Job | Duración real | Valor inicial cargado |
+|---|---|---|
+| `full_generation` | 206 s (3 min 26 s) | 210 s |
+| `regenerate_voz` (acto 3) | 22 s | 20 s |
+
+`evaluate_voice.py` venía midiendo ~3,7 min por relato con entidades; 210 s queda dentro del «≈» y la mediana del historial lo corrige solo con el uso (a partir de 2 jobs del perfil).
+
+**Avance ponderado contra tiempo real.** El Analyst ocupa el 9 % del tiempo con peso 0, y dentro de cada acto la Voz arranca al ~25 % (peso actual 0,4) y el Journal al ~82 % (peso 0,85). El avance queda entre 0,02 y 0,07 por debajo del tiempo real. Simulado sobre esta corrida con estimación de 210 s:
+
+| | Error medio del restante | Texto mostrado distinto del real |
+|---|---|---|
+| Pesos actuales | 11 s | 4 de 16 puntos (siempre un minuto de más) |
+| Pesos ajustados (Analyst 9 %, Voz 0,25, Journal 0,8) | 7 s | 2 de 16 |
+
+**Recomendación: dejar los pesos como están** (a confirmar por el usuario). Con el redondeo a minutos la diferencia casi no se ve, y los pesos también mueven la barra de progreso de Spec-460. Si más adelante se quiere afinar, el cambio está medido acá.
+
+**Bug encontrado y corregido:** en la etapa `consolidando` el avance es 1 y el restante daba 0 → «tardando más de lo habitual» justo al terminar. Ahora `remainingFor` devuelve «falta menos de 1 min» al consolidar (test en `eta.test.ts`).
