@@ -43,7 +43,7 @@ Que antes de generar se sepa **cuánto va a tardar**, que durante la generación
 ### 2.1 Estimación (Core)
 
 - **Valor inicial por perfil** en `config/llm_core_definitions.yaml`: `profiles.<perfil>.estimated_seconds: {full_generation: 240, regenerate_voz: 60}` (valores de `gemma3:12b` a medir en S-final). Un perfil sin el bloque usa un default global.
-- **Estimador** (servicio en `application`): mediana de la duración (`finished_at − started_at`) de los **últimos 5 jobs `completed`** del mismo `kind` y el mismo perfil. Con menos de 2 muestras, el valor inicial. Devuelve `{seconds, source: "history" | "default", samples}`.
+- **Estimador** (servicio en `application`): mediana de la duración (`finished_at − started_at`) de los **últimos 5 jobs `done`** del mismo `kind` y el mismo perfil. Con menos de 2 muestras, el valor inicial. Devuelve `{seconds, source: "history" | "default", samples}`.
 - Al crear un job se guarda `params.profile` y se calcula `estimated_seconds`, que viaja en el payload del job junto con `started_at` y `finished_at`.
 - `GET /api/v1/jobs/estimates` → la estimación de los dos tipos con el perfil activo (para mostrarla antes de lanzar).
 
@@ -67,7 +67,7 @@ En el banner (`data-banner-step`) y en la sala: «Acto 2 de 5 · Narrando — fa
 
 ### 2.4 Al terminar
 
-El aviso de terminado del banner y el panel final de la sala: «Lista en 3 min 42 s» (con `finished_at − started_at` del payload). Solo para `completed`.
+El aviso de terminado del banner y el panel final de la sala: «Lista en 3 min 42 s» (con `finished_at − started_at` del payload). Solo para `done`.
 
 ---
 
@@ -81,7 +81,7 @@ El aviso de terminado del banner y el panel final de la sala: «Lista en 3 min 4
 
 ## TESTING
 
-- **Unit (pytest):** estimador (sin historial → default; 1 muestra → default; ≥ 2 → mediana de los últimos 5; filtra por `kind`, perfil y `completed`; ignora jobs sin `started_at`/`finished_at`); config del valor inicial por perfil y default global.
+- **Unit (pytest):** estimador (sin historial → default; 1 muestra → default; ≥ 2 → mediana de los últimos 5; filtra por `kind`, perfil y `done`; ignora jobs sin `started_at`/`finished_at`); config del valor inicial por perfil y default global.
 - **API (pytest):** `GET /jobs/estimates` (los dos tipos, fuente `default` e `history`); el job creado guarda `params.profile`; el payload del job trae `started_at`, `finished_at`, `estimated_seconds`.
 - **Unit (Vitest):** la función de tiempo restante y su redondeo (tabla de casos: inicio, mitad, pasado de tiempo, `p` = 0, sin estimación); el formateo de «lista en».
 - **Vista (Vitest):** los botones y confirmaciones muestran «≈ N min» cuando hay estimación y nada cuando no.
@@ -118,7 +118,7 @@ Primero el Core (la estimación y los tiempos del job), después la lógica pura
 | Tema | Decisión |
 |---|---|
 | Valor inicial | `profiles.<perfil>.estimated_seconds: {full_generation, regenerate_voz}` en `llm_core_definitions.yaml`; `settings.estimated_seconds(kind)` lo lee y cae a un default global (`DEFAULT_ESTIMATED_SECONDS = {full_generation: 240, regenerate_voz: 60}` en `config.py`). |
-| Historial | `SQLJobRepository.list_finished(kind, limit)`: jobs `completed` con `started_at` y `finished_at`, más nuevos primero. El filtro por perfil (`params.profile`) y el descarte de duraciones < 5 s (corridas con el LLM mock) se hacen en el estimador, en Python: a esta escala alcanza con traer los últimos 50. |
+| Historial | `SQLJobRepository.list_finished(kind, limit)`: jobs `done` con `started_at` y `finished_at`, más nuevos primero. El filtro por perfil (`params.profile`) y el descarte de duraciones < 5 s (corridas con el LLM mock) se hacen en el estimador, en Python: a esta escala alcanza con traer los últimos 50. |
 | Estimador | `application/services/job_duration_estimator.py`: `JobDurationEstimator(repo).estimate(kind, profile) -> Estimate(seconds, source, samples)`. Mediana de las últimas 5 duraciones válidas; con menos de 2, el valor inicial. |
 | Guardar en el job | `JobManager.start()` agrega `profile` y `estimated_seconds` a `params` al crear el job. Queda fija para ese job (no cambia si en el medio termina otro) y viaja sola en el payload, que ya incluye `params`. |
 | Tiempos en el payload | `JobManager._payload` y `JobResponse` suman `started_at`, `finished_at` y `elapsed_seconds` (calculado en el Core al publicar). El cliente usa `elapsed_seconds` más lo que pasó en su reloj desde que lo recibió: no le afecta una diferencia de hora entre máquinas. |
@@ -167,27 +167,27 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S0 — Estimación en el Core
 
-- [ ] **T0.1:** Valor inicial por perfil.
+- [x] **T0.1:** Valor inicial por perfil.
   - Acceptance: `settings.estimated_seconds(kind)` → `profiles.<activo>.estimated_seconds.<kind>`; sin bloque o sin la clave → `DEFAULT_ESTIMATED_SECONDS[kind]` (240 / 60); valor no numérico o ≤ 0 → default.
   - Verify: pytest con un `llm_core_definitions` de prueba (con bloque, sin bloque, valor inválido).
   - Files: `src/config.py`, `tests/unit/test_config_profiles.py`
-- [ ] **T0.2:** Historial de jobs terminados.
-  - Acceptance: `SQLJobRepository.list_finished(kind, limit=50)` → jobs `completed` de ese `kind` con `started_at` y `finished_at`, del más nuevo al más viejo; excluye `failed`, `cancelled` y los activos.
+- [x] **T0.2:** Historial de jobs terminados.
+  - Acceptance: `SQLJobRepository.list_finished(kind, limit=50)` → jobs `done` de ese `kind` con `started_at` y `finished_at`, del más nuevo al más viejo; excluye `failed` (cancelados incluidos) y los activos.
   - Verify: pytest sobre una DB temporal con jobs de todos los estados y los dos kinds.
   - Files: `src/infrastructure/database/repositories/job_repository.py`, `tests/unit/infrastructure/test_job_repository.py`
-- [ ] **T0.3:** `JobDurationEstimator`.
+- [x] **T0.3:** `JobDurationEstimator`.
   - Acceptance: `estimate(kind, profile)` → `Estimate(seconds, source, samples)`: mediana (entera, en segundos) de las últimas 5 duraciones válidas del `profile` (`params.profile`); descarta < 5 s y jobs sin perfil; con < 2 válidas → valor inicial con `source="default"` y `samples` = las válidas.
   - Verify: pytest con repo falso (0, 1, 2, 7 muestras; otro perfil; otro kind; duraciones < 5 s; mediana par e impar).
   - Files: `src/application/services/job_duration_estimator.py`, `tests/unit/application/services/test_job_duration_estimator.py`
-- [ ] **T0.4:** La estimación viaja en el job.
+- [x] **T0.4:** La estimación viaja en el job.
   - Acceptance: al crear un job, `params` suma `profile` (perfil activo) y `estimated_seconds`, sin pisar `beat`/`narrative_id` de `regenerate_voz`; `JobManager._payload` y `JobResponse` suman `started_at`, `finished_at` (ISO o `null`) y `elapsed_seconds` (entero; `null` si no arrancó; hasta `finished_at` si terminó).
   - Verify: pytest de `JobManager` (params y payload en `job_started` / `job_progress` / `job_done`) y del `GET /jobs/{id}`.
   - Files: `src/application/services/job_manager.py`, `src/presentation/routers/job_router.py`, `src/presentation/schemas/response.py`, `tests/unit/application/services/test_job_manager.py`, `tests/integration/test_job_api.py`
-- [ ] **T0.5:** Endpoint de estimaciones.
+- [x] **T0.5:** Endpoint de estimaciones.
   - Acceptance: `GET /api/v1/jobs/estimates` → `{full_generation: {seconds, source, samples}, regenerate_voz: {...}}` con el perfil activo; sin historial, `source="default"`.
-  - Verify: pytest de API (sin historial; con 2 jobs `completed` del perfil activo sembrados en la DB → `source="history"`).
+  - Verify: pytest de API (sin historial; con 2 jobs `done` del perfil activo sembrados en la DB → `source="history"`).
   - Files: `src/presentation/routers/job_router.py`, `tests/integration/test_job_api.py`
-- [ ] **Checkpoint S0:** lint + pytest + Vitest → commit.
+- [x] **Checkpoint S0:** lint + pytest + Vitest → commit.
 
 ### S1 — Lógica del cliente
 

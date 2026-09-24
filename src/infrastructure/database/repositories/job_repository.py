@@ -9,6 +9,7 @@ from src.domain.jobs import (
     ACTIVE_JOB_STATUSES,
     INTERRUPTED_ERROR,
     Job,
+    JobKind,
     JobStage,
     JobStatus,
 )
@@ -59,10 +60,13 @@ class SQLJobRepository:
             await conn.close()
         return job
 
-    async def mark_running(self, job_id: UUID) -> None:
+    async def mark_running(self, job_id: UUID) -> datetime:
+        """Pasa el job a `running`; devuelve el `started_at` guardado."""
+        started_at = now_argentina()
         await self._update(
-            job_id, status=JobStatus.RUNNING.value, started_at=now_argentina().isoformat()
+            job_id, status=JobStatus.RUNNING.value, started_at=started_at.isoformat()
         )
+        return started_at
 
     async def update_progress(
         self, job_id: UUID, stage: JobStage, beat: int | None, total_beats: int | None = None
@@ -78,14 +82,17 @@ class SQLJobRepository:
         status: JobStatus,
         error: str | None = None,
         narrative_id: UUID | str | None = None,
-    ) -> None:
+    ) -> datetime:
+        """Cierra el job; devuelve el `finished_at` guardado."""
+        finished_at = now_argentina()
         await self._update(
             job_id,
             status=status.value,
             error=error,
             narrative_id=str(narrative_id) if narrative_id else None,
-            finished_at=now_argentina().isoformat(),
+            finished_at=finished_at.isoformat(),
         )
+        return finished_at
 
     async def get(self, job_id: UUID) -> Job | None:
         rows = await self._select("id = ?", (str(job_id),))
@@ -102,6 +109,14 @@ class SQLJobRepository:
         """Jobs terminados desde `since` (para el `snapshot` del canal global)."""
         return await self._select(
             f"NOT {_ACTIVE_SQL} AND finished_at >= ?", (*_ACTIVE, since.isoformat())
+        )
+
+    async def list_finished(self, kind: JobKind, limit: int = 50) -> list[Job]:
+        """Jobs `done` de un tipo con sus tiempos, del más nuevo al más viejo (Spec-510)."""
+        return await self._select(
+            "kind = ? AND status = ? AND started_at IS NOT NULL AND finished_at IS NOT NULL",
+            (kind.value, JobStatus.DONE.value),
+            order=f"finished_at DESC LIMIT {int(limit)}",
         )
 
     async def recover_interrupted(self) -> int:

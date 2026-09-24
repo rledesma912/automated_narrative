@@ -484,3 +484,65 @@ async def test_cierre_de_la_app_interrumpe_los_jobs_del_singleton(job_repo, stor
 
     saved = await job_repo.get(job.id)
     assert (saved.status, saved.error) == (JobStatus.FAILED, INTERRUPTED_ERROR)
+
+
+# ── Spec-510 T0.4: la estimación y los tiempos viajan en el job ───────────────
+
+
+async def test_params_llevan_perfil_y_estimacion_sin_pisar_los_del_job(
+    manager, job_repo, story_repo, monkeypatch
+):
+    import src.config as config
+
+    monkeypatch.setattr(config, "_active_profile_name", "perfil-test")
+    monkeypatch.setattr(config, "_profile", {"estimated_seconds": {"regenerate_voz": 70}})
+    story = await _story(story_repo)
+
+    job = await manager.submit(
+        story, JobKind.REGENERATE_VOZ, _quick_run(), params={"beat": 3, "narrative_id": "n-1"}
+    )
+    await manager.wait(job.id)
+
+    saved = await job_repo.get(job.id)
+    assert saved.params == {
+        "beat": 3,
+        "narrative_id": "n-1",
+        "profile": "perfil-test",
+        "estimated_seconds": 70,
+    }
+
+
+async def test_payload_trae_tiempos(manager, bus, story_repo):
+    story = await _story(story_repo)
+    global_q, _ = bus.subscribe(GLOBAL_CHANNEL)
+
+    job = await manager.submit(story, JobKind.FULL_GENERATION, _quick_run(total=1))
+    await manager.wait(job.id)
+
+    started, *progress, done = [e.data for e in _drain(global_q)]
+    assert (started["started_at"], started["finished_at"], started["elapsed_seconds"]) == (
+        None,
+        None,
+        None,
+    )
+    assert progress[0]["started_at"] is not None and progress[0]["finished_at"] is None
+    assert isinstance(progress[0]["elapsed_seconds"], int)
+    assert done["started_at"] == progress[0]["started_at"]
+    assert done["finished_at"] is not None and done["elapsed_seconds"] >= 0
+    assert done["params"]["estimated_seconds"] > 0
+
+
+async def test_si_falla_el_estimador_el_job_arranca_igual(bus, job_repo, story_repo):
+    class _Broken:
+        async def estimate(self, kind, profile):
+            raise RuntimeError("sin estimación")
+
+    manager = JobManager(bus, job_repo, story_repo, estimator=_Broken())
+    story = await _story(story_repo)
+
+    job = await manager.submit(story, JobKind.FULL_GENERATION, _quick_run())
+    await manager.wait(job.id)
+
+    saved = await job_repo.get(job.id)
+    assert saved.status == JobStatus.DONE
+    assert "estimated_seconds" not in saved.params

@@ -157,3 +157,45 @@ class TestRoleProvider:
         assert settings.role_provider("voz") == "anthropic"
         assert settings.role_provider("journal") == "ollama"
         assert settings.llm_providers == {"ollama", "anthropic"}
+
+
+class TestEstimatedSeconds:
+    """Spec-510 T0.1: duración inicial estimada por perfil."""
+
+    def _use(self, monkeypatch, profile: dict) -> None:
+        import src.config as config
+
+        monkeypatch.setattr(config, "_profile", profile)
+
+    def test_valor_del_perfil(self, monkeypatch):
+        from src.config import settings
+
+        self._use(
+            monkeypatch,
+            {"estimated_seconds": {"full_generation": 220, "regenerate_voz": 50.5}},
+        )
+        assert settings.estimated_seconds("full_generation") == 220
+        assert settings.estimated_seconds("regenerate_voz") == 50
+
+    def test_sin_bloque_usa_el_default(self, monkeypatch):
+        from src.config import DEFAULT_ESTIMATED_SECONDS, settings
+
+        self._use(monkeypatch, {"provider": "ollama"})
+        assert (
+            settings.estimated_seconds("full_generation")
+            == DEFAULT_ESTIMATED_SECONDS["full_generation"]
+        )
+        assert settings.estimated_seconds("regenerate_voz") == 60
+
+    def test_sin_la_clave_usa_el_default(self, monkeypatch):
+        from src.config import settings
+
+        self._use(monkeypatch, {"estimated_seconds": {"full_generation": 200}})
+        assert settings.estimated_seconds("regenerate_voz") == 60
+
+    def test_valores_invalidos_usan_el_default(self, monkeypatch):
+        from src.config import settings
+
+        for invalid in ("rápido", 0, -10, None, True):
+            self._use(monkeypatch, {"estimated_seconds": {"full_generation": invalid}})
+            assert settings.estimated_seconds("full_generation") == 240
