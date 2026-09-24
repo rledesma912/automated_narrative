@@ -216,19 +216,19 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S1 — Endpoint de descarga
 
-- [ ] **T1.1:** Caso de uso.
+- [x] **T1.1:** Caso de uso.
   - Acceptance: `GenerateNarrativesUseCase.export_tts_markdown(narrative_id)` → `(filename, markdown)` con el título de la historia; si la historia no existe, el título de la variante sin ` · fecha`; `None` si la variante no existe.
   - Verify: pytest con repos de prueba (historia existente, historia borrada, variante inexistente).
   - Files: `src/application/use_cases/generate_narratives_use_case.py`, `tests/unit/application/use_cases/test_export_tts_markdown.py`
-- [ ] **T1.2:** Endpoint.
+- [x] **T1.2:** Endpoint.
   - Acceptance: `GET /api/v1/generated-narratives/{id}/export.md` → 200, `text/markdown; charset=utf-8`, `Content-Disposition: attachment; filename="…"` y el `.md` como cuerpo; 400 con id inválido; 404 si no existe.
-  - Verify: pytest con `TestClient` sobre una DB temporal.
-  - Files: `src/presentation/routers/narrative_router.py`, `tests/unit/presentation/routers/test_narrative_router_export.py`
-- [ ] **T1.3:** Proxy.
+  - Verify: pytest con `httpx.ASGITransport` sobre una DB temporal.
+  - Files: `src/presentation/routers/narrative_router.py`, `tests/integration/test_narrative_export_api.py`
+- [x] **T1.3:** Proxy.
   - Acceptance: `Content-Disposition` y `Content-Type` del Core llegan intactos al browser vía `/api/*`.
   - Verify: Vitest, un caso nuevo en `proxy_passthrough.test.ts`.
   - Files: `frontend/tests/integration/proxy_passthrough.test.ts`
-- [ ] **Checkpoint S1:** lint + pytest + Vitest → commit.
+- [x] **Checkpoint S1:** lint + pytest + Vitest → commit.
 
 ### S2 — UI: descargar y copiar
 

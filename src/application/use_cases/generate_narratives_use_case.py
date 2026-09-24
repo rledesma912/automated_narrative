@@ -3,6 +3,10 @@
 import logging
 from uuid import UUID
 
+from src.application.services.narrative_script_formatter import (
+    export_filename,
+    to_tts_markdown,
+)
 from src.domain.models import GeneratedNarrative, Story, StoryStatus
 from src.infrastructure.database.repositories import (
     SQLBeatRepository,
@@ -91,6 +95,22 @@ class GenerateNarrativesUseCase:
     async def get_by_id(self, narrative_id: UUID) -> GeneratedNarrative | None:
         """Obtiene un relato generado por su ID."""
         return await self.narrative_repo.get_by_id(narrative_id)
+
+    async def export_tts_markdown(self, narrative_id: UUID) -> tuple[str, str] | None:
+        """`(nombre de archivo, .md)` de una variante para el TTS (Spec-490).
+
+        El título es el de la historia; si ya no existe, el de la variante sin
+        el sufijo de fecha. `None` si la variante no existe.
+        """
+        narrative = await self.narrative_repo.get_by_id(narrative_id)
+        if not narrative:
+            return None
+        story = await self.story_repo.get_by_id(narrative.story_template_id)
+        title = story.title if story else narrative.title.rsplit(" · ", 1)[0]
+        return (
+            export_filename(title, narrative.created_at),
+            to_tts_markdown(title, narrative.content),
+        )
 
     async def delete(self, narrative_id: UUID) -> None:
         """Elimina un relato generado."""
