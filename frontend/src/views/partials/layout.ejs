@@ -6,15 +6,15 @@
   <title>NarrativeForge — <%= title %></title>
 
   <!-- CSS compilado (Tailwind CLI compilado con PostCSS) — Offline first -->
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=<%= locals.assetVersion || '' %>">
 
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <%/* Spec-460: canal global de eventos + componentes que lo consumen. En <head>
        con defer: sobreviven a las navegaciones de hx-boost (1 SSE por pestaña). */%>
-  <script src="/js/event-bus.js" defer></script>
-  <script src="/js/generation-banner.js" defer></script>
-  <script src="/js/footer.js" defer></script>
-  <script src="/js/generation-guard.js" defer></script>
+  <script src="/js/event-bus.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/generation-banner.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/footer.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/generation-guard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 
   <style>
     :root { 

@@ -141,3 +141,15 @@ describe("wizard paso 4 — entidades", () => {
     expect(html).toMatch(/name="entity_1_description"[^>]*maxlength="400"/);
   });
 });
+
+/** Estáticos versionados: cada deploy cambia la URL y el navegador no usa el JS viejo. */
+describe("estáticos con versión", () => {
+  it("wizard.js lleva ?v=<assetVersion>; sin versión, la URL sigue siendo válida", async () => {
+    const withVersion = await ejs.renderFile(viewPath, {
+      steps: STEPS, step: STEPS[0], saved: {}, isLast: false, assetVersion: "abc123",
+    });
+    expect(withVersion).toContain('src="/js/wizard.js?v=abc123"');
+    const without = await ejs.renderFile(viewPath, { steps: STEPS, step: STEPS[0], saved: {}, isLast: false });
+    expect(without).toContain('src="/js/wizard.js?v="');
+  });
+});

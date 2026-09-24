@@ -46,7 +46,7 @@ describe('CSS Architecture — Cutover (Sin CDN)', () => {
   it('layout.ejs contiene link a /styles.css', () => {
     const content = fs.readFileSync(layoutPath, 'utf-8');
     
-    expect(content).toContain('href="/styles.css"');
+    expect(content).toMatch(/href="\/styles\.css(\?v=[^"]*)?"/); // versionado: ?v=<assetVersion>
     expect(content).toContain('<link rel="stylesheet"');
   });
 

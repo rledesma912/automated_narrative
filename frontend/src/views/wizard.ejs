@@ -466,5 +466,5 @@ function hasCardData(fields) {
   <%/* Spec-440 §2: wizard.js repuebla el subgénero al cambiar el género. */%>
   <script type="application/json" id="genre-catalog"><%- JSON.stringify(CATALOG).replace(/</g, '\\u003c') %></script>
 <% } %>
-<script src="/js/wizard.js" defer></script>
+<script src="/js/wizard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 

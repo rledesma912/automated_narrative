@@ -80,7 +80,7 @@ describe('CSS Architecture — Layout Rendering', () => {
 
   it('layout.ejs incluye link a /styles.css', async () => {
     const html = await fetchHomeHtml();
-    expect(html).toContain('href="/styles.css"');
+    expect(html).toMatch(/href="\/styles\.css(\?v=[^"]*)?"/); // versionado: ?v=<assetVersion>
   });
 
   it('layout.ejs ya no incluye CDN fallback de Tailwind (Arquitectura Offline-First)', async () => {

@@ -208,6 +208,6 @@
   window.TOTAL_BEATS   = 5;
   window.ACTIVE_JOB_ID = <%- JSON.stringify(activeJobId || null) %>;
 </script>
-<script src="/js/streaming-room.js" defer></script>
+<script src="/js/streaming-room.js?v=<%= locals.assetVersion || '' %>" defer></script>
 
 <% } %>
