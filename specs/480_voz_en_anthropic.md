@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 y S1 commiteadas; sigue S2
+**Estado:** IMPLEMENT — S0–S2 commiteadas; sigue S3
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -187,21 +187,25 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S2 — Perfil híbrido, health y evaluación preparada
 
-- [ ] **T2.1:** Perfil `ollama-gemma3-12b-voz-sonnet5` (sin activar) y baja de `anthropic-opus-voz`.
+- [x] **T2.1:** Perfil `ollama-gemma3-12b-voz-sonnet5` (sin activar) y baja de `anthropic-opus-voz`.
   - Verify: pytest (el perfil carga; la Voz es `anthropic`/`claude-sonnet-5`, el resto `ollama`; `active_profile` sigue siendo `ollama-gemma3-12b`).
   - Files: `config/llm_core_definitions.yaml`
-- [ ] **T2.2:** `/health` y `/config/active-profile` por rol.
+- [x] **T2.2:** `/health` y `/config/active-profile` por rol.
   - Acceptance: health verifica cada proveedor en uso (Ollama responde, Anthropic tiene key); active-profile muestra `provider` por rol.
   - Verify: pytest de los endpoints con el perfil local y con el híbrido.
   - Files: `src/presentation/routers/stream_router.py`
-- [ ] **T2.3:** Pipeline completo con el perfil híbrido.
+- [x] **T2.3:** Pipeline completo con el perfil híbrido.
   - Acceptance: un job con el perfil híbrido manda las 5 llamadas de la Voz al cliente de Anthropic simulado (con el system prompt compact de Spec-470) y el resto al mock local; el relato se consolida.
   - Verify: pytest de integración (`tests/integration/test_hybrid_profile.py`).
-- [ ] **T2.4:** `evaluate_voice.py --profile … --yes`.
+- [x] **T2.4:** `evaluate_voice.py --profile … --yes`.
   - Acceptance: `--profile` cambia el perfil solo dentro del proceso; con un proveedor pago y sin `--yes`, termina sin generar y muestra el costo estimado; con `--yes`, reporta el costo real por relato (`usage` de la Voz × US$ 2 / 10 por millón).
   - Verify: pytest con el cliente simulado (costo calculado a partir del `usage` simulado); sin corrida real.
   - Files: `scripts/evaluate_voice.py`, `tests/unit/scripts/test_evaluate_voice.py`
-- [ ] **Checkpoint S2:** lint + pytest + Playwright → commit.
+- [x] **Notas de S2 (2026-09-24):**
+  - **Health (bug previo):** el chequeo de Anthropic miraba `os.getenv("ANTHROPIC_API_KEY")`, pero la clave vive en `.env` y la lee `settings`: con el proceso levantado así la reportaba faltante. Ahora usa `settings.anthropic_api_key`. El health es `degraded` si falta algún proveedor en uso.
+  - **Evaluación preparada, sin gastar:** con el perfil híbrido y sin `--yes`, `evaluate_voice.py` muestra «El perfil usa un proveedor pago para ['voz']: costo estimado ~US$ 0.32 (4 relatos)» y no genera nada (verificado con el script real). El costo real se mide con un contador que envuelve al proveedor (`TokenMeter`).
+  - **Pipeline completo** con el perfil híbrido y el cliente simulado: las 5 llamadas de la Voz van a Claude (`claude-sonnet-5`, `thinking: disabled`, sin `temperature`, prompt compact de Spec-470); Analyst, Mapper y Journal al modelo local.
+- [x] **Checkpoint S2:** lint + pytest + Playwright → commit.
 
 ### S3 — Documentación y cierre
 
