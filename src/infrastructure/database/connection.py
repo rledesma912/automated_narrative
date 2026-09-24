@@ -1,5 +1,8 @@
 """Database connection."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import aiosqlite
 
 from src.config import settings
@@ -28,6 +31,20 @@ async def get_connection() -> aiosqlite.Connection:
     await conn.execute("PRAGMA foreign_keys = ON")
     await conn.execute("PRAGMA journal_mode = WAL")
     return conn
+
+
+@asynccontextmanager
+async def connection() -> AsyncIterator[aiosqlite.Connection]:
+    """Conexión que se cierra siempre, también ante una excepción.
+
+    Una conexión aiosqlite sin cerrar deja vivo su hilo y puede colgar el proceso
+    (p. ej. `export-yaml` sobre un esquema viejo).
+    """
+    conn = await get_connection()
+    try:
+        yield conn
+    finally:
+        await conn.close()
 
 
 async def init_db() -> None:

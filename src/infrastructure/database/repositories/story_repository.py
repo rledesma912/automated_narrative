@@ -13,7 +13,7 @@ from src.domain.models import (
     StoryStatus,
     TypedRule,
 )
-from src.infrastructure.database.connection import get_connection
+from src.infrastructure.database.connection import connection, get_connection
 from src.utils.timezone import now_argentina
 
 
@@ -75,53 +75,49 @@ class SQLStoryRepository:
 
     async def get_by_id(self, story_id: UUID) -> Story | None:
         """Get story by ID."""
-        conn = await get_connection()
-
-        cursor = await conn.execute(
-            "SELECT * FROM story WHERE id = ?",
-            (str(story_id),),
-        )
-
-        row = await cursor.fetchone()
-
-        if not row:
-            await conn.close()
-            return None
-
-        # Cargar reglas
-        cursor_rules = await conn.execute(
-            "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
-            (str(story_id),),
-        )
-        rule_rows = await cursor_rules.fetchall()
-        reglas = [r["content"] for r in rule_rows]
-        typed_rules = self._rows_to_typed_rules(rule_rows, str(story_id))
-
-        # Cargar escenarios
-        from src.domain.models import Scenario
-
-        cursor_scenarios = await conn.execute(
-            "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
-            (str(story_id),),
-        )
-        scenario_rows = await cursor_scenarios.fetchall()
-        scenarios = [
-            Scenario(
-                id=UUID(s["id"]),
-                story_id=UUID(s["story_id"]),
-                order_index=s["order_index"],
-                name=s["name"],
-                description=(s["description"] if "description" in s.keys() else "") or "",
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT * FROM story WHERE id = ?",
+                (str(story_id),),
             )
-            for s in scenario_rows
-        ]
 
-        personajes = await self._load_personajes(conn, str(story_id))
-        entities = await self._load_entities(conn, str(story_id))
+            row = await cursor.fetchone()
 
-        beats = await self._load_beats(conn, str(story_id))
+            if not row:
+                return None
 
-        await conn.close()
+            # Cargar reglas
+            cursor_rules = await conn.execute(
+                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                (str(story_id),),
+            )
+            rule_rows = await cursor_rules.fetchall()
+            reglas = [r["content"] for r in rule_rows]
+            typed_rules = self._rows_to_typed_rules(rule_rows, str(story_id))
+
+            # Cargar escenarios
+            from src.domain.models import Scenario
+
+            cursor_scenarios = await conn.execute(
+                "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
+                (str(story_id),),
+            )
+            scenario_rows = await cursor_scenarios.fetchall()
+            scenarios = [
+                Scenario(
+                    id=UUID(s["id"]),
+                    story_id=UUID(s["story_id"]),
+                    order_index=s["order_index"],
+                    name=s["name"],
+                    description=(s["description"] if "description" in s.keys() else "") or "",
+                )
+                for s in scenario_rows
+            ]
+
+            personajes = await self._load_personajes(conn, str(story_id))
+            entities = await self._load_entities(conn, str(story_id))
+
+            beats = await self._load_beats(conn, str(story_id))
 
         story = self._row_to_story(row)
         story.reglas = reglas
@@ -134,51 +130,47 @@ class SQLStoryRepository:
 
     async def get_by_string_id(self, story_id: str) -> Story | None:
         """Get story by string ID (e.g., 'el_monte_prohibido_1744742400')."""
-        conn = await get_connection()
-
-        cursor = await conn.execute(
-            "SELECT * FROM story WHERE id = ?",
-            (story_id,),
-        )
-
-        row = await cursor.fetchone()
-
-        if not row:
-            await conn.close()
-            return None
-
-        # Cargar reglas
-        cursor_rules = await conn.execute(
-            "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
-            (story_id,),
-        )
-        rule_rows = await cursor_rules.fetchall()
-        reglas = [r["content"] for r in rule_rows]
-        typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
-
-        # Cargar escenarios
-        from src.domain.models import Scenario
-
-        cursor_scenarios = await conn.execute(
-            "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
-            (story_id,),
-        )
-        scenario_rows = await cursor_scenarios.fetchall()
-        scenarios = [
-            Scenario(
-                id=UUID(s["id"]),
-                story_id=UUID(s["story_id"]),
-                order_index=s["order_index"],
-                name=s["name"],
-                description=(s["description"] if "description" in s.keys() else "") or "",
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT * FROM story WHERE id = ?",
+                (story_id,),
             )
-            for s in scenario_rows
-        ]
 
-        personajes = await self._load_personajes(conn, story_id)
-        entities = await self._load_entities(conn, story_id)
+            row = await cursor.fetchone()
 
-        await conn.close()
+            if not row:
+                return None
+
+            # Cargar reglas
+            cursor_rules = await conn.execute(
+                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                (story_id,),
+            )
+            rule_rows = await cursor_rules.fetchall()
+            reglas = [r["content"] for r in rule_rows]
+            typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
+
+            # Cargar escenarios
+            from src.domain.models import Scenario
+
+            cursor_scenarios = await conn.execute(
+                "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
+                (story_id,),
+            )
+            scenario_rows = await cursor_scenarios.fetchall()
+            scenarios = [
+                Scenario(
+                    id=UUID(s["id"]),
+                    story_id=UUID(s["story_id"]),
+                    order_index=s["order_index"],
+                    name=s["name"],
+                    description=(s["description"] if "description" in s.keys() else "") or "",
+                )
+                for s in scenario_rows
+            ]
+
+            personajes = await self._load_personajes(conn, story_id)
+            entities = await self._load_entities(conn, story_id)
 
         story = self._row_to_story(row)
         story.reglas = reglas
@@ -325,93 +317,86 @@ class SQLStoryRepository:
 
     async def update_status(self, story_id, status: str) -> None:
         """Actualiza solo el campo status de una historia."""
-        from src.infrastructure.database.connection import get_connection
-
-        conn = await get_connection()
-        await conn.execute(
-            "UPDATE story SET status = ? WHERE id = ?",
-            (status, str(story_id)),
-        )
-        await conn.commit()
-        await conn.close()
+        async with connection() as conn:
+            await conn.execute(
+                "UPDATE story SET status = ? WHERE id = ?",
+                (status, str(story_id)),
+            )
+            await conn.commit()
 
     async def list_all(self) -> list[Story]:
         """List all stories."""
-        conn = await get_connection()
+        async with connection() as conn:
+            cursor = await conn.execute("SELECT * FROM story ORDER BY created_at DESC")
+            rows = await cursor.fetchall()
 
-        cursor = await conn.execute("SELECT * FROM story ORDER BY created_at DESC")
-        rows = await cursor.fetchall()
-
-        stories = []
-        for row in rows:
-            story_id = row["id"]
-            # Cargar reglas
-            cursor_rules = await conn.execute(
-                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
-                (story_id,),
-            )
-            rule_rows = await cursor_rules.fetchall()
-            reglas = [r["content"] for r in rule_rows]
-
-            # Cargar escenarios
-            from src.domain.models import Scenario
-
-            cursor_scenarios = await conn.execute(
-                "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
-                (story_id,),
-            )
-            scenario_rows = await cursor_scenarios.fetchall()
-            scenarios = [
-                Scenario(
-                    id=UUID(s["id"]),
-                    story_id=UUID(s["story_id"]),
-                    order_index=s["order_index"],
-                    name=s["name"],
+            stories = []
+            for row in rows:
+                story_id = row["id"]
+                # Cargar reglas
+                cursor_rules = await conn.execute(
+                    "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                    (story_id,),
                 )
-                for s in scenario_rows
-            ]
+                rule_rows = await cursor_rules.fetchall()
+                reglas = [r["content"] for r in rule_rows]
 
-            personajes = await self._load_personajes(conn, story_id)
+                # Cargar escenarios
+                from src.domain.models import Scenario
 
-            story = self._row_to_story(row)
-            story.reglas = reglas
-            story.typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
-            story.scenarios = scenarios
-            story.entities = await self._load_entities(conn, story_id)
-            story.personajes_full = personajes
-            stories.append(story)
+                cursor_scenarios = await conn.execute(
+                    "SELECT * FROM scenario WHERE story_id = ? ORDER BY order_index",
+                    (story_id,),
+                )
+                scenario_rows = await cursor_scenarios.fetchall()
+                scenarios = [
+                    Scenario(
+                        id=UUID(s["id"]),
+                        story_id=UUID(s["story_id"]),
+                        order_index=s["order_index"],
+                        name=s["name"],
+                    )
+                    for s in scenario_rows
+                ]
 
-        await conn.close()
+                personajes = await self._load_personajes(conn, story_id)
+
+                story = self._row_to_story(row)
+                story.reglas = reglas
+                story.typed_rules = self._rows_to_typed_rules(rule_rows, story_id)
+                story.scenarios = scenarios
+                story.entities = await self._load_entities(conn, story_id)
+                story.personajes_full = personajes
+                stories.append(story)
+
         return stories
 
     async def save_journal(
         self, story_id: UUID, journal: NarrativeJournal, beat_number: int
     ) -> None:
         """Save the narrative journal for a specific beat (Spec-222)."""
-        conn = await get_connection()
-
-        await conn.execute(
-            """INSERT OR REPLACE INTO narrative_journal
-            (story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state)
-            VALUES (?, ?, ?, ?, ?)""",
-            (
-                str(story_id),
-                beat_number,
-                journal.last_events,
-                journal.unresolved_mysteries,
-                journal.physical_emotional_state,
-            ),
-        )
-        # Spec-450: el estado de las entidades vive en su propia tabla.
-        if journal.entity_state:
+        async with connection() as conn:
             await conn.execute(
-                "INSERT OR REPLACE INTO entity_journal (id, story_id, beat_number, entity_state) "
-                "VALUES (?, ?, ?, ?)",
-                (str(uuid.uuid4()), str(story_id), beat_number, journal.entity_state),
+                """INSERT OR REPLACE INTO narrative_journal
+                (story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state)
+                VALUES (?, ?, ?, ?, ?)""",
+                (
+                    str(story_id),
+                    beat_number,
+                    journal.last_events,
+                    journal.unresolved_mysteries,
+                    journal.physical_emotional_state,
+                ),
             )
+            # Spec-450: el estado de las entidades vive en su propia tabla.
+            if journal.entity_state:
+                await conn.execute(
+                    "INSERT OR REPLACE INTO entity_journal (id, story_id, beat_number, entity_state) "
+                    "VALUES (?, ?, ?, ?)",
+                    (str(uuid.uuid4()), str(story_id), beat_number, journal.entity_state),
+                )
 
-        await conn.commit()
-        await conn.close()
+            await conn.commit()
 
     async def get_journal(
         self, story_id: UUID, beat_number: int | None = None
@@ -423,25 +408,23 @@ class SQLStoryRepository:
             beat_number: Si se especifica, retorna el journal de ese beat.
                         Si es None, retorna el journal del último beat completado.
         """
-        conn = await get_connection()
-
-        select = (
-            "SELECT j.*, ej.entity_state FROM narrative_journal j "
-            "LEFT JOIN entity_journal ej "
-            "ON ej.story_id = j.story_id AND ej.beat_number = j.beat_number "
-            "WHERE j.story_id = ?"
-        )
-        if beat_number is not None:
-            cursor = await conn.execute(
-                f"{select} AND j.beat_number = ?", (str(story_id), beat_number)
+        async with connection() as conn:
+            select = (
+                "SELECT j.*, ej.entity_state FROM narrative_journal j "
+                "LEFT JOIN entity_journal ej "
+                "ON ej.story_id = j.story_id AND ej.beat_number = j.beat_number "
+                "WHERE j.story_id = ?"
             )
-        else:
-            cursor = await conn.execute(
-                f"{select} ORDER BY j.beat_number DESC LIMIT 1", (str(story_id),)
-            )
+            if beat_number is not None:
+                cursor = await conn.execute(
+                    f"{select} AND j.beat_number = ?", (str(story_id), beat_number)
+                )
+            else:
+                cursor = await conn.execute(
+                    f"{select} ORDER BY j.beat_number DESC LIMIT 1", (str(story_id),)
+                )
 
-        row = await cursor.fetchone()
-        await conn.close()
+            row = await cursor.fetchone()
 
         if not row:
             return None
@@ -473,14 +456,13 @@ class SQLStoryRepository:
         """Transición masiva processing → failed tras reinicio del servidor (Spec-214 B1)."""
         import logging
 
-        conn = await get_connection()
-        cursor = await conn.execute(
-            "UPDATE story SET status = ? WHERE status = ?",
-            (StoryStatus.FAILED.value, StoryStatus.PROCESSING.value),
-        )
-        count = cursor.rowcount
-        await conn.commit()
-        await conn.close()
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "UPDATE story SET status = ? WHERE status = ?",
+                (StoryStatus.FAILED.value, StoryStatus.PROCESSING.value),
+            )
+            count = cursor.rowcount
+            await conn.commit()
         if count > 0:
             logging.getLogger(__name__).warning(
                 "Recuperadas %d historias en estado inconsistente tras reinicio", count
@@ -489,62 +471,61 @@ class SQLStoryRepository:
 
     async def delete(self, story_id: UUID) -> None:
         """Hard delete: borra la historia y todas sus tablas hija."""
-        conn = await get_connection()
-        sid = str(story_id)
-        await conn.execute("DELETE FROM generated_narrative WHERE story_template_id = ?", (sid,))
-        await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
-        await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
-        await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
-        await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
-        await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))
-        await conn.execute("DELETE FROM character WHERE story_id = ?", (sid,))
-        await conn.execute("DELETE FROM story WHERE id = ?", (sid,))
-        await conn.commit()
-        await conn.close()
+        async with connection() as conn:
+            sid = str(story_id)
+            await conn.execute(
+                "DELETE FROM generated_narrative WHERE story_template_id = ?", (sid,)
+            )
+            await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM character WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM story WHERE id = ?", (sid,))
+            await conn.commit()
 
     async def save_narrative_anchors(self, story_id, anchors) -> None:
         """Persiste los 5 anclajes de resonancia aristotélica (Spec-081)."""
-        conn = await get_connection()
-        # Nota: Usamos una subquery para el ID o generamos uno si es nuevo,
-        # pero para simplificar seguiremos el patrón de INSERT OR REPLACE por story_id
-        # si la tabla tiene story_id como UNIQUE o PK. En SQLite actual es story_id NOT NULL.
-        # Vamos a asegurar que id sea único.
-        import uuid
+        async with connection() as conn:
+            # Nota: Usamos una subquery para el ID o generamos uno si es nuevo,
+            # pero para simplificar seguiremos el patrón de INSERT OR REPLACE por story_id
+            # si la tabla tiene story_id como UNIQUE o PK. En SQLite actual es story_id NOT NULL.
+            # Vamos a asegurar que id sea único.
+            import uuid
 
-        # Primero buscamos si ya existe un ID para este story_id
-        cursor = await conn.execute(
-            "SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
-        )
-        row = await cursor.fetchone()
-        anchor_id = row[0] if row else str(uuid.uuid4())
+            # Primero buscamos si ya existe un ID para este story_id
+            cursor = await conn.execute(
+                "SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
+            )
+            row = await cursor.fetchone()
+            anchor_id = row[0] if row else str(uuid.uuid4())
 
-        await conn.execute(
-            """INSERT OR REPLACE INTO narrative_anchors
-            (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis,
-             resonance_peripeteia, resonance_residual, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                anchor_id,
-                str(story_id),
-                anchors.resonance_hamartia,
-                anchors.resonance_hybris,
-                anchors.resonance_anagnorisis,
-                anchors.resonance_peripeteia,
-                anchors.resonance_residual,
-                now_argentina().isoformat(),
-            ),
-        )
-        await conn.commit()
-        await conn.close()
+            await conn.execute(
+                """INSERT OR REPLACE INTO narrative_anchors
+                (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis,
+                 resonance_peripeteia, resonance_residual, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    anchor_id,
+                    str(story_id),
+                    anchors.resonance_hamartia,
+                    anchors.resonance_hybris,
+                    anchors.resonance_anagnorisis,
+                    anchors.resonance_peripeteia,
+                    anchors.resonance_residual,
+                    now_argentina().isoformat(),
+                ),
+            )
+            await conn.commit()
 
     async def get_narrative_anchors(self, story_id: UUID) -> NarrativeAnchors | None:
         """Lee los 5 anclajes de resonancia persistidos (Spec-081/Spec-430)."""
-        conn = await get_connection()
-        cursor = await conn.execute(
-            "SELECT * FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
-        )
-        row = await cursor.fetchone()
-        await conn.close()
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT * FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
+            )
+            row = await cursor.fetchone()
 
         if not row:
             return None

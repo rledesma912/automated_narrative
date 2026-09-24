@@ -301,3 +301,51 @@ class TestEntityNatureCatalog:
         await conn.commit()
         await init_db()
         assert await self._rows(conn, "SELECT title FROM story") == [("previa",)]
+
+
+class TestConnectionsSeCierran:
+    """Una lectura que falla a mitad de camino no deja la conexión abierta.
+
+    Una conexión aiosqlite sin cerrar deja vivo su hilo (colgó `export-yaml`).
+    """
+
+    @pytest.fixture
+    async def tracked(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'c.db'}")
+        await init_db()
+        import aiosqlite
+
+        opened: list = []
+        real = aiosqlite.connect
+
+        def tracking(*args, **kwargs):
+            conn = real(*args, **kwargs)
+            opened.append(conn)
+            return conn
+
+        monkeypatch.setattr(aiosqlite, "connect", tracking)
+        yield opened
+        # Si una quedó abierta, el test falla en su assert en vez de colgar el proceso.
+        for conn in opened:
+            if conn._connection is not None:
+                await conn.close()
+
+    async def test_get_by_id_cierra_la_conexion_si_falla_la_carga(self, tracked, monkeypatch):
+        from uuid import uuid4
+
+        from src.domain.models import Story
+        from src.infrastructure.database.repositories import SQLStoryRepository
+
+        repo = SQLStoryRepository()
+        story = Story(title="t", protagonista="p", relator="r", sinopsis="s")
+        await repo.save(story)
+
+        async def boom(*_a, **_k):
+            raise RuntimeError("esquema viejo")
+
+        monkeypatch.setattr(SQLStoryRepository, "_load_beats", boom)
+        with pytest.raises(RuntimeError):
+            await repo.get_by_id(story.id)
+
+        assert tracked and all(c._connection is None for c in tracked)  # todas cerradas
+        assert await repo.get_by_id(uuid4()) is None

@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from src.domain.models import BeatType, MacroBeat
-from src.infrastructure.database.connection import get_connection
+from src.infrastructure.database.connection import connection
 
 # Alias público para código existente que importa Beat
 Beat = MacroBeat
@@ -20,83 +20,79 @@ class SQLBeatRepository:
 
     async def save(self, beat: MacroBeat, story_id: UUID) -> MacroBeat:
         """Persiste un macro_beat (upsert: actualiza o inserta)."""
-        conn = await get_connection()
-
-        cursor = await conn.execute(
-            "SELECT id FROM macro_beat WHERE story_id = ? AND number = ?",
-            (str(story_id), beat.number),
-        )
-        existing = await cursor.fetchone()
-
-        if existing:
-            await conn.execute(
-                """UPDATE macro_beat SET
-                generated_act = ?,
-                status = ?,
-                active_scenario_id = ?,
-                active_scenario_description = ?,
-                system_prompt = ?,
-                user_prompt = ?
-                WHERE story_id = ? AND number = ?""",
-                (
-                    beat.generated_act,
-                    beat.status.value if hasattr(beat.status, "value") else str(beat.status),
-                    beat.active_scenario_id,
-                    beat.active_scenario_description,
-                    beat.system_prompt,
-                    beat.user_prompt,
-                    str(story_id),
-                    beat.number,
-                ),
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT id FROM macro_beat WHERE story_id = ? AND number = ?",
+                (str(story_id), beat.number),
             )
-        else:
-            await conn.execute(
-                """INSERT INTO macro_beat
-                (story_id, number, summary, synopsis_beat, generated_act, status,
-                 active_scenario_id, active_scenario_description,
-                 system_prompt, user_prompt, type)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    str(story_id),
-                    beat.number,
-                    beat.summary,
-                    beat.synopsis_beat or "",
-                    beat.generated_act,
-                    beat.status.value if hasattr(beat.status, "value") else str(beat.status),
-                    beat.active_scenario_id,
-                    beat.active_scenario_description,
-                    beat.system_prompt,
-                    beat.user_prompt,
-                    beat.beat_type.value
-                    if beat.beat_type and hasattr(beat.beat_type, "value")
-                    else (beat.beat_type or None),
-                ),
-            )
+            existing = await cursor.fetchone()
 
-        await conn.commit()
-        await conn.close()
+            if existing:
+                await conn.execute(
+                    """UPDATE macro_beat SET
+                    generated_act = ?,
+                    status = ?,
+                    active_scenario_id = ?,
+                    active_scenario_description = ?,
+                    system_prompt = ?,
+                    user_prompt = ?
+                    WHERE story_id = ? AND number = ?""",
+                    (
+                        beat.generated_act,
+                        beat.status.value if hasattr(beat.status, "value") else str(beat.status),
+                        beat.active_scenario_id,
+                        beat.active_scenario_description,
+                        beat.system_prompt,
+                        beat.user_prompt,
+                        str(story_id),
+                        beat.number,
+                    ),
+                )
+            else:
+                await conn.execute(
+                    """INSERT INTO macro_beat
+                    (story_id, number, summary, synopsis_beat, generated_act, status,
+                     active_scenario_id, active_scenario_description,
+                     system_prompt, user_prompt, type)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        str(story_id),
+                        beat.number,
+                        beat.summary,
+                        beat.synopsis_beat or "",
+                        beat.generated_act,
+                        beat.status.value if hasattr(beat.status, "value") else str(beat.status),
+                        beat.active_scenario_id,
+                        beat.active_scenario_description,
+                        beat.system_prompt,
+                        beat.user_prompt,
+                        beat.beat_type.value
+                        if beat.beat_type and hasattr(beat.beat_type, "value")
+                        else (beat.beat_type or None),
+                    ),
+                )
+
+            await conn.commit()
         return beat
 
     async def get_by_story(self, story_id: UUID) -> list[MacroBeat]:
         """Retorna todos los macro_beats de una historia."""
-        conn = await get_connection()
-        cursor = await conn.execute(
-            "SELECT * FROM macro_beat WHERE story_id = ? ORDER BY number",
-            (str(story_id),),
-        )
-        rows = await cursor.fetchall()
-        await conn.close()
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT * FROM macro_beat WHERE story_id = ? ORDER BY number",
+                (str(story_id),),
+            )
+            rows = await cursor.fetchall()
         return [self._row_to_beat(row) for row in rows]
 
     async def get_by_number(self, story_id: UUID, number: int) -> MacroBeat | None:
         """Retorna un macro_beat específico."""
-        conn = await get_connection()
-        cursor = await conn.execute(
-            "SELECT * FROM macro_beat WHERE story_id = ? AND number = ?",
-            (str(story_id), number),
-        )
-        row = await cursor.fetchone()
-        await conn.close()
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT * FROM macro_beat WHERE story_id = ? AND number = ?",
+                (str(story_id), number),
+            )
+            row = await cursor.fetchone()
 
         if not row:
             return None
