@@ -156,7 +156,7 @@ De adentro hacia afuera: primero el formateador puro (ahí está el riesgo de pe
 | Endpoint | `GET /api/v1/generated-narratives/{id}/export.md` en `narrative_router.py`, con el mismo manejo de 400/404 que `/text`. `Response(media_type="text/markdown; charset=utf-8")` con `Content-Disposition: attachment; filename="…"`. El slug es ASCII, así que no hace falta `filename*`. |
 | Slug | `unicodedata.normalize("NFKD")`, sin diacríticos, `[^a-z0-9]+` → `-`, recortado a 60 caracteres; `relato` si queda vacío. Fecha `AAAA-MM-DD-HHMM` en hora AR. |
 | Proxy | `/api/*` ya pasa los headers sin alterarlos (`proxy_passthrough.test.ts`); se agrega un caso para `Content-Disposition`. |
-| Botón | `<a … download>` con `btn-forge-outline` e ícono `download` (lucide). Con `regenerating`, sin `href` y con `aria-disabled="true"`. |
+| Botón | `<a … download hx-boost="false">` con `btn-forge-outline` e ícono `download` (lucide). Sin `hx-boost="false"`, el `hx-boost` del layout convierte el clic en un swap AJAX y no hay descarga (lo detectó el E2E). Con `regenerating`, sin `href` y con `aria-disabled="true"`. |
 | Copiar | `data-copy-part` en la vista; `copyRelatoContent()` hace `querySelectorAll("[data-copy-part]")` → `innerText.trim()` → `join("\n\n")`. |
 
 ### S0 — Formateador
@@ -181,7 +181,7 @@ Exportar relatos generados con `scripts/evaluate_voice.py` (gemma3), contar cuá
 |---|---|
 | La Voz produce formas no previstas (listas numeradas, `—` pegado a `*`…). | El test de contrato es genérico (ninguna línea de prosa salteable); S3 mide sobre relatos reales y suma reglas si aparece algo. |
 | Quitar `_` como énfasis rompe palabras con guion bajo. | Solo se quita `_texto_` delimitado por espacio o puntuación. Caso de test. |
-| `innerText` depende del layout y jsdom no lo implementa. | El test de vista verifica los `data-copy-part`; la copia real se prueba en E2E con Chromium. |
+| `innerText` depende del layout, y Vitest corre en `node` sin DOM (no hay jsdom y no se agregan dependencias). | El test de vista verifica los `data-copy-part` sobre el HTML; la copia real se prueba en E2E con Chromium. |
 | El `download` de un enlace proxyado no respeta el nombre. | El nombre sale del `Content-Disposition` del Core; el E2E verifica `download.suggestedFilename()`. |
 
 ---
@@ -232,23 +232,23 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S2 — UI: descargar y copiar
 
-- [ ] **T2.1:** Botón «Descargar .md».
+- [x] **T2.1:** Botón «Descargar .md».
   - Acceptance: en `relato_panel.ejs`, junto a «Copiar Relato», `<a href="/api/v1/generated-narratives/<id>/export.md" download>` con `btn-forge-outline` e ícono `download`; con `regenerating`, sin `href` y con `aria-disabled="true"`.
   - Verify: Vitest en `relatos.view.test.ts` (href correcto; deshabilitado durante la regeneración).
   - Files: `frontend/src/views/partials/relato_panel.ejs`, `frontend/tests/unit/views/relatos.view.test.ts`
-- [ ] **T2.2:** Marcar las partes a copiar.
+- [x] **T2.2:** Marcar las partes a copiar.
   - Acceptance: `data-copy-part` en el preámbulo, en cada rótulo `Acto N` y en cada bloque de prosa; los botones «Regenerar» no lo tienen ni quedan dentro de un elemento que lo tenga.
   - Verify: Vitest en `relatos.view.test.ts` (cantidad y orden de partes; ningún botón dentro de una parte).
   - Files: `frontend/src/views/partials/relato_panel.ejs`, `frontend/tests/unit/views/relatos.view.test.ts`
-- [ ] **T2.3:** Nuevo `copyRelatoContent()`.
+- [x] **T2.3:** Nuevo `copyRelatoContent()`.
   - Acceptance: arma el texto con `[data-copy-part]` del panel (`innerText.trim()`, unidos con línea en blanco); sin partes o sin texto → aviso en consola y no copia; se mantienen el fallback `execCommand` y el feedback del botón.
   - Verify: E2E (T2.4).
   - Files: `frontend/public/js/relatos.js`
-- [ ] **T2.4:** E2E.
+- [x] **T2.4:** E2E.
   - Acceptance: en `/historia/<id>/relatos`, «Descargar .md» baja un archivo cuyo `suggestedFilename()` termina en `.md` y cuya primera línea es `# <título de la historia>`; «Copiar Relato» deja en el portapapeles un texto con «Acto 1» y sin «Regenerar».
   - Verify: `npx playwright test relatos.spec.ts --reporter=line` (permiso `clipboard-read` en el contexto).
   - Files: `frontend/tests/e2e/relatos.spec.ts`
-- [ ] **Checkpoint S2:** lint + pytest + Vitest + Playwright completo → commit.
+- [x] **Checkpoint S2:** lint + pytest + Vitest + Playwright completo → commit.
 
 ### S3 — Verificación real y cierre
 
