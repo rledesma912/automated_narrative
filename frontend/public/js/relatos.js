@@ -65,8 +65,13 @@ function copyRelatoContent(relatoId, button) {
     return;
   }
 
-  const textToCopy = contentElement.innerText;
-  if (!textToCopy || !textToCopy.trim()) {
+  // Spec-490: solo rótulos y prosa (data-copy-part); los botones de cada acto
+  // viven dentro del contenido y no se copian.
+  const textToCopy = Array.from(contentElement.querySelectorAll("[data-copy-part]"))
+    .map((part) => part.innerText.trim())
+    .filter(Boolean)
+    .join("\n\n");
+  if (!textToCopy) {
     console.warn("[copyRelato] sin texto para copiar:", relatoId);
     return;
   }

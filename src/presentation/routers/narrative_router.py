@@ -4,7 +4,7 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.infrastructure.database.repositories import SQLStoryRepository
@@ -127,6 +127,29 @@ async def get_narrative_text(
         raise HTTPException(status_code=404, detail="Narrativa no encontrada")
 
     return JSONResponse(content={"text": narrative.content})
+
+
+@router.get("/generated-narratives/{narrative_id}/export.md")
+async def export_narrative_markdown(
+    narrative_id: str,
+    use_case: GenerateNarrativesUseCase = Depends(_narrative_use_case),
+):
+    """Descarga el relato como `.md` para el TTS (Spec-490)."""
+    try:
+        nid = UUID(narrative_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID de narrativa inválido")
+
+    exported = await use_case.export_tts_markdown(nid)
+    if not exported:
+        raise HTTPException(status_code=404, detail="Narrativa no encontrada")
+
+    filename, markdown = exported
+    return Response(
+        content=markdown,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.delete("/generated-narratives/{narrative_id}")
