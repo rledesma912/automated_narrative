@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 y S1 commiteadas; S2 (evaluación) en curso
+**Estado:** IMPLEMENT — S0–S2 completas (S2 pendiente commit); sigue S3
 **Roadmap:** EV-3 (calidad narrativa, sin costo). EV-2 (Voz en Anthropic) queda para después.
 
 ---
@@ -135,6 +135,105 @@ S0 Arnés + métricas + línea base ─▶ S1 Prompts (compact + frontier + narr
 
 - **Qué:** 2 corridas × (sin, con entidades) con el prompt nuevo, y 2 × con entidades con el prompt nuevo + `temperature 0.5`. Tabla antes / después / después+0.5 y lectura manual (fidelidad, graduación de Spec-450, ritmo y tensión).
 - **Salida:** resultado en la spec; si 0.5 ayuda sin empobrecer la prosa, **propuesta** de cambio del perfil (con OK, commit aparte).
+
+### S3 — Documentación, deploy y cierre
+
+- `CLAUDE.md` (Prompt System: guía de oficio, parentescos, lista de clichés, `evaluate_voice.py`), nota en Spec-170; deploy del backend (los templates viajan en la imagen); Spec-470 → DONE.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| El modelo local ignora instrucciones largas | Guía corta y concreta; se mide. Si no alcanza, es argumento para EV-2. |
+| Prohibir clichés los reemplaza por otros | La métrica cuenta la lista; la lectura manual busca reemplazos repetidos (4-gramas). |
+| La variación del modelo confunde la comparación | 2 corridas por variante; se miran tendencias, no un relato. |
+| Cambiar el encabezado del evento altera todas las historias | Es intencional; snapshot regenerado con diff revisado; la evaluación cubre sin y con entidades. |
+| La frontier no se puede evaluar con el perfil activo | Tests de prompt; queda lista para EV-2. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + pytest (+ Vitest/Playwright si cambia algo que use el frontend) en verde → commit con tu OK.
+
+### S0 — Arnés, métricas y línea base
+
+- [x] **T0.1:** Lista de clichés. *(Nota: «escalofrío» suelto no entra —es una palabra legítima—; sí la frase hecha «un escalofrío me recorrió».)*
+  - Acceptance: `config/prompts_generation/voice_cliches.txt`, una expresión por línea (la lista de §1.1), comentarios con `#`; un loader la lee (sin duplicados, en minúsculas para comparar).
+  - Verify: pytest (lee la lista; ignora comentarios y líneas vacías).
+  - Files: `config/prompts_generation/voice_cliches.txt`, `src/application/services/voice_cliches.py` (nuevo)
+- [x] **T0.2:** Métricas.
+  - Acceptance: `cliches(text)`, `wrong_kinship(text, narrator, cast)`, `narrator_outside_dialogue(text, narrator)` y `repeated_4grams(acts)` como funciones puras, con los criterios de la decisión técnica 3.
+  - Verify: pytest con fragmentos reales de la S5 de Spec-450 («me heló la sangre», «¿Será que… las leyendas de mi abuela…?», «Ricardo se sume en un silencio catatónico que Irene no se atreve a romper», diálogo «—Irene, no seas supersticiosa» que **no** cuenta).
+  - Files: `scripts/voice_metrics.py`, `tests/unit/scripts/test_voice_metrics.py`
+- [x] **T0.3:** Arnés de evaluación.
+  - Acceptance: `uv run python scripts/evaluate_voice.py --runs 2 --variants sin,con [--voz-temperature 0.5] --out <dir> --label <nombre>` genera con el perfil activo en una DB temporal, guarda cada relato y un `metrics.json`, e imprime una tabla (por relato y promedio por variante). La historia con entidades usa las 2 entidades de Spec-450 S5 (constante del script).
+  - Verify: corrida con `--mock` (sin Ollama) de punta a punta en un test; corrida real en T0.4.
+  - Files: `scripts/evaluate_voice.py`, `tests/unit/scripts/test_evaluate_voice.py`
+- [x] **T0.4:** Línea base.
+  - Acceptance: 2 corridas × (sin, con) con el prompt de hoy; tabla y observaciones en la spec.
+  - **Resultado (2026-09-24, `gemma3:12b`, Voz T=0.6, ~4 min por relato):**
+
+| Corrida | Clichés | Parentescos (candidatos) | Narradora 3ra persona | Frases repetidas | Palabras |
+|---|---|---|---|---|---|
+| sin #1 | 2 | 0 | 0 | 2 | 2045 |
+| sin #2 | 2 | 2* | 0 | 1 | 1978 |
+| con #1 | 7 | 0 | 0 | 3 | 2005 |
+| con #2 | 3 | 0 | 0 | 0 | 1978 |
+| **Promedio sin / con** | **2 / 5** | **1 / 0** | **0 / 0** | **1,5 / 1,5** | ~2000 |
+
+  - Clichés más frecuentes: «me heló la sangre» (6 en 4 relatos), «me revolvió el estómago» (4).
+  - \* Falsos positivos: «en casa de mi abuela», «una canción que mi abuela me enseñó» hablan de la abuela propia de Irene (fuera del elenco), no de María. **La métrica de parentescos cuenta candidatos; se revisan a mano.**
+  - Error que la métrica no ve: en «con #1» Ricardo le dice a Irene «las historias de **tu** madre» (María es madre de Ricardo). Se revisa en la lectura manual.
+  - Narradora en 3ra persona: 0 (todas las apariciones de «Irene» están en diálogo; métrica validada contra el texto). En esta línea base la Voz no filtró la tercera persona; se sigue midiendo.
+- [x] **Checkpoint S0:** lint + pytest → commit.
+
+### S1 — Prompts
+
+- [x] **T1.1:** Bloque de parentescos.
+  - Acceptance: `PromptBuilder._format_kinship(story)` → «CÓMO LLAMÁS A CADA PERSONAJE» con la instrucción de §1.2 y un renglón por personaje (nombre — rol), sin el narrador; narrador desde `storyteller_id`/`storyteller_name`; sin narrador identificable o sin elenco → `""`.
+  - Verify: pytest (Irene narra: aparece María con «Suegra de Irene…», no aparece Irene; sin `personajes_full` → vacío).
+  - Files: `src/application/services/prompt_builder.py`
+- [x] **T1.2:** Templates compact y frontier.
+  - Acceptance: guía de oficio (§1.1), primera persona (§1.3), léxico (§1.4), `{parentescos}` y `{cliches}` en `voice_system_compact.md` y `system.md`; `build_voice_system_compact()` y `build_voice_prompt()` los completan.
+  - Verify: pytest (las dos variantes contienen guía, clichés y parentescos; `format()` sin `KeyError`).
+  - Files: `config/prompts_generation/voice_system_compact.md`, `config/prompts_generation/system.md`, `src/application/services/prompt_builder.py`
+- [x] **T1.3:** Encabezado del evento con el narrador.
+  - Acceptance: `assemble(..., narrator=...)` usa «EVENTO DE ESTE MOMENTO (contalo en primera persona, como <narrador>; narrá EXACTAMENTE estos eventos, en orden):»; sin narrador, el de hoy. `build_narrative_context` pasa el narrador.
+  - Verify: pytest del assembler (con y sin narrador).
+  - Files: `src/application/services/narrative_context_assembler.py`, `src/application/services/prompt_builder.py`
+- [x] **T1.4:** Snapshots y presupuesto.
+  - Acceptance: `beat_reveal.json` y `pipeline_prompts.json` regenerados con `SNAPSHOT_UPDATE=1`; el diff solo muestra los textos de §1 (revisado); `measure_entity_prompts.py` sin roles fuera de margen (tabla actualizada en la spec).
+  - Verify: pytest completo en verde; salida del script de medición.
+  - Files: `tests/fixtures/snapshots/*.json`
+- [x] **Notas de S1 (2026-09-24):**
+  - **Guía compartida:** el texto de oficio, primera persona y léxico vive en `config/prompts_generation/voice_craft.md` (`{cliches}` y `{narrador}` adentro) y entra por `{guia_oficio}` en `voice_system_compact.md` y `system.md`; `PromptBuilder._voice_extras()` lo completa en los tres builders que usan esos templates (`build_voice_system_compact`, `build_voice_prompt`, `build_system_prompt`).
+  - **Presentación con nombre (agregado):** la primera línea del compact decía «Sos Primera persona en pasado. Narrador: Irene. Tono: …, narrando en primera persona…» (el string `relator` entero). Ahora «Sos Irene y contás en primera persona los hechos de la historia (<relator>)»; sin narrador identificable, como antes.
+  - **Snapshot:** `pipeline_prompts.json` regenerado; el diff cambia **solo** las 10 llamadas de la Voz (system + contexto); Analyst, Mapper y Journal idénticos. `beat_reveal.json` sin cambios.
+  - **Tokens (T1.4, `gemma3:12b`):** la Voz pasa de 1365/1747/2371 a 1878/2304/2928 tokens (0/1/3 entidades); margen mínimo 4264 de 8192. El resto de los roles sin cambios relevantes.
+- [x] **Checkpoint S1:** lint + pytest + Playwright (el arnés E2E genera con el backend) → commit.
+
+### S2 — Evaluación comparada
+
+- [x] **T2.1:** Prompt nuevo: 2 corridas × (sin, con).
+- [x] **T2.2:** Prompt nuevo + `--voz-temperature 0.5`: 2 corridas × con entidades.
+- [x] **T2.3:** Comparación y lectura manual.
+
+**Resultado S2 (2026-09-24, `gemma3:12b`, promedios por relato; ~4 min por relato):**
+
+| Versión | Clichés sin / con | Parentescos reales* | Narradora 3ra persona | Frases repetidas sin / con | Palabras |
+|---|---|---|---|---|---|
+| Antes (T 0.6) | 2 / 5 | 0 (+1 «tu madre» en diálogo) | 0 | 1,5 / 1,5 | ~2000 |
+| **Después (T 0.6)** | **0,5 / 0,5** | **0** | **0** | 1 / 4 | ~2130 |
+| Después, T 0.5 (solo con) | — / 1 | 1 («No era mi madre») | 0 | — / 6,5 | ~2000 |
+
+\* Revisados a mano: los candidatos «mi abuela me enseñó» (una oración, una canción) son la abuela propia de Irene, no María. La métrica se corrigió para que «Bebé de Irene» valga como hijo/hija («la manta de mi hija» era un falso positivo).
+
+- **Metas de §2:** clichés ≤ 1 ✔ (0,5); parentescos 0 ✔ (después de la revisión manual); narradora en 3ra persona 0 ✔; frases repetidas ≤ 2 ✘ con entidades (4), pero casi todo es el motivo de la entidad («olor a tierra mojada», «una y otra vez» del acto 4), no muletillas.
+- **Lectura manual (después, con #1):** «el rostro de mi suegra» y Ricardo le dice «mamá» a María; primera persona sostenida; cierres de acto en una imagen («La rama de espinillo seguía ahí, oscura y fría contra la tela de la manta»); graduación de Spec-450 respetada (la entidad no se nombra; se la reconoce por los ojos que no parpadean en el acto 3). El modelo esquiva la lista con variantes («me heló el alma», «un nudo en la garganta»).
+- **Problemas que quedan:** (1) **adelanto de manifestaciones**: en el acto 1 aparecen el camino que se deforma y los espinillos repetidos (del acto 4) — el efecto checklist de Spec-450 que v2/v3 habían corregido vuelve en esta corrida; (2) frases torpes o mal armadas («El taxi toco la puerta de barro», «Alargar la manta sobre los chiquitos, sentí algo áspero», «Rezad» en una narradora rioplatense, «pies descalzos» después de zapatos).
+- **Temperatura 0.5:** no conviene — más repetición de estilo («con la voz tensa», «la mirada fija en», «gritó Ricardo con la»), un error de parentesco y más clichés. **Se mantiene 0.6** (sin cambio de perfil).
+- **Conclusión:** el prompt nuevo cumple las metas de clichés, parentescos y primera persona con el modelo local. Lo que queda (adelanto de manifestaciones de la entidad y gramática) excede a esta spec: el primero es de Spec-450 (§1.1 de las guías de exposición) y el segundo es el techo del modelo local → argumento para EV-2.
 
 ### S3 — Documentación, deploy y cierre
 

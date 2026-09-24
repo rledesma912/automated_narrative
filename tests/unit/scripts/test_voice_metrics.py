@@ -13,6 +13,7 @@ CAST = [
     {"name": "Irene", "role": "Narradora y protagonista; nuera de María"},
     {"name": "Ricardo", "role": "Esposo de Irene; hijo de María"},
     {"name": "Mariano", "role": "Hijo pequeño de Irene y Ricardo"},
+    {"name": "Soledad", "role": "Bebé de Irene y Ricardo"},
     {"name": "María", "role": "Suegra de Irene; madre de Ricardo; dueña de la casa"},
 ]
 
@@ -29,7 +30,8 @@ def test_cliches_sin_doble_conteo():
 
 
 def test_parentescos_validos_salen_de_los_roles():
-    assert valid_kinship("Irene", CAST) == {"suegra", "esposo", "hijo"}
+    # «Bebé de Irene» vale como hijo o hija.
+    assert valid_kinship("Irene", CAST) == {"suegra", "esposo", "hijo", "hija"}
 
 
 def test_mi_abuela_en_la_narracion_es_error():
@@ -38,7 +40,9 @@ def test_mi_abuela_en_la_narracion_es_error():
 
 
 def test_mi_suegra_y_mi_esposo_son_correctos():
-    text = "Mi suegra nos esperaba. Mi esposo tiró de las riendas; mi hijo lloraba."
+    text = (
+        "Mi suegra nos esperaba. Mi esposo tiró de las riendas; mi hijo lloraba y mi hija dormía."
+    )
     assert wrong_kinship(text, "Irene", CAST)["narracion"] == {}
 
 

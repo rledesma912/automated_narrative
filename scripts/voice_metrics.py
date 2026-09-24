@@ -70,6 +70,9 @@ def valid_kinship(narrator: str, cast: list[dict]) -> set[str]:
             for w in words:
                 if re.search(rf"\b{w}\b[^;.]*?\bde {narrator.lower()}\b", role):
                     valid.add(kin)
+        # «Bebé de Irene» es hijo o hija de Irene.
+        if re.search(rf"\bbeb[eé]\b[^;.]*?\bde {narrator.lower()}\b", role):
+            valid |= {"hijo", "hija"}
     return valid
 
 
