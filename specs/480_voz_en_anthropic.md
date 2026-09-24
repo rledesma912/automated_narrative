@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — borrador, pendiente de OK
+**Estado:** SPECIFY — preguntas cerradas (2026-09-24); pendiente de OK para pasar a PLAN
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -14,6 +14,7 @@
 3. Se usa el SDK oficial `anthropic` (ya es dependencia, 0.96.0) y la `ANTHROPIC_API_KEY` del `.env`.
 4. El perfil local actual (`ollama-gemma3-12b`) sigue siendo el activo hasta que la evaluación muestre que vale la pena; el cambio de perfil activo en prod se decide con los números.
 5. Cada relato generado con Claude cuesta dinero: **toda corrida de evaluación se aprueba antes** con su costo estimado.
+6. **Esta spec no gasta dinero** (decisión 2026-09-24): se desarrolla y se prueba la integración con el SDK simulado; **ninguna llamada real a la API**. La evaluación con Claude queda preparada y pendiente de presupuesto.
 
 ---
 
@@ -86,9 +87,9 @@ La evaluación completa (2 corridas × sin/con entidades = 4 relatos) costaría 
 
 ---
 
-## OPEN QUESTIONS
+## DECISIONES (2026-09-24)
 
-1. **Modelo de la Voz:** ¿Claude Opus 5 (~US$ 0,20–0,33 por relato) o Claude Sonnet 5 (~US$ 0,08–0,13)? ¿O evaluamos los dos?
-2. **Pensamiento:** para prosa creativa, ¿probamos con pensamiento adaptativo (más caro, puede planificar mejor el acto) o sin él?
-3. **Presupuesto de la evaluación:** ¿aprobás ~US$ 1–2 para la evaluación completa (según las respuestas anteriores)?
-4. **Prod:** si la evaluación convence, ¿el perfil híbrido pasa a ser el activo en prod, o queda como opción para elegir por relato?
+1. **Modelo de la Voz:** Claude Sonnet 5 (`claude-sonnet-5`).
+2. **Pensamiento:** configurable por rol (`thinking: adaptive` / `disabled`), para comparar con y sin cuando se evalúe. En Sonnet 5, **omitir** `thinking` corre adaptativo: «sin pensamiento» manda `{"type": "disabled"}` explícito.
+3. **Presupuesto:** ninguno por ahora. Solo integración, probada con el SDK simulado; sin llamadas reales. La evaluación (`evaluate_voice.py --profile …`) queda lista para cuando haya presupuesto.
+4. **Prod:** el perfil híbrido queda definido pero **no se activa**; se decide después de evaluar.
