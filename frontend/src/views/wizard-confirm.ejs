@@ -18,6 +18,12 @@ function catalogLabel(field, id) {
 
 function displayValue(field, rawVal) {
   if (!rawVal) return '—';
+  if (field.source === 'entity_natures') {
+    const id = String(rawVal).split(':')[0].trim();
+    const catalog = (typeof genreCatalog !== 'undefined' && genreCatalog) || [];
+    const nature = catalog.flatMap(g => g.entity_natures || []).find(n => n.id === id);
+    return nature ? nature.label : rawVal;
+  }
   if (field.source === 'genre_catalog') {
     const id = String(rawVal).split(':')[0].trim();
     return catalogLabel(field, id) || rawVal;

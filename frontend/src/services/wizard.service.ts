@@ -1,6 +1,6 @@
 import { Session } from "express-session";
 import { loadSteps } from "./form_renderer.service";
-import type { CatalogGenre } from "./catalog.service";
+import { naturesOf, type CatalogGenre } from "./catalog.service";
 
 export interface WizardField {
   name: string;
@@ -17,9 +17,11 @@ export interface WizardField {
   default?: string;
   /**
    * Opciones dinámicas: `genre_catalog` = catálogo de géneros del Core (Spec-440 §2);
-   * `characters` = personajes con nombre del mismo paso (Spec-440 §5).
+   * `characters` = personajes con nombre del mismo paso (Spec-440 §5);
+   * `entity_natures` = naturalezas de entidad del género elegido (Spec-450 §4).
    */
-  source?: "genre_catalog" | "characters";
+  source?: "genre_catalog" | "characters" | "entity_natures";
+  maxlength?: number;
   /** Campo del que dependen las opciones (subgénero → género). */
   depends_on?: string;
   /** `half`: comparte fila con el campo `half` contiguo en pantallas anchas (Spec-440 §1). */
@@ -80,6 +82,38 @@ export function namedCharacters(data: Record<string, string>): CharacterOption[]
     if (name) options.push({ value: `protagonista_${i}`, label: name });
   }
   return options;
+}
+
+// ── Entidades (Spec-450 §4) ──────────────────────────────────────────────────
+
+export const MAX_ENTITIES = 3;
+const ENTITY_FIELDS = ["name", "nature", "description", "manifestations", "limits", "reveal"];
+
+function idOf(value: string | undefined): string {
+  return (value ?? "").split(":")[0].trim();
+}
+
+/** Descarta de la sesión las naturalezas que no corresponden al género (como el subgénero). */
+export function dropInvalidNatures(world: Record<string, string>, allowed: string[]): void {
+  for (let i = 1; i <= MAX_ENTITIES; i++) {
+    const key = `entity_${i}_nature`;
+    if (world[key] && !allowed.includes(idOf(world[key]))) delete world[key];
+  }
+}
+
+/** Cards con algún dato pero sin naturaleza: no se pueden guardar (el Core la exige). */
+export function entityCardsWithoutNature(world: Record<string, string>): number[] {
+  const missing: number[] = [];
+  for (let i = 1; i <= MAX_ENTITIES; i++) {
+    const hasData = ENTITY_FIELDS.some((f) => (world[`entity_${i}_${f}`] ?? "").trim() !== "");
+    if (hasData && !idOf(world[`entity_${i}_nature`])) missing.push(i);
+  }
+  return missing;
+}
+
+/** Género elegido en el paso 1 (ID limpio). */
+export function sessionGenre(wizard: WizardData | undefined): string {
+  return idOf(wizard?.["step_config_title"]?.["atmosfera"]);
 }
 
 /**
@@ -202,6 +236,21 @@ export function mapStoryToWizard(
       ? reverseOption("rule_1_type", LEGACY_RULE_TYPES[ruleType] ?? ruleType)
       : "";
   }
+
+  // Spec-450: entidades (la primera es la principal).
+  const entities = (sc["entities"] as any[]) ?? [];
+  for (let i = 1; i <= MAX_ENTITIES; i++) {
+    const e = entities[i - 1];
+    stepWorld[`entity_${i}_name`]           = e?.name           ?? "";
+    stepWorld[`entity_${i}_nature`]         = e?.nature         ?? "";
+    stepWorld[`entity_${i}_description`]    = e?.description    ?? "";
+    stepWorld[`entity_${i}_manifestations`] = e?.manifestations ?? "";
+    stepWorld[`entity_${i}_limits`]         = e?.limits         ?? "";
+    stepWorld[`entity_${i}_reveal`] = e?.reveal_level
+      ? reverseOption("entity_1_reveal", e.reveal_level)
+      : "";
+  }
+  if (catalog) dropInvalidNatures(stepWorld, naturesOf(catalog, stepTitle.atmosfera).map((n) => n.id));
 
   // ── step_plot ────────────────────────────────────────────────────────────
   // Fallback para historias CLI: si no hay actos, poner sinopsis en el acto 1.

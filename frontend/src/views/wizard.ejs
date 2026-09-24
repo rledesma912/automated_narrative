@@ -7,6 +7,7 @@
  *   isLast:  boolean
  *   characters:  { value, label }[] — personajes con nombre (Spec-440 §5)
  *   fieldErrors: Record<string, string> — errores por campo del POST del paso
+ *   entityNatures: { id, label }[] | null — naturalezas del género (Spec-450); null = no hay
  */
 
 const GROUP_META = {
@@ -20,6 +21,7 @@ const GROUP_META = {
   escenarios:   { title: 'ESCENARIOS',       subtitle: 'Los lugares donde ocurre la historia' },
   reglas:       { title: 'REGLAS DEL MUNDO', subtitle: 'Las leyes que rigen este universo' },
   actos:        { title: 'LA TRAMA',         subtitle: 'Los 5 actos según la Pirámide de Freytag' },
+  amenaza:      { title: 'LA AMENAZA',       subtitle: 'Opcional: qué acecha y cuánto se muestra. La primera es la principal.' },
 };
 
 function esc(str) {
@@ -73,6 +75,24 @@ function characterSelectHtml(field, effective) {
   return html;
 }
 
+// Spec-450 §4: naturalezas de entidad del género elegido en el paso 1.
+const NATURES = (typeof entityNatures !== 'undefined' && entityNatures) || null;
+const MSG_SIN_NATURALEZAS = 'Elegí primero el tipo de horror (paso 1)';
+
+function natureSelectHtml(field, effective) {
+  const options = NATURES || [];
+  const current = idOf(effective);
+  const selected = options.some(o => o.id === current) ? current : '';
+  const disabled = options.length === 0 ? ' disabled' : '';
+  const placeholder = options.length === 0 ? MSG_SIN_NATURALEZAS : 'Seleccioná...';
+  let html = `<select name="${esc(field.name)}"${disabled} data-entity-nature class="${CLS_INPUT} disabled:opacity-50 disabled:cursor-not-allowed">`;
+  html += `<option value="" disabled${!selected ? ' selected' : ''}>${esc(placeholder)}</option>`;
+  options.forEach(o => {
+    html += `<option value="${esc(o.id)}"${o.id === selected ? ' selected' : ''}>${esc(o.label)}</option>`;
+  });
+  return html + '</select>';
+}
+
 function idOf(value) {
   return String(value || '').split(':')[0].trim();
 }
@@ -114,6 +134,7 @@ function fieldHtml(field) {
   const msArr     = (field.type === 'multi-select') ? getSavedArray(field.name) : [];
   const reqAttr   = field.required ? ' required' : '';
   const ph        = esc(field.placeholder || '');
+  const maxAttr   = field.maxlength ? ` maxlength="${field.maxlength}"` : '';
 
   let html = '<div class="mb-4">';
 
@@ -126,10 +147,13 @@ function fieldHtml(field) {
   }
 
   if (field.type === 'textarea') {
-    html += `<textarea name="${esc(field.name)}" rows="${field.rows || 3}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT} resize-none">${esc(sv)}</textarea>`;
+    html += `<textarea name="${esc(field.name)}" rows="${field.rows || 3}" placeholder="${ph}"${reqAttr}${maxAttr} class="${CLS_INPUT} resize-none">${esc(sv)}</textarea>`;
 
   } else if (field.type === 'select' && field.source === 'genre_catalog') {
     html += catalogSelectHtml(field, effective);
+
+  } else if (field.type === 'select' && field.source === 'entity_natures') {
+    html += natureSelectHtml(field, effective);
 
   } else if (field.type === 'select' && field.source === 'characters') {
     html += characterSelectHtml(field, effective);
@@ -175,7 +199,7 @@ function fieldHtml(field) {
     html += '</div>';
 
   } else {
-    html += `<input type="text" name="${esc(field.name)}" value="${esc(sv)}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT}" />`;
+    html += `<input type="text" name="${esc(field.name)}" value="${esc(sv)}" placeholder="${ph}"${reqAttr}${maxAttr} class="${CLS_INPUT}" />`;
   }
 
   if (FIELD_ERRORS[field.name]) {
@@ -354,6 +378,30 @@ function hasCardData(fields) {
           deleteBtnIdPrefix: 'rule-delete-btn',
           addBtnId: 'btn-add-rule',
           msgMaxId: 'msg-max-reglas',
+          hasCardData, fieldHtml, esc,
+        }) %>
+
+      <% } else if (groupName === 'amenaza') { %>
+        <%
+          const entityCards = groupFieldsByIndex(groupedMap['amenaza'], /^entity_(\d+)_/);
+          const entityIndices = Object.keys(entityCards).sort((a,b) => Number(a)-Number(b));
+        %>
+        <%- include('partials/wizard_card_list', {
+          meta, indices: entityIndices, cards: entityCards, saved,
+          itemLabel: 'ENTIDAD',
+          addLabel: 'Agregar entidad',
+          maxLabel: 'Máximo 3 entidades',
+          iconAdd: 'skull',
+          addHandler: 'addEntidad()',
+          deleteHandler: 'askDeleteEntidad',
+          groupContainerId: 'amenaza-group',
+          cardIdPrefix: 'entity-card',
+          deleteBtnIdPrefix: 'entity-delete-btn',
+          addBtnId: 'btn-add-entidad',
+          msgMaxId: 'msg-max-entidades',
+          fieldNamePrefix: 'entity',
+          startEmpty: true,
+          firstSuffix: ' — PRINCIPAL',
           hasCardData, fieldHtml, esc,
         }) %>
 

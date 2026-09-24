@@ -96,3 +96,48 @@ describe("wizard paso 2 — narrador", () => {
     expect(html).toContain('data-field-error="storyteller_id">Elegí uno de los personajes con nombre.</p>');
   });
 });
+
+/** Spec-450 T4.1: grupo «La Amenaza» del paso 4. */
+describe("wizard paso 4 — entidades", () => {
+  const step4 = STEPS.find((s) => s.id === "step_world")!;
+  const NATURES = [
+    { id: "folklorica", label: "Ser del folklore" },
+    { id: "desconocida", label: "Desconocida / ambigua" },
+  ];
+
+  function render4(saved: Record<string, string>, entityNatures: unknown) {
+    return ejs.renderFile(viewPath, { steps: STEPS, step: step4, saved, isLast: false, entityNatures });
+  }
+
+  function cardHtml(html: string, n: number): string {
+    return html.match(new RegExp(`<div id="entity-card-${n}"[^>]*>`))![0];
+  }
+
+  it("arranca sin cards visibles y con «Agregar entidad»", async () => {
+    const html = await render4({}, NATURES);
+    for (const n of [1, 2, 3]) expect(cardHtml(html, n)).toContain("hidden");
+    expect(html).toContain('id="btn-add-entidad"');
+    expect(html).toContain("ENTIDAD 1 — PRINCIPAL");
+  });
+
+  it("una entidad guardada: su card visible con la naturaleza seleccionada", async () => {
+    const html = await render4({ entity_1_nature: "folklorica", entity_1_name: "La Mala Hora" }, NATURES);
+    expect(cardHtml(html, 1)).not.toContain("hidden");
+    expect(cardHtml(html, 2)).toContain("hidden");
+    expect(selectHtml(html, "entity_1_nature")).toContain(
+      '<option value="folklorica" selected>Ser del folklore</option>',
+    );
+  });
+
+  it("sin género (o sin catálogo): naturaleza deshabilitada con aviso", async () => {
+    const sel = selectHtml(await render4({}, null), "entity_1_nature");
+    expect(sel).toMatch(/<select name="entity_1_nature"[^>]* disabled/);
+    expect(sel).toContain("Elegí primero el tipo de horror (paso 1)");
+  });
+
+  it("los topes de largo del dominio van como maxlength", async () => {
+    const html = await render4({}, NATURES);
+    expect(html).toMatch(/name="entity_1_name"[^>]*maxlength="60"/);
+    expect(html).toMatch(/name="entity_1_description"[^>]*maxlength="400"/);
+  });
+});

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); S2 commiteado; S3 commiteado (sin despliegue); sigue S4
+**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); S2 commiteado; S3 commiteado; S4 implementado (pendiente commit + despliegue de S2+S3+S4)
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -369,22 +369,29 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S4 — Wizard «La Amenaza»
 
-- [ ] **T4.1:** Definición y render.
+- [x] **T4.1:** Definición y render.
   - Acceptance: grupo `amenaza` en el paso 4 con `wizard_card_list` (máx. 3, **arranca vacío**, card 1 «ENTIDAD 1 — PRINCIPAL»); campos `entity_N_name|nature|description|manifestations|limits|reveal` con `maxlength` según topes; `entity_N_nature` con `source: entity_natures` filtrado en el servidor por el género de la sesión (sin género → deshabilitado con aviso).
   - Verify: Vitest de la vista (filtrado por género; sin género; card list vacía por defecto).
   - Files: `frontend/config/ui_definitions.yaml`, `frontend/src/views/wizard.ejs`, `frontend/src/views/partials/wizard_card_list.ejs`, `frontend/src/controllers/wizard.controller.ts`, `frontend/src/services/catalog.service.ts`, `frontend/public/js/wizard.js`
-- [ ] **T4.2:** Validación del paso.
+- [x] **T4.2:** Validación del paso.
   - Acceptance: `submitStep` descarta una naturaleza que no corresponde al género (como el subgénero en Spec-440); una card con naturaleza vacía se marca con error.
   - Verify: Vitest del controller.
   - Files: `frontend/src/controllers/wizard.controller.ts`
-- [ ] **T4.3:** Mapeo ida y vuelta + confirmación.
+- [x] **T4.3:** Mapeo ida y vuelta + confirmación.
   - Acceptance: `mapWizardToCore()` → `narrator_config.entities` (solo cards con naturaleza, en orden); `mapStoryToWizard()` rehidrata; la confirmación lista las entidades con su nivel.
   - Verify: Vitest `mapper.service.test.ts` (0, 1 y 3 entidades; round-trip).
   - Files: `frontend/src/services/mapper.service.ts`, `frontend/src/services/wizard.service.ts`, `frontend/src/views/wizard-confirm.ejs`
-- [ ] **T4.4:** E2E.
+- [x] **T4.4:** E2E.
   - Acceptance: agregar 2 entidades → guardar → editar → rehidratadas; cambiar el género a uno donde la naturaleza no corresponde → queda sin naturaleza; el E2E de guardado de Spec-460 sigue en verde sin cambios.
   - Verify: Playwright `tests/e2e/entities.spec.ts` (nuevo) + suite completa.
-- [ ] **Checkpoint S4:** lint + pytest + tsc + Vitest + Playwright → commit + **despliegue de S2+S3+S4** (backend y frontend; `init_db()` crea las tablas en prod al arrancar).
+- [x] **Notas de S4 (2026-09-23):**
+  - **Card list vacía de entrada:** `wizard_card_list` suma `startEmpty` y `firstSuffix` («— PRINCIPAL»). Las funciones de cliente de las entidades salen de una fábrica genérica `cardList()` en `wizard.js` (personajes/escenarios/reglas quedan como estaban).
+  - **Nivel sin default en el radio:** con default, las cards ocultas enviaban «insinuada» y reaparecían solas; sin elegir, el mapper usa `insinuada` (lo dice el hint).
+  - **Cambio de género después del paso 4:** la naturaleza que no corresponde se descarta al renderizar, al enviar el paso y al guardar; si una card queda con datos pero sin naturaleza, «Guardar historia» lo explica en vez de perder la entidad.
+  - **Bug previo 1 (commit aparte):** con `hx-boost`, htmx 1.x no reemplaza el contenido ante un 4xx: las páginas 422 del wizard (paso con errores, guardado rechazado por el Core — Spec-460 §2.5) no se veían. `htmx:beforeSwap` en `layout.ejs` las muestra si son HTML.
+  - **Bug previo 2 (commit aparte):** con `saveUninitialized: false`, abrir el wizard en una sesión nueva no creaba la cookie; los primeros auto-saves simultáneos (género + subgénero) creaban sesiones distintas y el género se perdía. `showStep` inicializa `session.wizard`.
+  - Ambos bugs tienen un E2E en `entities.spec.ts` que falla sin el arreglo.
+- [x] **Checkpoint S4:** lint + pytest + tsc + Vitest + Playwright → commit + **despliegue de S2+S3+S4** (backend y frontend; `init_db()` crea las tablas en prod al arrancar).
 
 ### S5 — Evaluación
 

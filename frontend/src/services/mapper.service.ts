@@ -78,6 +78,24 @@ function buildRules(world: Record<string, string>) {
   return rules;
 }
 
+/** Spec-450: solo las cards con naturaleza, en orden (la primera es la principal). */
+function buildEntities(world: Record<string, string>) {
+  const entities: Array<Record<string, string>> = [];
+  for (let i = 1; i <= 3; i++) {
+    const nature = parseOptionalLabel(world[`entity_${i}_nature`] ?? "");
+    if (!nature) continue;
+    entities.push({
+      name:           (world[`entity_${i}_name`]           ?? "").trim(),
+      nature,
+      description:    (world[`entity_${i}_description`]    ?? "").trim(),
+      manifestations: (world[`entity_${i}_manifestations`] ?? "").trim(),
+      limits:         (world[`entity_${i}_limits`]         ?? "").trim(),
+      reveal_level:   optionId(world[`entity_${i}_reveal`], "insinuada"),
+    });
+  }
+  return entities;
+}
+
 /** Transforma los datos granulares del Wizard en el formato que espera el Core Python. */
 export function mapWizardToCore(wizard: WizardData): CoreDTO {
   const cfg   = wizard["step_config_title"]      ?? {};
@@ -136,6 +154,7 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
     atmosphere,
     scenarios,
     rules,
+    entities: buildEntities(world),
     actos,
     perception: {
       reliability: optionId(voz["perception_reliability"], "subjetiva"),

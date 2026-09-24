@@ -205,3 +205,87 @@ describe("mapStoryToWizard con catálogo (Spec-440 T3.5)", () => {
   });
 });
 
+
+/** Spec-450 T4.3: entidades ida y vuelta. */
+describe("entidades en el wizard (Spec-450)", () => {
+  const world = (extra: Record<string, string>) => ({
+    step_config_title: { title: "t", atmosfera: "folk_horror" },
+    step_world: extra,
+  });
+
+  it("sin cards con naturaleza no se envían entidades", () => {
+    const dto = mapWizardToCore(world({ entity_1_name: "Sin qué es" })) as any;
+    expect(dto.narrator_config.entities).toEqual([]);
+  });
+
+  it("solo las cards con naturaleza, en orden, con IDs y nivel por defecto", () => {
+    const dto = mapWizardToCore(
+      world({
+        entity_1_name: " La Mala Hora ",
+        entity_1_nature: "folklorica",
+        entity_1_limits: "No cruza el agua",
+        entity_1_reveal: "nunca: Nunca se confirma del todo (el acto 5 decide)",
+        entity_3_nature: "culto",
+      }),
+    ) as any;
+    expect(dto.narrator_config.entities).toEqual([
+      {
+        name: "La Mala Hora",
+        nature: "folklorica",
+        description: "",
+        manifestations: "",
+        limits: "No cruza el agua",
+        reveal_level: "nunca",
+      },
+      {
+        name: "",
+        nature: "culto",
+        description: "",
+        manifestations: "",
+        limits: "",
+        reveal_level: "insinuada",
+      },
+    ]);
+  });
+
+  it("ida y vuelta conserva las 3 entidades", () => {
+    const entities = ["folklorica", "culto", "espiritu"].map((nature, i) => ({
+      name: `E${i}`,
+      nature,
+      description: "d",
+      manifestations: "m",
+      limits: "l",
+      reveal_level: ["insinuada", "explicita", "progresiva"][i],
+    }));
+    const wizard = mapStoryToWizard({
+      title: "t",
+      storyteller_config: { atmosphere: { genre: "folk_horror" }, entities },
+    });
+    expect(wizard.step_world!.entity_2_reveal).toBe("explicita: Explícita — presente desde el comienzo");
+    const dto = mapWizardToCore(wizard) as any;
+    expect(dto.narrator_config.entities).toEqual(entities);
+  });
+
+  it("con catálogo, una naturaleza que no corresponde al género queda vacía", () => {
+    const catalog = [
+      {
+        id: "suspenso",
+        label: "Suspenso",
+        subgenres: [],
+        entity_natures: [{ id: "humano", label: "Humano" }],
+      },
+    ];
+    const w = mapStoryToWizard(
+      {
+        title: "t",
+        storyteller_config: {
+          atmosphere: { genre: "suspenso" },
+          entities: [{ nature: "demonio" }, { nature: "humano" }],
+        },
+      },
+      catalog,
+    ).step_world!;
+    expect(w).not.toHaveProperty("entity_1_nature"); // se descarta, como en la sesión
+    expect(w.entity_2_nature).toBe("humano");
+  });
+});

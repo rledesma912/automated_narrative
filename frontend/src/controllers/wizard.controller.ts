@@ -9,10 +9,13 @@ import {
   WizardField,
   mapStoryToWizard,
   namedCharacters,
+  dropInvalidNatures,
+  entityCardsWithoutNature,
+  sessionGenre,
 } from "../services/wizard.service";
 import { mapWizardToCore } from "../services/mapper.service";
 import { createStory, updateStory } from "../services/core_api.service";
-import { getGenreCatalog, subgenresOf } from "../services/catalog.service";
+import { getGenreCatalog, naturesOf, subgenresOf } from "../services/catalog.service";
 import { renderPage } from "../utils/render";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
@@ -49,7 +52,21 @@ async function stepLocals(
     ? await getGenreCatalog()
     : null;
   const characters = namedCharacters(saved);
-  return { step, saved, steps: STEPS, isLast, genreCatalog, characters, fieldErrors };
+  const entityNatures = step.fields.some((f) => f.source === "entity_natures")
+    ? await allowedNatures(req.session as WizardSession)
+    : null;
+  return { step, saved, steps: STEPS, isLast, genreCatalog, characters, entityNatures, fieldErrors };
+}
+
+/**
+ * Spec-450 §4: naturalezas de entidad del género elegido en el paso 1.
+ * `null` = no se pueden ofrecer (Core caído o sin género); el combo se deshabilita.
+ */
+async function allowedNatures(session: WizardSession) {
+  const catalog = await getGenreCatalog();
+  const genre = sessionGenre(session.wizard);
+  if (!catalog || !genre) return null;
+  return naturesOf(catalog, genre);
 }
 
 export function wizardRedirect(req: Request, res: Response): void {
@@ -99,7 +116,10 @@ export async function submitStep(req: Request, res: Response): Promise<void> {
     }
   }
   await dropInvalidSubgenre(step.fields, data);
-  const fieldErrors = invalidCharacterRefs(step.fields, data);
+  const fieldErrors = {
+    ...invalidCharacterRefs(step.fields, data),
+    ...(await invalidEntityCards(step.fields, data, req.session as WizardSession)),
+  };
   saveStepData(req.session as WizardSession, step.id, data);
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -163,6 +183,40 @@ function invalidCharacterRefs(
   return errors;
 }
 
+const msgEntitySinNaturaleza = (n: number) =>
+  `Elegí qué es la entidad ${n} (o borrala con el tacho).`;
+
+/**
+ * Spec-450 §4: descarta las naturalezas que no corresponden al género y marca
+ * las cards con datos pero sin naturaleza (el Core la exige).
+ */
+async function invalidEntityCards(
+  fields: WizardField[],
+  data: Record<string, string>,
+  session: WizardSession,
+): Promise<Record<string, string>> {
+  if (!fields.some((f) => f.source === "entity_natures")) return {};
+  const natures = await allowedNatures(session);
+  if (natures) dropInvalidNatures(data, natures.map((n) => n.id));
+  const errors: Record<string, string> = {};
+  for (const n of entityCardsWithoutNature(data)) {
+    errors[`entity_${n}_nature`] = msgEntitySinNaturaleza(n);
+  }
+  return errors;
+}
+
+/** Antes de guardar: el género pudo cambiar después del paso 4. */
+async function entitySaveError(session: WizardSession): Promise<string | null> {
+  const world = session.wizard?.["step_world"];
+  if (!world) return null;
+  const natures = await allowedNatures(session);
+  if (natures) dropInvalidNatures(world, natures.map((n) => n.id));
+  const missing = entityCardsWithoutNature(world);
+  if (missing.length === 0) return null;
+  return `La entidad ${missing.join(", ")} quedó sin «Qué es» (¿cambiaste el tipo de horror?). `
+    + "Elegila en el paso «El Mundo» antes de guardar.";
+}
+
 function optionValueId(value: string | undefined): string {
   return (value ?? "").split(":")[0].trim();
 }
@@ -195,6 +249,11 @@ export async function saveWizardStory(req: Request, res: Response): Promise<void
     res.redirect("/generar/paso/1");
     return;
   }
+  const entityError = await entitySaveError(session);
+  if (entityError) {
+    await renderConfirm(req, res, entityError);
+    return;
+  }
   const coreDto = mapWizardToCore(session.wizard) as unknown as Record<string, unknown>;
 
   try {
@@ -212,17 +271,22 @@ export async function saveWizardStory(req: Request, res: Response): Promise<void
     }
     res.redirect(`/galeria?success=${flash}&guardada=${encodeURIComponent(storyId)}`);
   } catch (err: unknown) {
-    res.status(422);
-    await renderPage(res, "wizard-confirm", {
-      title: "Confirmar Historia",
-      activePage: "generate",
-      steps: STEPS,
-      wizard: session.wizard,
-      storyId: session.wizard_story_id ?? null,
-      saveError: coreErrorMessage(err),
-      genreCatalog: await getGenreCatalog(),
-    });
+    await renderConfirm(req, res, coreErrorMessage(err));
   }
+}
+
+async function renderConfirm(req: Request, res: Response, saveError: string): Promise<void> {
+  const session = req.session as WizardSession;
+  res.status(422);
+  await renderPage(res, "wizard-confirm", {
+    title: "Confirmar Historia",
+    activePage: "generate",
+    steps: STEPS,
+    wizard: session.wizard,
+    storyId: session.wizard_story_id ?? null,
+    saveError,
+    genreCatalog: await getGenreCatalog(),
+  });
 }
 
 export async function confirmPage(req: Request, res: Response): Promise<void> {

@@ -18,7 +18,8 @@ interface RawField {
   note?: string;
   group?: string;
   default?: string;
-  source?: "genre_catalog" | "characters";
+  source?: "genre_catalog" | "characters" | "entity_natures";
+  maxlength?: number;
   depends_on?: string;
   width?: "half";
 }
@@ -51,6 +52,7 @@ function parseField(raw: RawField): WizardField {
     source:      raw.source,
     depends_on:  raw.depends_on,
     width:       raw.width,
+    maxlength:   raw.maxlength,
   };
 }
 

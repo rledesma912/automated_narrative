@@ -501,6 +501,150 @@ steps:
         group: "reglas"
         options: *rule_types
 
+      # Spec-450 §4: la amenaza. Card list opcional (arranca vacía, máx. 3); la
+      # primera es la principal. Topes de largo = los del dominio (Entity).
+      - name: entity_1_name
+        type: text
+        label: "Entidad 1 - Nombre"
+        subtitle: "Cómo se la conoce (puede no tener nombre)"
+        placeholder: "Ej: La Mala Hora"
+        maxlength: 60
+        group: "amenaza"
+
+      - name: entity_1_nature
+        type: select
+        label: "Entidad 1 - Qué es"
+        subtitle: "Su naturaleza (según el tipo de horror del paso 1)"
+        group: "amenaza"
+        source: entity_natures
+
+      - name: entity_1_description
+        type: textarea
+        rows: 2
+        label: "Entidad 1 - Qué quiere"
+        subtitle: "Qué es y qué busca"
+        maxlength: 400
+        group: "amenaza"
+
+      - name: entity_1_manifestations
+        type: textarea
+        rows: 2
+        label: "Entidad 1 - Cómo se percibe"
+        subtitle: "Señales, sonidos, rastros"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_1_limits
+        type: textarea
+        rows: 2
+        label: "Entidad 1 - Sus límites"
+        subtitle: "Reglas o debilidades (ej: no cruza el agua)"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_1_reveal
+        type: radio
+        label: "Entidad 1 - Cuánto se muestra"
+        hint: "Si no elegís, se usa «Insinuada»"
+        group: "amenaza"
+        options: &reveal_levels
+          - "insinuada: Insinuada — se revela en el clímax"
+          - "nunca: Nunca se confirma del todo (el acto 5 decide)"
+          - "progresiva: Progresiva — cada vez más presente"
+          - "explicita: Explícita — presente desde el comienzo"
+
+      - name: entity_2_name
+        type: text
+        label: "Entidad 2 - Nombre"
+        subtitle: "Cómo se la conoce (puede no tener nombre)"
+        placeholder: "Ej: La Mala Hora"
+        maxlength: 60
+        group: "amenaza"
+
+      - name: entity_2_nature
+        type: select
+        label: "Entidad 2 - Qué es"
+        subtitle: "Su naturaleza (según el tipo de horror del paso 1)"
+        group: "amenaza"
+        source: entity_natures
+
+      - name: entity_2_description
+        type: textarea
+        rows: 2
+        label: "Entidad 2 - Qué quiere"
+        subtitle: "Qué es y qué busca"
+        maxlength: 400
+        group: "amenaza"
+
+      - name: entity_2_manifestations
+        type: textarea
+        rows: 2
+        label: "Entidad 2 - Cómo se percibe"
+        subtitle: "Señales, sonidos, rastros"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_2_limits
+        type: textarea
+        rows: 2
+        label: "Entidad 2 - Sus límites"
+        subtitle: "Reglas o debilidades (ej: no cruza el agua)"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_2_reveal
+        type: radio
+        label: "Entidad 2 - Cuánto se muestra"
+        hint: "Si no elegís, se usa «Insinuada»"
+        group: "amenaza"
+        options: *reveal_levels
+
+      - name: entity_3_name
+        type: text
+        label: "Entidad 3 - Nombre"
+        subtitle: "Cómo se la conoce (puede no tener nombre)"
+        placeholder: "Ej: La Mala Hora"
+        maxlength: 60
+        group: "amenaza"
+
+      - name: entity_3_nature
+        type: select
+        label: "Entidad 3 - Qué es"
+        subtitle: "Su naturaleza (según el tipo de horror del paso 1)"
+        group: "amenaza"
+        source: entity_natures
+
+      - name: entity_3_description
+        type: textarea
+        rows: 2
+        label: "Entidad 3 - Qué quiere"
+        subtitle: "Qué es y qué busca"
+        maxlength: 400
+        group: "amenaza"
+
+      - name: entity_3_manifestations
+        type: textarea
+        rows: 2
+        label: "Entidad 3 - Cómo se percibe"
+        subtitle: "Señales, sonidos, rastros"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_3_limits
+        type: textarea
+        rows: 2
+        label: "Entidad 3 - Sus límites"
+        subtitle: "Reglas o debilidades (ej: no cruza el agua)"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_3_reveal
+        type: radio
+        label: "Entidad 3 - Cuánto se muestra"
+        hint: "Si no elegís, se usa «Insinuada»"
+        group: "amenaza"
+        options: *reveal_levels
+
   - id: step_plot
     title: "La Trama"
     subtitle: "Los 5 actos según la Pirámide de Freytag"

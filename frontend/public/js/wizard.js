@@ -284,6 +284,69 @@
     });
   };
 
+  // ── Listas dinámicas genéricas ───────────────────────────────────────────
+  // Mismo comportamiento que personajes/escenarios/reglas, parametrizado.
+  function cardList(opts) {
+    function card(i) {
+      return document.getElementById(opts.cardPrefix + i);
+    }
+    function visibleCount() {
+      var n = 0;
+      for (var i = 1; i <= opts.max; i++) if (card(i) && !card(i).classList.contains("hidden")) n++;
+      return n;
+    }
+    function toggleMax() {
+      var msg = document.getElementById(opts.msgMaxId);
+      if (msg) msg.classList.toggle("hidden", visibleCount() < opts.max);
+    }
+    return {
+      add: function () {
+        for (var i = 1; i <= opts.max; i++) {
+          if (card(i) && card(i).classList.contains("hidden")) {
+            card(i).classList.remove("hidden");
+            var delBtn = document.getElementById(opts.deleteBtnPrefix + i);
+            if (delBtn) delBtn.classList.remove("invisible");
+            if (typeof lucide !== "undefined") lucide.createIcons();
+            break;
+          }
+        }
+        toggleMax();
+      },
+      askDelete: function (idx) {
+        var label = opts.describe(idx);
+        openDeleteModal("Se borrará " + label + " definitivamente.", function () {
+          if (!card(idx)) return;
+          card(idx).querySelectorAll("input, textarea, select").forEach(function (el) {
+            if (el.type === "checkbox" || el.type === "radio") {
+              el.checked = false;
+              el.dispatchEvent(new Event("change"));
+            } else {
+              el.value = "";
+              el.dispatchEvent(new Event("blur"));
+            }
+          });
+          card(idx).classList.add("hidden");
+          toggleMax();
+        });
+      },
+    };
+  }
+
+  // ── Listas dinámicas: Entidades (Spec-450 §4) ────────────────────────────
+  var entidades = cardList({
+    max: 3,
+    cardPrefix: "entity-card-",
+    deleteBtnPrefix: "entity-delete-btn-",
+    msgMaxId: "msg-max-entidades",
+    describe: function (idx) {
+      var nameInput = document.querySelector('[name="entity_' + idx + '_name"]');
+      var name = nameInput ? nameInput.value.trim() : "";
+      return name ? '"' + name + '"' : "la Entidad " + idx;
+    },
+  });
+  window.addEntidad = entidades.add;
+  window.askDeleteEntidad = entidades.askDelete;
+
   // Render lucide icons iniciales
   if (typeof lucide !== "undefined") lucide.createIcons();
 

@@ -8,7 +8,18 @@ vi.mock("../../../src/services/catalog.service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../src/services/catalog.service")>()),
   getGenreCatalog: vi.fn(async () => [
     { id: "folk_horror", label: "Terror Rural", subgenres: [{ id: "rural", label: "Leyendas del campo" }] },
-    { id: "body_horror", label: "Horror Corporal", subgenres: [{ id: "contagio", label: "Contagio" }] },
+    {
+      id: "body_horror",
+      label: "Horror Corporal",
+      subgenres: [{ id: "contagio", label: "Contagio" }],
+      entity_natures: [{ id: "contagio", label: "Contagio / organismo" }],
+    },
+    {
+      id: "suspenso",
+      label: "Suspenso",
+      subgenres: [],
+      entity_natures: [{ id: "humano", label: "Humano" }],
+    },
   ]),
 }));
 vi.mock("../../../src/utils/render", () => ({
@@ -253,3 +264,59 @@ describe("submitStep (paso 2: narrador)", () => {
     expect(data).not.toHaveProperty("storyteller_id");
   });
 });
+
+/** Spec-450 T4.2: entidades del paso 4. */
+describe("submitStep (paso 4: entidades)", () => {
+  beforeEach(() => vi.clearAllMocks());
+  const step4 = String(STEPS.findIndex((s) => s.id === "step_world") + 1);
+
+  async function submitStep4(body: Record<string, string>, genre = "suspenso") {
+    const session: Record<string, any> = {
+      wizard: { step_config_title: { atmosfera: genre }, step_world: {} },
+    };
+    const res = makeRes();
+    await submitStep({ params: { step: step4 }, body, session } as unknown as Request, res);
+    return { res, data: session.wizard.step_world as Record<string, string> };
+  }
+
+  it("entidad válida: avanza", async () => {
+    const { res, data } = await submitStep4({ entity_1_name: "El vecino", entity_1_nature: "humano" });
+    expect(res.redirect).toHaveBeenCalledWith(`/generar/paso/${Number(step4) + 1}`);
+    expect(data.entity_1_nature).toBe("humano");
+  });
+
+  it("naturaleza de otro género: se descarta y la card queda marcada", async () => {
+    const { res, data } = await submitStep4({ entity_1_name: "Algo", entity_1_nature: "demonio" });
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(data).not.toHaveProperty("entity_1_nature");
+    expect(render.mock.calls[0][2].fieldErrors).toEqual({
+      entity_1_nature: "Elegí qué es la entidad 1 (o borrala con el tacho).",
+    });
+  });
+
+  it("sin cards de entidad no hay error", async () => {
+    const { res } = await submitStep4({ scenario_1_name: "La casa" });
+    expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe("saveWizardStory con entidades (Spec-450)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("si el género cambió y una entidad quedó sin naturaleza, no guarda y lo explica", async () => {
+    const session = {
+      wizard: {
+        step_config_title: { title: "t", atmosfera: "suspenso" },
+        step_world: { entity_1_name: "La Mala Hora", entity_1_nature: "folklorica" },
+      },
+    };
+    const res = makeRes();
+
+    await saveWizardStory({ session } as unknown as Request, res);
+
+    expect(create).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(422);
+    expect(render.mock.calls[0][2].saveError).toContain("La entidad 1 quedó sin «Qué es»");
+  });
+});
+

@@ -10,6 +10,8 @@ export interface CatalogOption {
 
 export interface CatalogGenre extends CatalogOption {
   subgenres: CatalogOption[];
+  /** Naturalezas de entidad que admite el género (Spec-450 §1). */
+  entity_natures?: CatalogOption[];
 }
 
 let cache: { genres: CatalogGenre[]; at: number } | null = null;
@@ -42,3 +44,9 @@ export function clearGenreCatalogCache(): void {
 export function subgenresOf(catalog: CatalogGenre[], genreId: string): CatalogOption[] {
   return catalog.find((g) => g.id === genreId)?.subgenres ?? [];
 }
+
+/** Naturalezas de entidad de un género del catálogo ([] si el género no existe). */
+export function naturesOf(catalog: CatalogGenre[], genreId: string): CatalogOption[] {
+  return catalog.find((g) => g.id === genreId)?.entity_natures ?? [];
+}
+
