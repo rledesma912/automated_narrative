@@ -24,8 +24,9 @@ export async function historiaPage(req: Request, res: Response): Promise<void> {
 export async function generateNarrativeHandler(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params;
   try {
-    const title = `Relato ${new Date().toLocaleString('es-AR')}`;
-    const resp = await axios.post(
+    // El contenedor corre en UTC: el título lleva la hora de Argentina.
+    const title = `Relato ${new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}`;
+    await axios.post(
       `${CORE_API_URL}/api/v1/story-templates/${storyId}/generate-narrative?title=${encodeURIComponent(title)}`,
       {},
       { timeout: 30000 },
