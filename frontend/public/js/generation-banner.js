@@ -2,14 +2,16 @@
  * Banda de generación + punto del sidebar (Spec-460 S5).
  *
  * Pinta el estado que mantiene /js/event-bus.js (window.ForgeEvents):
- *   - running: el job más reciente, "y N más", acto N de 5 · etapa, barra de
- *     progreso y "Ver progreso" (link real a la sala; solo existe con un job).
- *   - done:    "«Título» está lista" + "Leer relato"; se oculta sola a los 15 s.
+ *   - running: el job más reciente, "y N más", acto N de 5 · etapa — tiempo
+ *     restante (Spec-510), barra de progreso y "Ver progreso" (link real a la
+ *     sala; solo existe con un job).
+ *   - done:    "«Título» está lista · en N min" + "Leer relato"; se oculta sola a los 15 s.
  *   - failed:  "Falló la generación de «Título»" + "Ver detalle"; queda hasta cerrarla.
  * No se muestra en la sala de generación (ya muestra todo).
  *
  * Se carga en <head> con defer: los listeners sobreviven a las navegaciones de
  * hx-boost y re-pintan el body nuevo en cada `forge:jobs-changed`.
+ * El avance sale de /js/eta.js (window.ForgeEta, Spec-510), cargado antes.
  */
 (function () {
   "use strict";
@@ -18,32 +20,18 @@
   window.__forgeBannerReady = true;
 
   const DONE_VISIBLE_MS = 15000;
-  const STAGES = {
-    analyst: { label: "Analizando la sinopsis", weight: 0 },
-    resolver: { label: "Distribuyendo escenarios", weight: 0 },
-    mapper: { label: "Mapeando", weight: 0.1 },
-    voz: { label: "Narrando", weight: 0.4 },
-    journal: { label: "Actualizando la memoria", weight: 0.85 },
-    consolidando: { label: "Consolidando el relato", weight: 1 },
-  };
+  const TICK_MS = 15000; // recalcula el tiempo restante (Spec-510)
+  const eta = window.ForgeEta;
   const dismissed = new Set(); // job_id de avisos cerrados (esta pestaña)
 
   function stepText(job) {
     if (job.kind === "regenerate_voz") {
       return `Regenerando el acto ${(job.params && job.params.beat) || job.beat || ""}`.trim();
     }
-    const stage = STAGES[job.stage];
+    const stage = eta.STAGES[job.stage];
     if (!stage) return "Iniciando...";
     if (job.stage === "consolidando" || !job.beat) return stage.label;
     return `Acto ${job.beat} de ${job.total_beats || 5} · ${stage.label}`;
-  }
-
-  function progressPct(job) {
-    if (job.stage === "consolidando") return 100;
-    const stage = STAGES[job.stage];
-    if (!stage || !job.beat) return 3;
-    const total = job.total_beats || 5;
-    return Math.min(99, Math.round(((job.beat - 1 + stage.weight) / total) * 100));
   }
 
   function setText(root, selector, text) {
@@ -86,8 +74,9 @@
       const panel = banner.querySelector('[data-banner-state="running"]');
       setText(panel, "[data-banner-title]", `«${job.title || "Sin título"}»`);
       setText(panel, "[data-banner-more]", running.length > 1 ? `y ${running.length - 1} más` : "");
-      setText(panel, "[data-banner-step]", stepText(job));
-      panel.querySelector("[data-banner-progress]").style.width = `${progressPct(job)}%`;
+      const remaining = eta.formatRemaining(eta.remainingFor(job, eta.elapsedNow(job, Date.now())));
+      setText(panel, "[data-banner-step]", remaining ? `${stepText(job)} — ${remaining}` : stepText(job));
+      panel.querySelector("[data-banner-progress]").style.width = `${Math.round(eta.progress(job) * 100)}%`;
       // Regenerar un acto se sigue en la vista de relatos, no en la sala.
       panel.querySelector("[data-banner-link]").href =
         job.kind === "regenerate_voz"
@@ -104,6 +93,8 @@
       const panel = banner.querySelector(`[data-banner-state="${state}"]`);
       setText(panel, "[data-banner-title]", `«${job.title || "Sin título"}»`);
       setText(panel, "[data-banner-error]", job.error || "");
+      const took = state === "done" ? eta.formatDuration(job.elapsed_seconds) : "";
+      setText(panel, "[data-banner-duration]", took ? ` · en ${took}` : "");
       panel.querySelector("[data-banner-link]").href =
         state === "done" ? `/historia/${job.story_id}/relatos` : `/historia/${job.story_id}`;
       panel.querySelector("[data-banner-close]").dataset.jobId = job.job_id;
@@ -123,5 +114,8 @@
   });
 
   document.addEventListener("forge:jobs-changed", render);
+  setInterval(() => {
+    if (window.ForgeEvents && window.ForgeEvents.activeJobs().length > 0) render();
+  }, TICK_MS);
   render();
 })();

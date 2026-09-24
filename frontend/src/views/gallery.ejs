@@ -63,33 +63,36 @@ function renderStatusLabel(s) {
               </a>
 
               <% if (s.status === 'completed') { %>
-                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
+                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Abriendo..."
                           class="btn-forge-outline !px-0 !border-none bg-transparent cursor-pointer">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
                   </button>
+                  <%- include('partials/estimate', { kind: 'full_generation' }) %>
                 </form>
                 <a href="/historia/<%= s.id %>/relatos"
                    class="btn-forge-outline !px-0 !border-none">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver Relato
                 </a>
               <% } else if (s.status === 'failed') { %>
-                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
+                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Iniciando..."
                           class="btn-forge-outline !px-0 !border-none bg-transparent cursor-pointer">
                     <i data-lucide="zap" class="w-4 h-4"></i> Reintentar
                   </button>
+                  <%- include('partials/estimate', { kind: 'full_generation' }) %>
                 </form>
                 <a href="/generar/stream/<%= s.id %>"
                    class="btn-forge-outline !px-0 !border-none !text-forge-muted hover:!text-forge-accent">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver avance
                 </a>
               <% } else { %>
-                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline">
+                <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Iniciando..."
                           class="btn-forge-outline !px-0 !border-none bg-transparent cursor-pointer">
                     <i data-lucide="zap" class="w-4 h-4"></i> Generar
                   </button>
+                  <%- include('partials/estimate', { kind: 'full_generation' }) %>
                 </form>
               <% } %>
 

@@ -1,0 +1,7 @@
+<%/*
+ * Spec-510: «≈ N min» junto a un botón que lanza un job. `estimateLabels` lo
+ * deja el middleware loadEstimates; sin él no se muestra nada.
+ * Variables: kind ('full_generation' | 'regenerate_voz').
+ */
+const estimateLabel = locals.estimateLabels ? locals.estimateLabels[kind] : '';
+%><% if (estimateLabel) { %><span class="text-xs text-forge-muted whitespace-nowrap" data-estimate="<%= kind %>" title="Tiempo estimado"><%= estimateLabel %></span><% } %>

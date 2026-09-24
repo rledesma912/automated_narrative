@@ -145,6 +145,9 @@ profiles:
     prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
+    # Spec-510: valor inicial de la duración estimada (s), medido 2026-09-24
+    # (relato completo 206 s, regenerar un acto 22 s). Con historial manda la mediana.
+    estimated_seconds: { full_generation: 210, regenerate_voz: 20 }
     roles:
       story_analyst:
         model: gemma3:12b
@@ -181,6 +184,8 @@ profiles:
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     anthropic: { model: claude-sonnet-5 }
+    # Spec-510: sin medir con la Voz en Claude; mismos valores que gemma3 hasta tener historial.
+    estimated_seconds: { full_generation: 210, regenerate_voz: 20 }
     roles:
       story_analyst:
         model: gemma3:12b

@@ -29,6 +29,9 @@
   let es = null;
   let currentJobId = window.ACTIVE_JOB_ID || null;
   let cancelling = false;
+  let jobInfo = null; // GET /jobs/{id} + etapa en vivo, para el tiempo restante (Spec-510)
+  let etaTimer = null;
+  const ETA_TICK_MS = 15000;
 
   function jobEventsUrl(jobId) {
     return `/api/v1/jobs/${jobId}/events`;
@@ -150,6 +153,7 @@
   }
 
   function showError(msg) {
+    stopEta();
     setBadge("ERROR", "border-red-900 text-red-400");
     hideSpinner();
 
@@ -171,6 +175,8 @@
   }
 
   function showDone() {
+    stopEta();
+    showDuration(currentJobId);
     setBadge("COMPLETO", "border-green-900 text-green-400");
     setStatus("Historia generada con éxito");
     hideSpinner();
@@ -185,10 +191,70 @@
     if (window.lucide) lucide.createIcons();
   }
 
+  /* ── Tiempo restante (Spec-510) ────────────────────────────────────────── */
+
+  async function fetchJob(jobId) {
+    try {
+      const resp = await fetch(`/api/v1/jobs/${jobId}`);
+      if (!resp.ok) return null;
+      const job = await resp.json();
+      job.received_at = Date.now();
+      return job;
+    } catch {
+      return null;
+    }
+  }
+
+  function renderEta() {
+    const el = document.getElementById("eta-line");
+    const eta = window.ForgeEta;
+    if (!el) return;
+    if (!eta || !jobInfo) {
+      el.textContent = "";
+      return;
+    }
+    el.textContent = eta.formatRemaining(eta.remainingFor(jobInfo, eta.elapsedNow(jobInfo, Date.now())));
+  }
+
+  function startEta(jobId) {
+    stopEta();
+    fetchJob(jobId).then((job) => {
+      if (!job || currentJobId !== jobId || !es) return;
+      jobInfo = job;
+      renderEta();
+      etaTimer = setInterval(renderEta, ETA_TICK_MS);
+    });
+  }
+
+  function trackStage(d) {
+    if (!jobInfo || !d.stage) return;
+    jobInfo.stage = d.stage;
+    if (d.beat !== undefined) jobInfo.beat = d.beat;
+    if (d.total_beats) jobInfo.total_beats = d.total_beats;
+    renderEta();
+  }
+
+  function stopEta() {
+    if (etaTimer) clearInterval(etaTimer);
+    etaTimer = null;
+    jobInfo = null;
+    renderEta();
+  }
+
+  async function showDuration(jobId) {
+    const el = document.querySelector("[data-done-duration]");
+    const job = jobId ? await fetchJob(jobId) : null;
+    const took = job && window.ForgeEta ? window.ForgeEta.formatDuration(job.elapsed_seconds) : "";
+    if (!el || !took) return;
+    el.textContent = `Lista en ${took}`;
+    el.classList.remove("hidden");
+  }
+
   /* ── Acciones del usuario ──────────────────────────────────────────────── */
 
   async function cancelGeneration() {
     cancelling = true;
+    stopEta();
     if (es) {
       es.close();
       es = null;
@@ -302,6 +368,7 @@
     setStatus("Conectando con el sistema...");
 
     es = new EventSource(jobEventsUrl(jobId));
+    startEta(jobId);
 
     es.addEventListener("status", (e) => {
       revealLogs();
@@ -309,6 +376,7 @@
         const d = JSON.parse(e.data);
         setStatus(d.msg);
         appendLog(`🔍 ${d.msg}`);
+        trackStage(d);
         if (d.stage) setBadge("GENERANDO", "border-forge-accent text-forge-accent");
       } catch {
         /* payload mal formado — ignorar */

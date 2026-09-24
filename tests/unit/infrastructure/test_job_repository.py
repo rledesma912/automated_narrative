@@ -171,3 +171,43 @@ async def test_arranque_de_la_app_recupera_jobs_interrumpidos(repo: SQLJobReposi
 
     recovered = await repo.get(job.id)
     assert (recovered.status, recovered.error) == (JobStatus.FAILED, INTERRUPTED_ERROR)
+
+
+# --- Spec-510 T0.2: historial de jobs terminados ------------------------------
+
+
+async def _finished(repo: SQLJobRepository, story_id, kind: JobKind, status: JobStatus) -> Job:
+    job = await repo.create(_job(story_id, kind=kind))
+    await repo.mark_running(job.id)
+    await repo.finish(job.id, status)
+    return job
+
+
+async def test_list_finished_solo_done_del_kind_mas_nuevos_primero(repo: SQLJobRepository):
+    story_id = await _story()
+    first = await _finished(repo, story_id, JobKind.FULL_GENERATION, JobStatus.DONE)
+    await _finished(repo, story_id, JobKind.FULL_GENERATION, JobStatus.FAILED)
+    await _finished(repo, story_id, JobKind.REGENERATE_VOZ, JobStatus.DONE)
+    second = await _finished(repo, story_id, JobKind.FULL_GENERATION, JobStatus.DONE)
+    await repo.create(_job(story_id))  # activo (queued): no cuenta
+
+    jobs = await repo.list_finished(JobKind.FULL_GENERATION)
+
+    assert [j.id for j in jobs] == [second.id, first.id]
+    assert all(j.started_at and j.finished_at for j in jobs)
+
+
+async def test_list_finished_respeta_el_limite(repo: SQLJobRepository):
+    story_id = await _story()
+    for _ in range(3):
+        await _finished(repo, story_id, JobKind.REGENERATE_VOZ, JobStatus.DONE)
+
+    assert len(await repo.list_finished(JobKind.REGENERATE_VOZ, limit=2)) == 2
+
+
+async def test_list_finished_ignora_done_sin_started_at(repo: SQLJobRepository):
+    story_id = await _story()
+    job = await repo.create(_job(story_id))
+    await repo.finish(job.id, JobStatus.DONE)  # nunca pasó por running
+
+    assert await repo.list_finished(JobKind.FULL_GENERATION) == []

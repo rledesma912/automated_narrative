@@ -396,3 +396,57 @@ async def test_stream_legado_se_ata_al_job_activo(client, hold):
 
 async def test_stream_legado_historia_inexistente_404(client):
     assert (await client.get(f"/api/v1/stories/{uuid.uuid4()}/stream")).status_code == 404
+
+
+# ── Spec-510: tiempos del job y estimaciones ─────────────────────────────────
+
+
+async def test_get_job_trae_tiempos_y_estimacion(client):
+    story_id = await _create_story(client)
+    job_id = (await client.post(f"/api/v1/stories/{story_id}/jobs", json={})).json()["job_id"]
+    await job_manager.wait(uuid.UUID(job_id))
+
+    job = (await client.get(f"/api/v1/jobs/{job_id}")).json()
+
+    assert job["params"]["profile"] == settings.active_profile_name
+    assert job["params"]["estimated_seconds"] > 0
+    assert job["started_at"] and job["finished_at"]
+    assert isinstance(job["elapsed_seconds"], int)
+
+
+async def test_estimates_sin_historial_usa_el_valor_inicial(client):
+    resp = await client.get("/api/v1/jobs/estimates")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body) == {"full_generation", "regenerate_voz"}
+    assert body["full_generation"] == {
+        "seconds": settings.estimated_seconds("full_generation"),
+        "source": "default",
+        "samples": 0,
+    }
+
+
+async def test_estimates_con_historial_del_perfil_activo(client):
+    story_id = await _create_story(client)
+    conn = await get_connection()
+    for seconds in (200, 220):
+        await conn.execute(
+            "INSERT INTO generation_job (id, story_id, kind, status, params, created_at, "
+            "started_at, finished_at) VALUES (?, ?, 'full_generation', 'done', ?, ?, ?, ?)",
+            (
+                str(uuid.uuid4()),
+                story_id,
+                json.dumps({"profile": settings.active_profile_name}),
+                "2026-09-24T10:00:00-03:00",
+                "2026-09-24T10:00:00-03:00",
+                f"2026-09-24T10:0{seconds // 60}:{seconds % 60:02d}-03:00",
+            ),
+        )
+    await conn.commit()
+    await conn.close()
+
+    body = (await client.get("/api/v1/jobs/estimates")).json()
+
+    assert body["full_generation"] == {"seconds": 210, "source": "history", "samples": 2}
+    assert body["regenerate_voz"]["source"] == "default"
