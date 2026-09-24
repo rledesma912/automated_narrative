@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — pendiente de revisión
+**Estado:** PLAN — pendiente de revisión (SPECIFY aprobado 2026-09-24)
 **Roadmap:** EV-7 (exportar el relato para el guion de YouTube).
 
 ---
@@ -14,6 +14,7 @@
 3. Se exporta **desde la web**: un botón «Descargar .md» en el panel de cada variante de relato (`relato_panel.ejs`), junto a «Copiar Relato». Sin comando CLI.
 4. Se exporta **una variante** (`generated_narrative`) tal como está guardada, incluidos los actos regenerados (Spec-430). No se regenera ni se consulta al LLM.
 5. `audiogen` es de solo lectura para esta spec: no se toca su código. El contrato se deduce de su parser (`src/audiogen/application/services/markdown_parser.py`).
+6. De paso se arregla **«Copiar Relato»**, que hoy copia también el texto de los botones de cada acto (§2.4).
 
 ---
 
@@ -72,7 +73,7 @@ Primer párrafo de prosa, en una sola línea.
 Reglas (determinísticas, sin LLM):
 
 1. Primera línea: `# <título de la historia>`.
-2. Cada acto: `## Acto N` y su prosa. Entre un acto y el siguiente, una línea `[pause=<ms>]` (valor en §OPEN QUESTIONS).
+2. Cada acto: `## Acto N` y su prosa. Entre un acto y el siguiente, una línea `[pause=1500]`.
 3. **Un párrafo por línea:** los saltos simples dentro de un párrafo se unen con un espacio; los párrafos se separan con una línea en blanco.
 4. **Ninguna línea de prosa empieza con `#`, `-`, `*`, `>` ni es solo `[…]`:**
    - Guion de diálogo al inicio (`-`, `–`) → raya `—`.
@@ -91,6 +92,14 @@ Reglas (determinísticas, sin LLM):
 - Botón **«Descargar .md»** en `relato_panel.ejs`, al lado de «Copiar Relato», con el mismo estilo. Es un `<a href="/api/v1/generated-narratives/<id>/export.md" download>`: sin JS nuevo.
 - Mientras un acto de esa variante se regenera (`regenerating`), el botón queda deshabilitado, como los de «Regenerar acto».
 
+### 2.4 Arreglo de «Copiar Relato»
+
+Hoy `copyRelatoContent()` (`public/js/relatos.js`) copia el `innerText` de `#relato-content-<id>`, que contiene los botones de cada acto: el texto copiado incluye «Regenerar» tras cada rótulo (confirmado en `relato_panel.ejs`).
+
+- La vista marca con `data-copy-part` las partes que se copian: preámbulo, rótulo `Acto N` y prosa de cada acto.
+- `copyRelatoContent()` arma el texto con esas partes, en orden, separadas por una línea en blanco. Los botones no se copian.
+- Copiar da lo que se ve en pantalla («Acto 1», prosa…), no el `.md` para el TTS: sirve para pegar en cualquier lado.
+
 ---
 
 ## BOUNDARIES
@@ -106,7 +115,7 @@ Reglas (determinísticas, sin LLM):
 - **Unit (pytest):** el formateador con casos de cada regla de §2.1 (guion de diálogo, cursiva al inicio y a mitad de línea, `>`, separadores, saltos simples, párrafo `[…]`, acto vacío, título con acentos) y el slug del nombre de archivo.
 - **Contrato con `audiogen`:** un test que recorre el `.md` exportado con las **mismas reglas de salto** del parser de `audiogen` (líneas `#`/`-`/`*`/`>` y comandos `[…]`) y verifica que **todo** párrafo de prosa sobrevive como segmento. Replica la regla; no importa `audiogen`.
 - **API (pytest):** 200 con headers correctos, 404, 400.
-- **E2E (Playwright):** en el panel de una variante, el botón descarga un `.md` cuyo nombre y primera línea son los esperados.
+- **E2E (Playwright):** en el panel de una variante, el botón descarga un `.md` cuyo nombre y primera línea son los esperados, y «Copiar Relato» copia sin «Regenerar».
 - **Manual (una vez):** pasar un relato exportado por `audiogen` y escuchar que no falte nada.
 
 ---
@@ -116,12 +125,61 @@ Reglas (determinísticas, sin LLM):
 1. Desde el panel de una variante, un clic descarga `<slug>-<fecha>.md`.
 2. El archivo cumple §2.1; ninguna línea de prosa queda en una forma que `audiogen` saltee.
 3. El texto narrado (sin rótulos) es el de la variante, palabra por palabra, salvo los marcadores quitados en §2.1.4.
-4. `make lint`, `make test`, Vitest y Playwright en verde.
+4. «Copiar Relato» copia rótulos y prosa, sin el texto de los botones.
+5. `make lint`, `make test`, Vitest y Playwright en verde.
 
 ---
 
-## OPEN QUESTIONS
+---
 
-1. **Pausa entre actos:** ¿`[pause=1500]` (1,5 s) está bien, o preferís otro valor o ninguna pausa?
-2. **Rótulo de acto:** ¿`## Acto N` alcanza, o preferís los nombres de los actos (p. ej. `## Acto 1 — …`)? No se leen igual; es solo para orientarse en el archivo.
-3. **Arreglo de «Copiar Relato»:** hoy copia el `innerText` de `#relato-content-<id>`, que contiene los botones de cada acto: el texto copiado incluye «Regenerar» tras cada rótulo (confirmado en `relato_panel.ejs`). Quedó fuera de alcance según tu respuesta; ¿lo dejamos anotado como pendiente aparte?
+## DECISIONES (2026-09-24)
+
+1. Pausa entre actos: `[pause=1500]`.
+2. Rótulo: `## Acto N`, sin el nombre del acto.
+3. El arreglo de «Copiar Relato» entra en esta spec (§2.4).
+
+---
+
+## PLAN
+
+### Estrategia
+
+De adentro hacia afuera: primero el formateador puro (ahí está el riesgo de perder texto en el audio), después el endpoint y por último la UI. Cada slice deja la suite en verde y va en su propio commit.
+
+### Decisiones técnicas
+
+| Tema | Decisión |
+|---|---|
+| Dónde vive el formateo | `src/application/services/narrative_script_formatter.py`: funciones puras `to_tts_markdown(title, content) -> str` y `export_filename(title, created_at) -> str`. Parte el `content` por los encabezados `## Acto N`, el formato que produce `_consolidate_content`. |
+| Título | El de la historia (`story_repo.get_by_id(narrative.story_template_id).title`). Si la historia ya no existe, el de la variante sin el sufijo ` · fecha`. |
+| Caso de uso | Método nuevo `GenerateNarrativesUseCase.export_tts_markdown(narrative_id) -> tuple[str, str] \| None` (nombre de archivo, contenido). Ya tiene `narrative_repo` y `story_repo`. |
+| Endpoint | `GET /api/v1/generated-narratives/{id}/export.md` en `narrative_router.py`, con el mismo manejo de 400/404 que `/text`. `Response(media_type="text/markdown; charset=utf-8")` con `Content-Disposition: attachment; filename="…"`. El slug es ASCII, así que no hace falta `filename*`. |
+| Slug | `unicodedata.normalize("NFKD")`, sin diacríticos, `[^a-z0-9]+` → `-`, recortado a 60 caracteres; `relato` si queda vacío. Fecha `AAAA-MM-DD-HHMM` en hora AR. |
+| Proxy | `/api/*` ya pasa los headers sin alterarlos (`proxy_passthrough.test.ts`); se agrega un caso para `Content-Disposition`. |
+| Botón | `<a … download>` con `btn-forge-outline` e ícono `download` (lucide). Con `regenerating`, sin `href` y con `aria-disabled="true"`. |
+| Copiar | `data-copy-part` en la vista; `copyRelatoContent()` hace `querySelectorAll("[data-copy-part]")` → `innerText.trim()` → `join("\n\n")`. |
+
+### S0 — Formateador
+
+`narrative_script_formatter.py` con las reglas de §2.1 y el nombre de archivo. Tests unitarios por regla y test de contrato con las reglas de salto de `audiogen`.
+
+### S1 — Endpoint de descarga
+
+Caso de uso y endpoint `export.md`. Tests de API (200 con headers y cuerpo, 404, 400) y caso del proxy para `Content-Disposition`.
+
+### S2 — UI: descargar y copiar
+
+Botón «Descargar .md», `data-copy-part` en `relato_panel.ejs` y el nuevo `copyRelatoContent()`. Test de vista (Vitest, `relatos.view.test.ts`) y E2E (`relatos.spec.ts`): la descarga (nombre y primera línea) y la copia sin «Regenerar».
+
+### S3 — Verificación real y cierre
+
+Exportar relatos generados con `scripts/evaluate_voice.py` (gemma3), contar cuántas líneas corrige cada regla y pasar uno por `audiogen` (la escucha la hace el usuario). Actualizar `CLAUDE.md` (endpoint) y cerrar la spec. PR a `development`.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| La Voz produce formas no previstas (listas numeradas, `—` pegado a `*`…). | El test de contrato es genérico (ninguna línea de prosa salteable); S3 mide sobre relatos reales y suma reglas si aparece algo. |
+| Quitar `_` como énfasis rompe palabras con guion bajo. | Solo se quita `_texto_` delimitado por espacio o puntuación. Caso de test. |
+| `innerText` depende del layout y jsdom no lo implementa. | El test de vista verifica los `data-copy-part`; la copia real se prueba en E2E con Chromium. |
+| El `download` de un enlace proxyado no respeta el nombre. | El nombre sale del `Content-Disposition` del Core; el E2E verifica `download.suggestedFilename()`. |
