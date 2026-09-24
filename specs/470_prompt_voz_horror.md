@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** PLAN — SPECIFY aprobada (2026-09-24); plan pendiente de OK para pasar a TASKS
+**Estado:** TASKS — PLAN aprobado (2026-09-24); tareas pendientes de OK para pasar a IMPLEMENT
 **Roadmap:** EV-3 (calidad narrativa, sin costo). EV-2 (Voz en Anthropic) queda para después.
 
 ---
@@ -149,4 +149,60 @@ S0 Arnés + métricas + línea base ─▶ S1 Prompts (compact + frontier + narr
 | La variación del modelo confunde la comparación | 2 corridas por variante; se miran tendencias, no un relato. |
 | Cambiar el encabezado del evento altera todas las historias | Es intencional; snapshot regenerado con diff revisado; la evaluación cubre sin y con entidades. |
 | La frontier no se puede evaluar con el perfil activo | Tests de prompt; queda lista para EV-2. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + pytest (+ Vitest/Playwright si cambia algo que use el frontend) en verde → commit con tu OK.
+
+### S0 — Arnés, métricas y línea base
+
+- [ ] **T0.1:** Lista de clichés.
+  - Acceptance: `config/prompts_generation/voice_cliches.txt`, una expresión por línea (la lista de §1.1), comentarios con `#`; un loader la lee (sin duplicados, en minúsculas para comparar).
+  - Verify: pytest (lee la lista; ignora comentarios y líneas vacías).
+  - Files: `config/prompts_generation/voice_cliches.txt`, `src/application/services/voice_cliches.py` (nuevo)
+- [ ] **T0.2:** Métricas.
+  - Acceptance: `cliches(text)`, `wrong_kinship(text, narrator, cast)`, `narrator_outside_dialogue(text, narrator)` y `repeated_4grams(acts)` como funciones puras, con los criterios de la decisión técnica 3.
+  - Verify: pytest con fragmentos reales de la S5 de Spec-450 («me heló la sangre», «¿Será que… las leyendas de mi abuela…?», «Ricardo se sume en un silencio catatónico que Irene no se atreve a romper», diálogo «—Irene, no seas supersticiosa» que **no** cuenta).
+  - Files: `scripts/voice_metrics.py`, `tests/unit/scripts/test_voice_metrics.py`
+- [ ] **T0.3:** Arnés de evaluación.
+  - Acceptance: `uv run python scripts/evaluate_voice.py --runs 2 --variants sin,con [--voz-temperature 0.5] --out <dir> --label <nombre>` genera con el perfil activo en una DB temporal, guarda cada relato y un `metrics.json`, e imprime una tabla (por relato y promedio por variante). La historia con entidades usa las 2 entidades de Spec-450 S5 (constante del script).
+  - Verify: corrida con `--mock` (sin Ollama) de punta a punta en un test; corrida real en T0.4.
+  - Files: `scripts/evaluate_voice.py`, `tests/unit/scripts/test_evaluate_voice.py`
+- [ ] **T0.4:** Línea base.
+  - Acceptance: 2 corridas × (sin, con) con el prompt de hoy; tabla y observaciones en la spec.
+  - Verify: `metrics.json` de la línea base guardado en el scratchpad y resumido en la spec.
+- [ ] **Checkpoint S0:** lint + pytest → commit.
+
+### S1 — Prompts
+
+- [ ] **T1.1:** Bloque de parentescos.
+  - Acceptance: `PromptBuilder._format_kinship(story)` → «CÓMO LLAMÁS A CADA PERSONAJE» con la instrucción de §1.2 y un renglón por personaje (nombre — rol), sin el narrador; narrador desde `storyteller_id`/`storyteller_name`; sin narrador identificable o sin elenco → `""`.
+  - Verify: pytest (Irene narra: aparece María con «Suegra de Irene…», no aparece Irene; sin `personajes_full` → vacío).
+  - Files: `src/application/services/prompt_builder.py`
+- [ ] **T1.2:** Templates compact y frontier.
+  - Acceptance: guía de oficio (§1.1), primera persona (§1.3), léxico (§1.4), `{parentescos}` y `{cliches}` en `voice_system_compact.md` y `system.md`; `build_voice_system_compact()` y `build_voice_prompt()` los completan.
+  - Verify: pytest (las dos variantes contienen guía, clichés y parentescos; `format()` sin `KeyError`).
+  - Files: `config/prompts_generation/voice_system_compact.md`, `config/prompts_generation/system.md`, `src/application/services/prompt_builder.py`
+- [ ] **T1.3:** Encabezado del evento con el narrador.
+  - Acceptance: `assemble(..., narrator=...)` usa «EVENTO DE ESTE MOMENTO (contalo en primera persona, como <narrador>; narrá EXACTAMENTE estos eventos, en orden):»; sin narrador, el de hoy. `build_narrative_context` pasa el narrador.
+  - Verify: pytest del assembler (con y sin narrador).
+  - Files: `src/application/services/narrative_context_assembler.py`, `src/application/services/prompt_builder.py`
+- [ ] **T1.4:** Snapshots y presupuesto.
+  - Acceptance: `beat_reveal.json` y `pipeline_prompts.json` regenerados con `SNAPSHOT_UPDATE=1`; el diff solo muestra los textos de §1 (revisado); `measure_entity_prompts.py` sin roles fuera de margen (tabla actualizada en la spec).
+  - Verify: pytest completo en verde; salida del script de medición.
+  - Files: `tests/fixtures/snapshots/*.json`
+- [ ] **Checkpoint S1:** lint + pytest + Playwright (el arnés E2E genera con el backend) → commit.
+
+### S2 — Evaluación comparada
+
+- [ ] **T2.1:** Prompt nuevo: 2 corridas × (sin, con).
+- [ ] **T2.2:** Prompt nuevo + `--voz-temperature 0.5`: 2 corridas × con entidades.
+- [ ] **T2.3:** Tabla antes / después / después+0.5 contra las metas de §2 + lectura manual (fidelidad a los eventos, graduación de Spec-450, ritmo y tensión, palabras inventadas). Resultado en la spec; si 0.5 conviene, propuesta de cambio del perfil (con OK, commit aparte).
+
+### S3 — Documentación, deploy y cierre
+
+- [ ] **T3.1:** `CLAUDE.md` (Prompt System: guía de oficio, parentescos, `voice_cliches.txt`, `evaluate_voice.py`), nota en Spec-170, Spec-470 → DONE.
+- [ ] **T3.2:** Deploy del backend (con tu OK) y prueba rápida: una generación corta en prod no hace falta; se verifica que el contenedor tenga los templates nuevos y que la API responda.
 
