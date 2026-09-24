@@ -13,6 +13,7 @@ from src.application.services.prompt_strategies import (
 )
 from src.application.services.synopsis_slice_resolver import SynopsisSliceResolver
 from src.application.services.template_loader import TemplateLoader
+from src.application.services.voice_cliches import load_cliches
 from src.config import settings
 from src.domain.models import (
     Beat,
@@ -25,6 +26,8 @@ from src.domain.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+VOICE_CRAFT_FILE = "voice_craft.md"  # Spec-470: guía de oficio compartida por compact y frontier
 
 
 class PromptBuilder:
@@ -97,6 +100,7 @@ class PromptBuilder:
                 protagonistas=story.protagonista,
                 escenarios=escenarios_str,
                 sinopsis=story.sinopsis,
+                **self._voice_extras(story),
             )
 
         raise ValueError(f"Template system no encontrado: {template_name}")
@@ -259,6 +263,7 @@ Extiende este momento (150-400 palabras)."""
                 protagonistas=story.protagonista,
                 escenarios=escenarios_str,
                 reglas=reglas_str,
+                **self._voice_extras(story),
             )
 
         raise ValueError(f"Template voice no encontrado: {template_name}")
@@ -359,6 +364,57 @@ Extiende este momento (150-400 palabras)."""
 
     def get_beat_info(self, beat_id: int, reveal_level: str | None = None) -> dict:
         return self._beat_repo.get_by_id(beat_id, reveal_level)
+
+    # -- Spec-470: oficio de la Voz ----------------------------------------------
+
+    def narrator_name(self, story: "Story") -> str:
+        """Nombre de quien narra: `storyteller_name` o el personaje de `storyteller_id`."""
+        config = story.narrator_config or {}
+        if config.get("storyteller_name"):
+            return config["storyteller_name"]
+        pid = config.get("storyteller_id")
+        person = next((p for p in story.personajes_full if pid and p.get("id") == pid), None)
+        return (person or {}).get("name", "")
+
+    def _voice_extras(self, story: "Story") -> dict[str, str]:
+        """Guía de oficio + parentescos para los system prompts de la Voz (compact y frontier)."""
+        narrator = self.narrator_name(story)
+        cliches = "\n".join(f"  - «{c}»" for c in load_cliches())
+        craft = self._load_prompt(VOICE_CRAFT_FILE) or ""
+        return {
+            "guia_oficio": craft.format(
+                cliches=cliches, narrador=narrator or "el narrador"
+            ).strip(),
+            "parentescos": self._format_kinship(story, narrator),
+            # «Sos Irene…» en vez de «Sos Primera persona en pasado. Narrador: Irene…».
+            "presentacion": (
+                f"Sos {narrator} y contás en primera persona los hechos de la historia "
+                f"({story.relator})."
+                if narrator
+                else f"Sos {story.relator}, narrando en primera persona los hechos de la historia."
+            ),
+        }
+
+    @staticmethod
+    def _format_kinship(story: "Story", narrator: str) -> str:
+        """«CÓMO LLAMÁS A CADA PERSONAJE»: el rol de cada uno, leído desde quien narra.
+
+        Va pegado al elenco en el template: vacío no deja líneas en blanco; con contenido
+        arranca con una línea de separación.
+        """
+        others = [p for p in story.personajes_full if p.get("name") and p["name"] != narrator]
+        if not narrator or not others:
+            return ""
+        lines = [
+            "",
+            "",
+            f"CÓMO LLAMÁS A CADA PERSONAJE (sos {narrator}):",
+            "Cuando nombres a alguien por su parentesco, usá la relación que tiene CON VOS según "
+            f"su rol; nunca otra. Si un rol dice «Suegra de {narrator}», es tu suegra: no tu madre "
+            "ni tu abuela.",
+        ]
+        lines += [f"- {p['name']}: {p.get('role') or 'sin rol'}" for p in others]
+        return "\n".join(lines)
 
     # -- Spec-450: entidades (la amenaza) --------------------------------------
     # Sin entidades, cada bloque es "" y el prompt queda idéntico al de antes: los
@@ -516,6 +572,7 @@ Extiende este momento (150-400 palabras)."""
             reglas=reglas_str,
             narrator_config_block=narrator_config_block,
             word_limit=word_limit,
+            **self._voice_extras(story),
         )
 
     def build_story_analyst_system(self, assertive: bool = False) -> str | None:
@@ -557,6 +614,7 @@ Extiende este momento (150-400 palabras)."""
             cast_block=cast_block,
             active_rules=active_rules,
             entities=story.entities if story else None,
+            narrator=self.narrator_name(story) if story else "",
         )
 
     def build_scenario_resolver_prompt(

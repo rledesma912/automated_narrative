@@ -26,6 +26,7 @@ class NarrativeContextAssembler:
         cast_block: str | None = None,
         active_rules: list[str] | None = None,
         entities: list[Entity] | None = None,
+        narrator: str = "",
     ) -> str:
         """Combina beat_spec + resonancia + evento + escenario + amenaza + memoria anterior.
 
@@ -43,8 +44,11 @@ class NarrativeContextAssembler:
         success_items = beat_spec.get("success_signal", [])
 
         # Los EVENTOS van primero — el LLM presta más atención al inicio del contexto.
+        # Spec-470 §1.3: los eventos vienen en tercera persona; el encabezado recuerda
+        # quién los cuenta para que no se filtre «Irene no se atreve…».
+        persona = f"contalo en primera persona, como {narrator}; " if narrator else ""
         lines = [
-            "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):",
+            f"EVENTO DE ESTE MOMENTO ({persona}narrá EXACTAMENTE estos eventos, en orden):",
             macro_beat.summary or "",
         ]
 

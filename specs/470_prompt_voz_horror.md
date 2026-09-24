@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 commiteada; sigue S1
+**Estado:** IMPLEMENT — S0 y S1 commiteadas; S2 (evaluación) en curso
 **Roadmap:** EV-3 (calidad narrativa, sin costo). EV-2 (Voz en Anthropic) queda para después.
 
 ---
@@ -190,23 +190,28 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S1 — Prompts
 
-- [ ] **T1.1:** Bloque de parentescos.
+- [x] **T1.1:** Bloque de parentescos.
   - Acceptance: `PromptBuilder._format_kinship(story)` → «CÓMO LLAMÁS A CADA PERSONAJE» con la instrucción de §1.2 y un renglón por personaje (nombre — rol), sin el narrador; narrador desde `storyteller_id`/`storyteller_name`; sin narrador identificable o sin elenco → `""`.
   - Verify: pytest (Irene narra: aparece María con «Suegra de Irene…», no aparece Irene; sin `personajes_full` → vacío).
   - Files: `src/application/services/prompt_builder.py`
-- [ ] **T1.2:** Templates compact y frontier.
+- [x] **T1.2:** Templates compact y frontier.
   - Acceptance: guía de oficio (§1.1), primera persona (§1.3), léxico (§1.4), `{parentescos}` y `{cliches}` en `voice_system_compact.md` y `system.md`; `build_voice_system_compact()` y `build_voice_prompt()` los completan.
   - Verify: pytest (las dos variantes contienen guía, clichés y parentescos; `format()` sin `KeyError`).
   - Files: `config/prompts_generation/voice_system_compact.md`, `config/prompts_generation/system.md`, `src/application/services/prompt_builder.py`
-- [ ] **T1.3:** Encabezado del evento con el narrador.
+- [x] **T1.3:** Encabezado del evento con el narrador.
   - Acceptance: `assemble(..., narrator=...)` usa «EVENTO DE ESTE MOMENTO (contalo en primera persona, como <narrador>; narrá EXACTAMENTE estos eventos, en orden):»; sin narrador, el de hoy. `build_narrative_context` pasa el narrador.
   - Verify: pytest del assembler (con y sin narrador).
   - Files: `src/application/services/narrative_context_assembler.py`, `src/application/services/prompt_builder.py`
-- [ ] **T1.4:** Snapshots y presupuesto.
+- [x] **T1.4:** Snapshots y presupuesto.
   - Acceptance: `beat_reveal.json` y `pipeline_prompts.json` regenerados con `SNAPSHOT_UPDATE=1`; el diff solo muestra los textos de §1 (revisado); `measure_entity_prompts.py` sin roles fuera de margen (tabla actualizada en la spec).
   - Verify: pytest completo en verde; salida del script de medición.
   - Files: `tests/fixtures/snapshots/*.json`
-- [ ] **Checkpoint S1:** lint + pytest + Playwright (el arnés E2E genera con el backend) → commit.
+- [x] **Notas de S1 (2026-09-24):**
+  - **Guía compartida:** el texto de oficio, primera persona y léxico vive en `config/prompts_generation/voice_craft.md` (`{cliches}` y `{narrador}` adentro) y entra por `{guia_oficio}` en `voice_system_compact.md` y `system.md`; `PromptBuilder._voice_extras()` lo completa en los tres builders que usan esos templates (`build_voice_system_compact`, `build_voice_prompt`, `build_system_prompt`).
+  - **Presentación con nombre (agregado):** la primera línea del compact decía «Sos Primera persona en pasado. Narrador: Irene. Tono: …, narrando en primera persona…» (el string `relator` entero). Ahora «Sos Irene y contás en primera persona los hechos de la historia (<relator>)»; sin narrador identificable, como antes.
+  - **Snapshot:** `pipeline_prompts.json` regenerado; el diff cambia **solo** las 10 llamadas de la Voz (system + contexto); Analyst, Mapper y Journal idénticos. `beat_reveal.json` sin cambios.
+  - **Tokens (T1.4, `gemma3:12b`):** la Voz pasa de 1365/1747/2371 a 1878/2304/2928 tokens (0/1/3 entidades); margen mínimo 4264 de 8192. El resto de los roles sin cambios relevantes.
+- [x] **Checkpoint S1:** lint + pytest + Playwright (el arnés E2E genera con el backend) → commit.
 
 ### S2 — Evaluación comparada
 

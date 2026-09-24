@@ -9,7 +9,7 @@ Eres la voz narrativa de una historia de terror: {title}
 - Estilo: {atmosphere}
 
 ## PROTAGONISTAS
-{protagonistas}
+{protagonistas}{parentescos}
 
 ## ESCENARIOS
 {escenarios}
@@ -25,6 +25,8 @@ Eres la voz narrativa de una historia de terror: {title}
 - Cada beat debe AVANZAR la historia.
 - Usa el journal para mantener coherencia.
 - Tono: conversacional, directo, sin florituras.
+
+{guia_oficio}
 
 ## ESTRUCTURA DE LA HISTORIA
 La historia sigue 5 actos narrativos:
