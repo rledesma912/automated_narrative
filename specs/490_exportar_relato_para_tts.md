@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** TASKS — pendiente de revisión (SPECIFY y PLAN aprobados 2026-09-24)
+**Estado:** DONE (2026-09-24) — export verificado en `audiogen`; las pausas entre actos esperan un arreglo en `audiogen` (fuera de alcance)
 **Roadmap:** EV-7 (exportar el relato para el guion de YouTube).
 
 ---
@@ -252,16 +252,39 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S3 — Verificación real y cierre
 
-- [ ] **T3.1:** Medir sobre relatos reales.
+- [x] **T3.1:** Medir sobre relatos reales.
   - Acceptance: exportar los relatos de una corrida de `scripts/evaluate_voice.py` (gemma3, 2 relatos, en background) y contar cuántas líneas tocó cada regla de §2.1.4; ninguna línea de prosa salteable por `audiogen` en la salida. Si aparece una forma no prevista, se agrega la regla y su test.
   - Verify: script de medición en el scratchpad; resultados en la sección RESULTADOS de esta spec.
   - Files: `specs/490_exportar_relato_para_tts.md` (+ formateador y tests si hace falta una regla)
-- [ ] **T3.2:** Prueba en `audiogen` (usuario).
+- [x] **T3.2:** Prueba en `audiogen` (usuario).
   - Acceptance: el usuario pasa un `.md` exportado por `./scripts/generate.sh` y confirma que no falta texto y que las pausas entre actos se oyen.
   - Verify: escucha manual.
   - Files: —
-- [ ] **T3.3:** Documentación y cierre.
+- [x] **T3.3:** Documentación y cierre.
   - Acceptance: `CLAUDE.md` lista el endpoint `export.md` y el botón; la spec pasa a DONE con resultados; roadmap EV-7 hecho.
   - Verify: lectura.
   - Files: `CLAUDE.md`, `specs/490_exportar_relato_para_tts.md`
-- [ ] **Checkpoint S3:** suite completa en verde → commit → push → PR `feat/ev-7-exportar-guion` → `development`.
+- [x] **Checkpoint S3:** suite completa en verde → commit → push → PR `feat/ev-7-exportar-guion` → `development`.
+
+---
+
+## RESULTADOS (2026-09-24)
+
+**T3.1 — relatos reales.** 4 relatos de «El monte prohibido» con `scripts/evaluate_voice.py --runs 2` (perfil `ollama-gemma3-12b`, variantes `sin` y `con` guía de oficio), ~8.000 palabras en total:
+
+| Relato | Actos | Reglas que actuaron | Palabras entrada / salida | Líneas que `audiogen` saltearía |
+|---|---|---|---|---|
+| con_1 | 5 | — | 1989 / 1989 | 0 |
+| con_2 | 5 | — | 1967 / 1967 | 0 |
+| sin_1 | 5 | 1 salto simple dentro de un párrafo | 2070 / 2070 | 0 |
+| sin_2 | 5 | — | 2057 / 2057 | 0 |
+
+- Con el prompt actual (Spec-470), `gemma3:12b` escribe los diálogos **entre comillas** (“…”), no con guion, y no usa Markdown en la prosa: casi ninguna regla de §2.1.4 se activa. Las reglas quedan como red de seguridad (otros modelos, la Voz en Claude, cambios de prompt), cubiertas por el test de contrato.
+- No apareció ninguna forma no prevista: no hizo falta sumar reglas.
+
+**T3.2 — `audiogen`.** `el-monte-prohibido-2026-09-24-0909.md` (exportado de `con_1`) por `./scripts/generate.sh` con el motor por defecto (`kokoro`, voz `ef_dora`):
+
+- **El texto llega completo.** El parser tomó **47 bloques = 43 párrafos + 4 `[pause=1500]`**: ninguna línea salteada. 177 micro-segmentos, `failed_segments: []`, `master.wav` de 12,7 min.
+- **Las pausas no suenan: bug de `audiogen`.** `BatchOrchestrator.process_segments` descarta los segmentos sin texto (`if segment.text is None: continue`, `batch_orchestrator.py:131`), que es lo que el parser produce para `[pause=ms]`. El master no tiene ningún silencio ≥ 1 s (medido a −60 dBFS, piso de ruido −93 dB). El export cumple el DSL documentado en `audiogen`; el arreglo corresponde a ese repo (fuera de alcance, §BOUNDARIES).
+- **Decisión (2026-09-24):** se cierra EV-7 con el export como está (`[pause=1500]` incluido); las pausas sonarán cuando `audiogen` procese los segmentos de pausa. Ese arreglo queda como spec aparte en el repo `audiogen`.
+
