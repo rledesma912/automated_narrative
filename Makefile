@@ -1,4 +1,4 @@
-.PHONY: api ui dev-all install test lint format clean help db db-clean list status export generate init export-yaml
+.PHONY: api ui dev-all install test lint format clean help db db-clean list status export generate init export-yaml deploy deploy-check
 
 # ── Variables y Configuración ─────────────────────────────────────────────────
 
@@ -31,6 +31,10 @@ help:
 	@echo "    make db           Inicializa SQLite de desarrollo"
 	@echo "    make db-clean     Limpia todos los registros de desarrollo"
 	@echo ""
+	@echo "  Producción (Spec-520: prod cambia solo con make deploy desde main)"
+	@echo "    make deploy-check Valida sin tocar nada (main, limpio, al día, sin jobs)"
+	@echo "    make deploy       Valida, backup de la DB, build de imágenes y verificación"
+	@echo ""
 	@echo "  Historia (CLI)"
 	@echo "    make list                      Lista todas las historias"
 	@echo "    make generate ARG=<story_id>   Genera una historia"
@@ -39,6 +43,14 @@ help:
 	@echo ""
 	@echo "  Variables"
 	@echo "    API_HOST   Host:puerto del Core API (default: 0.0.0.0:8010)"
+
+# ── Producción (Spec-520) ─────────────────────────────────────────────────────
+
+deploy-check:
+	@scripts/bash/deploy_prod.sh --check
+
+deploy:
+	@scripts/bash/deploy_prod.sh
 
 # ── Dependencias ──────────────────────────────────────────────────────────────
 

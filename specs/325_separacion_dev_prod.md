@@ -57,6 +57,7 @@ Dos archivos de entorno, alineados con **cómo cada runtime carga su configuraci
 - Ajustar `docker-compose.yml` para usar el perfil de producción.
 - Mapear volúmenes específicamente a la subcarpeta `prod`.
 - **Importante:** El contenedor de frontend debe apuntar a la URL interna del contenedor backend en la misma red de Docker, no a `host.docker.internal` si ambos están dentro de Compose.
+- **Actualización (Spec-520, 2026-09-24):** `config/` ya no se monta como volumen: viaja dentro de la imagen (`COPY config/`), así prod no cambia al cambiar de rama o editar prompts en el directorio de trabajo. El pase a producción es `make deploy` desde `main` (valida rama, árbol limpio, sincronía con GitHub y que no haya generaciones en curso; hace backup de la DB, build y verificación). `make deploy-check` solo valida.
 
 ---
 
