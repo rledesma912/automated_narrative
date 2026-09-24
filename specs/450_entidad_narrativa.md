@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** DONE (2026-09-23) — S0–S6 completos; todo desplegado en prod
+**Estado:** DONE (2026-09-23) — S0–S6 completos; todo desplegado en prod. Ajuste §10 (2026-09-24)
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -421,4 +421,37 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 ### S6 — Documentación y cierre
 
 - [x] **T6.1:** `CLAUDE.md` (tablas nuevas, fórmula del `narrative_context`, journal, wizard, catálogo), notas en Spec-180 y Spec-220, Spec-450 → DONE.
+
+---
+
+## 10. AJUSTE (2026-09-24): manifestaciones según el acto
+
+**Problema** (evaluación de Spec-470 S2): con exposiciones tempranas la Voz todavía usa manifestaciones que la sinopsis ubica en actos posteriores — en el acto 1 apareció «el camino se deforma», del acto 4. Las guías de §S5 limitan cuántas usar, pero la Voz recibe la lista entera, y el orden en que la autora la escribe no dice a qué acto pertenece cada una.
+
+**Diseño (determinístico, sin LLM):**
+- `manifestations` se separa en ítems por `;` y `.`.
+- Cada ítem queda **reservado** para el primer acto cuya sinopsis comparte con él ≥ 2 palabras significativas (≥ 5 letras, comparadas por sus primeras 5, sin palabras vacías). Ej. «El camino se deforma» → acto 4 («el camino parece deformarse»).
+- Las exposiciones tempranas (`senales`, `senales_intensas`, `manifestacion_parcial`) declaran `max_manifestations` en el YAML: la Voz recibe solo ítems **no reservados para un acto posterior**, hasta ese tope (primero los del acto actual). Las demás exposiciones siguen mostrando la lista completa.
+- La sinopsis de cada acto sale del mismo corte que usa el Mapper (`get_beat_sinopsis_slice`).
+- El Mapper sigue viendo la ficha completa.
+
+**Con «El monte prohibido»:** la figura de María y el caballo que se clava → acto 3; camino que se deforma y espinillos repetidos → acto 4; espinas enganchadas → acto 5; olor a tierra mojada y silencio de los grillos → libres (señales tempranas).
+
+**Tareas:**
+- [x] **T10.1:** `max_manifestations` en `entity_exposures` (`senales` 2, `senales_intensas` 3, `manifestacion_parcial` 1) y filtro en `NarrativeContextAssembler` (recibe la sinopsis de los 5 actos desde `PromptBuilder.build_narrative_context`). Sin entidades, el contexto no cambia.
+- [x] **T10.2:** Tests (partición, reserva por acto con los textos reales, tope, exposiciones plenas sin filtro, snapshot sin entidades idéntico).
+- [x] **T10.3:** Evaluación con `scripts/evaluate_voice.py --variants con --runs 2` y lectura del acto 1–2 (¿aparecen manifestaciones de actos posteriores?).
+  - **Resultado (2026-09-24, `gemma3:12b`):** apariciones por acto (A1–A5) de cada manifestación, antes del ajuste (2 corridas de Spec-470 S2) → después:
+
+| Manifestación (acto de la sinopsis) | Antes #1 | Antes #2 | Después #1 | Después #2 |
+|---|---|---|---|---|
+| Camino que se deforma (4) | `1 1 0 0 0` | `0 0 0 0 0` | `0 0 0 0 0` | `0 0 0 0 0` |
+| Espinillos repetidos (4) | `2 2 0 3 0` | `2 0 0 1 0` | `0 0 0 2 0` | `0 0 0 2 0` |
+| Figura que no parpadea (3) | `0 1 2 0 0` | `0 1 3 1 0` | `0 0 2 0 0` | `0 0 2 0 0` |
+| Caballo que se clava (3) | `1 1 1 0 0` | `0 1 2 0 0` | `0 0 1 1 0` | `0 0 1 0 0` |
+| Espinas enganchadas (5) | `0 0 0 0 1` | `0 0 0 0 1` | `0 0 0 0 1` | `0 0 0 0 1` |
+
+  - **Los actos 1 y 2 ya no adelantan manifestaciones**; cada una aparece en su acto. La tensión temprana se sostiene con las señales libres («el olor a tierra mojada persistía», «unas hojas secas crujieron bajo el sulki, un sonido que no parecía venir de ningún animal»; «una sombra, fugaz, se deslizó entre los árboles»).
+  - Métricas de Spec-470 sin regresión: clichés 1 por relato, parentescos 0, narradora en 3ra persona 0, frases repetidas 2 (dentro de la meta; antes 4).
+  - Error de la Voz ajeno al ajuste: en el acto 1 Ricardo va «conversando con su madre» en el sulki (María quedó en la casa).
 

@@ -9,15 +9,20 @@ beats_spec:
   # reveal_level de la entidad (nunca/insinuada/progresiva/explicita) a una de
   # estas exposiciones. `show` = campos de la ficha que recibe la Voz (nunca la
   # ficha completa si la exposición no lo pide); `guide` = instrucción de revelación.
+  # `max_manifestations` (Spec-450 §10): tope de manifestaciones que ve la Voz, sin
+  # las reservadas para un acto posterior (las que la sinopsis ubica más adelante).
   entity_exposures:
     senales:
       show: [manifestations]
+      max_manifestations: 2
       guide: "Solo señales: una o dos de la lista, sutiles, no todas (sonidos, rastros, sensaciones). Sin mostrar una figura completa, sin nombrarla ni decir qué es."
     senales_intensas:
       show: [manifestations]
+      max_manifestations: 3
       guide: "Señales intensas y cercanas (dos o tres de la lista, no todas), pero sin confirmar qué es ni nombrarla."
     manifestacion_parcial:
       show: [manifestations]
+      max_manifestations: 1
       guide: "Se deja ver en parte: una sola manifestación de la lista (un fragmento, una silueta borrosa, un efecto directo), no todas; sin nombrarla ni explicar qué es."
     presencia_directa:
       show: [description, manifestations]

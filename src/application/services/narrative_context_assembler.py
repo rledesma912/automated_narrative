@@ -3,6 +3,7 @@
 import logging
 
 from src.application.services.beat_spec_repository import BeatSpecRepository
+from src.application.services.manifestations import manifestations_for_act
 from src.domain.models import Entity, MacroBeat, NarrativeJournal
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class NarrativeContextAssembler:
         active_rules: list[str] | None = None,
         entities: list[Entity] | None = None,
         narrator: str = "",
+        act_texts: list[str] | None = None,
     ) -> str:
         """Combina beat_spec + resonancia + evento + escenario + amenaza + memoria anterior.
 
@@ -81,7 +83,7 @@ class NarrativeContextAssembler:
             lines.extend([f"- {r}" for r in active_rules])
 
         if entities:
-            lines += ["", *self._amenaza_block(macro_beat.number, entities)]
+            lines += ["", *self._amenaza_block(macro_beat.number, entities, act_texts or [])]
 
         if previous_journal and not previous_journal.is_empty():
             lines += ["", "MEMORIA DEL ACTO ANTERIOR:"]
@@ -107,7 +109,9 @@ class NarrativeContextAssembler:
 
         return "\n".join(lines)
 
-    def _amenaza_block(self, beat_number: int, entities: list[Entity]) -> list[str]:
+    def _amenaza_block(
+        self, beat_number: int, entities: list[Entity], act_texts: list[str]
+    ) -> list[str]:
         """Solo los campos que la exposición del acto permite ver de cada entidad.
 
         Nunca la ficha completa si la exposición no la pide: con «señales» la Voz
@@ -133,6 +137,13 @@ class NarrativeContextAssembler:
                 ("limits", "Límites"),
             ):
                 value = getattr(e, key)
+                if key == "manifestations" and exposure.get("max_manifestations") and act_texts:
+                    # Spec-450 §10: sin las manifestaciones de actos posteriores.
+                    value = "; ".join(
+                        manifestations_for_act(
+                            value, beat_number, act_texts, exposure["max_manifestations"]
+                        )
+                    )
                 if key in show and value:
                     lines.append(f"  {label}: {value}")
             if exposure.get("guide"):

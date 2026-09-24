@@ -615,6 +615,13 @@ Extiende este momento (150-400 palabras)."""
             active_rules=active_rules,
             entities=story.entities if story else None,
             narrator=self.narrator_name(story) if story else "",
+            # Spec-450 §10: la sinopsis de cada acto, con el mismo corte que usa el Mapper.
+            act_texts=[
+                self.get_beat_sinopsis_slice(story.sinopsis, n, self.num_beats)
+                for n in range(1, self.num_beats + 1)
+            ]
+            if story and story.entities
+            else None,
         )
 
     def build_scenario_resolver_prompt(
