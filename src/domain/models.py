@@ -38,24 +38,108 @@ class BeatStatus(str, Enum):
 
 
 class RuleType(str, Enum):
-    """Categoría semántica de una regla narrativa (Spec-043)."""
+    """Categoría semántica de una regla narrativa (Spec-043).
+
+    Spec-190 §4.4: lo temporal (eventos, acciones de personaje) no es regla —
+    va en `macro_beat.synopsis_beat`. Quedan las categorías estables.
+    """
 
     PSICOLOGICA = "psicologica"
     ENTORNO = "entorno"
-    EVENTO = "evento"
     FENOMENO = "fenomeno"
-    ACCION_PERSONAJE = "accion_personaje"
     INDICADOR = "indicador"
+
+    @classmethod
+    def from_raw(cls, raw: Optional[str]) -> Optional["RuleType"]:
+        """Tipo desde texto libre. Acepta los valores que el wizard ofrecía antes
+        de alinearse con el dominio (Spec-440 §9): `paranormal` → `fenomeno`,
+        `social` → `entorno`; `evento` o desconocido → `None`.
+        """
+        value = (raw or "").split(":")[0].strip().lower()
+        value = _LEGACY_RULE_TYPES.get(value, value)
+        try:
+            return cls(value) if value else None
+        except ValueError:
+            return None
+
+
+_LEGACY_RULE_TYPES = {"paranormal": "fenomeno", "social": "entorno"}
+
+
+class Subgenre(BaseModel):
+    """Subgénero del catálogo (Spec-440 §2). El id se repite entre géneros (`otro`)."""
+
+    id: str
+    label: str
+
+
+class EntityNature(BaseModel):
+    """Naturaleza de una entidad narrativa: espíritu, culto, criatura… (Spec-450 §1)."""
+
+    id: str
+    label: str
+
+
+class Genre(BaseModel):
+    """Género del catálogo con sus subgéneros y las naturalezas de entidad que admite,
+    ambos ordenados (Spec-440 §2, Spec-450 §1)."""
+
+    id: str
+    label: str
+    subgenres: list[Subgenre] = Field(default_factory=list)
+    entity_natures: list[EntityNature] = Field(default_factory=list)
+
+
+class RevealLevel(str, Enum):
+    """Cuánto se muestra de una entidad a lo largo de los 5 actos (Spec-450 §2)."""
+
+    NUNCA = "nunca"
+    INSINUADA = "insinuada"
+    PROGRESIVA = "progresiva"
+    EXPLICITA = "explicita"
+
+
+MAX_ENTITIES = 3
+
+
+class Entity(BaseModel):
+    """Entidad narrativa: la amenaza de la historia (Spec-450 §1).
+
+    La de `order_index = 0` es la principal: gobierna las reglas de revelación de
+    los beats. Los topes de largo cuidan el contexto de los modelos locales.
+    """
+
+    id: UUID4 = Field(default_factory=uuid.uuid4)
+    story_id: UUID4
+    order_index: int
+    name: str = Field("", max_length=60)
+    nature_id: str = Field(..., min_length=1)
+    description: str = Field("", max_length=400)
+    manifestations: str = Field("", max_length=300)
+    limits: str = Field("", max_length=300)
+    reveal_level: RevealLevel = RevealLevel.INSINUADA
+    # Etiqueta del catálogo ("Ser del folklore") para los prompts; no se persiste.
+    nature_label: str = ""
+
+    @field_validator("name", "nature_id", "description", "manifestations", "limits", mode="before")
+    @classmethod
+    def _strip(cls, v):
+        return v.strip() if isinstance(v, str) else v
 
 
 class TypedRule(BaseModel):
-    """Regla narrativa con semántica explícita (Spec-043)."""
+    """Regla narrativa con semántica explícita (Spec-043).
+
+    Spec-190 §4.4: `applies_to_beat` define el alcance — `None` = regla global
+    (aplica a los 5 actos); `1..N` = regla anclada a ese acto.
+    """
 
     id: str
     story_id: UUID4
     content: str
     type: Optional[RuleType] = None
     intensity: Optional[str] = None
+    applies_to_beat: Optional[int] = None
 
 
 class NarrativeAnchors(BaseModel):
@@ -76,6 +160,7 @@ class Scenario(BaseModel):
     story_id: UUID4
     order_index: int
     name: str
+    description: str = ""
 
 
 class MacroBeat(BaseModel):
@@ -83,19 +168,21 @@ class MacroBeat(BaseModel):
 
     number: int
     summary: str
-    content: str = ""
+    generated_act: str = ""
     status: BeatStatus = BeatStatus.PENDING
     created_at: datetime = Field(default_factory=now_argentina)
     # Spec 038: campos nuevos
     active_scenario_id: Optional[str] = None
-    active_rules: list[str] = []
     active_scenario_description: str = ""
-    narrative_context: Optional[str] = None
+    user_prompt: Optional[str] = None
     beat_type: Optional[BeatType] = None
+    # Spec 190 (Slice 3): trazabilidad de prompting + input del usuario
+    system_prompt: Optional[str] = None
+    synopsis_beat: Optional[str] = None
 
     def is_narrated(self) -> bool:
         """True si el beat tiene prosa generada y está marcado como completado."""
-        return bool(self.content and self.status == BeatStatus.COMPLETED)
+        return bool(self.generated_act and self.status == BeatStatus.COMPLETED)
 
     def is_pending(self) -> bool:
         """True si el beat aún no fue narrado."""
@@ -103,7 +190,7 @@ class MacroBeat(BaseModel):
 
     def has_content(self) -> bool:
         """True si el beat tiene contenido (independientemente del status)."""
-        return bool(self.content)
+        return bool(self.generated_act)
 
 
 # Alias de compatibilidad — se mantiene mientras los tests y repos migran a MacroBeat
@@ -116,19 +203,17 @@ class NarrativeJournal(BaseModel):
     last_events: str = ""
     unresolved_mysteries: str = ""
     physical_emotional_state: str = ""
+    # Spec-450: qué sabe el narrador de las entidades y qué hicieron (tabla entity_journal).
+    entity_state: str = ""
 
     def is_empty(self) -> bool:
         """True si no tiene ningún campo con datos."""
-        return not (self.last_events or self.unresolved_mysteries or self.physical_emotional_state)
-
-
-class StoryPlan(BaseModel):
-    """Plan maestro de la historia."""
-
-    story_id: UUID4
-    title: str
-    beats: list[Beat] = []
-    created_at: datetime = Field(default_factory=now_argentina)
+        return not (
+            self.last_events
+            or self.unresolved_mysteries
+            or self.physical_emotional_state
+            or self.entity_state
+        )
 
 
 class StoryMetadata(BaseModel):
@@ -137,9 +222,11 @@ class StoryMetadata(BaseModel):
     protagonista: str
     relator: str
     sinopsis: str
-    atmosfera: str
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
     reglas: list[str] = []
-    storyteller_config: Optional[dict] = None
+    narrator_config: Optional[dict] = None
     personajes_full: list[dict] = []
 
     @classmethod
@@ -148,15 +235,17 @@ class StoryMetadata(BaseModel):
             protagonista=story.protagonista,
             relator=story.relator,
             sinopsis=story.sinopsis,
-            atmosfera=story.atmosfera,
+            genero=story.genero,
+            subgenero=story.subgenero,
+            tono=story.tono,
             reglas=story.reglas,
-            storyteller_config=story.storyteller_config,
+            narrator_config=story.narrator_config,
             personajes_full=story.personajes_full,
         )
 
     def has_rules(self) -> bool:
         """True si hay reglas de narrativa o configuración de narrador."""
-        return bool(self.reglas or self.storyteller_config)
+        return bool(self.reglas or self.narrator_config)
 
 
 class GeneratedNarrative(BaseModel):
@@ -178,26 +267,44 @@ class Story(BaseModel):
     protagonista: str = Field(..., min_length=1)
     relator: str = Field(..., min_length=1)
     sinopsis: str = Field(..., min_length=1)
-    atmosfera: str = Field(..., min_length=1)
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
+    entities: list[Entity] = []
     journal: NarrativeJournal = Field(default_factory=NarrativeJournal)
     status: StoryStatus = StoryStatus.DRAFT
     created_at: datetime = Field(default_factory=now_argentina)
 
-    narrative_brief: str = ""
-    storyteller_config: Optional[dict] = None
+    narrator_config: Optional[dict] = None
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
-    file_path: Optional[str] = None
 
-    @field_validator("title", "protagonista", "relator", "sinopsis", "atmosfera", mode="before")
+    @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod
     def _strip_whitespace(cls, v: str) -> str:
         if isinstance(v, str):
             return v.strip()
         return v
+
+    @property
+    def atmosfera(self) -> str:
+        """String de atmósfera derivado de genero/subgenero/tono (Spec-190 §T6.3).
+
+        Formato: `genero (subgenero) - tono`. Sustituye a la columna `atmosfera`
+        eliminada; los prompts que necesitan un único string lo consumen por acá.
+        """
+        genero = self.genero or ""
+        subgenero = f" ({self.subgenero})" if self.subgenero else ""
+        tono = f" - {self.tono}" if self.tono else ""
+        return f"{genero}{subgenero}{tono}".strip()
+
+    @property
+    def principal_entity(self) -> Optional[Entity]:
+        """La entidad principal (la primera) o `None` si no hay (Spec-450)."""
+        return self.entities[0] if self.entities else None
 
     # -- Spec 070: comportamiento de dominio --
 
@@ -228,6 +335,21 @@ class Story(BaseModel):
     def has_content(self) -> bool:
         """True si al menos un beat tiene prosa generada."""
         return bool(self.beats) and any(b.has_content() for b in self.beats)
+
+    def active_rules_for_beat(self, beat_number: int) -> list[str]:
+        """Reglas activas de un beat, derivadas determinísticamente (Spec-190 §4.4).
+
+        Una regla aplica al beat N si es global (`applies_to_beat is None`) o está
+        anclada exactamente a ese acto (`applies_to_beat == N`). Si la historia no
+        tiene `typed_rules`, se cae a `reglas` (strings legacy), todas globales.
+        """
+        if self.typed_rules:
+            return [
+                r.content
+                for r in self.typed_rules
+                if r.applies_to_beat is None or r.applies_to_beat == beat_number
+            ]
+        return list(self.reglas)
 
     def get_beat_by_number(self, n: int) -> Beat | None:
         """Retorna el beat con ese número, o None si no existe."""

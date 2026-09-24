@@ -3,6 +3,9 @@ module.exports = {
   content: [
     './src/views/**/*.ejs',
     './src/public/**/*.html',
+    // Clases que arman los scripts del cliente (sin esto, p.ej. el punto verde/rojo
+    // del Core en el pie o los estados de la sala no existían en el CSS compilado).
+    './public/js/**/*.js',
     './src/styles/**/*.css',
   ],
   safelist: [

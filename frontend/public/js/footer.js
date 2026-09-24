@@ -1,77 +1,70 @@
 /**
- * Footer Activity Monitor (extraído de partials/footer.ejs).
+ * Pie global (Spec-460 S5): sin polling.
  *
- * Polling cada 5s a `/internal/streaming/active` para mostrar:
- *  - Generación activa (con link al stream).
- *  - Último evento del sistema cuando no hay generación.
- *  - Estado de conexión con el Core API (puntito verde/rojo).
+ * - Punto "Core API": verde mientras llegan señales del canal global (snapshot,
+ *   eventos o heartbeat cada 15 s), rojo si se corta. Lo emite /js/event-bus.js
+ *   como `forge:core-status`; en la sala lo emite la propia sala.
+ * - "Actividad": último evento de jobs recibido.
  *
- * Bug preexistente arreglado en esta extracción: bajo `<body hx-boost="true">`,
- * cada navegación re-incluía footer.ejs → re-ejecutaba el <script> inline →
- * acumulaba un nuevo `setInterval` sin clearear el anterior. Después de N
- * navegaciones había N intervals corriendo en paralelo (memory + network leak).
- * El guard `window.__footerIntervalId` ahora limpia el interval anterior
- * antes de crear uno nuevo.
+ * Se carga en <head> con defer: los listeners se registran una vez por pestaña y
+ * el estado se re-aplica al footer nuevo tras cada navegación de hx-boost.
  */
 (function () {
   "use strict";
 
-  let lastKnownEventTime = null;
+  if (window.__forgeFooterReady) return;
+  window.__forgeFooterReady = true;
 
-  async function checkStatus() {
-    try {
-      const res = await fetch("/internal/streaming/active");
-      if (!res.ok) {
-        updateConnStatus(false);
-        return;
-      }
-      updateConnStatus(true);
-      const data = await res.json();
+  let alive = null; // null = sin señales todavía
+  let lastEvent = null;
 
-      const activeContainer = document.getElementById("footer-active-content");
-      const idleContainer = document.getElementById("footer-idle-content");
-      if (!activeContainer || !idleContainer) return;
+  const STAGE_LABELS = {
+    analyst: "analizando la sinopsis",
+    resolver: "distribuyendo escenarios",
+    mapper: "mapeando",
+    voz: "narrando",
+    journal: "actualizando la memoria",
+    consolidando: "consolidando el relato",
+  };
 
-      if (data.active && data.story) {
-        activeContainer.classList.remove("hidden");
-        idleContainer.classList.add("hidden");
-        document.getElementById("footer-story-title").textContent = data.story.title || "Sin título";
-        document.getElementById("footer-story-link").href = `/generar/stream/${data.story.id}`;
-      } else {
-        activeContainer.classList.add("hidden");
-        idleContainer.classList.remove("hidden");
+  function describe(kind, job) {
+    const title = `«${job.title || "Sin título"}»`;
+    if (kind === "job-started") return `${title}: generación iniciada`;
+    if (kind === "job-done") return `${title}: lista`;
+    if (kind === "job-failed") return `${title}: falló${job.error ? ` (${job.error})` : ""}`;
+    const stage = STAGE_LABELS[job.stage] || "en curso";
+    return job.beat ? `${title}: acto ${job.beat} · ${stage}` : `${title}: ${stage}`;
+  }
 
-        if (data.lastEvent) {
-          const event = data.lastEvent;
-          const msg = `[${event.timestamp}] ${event.message}`;
-          const el = document.getElementById("footer-last-event");
-          if (!el) return;
-
-          if (event.timestamp !== lastKnownEventTime) {
-            el.classList.add("text-forge-accent");
-            setTimeout(() => el.classList.remove("text-forge-accent"), 2000);
-            lastKnownEventTime = event.timestamp;
-          }
-          el.textContent = msg;
-        }
-      }
-    } catch (e) {
-      updateConnStatus(false);
+  function apply() {
+    const dot = document.getElementById("core-status-dot");
+    if (dot) {
+      dot.className =
+        alive === null
+          ? "w-2 h-2 rounded-full bg-forge-border"
+          : alive
+            ? "w-2 h-2 rounded-full bg-green-500"
+            : "w-2 h-2 rounded-full bg-red-500 animate-pulse";
+    }
+    const el = document.getElementById("footer-last-event");
+    if (el && lastEvent) {
+      const time = new Date(lastEvent.at).toTimeString().slice(0, 5);
+      el.textContent = `[${time}] ${lastEvent.text}`;
     }
   }
 
-  function updateConnStatus(online) {
-    const dot = document.getElementById("core-status-dot");
-    if (!dot) return;
-    dot.className = online
-      ? "w-2 h-2 rounded-full bg-green-500"
-      : "w-2 h-2 rounded-full bg-red-500 animate-pulse";
-  }
+  document.addEventListener("forge:core-status", (e) => {
+    alive = !!(e.detail && e.detail.alive);
+    apply();
+  });
 
-  // Guard contra acumulación bajo hx-boost: limpiar el interval anterior si existe.
-  if (window.__footerIntervalId) {
-    clearInterval(window.__footerIntervalId);
-  }
-  checkStatus();
-  window.__footerIntervalId = setInterval(checkStatus, 15000);
+  ["job-started", "job-progress", "job-done", "job-failed"].forEach((kind) => {
+    document.addEventListener(`forge:${kind}`, (e) => {
+      lastEvent = { text: describe(kind, e.detail), at: Date.now() };
+      apply();
+    });
+  });
+
+  document.addEventListener("htmx:afterSwap", apply);
+  apply();
 })();

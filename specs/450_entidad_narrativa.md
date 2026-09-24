@@ -1,0 +1,457 @@
+# SPEC-450: Entidades narrativas (la Amenaza) como parámetro del pipeline
+
+**Fecha:** 2026-09-22
+**Tipo:** SDD (Spec-Driven Development)
+**Estado:** DONE (2026-09-23) — S0–S6 completos; todo desplegado en prod. Ajuste §10 (2026-09-24)
+**Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
+
+---
+
+## ASSUMPTIONS
+
+1. Las entidades son **opcionales**: el terror psicológico, el suspenso o el slasher con asesino humano pueden no tener una entidad sobrenatural, o dejarla ambigua a propósito.
+2. **Varias entidades por historia, con una principal** (1:0..N con `story`, máximo 3). La principal es la de `order_index = 0` (la primera card del wizard) y es la que gobierna la curva de revelación de los beats (§2).
+3. Las **naturalezas** de entidad son dominio de datos, igual que los géneros en Spec-440: viven en DB, con seed en `init_db()`.
+4. Sin llamadas LLM extra: las entidades entran por **ensamblado determinístico** en prompts existentes (se mantienen 17 llamadas).
+6. **Sin recrear bases:** todo el esquema nuevo son tablas nuevas (`CREATE TABLE IF NOT EXISTS`), así que `init_db()` las agrega sobre las DB de dev y prod sin perder relatos generados.
+5. El wizard sigue en 5 pasos: la entidad se agrega como grupo del paso *El Mundo*.
+
+---
+
+## OBJECTIVE
+
+Hoy el pipeline no tiene concepto de antagonista. La búsqueda de `antagonist|entidad|criatura|amenaza` en `src/` y `config/prompts_generation/` solo encuentra "el espacio como antagonista" (pilar Peripeteia). El demonio, el espíritu o la criatura existen solo si el usuario los describe dentro de los actos o de las reglas, y cada rol LLM los reinterpreta por separado.
+
+**Síntomas esperables:**
+
+- **Deriva entre beats:** la entidad cambia de aspecto, de poder o de nombre de un acto a otro.
+- **Revelación sin control:** no hay forma de decidir cuánto se muestra en cada acto, algo central en horror.
+- **Reglas sin dueño:** los límites de la entidad ("no puede cruzar la sal") se mezclan con reglas del mundo sin quedar atados a ella.
+
+**Éxito:** cada entidad definida en el wizard aparece coherente en los 5 actos, con el nivel de revelación elegido para ella, y su estado queda registrado en el Journal para dar continuidad.
+
+---
+
+## 1. MODELO DE DATOS
+
+```sql
+CREATE TABLE IF NOT EXISTS entity_nature (
+    id          TEXT PRIMARY KEY,     -- 'espiritu'
+    label       TEXT NOT NULL,        -- 'Espíritu / aparecido'
+    order_index INTEGER NOT NULL
+);
+
+-- Qué naturalezas tienen sentido en cada género (filtra el combo)
+CREATE TABLE IF NOT EXISTS genre_entity_nature (
+    genre_id  TEXT NOT NULL,
+    nature_id TEXT NOT NULL,
+    PRIMARY KEY (genre_id, nature_id),
+    FOREIGN KEY (genre_id)  REFERENCES genre(id),
+    FOREIGN KEY (nature_id) REFERENCES entity_nature(id)
+);
+
+CREATE TABLE IF NOT EXISTS entity (
+    id             TEXT PRIMARY KEY,
+    story_id       TEXT NOT NULL,
+    order_index    INTEGER NOT NULL,              -- 0 = principal
+    name           TEXT,                           -- puede no tener nombre
+    nature_id      TEXT NOT NULL,
+    description    TEXT DEFAULT '',                -- qué es, qué quiere
+    manifestations TEXT DEFAULT '',                -- cómo se percibe
+    limits         TEXT DEFAULT '',                -- reglas y debilidades
+    reveal_level   TEXT NOT NULL DEFAULT 'insinuada',
+    UNIQUE (story_id, order_index),
+    FOREIGN KEY (story_id)  REFERENCES story(id) ON DELETE CASCADE,
+    FOREIGN KEY (nature_id) REFERENCES entity_nature(id)
+);
+
+-- Estado de las entidades por beat (lo escribe el Journal). Tabla aparte de
+-- narrative_journal para no alterar su esquema (sin recrear bases).
+CREATE TABLE IF NOT EXISTS entity_journal (
+    id           TEXT PRIMARY KEY,
+    story_id     TEXT NOT NULL,
+    beat_number  INTEGER NOT NULL,
+    entity_state TEXT NOT NULL DEFAULT '',        -- qué sabe el narrador y qué hizo cada entidad
+    UNIQUE (story_id, beat_number),
+    FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+);
+```
+
+- **Por qué `entity_journal` no referencia a `entity`:** al editar una historia, `update_inputs()` borra y reinserta los hijos (`character`, `rule`, `scenario`; `entity` seguirá el mismo patrón), así que los ids de entidad cambian. La regeneración de un acto (Spec-430) lee el journal del beat anterior y no debe perderlo por una edición. Un registro por beat también coincide con que el Journal es una sola llamada LLM por beat.
+- **Límite de 3 entidades:** se valida en el dominio y en el wizard (card list con máximo 3, como personajes/escenarios/reglas).
+
+**Naturalezas (seed, a validar):** `espiritu` Espíritu / aparecido · `demonio` Demonio · `criatura` Criatura / monstruo · `humano` Humano (asesino, acosador) · `culto` Culto / colectivo · `contagio` Contagio / organismo · `lugar` Lugar vivo o maldito · `cosmica` Entidad cósmica · `folklorica` Ser del folklore · `desconocida` Desconocida / ambigua.
+
+Mapeo género → naturalezas en `genre_entity_nature` (ej. `folk_horror` → `folklorica, espiritu, culto, lugar, desconocida`). `desconocida` está habilitada en todos los géneros. El mapeo completo se arma en PLAN junto con el seed.
+
+**Catálogo editable a futuro:** la lista inicial son las 10 naturalezas. Para agregar o modificar se edita el seed; `init_db()` lo aplica con upsert (`INSERT … ON CONFLICT DO UPDATE` de `label`/`order_index`), así un cambio de etiqueta llega a las bases existentes sin recrearlas. (El seed de géneros de Spec-440 usa `INSERT OR IGNORE`: agrega, pero no modifica.) Un ABM del catálogo en la UI queda fuera de alcance. Una entidad cuya naturaleza no corresponde al género → 422 (mismo criterio que el par género/subgénero de Spec-440).
+
+Dominio: `Entity` en `src/domain/models.py`; `Story.entities: list[Entity]` (máx. 3, ordenada) y `Story.principal_entity` (la primera o `None`). Persistencia en `SQLStoryRepository` (mismo patrón que `scenario`).
+
+---
+
+## 2. NIVEL DE REVELACIÓN
+
+Cada entidad tiene su propio `reveal_level` (ej. un culto `explicita` que sirve a un demonio `insinuada`).
+
+| `reveal_level` | Beat 1 | Beat 2 | Beat 3 (Anagnorisis) | Beat 4 | Beat 5 |
+|---|---|---|---|---|---|
+| `nunca` | señales | señales | señales intensas, sin confirmar | señales | **lo decide el acto 5** |
+| `insinuada` | señales | manifestación parcial | **revelación** | límites y consecuencias | huella |
+| `progresiva` | señales | manifestación parcial | presencia directa | presencia plena | huella |
+| `explicita` | presencia | presencia | confrontación | consecuencias | huella |
+
+- **Señales** = solo `manifestations`, sin nombre ni naturaleza.
+- **Revelación** = `name` + `nature` + `description`.
+- **Límites** = `limits` (se exponen cuando el relato los necesita).
+- **Beat 5 con `nunca` (decidido 2026-09-23):** el final no se fuerza ambiguo. Si el acto 5 del escritor identifica a la entidad, se identifica; si no, queda la ambigüedad. `nunca` gobierna los beats 1–4.
+
+La graduación vive en `config/llm_beats_definition.yaml` (fuente de verdad de beats): cada `macro_beat` suma `entity_exposure: {nunca: ..., insinuada: ..., ...}`.
+
+**Reglas de revelación de los beats (decidido 2026-09-23: dependen del nivel).** Los beats actuales traen una curva de revelación fija que choca con algunos niveles:
+
+| Beat | Regla actual | Choca con |
+|---|---|---|
+| 1 | `must_not: "confirmar lo paranormal"` | `explicita` |
+| 2 | `must_not: "aceptar lo paranormal como hecho"` | `explicita` |
+| 3 | `must: "mostrar amenaza o presencia directa"` | `nunca` |
+
+- Solo estas reglas de revelación pasan a depender del `reveal_level` **de la entidad principal** (en el YAML, variantes por nivel; el resto de `must`/`must_not` queda fijo).
+- **Sin entidades, los beats quedan exactamente como hoy** (se usa la variante actual).
+- **Queda fija (decidido 2026-09-23):** beat 3 `must_not: "explicar origen o reglas completas del fenomeno"`. Revelar a la entidad (nombre, naturaleza, descripción) no es explicar su origen; vale para todos los niveles, incluido `explicita`.
+
+---
+
+## 3. INTEGRACIÓN EN EL PIPELINE
+
+| Rol | Qué recibe | Dónde |
+|---|---|---|
+| Analyst | Fichas completas, principal primero (para anclar los 5 pilares a la amenaza) | template `story_analyst_*compact.md` |
+| Mapper | Fichas completas + `entity_exposure` del beat por entidad (decide el evento sin revelar de más) | `synopsis_mapper_*compact.md` |
+| Voz | **Solo** el bloque graduado del beat N de cada entidad | `narrative_context` vía `NarrativeContextAssembler` |
+| Journal | Fichas completas → devuelve `entity_state` (un texto que cubre todas las entidades) → `entity_journal` | `journal.md` + `MemoryJournalist.extract()` |
+
+- `PromptBuilder.build_narrative_context()` pasa `story.entities` al assembler, que agrega un bloque por entidad según su `reveal_level` y el número de beat, y elige la variante de reglas de revelación según la principal.
+- **Presupuesto de tokens:** con 3 entidades el bloque de la Voz crece; en PLAN se mide el tamaño del `narrative_context` con 0, 1 y 3 entidades para los modelos locales (Ollama).
+- `narrative_context = beat_spec + resonance + synopsis_event + active_scenario + entity_exposure + memory_snapshot`.
+- El `entity_state` del journal del beat N-1 viaja en `memory_snapshot` al beat N (continuidad, Spec-420).
+- Regeneración parcial (Spec-430): la Voz regenerada recibe el mismo bloque, sin cambios adicionales.
+
+---
+
+## 4. WIZARD Y ROUND-TRIP
+
+- Grupo **"La Amenaza"** en el paso *El Mundo*: card list como personajes/escenarios/reglas, **máximo 3**, arranca vacía (sin cards → la historia no tiene entidades y no se envía nada). La card 1 se rotula "ENTIDAD 1 — PRINCIPAL".
+- Campos por card N: `entity_N_name`, `entity_N_nature` (combo filtrado por el género del paso 1; el catálogo sale de `GET /api/v1/catalog/entity-natures?genre=` o se embebe en `GET /catalog/genres`, a definir en PLAN), `entity_N_description`, `entity_N_manifestations`, `entity_N_limits` y `entity_N_reveal` (radio con los 4 niveles).
+- Si el usuario cambia el género del paso 1 y una naturaleza elegida deja de corresponder, esa entidad queda sin naturaleza y el paso 4 lo marca (mismo criterio que el subgénero en Spec-440).
+- `mapWizardToCore()` → `narrator_config.entities` (lista). `mapStoryToWizard()` rehidrata.
+- YAML (Spec-302/320): `storyteller_config.entities` en `YamlStoryLoader` y en el exporter.
+- CLI `generate --input` acepta la entidad desde YAML.
+
+---
+
+## BOUNDARIES
+
+- **Siempre:** entidad opcional; historias sin entidad generan exactamente igual que hoy (regresión cero).
+- **Consultar antes:** cambios en los `must`/`must_not` de `llm_beats_definition.yaml` que no sean de revelación.
+- **Nunca:** llamadas LLM nuevas; scripts de migración (`init_db()` + recrear `stories.db`).
+
+---
+
+## DECISIONES (2026-09-23)
+
+1. **Cantidad:** varias entidades por historia (máximo 3), con una principal (la primera).
+2. **Naturalezas:** combo filtrado por género (`genre_entity_nature`), `desconocida` en todos.
+3. **Reglas de revelación de los beats:** dependen del `reveal_level` de la entidad principal (tabla §2); el resto de `must`/`must_not` queda fijo; sin entidades, nada cambia.
+4. **Journal:** tabla nueva `entity_journal` (una fila por historia y beat), sin tocar `narrative_journal` → no hay que recrear bases.
+
+---
+
+## RESPUESTAS A LAS PREGUNTAS ABIERTAS (2026-09-23)
+
+1. **Máximo de entidades:** 3.
+2. **Nivel `nunca`:** no fuerza un final ambiguo; el acto 5 del escritor decide si la entidad queda identificada (§2).
+3. **Naturalezas:** las 10 del seed; se podrán agregar o modificar a futuro editando el seed (upsert en `init_db()`).
+4. **Evaluación:** generar `el_monte_prohibido.yaml` con y sin entidades y comparar a mano la coherencia de la entidad entre actos.
+
+---
+
+## PLAN
+
+### Estrategia
+
+De adentro hacia afuera, como en Spec-440: primero el catálogo y los datos (sin efecto en la generación), después los beats y el pipeline (con regresión cero verificada sin entidades), y al final el wizard. Todo el esquema nuevo son tablas nuevas: `init_db()` las crea al arrancar sobre las bases existentes, **sin recarga de prod**.
+
+### Mapa
+
+```
+S0 Catálogo de naturalezas ─▶ S1 Dominio + persistencia + API + YAML ─┬─▶ S2 Beats: revelación por nivel ─▶ S3 Pipeline (5 roles + journal)
+                                                                       └─▶ S4 Wizard «La Amenaza» ◀───────────────────────────────┘
+                                                                                     S5 Evaluación con el_monte_prohibido ─▶ S6 Docs + DONE
+```
+
+### Decisiones técnicas del plan
+
+1. **De dónde saca el wizard las naturalezas:** se embeben en la respuesta de `GET /catalog/genres` (cada género trae `entity_natures: [{id, label}]`). El frontend ya cachea y embebe ese catálogo; el género se elige en el paso 1 y las entidades están en el paso 4, así que el filtro se hace en el render del servidor con el género de la sesión. No hace falta un endpoint nuevo ni JS dependiente.
+2. **Mapeo género → naturalezas (seed inicial; `desconocida` en todos):**
+
+| Género | Naturalezas |
+|---|---|
+| `terror_psicologico` | humano, espiritu, lugar, desconocida |
+| `horror_cosmico` | cosmica, culto, criatura, lugar, desconocida |
+| `terror_gotico` | espiritu, demonio, criatura, lugar, humano, desconocida |
+| `body_horror` | contagio, criatura, humano, cosmica, desconocida |
+| `paranormal` | espiritu, demonio, lugar, folklorica, desconocida |
+| `folk_horror` | folklorica, espiritu, culto, lugar, demonio, desconocida |
+| `suspenso` | humano, culto, desconocida |
+| `terror_supervivencia` | criatura, humano, contagio, culto, desconocida |
+
+3. **Reglas de revelación en el YAML de beats:** las 3 reglas que chocan salen de `must`/`must_not` y pasan a un bloque `reveal_rules` por beat, con una variante `default` (la de hoy) y overrides por nivel. `BeatSpecRepository.get_by_id(beat_id, reveal_level=None)` devuelve el beat resuelto: `must_not = fijos + reveal_rules.must_not[nivel | default]` (ídem `must`). Sin entidades se usa `default` y, como las 3 reglas hoy van al final de su lista, **el texto resultante es idéntico al actual** (se verifica con un test de snapshot antes de tocar el YAML). El mismo bloque trae `entity_exposure` por nivel (la tabla de §2).
+4. **Topes de largo por campo** (para los contextos de 4096 tokens del Analyst y el Journal): `name` 60, `description` 400, `manifestations` 300, `limits` 300 caracteres. Se validan en el dominio (422) y se muestran como `maxlength` en el wizard. Se ajustan con la medición de S3.
+5. **Journal:** la plantilla suma la clave `entity_state` al JSON **solo si la historia tiene entidades** (sin entidades el prompt no cambia). `NarrativeJournal` suma `entity_state` opcional; el repo lo guarda en `entity_journal`, y `get_journal()` lo trae de vuelta, así llega a la Voz del beat siguiente y a la regeneración de un acto (Spec-430) sin tocar esos llamadores.
+
+### S0 — Catálogo de naturalezas (backend)
+
+- **Qué:** tablas `entity_nature` y `genre_entity_nature` con seed (upsert) y el mapeo de arriba; `GET /catalog/genres` suma `entity_natures` por género; `SQLGenreRepository` las lee.
+- **Verificación:** pytest (seed idempotente; upsert actualiza una etiqueta; endpoint con natures ordenadas; `desconocida` en los 8 géneros).
+- **Despliegue:** se puede desplegar solo (aditivo, nadie lo consume todavía).
+
+### S1 — Dominio, persistencia, API y YAML
+
+- **Qué:** `Entity` + `Story.entities` (máx. 3, topes de largo), tabla `entity`, `SQLStoryRepository` (save, `update_inputs` borra y reinserta, carga ordenada); `narrator_config.entities` en request/response y en `_request_to_dto`; validación naturaleza ↔ género (422); `YamlStoryLoader`/exporter (`storyteller_config.entities`) e `import-yaml`.
+- **Verificación:** pytest (round-trip DB y YAML con 0, 1 y 3 entidades; 4 → error; naturaleza de otro género → 422; editar una historia no toca `entity_journal`).
+- **Sin efecto en la generación** todavía: el pipeline no lee `story.entities`.
+
+### S2 — Beats: revelación por nivel
+
+- **Qué:** snapshot de las salidas actuales (`format_for_beat` compact/frontier, `assemble`, `acts_json` del resolver) → mover las 3 reglas a `reveal_rules` + `entity_exposure` en `llm_beats_definition.yaml` → `get_by_id(beat_id, reveal_level)`.
+- **Verificación:** pytest — sin nivel, el snapshot es idéntico byte a byte; `explicita` quita los `must_not` de los beats 1 y 2; `nunca` quita el `must` de presencia directa del beat 3.
+
+### S3 — Pipeline (Analyst, Resolver, Mapper, Voz, Journal)
+
+- **Qué:**
+  - Analyst y Mapper: bloque de fichas (principal primero) en sus templates; el Mapper suma la exposición del beat por entidad.
+  - Resolver y Mapper usan el beat resuelto con el nivel de la principal.
+  - Voz: `NarrativeContextAssembler` agrega un bloque «AMENAZA EN ESTE ACTO» con la exposición graduada de cada entidad y `entity_state` en la memoria del acto anterior.
+  - Journal: `entity_state` → `entity_journal`.
+- **Regresión cero:** test que genera con `MockLLMAdapter` una historia sin entidades y compara los 17 prompts contra los de antes del cambio.
+- **Medición:** script que arma los prompts de los 5 roles con 0, 1 y 3 entidades (campos al tope) y reporta tokens estimados contra el `num_ctx` de cada rol del perfil activo. Si algún rol se pasa, se ajustan los topes o se resume la ficha para ese rol.
+- **Verificación:** pytest (bloques presentes/ausentes según nivel y beat; `entity_state` persiste y vuelve en `get_journal`; regeneración de un acto recibe el estado).
+
+### S4 — Wizard «La Amenaza»
+
+- **Qué:** grupo `amenaza` en el paso 4 con `wizard_card_list` (máx. 3, arranca vacío, card 1 «PRINCIPAL»); campos `entity_N_*` en `ui_definitions.yaml` con `source: entity_natures` (filtrado por el género de la sesión) y `maxlength`; `submitStep` descarta naturalezas que no corresponden al género (como el subgénero); `mapWizardToCore`/`mapStoryToWizard`; la confirmación muestra las entidades.
+- **Verificación:** Vitest (mapper ida y vuelta, render filtrado, descarte al cambiar de género) + Playwright (agregar 2 entidades, guardar, editar y verlas rehidratadas; cambiar el género deja sin naturaleza la que no corresponde).
+- **Despliegue:** S2 + S3 + S4 salen juntos (antes de S4 nadie puede cargar entidades desde la web).
+
+### S5 — Evaluación
+
+- **Qué:** generar `el_monte_prohibido.yaml` con el perfil activo, sin entidades y con entidades (principal `insinuada` + una secundaria), y comparar a mano la coherencia de la entidad entre los 5 actos y el respeto del nivel de revelación. Resultado anotado en la spec.
+
+### S6 — Documentación y cierre
+
+- `CLAUDE.md` (tablas, `narrative_context`, journal, wizard), notas en Spec-180/220, Spec-450 → DONE.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| Los prompts con 3 entidades no entran en el `num_ctx` de 4096 del Analyst/Journal | Topes de largo por campo + medición en S3 antes de cerrar el slice. |
+| El modelo local revela de más aunque el nivel diga «señales» | La Voz recibe solo el bloque graduado (nunca la ficha completa); se evalúa en S5. |
+| Cambiar el YAML de beats altera historias sin entidades | Snapshot byte a byte antes y después (S2) + regresión de los 17 prompts con mock (S3). |
+| Editar una historia borra el estado del journal de entidades | `entity_journal` cuelga de `story`, no de `entity`; test en S1. |
+| El E2E de guardado de Spec-460 recorre el paso 4 | El grupo arranca vacío (sin cards), no agrega obligatorios. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + pytest + tsc + Vitest + Playwright en verde → commit (y despliegue donde se indica) con tu OK.
+
+### S0 — Catálogo de naturalezas (backend)
+
+- [x] **T0.1:** Tablas y seed.
+  - Acceptance: `init_db()` crea `entity_nature` y `genre_entity_nature` y siembra las 10 naturalezas y el mapeo del PLAN con upsert (`ON CONFLICT DO UPDATE` de `label`/`order_index` en naturalezas; `INSERT OR IGNORE` en el mapeo). `desconocida` en los 8 géneros. Corre sobre una DB existente sin tocar sus datos.
+  - Verify: pytest — 2 corridas = mismas filas; cambiar una etiqueta en el seed y re-correr la actualiza; DB con historias previas conserva sus filas.
+  - Files: `src/infrastructure/database/seeds/entity_natures.py` (nuevo), `src/infrastructure/database/connection.py`
+- [x] **T0.2:** Catálogo en la API.
+  - Acceptance: `GET /api/v1/catalog/genres` suma `entity_natures: [{id, label}]` por género, ordenadas por `order_index`; `SQLGenreRepository` expone `natures_of(genre_id)` y `nature_allowed(genre_id, nature_id)`.
+  - Verify: pytest del repo y del router (forma de la respuesta; `suspenso` → humano, culto, desconocida).
+  - Files: `src/domain/models.py` (`EntityNature`, `Genre.entity_natures`), `src/domain/interfaces.py`, `src/infrastructure/database/repositories/genre_repository.py`, `src/presentation/routers/catalog_router.py`
+- [x] **Checkpoint S0:** lint + pytest + Vitest (el `catalog.service` del frontend tolera el campo nuevo) → commit + despliegue (aditivo).
+
+### S1 — Dominio, persistencia, API y YAML
+
+- [x] **T1.1:** Dominio.
+  - Acceptance: `Entity` (name, nature_id, description, manifestations, limits, reveal_level ∈ {nunca, insinuada, progresiva, explicita}, default `insinuada`); `Story.entities: list[Entity]` (máx. 3) y `Story.principal_entity`. Topes: name 60, description 400, manifestations 300, limits 300 → error de validación.
+  - Verify: pytest `tests/unit/domain/test_models.py` (4 entidades → error; tope excedido → error; principal = primera; sin entidades → `None`).
+  - Files: `src/domain/models.py`
+- [x] **T1.2:** Persistencia.
+  - Acceptance: tabla `entity` (esquema §1); `save()` y `update_inputs()` borran y reinsertan con `order_index`; `get_by_id()`/listados cargan `entities` ordenadas. Tabla `entity_journal` creada (se usa en S3).
+  - Verify: pytest de integración — round-trip con 0, 1 y 3 entidades; editar una historia no borra filas de `entity_journal`; borrar la historia las borra (cascade).
+  - Files: `src/infrastructure/database/connection.py`, `src/infrastructure/database/repositories/story_repository.py`
+- [x] **T1.3:** API.
+  - Acceptance: `narrator_config.entities` entra por `POST`/`PATCH /stories` y sale en la respuesta (`storyteller_config.entities`); naturaleza que no corresponde al género → 422 legible (`ensure_valid_entities`, junto a `ensure_valid_genre`); más de 3 o tope excedido → 422.
+  - Verify: pytest `tests/unit/presentation/routers/test_story_router.py` (alta, edición, 422 por naturaleza/cantidad/largo).
+  - Files: `src/presentation/schemas/request.py`, `src/presentation/schemas/response.py`, `src/presentation/routers/story_router.py`, `src/application/dto/story_dto.py`, `src/application/use_cases/create_story.py`, `src/application/services/narrator_config_sanitizer.py`
+- [x] **T1.4:** YAML.
+  - Acceptance: `YamlStoryLoader` lee `storyteller_config.entities`; el exporter las escribe; `export-yaml` → `import-yaml` conserva las entidades; `generate --input` las acepta.
+  - Verify: pytest (round-trip YAML con 2 entidades; YAML sin `entities` → historia sin entidades).
+  - Files: `src/infrastructure/loaders/yaml_loader.py`, `src/infrastructure/exporters/yaml_exporter.py`, `src/cli/commands.py`
+- [x] **Checkpoint S1:** lint + pytest → commit (sin despliegue: nadie carga entidades todavía).
+
+### S2 — Beats: revelación por nivel
+
+- [x] **T2.1:** Snapshot de hoy.
+  - Acceptance: test que congela, para los 5 beats, la salida de `format_for_beat` (compact y frontier), de `NarrativeContextAssembler.assemble()` con un `MacroBeat` fijo y del `acts_json` del resolver. Se escribe **antes** de tocar el YAML.
+  - Verify: pytest en verde contra el código actual.
+  - Files: `tests/unit/application/test_beat_reveal_snapshot.py` (nuevo) + fixture de snapshot
+- [x] **T2.2:** `reveal_rules` y `entity_exposure` en el YAML.
+  - Acceptance: las 3 reglas de §2 salen de `must`/`must_not` y pasan a `reveal_rules` con `default` + overrides (`explicita` sin los `must_not` de los beats 1 y 2; `nunca` sin el `must` de presencia del beat 3); cada beat suma `entity_exposure` con los 4 niveles (tabla §2; beat 5 de `nunca` = "lo que decida el acto 5"). La regla de origen del beat 3 queda fija.
+  - Verify: el snapshot de T2.1 sigue idéntico.
+  - Files: `config/llm_beats_definition.yaml`
+- [x] **T2.3:** Resolución por nivel.
+  - Acceptance: `BeatSpecRepository.get_by_id(beat_id, reveal_level=None)` y `format_for_beat(..., reveal_level=None)` devuelven el beat resuelto; sin nivel = `default`; `exposure_for(beat_id, reveal_level)` devuelve el texto de exposición.
+  - Verify: pytest — sin nivel = snapshot; `explicita` beat 1 sin «confirmar lo paranormal»; `nunca` beat 3 sin «mostrar amenaza o presencia directa»; `insinuada` = default.
+  - Files: `src/application/services/beat_spec_repository.py`
+- [x] **Notas de S2 (2026-09-23):**
+  - **Exposiciones en el YAML:** además de `entity_exposure` por beat, el YAML define un vocabulario común `entity_exposures` (señales, manifestación parcial, revelación, presencia, huella, …) con `show` (campos de la ficha que ve la Voz) y `guide` (instrucción). Así S3 no decide qué campos mostrar: lo dice el YAML. `nunca` en el beat 3 no queda vacío: reemplaza la presencia directa por «mostrar señales intensas de la amenaza sin confirmar qué es» (fila de la tabla §2).
+  - **`get_all()` también se resuelve:** el resolver arma su `acts_json` con `get_all()`; sin resolver habría perdido las reglas movidas. El snapshot lo cubre.
+  - **Bug evitado:** `str(RevealLevel.NUNCA)` da `"RevealLevel.NUNCA"` en Python 3.11+; el nivel se normaliza con `.value`.
+- [x] **Checkpoint S2:** lint + pytest → commit.
+
+### S3 — Pipeline
+
+- [x] **T3.1:** Regresión cero (antes de tocar prompts).
+  - Acceptance: test que corre el pipeline completo con `MockLLMAdapter` sobre una historia sin entidades y congela los 17 prompts (system + user).
+  - Verify: pytest en verde contra el código actual y al final del slice.
+  - Files: `tests/integration/test_pipeline_prompts_snapshot.py` (nuevo)
+- [x] **T3.2:** Analyst y Mapper.
+  - Acceptance: bloque «AMENAZA» con las fichas (principal primero) en `story_analyst_*compact.md` y `synopsis_mapper_*compact.md`, solo si hay entidades; el Mapper suma la exposición del beat por entidad; Resolver y Mapper usan el beat resuelto con el nivel de la principal.
+  - Verify: pytest de `PromptBuilder` (con entidades: bloque presente y en orden; sin entidades: T3.1 idéntico).
+  - Files: `src/application/services/prompt_builder.py`, `config/prompts_generation/story_analyst_compact.md`, `config/prompts_generation/synopsis_mapper_one_compact.md`
+- [x] **T3.3:** Voz.
+  - Acceptance: `NarrativeContextAssembler.assemble()` recibe las entidades y el nivel de la principal: bloque «AMENAZA EN ESTE ACTO» con solo la exposición graduada de cada entidad (nunca la ficha completa); `PROHIBIDO`/`Efecto buscado` salen del beat resuelto; `entity_state` del acto anterior en la memoria.
+  - Verify: pytest (con `nunca` en el beat 1 no aparecen nombre ni naturaleza; con `explicita` sí; sin entidades = snapshot).
+  - Files: `src/application/services/narrative_context_assembler.py`, `src/application/services/prompt_builder.py`
+- [x] **T3.4:** Journal.
+  - Acceptance: `journal.md` pide `entity_state` solo si hay entidades; `NarrativeJournal.entity_state` opcional; `save_journal()` lo guarda en `entity_journal` y `get_journal()` lo devuelve; llega a la Voz del beat siguiente y a la regeneración de un acto (Spec-430).
+  - Verify: pytest (parseo con y sin la clave; persistencia; `RegenerateBeatVozUseCase` recibe el estado).
+  - Files: `config/prompts_generation/journal.md`, `src/application/services/memory_journalist.py`, `src/domain/models.py`, `src/infrastructure/database/repositories/story_repository.py`
+- [x] **T3.5:** Medición de tokens.
+  - Acceptance: script que arma los prompts de los 5 roles con 0, 1 y 3 entidades (campos al tope) y reporta tokens estimados vs `num_ctx` de cada rol del perfil activo; resultado anotado en la spec. Si un rol se pasa, se ajustan topes o se resume la ficha para ese rol antes de cerrar el slice.
+  - Verify: salida del script en la spec.
+  - Files: `scripts/measure_entity_prompts.py` (nuevo)
+- [x] **Notas de S3 (2026-09-23):**
+  - **16 llamadas, no 17:** desde Spec-410 el resolver es determinístico; `build_scenario_resolver_prompt` no tiene llamadores (código muerto, no se toca). El punto «Resolver usa el beat resuelto» no aplica.
+  - **Regresión cero:** los placeholders nuevos (`{amenaza_section}`, `{entity_state_field}`) van pegados al final de una línea existente del template; sin entidades valen `""` y los 16 prompts quedan idénticos al snapshot de T3.1.
+  - **`Entity.nature_label`:** etiqueta del catálogo cargada por el repo (JOIN), no se persiste; los prompts dicen «Ser del folklore», no `folklorica`.
+  - **Bug previo arreglado (commit aparte):** `MemoryJournalist` llamaba al LLM sin `role`/`num_ctx`/`num_predict`; Ollama usaba sus valores por defecto (4096/2048) en vez de los del rol journal (p. ej. `num_predict` 256).
+  - **Medición T3.5** (`scripts/measure_entity_prompts.py`, pipeline real con textos de tamaño realista, entidades con todos los campos al tope, tokens contados con el tokenizer de `gemma3:12b` vía Ollama; margen = num_ctx − prompt − num_predict):
+
+| Escenario | Rol | Prompt máx. | Salida | num_ctx | Margen |
+|---|---|---|---|---|---|
+| 0 entidades | story_analyst | 1641 | 500 | 4096 | 1955 |
+| 0 entidades | director | 1235 | 700 | 8192 | 6257 |
+| 0 entidades | voz | 1365 | 1000 | 8192 | 5827 |
+| 0 entidades | journal | 879 | 256 | 4096 | 2961 |
+| 1 entidad | story_analyst | 1955 | 500 | 4096 | 1641 |
+| 1 entidad | director | 1585 | 700 | 8192 | 5907 |
+| 1 entidad | voz | 1747 | 1000 | 8192 | 5445 |
+| 1 entidad | journal | 1267 | 256 | 4096 | 2573 |
+| 3 entidades | story_analyst | 2537 | 500 | 4096 | 1059 |
+| 3 entidades | director | 2231 | 700 | 8192 | 5261 |
+| 3 entidades | voz | 2371 | 1000 | 8192 | 4821 |
+| 3 entidades | journal | 1851 | 256 | 4096 | 1989 |
+
+    Todos los roles entran con margen; el más ajustado es el Analyst con 3 entidades (~1060 tokens libres). **No se ajustan los topes.**
+- [x] **Checkpoint S3:** lint + pytest (T3.1 idéntico) → commit (despliegue junto con S4).
+
+### S4 — Wizard «La Amenaza»
+
+- [x] **T4.1:** Definición y render.
+  - Acceptance: grupo `amenaza` en el paso 4 con `wizard_card_list` (máx. 3, **arranca vacío**, card 1 «ENTIDAD 1 — PRINCIPAL»); campos `entity_N_name|nature|description|manifestations|limits|reveal` con `maxlength` según topes; `entity_N_nature` con `source: entity_natures` filtrado en el servidor por el género de la sesión (sin género → deshabilitado con aviso).
+  - Verify: Vitest de la vista (filtrado por género; sin género; card list vacía por defecto).
+  - Files: `frontend/config/ui_definitions.yaml`, `frontend/src/views/wizard.ejs`, `frontend/src/views/partials/wizard_card_list.ejs`, `frontend/src/controllers/wizard.controller.ts`, `frontend/src/services/catalog.service.ts`, `frontend/public/js/wizard.js`
+- [x] **T4.2:** Validación del paso.
+  - Acceptance: `submitStep` descarta una naturaleza que no corresponde al género (como el subgénero en Spec-440); una card con naturaleza vacía se marca con error.
+  - Verify: Vitest del controller.
+  - Files: `frontend/src/controllers/wizard.controller.ts`
+- [x] **T4.3:** Mapeo ida y vuelta + confirmación.
+  - Acceptance: `mapWizardToCore()` → `narrator_config.entities` (solo cards con naturaleza, en orden); `mapStoryToWizard()` rehidrata; la confirmación lista las entidades con su nivel.
+  - Verify: Vitest `mapper.service.test.ts` (0, 1 y 3 entidades; round-trip).
+  - Files: `frontend/src/services/mapper.service.ts`, `frontend/src/services/wizard.service.ts`, `frontend/src/views/wizard-confirm.ejs`
+- [x] **T4.4:** E2E.
+  - Acceptance: agregar 2 entidades → guardar → editar → rehidratadas; cambiar el género a uno donde la naturaleza no corresponde → queda sin naturaleza; el E2E de guardado de Spec-460 sigue en verde sin cambios.
+  - Verify: Playwright `tests/e2e/entities.spec.ts` (nuevo) + suite completa.
+- [x] **Notas de S4 (2026-09-23):**
+  - **Card list vacía de entrada:** `wizard_card_list` suma `startEmpty` y `firstSuffix` («— PRINCIPAL»). Las funciones de cliente de las entidades salen de una fábrica genérica `cardList()` en `wizard.js` (personajes/escenarios/reglas quedan como estaban).
+  - **Nivel sin default en el radio:** con default, las cards ocultas enviaban «insinuada» y reaparecían solas; sin elegir, el mapper usa `insinuada` (lo dice el hint).
+  - **Cambio de género después del paso 4:** la naturaleza que no corresponde se descarta al renderizar, al enviar el paso y al guardar; si una card queda con datos pero sin naturaleza, «Guardar historia» lo explica en vez de perder la entidad.
+  - **Bug previo 1 (commit aparte):** con `hx-boost`, htmx 1.x no reemplaza el contenido ante un 4xx: las páginas 422 del wizard (paso con errores, guardado rechazado por el Core — Spec-460 §2.5) no se veían. `htmx:beforeSwap` en `layout.ejs` las muestra si son HTML.
+  - **Bug previo 2 (commit aparte):** con `saveUninitialized: false`, abrir el wizard en una sesión nueva no creaba la cookie; los primeros auto-saves simultáneos (género + subgénero) creaban sesiones distintas y el género se perdía. `showStep` inicializa `session.wizard`.
+  - Ambos bugs tienen un E2E en `entities.spec.ts` que falla sin el arreglo.
+- [x] **Checkpoint S4:** lint + pytest + tsc + Vitest + Playwright → commit + **despliegue de S2+S3+S4** (backend y frontend; `init_db()` crea las tablas en prod al arrancar).
+
+### S5 — Evaluación
+
+- [x] **T5.1:** Generar `el_monte_prohibido.yaml` con el perfil activo, sin entidades y con entidades (principal `insinuada` + una secundaria), y comparar a mano: coherencia de nombre/aspecto/poderes entre actos, respeto del nivel de revelación por beat, uso de los límites. Resultado y ejemplos anotados en la spec.
+- **Resultado T5.1 (2026-09-23)** — `gemma3:12b`, perfil `ollama-gemma3-12b`, `generate --input` con `--debug` en una DB descartable. Entidades: «La Sombra del Monte» (folklórica, `insinuada`: toma la forma de María; límites: rezos y vela en el umbral) y «El Monte de los Espinillos» (lugar, `progresiva`: el camino se deforma). ~3,5 min por relato.
+  - **Coherencia (mejora):** con entidades, los rasgos se sostienen entre actos: «no parpadea», olor a tierra mojada y el silencio de los grillos en los actos 1–3; los espinillos que se repiten en los actos 2 y 4. Sin entidades, el rasgo inhumano recién aparece en el acto 3 y en el acto 4 la Voz inventa mitología nueva («el monte se alimenta de los rezos que no llegan al cielo»).
+  - **Límites (mejora):** los rezos preceden la liberación en los actos 3 y 4 (rezan → el sulki se mueve / salen del cerco); la vela en el umbral en el acto 5.
+  - **Revelación (se respeta):** el nombre «La Sombra del Monte» no aparece antes del clímax; se nombra en el acto 4. El monte `progresiva` gana presencia del acto 2 al 4.
+  - **Journal (mejora):** `entity_state` distingue a la María real de la copia («María (la verdadera) está preocupada en la casa. La Sombra del Monte se manifestó como una copia de María»).
+  - **Adelantos (problema):** en **las dos** versiones la aparición de María ocurre ya en el acto 1. El Mapper no la pone (sus eventos del acto 1 son correctos); la inventa la Voz a partir de la regla R4 del YAML («La aparición de María en el monte… asusta a toda la familia», tipo `evento` → sin tipo → **global**, la Voz la recibe en los 5 actos). Es un problema del contenido de la historia (Spec-190 §4.4: lo temporal no es regla), no de las entidades.
+  - **Efecto checklist (problema de Spec-450):** la Voz usa «Cómo se percibe» como lista a cubrir: con `senales` en el acto 1 muestra la figura que no parpadea (estaba en las manifestaciones) y en el acto 2 usa casi todas las señales de las dos entidades, incluida la deformación del camino que la sinopsis ubica en el acto 4.
+  - **Sin relación con entidades:** en las dos versiones la llegada a la casa se narra en el acto 4 y otra vez en el acto 5.
+- **Ajuste y re-evaluación (v2, 2026-09-23):** guías de `senales` («una o dos de la lista, sutiles, no todas; sin mostrar una figura completa»), `senales_intensas` («dos o tres, no todas») y `manifestacion_parcial` («una sola manifestación») + una línea en el bloque de la Voz («"Cómo se percibe" es un repertorio para todo el relato, no una lista a cumplir»). Sin entidades nada cambia (snapshots idénticos).
+  - **Acto 1:** la figura completa que no parpadea (v1) pasa a «por un instante, juré haber visto una sombra moverse entre los espinillos, una figura que se parecía inquietantemente a mi suegra» + el caballo se detiene un segundo: una señal ambigua. La aparición sigue empujada por la regla R4 (ver arriba).
+  - **Acto 2:** ya no adelanta la deformación del camino ni los espinillos repetidos: quedan en el acto 4, donde los pone la sinopsis. Usa silueta borrosa + olor + caballo + mirada que no parpadea.
+  - **Acto 3:** reconocimiento sin nombre («No era mi madre… Era algo más. Algo antiguo, que se alimenta de los miedos y de la noche»). En v2 el nombre no aparece nunca (en v1, en el acto 4): `insinuada` quedó del lado prudente.
+  - **Límites:** rezos → liberación en los actos 3 y 4; vela en el umbral en el acto 5 (igual que v1).
+  - Conteo aproximado de rasgos por acto (A1–A5), v1 → v2: deformación del camino `0 1 0 0 0` → `0 0 0 1 0`; espinillos repetidos `0 2 0 2 0` → `0 0 0 3 0`; «no parpadea» `1 1 1 0 0` → `0 1 1 0 0`.
+  - **Ruido de la Voz, sin relación con entidades:** una oración en tercera persona copiada de la sinopsis en el acto 4 («Ricardo se sume en un silencio catatónico que Irene no se atreve a romper») y «mi madre» / «mi abuela» por «mi suegra».
+- **Conclusión S5:** las entidades mejoran la coherencia de la amenaza entre actos, el uso de sus límites y la continuidad del Journal, y con el ajuste de v2 se respeta la graduación sin el efecto checklist. **Pendientes fuera de Spec-450:** la regla R4 de `el_monte_prohibido.yaml` (tipo `evento`, global) adelanta la aparición al acto 1 → mover R3–R5 a los actos (contenido del autor); la doble llegada a la casa (actos 4 y 5); `run_full` no pasa los `actos` del YAML.
+- **Pendientes fuera de Spec-450, resueltos (2026-09-23)** y verificados con una tercera generación (v3: YAML corregido + las mismas entidades):
+  - `el_monte_prohibido.yaml`: R3 («María se queda en su casa…») pasa al final del acto 1; R4 («La aparición de María en el monte…») se elimina (ya está en el acto 3); R5 («Los rezos… única defensa») queda como regla de tipo `fenomeno` (renumerada R3); R1 `social` → `entorno`. El recibimiento con la vela pasa a la llegada (fin del acto 4) y el acto 5 arranca «Esa noche, ya dentro de la casa, mientras Irene acuesta a los niños…».
+  - **v3 — acto 1:** ya no hay aparición en el monte; solo señales («por un instante, me pareció ver algo extraño en su mirada», el caballo se detiene, un silencio inusual) y María queda en la puerta. **Actos 4–5:** la vela en el umbral cierra el acto 4 y el acto 5 empieza acostando a los niños: **una sola llegada**.
+  - `StoryRunner.run_full` (CLI `generate --input`) no pasaba los `actos` del YAML: la historia quedaba sin el texto de cada acto (el wizard ponía toda la sinopsis en el acto 1 y el export salía sin actos). Arreglado con test.
+  - Queda en la Voz, sin relación con esta spec: confunde «suegra» con «madre»/«abuela» y alguna palabra inventada («La arbolé»).
+
+### S6 — Documentación y cierre
+
+- [x] **T6.1:** `CLAUDE.md` (tablas nuevas, fórmula del `narrative_context`, journal, wizard, catálogo), notas en Spec-180 y Spec-220, Spec-450 → DONE.
+
+---
+
+## 10. AJUSTE (2026-09-24): manifestaciones según el acto
+
+**Problema** (evaluación de Spec-470 S2): con exposiciones tempranas la Voz todavía usa manifestaciones que la sinopsis ubica en actos posteriores — en el acto 1 apareció «el camino se deforma», del acto 4. Las guías de §S5 limitan cuántas usar, pero la Voz recibe la lista entera, y el orden en que la autora la escribe no dice a qué acto pertenece cada una.
+
+**Diseño (determinístico, sin LLM):**
+- `manifestations` se separa en ítems por `;` y `.`.
+- Cada ítem queda **reservado** para el primer acto cuya sinopsis comparte con él ≥ 2 palabras significativas (≥ 5 letras, comparadas por sus primeras 5, sin palabras vacías). Ej. «El camino se deforma» → acto 4 («el camino parece deformarse»).
+- Las exposiciones tempranas (`senales`, `senales_intensas`, `manifestacion_parcial`) declaran `max_manifestations` en el YAML: la Voz recibe solo ítems **no reservados para un acto posterior**, hasta ese tope (primero los del acto actual). Las demás exposiciones siguen mostrando la lista completa.
+- La sinopsis de cada acto sale del mismo corte que usa el Mapper (`get_beat_sinopsis_slice`).
+- El Mapper sigue viendo la ficha completa.
+
+**Con «El monte prohibido»:** la figura de María y el caballo que se clava → acto 3; camino que se deforma y espinillos repetidos → acto 4; espinas enganchadas → acto 5; olor a tierra mojada y silencio de los grillos → libres (señales tempranas).
+
+**Tareas:**
+- [x] **T10.1:** `max_manifestations` en `entity_exposures` (`senales` 2, `senales_intensas` 3, `manifestacion_parcial` 1) y filtro en `NarrativeContextAssembler` (recibe la sinopsis de los 5 actos desde `PromptBuilder.build_narrative_context`). Sin entidades, el contexto no cambia.
+- [x] **T10.2:** Tests (partición, reserva por acto con los textos reales, tope, exposiciones plenas sin filtro, snapshot sin entidades idéntico).
+- [x] **T10.3:** Evaluación con `scripts/evaluate_voice.py --variants con --runs 2` y lectura del acto 1–2 (¿aparecen manifestaciones de actos posteriores?).
+  - **Resultado (2026-09-24, `gemma3:12b`):** apariciones por acto (A1–A5) de cada manifestación, antes del ajuste (2 corridas de Spec-470 S2) → después:
+
+| Manifestación (acto de la sinopsis) | Antes #1 | Antes #2 | Después #1 | Después #2 |
+|---|---|---|---|---|
+| Camino que se deforma (4) | `1 1 0 0 0` | `0 0 0 0 0` | `0 0 0 0 0` | `0 0 0 0 0` |
+| Espinillos repetidos (4) | `2 2 0 3 0` | `2 0 0 1 0` | `0 0 0 2 0` | `0 0 0 2 0` |
+| Figura que no parpadea (3) | `0 1 2 0 0` | `0 1 3 1 0` | `0 0 2 0 0` | `0 0 2 0 0` |
+| Caballo que se clava (3) | `1 1 1 0 0` | `0 1 2 0 0` | `0 0 1 1 0` | `0 0 1 0 0` |
+| Espinas enganchadas (5) | `0 0 0 0 1` | `0 0 0 0 1` | `0 0 0 0 1` | `0 0 0 0 1` |
+
+  - **Los actos 1 y 2 ya no adelantan manifestaciones**; cada una aparece en su acto. La tensión temprana se sostiene con las señales libres («el olor a tierra mojada persistía», «unas hojas secas crujieron bajo el sulki, un sonido que no parecía venir de ningún animal»; «una sombra, fugaz, se deslizó entre los árboles»).
+  - Métricas de Spec-470 sin regresión: clichés 1 por relato, parentescos 0, narradora en 3ra persona 0, frases repetidas 2 (dentro de la meta; antes 4).
+  - Error de la Voz ajeno al ajuste: en el acto 1 Ricardo va «conversando con su madre» en el sulki (María quedó en la casa).
+

@@ -11,6 +11,7 @@ from collections.abc import AsyncGenerator
 
 from src.application.services.observability_service import observability
 from src.application.use_cases.director_use_case import DirectorUseCase
+from src.domain.jobs import JobStage
 from src.domain.models import Story, StoryStatus
 from src.domain.streaming import StreamEvent, StreamEventType
 
@@ -19,6 +20,30 @@ logger = logging.getLogger(__name__)
 HEARTBEAT_INTERVAL = 15  # segundos — no negociable (punto 2 Spec-201)
 
 _SENTINEL = object()
+
+# Mensaje legible por etapa (Spec-460). `{beat}`/`{total}` se completan si aplica.
+_STAGE_MESSAGES = {
+    JobStage.ANALYST: "Analizando sinopsis y extrayendo anclajes...",
+    JobStage.RESOLVER: "Distribuyendo escenarios y reglas...",
+    JobStage.MAPPER: "Mapeando acto {beat} de {total}...",
+    JobStage.VOZ: "Narrando acto {beat} de {total}...",
+    JobStage.JOURNAL: "Actualizando la memoria del acto {beat}...",
+    JobStage.CONSOLIDANDO: "Consolidando el relato...",
+}
+
+
+def stage_event(stage: JobStage, beat: int | None, total_beats: int) -> StreamEvent:
+    """Evento `status` con la etapa estructurada (Spec-460) + `step` legado."""
+    return StreamEvent(
+        event=StreamEventType.STATUS,
+        data={
+            "msg": _STAGE_MESSAGES[stage].format(beat=beat, total=total_beats),
+            "step": stage.value,
+            "stage": stage.value,
+            "beat": beat,
+            "total_beats": total_beats,
+        },
+    )
 
 
 async def stream_story(
@@ -34,11 +59,11 @@ async def stream_story(
     para garantizar que los heartbeats se envíen DURANTE la espera del LLM.
 
     Flujo de eventos:
-        status     → cambios de fase
+        status     → cambios de etapa, con `stage`/`beat`/`total_beats` (Spec-460)
         beat_start → inicio de cada beat
         beat_done  → beat persistido en DB + emitido al cliente
         heartbeat  → cada 15s de inactividad para mantener la conexión viva
-        done       → pipeline completo (incluye file_path si se exportó MD)
+        done       → pipeline completo (incluye narrative_id de la variante consolidada)
         error      → cualquier excepción (puede ocurrir a mitad de conexión)
     """
     queue: asyncio.Queue[StreamEvent | object] = asyncio.Queue()
@@ -47,35 +72,42 @@ async def stream_story(
     # ── Productor principal ───────────────────────────────────────────────────
     async def _main_producer():
         try:
-            # Spec-220: la limpieza canónica de artefactos vive en update_story_status
-            # (Spec-216 Slice A). La idempotencia del SSE la garantiza StreamSessionManager:
-            # un solo productor por story_id, las conexiones extra se atan a la sesión
-            # existente. Sin necesidad de salvaguardas defensivas acá.
+            # Spec-460: la limpieza de artefactos previos la hace el JobManager antes de
+            # correr el pipeline, y la idempotencia (un solo job activo por historia) la
+            # garantizan el JobManager y un índice único en generation_job.
             if story_repo is not None:
                 await story_repo.update_status(story.id, "processing")
 
-            await queue.put(
-                StreamEvent(
-                    event=StreamEventType.STATUS,
-                    data={"msg": "Analizando sinopsis y extrayendo anclajes...", "step": "analyst"},
+            started_beats: set[int] = set()
+
+            def _beat_start(number: int, beat_type: str = "") -> StreamEvent:
+                started_beats.add(number)
+                return StreamEvent(
+                    event=StreamEventType.BEAT_START,
+                    data={"number": number, "type": beat_type},
                 )
-            )
+
+            def _on_stage(stage: JobStage, beat: int | None) -> None:
+                # beat_start sale al empezar el beat (mapper), no cuando ya terminó.
+                if stage == JobStage.MAPPER and beat is not None and beat not in started_beats:
+                    queue.put_nowait(_beat_start(beat))
+                queue.put_nowait(stage_event(stage, beat, num_beats))
 
             beat_number = 0
             beats_collected = []
-            async for macro_beat, _journal, _elapsed in director.execute_full(story):
+            async for macro_beat, _journal, _elapsed in director.execute_full(
+                story, on_stage=_on_stage
+            ):
                 beat_number += 1
                 beats_collected.append(macro_beat)
 
-                await queue.put(
-                    StreamEvent(
-                        event=StreamEventType.BEAT_START,
-                        data={
-                            "number": beat_number,
-                            "type": macro_beat.beat_type.value if macro_beat.beat_type else "",
-                        },
+                if beat_number not in started_beats:  # director sin on_stage
+                    await queue.put(
+                        _beat_start(
+                            beat_number,
+                            macro_beat.beat_type.value if macro_beat.beat_type else "",
+                        )
                     )
-                )
 
                 # Persistir beat y journal en DB antes de emitir al cliente
                 if beat_repo is not None:
@@ -83,26 +115,16 @@ async def stream_story(
                 if story_repo is not None and _journal is not None:
                     await story_repo.save_journal(story.id, _journal, beat_number)
 
-                if beat_number < num_beats:
-                    await queue.put(
-                        StreamEvent(
-                            event=StreamEventType.STATUS,
-                            data={
-                                "msg": f"Narrando beat {beat_number + 1}/{num_beats}...",
-                                "step": "mapper",
-                            },
-                        )
-                    )
-
                 await queue.put(
                     StreamEvent(
                         event=StreamEventType.BEAT_DONE,
-                        data={"number": beat_number, "content": macro_beat.content},
+                        data={"number": beat_number, "content": macro_beat.generated_act},
                     )
                 )
 
             narrative_id: str | None = None
             if narrative_use_case is not None and beats_collected:
+                await queue.put(stage_event(JobStage.CONSOLIDANDO, None, num_beats))
                 try:
                     story.beats = beats_collected
                     narrative = await narrative_use_case.consolidate_and_save(story)

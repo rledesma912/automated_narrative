@@ -24,7 +24,7 @@ def _beat() -> Beat:
     return Beat(
         number=1,
         summary="Elena escucha pasos en el piso de arriba.",
-        content="El crujido del piso me heló la sangre.",
+        generated_act="El crujido del piso me heló la sangre.",
         status="completed",
     )
 

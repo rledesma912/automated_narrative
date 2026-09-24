@@ -49,10 +49,9 @@ class TestPersonaService:
         assert svc.resolve("Zorba") == "primera persona (Zorba narra)"
 
     def test_nombre_con_config_gender_femenino(self, svc):
-        # El género explícito en storyteller_config sí cambia el output
         config = {"voice": {"person": "primera"}, "gender": "femenino"}
-        assert svc.resolve("irene", storyteller_config=config) == "primera persona (ella narra)"
+        assert svc.resolve("irene", narrator_config=config) == "primera persona (ella narra)"
 
     def test_nombre_con_config_gender_masculino(self, svc):
         config = {"voice": {"person": "primera"}, "gender": "masculino"}
-        assert svc.resolve("ricardo", storyteller_config=config) == "primera persona (él narra)"
+        assert svc.resolve("ricardo", narrator_config=config) == "primera persona (él narra)"

@@ -3,10 +3,31 @@
  * Variables de entrada:
  *   steps:   WizardStep[]
  *   wizard:  WizardData — datos completos de la sesión
- *   storyId: string | null — ID de la historia ya persistida (null si sesión expiró)
+ *   storyId: string | null — ID de la historia ya guardada (edición: se actualiza)
+ *   saveError: string | null — error del Core al guardar (Spec-460 §2.5: nunca se oculta)
  */
+// Spec-440 §2: género y subgénero se guardan como ID; se muestran con su etiqueta.
+function catalogLabel(field, id) {
+  const catalog = (typeof genreCatalog !== 'undefined' && genreCatalog) || [];
+  if (!field.depends_on) return (catalog.find(g => g.id === id) || {}).label;
+  const stepData = Object.values(wizard).find(d => d && d[field.depends_on]) || {};
+  const parentId = String(stepData[field.depends_on] || '').split(':')[0].trim();
+  const genre = catalog.find(g => g.id === parentId);
+  return ((genre && genre.subgenres) || []).find(s => s.id === id)?.label;
+}
+
 function displayValue(field, rawVal) {
   if (!rawVal) return '—';
+  if (field.source === 'entity_natures') {
+    const id = String(rawVal).split(':')[0].trim();
+    const catalog = (typeof genreCatalog !== 'undefined' && genreCatalog) || [];
+    const nature = catalog.flatMap(g => g.entity_natures || []).find(n => n.id === id);
+    return nature ? nature.label : rawVal;
+  }
+  if (field.source === 'genre_catalog') {
+    const id = String(rawVal).split(':')[0].trim();
+    return catalogLabel(field, id) || rawVal;
+  }
   if (field.type === 'multi-select') {
     try {
       const arr = JSON.parse(rawVal);
@@ -18,7 +39,17 @@ function displayValue(field, rawVal) {
 %>
 <div class="max-w-3xl">
   <h2 class="font-serif text-2xl text-forge-accent mb-1">Revisar Historia</h2>
-  <p class="text-forge-muted text-xs uppercase tracking-widest mb-8">Confirmá los datos antes de generar</p>
+  <p class="text-forge-muted text-xs uppercase tracking-widest mb-8">Confirmá los datos y guardá la historia. La generación se inicia desde la galería.</p>
+
+  <% if (typeof saveError !== 'undefined' && saveError) { %>
+    <div role="alert" class="flex items-start gap-3 mb-8 p-4 border border-red-800 text-red-400 bg-forge-surface">
+      <i data-lucide="x-circle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+      <div>
+        <p class="text-sm font-bold mb-1">No se pudo guardar la historia</p>
+        <p class="text-sm" data-save-error><%= saveError %></p>
+      </div>
+    </div>
+  <% } %>
 
   <div class="space-y-6 mb-8">
     <% steps.forEach(s => { %>
@@ -54,25 +85,13 @@ function displayValue(field, rawVal) {
        class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
     </a>
-    <div class="flex items-center gap-3">
-      <% if (storyId) { %>
-        <form method="POST" action="/historia/<%= storyId %>/generar">
-          <button type="submit"
-                  class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
-            <i data-lucide="zap" class="w-4 h-4"></i> Generar historia
-          </button>
-        </form>
-      <% } else { %>
-        <form method="POST" action="/generar/submit">
-          <input type="hidden" name="action" value="generate" />
-          <button type="submit"
-                  class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
-            <i data-lucide="zap" class="w-4 h-4"></i> Generar historia
-          </button>
-        </form>
-      <% } %>
-    </div>
+    <%/* Spec-460 §2.5: el wizard solo guarda; se genera desde la galería o la ficha. */%>
+    <form method="POST" action="/generar/guardar">
+      <button type="submit" data-generation-trigger data-busy-label="Guardando..."
+              class="flex items-center gap-2 px-6 py-2 bg-forge-accent text-forge-text text-sm
+                     tracking-widest uppercase hover:opacity-80 transition-opacity">
+        <i data-lucide="save" class="w-4 h-4"></i> Guardar historia
+      </button>
+    </form>
   </div>
 </div>

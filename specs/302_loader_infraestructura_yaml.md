@@ -593,7 +593,7 @@ a componentes eliminados y cero tests “zombie”.
 
 | Archivo | Decisión propuesta | Motivo |
 |---|---|---|
-| `tests/integration/test_stream_broadcaster.py` | **KEEP** | Cubre contrato vigente de `StreamSessionManager` (productor único, replay, cleanup, error propagation). Señal alta y no depende de componentes removidos. |
+| `tests/integration/test_stream_broadcaster.py` | **KEEP** → eliminado en Spec-460 S8 junto con `StreamSessionManager` (cobertura migrada a `test_job_manager.py` / `test_event_bus.py`) | Cubre contrato vigente de `StreamSessionManager` (productor único, replay, cleanup, error propagation). Señal alta y no depende de componentes removidos. |
 | `tests/integration/test_slice8_e2e_monte.py` | **REWRITE (ya aplicado)** | Antes dependía de `MarkdownStoryParser` removido; se migró a smoke de `YamlStoryLoader` para validar input real vigente. |
 | `tests/unit/cli/test_commands_generate_input.py` | **KEEP + endurecer** | Es costura crítica del fix 302 (`_generate_async` con `input_file`). Agregar caso negativo: YAML inválido no debe invocar `run_full`. |
 | `tests/unit/cli/test_runner_argparse.py` | **KEEP + endurecer** | Verifica cableado `argparse → commands.generate` y firma pública. Falta eliminar `if mock_gen.called` y afirmar invocación explícita (`assert_called_once`). |

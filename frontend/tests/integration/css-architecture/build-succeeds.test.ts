@@ -1,40 +1,32 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { execSync } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 /**
  * Spec-315: Tests de Build — Generación de CSS
- * 
- * Verifica que `npm run build:css` genera correctamente
- * el archivo public/styles.css sin errores.
+ *
+ * Verifica que el comando de `npm run build:css` compila sin errores.
+ *
+ * Compila a un archivo temporal (mismo comando del package.json, otro `-o`)
+ * en vez de reescribir public/styles.css: los demás tests de css-architecture
+ * leen ese archivo en paralelo y el `make ui` en curso lo sirve.
  */
 describe('CSS Architecture — Build Process', () => {
   const frontendDir = process.cwd(); // Estamos ya en frontend/
-  const outputCssPath = path.join(frontendDir, 'public', 'styles.css');
-
-  beforeAll(() => {
-    // Limpiar output anterior si existe
-    if (fs.existsSync(outputCssPath)) {
-      fs.unlinkSync(outputCssPath);
-    }
-  });
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-css-'));
+  const outputCssPath = path.join(tmpDir, 'styles.css');
+  const pkg = JSON.parse(fs.readFileSync(path.join(frontendDir, 'package.json'), 'utf-8'));
+  const buildCmd = `npx ${pkg.scripts['build:css'].replace('./public/styles.css', outputCssPath)}`;
 
   afterAll(() => {
-    // Restaurar CSS para que el servidor siga funcionando
-    try {
-      execSync('npm run build:css', { cwd: frontendDir, stdio: 'ignore' });
-    } catch (e) {
-      // Ignorar si falla
-    }
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('npm run build:css genera public/styles.css', () => {
-    // Ejecutar build
-    execSync('npm run build:css', { 
-      cwd: frontendDir,
-      encoding: 'utf-8',
-    });
+    expect(buildCmd).toContain(outputCssPath);
+    execSync(buildCmd, { cwd: frontendDir, encoding: 'utf-8', stdio: 'pipe' });
 
     // Verificar que el archivo fue creado
     expect(fs.existsSync(outputCssPath)).toBe(true);

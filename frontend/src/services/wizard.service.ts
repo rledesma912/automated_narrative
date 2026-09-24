@@ -1,5 +1,6 @@
 import { Session } from "express-session";
 import { loadSteps } from "./form_renderer.service";
+import { naturesOf, type CatalogGenre } from "./catalog.service";
 
 export interface WizardField {
   name: string;
@@ -14,6 +15,17 @@ export interface WizardField {
   note?: string;
   group?: string;
   default?: string;
+  /**
+   * Opciones dinámicas: `genre_catalog` = catálogo de géneros del Core (Spec-440 §2);
+   * `characters` = personajes con nombre del mismo paso (Spec-440 §5);
+   * `entity_natures` = naturalezas de entidad del género elegido (Spec-450 §4).
+   */
+  source?: "genre_catalog" | "characters" | "entity_natures";
+  maxlength?: number;
+  /** Campo del que dependen las opciones (subgénero → género). */
+  depends_on?: string;
+  /** `half`: comparte fila con el campo `half` contiguo en pantallas anchas (Spec-440 §1). */
+  width?: "half";
 }
 
 export interface WizardStep {
@@ -55,8 +67,61 @@ export function getStepData(
   return session.wizard?.[stepId] ?? {};
 }
 
-/** Dado un fieldName y un ID limpio ("folk_horror"), devuelve el string completo del YAML ("folk_horror: Terror Rural…"). */
-export function reverseOption(fieldName: string, id: string): string {
+export interface CharacterOption {
+  value: string; // "protagonista_N"
+  label: string; // nombre escrito
+}
+
+const MAX_PERSONAJES = 5;
+
+/** Personajes con nombre, en orden: las opciones de "quién cuenta la historia" (Spec-440 §5). */
+export function namedCharacters(data: Record<string, string>): CharacterOption[] {
+  const options: CharacterOption[] = [];
+  for (let i = 1; i <= MAX_PERSONAJES; i++) {
+    const name = (data[`protagonista_${i}_name`] ?? "").trim();
+    if (name) options.push({ value: `protagonista_${i}`, label: name });
+  }
+  return options;
+}
+
+// ── Entidades (Spec-450 §4) ──────────────────────────────────────────────────
+
+export const MAX_ENTITIES = 3;
+const ENTITY_FIELDS = ["name", "nature", "description", "manifestations", "limits", "reveal"];
+
+function idOf(value: string | undefined): string {
+  return (value ?? "").split(":")[0].trim();
+}
+
+/** Descarta de la sesión las naturalezas que no corresponden al género (como el subgénero). */
+export function dropInvalidNatures(world: Record<string, string>, allowed: string[]): void {
+  for (let i = 1; i <= MAX_ENTITIES; i++) {
+    const key = `entity_${i}_nature`;
+    if (world[key] && !allowed.includes(idOf(world[key]))) delete world[key];
+  }
+}
+
+/** Cards con algún dato pero sin naturaleza: no se pueden guardar (el Core la exige). */
+export function entityCardsWithoutNature(world: Record<string, string>): number[] {
+  const missing: number[] = [];
+  for (let i = 1; i <= MAX_ENTITIES; i++) {
+    const hasData = ENTITY_FIELDS.some((f) => (world[`entity_${i}_${f}`] ?? "").trim() !== "");
+    if (hasData && !idOf(world[`entity_${i}_nature`])) missing.push(i);
+  }
+  return missing;
+}
+
+/** Género elegido en el paso 1 (ID limpio). */
+export function sessionGenre(wizard: WizardData | undefined): string {
+  return idOf(wizard?.["step_config_title"]?.["atmosfera"]);
+}
+
+/**
+ * Dado un fieldName y un valor guardado, devuelve el string completo del YAML ("folk_horror: Terror Rural…").
+ * Acepta el ID limpio ("folk_horror") y el formato legado "id: Etiqueta" (Spec-440 §4).
+ */
+export function reverseOption(fieldName: string, value: string): string {
+  const id = (value ?? "").split(":")[0].trim();
   if (!id) return "";
   for (const step of STEPS) {
     const field = step.fields.find((f) => f.name === fieldName);
@@ -68,14 +133,26 @@ export function reverseOption(fieldName: string, id: string): string {
   return id;
 }
 
+/** Tipos de regla que el wizard ofrecía antes de alinearse con RuleType (Spec-440 §9). */
+const LEGACY_RULE_TYPES: Record<string, string> = {
+  paranormal: "fenomeno",
+  social: "entorno",
+};
+
 /** Convierte un array de IDs limpios a un JSON string de strings completos, listo para session.wizard. */
 function reverseJsonArray(fieldName: string, ids: string[]): string {
   if (!ids?.length) return "[]";
   return JSON.stringify(ids.map((id) => reverseOption(fieldName, id)));
 }
 
-/** Reconstruye el objeto session.wizard a partir de la respuesta de la API Core. */
-export function mapStoryToWizard(story: Record<string, unknown>): WizardData {
+/**
+ * Reconstruye el objeto session.wizard a partir de la respuesta de la API Core.
+ * Con `catalog`, un subgénero que no pertenece al género queda vacío (Spec-440 §2).
+ */
+export function mapStoryToWizard(
+  story: Record<string, unknown>,
+  catalog?: CatalogGenre[],
+): WizardData {
   const sc = (story["storyteller_config"] as Record<string, any>) ?? {};
   const atm = sc["atmosphere"] ?? {};
   const perception = sc["perception"] ?? {};
@@ -97,6 +174,13 @@ export function mapStoryToWizard(story: Record<string, unknown>): WizardData {
     atmosphere_subgenre: reverseOption("atmosphere_subgenre", atm["subgenre"] ?? ""),
     atmosphere_tone:     reverseOption("atmosphere_tone",     atm["tone"]     || storyAtmosfera),
   };
+  if (catalog) {
+    const genre = catalog.find((g) => g.id === stepTitle.atmosfera);
+    if (!genre) stepTitle.atmosfera = ""; // p. ej. el string legado `atmosfera`
+    if (!genre?.subgenres.some((s) => s.id === stepTitle.atmosphere_subgenre)) {
+      stepTitle.atmosphere_subgenre = "";
+    }
+  }
 
   // ── step_config_personajes ───────────────────────────────────────────────
   // Usar índice en lugar de .find por id: personajes_full del Core no siempre tiene campo id.
@@ -147,8 +231,26 @@ export function mapStoryToWizard(story: Record<string, unknown>): WizardData {
   for (let i = 1; i <= 7; i++) {
     const r = rules[i - 1];
     stepWorld[`rule_${i}_text`] = r?.text ?? "";
-    stepWorld[`rule_${i}_type`] = r?.type ? reverseOption("rule_1_type", r.type) : "";
+    const ruleType = (r?.type ?? "").split(":")[0].trim();
+    stepWorld[`rule_${i}_type`] = ruleType
+      ? reverseOption("rule_1_type", LEGACY_RULE_TYPES[ruleType] ?? ruleType)
+      : "";
   }
+
+  // Spec-450: entidades (la primera es la principal).
+  const entities = (sc["entities"] as any[]) ?? [];
+  for (let i = 1; i <= MAX_ENTITIES; i++) {
+    const e = entities[i - 1];
+    stepWorld[`entity_${i}_name`]           = e?.name           ?? "";
+    stepWorld[`entity_${i}_nature`]         = e?.nature         ?? "";
+    stepWorld[`entity_${i}_description`]    = e?.description    ?? "";
+    stepWorld[`entity_${i}_manifestations`] = e?.manifestations ?? "";
+    stepWorld[`entity_${i}_limits`]         = e?.limits         ?? "";
+    stepWorld[`entity_${i}_reveal`] = e?.reveal_level
+      ? reverseOption("entity_1_reveal", e.reveal_level)
+      : "";
+  }
+  if (catalog) dropInvalidNatures(stepWorld, naturesOf(catalog, stepTitle.atmosfera).map((n) => n.id));
 
   // ── step_plot ────────────────────────────────────────────────────────────
   // Fallback para historias CLI: si no hay actos, poner sinopsis en el acto 1.

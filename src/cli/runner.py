@@ -8,6 +8,7 @@ from src.cli import commands
 from src.cli.exceptions import CLIError
 from src.cli.logger import logger
 from src.config import settings
+from src.domain.exceptions import InvalidStoryInputError
 
 
 def main() -> None:
@@ -51,8 +52,8 @@ def main() -> None:
     generate_parser.add_argument("--escenarios", help="Escenario(s)")
     generate_parser.add_argument("--sinopsis", help="Sinopsis de la historia")
     generate_parser.add_argument(
-        "--atmosfera",
-        help="Atmósfera de la historia",
+        "--genero",
+        help="Género de la historia (atmósfera). El YAML (--input) trae además subgénero y tono.",
     )
     generate_parser.add_argument(
         "--input",
@@ -78,36 +79,11 @@ def main() -> None:
         help="Directorio de output",
     )
 
-    plan_parser = subparsers.add_parser("plan", help="Generar solo el plan (beats)")
-    plan_parser.add_argument("--title", required=True, help="Título")
-    plan_parser.add_argument("--mock", action="store_true", help="Usar Mock LLM (solo para tests)")
-    plan_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(settings.output_dir),
-        help="Directorio de output",
-    )
-
     narrate_parser = subparsers.add_parser("narrate", help="Narrar beats específicos")
     narrate_parser.add_argument("--story-id", required=True, help="UUID de la historia")
     narrate_parser.add_argument("--beats", required=True, help="Beats a narrar (csv: 1,2,3)")
     narrate_parser.add_argument(
         "--mock", action="store_true", help="Usar Mock LLM (solo para tests)"
-    )
-
-    export_parser = subparsers.add_parser("export", help="Exportar historia a archivo")
-    export_parser.add_argument("--story-id", required=True, help="UUID de la historia")
-    export_parser.add_argument(
-        "--format",
-        default="markdown",
-        choices=["markdown", "json"],
-        help="Formato de export",
-    )
-    export_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path(settings.output_dir),
-        help="Directorio de output",
     )
 
     export_yaml_parser = subparsers.add_parser(
@@ -116,13 +92,36 @@ def main() -> None:
     )
     export_yaml_parser.add_argument(
         "story_id",
-        help="UUID de la historia a exportar",
+        nargs="?",
+        help="UUID de la historia a exportar (o --all)",
+    )
+    export_yaml_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Exportar todas las historias (requiere --output-dir)",
+    )
+    export_yaml_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Directorio de salida para --all",
     )
     export_yaml_parser.add_argument(
         "--output",
         type=Path,
         default=None,
         help="Path de salida (default: input_stories/<slug>.yaml)",
+    )
+
+    import_yaml_parser = subparsers.add_parser(
+        "import-yaml",
+        help="Crear historias como borrador desde YAML, sin generar (Spec-440).",
+    )
+    import_yaml_parser.add_argument("files", nargs="+", type=Path, help="Archivos YAML")
+    import_yaml_parser.add_argument(
+        "--descartar-subgenero-invalido",
+        action="store_true",
+        help="Si el subgénero no corresponde al género, importar sin subgénero (con aviso)",
     )
 
     args = parser.parse_args()
@@ -148,7 +147,7 @@ def main() -> None:
                     relator="",
                     escenarios="",
                     sinopsis="",
-                    atmosfera="",
+                    genero="",
                     use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
@@ -167,8 +166,8 @@ def main() -> None:
                     campos_faltantes.append("--escenarios")
                 if not args.sinopsis:
                     campos_faltantes.append("--sinopsis")
-                if not args.atmosfera:
-                    campos_faltantes.append("--atmosfera")
+                if not args.genero:
+                    campos_faltantes.append("--genero")
 
                 if campos_faltantes:
                     print(
@@ -187,7 +186,7 @@ def main() -> None:
                     relator=args.relator or "tercera_persona",
                     escenarios=args.escenarios,
                     sinopsis=args.sinopsis,
-                    atmosfera=args.atmosfera,
+                    genero=args.genero,
                     use_mock=args.mock,
                     output_dir=args.output,
                     provider=args.provider,
@@ -195,33 +194,31 @@ def main() -> None:
                     debug=args.debug,
                     hasta=args.hasta,
                 )
-        elif args.command == "plan":
-            commands.plan(
-                title=args.title,
-                use_mock=args.mock,
-                output_dir=args.output,
-            )
         elif args.command == "narrate":
             commands.narrate(
                 story_id=args.story_id,
                 beats=args.beats,
                 use_mock=args.mock,
             )
-        elif args.command == "export":
-            commands.export_(
-                story_id=args.story_id,
-                format=args.format,
-                output_dir=args.output,
-            )
         elif args.command == "export-yaml":
-            commands.export_yaml(
-                story_id=args.story_id,
-                output=args.output,
-            )
+            if args.all:
+                if args.output_dir is None:
+                    export_yaml_parser.error("--all requiere --output-dir")
+                commands.export_all_yaml(args.output_dir)
+            elif args.story_id:
+                commands.export_yaml(story_id=args.story_id, output=args.output)
+            else:
+                export_yaml_parser.error("indicá un story_id o --all")
+        elif args.command == "import-yaml":
+            commands.import_yaml(args.files, args.descartar_subgenero_invalido)
     except CLIError as e:
         logger.error(f"[CLI] {e.message}")
         print(f"Error: {e.message}", file=sys.stderr)
         sys.exit(e.exit_code)
+    except InvalidStoryInputError as e:
+        logger.error(f"[CLI] {e.message}")
+        print(f"Error de validación: {e.message}", file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         logger.error(f"[ERROR_INESPERADO] {str(e)}")
         print(f"Error inesperado: {str(e)}", file=sys.stderr)

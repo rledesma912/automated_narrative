@@ -57,7 +57,7 @@ api:
 
 ui:
 	@echo "🚀 Frontend UI (DEV) → http://localhost:$(PORT)"
-	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) DATABASE_URL=$(DATABASE_URL) npm run dev
+	cd $(FRONTEND_DIR) && CORE_API_URL=http://localhost:$(API_PORT) PORT=$(PORT) DATABASE_URL=$(DATABASE_URL) npm run build:css && npm run dev
 
 dev:
 	@echo "Levantando entorno de desarrollo completo..."
@@ -81,8 +81,12 @@ clean:
 
 db:
 	@chmod +x scripts/bash/init_db.sh
-	@# Asegurar que la carpeta y el archivo de DEV existan antes de crear el esquema
-	@mkdir -p data/dev && touch data/dev/stories.db
+	@# Recrear el esquema desde cero: init_db() usa CREATE TABLE IF NOT EXISTS
+	@# y no aplica cambios de esquema sobre una DB existente. Se elimina la DB
+	@# (y sus archivos -wal/-shm) antes de regenerarla.
+	@mkdir -p data/dev
+	@rm -f data/dev/stories.db data/dev/stories.db-wal data/dev/stories.db-shm
+	@touch data/dev/stories.db
 	@./scripts/bash/init_db.sh
 
 db-clean:

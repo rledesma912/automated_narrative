@@ -5,6 +5,9 @@
  *   step:    WizardStep    — paso activo
  *   saved:   Record<string, string> — datos guardados en sesión para este paso
  *   isLast:  boolean
+ *   characters:  { value, label }[] — personajes con nombre (Spec-440 §5)
+ *   fieldErrors: Record<string, string> — errores por campo del POST del paso
+ *   entityNatures: { id, label }[] | null — naturalezas del género (Spec-450); null = no hay
  */
 
 const GROUP_META = {
@@ -18,6 +21,7 @@ const GROUP_META = {
   escenarios:   { title: 'ESCENARIOS',       subtitle: 'Los lugares donde ocurre la historia' },
   reglas:       { title: 'REGLAS DEL MUNDO', subtitle: 'Las leyes que rigen este universo' },
   actos:        { title: 'LA TRAMA',         subtitle: 'Los 5 actos según la Pirámide de Freytag' },
+  amenaza:      { title: 'LA AMENAZA',       subtitle: 'Opcional: qué acecha y cuánto se muestra. La primera es la principal.' },
 };
 
 function esc(str) {
@@ -42,7 +46,87 @@ step.fields.filter(f => f.group).forEach(f => {
   groupedMap[f.group].push(f);
 });
 
-const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge-text text-lg px-4 py-3 focus:outline-none focus:border-forge-accent transition-colors placeholder:text-forge-muted';
+const CLS_INPUT = 'w-full bg-forge-surface border border-forge-border text-forge-text text-base px-3 py-2 focus:outline-none focus:border-forge-accent transition-colors placeholder:text-forge-muted';
+
+// Spec-440 §2: género/subgénero desde el catálogo del Core. El value es el ID.
+const CATALOG = (typeof genreCatalog !== 'undefined' && genreCatalog) || null;
+const MSG_SIN_GENERO   = 'Elegí primero el tipo de horror';
+const MSG_SIN_CATALOGO = 'No se pudo cargar el catálogo de géneros. Recargá la página en unos segundos.';
+
+// Spec-440 §5: "quién cuenta la historia" lista solo los personajes con nombre.
+const CHARACTERS   = (typeof characters !== 'undefined' && characters) || [];
+const FIELD_ERRORS = (typeof fieldErrors !== 'undefined' && fieldErrors) || {};
+const MSG_SIN_PERSONAJES = 'Primero nombrá un personaje';
+
+function characterSelectHtml(field, effective) {
+  const reqAttr = field.required ? ' required' : '';
+  const current = idOf(effective);
+  let selected = CHARACTERS.some(c => c.value === current) ? current : '';
+  if (!selected && CHARACTERS.length === 1) selected = CHARACTERS[0].value;
+  const disabled = CHARACTERS.length === 0 ? ' disabled' : '';
+  const placeholder = CHARACTERS.length === 0 ? MSG_SIN_PERSONAJES : 'Seleccioná...';
+
+  let html = `<select name="${esc(field.name)}"${reqAttr}${disabled} data-characters-field class="${CLS_INPUT} disabled:opacity-50 disabled:cursor-not-allowed">`;
+  html += `<option value="" disabled${!selected ? ' selected' : ''}>${esc(placeholder)}</option>`;
+  CHARACTERS.forEach(c => {
+    html += `<option value="${esc(c.value)}"${c.value === selected ? ' selected' : ''}>${esc(c.label)}</option>`;
+  });
+  html += '</select>';
+  return html;
+}
+
+// Spec-450 §4: naturalezas de entidad del género elegido en el paso 1.
+const NATURES = (typeof entityNatures !== 'undefined' && entityNatures) || null;
+const MSG_SIN_NATURALEZAS = 'Elegí primero el tipo de horror (paso 1)';
+
+function natureSelectHtml(field, effective) {
+  const options = NATURES || [];
+  const current = idOf(effective);
+  const selected = options.some(o => o.id === current) ? current : '';
+  const disabled = options.length === 0 ? ' disabled' : '';
+  const placeholder = options.length === 0 ? MSG_SIN_NATURALEZAS : 'Seleccioná...';
+  let html = `<select name="${esc(field.name)}"${disabled} data-entity-nature class="${CLS_INPUT} disabled:opacity-50 disabled:cursor-not-allowed">`;
+  html += `<option value="" disabled${!selected ? ' selected' : ''}>${esc(placeholder)}</option>`;
+  options.forEach(o => {
+    html += `<option value="${esc(o.id)}"${o.id === selected ? ' selected' : ''}>${esc(o.label)}</option>`;
+  });
+  return html + '</select>';
+}
+
+function idOf(value) {
+  return String(value || '').split(':')[0].trim();
+}
+
+function catalogSelectHtml(field, effective) {
+  const reqAttr = field.required ? ' required' : '';
+  const dataAttrs = ` data-catalog-field="${esc(field.name)}"`
+    + (field.depends_on ? ` data-depends-on="${esc(field.depends_on)}"` : '');
+  let options = [];
+  let placeholder = 'Seleccioná...';
+  if (!CATALOG) {
+    placeholder = MSG_SIN_CATALOGO;
+  } else if (field.depends_on) {
+    const parent = CATALOG.find(g => g.id === idOf(saved[field.depends_on]));
+    if (parent) options = parent.subgenres;
+    else placeholder = MSG_SIN_GENERO;
+  } else {
+    options = CATALOG;
+  }
+  const current = idOf(effective);
+  const selected = options.some(o => o.id === current) ? current : '';
+  const disabled = options.length === 0 ? ' disabled' : '';
+
+  let html = `<select name="${esc(field.name)}"${reqAttr}${disabled}${dataAttrs} class="${CLS_INPUT} disabled:opacity-50 disabled:cursor-not-allowed">`;
+  html += `<option value="" disabled${!selected ? ' selected' : ''}>${esc(placeholder)}</option>`;
+  options.forEach(o => {
+    html += `<option value="${esc(o.id)}"${o.id === selected ? ' selected' : ''}>${esc(o.label)}</option>`;
+  });
+  html += '</select>';
+  if (!CATALOG && !field.depends_on) {
+    html += `<p role="alert" class="text-sm text-red-400 mt-2" data-catalog-error>${esc(MSG_SIN_CATALOGO)}</p>`;
+  }
+  return html;
+}
 
 function fieldHtml(field) {
   const sv        = saved[field.name] || '';
@@ -50,69 +134,77 @@ function fieldHtml(field) {
   const msArr     = (field.type === 'multi-select') ? getSavedArray(field.name) : [];
   const reqAttr   = field.required ? ' required' : '';
   const ph        = esc(field.placeholder || '');
+  const maxAttr   = field.maxlength ? ` maxlength="${field.maxlength}"` : '';
 
-  let html = '<div class="mb-5">';
+  let html = '<div class="mb-4">';
 
-  html += `<label class="block text-lg font-semibold text-forge-text mb-1">${esc(field.label)}`;
+  html += `<label class="block text-base font-semibold text-forge-text mb-0.5">${esc(field.label)}`;
   if (field.required) html += ' <span class="text-forge-accent">*</span>';
   html += '</label>';
 
   if (field.subtitle) {
-    html += `<p class="text-sm text-forge-muted mb-2">${esc(field.subtitle)}</p>`;
+    html += `<p class="text-xs text-forge-muted mb-1.5">${esc(field.subtitle)}</p>`;
   }
 
   if (field.type === 'textarea') {
-    html += `<textarea name="${esc(field.name)}" rows="${field.rows || 3}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT} resize-none">${esc(sv)}</textarea>`;
+    html += `<textarea name="${esc(field.name)}" rows="${field.rows || 3}" placeholder="${ph}"${reqAttr}${maxAttr} class="${CLS_INPUT} resize-none">${esc(sv)}</textarea>`;
+
+  } else if (field.type === 'select' && field.source === 'genre_catalog') {
+    html += catalogSelectHtml(field, effective);
+
+  } else if (field.type === 'select' && field.source === 'entity_natures') {
+    html += natureSelectHtml(field, effective);
+
+  } else if (field.type === 'select' && field.source === 'characters') {
+    html += characterSelectHtml(field, effective);
 
   } else if (field.type === 'select') {
-    const isStoryteller = field.name === 'storyteller_id';
     html += `<select name="${esc(field.name)}"${reqAttr} class="${CLS_INPUT}">`;
     html += `<option value="" disabled${!effective ? ' selected' : ''}>Seleccioná...</option>`;
     (Array.isArray(field.options) ? field.options : []).forEach(opt => {
       const parts = opt.split(':');
-      const val   = parts[0].trim();
       const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
-
       const sel = effective === opt ? ' selected' : '';
-      let displayLabel;
-      if (isStoryteller) {
-        const idx = val.replace('protagonista_', '');
-        displayLabel = `Personaje ${idx}`;
-      } else {
-        displayLabel = label;
-      }
-      html += `<option value="${esc(opt)}"${sel}>${displayLabel}</option>`;
+      html += `<option value="${esc(opt)}"${sel}>${label}</option>`;
     });
     html += '</select>';
 
   } else if (field.type === 'radio') {
-    html += '<div class="space-y-2 mt-2">';
-    (Array.isArray(field.options) ? field.options : []).forEach(opt => {
+    // Spec-440 §1: 5+ opciones en 2 columnas para no alargar la card.
+    const radioOpts = Array.isArray(field.options) ? field.options : [];
+    const radioCls  = radioOpts.length >= 5 ? 'grid sm:grid-cols-2 gap-x-6 gap-y-1.5' : 'space-y-1.5';
+    html += `<div class="${radioCls} mt-2">`;
+    radioOpts.forEach(opt => {
       const chk = effective === opt ? ' checked' : '';
+      const parts = opt.split(':');
+      const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
       html += '<label class="flex items-center gap-3 cursor-pointer">';
       html += `<input type="radio" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
-      html += `<span class="text-base text-forge-text">${esc(opt)}</span>`;
+      html += `<span class="text-sm text-forge-text">${esc(label)}</span>`;
       html += '</label>';
     });
     html += '</div>';
 
   } else if (field.type === 'multi-select') {
-    html += '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">';
+    html += '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">';
     (Array.isArray(field.options) ? field.options : []).forEach(opt => {
       const parts = opt.split(':');
       const label = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0].trim();
       const chk = msArr.includes(opt) ? ' checked' : '';
       html += '<label class="flex items-center gap-2 cursor-pointer">';
       html += `<input type="checkbox" name="${esc(field.name)}" value="${esc(opt)}"${chk} class="w-4 h-4 accent-forge-accent cursor-pointer" />`;
-      html += `<span class="text-base text-forge-text">${label}</span>`;
+      html += `<span class="text-sm text-forge-text">${label}</span>`;
       html += '</label>';
     });
     html += '</div>';
 
   } else {
-    html += `<input type="text" name="${esc(field.name)}" value="${esc(sv)}" placeholder="${ph}"${reqAttr} class="${CLS_INPUT}" />`;
+    html += `<input type="text" name="${esc(field.name)}" value="${esc(sv)}" placeholder="${ph}"${reqAttr}${maxAttr} class="${CLS_INPUT}" />`;
   }
 
+  if (FIELD_ERRORS[field.name]) {
+    html += `<p role="alert" class="text-sm text-red-400 mt-2" data-field-error="${esc(field.name)}">${esc(FIELD_ERRORS[field.name])}</p>`;
+  }
   if (field.note) {
     html += `<p class="text-xs text-forge-muted mt-2 italic">${esc(field.note)}</p>`;
   }
@@ -121,6 +213,22 @@ function fieldHtml(field) {
   }
 
   html += '</div>';
+  return html;
+}
+
+// Spec-440 §1: campos `width: half` contiguos comparten fila en pantallas anchas.
+function fieldsHtml(fields) {
+  let html = '';
+  for (let i = 0; i < fields.length; i++) {
+    if (fields[i].width === 'half') {
+      html += '<div class="grid lg:grid-cols-2 gap-x-6">';
+      while (i < fields.length && fields[i].width === 'half') html += fieldHtml(fields[i++]);
+      html += '</div>';
+      i--;
+    } else {
+      html += fieldHtml(fields[i]);
+    }
+  }
   return html;
 }
 
@@ -154,7 +262,7 @@ function hasCardData(fields) {
 <div class="w-[85vw] max-w-5xl mx-auto">
 
   <%/* ── Stepper header ─────────────────────────────── */%>
-  <div class="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
+  <div class="flex items-center gap-0 mb-6 overflow-x-auto pb-2">
     <% steps.forEach((s, i) => { %>
       <%
         const done   = s.number < step.number;
@@ -186,15 +294,15 @@ function hasCardData(fields) {
   </div>
 
   <%/* ── Título + Subtítulo del paso ─────────────────── */%>
-  <h2 class="heading-forge-lg mb-1"><%= step.title %></h2>
+  <h2 class="heading-forge-lg !text-2xl mb-1"><%= step.title %></h2>
   <% if (step.subtitle) { %>
-    <p class="text-forge-muted-caps mb-8"><%= step.subtitle %></p>
+    <p class="text-forge-muted-caps mb-5"><%= step.subtitle %></p>
   <% } else { %>
     <div class="mb-6"></div>
   <% } %>
 
   <%/* ── Formulario ───────────────────────────────────── */%>
-  <form method="POST" action="/generar/paso/<%= step.number %>" class="space-y-6">
+  <form method="POST" action="/generar/paso/<%= step.number %>" class="space-y-5">
 
     <%/* -- Campos sin grupo */%>
     <% ungrouped.forEach(field => { %>
@@ -273,22 +381,44 @@ function hasCardData(fields) {
           hasCardData, fieldHtml, esc,
         }) %>
 
+      <% } else if (groupName === 'amenaza') { %>
+        <%
+          const entityCards = groupFieldsByIndex(groupedMap['amenaza'], /^entity_(\d+)_/);
+          const entityIndices = Object.keys(entityCards).sort((a,b) => Number(a)-Number(b));
+        %>
+        <%- include('partials/wizard_card_list', {
+          meta, indices: entityIndices, cards: entityCards, saved,
+          itemLabel: 'ENTIDAD',
+          addLabel: 'Agregar entidad',
+          maxLabel: 'Máximo 3 entidades',
+          iconAdd: 'skull',
+          addHandler: 'addEntidad()',
+          deleteHandler: 'askDeleteEntidad',
+          groupContainerId: 'amenaza-group',
+          cardIdPrefix: 'entity-card',
+          deleteBtnIdPrefix: 'entity-delete-btn',
+          addBtnId: 'btn-add-entidad',
+          msgMaxId: 'msg-max-entidades',
+          fieldNamePrefix: 'entity',
+          startEmpty: true,
+          firstSuffix: ' — PRINCIPAL',
+          hasCardData, fieldHtml, esc,
+        }) %>
+
       <% } else { %>
-        <div class="card-forge !p-6 space-y-5">
+        <div class="card-forge !p-5 space-y-4">
           <div class="border-b border-forge-border pb-3">
             <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
             <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
           </div>
-          <% groupedMap[groupName].forEach(field => { %>
-            <%- fieldHtml(field) %>
-          <% }); %>
+          <%- fieldsHtml(groupedMap[groupName]) %>
         </div>
       <% } %>
 
     <% }); %>
 
     <%/* ── Navegación ────────────────────────────────── */%>
-    <div class="flex items-center justify-between pt-8 border-t border-forge-border">
+    <div class="flex items-center justify-between pt-6 border-t border-forge-border">
       <% if (step.number > 1) { %>
         <a href="/generar/paso/<%= step.number - 1 %>"
            class="btn-forge-outline !px-0 !border-none">
@@ -300,7 +430,8 @@ function hasCardData(fields) {
 
       <button type="submit" class="btn-forge !px-8 !py-3 !text-sm">
         <% if (isLast) { %>
-          <i data-lucide="save" class="w-4 h-4"></i> Guardar y revisar
+          <%/* Spec-460 §2.5: se guarda en la confirmación, con "Guardar historia". */%>
+          Revisar <i data-lucide="arrow-right" class="w-4 h-4"></i>
         <% } else { %>
           Siguiente <i data-lucide="arrow-right" class="w-4 h-4"></i>
         <% } %>
@@ -331,5 +462,9 @@ function hasCardData(fields) {
 <script>
   window.STEP_NUM = <%= step.number %>;
 </script>
-<script src="/js/wizard.js" defer></script>
+<% if (CATALOG) { %>
+  <%/* Spec-440 §2: wizard.js repuebla el subgénero al cambiar el género. */%>
+  <script type="application/json" id="genre-catalog"><%- JSON.stringify(CATALOG).replace(/</g, '\\u003c') %></script>
+<% } %>
+<script src="/js/wizard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 

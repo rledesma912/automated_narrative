@@ -6,10 +6,11 @@ export interface CoreDTO {
   relator: string;
   escenarios: string;
   sinopsis: string;
-  atmosfera: string;
+  genero: string;
+  subgenero: string;
+  tono: string;
   reglas: string[];
-  actos: object;
-  storyteller_config: object;
+  narrator_config: object;
   personajes_full: object[];
 }
 
@@ -26,6 +27,16 @@ function parseJsonArray(raw: string | undefined): string[] {
 function parseOptionalLabel(val: string): string {
   if (!val) return "";
   return val.split(":")[0].trim();
+}
+
+/** Campo simple del wizard → ID limpio, con valor por defecto. */
+function optionId(val: string | undefined, fallback: string): string {
+  return parseOptionalLabel(val ?? "") || fallback;
+}
+
+/** Campo multi-select del wizard (JSON de "id: Etiqueta") → lista de IDs. */
+function optionIds(raw: string | undefined): string[] {
+  return parseJsonArray(raw).map(parseOptionalLabel).filter(Boolean);
 }
 
 function buildAtmosphere(cfg: Record<string, string>) {
@@ -61,11 +72,28 @@ function buildRules(world: Record<string, string>) {
   for (let i = 1; i <= 7; i++) {
     const text = (world[`rule_${i}_text`] ?? "").trim();
     if (!text) continue;
-    const typeRaw = (world[`rule_${i}_type`] ?? "entorno").trim();
-    const type = typeRaw.split(":")[0].trim(); // Extrae 'entorno' de 'entorno: Del lugar'
+    const type = optionId(world[`rule_${i}_type`], "entorno");
     rules.push({ id: `R${i}`, text, type });
   }
   return rules;
+}
+
+/** Spec-450: solo las cards con naturaleza, en orden (la primera es la principal). */
+function buildEntities(world: Record<string, string>) {
+  const entities: Array<Record<string, string>> = [];
+  for (let i = 1; i <= 3; i++) {
+    const nature = parseOptionalLabel(world[`entity_${i}_nature`] ?? "");
+    if (!nature) continue;
+    entities.push({
+      name:           (world[`entity_${i}_name`]           ?? "").trim(),
+      nature,
+      description:    (world[`entity_${i}_description`]    ?? "").trim(),
+      manifestations: (world[`entity_${i}_manifestations`] ?? "").trim(),
+      limits:         (world[`entity_${i}_limits`]         ?? "").trim(),
+      reveal_level:   optionId(world[`entity_${i}_reveal`], "insinuada"),
+    });
+  }
+  return entities;
 }
 
 /** Transforma los datos granulares del Wizard en el formato que espera el Core Python. */
@@ -82,17 +110,15 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
     const name = (pjs[`protagonista_${i}_name`] ?? "").trim();
     if (!name) continue;
     const role   = (pjs[`protagonista_${i}_role`]   ?? "").trim();
-    const traitsRaw = parseJsonArray(pjs[`protagonista_${i}_traits`]);
-    const traits = traitsRaw.map(t => t.split(":")[0].trim()); // Limpia rasgos
+    const traits = optionIds(pjs[`protagonista_${i}_traits`]);
     protagonists.push({ id: `P${i}`, name, role, traits });
   }
 
   // Storyteller — protagonista_1 → P1
-  const storytellerWizardId = pjs["storyteller_id"] ?? "protagonista_1";
+  const storytellerWizardId = optionId(pjs["storyteller_id"], "protagonista_1");
   const storytellerPid      = storytellerWizardId.replace("protagonista_", "P");
   const storyteller         = protagonists.find(p => p.id === storytellerPid) ?? protagonists[0];
-  const voiceStyleRaw       = pjs["voice_style"] ?? "intimista";
-  const voiceStyle          = voiceStyleRaw.split(":")[0].trim();
+  const voiceStyle          = optionId(pjs["voice_style"], "intimista");
 
   // Atmosphere
   const atmosphere = buildAtmosphere(cfg);
@@ -109,15 +135,9 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
         .join("; ")
     : "Personaje principal";
 
-  const langReg     = voz["language_register"] ?? "coloquial";
+  const langReg     = optionId(voz["language_register"], "coloquial");
   const narName     = storyteller?.name ?? "narrador";
   const relator     = `Primera persona en pasado. Narrador: ${narName}. Tono: ${voiceStyle}. Registro: ${langReg}.`;
-
-  const atmosferaStr = [
-    atmosphere.genre,
-    atmosphere.subgenre ? `(${atmosphere.subgenre})` : "",
-    atmosphere.tone     ? `- ${atmosphere.tone}`     : "",
-  ].filter(Boolean).join(" ");
 
   const escenariosStr = scenarios.length
     ? scenarios.map(s => s.name + (s.description ? `: ${s.description}` : "")).join("; ")
@@ -125,8 +145,8 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
 
   const reglasList = rules.map(r => r.text);
 
-  // ── storyteller_config ───────────────────────────────────────────────────
-  const storytellerConfig = {
+  // ── narrator_config (Spec-440 §4: solo IDs, nunca "id: Etiqueta") ─────────
+  const narratorConfig = {
     storyteller_id:   storytellerPid,
     storyteller_name: narName,
     voice_style:      voiceStyle,
@@ -134,28 +154,29 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
     atmosphere,
     scenarios,
     rules,
+    entities: buildEntities(world),
     actos,
     perception: {
-      reliability: voz["perception_reliability"] ?? "subjetiva",
+      reliability: optionId(voz["perception_reliability"], "subjetiva"),
       distortion: {
-        level:    voz["distortion_level"]    ?? "media",
-        triggers: parseJsonArray(voz["distortion_triggers"]),
+        level:    optionId(voz["distortion_level"], "media"),
+        triggers: optionIds(voz["distortion_triggers"]),
       },
     },
     knowledge: {
       domain: {
-        paranormal: voz["paranormal_knowledge"] ?? "medio",
-        religioso:  voz["religioso_knowledge"]  ?? "medio",
+        paranormal: optionId(voz["paranormal_knowledge"], "medio"),
+        religioso:  optionId(voz["religioso_knowledge"], "medio"),
       },
-      interpretation_style: voz["interpretation_style"] ?? "simbolica",
+      interpretation_style: optionId(voz["interpretation_style"], "simbolica"),
     },
     language: {
       register:           langReg,
-      figurative_density: voz["figurative_density"] ?? "media",
+      figurative_density: optionId(voz["figurative_density"], "media"),
     },
     bias: {
-      fear_focus:      parseJsonArray(voz["fear_focus"]),
-      attention_focus: parseJsonArray(voz["attention_focus"]),
+      fear_focus:      optionIds(voz["fear_focus"]),
+      attention_focus: optionIds(voz["attention_focus"]),
     },
   };
 
@@ -166,15 +187,16 @@ export function mapWizardToCore(wizard: WizardData): CoreDTO {
   ].filter(Boolean).join("\n\n");
 
   return {
-    title:             cfg["title"]     ?? "",
-    atmosfera:         atmosferaStr || atmosphere.genre,
-    protagonista:      protagonistaStr,
+    title:           cfg["title"] ?? "",
+    protagonista:    protagonistaStr,
     relator,
-    escenarios:        escenariosStr,
-    sinopsis:          sinopsisFromActos,
-    actos,
-    reglas:            reglasList,
-    storyteller_config: storytellerConfig,
-    personajes_full:    protagonists,
+    escenarios:      escenariosStr,
+    sinopsis:        sinopsisFromActos,
+    genero:          atmosphere.genre,
+    subgenero:       atmosphere.subgenre,
+    tono:            atmosphere.tone,
+    reglas:          reglasList,
+    narrator_config: narratorConfig,
+    personajes_full: protagonists,
   };
 }

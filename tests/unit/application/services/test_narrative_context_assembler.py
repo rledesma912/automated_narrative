@@ -112,16 +112,36 @@ class TestNarrativeContextAssemblerSnapshot:
         result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
         assert "MEMORIA DEL ACTO ANTERIOR" not in result
 
+    def test_con_journal_incluye_unresolved_mysteries(self, assembler, repo):
+        beat = _beat(2)
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="Algo se movió en el granero.",
+            physical_emotional_state="Tranquilos",
+        )
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
+        assert "Misterios sin resolver: Algo se movió en el granero." in result
+
+    def test_unresolved_mysteries_vacio_no_agrega_linea(self, assembler, repo):
+        beat = _beat(2)
+        journal = NarrativeJournal(
+            last_events="La familia llegó a la fiesta.",
+            unresolved_mysteries="",
+            physical_emotional_state="Tranquilos",
+        )
+        result = assembler.assemble(beat, _beat_anchors(2, repo), previous_journal=journal)
+        assert "Misterios sin resolver" not in result
+
 
 class TestNarrativeContextAssemblerReglas:
     def test_reglas_activas_se_incluyen(self, assembler, repo):
         beat = _beat(1)
-        beat.active_rules = ["No cruzar el monte de noche"]
-        result = assembler.assemble(beat, _beat_anchors(1, repo))
+        result = assembler.assemble(
+            beat, _beat_anchors(1, repo), active_rules=["No cruzar el monte de noche"]
+        )
         assert "No cruzar el monte de noche" in result
 
     def test_sin_reglas_activas_no_incluye_seccion(self, assembler, repo):
         beat = _beat(1)
-        beat.active_rules = []
-        result = assembler.assemble(beat, _beat_anchors(1, repo))
+        result = assembler.assemble(beat, _beat_anchors(1, repo), active_rules=[])
         assert "REGLAS ESPECÍFICAS" not in result

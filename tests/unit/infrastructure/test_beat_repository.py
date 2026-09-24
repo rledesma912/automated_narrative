@@ -105,9 +105,9 @@ class TestSqlBeatRepository:
 
         await repo.save(beat, saved_story_id)
 
-        beat.content = "Updated content"
+        beat.generated_act = "Updated content"
         beat.status = "completed"
         result = await repo.update(beat, saved_story_id)
 
-        assert result.content == "Updated content"
+        assert result.generated_act == "Updated content"
         assert result.status == "completed"

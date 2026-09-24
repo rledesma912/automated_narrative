@@ -27,21 +27,26 @@
  *   labelIdPrefix     : prefijo de id del <h4> (solo si necesita id, ej. 'personaje-label')
  *   fieldNamePrefix   : prefijo del campo nombre ('protagonista' → busca saved['protagonista_<idx>_name'])
  *                       Si está presente, muestra "ITEM N — Nombre" en el label.
+ *   startEmpty        : true → ninguna card visible hasta "Agregar" (Spec-450: entidades opcionales)
+ *   firstSuffix       : texto tras el label de la card 1 (' — PRINCIPAL')
  *
  * Funciones inyectadas (heredadas del scope EJS de wizard.ejs):
  *   hasCardData(fields), fieldHtml(field), esc(str)
  */
 %>
-<div class="card-forge !p-6 space-y-5" id="<%= groupContainerId %>">
+<div class="card-forge !p-5 space-y-4" id="<%= groupContainerId %>">
   <div class="border-b border-forge-border pb-3">
     <h3 class="text-forge-muted-caps font-bold"><%= meta.title %></h3>
     <p class="text-sm text-forge-muted mt-1"><%= meta.subtitle %></p>
   </div>
 
+  <% const emptyStart = typeof startEmpty !== 'undefined' && startEmpty; %>
   <% indices.forEach((idx, i) => { %>
     <%
       const isFirst = i === 0;
-      const visible = isFirst || hasCardData(cards[idx]);
+      const alwaysVisible = isFirst && !emptyStart;
+      const visible = alwaysVisible || hasCardData(cards[idx]);
+      const suffix = (isFirst && typeof firstSuffix !== 'undefined') ? firstSuffix : '';
       const nameVal = (typeof fieldNamePrefix !== 'undefined' && fieldNamePrefix)
         ? (saved[fieldNamePrefix + '_' + idx + '_name'] || '')
         : '';
@@ -52,12 +57,12 @@
         <h4 class="text-forge-muted-caps font-bold"<%
           if (typeof labelIdPrefix !== 'undefined' && labelIdPrefix) { %>
             id="<%= labelIdPrefix %>-<%= idx %>"<% } %>>
-          <%= itemLabel %> <%= idx %><% if (nameVal) { %> — <%= esc(nameVal) %><% } %>
+          <%= itemLabel %> <%= idx %><%= suffix %><% if (nameVal) { %> — <%= esc(nameVal) %><% } %>
         </h4>
         <button type="button"
                 onclick="<%= deleteHandler %>('<%= idx %>')"
                 id="<%= deleteBtnIdPrefix %>-<%= idx %>"
-                class="text-forge-muted hover:text-red-400 transition-colors<%= isFirst ? ' invisible' : '' %>">
+                class="text-forge-muted hover:text-red-400 transition-colors<%= alwaysVisible ? ' invisible' : '' %>">
           <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
       </div>

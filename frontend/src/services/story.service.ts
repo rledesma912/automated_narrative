@@ -11,7 +11,6 @@ export interface Story {
   protagonista?: string;
   relator?: string;
   sinopsis?: string;
-  file_path?: string;
 }
 
 export interface Relato {
@@ -47,4 +46,30 @@ export const getRelatosForStory = async (storyId: string): Promise<Relato[]> => 
     console.error(`Error fetching narratives for story ${storyId}:`, error);
     return [];
   }
+};
+
+/** Resultado de lanzar la regeneración de un acto (Spec-460 S7: es un job). */
+export interface ActoRegenerationStart {
+  status: number; // 202 lanzado · 409 ya hay un job · 404/422 inválido
+  jobId: string | null;
+  detail: string | null;
+}
+
+/** Lanza la re-narración de la Voz de un acto como job y responde al instante. */
+export const startActoRegeneration = async (
+  storyId: string,
+  narrativeId: string,
+  actoNumero: number
+): Promise<ActoRegenerationStart> => {
+  const response = await axios.post(
+    `${CORE_API_URL}/api/v1/stories/${storyId}/jobs`,
+    { kind: "regenerate_voz", beat: actoNumero, narrative_id: narrativeId },
+    { timeout: 5000, validateStatus: (s) => [202, 404, 409, 422].includes(s) }
+  );
+  const detail = response.data?.detail;
+  return {
+    status: response.status,
+    jobId: response.data?.job_id ?? null,
+    detail: typeof detail === "string" ? detail : null,
+  };
 };

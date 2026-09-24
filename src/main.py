@@ -6,20 +6,27 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.infrastructure.database.connection import init_db
+from src.infrastructure.database.repositories.job_repository import SQLJobRepository
 from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
 from src.presentation.routers import (
     beat_router,
+    catalog_router,
+    events_router,
+    job_router,
     narrative_router,
     story_router,
     stream_router,
 )
+from src.presentation.runtime import job_manager
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     await init_db()
     await SQLStoryRepository().recover_processing_stories()
+    await SQLJobRepository().recover_interrupted()
     yield
+    await job_manager.shutdown()
 
 
 app = FastAPI(
@@ -41,6 +48,9 @@ app.include_router(story_router, prefix="/api/v1")
 app.include_router(beat_router, prefix="/api/v1")
 app.include_router(narrative_router, prefix="/api/v1")
 app.include_router(stream_router, prefix="/api/v1")
+app.include_router(job_router, prefix="/api/v1")
+app.include_router(events_router, prefix="/api/v1")
+app.include_router(catalog_router, prefix="/api/v1")
 
 
 @app.get("/")

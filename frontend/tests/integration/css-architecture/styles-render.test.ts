@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import express, { Express } from 'express';
 import type { Server } from 'http';
+import type { AddressInfo } from 'net';
 import path from 'path';
 
 /**
@@ -18,7 +19,7 @@ import path from 'path';
 describe('CSS Architecture — Layout Rendering', () => {
   let app: Express;
   let server: Server;
-  const baseUrl = 'http://localhost:3010';
+  let baseUrl = '';
 
   const layoutLocals = {
     title: 'Test Page',
@@ -48,9 +49,11 @@ describe('CSS Architecture — Layout Rendering', () => {
       res.render('partials/layout', layoutLocals);
     });
 
+    // Puerto 0 → el SO asigna uno libre (no choca con `make ui` en 3010).
     await new Promise<void>((resolve) => {
-      server = app.listen(3010, resolve);
+      server = app.listen(0, '127.0.0.1', resolve);
     });
+    baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
 
   afterAll(async () => {
@@ -77,7 +80,7 @@ describe('CSS Architecture — Layout Rendering', () => {
 
   it('layout.ejs incluye link a /styles.css', async () => {
     const html = await fetchHomeHtml();
-    expect(html).toContain('href="/styles.css"');
+    expect(html).toMatch(/href="\/styles\.css(\?v=[^"]*)?"/); // versionado: ?v=<assetVersion>
   });
 
   it('layout.ejs ya no incluye CDN fallback de Tailwind (Arquitectura Offline-First)', async () => {

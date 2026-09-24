@@ -10,13 +10,13 @@ class PersonaService:
     Convierte la identidad del narrador en instrucciones gramaticales.
 
     Prioridad:
-    1. storyteller_config['voice']['person']
-    2. storyteller_config['gender']
+    1. narrator_config['voice']['person']
+    2. narrator_config['gender']
     3. Mapeo directo de palabras clave en 'relator'
     """
 
-    def resolve(self, relator: str, storyteller_config: dict | None = None) -> str:
-        config = storyteller_config or {}
+    def resolve(self, relator: str, narrator_config: dict | None = None) -> str:
+        config = narrator_config or {}
         voice = config.get("voice", {})
 
         # 1. Configuración explícita de Voz

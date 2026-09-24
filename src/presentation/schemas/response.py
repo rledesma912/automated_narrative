@@ -12,13 +12,17 @@ class StoryResponse(BaseModel):
     title: str
     status: str
     created_at: datetime
-    atmosfera: str | None = None
+    genero: str | None = None
+    subgenero: str | None = None
+    tono: str | None = None
     protagonista: str | None = None
     relator: str | None = None
     sinopsis: str | None = None
+    narrator_config: dict | None = None
+    # Spec-440 §8: vista de autoría completa (atmósfera, escenarios, reglas, actos,
+    # narrador) para rehidratar el wizard al editar. Solo en GET /stories/{id}.
     storyteller_config: dict | None = None
     personajes_full: list | None = None
-    file_path: str | None = None
 
     class Config:
         from_attributes = True
@@ -45,3 +49,17 @@ class GeneratedNarrativeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class JobResponse(BaseModel):
+    """Estado de un job de generación (Spec-460)."""
+
+    job_id: str
+    story_id: str
+    kind: str
+    status: str
+    stage: str | None = None
+    beat: int | None = None
+    total_beats: int | None = None
+    error: str | None = None
+    narrative_id: str | None = None

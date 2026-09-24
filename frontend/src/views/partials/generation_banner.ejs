@@ -1,0 +1,58 @@
+<%/*
+ * Banda de generación (Spec-460 S5). Arranca oculta; la completa
+ * /js/generation-banner.js con los eventos del canal global (/js/event-bus.js).
+ * Estados: running · done · failed. Los links se arman solo cuando hay un job
+ * (nunca href="#").
+ */%>
+<div id="generation-banner" class="generation-banner hidden" role="status" aria-live="polite">
+
+  <%/* ── Generando ─────────────────────────────────────────────── */%>
+  <div data-banner-state="running" class="hidden px-12 py-3 flex items-center gap-4">
+    <span class="generation-banner__pulse" aria-hidden="true"></span>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm text-forge-text truncate">
+        <span class="text-xs uppercase tracking-widest text-forge-muted mr-2">Generando</span>
+        <span class="font-serif" data-banner-title></span>
+        <span class="text-xs text-forge-muted ml-2" data-banner-more></span>
+      </p>
+      <p class="text-xs text-forge-muted mt-0.5" data-banner-step></p>
+      <div class="generation-banner__bar">
+        <div class="generation-banner__progress" data-banner-progress style="width: 0%"></div>
+      </div>
+    </div>
+    <a data-banner-link hx-boost="false" class="btn-forge-outline-sm shrink-0">
+      <i data-lucide="eye" class="w-4 h-4"></i> Ver progreso
+    </a>
+  </div>
+
+  <%/* ── Terminó ───────────────────────────────────────────────── */%>
+  <div data-banner-state="done" class="hidden px-12 py-3 flex items-center gap-4">
+    <i data-lucide="check-circle" class="w-5 h-5 text-forge-accent shrink-0"></i>
+    <p class="flex-1 min-w-0 text-sm text-forge-text truncate">
+      <span class="font-serif" data-banner-title></span> está lista
+    </p>
+    <a data-banner-link hx-boost="false" class="btn-forge-outline-sm shrink-0">
+      <i data-lucide="book-open" class="w-4 h-4"></i> Leer relato
+    </a>
+    <button type="button" data-banner-close aria-label="Cerrar aviso"
+            class="text-forge-muted hover:text-forge-text shrink-0">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <%/* ── Falló ─────────────────────────────────────────────────── */%>
+  <div data-banner-state="failed" class="hidden px-12 py-3 flex items-center gap-4">
+    <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 shrink-0"></i>
+    <p class="flex-1 min-w-0 text-sm text-forge-text truncate">
+      Falló la generación de <span class="font-serif" data-banner-title></span>
+      <span class="text-xs text-forge-muted ml-2" data-banner-error></span>
+    </p>
+    <a data-banner-link hx-boost="false" class="btn-forge-outline-sm shrink-0">
+      <i data-lucide="file-search" class="w-4 h-4"></i> Ver detalle
+    </a>
+    <button type="button" data-banner-close aria-label="Cerrar aviso"
+            class="text-forge-muted hover:text-forge-text shrink-0">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+</div>

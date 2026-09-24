@@ -2,10 +2,11 @@
  * Wizard Client (extraído de wizard.ejs siguiendo el patrón de Spec-318 §9.C).
  *
  * Maneja:
- *  - Storyteller labels: refleja nombres de personajes en el <select> storyteller_id.
+ *  - Narrador (Spec-440 §5): el <select> storyteller_id lista solo personajes con nombre.
  *  - Modal de eliminación con confirmación (closeDeleteModal global).
  *  - Listas dinámicas: addPersonaje/addScenario/addRule + askDelete* para cada uno.
  *  - Auto-save por campo (Spec-220): PATCH a /generar/paso/<step>/guardar en blur/change.
+ *  - Combos Género → Subgénero desde el catálogo embebido (Spec-440 §2).
  *
  * Lee `window.STEP_NUM` (inyectado por un <script> inline previo en wizard.ejs).
  *
@@ -17,24 +18,6 @@
   "use strict";
 
   const STEP_NUM = window.STEP_NUM;
-
-  // ── Storyteller: actualizar labels con nombres escritos ──────────────────
-  function updateStoryteller() {
-    var sel = document.querySelector('[name="storyteller_id"]');
-    if (!sel) return;
-    [1, 2, 3, 4, 5].forEach(function (n) {
-      var nameInput = document.querySelector('[name="protagonista_' + n + '_name"]');
-      var opt = sel.querySelector('option[value="protagonista_' + n + '"]');
-      if (opt && nameInput) {
-        var name = nameInput.value.trim();
-        opt.textContent = name || "Personaje " + n + " (sin nombre)";
-      }
-    });
-  }
-  document.querySelectorAll('[name$="_name"]').forEach(function (el) {
-    el.addEventListener("input", updateStoryteller);
-  });
-  updateStoryteller();
 
   // ── Modal de eliminación ─────────────────────────────────────────────────
   var pendingDelete = null;
@@ -91,6 +74,7 @@
         break;
       }
     }
+    updateStoryteller();
 
     var newVisible = getVisiblePersonajes();
     if (newVisible.length >= MAX_PROTAGONISTAS) {
@@ -125,6 +109,54 @@
       updateStoryteller();
     });
   };
+
+  // ── Narrador: solo personajes visibles y con nombre (Spec-440 §5) ────────
+  // Mismo criterio que el render del servidor (wizard.ejs). Si el elegido deja
+  // de existir → "Seleccioná..."; con un único personaje se preselecciona.
+  // Cada cambio de valor se guarda en sesión.
+  function namedPersonajes() {
+    return getVisiblePersonajes()
+      .map(function (i) {
+        var input = document.querySelector('[name="protagonista_' + i + '_name"]');
+        return { value: "protagonista_" + i, label: input ? input.value.trim() : "" };
+      })
+      .filter(function (c) {
+        return c.label !== "";
+      });
+  }
+
+  function updateStoryteller() {
+    var sel = document.querySelector("select[data-characters-field]");
+    if (!sel) return;
+    var chars = namedPersonajes();
+    var current = sel.value;
+
+    sel.innerHTML = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.textContent = chars.length ? "Seleccioná..." : "Primero nombrá un personaje";
+    sel.appendChild(placeholder);
+    chars.forEach(function (c) {
+      var opt = document.createElement("option");
+      opt.value = c.value;
+      opt.textContent = c.label;
+      sel.appendChild(opt);
+    });
+
+    var keep = chars.some(function (c) {
+      return c.value === current;
+    });
+    var next = keep ? current : chars.length === 1 ? chars[0].value : "";
+    sel.value = next;
+    if (!next) placeholder.selected = true;
+    sel.disabled = chars.length === 0;
+    if (next !== current) autoSaveField(sel.name, next, "select");
+  }
+
+  document.querySelectorAll('[name^="protagonista_"][name$="_name"]').forEach(function (el) {
+    el.addEventListener("input", updateStoryteller);
+  });
 
   // ── Listas dinámicas: Escenarios ─────────────────────────────────────────
   var MAX_ESCENARIOS = 4;
@@ -252,6 +284,69 @@
     });
   };
 
+  // ── Listas dinámicas genéricas ───────────────────────────────────────────
+  // Mismo comportamiento que personajes/escenarios/reglas, parametrizado.
+  function cardList(opts) {
+    function card(i) {
+      return document.getElementById(opts.cardPrefix + i);
+    }
+    function visibleCount() {
+      var n = 0;
+      for (var i = 1; i <= opts.max; i++) if (card(i) && !card(i).classList.contains("hidden")) n++;
+      return n;
+    }
+    function toggleMax() {
+      var msg = document.getElementById(opts.msgMaxId);
+      if (msg) msg.classList.toggle("hidden", visibleCount() < opts.max);
+    }
+    return {
+      add: function () {
+        for (var i = 1; i <= opts.max; i++) {
+          if (card(i) && card(i).classList.contains("hidden")) {
+            card(i).classList.remove("hidden");
+            var delBtn = document.getElementById(opts.deleteBtnPrefix + i);
+            if (delBtn) delBtn.classList.remove("invisible");
+            if (typeof lucide !== "undefined") lucide.createIcons();
+            break;
+          }
+        }
+        toggleMax();
+      },
+      askDelete: function (idx) {
+        var label = opts.describe(idx);
+        openDeleteModal("Se borrará " + label + " definitivamente.", function () {
+          if (!card(idx)) return;
+          card(idx).querySelectorAll("input, textarea, select").forEach(function (el) {
+            if (el.type === "checkbox" || el.type === "radio") {
+              el.checked = false;
+              el.dispatchEvent(new Event("change"));
+            } else {
+              el.value = "";
+              el.dispatchEvent(new Event("blur"));
+            }
+          });
+          card(idx).classList.add("hidden");
+          toggleMax();
+        });
+      },
+    };
+  }
+
+  // ── Listas dinámicas: Entidades (Spec-450 §4) ────────────────────────────
+  var entidades = cardList({
+    max: 3,
+    cardPrefix: "entity-card-",
+    deleteBtnPrefix: "entity-delete-btn-",
+    msgMaxId: "msg-max-entidades",
+    describe: function (idx) {
+      var nameInput = document.querySelector('[name="entity_' + idx + '_name"]');
+      var name = nameInput ? nameInput.value.trim() : "";
+      return name ? '"' + name + '"' : "la Entidad " + idx;
+    },
+  });
+  window.addEntidad = entidades.add;
+  window.askDeleteEntidad = entidades.askDelete;
+
   // Render lucide icons iniciales
   if (typeof lucide !== "undefined") lucide.createIcons();
 
@@ -292,6 +387,59 @@
       autoSaveField(name, el.value, el.type);
     }
   }
+
+  // ── Género → Subgénero (Spec-440 §2) ─────────────────────────────────────
+  // Al cambiar el género se repuebla el subgénero con los suyos; si el valor
+  // actual no pertenece al nuevo género, vuelve a "Seleccioná..." y se guardan
+  // ambos campos en sesión.
+  var catalogEl = document.getElementById("genre-catalog");
+  var genreCatalog = [];
+  try {
+    genreCatalog = catalogEl ? JSON.parse(catalogEl.textContent || "[]") : [];
+  } catch (e) {
+    genreCatalog = [];
+  }
+
+  function fillSubgenres(sub, genreId) {
+    var genre = genreCatalog.find(function (g) {
+      return g.id === genreId;
+    });
+    var subgenres = genre ? genre.subgenres : [];
+    var current = sub.value;
+    var keep = subgenres.some(function (s) {
+      return s.id === current;
+    });
+    sub.innerHTML = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.textContent = genre ? "Seleccioná..." : "Elegí primero el tipo de horror";
+    sub.appendChild(placeholder);
+    subgenres.forEach(function (s) {
+      var opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.label;
+      sub.appendChild(opt);
+    });
+    sub.disabled = subgenres.length === 0;
+    sub.value = keep ? current : "";
+    if (!keep) placeholder.selected = true;
+    return keep;
+  }
+
+  document.querySelectorAll("select[data-depends-on]").forEach(function (sub) {
+    var parent = document.querySelector('[name="' + sub.dataset.dependsOn + '"]');
+    if (!parent) return;
+    parent.addEventListener("change", function () {
+      autoSaveField(parent.name, parent.value, "select");
+      if (!fillSubgenres(sub, parent.value)) autoSaveField(sub.name, "", "select");
+    });
+    sub.addEventListener("change", function () {
+      autoSaveField(sub.name, sub.value, "select");
+    });
+  });
+
+  updateStoryteller();
 
   if (formEl) {
     formEl.querySelectorAll("input, textarea, select").forEach(function (el) {

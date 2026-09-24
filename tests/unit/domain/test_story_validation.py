@@ -25,17 +25,16 @@ class TestStoryValidation:
 
     def test_rechaza_sinopsis_vacia(self):
         with pytest.raises(ValidationError) as exc:
-            Story(title="t", protagonista="p", relator="r", sinopsis="", atmosfera="a")
+            Story(title="t", protagonista="p", relator="r", sinopsis="", genero="a")
         assert "sinopsis" in str(exc.value)
 
-    def test_rechaza_atmosfera_vacia(self):
-        with pytest.raises(ValidationError) as exc:
-            Story(title="t", protagonista="p", relator="r", sinopsis="s", atmosfera="")
-        assert "atmosfera" in str(exc.value)
+    def test_acepta_genero_vacio(self):
+        story = Story(title="t", protagonista="p", relator="r", sinopsis="s", genero="")
+        assert story.genero == ""
 
     def test_rechaza_solo_espacios(self):
         with pytest.raises(ValidationError) as exc:
-            Story(title="   ", protagonista="p", relator="r", sinopsis="s", atmosfera="a")
+            Story(title="   ", protagonista="p", relator="r", sinopsis="s", genero="a")
         assert "title" in str(exc.value)
 
     def test_acepta_campos_validos(self):
@@ -44,24 +43,24 @@ class TestStoryValidation:
             protagonista="Protagonista",
             relator="tercera_persona",
             sinopsis="Sinopsis",
-            atmosfera="terror",
+            genero="terror",
         )
         assert story.title == "Test"
 
     def test_normaliza_espacios(self):
-        story = Story(title="  Test  ", protagonista="p", relator="r", sinopsis="s", atmosfera="a")
+        story = Story(title="  Test  ", protagonista="p", relator="r", sinopsis="s", genero="a")
         assert story.title == "Test"
 
 
 class TestStoryCreateDTOValidation:
     def test_rechaza_titulo_vacio(self):
         with pytest.raises(ValidationError) as exc:
-            StoryCreateDTO(title="", protagonista="p", relator="r", sinopsis="s", atmosfera="a")
+            StoryCreateDTO(title="", protagonista="p", relator="r", sinopsis="s", genero="a")
         assert "title" in str(exc.value)
 
     def test_rechaza_sinopsis_vacia(self):
         with pytest.raises(ValidationError) as exc:
-            StoryCreateDTO(title="t", protagonista="p", relator="r", sinopsis="", atmosfera="a")
+            StoryCreateDTO(title="t", protagonista="p", relator="r", sinopsis="", genero="a")
         assert "sinopsis" in str(exc.value)
 
     def test_acepta_campos_validos(self):
@@ -70,12 +69,12 @@ class TestStoryCreateDTOValidation:
             protagonista="Protagonista",
             relator="tercera_persona",
             sinopsis="Sinopsis",
-            atmosfera="terror",
+            genero="terror",
         )
         assert dto.title == "Test"
 
     def test_normaliza_espacios(self):
         dto = StoryCreateDTO(
-            title="  Test  ", protagonista="p", relator="r", sinopsis="s", atmosfera="a"
+            title="  Test  ", protagonista="p", relator="r", sinopsis="s", genero="a"
         )
         assert dto.title == "Test"

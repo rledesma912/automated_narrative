@@ -13,9 +13,12 @@ class TemplateInput:
     title: str
     protagonista: str
     relator: str
-    atmosfera: str
-    escenarios: str
-    sinopsis: str
+    genero: str = ""
+    subgenero: str = ""
+    tono: str = ""
+    atmosfera: str = ""
+    escenarios: str = ""
+    sinopsis: str = ""
     reglas: list[str] | None = None
 
 
@@ -38,19 +41,32 @@ class TemplateMapper:
             ):
                 scenarios.append(Scenario(story_id=story_id, order_index=i, name=name))
 
+        genero, subgenero, tono = self._parse_atmosfera(input_data)
+
         return Story(
             id=story_id,
             title=input_data.title,
             protagonista=input_data.protagonista,
             relator=self._map_relator(input_data.relator),
             sinopsis=input_data.sinopsis,
-            atmosfera=input_data.atmosfera,
+            genero=genero,
+            subgenero=subgenero,
+            tono=tono,
             reglas=input_data.reglas or [],
             scenarios=scenarios,
-            protagonist=input_data.protagonista,
-            atmosphere=input_data.atmosfera,
-            synopsis=input_data.sinopsis,
         )
+
+    def _parse_atmosfera(self, input_data: TemplateInput) -> tuple[str, str, str]:
+        """Parsea atmosfera legacy o usa los nuevos campos."""
+        if input_data.genero:
+            return input_data.genero, input_data.subgenero, input_data.tono
+        if input_data.atmosfera:
+            parts = input_data.atmosfera.split(" - ")
+            genero = parts[0] if parts else ""
+            subgenero = ""
+            tono = parts[1] if len(parts) > 1 else ""
+            return genero, subgenero, tono
+        return "", "", ""
 
     def _map_relator(self, relator: str) -> str:
         """Mapea relator español a inglés."""

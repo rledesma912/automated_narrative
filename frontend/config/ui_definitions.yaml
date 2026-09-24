@@ -16,36 +16,25 @@ steps:
         subtitle: "El género principal de la historia"
         required: true
         group: "atmosphere"
-        options:
-          - "terror_psicologico: Terror Psicológico"
-          - "horror_cosmico: Horror Cósmico (Lovecraftiano)"
-          - "terror_gotico: Terror Gótico"
-          - "body_horror: Horror Corporal (Body Horror)"
-          - "paranormal: Fenómenos Paranormales"
-          - "folk_horror: Terror Rural (Leyendas de campo)"
-          - "suspenso: Suspenso / Thriller"
-          - "terror_supervivencia: Terror de Supervivencia"
+        # Spec-440 §2: opciones del catálogo del Core (GET /api/v1/catalog/genres).
+        source: genre_catalog
+        width: half
 
       - name: atmosphere_subgenre
         type: select
         label: "Qué estilo de horror"
         subtitle: "El subgénero o estilo específico"
         group: "atmosphere"
-        options:
-          - "rural: Leyendas del campo"
-          - "gotico: Gótico (Atmósfera lúgubre)"
-          - "leyenda_urbana: Leyendas urbanas"
-          - "historico: Época pasada / Histórico"
-          - "scifi: Ciencia Ficción / Futurista"
-          - "psicologico: Psicológico / Interior"
-          - "sobrenatural: Sobrenatural"
-          - "otro: Otro estilo"
+        # Solo los subgéneros del género elegido.
+        source: genre_catalog
+        depends_on: atmosfera
+        width: half
 
       - name: atmosphere_tone
         type: radio
-        label: "Cómo evolve la tensión"
+        label: "Cómo evoluciona la tensión"
         subtitle: "El tono narrativo de la historia"
-        hint: "Cómo evolve la tensión a lo largo de toda la historia"
+        hint: "Cómo evoluciona la tensión a lo largo de toda la historia"
         group: "atmosphere"
         options:
           - "creciente: Creciente y opresivo"
@@ -80,7 +69,8 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
+        # Spec-440 §3: lista única; el resto de los personajes la reusa (*character_traits).
+        options: &character_traits
           - "inseguro: Inseguro"
           - "ansioso: Ansioso"
           - "observador: Observador"
@@ -91,10 +81,14 @@ steps:
           - "disciplinado: Disciplinado"
           - "sociable: Sociable"
           - "audaz: Audaz / Valiente"
+          - "miedoso: Miedoso / Temeroso"
           - "cooperativo: Cooperativo"
           - "reservado: Reservado"
           - "protector: Protector"
           - "terco: Obstinado / Terco"
+          - "curioso: Curioso"
+          - "impulsivo: Impulsivo"
+          - "desconfiado: Desconfiado"
 
       - name: protagonista_2_name
         type: text
@@ -116,21 +110,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: protagonista_3_name
         type: text
@@ -152,21 +132,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: protagonista_4_name
         type: text
@@ -186,21 +152,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: protagonista_5_name
         type: text
@@ -220,21 +172,7 @@ steps:
         subtitle: "Traits de personalidad"
         hint: "Elegí 2-3 que definan mejor al personaje"
         group: "elenco"
-        options:
-          - "inseguro: Inseguro"
-          - "ansioso: Ansioso"
-          - "observador: Observador"
-          - "imaginativo: Imaginativo"
-          - "escéptico: Escéptico (No cree en nada)"
-          - "tradicional: Tradicional"
-          - "pragmático: Pragmático"
-          - "disciplinado: Disciplinado"
-          - "sociable: Sociable"
-          - "audaz: Audaz / Valiente"
-          - "cooperativo: Cooperativo"
-          - "reservado: Reservado"
-          - "protector: Protector"
-          - "terco: Obstinado / Terco"
+        options: *character_traits
 
       - name: storyteller_id
         type: select
@@ -243,12 +181,8 @@ steps:
         note: "Elegí uno de los personajes que definiste arriba"
         group: "narrador"
         required: true
-        options:
-          - protagonista_1
-          - protagonista_2
-          - protagonista_3
-          - protagonista_4
-          - protagonista_5
+        # Spec-440 §5: opciones = personajes con nombre del mismo paso.
+        source: characters
 
       - name: voice_style
         type: radio
@@ -398,7 +332,7 @@ steps:
         type: multi-select
         label: "Presta atención a"
         subtitle: "A qué le dedica energía mental"
-        hint: "En qué se fixa el narrador (busca pistas visuales/auditvas)"
+        hint: "En qué se fija el narrador (busca pistas visuales/auditivas)"
         group: "sesgos"
         options:
           - "sonidos: Sonidos y ruidos"
@@ -482,12 +416,12 @@ steps:
         type: select
         label: "Tipo de regla 1"
         group: "reglas"
-        options:
+        # Tipos de RuleType (Spec-440 §9). Lista única, el resto la referencia.
+        options: &rule_types
           - "entorno: Del lugar"
           - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+          - "fenomeno: Sobrenatural"
+          - "indicador: Señal o indicio"
 
       - name: rule_2_text
         type: textarea
@@ -500,12 +434,7 @@ steps:
         type: select
         label: "Tipo de regla 2"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_3_text
         type: textarea
@@ -518,12 +447,7 @@ steps:
         type: select
         label: "Tipo de regla 3"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_4_text
         type: textarea
@@ -536,12 +460,7 @@ steps:
         type: select
         label: "Tipo de regla 4"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_5_text
         type: textarea
@@ -554,12 +473,7 @@ steps:
         type: select
         label: "Tipo de regla 5"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_6_text
         type: textarea
@@ -572,12 +486,7 @@ steps:
         type: select
         label: "Tipo de regla 6"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
 
       - name: rule_7_text
         type: textarea
@@ -590,12 +499,151 @@ steps:
         type: select
         label: "Tipo de regla 7"
         group: "reglas"
-        options:
-          - "entorno: Del lugar"
-          - "psicologica: De la mente"
-          - "paranormal: Sobrenatural"
-          - "evento: De un evento"
-          - "social: Social"
+        options: *rule_types
+
+      # Spec-450 §4: la amenaza. Card list opcional (arranca vacía, máx. 3); la
+      # primera es la principal. Topes de largo = los del dominio (Entity).
+      - name: entity_1_name
+        type: text
+        label: "Entidad 1 - Nombre"
+        subtitle: "Cómo se la conoce (puede no tener nombre)"
+        placeholder: "Ej: La Mala Hora"
+        maxlength: 60
+        group: "amenaza"
+
+      - name: entity_1_nature
+        type: select
+        label: "Entidad 1 - Qué es"
+        subtitle: "Su naturaleza (según el tipo de horror del paso 1)"
+        group: "amenaza"
+        source: entity_natures
+
+      - name: entity_1_description
+        type: textarea
+        rows: 2
+        label: "Entidad 1 - Qué quiere"
+        subtitle: "Qué es y qué busca"
+        maxlength: 400
+        group: "amenaza"
+
+      - name: entity_1_manifestations
+        type: textarea
+        rows: 2
+        label: "Entidad 1 - Cómo se percibe"
+        subtitle: "Señales, sonidos, rastros"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_1_limits
+        type: textarea
+        rows: 2
+        label: "Entidad 1 - Sus límites"
+        subtitle: "Reglas o debilidades (ej: no cruza el agua)"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_1_reveal
+        type: radio
+        label: "Entidad 1 - Cuánto se muestra"
+        hint: "Si no elegís, se usa «Insinuada»"
+        group: "amenaza"
+        options: &reveal_levels
+          - "insinuada: Insinuada — se revela en el clímax"
+          - "nunca: Nunca se confirma del todo (el acto 5 decide)"
+          - "progresiva: Progresiva — cada vez más presente"
+          - "explicita: Explícita — presente desde el comienzo"
+
+      - name: entity_2_name
+        type: text
+        label: "Entidad 2 - Nombre"
+        subtitle: "Cómo se la conoce (puede no tener nombre)"
+        placeholder: "Ej: La Mala Hora"
+        maxlength: 60
+        group: "amenaza"
+
+      - name: entity_2_nature
+        type: select
+        label: "Entidad 2 - Qué es"
+        subtitle: "Su naturaleza (según el tipo de horror del paso 1)"
+        group: "amenaza"
+        source: entity_natures
+
+      - name: entity_2_description
+        type: textarea
+        rows: 2
+        label: "Entidad 2 - Qué quiere"
+        subtitle: "Qué es y qué busca"
+        maxlength: 400
+        group: "amenaza"
+
+      - name: entity_2_manifestations
+        type: textarea
+        rows: 2
+        label: "Entidad 2 - Cómo se percibe"
+        subtitle: "Señales, sonidos, rastros"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_2_limits
+        type: textarea
+        rows: 2
+        label: "Entidad 2 - Sus límites"
+        subtitle: "Reglas o debilidades (ej: no cruza el agua)"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_2_reveal
+        type: radio
+        label: "Entidad 2 - Cuánto se muestra"
+        hint: "Si no elegís, se usa «Insinuada»"
+        group: "amenaza"
+        options: *reveal_levels
+
+      - name: entity_3_name
+        type: text
+        label: "Entidad 3 - Nombre"
+        subtitle: "Cómo se la conoce (puede no tener nombre)"
+        placeholder: "Ej: La Mala Hora"
+        maxlength: 60
+        group: "amenaza"
+
+      - name: entity_3_nature
+        type: select
+        label: "Entidad 3 - Qué es"
+        subtitle: "Su naturaleza (según el tipo de horror del paso 1)"
+        group: "amenaza"
+        source: entity_natures
+
+      - name: entity_3_description
+        type: textarea
+        rows: 2
+        label: "Entidad 3 - Qué quiere"
+        subtitle: "Qué es y qué busca"
+        maxlength: 400
+        group: "amenaza"
+
+      - name: entity_3_manifestations
+        type: textarea
+        rows: 2
+        label: "Entidad 3 - Cómo se percibe"
+        subtitle: "Señales, sonidos, rastros"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_3_limits
+        type: textarea
+        rows: 2
+        label: "Entidad 3 - Sus límites"
+        subtitle: "Reglas o debilidades (ej: no cruza el agua)"
+        maxlength: 300
+        group: "amenaza"
+
+      - name: entity_3_reveal
+        type: radio
+        label: "Entidad 3 - Cuánto se muestra"
+        hint: "Si no elegís, se usa «Insinuada»"
+        group: "amenaza"
+        options: *reveal_levels
 
   - id: step_plot
     title: "La Trama"

@@ -46,25 +46,28 @@ describe('CSS Architecture — Cutover (Sin CDN)', () => {
   it('layout.ejs contiene link a /styles.css', () => {
     const content = fs.readFileSync(layoutPath, 'utf-8');
     
-    expect(content).toContain('href="/styles.css"');
+    expect(content).toMatch(/href="\/styles\.css(\?v=[^"]*)?"/); // versionado: ?v=<assetVersion>
     expect(content).toContain('<link rel="stylesheet"');
   });
 
-  it('layout.ejs contiene solo HTMX script (no Tailwind)', () => {
+  it('layout.ejs: en <head> el único script externo es HTMX (no Tailwind)', () => {
     const content = fs.readFileSync(layoutPath, 'utf-8');
-    
+
     // Debe tener HTMX
     expect(content).toContain('htmx.org');
-    
-    // Debe tener solo 1 <script> dentro de head (HTMX)
+
     const headMatch = content.match(/<head>[\s\S]*?<\/head>/);
     expect(headMatch).toBeDefined();
-    
+
     const head = headMatch![0];
-    const scriptCount = (head.match(/<script[^>]*src=/g) || []).length;
-    
-    // Solo HTMX script (1)
-    expect(scriptCount).toBe(1);
+    const srcs = [...head.matchAll(/<script[^>]*src="([^"]+)"/g)].map((m) => m[1]!);
+
+    // Externos: solo HTMX. El resto son scripts propios servidos desde /js/
+    // (Spec-460: canal global de eventos, banda y pie, con defer).
+    const external = srcs.filter((src) => /^https?:/.test(src));
+    expect(external).toHaveLength(1);
+    expect(external[0]).toContain('htmx.org');
+    expect(srcs.filter((src) => !/^https?:/.test(src)).every((src) => src.startsWith('/js/'))).toBe(true);
   });
 
   it('public/styles.css existe y es válido', () => {

@@ -15,13 +15,35 @@ personajes_full:
   - terco
 protagonista: 'Ramiro: Narrador y protagonista. Cabo primero [observador, disciplinado, cooperativo];
   Gringo Ledesma: Sargento de Ramiro [pragmático, terco]'
-relator: 'Primera persona en pasado. Narrador: Ramiro. Tono: intimista. Registro: formal: Educado
-  y correcto.'
+relator: 'Primera persona en pasado. Narrador: Ramiro. Tono: intimista. Registro: formal: Educado y correcto.'
 atmosfera: folk_horror (rural) - creciente
-escenarios: 'Destacamento de Cuesta del Ternero: Construcción solitaria en la ladera de la montaña,
-  hecha de piedra gris y troncos hachados.; El Destacamento (Interior): Ambiente amplio, frío
-  y espartano.; La Cocina: Punto más vulnerable con el postigo de madera.; El Baño de Concreto:
-  Refugo final con puerta de hierro.'
+escenarios: 'El Destacamento de Cuesta del Ternero (Exterior): Es una construcción solitaria en la ladera
+  de la montaña. Debe verse sólida pero olvidada, hecha de piedra gris y troncos hachados.
+
+
+  Detalle visual: El techo es de chapa acanalada oxidada.
+
+
+  El punto clave: La ventana de la cocina con el gancho de hierro oxidado que sobresale de la madera podrida
+  del marco.; El Salón Principal (Interior): Un ambiente amplio, frío y espartano. Hay una mesa de madera
+  larga, un par de bancos y una estufa a leña de hierro (tipo Salamandra) que no da abasto.
+
+
+  Detalle visual: El piso es de cemento alisado con manchas de humedad. La luz es escasa, proveniente
+  de faroles de noche o linternas, generando sombras largas que se mueven con el viento que se filtra
+  por las rendijas.; La Cocina (El lugar de la transgresión): Es el punto más vulnerable de la casa porque
+  es donde está el postigo de madera que conecta con la criatura.
+
+
+  Detalle visual: Estantes con latas de conservas viejas y una cortina de tela rústica que se mueve apenas.
+  Es un lugar que se siente "expuesto" a pesar de estar bajo techo.; El Baño de Concreto (El refugio final):
+  Un cuarto pequeño, casi como una celda. Paredes de cemento bruto, sin pintar, y una puerta de hierro
+  pesado con un pasador manual.
+
+
+  Detalle visual: La falta de ventanas lo hace claustrofóbico. Solo se ve lo que ilumina la linterna del
+  protagonista: el vapor del aliento de los soldados y la rendija inferior de la puerta por donde "acecha"
+  el olor y el sonido de la criatura.'
 sinopsis: |-
   El escenario: Destacamento de Cuesta del Ternero. Es una construcción solitaria en la ladera de la montaña. Debe verse sólida pero olvidada, hecha de piedra gris y troncos hachados.
 
@@ -53,9 +75,8 @@ sinopsis: |-
 
   La Consecuencia: Ramiro cuenta que al final regresaron a la base y redactaron un informe falso sobre un ataque de "vándalos" o animales salvajes para evitar ser enviados a psiquiatría. Ramiro concluye diciendo que nunca volvió a ese lugar y que, desde entonces, jamás rompe una regla por más rara que le parezca.
 reglas:
-- Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina.
-- Cerrar el postigo y no abrirlo por nada hasta el amanecer.
-- En caso de emergencia, refugiarse en el baño.
+- Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina. Cerrar
+  el postigo y no abrirlo por nada hasta el amanecer. En caso de emergencia, refugiarse en el baño
 storyteller_config:
   storyteller_id: P1
   storyteller_name: Ramiro
@@ -72,37 +93,49 @@ storyteller_config:
   - id: S1
     order: 1
     name: El Destacamento de Cuesta del Ternero (Exterior)
-    description: |-
-      Es una construcción solitaria en la ladera de la montaña. Debe verse sólida pero olvidada, hecha de piedra gris y troncos hachados.
+    description: 'Es una construcción solitaria en la ladera de la montaña. Debe verse sólida pero olvidada,
+      hecha de piedra gris y troncos hachados.
+
 
       Detalle visual: El techo es de chapa acanalada oxidada.
 
-      El punto clave: La ventana de la cocina con el gancho de hierro oxidado que sobresale de la madera podrida del marco.
+
+      El punto clave: La ventana de la cocina con el gancho de hierro oxidado que sobresale de la madera
+      podrida del marco.'
   - id: S2
     order: 2
     name: El Salón Principal (Interior)
-    description: |-
-      Un ambiente amplio, frío y espartano. Hay una mesa de madera larga, un par de bancos y una estufa a leña de hierro (tipo Salamandra) que no da abasto.
+    description: 'Un ambiente amplio, frío y espartano. Hay una mesa de madera larga, un par de bancos
+      y una estufa a leña de hierro (tipo Salamandra) que no da abasto.
 
-      Detalle visual: El piso es de cemento alisado con manchas de humedad. La luz es escasa, proveniente de faroles de noche o linternas, generando sombras largas que se mueven con el viento que se filtra por las rendijas.
+
+      Detalle visual: El piso es de cemento alisado con manchas de humedad. La luz es escasa, proveniente
+      de faroles de noche o linternas, generando sombras largas que se mueven con el viento que se filtra
+      por las rendijas.'
   - id: S3
     order: 3
     name: La Cocina (El lugar de la transgresión)
-    description: |-
-      Es el punto más vulnerable de la casa porque es donde está el postigo de madera que conecta con la criatura.
+    description: 'Es el punto más vulnerable de la casa porque es donde está el postigo de madera que
+      conecta con la criatura.
 
-      Detalle visual: Estantes con latas de conservas viejas y una cortina de tela rústica que se mueve apenas. Es un lugar que se siente "expuesto" a pesar de estar bajo techo.
+
+      Detalle visual: Estantes con latas de conservas viejas y una cortina de tela rústica que se mueve
+      apenas. Es un lugar que se siente "expuesto" a pesar de estar bajo techo.'
   - id: S4
     order: 4
     name: El Baño de Concreto (El refugio final)
-    description: |-
-      Un cuarto pequeño, casi como una celda. Paredes de cemento bruto, sin pintar, y una puerta de hierro pesado con un pasador manual.
+    description: 'Un cuarto pequeño, casi como una celda. Paredes de cemento bruto, sin pintar, y una
+      puerta de hierro pesado con un pasador manual.
 
-      Detalle visual: La falta de ventanas lo hace claustrofóbico. Solo se ve lo que ilumina la linterna del protagonista: el vapor del aliento de los soldados y la rendija inferior de la puerta por donde "acecha" el olor y el sonido de la criatura.
+
+      Detalle visual: La falta de ventanas lo hace claustrofóbico. Solo se ve lo que ilumina la linterna
+      del protagonista: el vapor del aliento de los soldados y la rendija inferior de la puerta por donde
+      "acecha" el olor y el sonido de la criatura.'
   rules:
   - id: R1
-    text: 'Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina.
-      Cerrar el postigo y no abrirlo por nada hasta el amanecer. En caso de emergencia, refugiarse en el baño'
+    text: Al caer el sol, colgar una ración de carne cruda en el gancho exterior de la ventana de la cocina.
+      Cerrar el postigo y no abrirlo por nada hasta el amanecer. En caso de emergencia, refugiarse en
+      el baño
     type: entorno
   actos:
     act_1:

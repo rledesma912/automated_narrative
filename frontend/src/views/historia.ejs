@@ -28,7 +28,7 @@ const personajes = story.personajes_full || [];
     <div>
       <h2 class="font-serif text-2xl text-forge-accent mb-1"><%= story.title || 'Sin título' %></h2>
       <p class="text-forge-muted text-xs uppercase tracking-widest">
-        <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+        <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' }) %>
       </p>
     </div>
     <span class="text-[10px] font-bold uppercase tracking-widest shrink-0 <%= sl.cls %>">
@@ -120,32 +120,33 @@ const personajes = story.personajes_full || [];
     </a>
 
     <%
-  const showStartButton = typeof startGeneration !== 'undefined' && startGeneration === 1;
   const btnLabel = story.status === 'failed' ? 'Reintentar' : story.status === 'completed' ? 'Regenerar' : 'Generar historia';
 %>
 
-    <% if (showStartButton) { %>
-      <div class="flex items-center gap-4 w-full">
-        <a href="/generar/stream/<%= story.id %><%= story.status === 'completed' ? '?regenerate=1' : '' %>"
-           class="btn-forge flex-1">
-          <i data-lucide="<%= story.status === 'completed' ? 'refresh-cw' : 'zap' %>" class="w-6 h-6"></i>
-          Comenzar <%= btnLabel.replace('historia', '').trim() %>
-        </a>
-      </div>
-    <% } else if (story.status !== 'processing') { %>
+    <% if (story.status === 'processing') { %>
+      <%/* Spec-460: generación en curso → sin botones de generar, con acceso a la sala. */%>
+      <button type="button" disabled aria-disabled="true" class="btn-forge-sm opacity-60 cursor-not-allowed">
+        <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+        Generando… <span class="text-xs normal-case tracking-normal" data-job-progress="<%= story.id %>"></span>
+      </button>
+      <a href="/generar/stream/<%= story.id %>" hx-boost="false" class="btn-forge-outline">
+        <i data-lucide="eye" class="w-4 h-4"></i> Ver progreso
+      </a>
+    <% } else { %>
       <a href="/generar/cargar/<%= story.id %>" class="btn-forge-outline">
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (story.status === 'completed') { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
-          <button type="submit" class="btn-forge-sm">
+          <button type="submit" class="btn-forge-sm"
+                  data-generation-trigger data-story-id="<%= story.id %>" data-busy-label="Abriendo...">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Regenerar
           </button>
         </form>
         <%/* Variante outline-accent única; YAGNI sobre crear .btn-forge-outline-accent. */%>
         <form method="POST" action="/historia/<%= story.id %>/generar-relato">
-          <button type="submit"
+          <button type="submit" data-generation-trigger data-busy-label="Generando relato..."
                   class="flex items-center gap-2 px-5 py-2 border border-forge-accent text-forge-accent text-sm
                          tracking-widest uppercase hover:opacity-80 transition-opacity">
             <i data-lucide="book-text" class="w-4 h-4"></i>
@@ -158,7 +159,8 @@ const personajes = story.personajes_full || [];
         </a>
       <% } else { %>
         <form method="POST" action="/historia/<%= story.id %>/generar">
-          <button type="submit" class="btn-forge-sm">
+          <button type="submit" class="btn-forge-sm"
+                  data-generation-trigger data-story-id="<%= story.id %>" data-busy-label="Iniciando generación...">
             <i data-lucide="zap" class="w-4 h-4"></i>
             <%= btnLabel %>
           </button>

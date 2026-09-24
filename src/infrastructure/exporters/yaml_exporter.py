@@ -3,6 +3,11 @@
 El YAML producido es input válido del comando `generate --input` (round-trip
 bidireccional) y refleja 1:1 la estructura interna de `storyteller_config`
 que `mapStoryToWizard()` consume para rehidratar el wizard del frontend.
+
+Spec-190 §T6.2: el `narrator_config` persistido ya no contiene `atmosphere`,
+`scenarios`, `rules` ni `actos` (ni `entities`, Spec-450). El exporter los
+reconstruye dentro del bloque `storyteller_config` del YAML desde las
+columnas/tablas correspondientes.
 """
 
 from __future__ import annotations
@@ -53,7 +58,7 @@ class YamlStoryExporter:
     # ── Construcción del documento ───────────────────────────────────────────
 
     def _build_document(self, story: Story) -> dict[str, Any]:
-        sc = story.storyteller_config or {}
+        sc = story.narrator_config or {}
         personajes = self._build_personajes(story)
 
         return {
@@ -82,23 +87,22 @@ class YamlStoryExporter:
         return out
 
     def _derive_escenarios_str(self, sc: dict, story: Story) -> str:
-        scenarios = sc.get("scenarios") or []
-        if scenarios:
-            parts = []
-            for s in scenarios:
-                name = s.get("name", "")
-                desc = s.get("description", "")
-                parts.append(f"{name}: {desc}" if desc else name)
-            return "; ".join(parts)
         if story.scenarios:
-            return "; ".join(s.name for s in story.scenarios)
+            parts = []
+            for s in story.scenarios:
+                parts.append(f"{s.name}: {s.description}" if s.description else s.name)
+            return "; ".join(parts)
         return ""
+
+    def authoring_config(self, story: Story) -> dict[str, Any]:
+        """`storyteller_config` completo (mismo que el YAML) para rehidratar el wizard."""
+        return self._build_storyteller_config(story.narrator_config or {}, story)
 
     def _build_storyteller_config(self, sc: dict, story: Story) -> dict[str, Any]:
         """Reconstruye el bloque canónico, completando lo que falte desde Story."""
         scenarios = self._build_scenarios(sc, story)
         rules = self._build_rules(sc, story)
-        actos = self._build_actos(sc)
+        actos = self._build_actos(sc, story)
 
         return {
             "storyteller_id": sc.get("storyteller_id") or "P1",
@@ -110,12 +114,13 @@ class YamlStoryExporter:
                 "style": sc.get("voice", {}).get("style") or sc.get("voice_style") or "intimista",
             },
             "atmosphere": {
-                "genre": sc.get("atmosphere", {}).get("genre", ""),
-                "subgenre": sc.get("atmosphere", {}).get("subgenre", ""),
-                "tone": sc.get("atmosphere", {}).get("tone", ""),
+                "genre": story.genero,
+                "subgenre": story.subgenero,
+                "tone": story.tono,
             },
             "scenarios": scenarios,
             "rules": rules,
+            "entities": self._build_entities(story),
             "actos": actos,
             "perception": {
                 "reliability": sc.get("perception", {}).get("reliability", "subjetiva"),
@@ -150,23 +155,25 @@ class YamlStoryExporter:
         }
 
     def _build_scenarios(self, sc: dict, story: Story) -> list[dict[str, Any]]:
-        rich = sc.get("scenarios") or []
-        if rich:
-            out = []
-            for idx, s in enumerate(rich, start=1):
-                out.append(
-                    {
-                        "id": s.get("id") or f"S{idx}",
-                        "order": s.get("order", idx),
-                        "name": s.get("name", ""),
-                        "description": s.get("description", ""),
-                    }
-                )
-            return out
-        # Fallback: derivar desde story.scenarios (sin description)
+        # Spec-190 §T6.2: los escenarios viven en la tabla `scenario` (con
+        # description), ya no dentro del JSON narrator_config.
         return [
-            {"id": f"S{i}", "order": i, "name": s.name, "description": ""}
+            {"id": f"S{i}", "order": i, "name": s.name, "description": s.description or ""}
             for i, s in enumerate(story.scenarios or [], start=1)
+        ]
+
+    def _build_entities(self, story: Story) -> list[dict[str, Any]]:
+        # Spec-450: viven en la tabla `entity`; la primera es la principal.
+        return [
+            {
+                "name": e.name,
+                "nature": e.nature_id,
+                "description": e.description,
+                "manifestations": e.manifestations,
+                "limits": e.limits,
+                "reveal_level": e.reveal_level.value,
+            }
+            for e in story.entities
         ]
 
     def _build_rules(self, sc: dict, story: Story) -> list[dict[str, Any]]:
@@ -201,8 +208,18 @@ class YamlStoryExporter:
             for i, txt in enumerate(story.reglas or [], start=1)
         ]
 
-    def _build_actos(self, sc: dict) -> dict[str, dict[str, Any]]:
+    def _build_actos(self, sc: dict, story: Story) -> dict[str, dict[str, Any]]:
+        """Texto de cada acto, de la fuente más fiel disponible (Spec-440 §8).
+
+        1. `narrator_config.actos` (historias viejas: el JSON aún los traía);
+        2. `macro_beat.synopsis_beat` (donde los guarda CreateStoryUseCase);
+        3. `sinopsis` partida en 5 párrafos (el wizard la arma uniendo los actos
+           con una línea en blanco; tras una generación web es la única copia).
+        """
         actos_raw = sc.get("actos") or {}
+        by_beat = {b.number: (b.synopsis_beat or "") for b in (story.beats or [])}
+        paragraphs = [p.strip() for p in (story.sinopsis or "").split("\n\n") if p.strip()]
+        from_sinopsis = paragraphs if len(paragraphs) == 5 else []
         canonical_keys = [
             ("act_1", "exposicion"),
             ("act_2", "accion_ascendente"),
@@ -211,9 +228,13 @@ class YamlStoryExporter:
             ("act_5", "desenlace"),
         ]
         out: dict[str, dict[str, Any]] = {}
-        for key, default_type in canonical_keys:
+        for number, (key, default_type) in enumerate(canonical_keys, start=1):
             block = actos_raw.get(key) or {}
             text = block.get("text", "") if isinstance(block, dict) else str(block)
+            if not text:
+                text = by_beat.get(number, "")
+            if not text and from_sinopsis:
+                text = from_sinopsis[number - 1]
             out[key] = {
                 "type": (block.get("type") if isinstance(block, dict) else None) or default_type,
                 "text": _LiteralStr(text) if text else "",

@@ -13,10 +13,21 @@ from src.application.services.prompt_strategies import (
 )
 from src.application.services.synopsis_slice_resolver import SynopsisSliceResolver
 from src.application.services.template_loader import TemplateLoader
+from src.application.services.voice_cliches import load_cliches
 from src.config import settings
-from src.domain.models import Beat, BeatStatus, MacroBeat, NarrativeAnchors, NarrativeJournal, Story
+from src.domain.models import (
+    Beat,
+    BeatStatus,
+    Entity,
+    MacroBeat,
+    NarrativeAnchors,
+    NarrativeJournal,
+    Story,
+)
 
 logger = logging.getLogger(__name__)
+
+VOICE_CRAFT_FILE = "voice_craft.md"  # Spec-470: guía de oficio compartida por compact y frontier
 
 
 class PromptBuilder:
@@ -78,7 +89,7 @@ class PromptBuilder:
         escenarios_str = self._format_escenarios(story)
 
         if template:
-            persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
+            persona = self._get_persona_gramatical(story.relator, config=story.narrator_config)
             return template.format(
                 title=story.title,
                 atmosfera=story.atmosfera,
@@ -89,12 +100,13 @@ class PromptBuilder:
                 protagonistas=story.protagonista,
                 escenarios=escenarios_str,
                 sinopsis=story.sinopsis,
+                **self._voice_extras(story),
             )
 
         raise ValueError(f"Template system no encontrado: {template_name}")
 
     def _get_persona_gramatical(self, relator: str, config: dict | None = None) -> str:
-        return self._persona.resolve(relator, storyteller_config=config)
+        return self._persona.resolve(relator, narrator_config=config)
 
     def _build_journal_context(self, journal: NarrativeJournal | None) -> str:
         """Construye el contexto del journal para el prompt."""
@@ -121,14 +133,17 @@ class PromptBuilder:
         if not previous_beats:
             return "Sin contexto anterior"
 
-        completed = [b for b in previous_beats if b.status == BeatStatus.COMPLETED and b.content]
+        completed = [
+            b for b in previous_beats if b.status == BeatStatus.COMPLETED and b.generated_act
+        ]
         if not completed:
             return "Sin contexto anterior"
 
         last_2 = completed[-2:]
         context_parts = []
         for b in last_2:
-            content = b.content[:max_chars] + "..." if len(b.content) > max_chars else b.content
+            act = b.generated_act
+            content = act[:max_chars] + "..." if len(act) > max_chars else act
             context_parts.append(content)
 
         return "\n\n".join(context_parts)
@@ -150,7 +165,7 @@ class PromptBuilder:
             previous_beats, max_chars=strategy.max_context_chars
         )
         journal_context = self._build_journal_context(journal)
-        persona = self._get_persona_gramatical(story.relator, config=story.storyteller_config)
+        persona = self._get_persona_gramatical(story.relator, config=story.narrator_config)
         reglas_str = self._format_reglas(story.reglas)
         escenarios_str = self._format_escenarios(story)
 
@@ -248,6 +263,7 @@ Extiende este momento (150-400 palabras)."""
                 protagonistas=story.protagonista,
                 escenarios=escenarios_str,
                 reglas=reglas_str,
+                **self._voice_extras(story),
             )
 
         raise ValueError(f"Template voice no encontrado: {template_name}")
@@ -275,32 +291,7 @@ Extiende este momento (150-400 palabras)."""
             escenarios=[s.name for s in story.scenarios] if story.scenarios else [],
             atmosfera=story.atmosfera,
             reglas=reglas_str,
-        )
-
-    def build_synopsis_mapper_prompt(self, story: "Story", narrative_brief: str = "") -> str:
-        """Prompt principal del SynopsisBeatMapper, selecciona variante por perfil."""
-        strategy = self._get_strategy()
-        template_file = strategy.get_template_name("synopsis_mapper")
-        template = self._load_prompt(template_file)
-        if not template:
-            logger.warning(f"[PB] {template_file} no encontrado — usando synopsis_mapper.md")
-            template = self._load_prompt("synopsis_mapper.md")
-
-        reglas_str = self._format_reglas(story.reglas)
-        escenarios_str = self._format_escenarios(story)
-        beats_spec_compact = self._format_beats_spec_compact()
-
-        return template.format(
-            title=story.title,
-            sinopsis=story.sinopsis,
-            protagonistas=story.protagonista,
-            relator=story.relator,
-            escenarios=escenarios_str,
-            atmosfera=story.atmosfera,
-            reglas=reglas_str,
-            num_beats=self.num_beats,
-            beats_spec_compact=beats_spec_compact,
-            narrative_brief=narrative_brief,
+            amenaza_section=self._amenaza_for_analyst(story),
         )
 
     def build_synopsis_mapper_one_prompt(
@@ -333,7 +324,8 @@ Extiende este momento (150-400 palabras)."""
                 "FORMATO:\nESCENARIO: [nombre]\n\nEVENTOS:\n- [evento]"
             )
 
-        beat_info = self.get_beat_info(macro_beat_id)
+        principal = story.principal_entity
+        beat_info = self.get_beat_info(macro_beat_id, principal.reveal_level if principal else None)
 
         synopsis_slice_val = synopsis_slice or story.sinopsis
         active_rules_str = "\n".join(f"- {r}" for r in active_rules) if active_rules else "Ninguna"
@@ -348,6 +340,7 @@ Extiende este momento (150-400 palabras)."""
             prev_section = (
                 f"\nMEMORIA DEL ACTO ANTERIOR:\n"
                 f"- Últimos eventos: {previous_journal.last_events}\n"
+                f"- Misterios sin resolver: {previous_journal.unresolved_mysteries}\n"
                 f"- Estado: {previous_journal.physical_emotional_state}\n"
             )
 
@@ -366,13 +359,125 @@ Extiende este momento (150-400 palabras)."""
             macro_beat_id=macro_beat_id,
             beat_name=beat_info.get("name", f"acto_{macro_beat_id}"),
             beat_intent_legacy=beat_info.get("intent", ""),
+            amenaza_section=self._amenaza_for_mapper(story, macro_beat_id),
         )
 
-    def get_beat_info(self, beat_id: int) -> dict:
-        return self._beat_repo.get_by_id(beat_id)
+    def get_beat_info(self, beat_id: int, reveal_level: str | None = None) -> dict:
+        return self._beat_repo.get_by_id(beat_id, reveal_level)
 
-    def _build_storyteller_block(self, config: dict) -> str:
-        """Formatea storyteller_config completo para el prompt (Spec-070/180)."""
+    # -- Spec-470: oficio de la Voz ----------------------------------------------
+
+    def narrator_name(self, story: "Story") -> str:
+        """Nombre de quien narra: `storyteller_name` o el personaje de `storyteller_id`."""
+        config = story.narrator_config or {}
+        if config.get("storyteller_name"):
+            return config["storyteller_name"]
+        pid = config.get("storyteller_id")
+        person = next((p for p in story.personajes_full if pid and p.get("id") == pid), None)
+        return (person or {}).get("name", "")
+
+    def _voice_extras(self, story: "Story") -> dict[str, str]:
+        """Guía de oficio + parentescos para los system prompts de la Voz (compact y frontier)."""
+        narrator = self.narrator_name(story)
+        cliches = "\n".join(f"  - «{c}»" for c in load_cliches())
+        craft = self._load_prompt(VOICE_CRAFT_FILE) or ""
+        return {
+            "guia_oficio": craft.format(
+                cliches=cliches, narrador=narrator or "el narrador"
+            ).strip(),
+            "parentescos": self._format_kinship(story, narrator),
+            # «Sos Irene…» en vez de «Sos Primera persona en pasado. Narrador: Irene…».
+            "presentacion": (
+                f"Sos {narrator} y contás en primera persona los hechos de la historia "
+                f"({story.relator})."
+                if narrator
+                else f"Sos {story.relator}, narrando en primera persona los hechos de la historia."
+            ),
+        }
+
+    @staticmethod
+    def _format_kinship(story: "Story", narrator: str) -> str:
+        """«CÓMO LLAMÁS A CADA PERSONAJE»: el rol de cada uno, leído desde quien narra.
+
+        Va pegado al elenco en el template: vacío no deja líneas en blanco; con contenido
+        arranca con una línea de separación.
+        """
+        others = [p for p in story.personajes_full if p.get("name") and p["name"] != narrator]
+        if not narrator or not others:
+            return ""
+        lines = [
+            "",
+            "",
+            f"CÓMO LLAMÁS A CADA PERSONAJE (sos {narrator}):",
+            "Cuando nombres a alguien por su parentesco, usá la relación que tiene CON VOS según "
+            f"su rol; nunca otra. Si un rol dice «Suegra de {narrator}», es tu suegra: no tu madre "
+            "ni tu abuela.",
+        ]
+        lines += [f"- {p['name']}: {p.get('role') or 'sin rol'}" for p in others]
+        return "\n".join(lines)
+
+    # -- Spec-450: entidades (la amenaza) --------------------------------------
+    # Sin entidades, cada bloque es "" y el prompt queda idéntico al de antes: los
+    # placeholders van pegados al final de una línea existente del template.
+
+    @staticmethod
+    def _entity_card(entity: "Entity", fields: tuple[str, ...] | list[str]) -> list[str]:
+        """Ficha de una entidad con solo los campos pedidos (principal marcada)."""
+        head = []
+        if "name" in fields:
+            head.append(entity.name or "(sin nombre)")
+        if "nature" in fields:
+            head.append(entity.nature_label or entity.nature_id)
+        title = " — ".join(head) if head else f"Entidad {entity.order_index + 1}"
+        if entity.order_index == 0:
+            title += " [principal]"
+        lines = [f"- {title}"]
+        for key, label in (
+            ("description", "Qué es"),
+            ("manifestations", "Cómo se percibe"),
+            ("limits", "Límites"),
+        ):
+            value = getattr(entity, key)
+            if key in fields and value:
+                lines.append(f"  {label}: {value}")
+        return lines
+
+    _FULL_CARD = ("name", "nature", "description", "manifestations", "limits")
+
+    def _amenaza_for_analyst(self, story: "Story") -> str:
+        if not story.entities:
+            return ""
+        lines = ["", "", "AMENAZA (la primera es la principal; anclá los pilares a ella):"]
+        for e in story.entities:
+            lines += self._entity_card(e, self._FULL_CARD)
+        return "\n".join(lines)
+
+    def _amenaza_for_journal(self, story: "Story") -> str:
+        if not story.entities:
+            return ""
+        lines = ["", "- Amenaza (la primera es la principal):"]
+        for e in story.entities:
+            lines += [f"  {line}" for line in self._entity_card(e, self._FULL_CARD)]
+        return "\n".join(lines)
+
+    def _amenaza_for_mapper(self, story: "Story", beat_id: int) -> str:
+        if not story.entities:
+            return ""
+        lines = [
+            "",
+            "",
+            "### AMENAZA EN ESTE ACTO",
+            "Los eventos no revelan de la entidad más de lo que indica «En este acto».",
+        ]
+        for e in story.entities:
+            lines += self._entity_card(e, self._FULL_CARD)
+            guide = self._beat_repo.exposure_for(beat_id, e.reveal_level).get("guide", "")
+            if guide:
+                lines.append(f"  En este acto: {guide}")
+        return "\n".join(lines)
+
+    def _build_narrator_block(self, config: dict) -> str:
+        """Formatea narrator_config completo para el prompt (Spec-070/180)."""
         if not config:
             return ""
         lines = ["== Perfil del Narrador =="]
@@ -458,15 +563,16 @@ Extiende este momento (150-400 palabras)."""
             return None
         rules = active_rules if active_rules is not None else story.reglas
         reglas_str = "\n".join(f"- {r}" for r in rules) if rules else "Ninguna"
-        storyteller_config_block = self._build_storyteller_block(story.storyteller_config or {})
+        narrator_config_block = self._build_narrator_block(story.narrator_config or {})
         word_limit = self._beat_repo.get_word_limit(beat_number, "entre 350 y 430 palabras")
         return system.format(
             relator=story.relator,
             atmosfera=story.atmosfera,
             protagonistas=self._format_cast(story),
             reglas=reglas_str,
-            storyteller_config_block=storyteller_config_block,
+            narrator_config_block=narrator_config_block,
             word_limit=word_limit,
+            **self._voice_extras(story),
         )
 
     def build_story_analyst_system(self, assertive: bool = False) -> str | None:
@@ -497,22 +603,36 @@ Extiende este momento (150-400 palabras)."""
         beat_anchors: dict,
         previous_journal: NarrativeJournal | None = None,
         story: "Story | None" = None,
+        active_rules: list[str] | None = None,
     ) -> str:
         """Ensambla el narrative_context pre-baked que recibe el VOZ. Determinístico."""
         cast_block = self._format_cast_for_context(story) if story else None
         return self._nc_assembler.assemble(
-            macro_beat, beat_anchors, previous_journal, cast_block=cast_block
+            macro_beat,
+            beat_anchors,
+            previous_journal,
+            cast_block=cast_block,
+            active_rules=active_rules,
+            entities=story.entities if story else None,
+            narrator=self.narrator_name(story) if story else "",
+            # Spec-450 §10: la sinopsis de cada acto, con el mismo corte que usa el Mapper.
+            act_texts=[
+                self.get_beat_sinopsis_slice(story.sinopsis, n, self.num_beats)
+                for n in range(1, self.num_beats + 1)
+            ]
+            if story and story.entities
+            else None,
         )
 
-    def build_rule_resolver_prompt(
+    def build_scenario_resolver_prompt(
         self, story: "Story", anchors: NarrativeAnchors | None = None
     ) -> str:
-        """Prompt para distribuir reglas y escenarios detallados."""
+        """Prompt para distribuir escenarios detallados a cada acto."""
         import json as _json
 
-        template = self._load_prompt("rule_resolver_compact.md")
+        template = self._load_prompt("scenario_resolver_compact.md")
         if not template:
-            return f"Distribuye estas reglas: {story.reglas}"
+            return f"Distribuye estos escenarios: {[s.name for s in story.scenarios or []]}"
 
         # Acts JSON: definición narrativa completa desde YAML (Spec-052)
         acts_data = [
@@ -527,23 +647,6 @@ Extiende este momento (150-400 palabras)."""
             for b in self._beats_spec
         ]
         acts_json = _json.dumps(acts_data, ensure_ascii=False, indent=2)
-
-        # Rules JSON: ID + tipo semántico + contenido (necesario para asignación inteligente)
-        if story.typed_rules:
-            rules_data = [
-                {
-                    "id": r.id,
-                    "type": r.type.value if r.type else "sin_tipo",
-                    "content": r.content[:100],
-                }
-                for r in story.typed_rules
-            ]
-        else:
-            rules_data = [
-                {"id": str(i + 1), "type": "sin_tipo", "content": r[:100]}
-                for i, r in enumerate(story.reglas)
-            ]
-        rules_json = _json.dumps(rules_data, ensure_ascii=False, indent=2)
 
         # Scenarios JSON: IDs cortos ("S1", "S2"…) + orden cronológico
         scenarios = story.scenarios or []
@@ -567,20 +670,19 @@ Extiende este momento (150-400 palabras)."""
 
         return template.format(
             acts_json=acts_json,
-            rules_json=rules_json,
             scenarios_json=scenarios_json,
             anchors_json=anchors_json,
         )
 
-    def build_rule_resolver_system(self) -> str | None:
-        """System prompt para el rule resolver."""
+    def build_scenario_resolver_system(self) -> str | None:
+        """System prompt para el scenario resolver."""
         strategy = self._get_strategy()
-        template_name = strategy.get_template_name("rule_resolver_system")
+        template_name = strategy.get_template_name("scenario_resolver_system")
         return self._load_prompt(template_name)
 
     def build_voz_user_prompt(self, macro_beat: MacroBeat) -> str:
         """User prompt para VOZ (nueva arquitectura): solo contiene narrative_context."""
-        nc = macro_beat.narrative_context or ""
+        nc = macro_beat.user_prompt or ""
         return f"{nc}\n\nEscribí el fragmento del relato para este acto."
 
     def build_journal_prompt(
@@ -605,6 +707,8 @@ Extiende este momento (150-400 palabras)."""
                 f"- Misterios sin resolver: {prev_unresolved}\n"
                 f"- Estado físico/emocional: {prev_state}"
             )
+            if story.entities and previous_journal.entity_state:
+                previous_state_section += f"\n- Amenaza: {previous_journal.entity_state}"
             consistency_rules = (
                 "- Mantener consistencia con el estado anterior\n"
                 "- Si no hay cambios relevantes, mantener el valor anterior"
@@ -618,8 +722,17 @@ Extiende este momento (150-400 palabras)."""
                 previous_state_section=previous_state_section,
                 beat_number=beat.number,
                 beat_summary=beat.summary,
-                beat_content=beat.content[:800] if beat.has_content() else "[Aún no generado]",
+                beat_content=beat.generated_act[:800]
+                if beat.has_content()
+                else "[Aún no generado]",
                 consistency_rules=consistency_rules,
+                amenaza_section=self._amenaza_for_journal(story),
+                entity_state_field=(
+                    ',\n  "entity_state": "Qué sabe el narrador de cada entidad y qué hizo '
+                    'en este beat (1-2 oraciones)"'
+                    if story.entities
+                    else ""
+                ),
             )
 
         raise ValueError(f"Template journal no encontrado: {settings.prompt_file_journal}")

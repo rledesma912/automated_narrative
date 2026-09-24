@@ -29,14 +29,13 @@ class TestPrepareStory:
             return_value={"hamartia": "anchor1"},
         ):
             with patch(
-                "src.application.services.rule_scenario_resolver_service.RuleScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
-                return_value={"1": {"rules": ["rule1"]}},
+                "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
+                return_value={"1": {"scenario_id": "S1"}},
             ):
-                anchors, rules, num_beats = await director.prepare_story(MagicMock())
+                anchors, distribution, num_beats = await director.prepare_story(MagicMock())
 
         assert isinstance(anchors, dict)
-        assert isinstance(rules, dict)
+        assert isinstance(distribution, dict)
         assert num_beats == 5
 
     @pytest.mark.asyncio
@@ -65,9 +64,8 @@ class TestPrepareStory:
             return_value={"anchor": "val"},
         ):
             with patch(
-                "src.application.services.rule_scenario_resolver_service.RuleScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
-                return_value={"1": {"rules": []}},
+                "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
+                return_value={"1": {"scenario_id": "S1"}},
             ) as mock_resolve:
                 director = DirectorUseCase(llm=llm, prompt_builder=pb)
                 await director.prepare_story(mock_story)
@@ -87,8 +85,7 @@ class TestPrepareStory:
             return_value={},
         ):
             with patch(
-                "src.application.services.rule_scenario_resolver_service.RuleScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
+                "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
                 return_value={},
             ):
                 director = DirectorUseCase(llm=llm, prompt_builder=pb)
@@ -112,8 +109,7 @@ class TestPrepareStory:
             return_value={},
         ):
             with patch(
-                "src.application.services.rule_scenario_resolver_service.RuleScenarioResolverService.resolve_distribution",
-                new_callable=AsyncMock,
+                "src.application.services.scenario_resolver_service.ScenarioResolverService.resolve_distribution",
                 return_value={},
             ):
                 director = DirectorUseCase(llm=llm, prompt_builder=pb)

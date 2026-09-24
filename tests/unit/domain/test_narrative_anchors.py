@@ -55,21 +55,23 @@ class TestNarrativeAnchors:
 
 
 class TestMacroBeatNewFields:
-    """A4 — MacroBeat acepta narrative_context como opcional (Spec-222: memory_snapshot eliminado)."""
+    """A4 — MacroBeat acepta user_prompt como opcional (Spec-222: memory_snapshot eliminado)."""
 
     def test_macro_beat_defaults_are_none(self):
         beat = MacroBeat(number=1, summary="Apertura del relato")
         assert beat.active_scenario_id is None
-        assert beat.narrative_context is None
+        assert beat.user_prompt is None
+        assert beat.system_prompt is None
+        assert beat.synopsis_beat is None
 
     def test_macro_beat_accepts_new_fields(self):
         beat = MacroBeat(
             number=2,
             summary="El conflicto",
             active_scenario_id="some-uuid",
-            narrative_context="ACTO: accion_ascendente\n...",
+            user_prompt="ACTO: accion_ascendente\n...",
         )
-        assert beat.narrative_context.startswith("ACTO:")
+        assert beat.user_prompt.startswith("ACTO:")
 
     def test_beat_alias_is_macro_beat(self):
         """Beat es alias de MacroBeat — compatibilidad hacia atrás."""

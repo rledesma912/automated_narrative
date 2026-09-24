@@ -1,6 +1,16 @@
 """Tests for domain models."""
 
-from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story, StoryMetadata, StoryStatus
+import pytest
+
+from src.domain.models import (
+    Beat,
+    MacroBeat,
+    NarrativeJournal,
+    RuleType,
+    Story,
+    StoryMetadata,
+    StoryStatus,
+)
 
 
 class TestStory:
@@ -13,7 +23,7 @@ class TestStory:
             protagonista="Protagonist",
             relator="tercera_persona",
             sinopsis="Synopsis",
-            atmosfera="terror",
+            genero="terror",
         )
 
         assert story.title == "Test Story"
@@ -27,7 +37,7 @@ class TestStory:
             protagonista="P",
             relator="R",
             sinopsis="S",
-            atmosfera="A",
+            genero="A",
         )
 
         assert story.beats == []
@@ -45,18 +55,18 @@ class TestBeat:
         assert beat.number == 1
         assert beat.summary == "Test beat"
         assert beat.status == "pending"
-        assert beat.content == ""
+        assert beat.generated_act == ""
 
     def test_beat_with_content(self):
         """Test beat with content."""
         beat = Beat(
             number=1,
             summary="Test summary",
-            content="Generated content",
+            generated_act="Generated content",
             status="completed",
         )
 
-        assert beat.content == "Generated content"
+        assert beat.generated_act == "Generated content"
         assert beat.status == "completed"
 
 
@@ -84,7 +94,7 @@ class TestNarrativeJournal:
 
 class TestMacroBeatBehavior:
     def test_is_narrated_true_cuando_content_y_completed(self):
-        beat = MacroBeat(number=1, summary="T", content="Prosa generada.", status="completed")
+        beat = MacroBeat(number=1, summary="T", generated_act="Prosa generada.", status="completed")
         assert beat.is_narrated() is True
 
     def test_is_narrated_false_sin_content(self):
@@ -92,7 +102,7 @@ class TestMacroBeatBehavior:
         assert beat.is_narrated() is False
 
     def test_is_narrated_false_sin_status_completed(self):
-        beat = MacroBeat(number=1, summary="T", content="Prosa", status="pending")
+        beat = MacroBeat(number=1, summary="T", generated_act="Prosa", status="pending")
         assert beat.is_narrated() is False
 
     def test_is_pending_true_por_defecto(self):
@@ -104,7 +114,7 @@ class TestMacroBeatBehavior:
         assert beat.is_pending() is False
 
     def test_has_content_true_con_texto(self):
-        beat = MacroBeat(number=1, summary="T", content="Algo")
+        beat = MacroBeat(number=1, summary="T", generated_act="Algo")
         assert beat.has_content() is True
 
     def test_has_content_false_sin_texto(self):
@@ -112,7 +122,7 @@ class TestMacroBeatBehavior:
         assert beat.has_content() is False
 
     def test_has_content_independiente_del_status(self):
-        beat = MacroBeat(number=1, summary="T", content="Algo", status="pending")
+        beat = MacroBeat(number=1, summary="T", generated_act="Algo", status="pending")
         assert beat.has_content() is True
 
 
@@ -123,7 +133,7 @@ class TestStoryBehavior:
             protagonista="P",
             relator="tercera_persona",
             sinopsis="S",
-            atmosfera="a",
+            genero="a",
             beats=beats or [],
         )
 
@@ -143,7 +153,7 @@ class TestStoryBehavior:
 
     def test_get_pending_beats_retorna_pendientes(self):
         beats = [
-            MacroBeat(number=1, summary="A", content="X", status="completed"),
+            MacroBeat(number=1, summary="A", generated_act="X", status="completed"),
             MacroBeat(number=2, summary="B"),
             MacroBeat(number=3, summary="C"),
         ]
@@ -154,8 +164,8 @@ class TestStoryBehavior:
 
     def test_get_completed_beats_retorna_narrados(self):
         beats = [
-            MacroBeat(number=1, summary="A", content="X", status="completed"),
-            MacroBeat(number=2, summary="B", content="Y", status="completed"),
+            MacroBeat(number=1, summary="A", generated_act="X", status="completed"),
+            MacroBeat(number=2, summary="B", generated_act="Y", status="completed"),
             MacroBeat(number=3, summary="C"),
         ]
         story = self._story(beats)
@@ -165,7 +175,8 @@ class TestStoryBehavior:
 
     def test_get_pending_beats_vacio_si_todos_narrados(self):
         beats = [
-            MacroBeat(number=i, summary="A", content="X", status="completed") for i in range(1, 4)
+            MacroBeat(number=i, summary="A", generated_act="X", status="completed")
+            for i in range(1, 4)
         ]
         assert self._story(beats).get_pending_beats() == []
 
@@ -201,9 +212,11 @@ class TestStoryMetadata:
             protagonista="Irene",
             relator="tercera_persona",
             sinopsis="Una historia de terror.",
-            atmosfera="oscura",
+            genero="terror",
+            subgenero="psicologico",
+            tono="oscuro",
             reglas=["Regla A"],
-            storyteller_config={"voz": "primera"},
+            narrator_config={"voz": "primera"},
         )
         defaults.update(kwargs)
         return Story(**defaults)
@@ -220,34 +233,36 @@ class TestStoryMetadata:
         m = StoryMetadata.from_story(self._story())
         assert m.sinopsis == "Una historia de terror."
 
-    def test_from_story_copia_atmosfera(self):
+    def test_from_story_copia_genero_subgenero_tono(self):
         m = StoryMetadata.from_story(self._story())
-        assert m.atmosfera == "oscura"
+        assert m.genero == "terror"
+        assert m.subgenero == "psicologico"
+        assert m.tono == "oscuro"
 
     def test_from_story_copia_reglas(self):
         m = StoryMetadata.from_story(self._story())
         assert m.reglas == ["Regla A"]
 
-    def test_from_story_copia_storyteller_config(self):
+    def test_from_story_copia_narrator_config(self):
         m = StoryMetadata.from_story(self._story())
-        assert m.storyteller_config == {"voz": "primera"}
+        assert m.narrator_config == {"voz": "primera"}
 
     def test_has_rules_true_con_reglas(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", atmosfera="a", reglas=["x"])
+        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", genero="g", reglas=["x"])
         assert m.has_rules() is True
 
-    def test_has_rules_true_con_storyteller_config(self):
+    def test_has_rules_true_con_narrator_config(self):
         m = StoryMetadata(
             protagonista="P",
             relator="r",
             sinopsis="s",
-            atmosfera="a",
-            storyteller_config={"k": "v"},
+            genero="a",
+            narrator_config={"k": "v"},
         )
         assert m.has_rules() is True
 
     def test_has_rules_false_sin_nada(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", atmosfera="a")
+        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", genero="a")
         assert m.has_rules() is False
 
 
@@ -258,7 +273,7 @@ class TestStoryAggregate:
             protagonista="P",
             relator="tercera_persona",
             sinopsis="S",
-            atmosfera="a",
+            genero="a",
             beats=beats or [],
         )
 
@@ -280,7 +295,7 @@ class TestStoryAggregate:
         assert story.has_content is False
 
     def test_has_content_true_con_beat_narrado(self):
-        story = self._story([MacroBeat(number=1, summary="T", content="Prosa")])
+        story = self._story([MacroBeat(number=1, summary="T", generated_act="Prosa")])
         assert story.has_content is True
 
     def test_get_beat_by_number_existe(self):
@@ -310,3 +325,27 @@ class TestStoryAggregate:
 
     def test_get_last_beat_none_sin_beats(self):
         assert self._story().get_last_beat() is None
+
+
+class TestRuleTypeFromRaw:
+    """Spec-440 §9: tipos del wizard viejo mapeados al dominio."""
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("entorno", RuleType.ENTORNO),
+            ("psicologica", RuleType.PSICOLOGICA),
+            ("fenomeno", RuleType.FENOMENO),
+            ("indicador", RuleType.INDICADOR),
+            ("paranormal", RuleType.FENOMENO),
+            ("social", RuleType.ENTORNO),
+            ("social: Social", RuleType.ENTORNO),
+            ("Fenomeno", RuleType.FENOMENO),
+            ("evento", None),
+            ("inventado", None),
+            ("", None),
+            (None, None),
+        ],
+    )
+    def test_mapeo(self, raw, expected):
+        assert RuleType.from_raw(raw) is expected

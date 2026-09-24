@@ -25,7 +25,7 @@ def _make_beat(number: int, content: str) -> MacroBeat:
     return MacroBeat(
         number=number,
         summary=f"summary {number}",
-        content=content,
+        generated_act=content,
         status=BeatStatus.COMPLETED,
     )
 
@@ -114,3 +114,46 @@ async def test_consolidate_and_save_creates_new_uuid_each_call(use_case):
     assert n1.id != n2.id
     assert isinstance(n1.id, uuid.UUID)
     assert use_case.narrative_repo.save.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_update_content_preserves_id_and_title(use_case):
+    """Spec-430: update_content sobrescribe content pero conserva id/título."""
+    story = _make_story([_make_beat(1, "acto uno original")])
+    existing = GeneratedNarrative(
+        story_template_id=story.id,
+        title="Mi variante",
+        content="contenido viejo",
+    )
+    use_case.narrative_repo.get_by_id = AsyncMock(return_value=existing)
+
+    story.beats = [_make_beat(1, "acto uno REGENERADO")]
+    result = await use_case.update_content(existing.id, story)
+
+    assert result.id == existing.id
+    assert result.title == "Mi variante"
+    assert "acto uno REGENERADO" in result.content
+    assert "contenido viejo" not in result.content
+
+
+@pytest.mark.asyncio
+async def test_update_content_raises_when_narrative_not_found(use_case):
+    story = _make_story([_make_beat(1, "x")])
+    use_case.narrative_repo.get_by_id = AsyncMock(return_value=None)
+
+    with pytest.raises(ValueError, match="no encontrado"):
+        await use_case.update_content(uuid.uuid4(), story)
+
+
+@pytest.mark.asyncio
+async def test_update_content_raises_when_narrative_belongs_to_other_story(use_case):
+    story = _make_story([_make_beat(1, "x")])
+    other_narrative = GeneratedNarrative(
+        story_template_id=uuid.uuid4(),
+        title="De otra historia",
+        content="x",
+    )
+    use_case.narrative_repo.get_by_id = AsyncMock(return_value=other_narrative)
+
+    with pytest.raises(ValueError, match="no pertenece"):
+        await use_case.update_content(other_narrative.id, story)

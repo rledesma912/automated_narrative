@@ -1,7 +1,7 @@
 
 PROTAGONISTAS: {protagonistas}
 ESCENARIOS: {escenarios}
-ATMÓSFERA: {atmosfera}
+ATMÓSFERA: {atmosfera}{amenaza_section}
 
 SINOPSIS:
 {sinopsis}

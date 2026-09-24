@@ -16,24 +16,6 @@ from src.config import settings
 from src.domain.models import StoryStatus
 from src.infrastructure.container import CLIContainer
 from src.infrastructure.database.connection import init_db
-from src.utils.timezone import now_argentina
-
-
-def _write_markdown(story, output_dir: Path, renderer) -> Path:
-    """Renderiza la historia a Markdown y la escribe en output_dir. Retorna la ruta."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    md_content = renderer.render(story)
-    timestamp = now_argentina().strftime("%Y%m%d%H%M")
-    safe_title = (
-        "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
-        .strip()
-        .replace(" ", "_")
-        .lower()
-    )
-    output_path = output_dir / f"{safe_title}_{timestamp}.md"
-    output_path.write_text(md_content, encoding="utf-8")
-    return output_path
 
 
 async def _init_database() -> None:
@@ -50,7 +32,7 @@ def generate(
     relator: str,
     escenarios: str,
     sinopsis: str,
-    atmosfera: str,
+    genero: str,
     use_mock: bool,
     output_dir: Path,
     input_file: str | None = None,
@@ -65,7 +47,7 @@ def generate(
             Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
     """
     reglas: list[str] = []
-    storyteller_config: dict | None = None
+    narrator_config: dict | None = None
     typed_rules: list[dict] = []
     personajes_full: list[dict] = []
 
@@ -81,14 +63,14 @@ def generate(
                 relator,
                 escenarios,
                 sinopsis,
-                atmosfera,
+                genero,
                 use_mock,
                 output_dir,
                 provider,
                 reglas,
                 debug=debug,
                 hasta=hasta,
-                storyteller_config=storyteller_config,
+                narrator_config=narrator_config,
                 typed_rules=typed_rules,
                 personajes_full=personajes_full,
                 input_file=input_file,
@@ -109,20 +91,26 @@ async def _generate_async(
     relator: str,
     escenarios: str,
     sinopsis: str,
-    atmosfera: str,
+    genero: str,
     use_mock: bool,
     output_dir: Path,
     provider: str | None = None,
     reglas: list[str] | None = None,
     debug: bool = False,
     hasta: str | None = None,
-    storyteller_config: dict | None = None,
+    narrator_config: dict | None = None,
     typed_rules: list[dict] | None = None,
     personajes_full: list[dict] | None = None,
     input_file: str | None = None,
+    subgenero: str = "",
+    tono: str = "",
+    escenarios_full: list[dict] | None = None,
 ) -> None:
     """Async implementation of generate."""
     await _init_database()
+    # Solo vienen del YAML (--input): entidades (Spec-450) y el texto de cada acto.
+    entities: list[dict] = []
+    actos: list[dict] = []
 
     if input_file:
         from src.infrastructure.loaders import YamlStoryLoader, YamlStoryLoaderError
@@ -134,12 +122,17 @@ async def _generate_async(
             protagonista = dto.protagonista
             relator = dto.relator
             escenarios = dto.escenarios
+            escenarios_full = dto.escenarios_full
             sinopsis = dto.sinopsis
-            atmosfera = dto.atmosfera
+            genero = dto.genero
+            subgenero = dto.subgenero
+            tono = dto.tono
             reglas = dto.reglas
-            storyteller_config = dto.storyteller_config
+            narrator_config = dto.narrator_config
             typed_rules = dto.typed_rules
             personajes_full = dto.personajes_full
+            entities = dto.entities
+            actos = dto.actos
         except YamlStoryLoaderError as e:
             raise ValidationError(f"Error al cargar YAML: {e}")
 
@@ -156,64 +149,23 @@ async def _generate_async(
         relator=relator,
         escenarios=escenarios,
         sinopsis=sinopsis,
-        atmosfera=atmosfera,
+        genero=genero,
+        subgenero=subgenero,
+        tono=tono,
         reglas=reglas or [],
         stop_after=hasta,
-        storyteller_config=storyteller_config,
+        narrator_config=narrator_config,
         typed_rules=typed_rules or [],
         personajes_full=personajes_full or [],
+        escenarios_full=escenarios_full or [],
+        entities=entities,
+        actos=actos,
     )
 
     await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)
 
     container.reporter.done(time.perf_counter() - t_total)
     logger.info("[COMANDOS] Historia completada")
-
-
-def plan(
-    title: str,
-    use_mock: bool,
-    output_dir: Path,
-    provider: str | None = None,
-) -> None:
-    """Generate only the story plan (beats)."""
-    logger.info(f"[COMANDOS] Iniciando generación de plan: {title}")
-
-    try:
-        import asyncio
-
-        asyncio.run(_plan_async(title, use_mock, output_dir, provider))
-    except Exception as e:
-        logger.error(f"[COMANDOS] Error al generar el plan: {e}")
-        raise GenerationError(str(e)) from e
-
-    logger.info(f"[COMANDOS] Generación de plan completada: {title}")
-
-
-async def _plan_async(
-    title: str,
-    use_mock: bool,
-    output_dir: Path,  # noqa: ARG001
-    provider: str | None = None,
-) -> None:
-    """Async implementation of plan."""
-    await _init_database()
-
-    container = CLIContainer(use_mock=use_mock, provider=provider)
-    create_story = container.create_story_use_case()
-    create_plan = container.director_use_case()
-
-    story = await create_story.execute(
-        title=title,
-        protagonista="",
-        relator="tercera_persona",
-        escenarios="",
-        sinopsis="",
-        atmosfera="",
-    )
-
-    plan_result = await create_plan.execute(story)
-    logger.info(f"[COMANDOS] Se han generado {len(plan_result.beats)} beats")
 
 
 def narrate(
@@ -346,6 +298,15 @@ def export_yaml(
         raise ExportError(str(e)) from e
 
 
+def _safe_title(title: str) -> str:
+    return (
+        "".join(c for c in title if c.isalnum() or c in (" ", "-", "_"))
+        .strip()
+        .replace(" ", "_")
+        .lower()
+    )
+
+
 async def _export_yaml_async(story_id: str, output: Path | None) -> None:
     """Async impl de export-yaml."""
     await _init_database()
@@ -358,13 +319,7 @@ async def _export_yaml_async(story_id: str, output: Path | None) -> None:
     from src.infrastructure.exporters import YamlStoryExporter
 
     if output is None:
-        safe_title = (
-            "".join(c for c in story.title if c.isalnum() or c in (" ", "-", "_"))
-            .strip()
-            .replace(" ", "_")
-            .lower()
-        )
-        output = Path(settings.input_dir) / f"{safe_title}.yaml"
+        output = Path(settings.input_dir) / f"{_safe_title(story.title)}.yaml"
 
     exporter = YamlStoryExporter()
     written = exporter.export_to_file(story, output)
@@ -372,47 +327,82 @@ async def _export_yaml_async(story_id: str, output: Path | None) -> None:
     print(f"YAML escrito en: {written}")
 
 
-def export_(
-    story_id: str,
-    format: str,
-    output_dir: Path,
-    provider: str | None = None,  # noqa: ARG001
-) -> None:
-    """Export story to file."""
-    logger.info(f"[COMANDOS] Iniciando exportación para historia: {story_id}")
-
+def export_all_yaml(output_dir: Path) -> None:
+    """Exporta todas las historias a `output_dir`, una por archivo (Spec-440 T2.4)."""
+    logger.info(f"[COMANDOS] Iniciando export-yaml --all en: {output_dir}")
     try:
         import asyncio
 
-        asyncio.run(_export_async(story_id, format, output_dir))
-    except StoryNotFoundError:
-        raise
+        asyncio.run(_export_all_yaml_async(output_dir))
     except Exception as e:
-        logger.error(f"[COMANDOS] Error en la exportación: {e}")
-        raise ExportError(str(e))
-
-    logger.info(f"[COMANDOS] Exportación completada para historia: {story_id}")
+        logger.error(f"[COMANDOS] Error en export-yaml --all: {e}")
+        raise ExportError(str(e)) from e
 
 
-async def _export_async(
-    story_id: str,
-    format: str,  # noqa: ARG001
-    _output_dir: Path,
-) -> None:
-    """Async implementation of export."""
+async def _export_all_yaml_async(output_dir: Path) -> None:
+    from src.infrastructure.exporters import YamlStoryExporter
+
     await _init_database()
-
-    try:
-        story_uuid = UUID(story_id)
-    except ValueError:
-        raise ValidationError(f"Formato de UUID inválido: {story_id}")
-
     container = CLIContainer()
+    exporter = YamlStoryExporter()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    used: set[str] = set()
+    for summary in await container.story_repo.list_all():
+        story = await container.story_repo.get_by_id(summary.id)
+        if story is None:
+            continue
+        name = _safe_title(story.title) or "historia"
+        if name in used:  # títulos repetidos: se desambigua con el id
+            name = f"{name}_{str(story.id)[:8]}"
+        used.add(name)
+        written = exporter.export_to_file(story, output_dir / f"{name}.yaml")
+        print(f"YAML escrito en: {written}")
 
-    story = await container.story_repo.get_by_id(story_uuid)
-    if not story:
-        raise StoryNotFoundError(story_id)
 
-    beats = await container.beat_repo.get_by_story(story_uuid)
-    story.beats = beats
-    logger.info("[COMANDOS] Historia exportada (sin archivo markdown)")
+def import_yaml(files: list[Path], drop_invalid_subgenre: bool = False) -> None:
+    """Crea cada historia del YAML como borrador, sin llamar al LLM (Spec-440 T2.4).
+
+    Con `drop_invalid_subgenre`, un subgénero que no corresponde a su género se
+    descarta (queda el género) con un aviso, en vez de rechazar el archivo.
+    """
+    import asyncio
+
+    failed = asyncio.run(_import_yaml_async(files, drop_invalid_subgenre))
+    if failed:
+        raise ValidationError(f"{failed} de {len(files)} archivo(s) no se importaron")
+
+
+async def _import_yaml_async(files: list[Path], drop_invalid_subgenre: bool) -> int:
+    from src.application.use_cases.create_story import CreateStoryUseCase
+    from src.domain.exceptions import InvalidStoryInputError
+    from src.infrastructure.database.repositories import SQLGenreRepository
+    from src.infrastructure.loaders import YamlStoryLoader, YamlStoryLoaderError
+
+    await _init_database()
+    genres = SQLGenreRepository()
+    use_case = CreateStoryUseCase(CLIContainer().story_repo, genres)
+    loader = YamlStoryLoader()
+    failed = 0
+    for path in files:
+        try:
+            # Relativo al cwd si existe; si no, el loader lo busca en input_dir.
+            dto = loader.load_from_file(path.resolve() if path.exists() else path)
+            if (
+                drop_invalid_subgenre
+                and dto.subgenero
+                and await genres.exists(dto.genero)
+                and not await genres.exists(dto.genero, dto.subgenero)
+            ):
+                print(
+                    f"Aviso: {path}: se descarta el subgénero '{dto.subgenero}' "
+                    f"(no corresponde a '{dto.genero}'); elegí uno válido en el wizard."
+                )
+                dto.subgenero = ""
+            story = await use_case.execute(dto, initial_status=StoryStatus.DRAFT)
+            print(f"Importada: {story.title} ({story.id})")
+        except (YamlStoryLoaderError, InvalidStoryInputError) as e:
+            failed += 1
+            message = e.message if isinstance(e, InvalidStoryInputError) else str(e)
+            logger.error(f"[COMANDOS] import-yaml {path}: {message}")
+            print(f"Error: {path}: {message}")
+    return failed

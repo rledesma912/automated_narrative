@@ -1,120 +1,41 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { WizardData } from "../services/wizard.service";
-import { mapWizardToCore } from "../services/mapper.service";
-import { createStory, checkCoreHealth } from "../services/core_api.service";
+import { getActiveJob } from "../services/core_api.service";
 import { renderPage } from "../utils/render";
-
-type WizardSession = Request["session"] & { wizard?: WizardData };
-
-export async function submitGeneration(req: Request, res: Response): Promise<void> {
-  const action = (req.body as Record<string, string>)["action"] ?? "generate";
-
-  // Solo verificar salud si vamos a generar
-  if (action === "generate") {
-    const health = await checkCoreHealth();
-    if (!health.reachable || health.status !== "healthy") {
-      res.redirect("/debug?error=backend_offline");
-      return;
-    }
-  }
-
-  const wizard = (req.session as WizardSession).wizard ?? {};
-  const coreDto = mapWizardToCore(wizard);
-
-  try {
-    const story = await createStory(
-      coreDto as unknown as Record<string, unknown>,
-      action,
-    );
-
-    if (action === "save") {
-      const isAjax = req.query["format"] === "json";
-      if (isAjax) {
-        res.json({ id: story.id });
-        return;
-      }
-      res.redirect(`/historia/${story.id}`);
-    } else {
-      res.redirect(`/generar/stream/${story.id}`);
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    res.redirect(`/generar/confirmar?error=${encodeURIComponent(msg)}`);
-  }
-}
 
 export async function streamingRoomPage(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params as { storyId: string };
   const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
-  // Spec-221: path relativo. El navegador resuelve contra el origin del HTML
-  // y Express proxia /api/* al backend. Mantiene same-origin desde cualquier host.
-  const coreStreamUrl = `/api/v1/stories/${storyId}/stream`;
 
   let story: Record<string, unknown> | null = null;
   let beats: unknown[] = [];
+  let activeJobId: string | null = null;
 
   try {
     const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
     story = resp.data as Record<string, unknown>;
-
-    if (story.status !== "processing") {
+    // Spec-460: "hay una generación en curso" lo dice el job, no story.status.
+    activeJobId = (await getActiveJob(storyId))?.job_id ?? null;
+    if (!activeJobId) {
       const beatsResp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}/beats`, { timeout: 5000 });
       beats = Array.isArray(beatsResp.data) ? beatsResp.data : [];
     }
   } catch {
-    // Story not found — SSE mode will handle connection error
+    // Historia inexistente o Core caído: la sala muestra el modo lectura vacío.
   }
 
-  const storyStatus = story ? String(story.status) : "processing";
-  const regenerateMode = req.query["regenerate"] === "1" && storyStatus === "completed";
-  // Spec-220: MODO MONITOR — generación en curso disparada por otra pestaña/cliente.
-  // No abre EventSource (Slice A); polling al status. Migrará a EventSource en T4 cuando
-  // el broadcaster del backend (T2+T3) garantice idempotencia.
-  const monitorMode = storyStatus === "processing" && !regenerateMode;
-
-  // En MODO MONITOR, los beats parciales también deben cargarse para mostrar progreso
-  // (la condición original `if (story.status !== "processing")` los omitía).
-  if (monitorMode && story) {
-    try {
-      const beatsResp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}/beats`, { timeout: 5000 });
-      beats = Array.isArray(beatsResp.data) ? beatsResp.data : [];
-    } catch {
-      // Sin beats parciales — la sala mostrará solo el spinner
-    }
-  }
+  const storyStatus = story ? String(story.status) : "draft";
+  const regenerateMode =
+    !activeJobId && req.query["regenerate"] === "1" && storyStatus === "completed";
 
   await renderPage(res, "streaming-room", {
     title: story ? String(story.title ?? "Historia") : "Generando historia...",
     activePage: "generate",
     storyId,
-    coreStreamUrl,
     story,
     beats,
     storyStatus,
     regenerateMode,
-    monitorMode,
+    activeJobId,
   });
-}
-
-export async function getActiveStreamApi(req: Request, res: Response): Promise<void> {
-  const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
-  try {
-    // Buscamos historias con estado 'processing' en la API Core
-    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories`, { timeout: 3000 });
-    const stories = resp.data as any[];
-    const activeStory = stories.find(s => s.status === "processing");
-
-    // También pedimos el último evento del sistema
-    const eventResp = await axios.get(`${CORE_API_URL}/api/v1/system/events?limit=1`, { timeout: 2000 });
-    const lastEvent = eventResp.data[0] || null;
-
-    res.json({ 
-      active: !!activeStory, 
-      story: activeStory || null,
-      lastEvent: lastEvent
-    });
-  } catch {
-    res.status(500).json({ error: "No se pudo consultar el estado de streaming" });
-  }
 }

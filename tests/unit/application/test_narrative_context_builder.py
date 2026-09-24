@@ -53,7 +53,7 @@ def _make_beat_with_nc(number: int) -> MacroBeat:
     builder = PromptBuilder()
     anchors = _beat_anchors(number)
     beat = _make_beat(number)
-    beat.narrative_context = builder.build_narrative_context(beat, anchors)
+    beat.user_prompt = builder.build_narrative_context(beat, anchors)
     return beat
 
 
@@ -155,7 +155,7 @@ class TestVozUserPrompt:
         builder = PromptBuilder()
         beat = _make_beat_with_nc(1)
         prompt = builder.build_voz_user_prompt(beat)
-        assert beat.narrative_context in prompt
+        assert beat.user_prompt in prompt
 
     def test_voz_user_prompt_does_not_contain_full_sinopsis(self):
         """B4 — el user prompt no contiene la sinopsis completa de la historia."""

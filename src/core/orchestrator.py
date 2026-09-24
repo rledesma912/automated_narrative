@@ -11,7 +11,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases import CreateStoryUseCase, DirectorUseCase
 from src.cli.logger import logger
 from src.cli.progress import SilentReporter
-from src.domain.interfaces import LLMProvider
+from src.domain.interfaces import GenreRepository, LLMProvider
 from src.domain.models import BeatStatus, Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.normalizers import ResponseNormalizer
@@ -36,6 +36,7 @@ class StoryRunner:
         reporter: "ProgressReporter | SilentReporter | None" = None,
         debug_collector: DebugCollector | None = None,
         narrative_use_case: "GenerateNarrativesUseCase | None" = None,
+        genre_repo: GenreRepository | None = None,
     ):
         self.llm = llm_adapter
         self.story_repo = story_repo
@@ -46,6 +47,7 @@ class StoryRunner:
         self.normalizer = ResponseNormalizer()
         self.debug_collector = debug_collector or NullDebugCollector()
         self.narrative_use_case = narrative_use_case
+        self.genre_repo = genre_repo
         self.last_narrative_id: str | None = None
 
     async def _narrate_beats(
@@ -86,12 +88,17 @@ class StoryRunner:
         relator: str,
         escenarios: list[str] | str,
         sinopsis: str,
-        atmosfera: str,
+        genero: str = "",
+        subgenero: str = "",
+        tono: str = "",
         reglas: list[str] | None = None,
         stop_after: str | None = None,
-        storyteller_config: dict | None = None,
+        narrator_config: dict | None = None,
         typed_rules: list[dict] | None = None,
         personajes_full: list[dict] | None = None,
+        escenarios_full: list[dict] | None = None,
+        entities: list[dict] | None = None,
+        actos: list[dict] | None = None,
     ) -> Story:
         """Flujo completo: crear story + plan + narrar todos los beats.
 
@@ -111,7 +118,7 @@ class StoryRunner:
             f"voz={cfg.role_config('voz').get('model')}"
         )
 
-        create_story = CreateStoryUseCase(self.story_repo)
+        create_story = CreateStoryUseCase(self.story_repo, self.genre_repo)
         escenarios_list = (
             escenarios
             if isinstance(escenarios, list)
@@ -122,12 +129,17 @@ class StoryRunner:
             protagonista=protagonista,
             relator=relator,
             escenarios=escenarios_list,
+            escenarios_full=escenarios_full or [],
             sinopsis=sinopsis,
-            atmosfera=atmosfera,
+            genero=genero,
+            subgenero=subgenero,
+            tono=tono,
             reglas=reglas or [],
-            storyteller_config=storyteller_config,
+            narrator_config=narrator_config,
             typed_rules=typed_rules or [],
             personajes_full=personajes_full or [],
+            entities=entities or [],
+            actos=actos or [],
         )
         story = await create_story.execute(dto)
         logger.info(f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}")
@@ -165,9 +177,6 @@ class StoryRunner:
         if stop_after is None and self.narrative_use_case is not None:
             await self._consolidate_narrative(story)
 
-        if story.narrative_brief:
-            await self.story_repo.save_narrative_brief(story.id, story.narrative_brief)
-
         if self.debug_collector.is_active():
             story_meta = {
                 "profile": cfg.active_profile_name,
@@ -176,7 +185,7 @@ class StoryRunner:
                 "title": title,
                 "protagonista": protagonista,
                 "sinopsis": sinopsis,
-                "atmosfera": atmosfera,
+                "atmosfera": story.atmosfera,
                 "relator": relator,
             }
             try:

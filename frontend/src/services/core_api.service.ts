@@ -55,14 +55,6 @@ export async function updateStory(
   return response.data;
 }
 
-export async function updateFilePath(storyId: string, filePath: string | null): Promise<void> {
-  await axios.patch(
-    `${CORE_API_URL}/api/v1/stories/${storyId}/file-path`,
-    { file_path: filePath },
-    { timeout: 5000 },
-  );
-}
-
 export interface GeneratedNarrative {
   id: string;
   story_template_id: string;
@@ -105,4 +97,47 @@ export async function deleteNarrative(narrativeId: string): Promise<void> {
     `${CORE_API_URL}/api/v1/generated-narratives/${narrativeId}`,
     { timeout: 5000 },
   );
+}
+
+// ── Jobs de generación (Spec-460) ───────────────────────────────────────────
+
+export interface CoreJob {
+  job_id: string;
+  story_id: string;
+  kind: string;
+  status: string;
+  stage: string | null;
+  beat: number | null;
+  total_beats: number | null;
+  error: string | null;
+  narrative_id: string | null;
+}
+
+/**
+ * Lanza la generación completa de una historia. Si ya hay una en curso (409),
+ * devuelve ese job en vez de fallar: el llamador redirige a su sala.
+ */
+export async function startGeneration(
+  storyId: string,
+): Promise<{ jobId: string; alreadyRunning: boolean }> {
+  const response = await axios.post(
+    `${CORE_API_URL}/api/v1/stories/${storyId}/jobs`,
+    { kind: "full_generation" },
+    { timeout: 5000, validateStatus: (s) => s === 202 || s === 409 },
+  );
+  return { jobId: response.data.job_id, alreadyRunning: response.status === 409 };
+}
+
+/** Job en curso de la historia, o null si no hay. */
+export async function getActiveJob(storyId: string): Promise<CoreJob | null> {
+  try {
+    const response = await axios.get(
+      `${CORE_API_URL}/api/v1/stories/${storyId}/jobs/active`,
+      { timeout: 5000 },
+    );
+    return response.data;
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) return null;
+    throw err;
+  }
 }

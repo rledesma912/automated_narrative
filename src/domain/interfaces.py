@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from src.domain.models import Beat, Story
+from src.domain.models import Beat, EntityNature, Genre, Story
 
 
 @dataclass
@@ -73,6 +73,26 @@ class StoryRepository(Protocol):
 
     async def list_all(self) -> list[Story]:
         """List all stories."""
+        ...
+
+
+class GenreRepository(Protocol):
+    """Catálogo de géneros y subgéneros (Spec-440 §2). Solo lectura."""
+
+    async def list_with_subgenres(self) -> list[Genre]:
+        """Géneros con sus subgéneros, ambos por `order_index`."""
+        ...
+
+    async def exists(self, genero: str, subgenero: str = "") -> bool:
+        """True si el par es válido. Sin género, o género sin subgénero, alcanza con el género."""
+        ...
+
+    async def natures_of(self, genre_id: str) -> list[EntityNature]:
+        """Naturalezas de entidad que admite el género, por `order_index` (Spec-450)."""
+        ...
+
+    async def nature_allowed(self, genre_id: str, nature_id: str) -> bool:
+        """True si la naturaleza corresponde al género; sin género, si existe en el catálogo."""
         ...
 
 

@@ -6,9 +6,15 @@
   <title>NarrativeForge — <%= title %></title>
 
   <!-- CSS compilado (Tailwind CLI compilado con PostCSS) — Offline first -->
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=<%= locals.assetVersion || '' %>">
 
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <%/* Spec-460: canal global de eventos + componentes que lo consumen. En <head>
+       con defer: sobreviven a las navegaciones de hx-boost (1 SSE por pestaña). */%>
+  <script src="/js/event-bus.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/generation-banner.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/footer.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/generation-guard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 
   <style>
     :root { 
@@ -26,6 +32,7 @@
   <%- include('sidebar', { activePage, activeTheme, allThemes }) %>
 
   <main class="flex-1 overflow-y-auto p-12 pb-24">
+    <%- include('generation_banner') %>
     <%- body %>
   </main>
 
@@ -66,6 +73,17 @@
     // Ejecutar después de swaps de HTMX (si se usa en el proyecto)
     document.addEventListener('htmx:afterSwap', focusFirstField);
     document.addEventListener('htmx:afterSettle', () => { lucide.createIcons(); });
+
+    // htmx 1.x no reemplaza el contenido ante un 4xx: con hx-boost, las páginas de
+    // validación del wizard (422: paso con errores, "Guardar historia" rechazado)
+    // quedaban invisibles. Se muestran si la respuesta es HTML.
+    document.addEventListener('htmx:beforeSwap', (e) => {
+      const xhr = e.detail.xhr;
+      if (xhr.status === 422 && (xhr.getResponseHeader('Content-Type') || '').includes('text/html')) {
+        e.detail.shouldSwap = true;
+        e.detail.isError = false;
+      }
+    });
   </script>
 </body>
 </html>

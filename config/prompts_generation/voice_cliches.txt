@@ -1,0 +1,14 @@
+# Spec-470: clichés que la Voz no debe usar (una expresión por línea).
+# Alimenta el prompt de la Voz (compact y frontier) y las métricas de
+# scripts/evaluate_voice.py. Para sumar uno, agregá una línea.
+me heló la sangre
+se me heló la sangre
+me revolvió el estómago
+un nudo en el estómago
+un escalofrío me recorrió
+un silencio pesado
+un silencio sepulcral
+como una mortaja
+el corazón me latía con fuerza
+algo no estaba bien
+como si algo nos estuviera observando

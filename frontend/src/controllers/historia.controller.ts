@@ -1,17 +1,12 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import fs from "fs";
-import path from "path";
 import { renderPage } from "../utils/render";
-import { checkCoreHealth, deleteStory, updateFilePath } from "../services/core_api.service";
+import { checkCoreHealth, deleteStory, startGeneration } from "../services/core_api.service";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
-const OUTPUT_DIR = process.env.OUTPUT_STORIES_DIR ?? path.join(__dirname, "../../public/output_stories");
 
 export async function historiaPage(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params;
-  const startParam = req.query.start as string;
-  const startGeneration = startParam === "1" ? 1 : 0;
 
   try {
     const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
@@ -20,7 +15,6 @@ export async function historiaPage(req: Request, res: Response): Promise<void> {
       activePage: "gallery",
       story: resp.data,
       pageError: req.query.error ?? null,
-      startGeneration,
     });
   } catch {
     res.redirect("/galeria");
@@ -30,8 +24,9 @@ export async function historiaPage(req: Request, res: Response): Promise<void> {
 export async function generateNarrativeHandler(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params;
   try {
-    const title = `Relato ${new Date().toLocaleString('es-AR')}`;
-    const resp = await axios.post(
+    // El contenedor corre en UTC: el título lleva la hora de Argentina.
+    const title = `Relato ${new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}`;
+    await axios.post(
       `${CORE_API_URL}/api/v1/story-templates/${storyId}/generate-narrative?title=${encodeURIComponent(title)}`,
       {},
       { timeout: 30000 },
@@ -56,18 +51,7 @@ export async function listNarrativesHandler(req: Request, res: Response): Promis
 export async function deleteStoryHandler(req: Request, res: Response): Promise<void> {
   const storyId = req.params["storyId"] as string;
   try {
-    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 3000 });
-    const story = resp.data;
-
     await deleteStory(storyId);
-
-    if (story.file_path) {
-      const filename = path.basename(story.file_path);
-      const fullPath = path.join(OUTPUT_DIR, filename);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
-    }
 
     if (req.headers["hx-request"]) {
       res.setHeader("HX-Redirect", "/galeria");
@@ -130,12 +114,9 @@ export async function generarDesdeHistoria(req: Request, res: Response): Promise
     return;
   }
 
+  // Spec-460: lanza la generación como job (un 409 = ya hay una en curso: vamos a su sala).
   try {
-    await axios.patch(
-      `${CORE_API_URL}/api/v1/stories/${storyId}/status`,
-      { status: "processing" },
-      { timeout: 5000 },
-    );
+    await startGeneration(String(storyId));
   } catch (err: any) {
     const detail = err?.response?.data?.detail ?? err?.message ?? "unknown";
     htmxRedirect(res, req, `/debug?error=regeneration_failed&detail=${encodeURIComponent(detail)}`);
@@ -143,14 +124,4 @@ export async function generarDesdeHistoria(req: Request, res: Response): Promise
   }
 
   htmxRedirect(res, req, `/generar/stream/${storyId}`);
-}
-
-export async function updateFilePathHandler(req: Request, res: Response): Promise<void> {
-  const storyId = req.params.storyId as string;
-  try {
-    await updateFilePath(storyId, null);
-    res.status(200).json({ success: true });
-  } catch {
-    res.status(500).json({ error: "Error al desvincular" });
-  }
 }

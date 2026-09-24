@@ -5,6 +5,53 @@ beats_spec:
   # Spec-081: se elimina anchor_priorities. Cada beat recibe la resonancia N
   # definida en llm_narrative_definition.yaml mediante mapeo 1:1 (Beat N → Pilar N).
 
+  # Spec-450 §2: cuánto se muestra de una entidad en un beat. Cada beat mapea el
+  # reveal_level de la entidad (nunca/insinuada/progresiva/explicita) a una de
+  # estas exposiciones. `show` = campos de la ficha que recibe la Voz (nunca la
+  # ficha completa si la exposición no lo pide); `guide` = instrucción de revelación.
+  # `max_manifestations` (Spec-450 §10): tope de manifestaciones que ve la Voz, sin
+  # las reservadas para un acto posterior (las que la sinopsis ubica más adelante).
+  entity_exposures:
+    senales:
+      show: [manifestations]
+      max_manifestations: 2
+      guide: "Solo señales: una o dos de la lista, sutiles, no todas (sonidos, rastros, sensaciones). Sin mostrar una figura completa, sin nombrarla ni decir qué es."
+    senales_intensas:
+      show: [manifestations]
+      max_manifestations: 3
+      guide: "Señales intensas y cercanas (dos o tres de la lista, no todas), pero sin confirmar qué es ni nombrarla."
+    manifestacion_parcial:
+      show: [manifestations]
+      max_manifestations: 1
+      guide: "Se deja ver en parte: una sola manifestación de la lista (un fragmento, una silueta borrosa, un efecto directo), no todas; sin nombrarla ni explicar qué es."
+    presencia_directa:
+      show: [description, manifestations]
+      guide: "Presencia directa: se la ve y se la enfrenta, todavía sin nombrarla ni explicar del todo qué es."
+    presencia_plena:
+      show: [name, nature, description, manifestations, limits]
+      guide: "Presencia plena: se muestra entera, con su nombre y su naturaleza."
+    presencia:
+      show: [name, nature, description, manifestations]
+      guide: "Presencia abierta: el narrador sabe qué es y la nombra."
+    revelacion:
+      show: [name, nature, description, manifestations]
+      guide: "Revelación: el narrador reconoce qué es (nombre, naturaleza, qué quiere)."
+    confrontacion:
+      show: [name, nature, description, manifestations, limits]
+      guide: "Confrontación directa con la entidad."
+    limites_consecuencias:
+      show: [name, nature, manifestations, limits]
+      guide: "Ya revelada: sus límites se ponen a prueba y se ven las consecuencias de lo que hizo."
+    consecuencias:
+      show: [name, nature, manifestations, limits]
+      guide: "Consecuencias de su acción; sus límites se ponen en juego."
+    huella:
+      show: [name, manifestations]
+      guide: "Huella: queda su marca o su rastro; no vuelve a mostrarse entera."
+    segun_acto_5:
+      show: [name, nature, manifestations]
+      guide: "Lo decide el EVENTO de este acto: si la identifica, se la nombra; si no, queda ambigua y solo se ve su rastro."
+
   macro_beats:
 
     - id: 1
@@ -16,13 +63,23 @@ beats_spec:
         - "presentar situacion base del narrador"
         - "introducir una anomalia sutil"
         - "incluir regla, advertencia o limite implicito"
-      must_not:
-        - "confirmar lo paranormal"
+      must_not: []
+      # Spec-450 §2: reglas de revelación según el reveal_level de la entidad
+      # principal. `default` = sin entidades y niveles sin override.
+      reveal_rules:
+        must_not:
+          default: ["confirmar lo paranormal"]
+          explicita: []
       state_change:
         from: "estabilidad"
         to: "incomodidad leve"
       success_signal:
         - "quien escucha el relato percibe que algo no encaja pero no sabe que"
+      entity_exposure:
+        nunca: senales
+        insinuada: senales
+        progresiva: senales
+        explicita: presencia
 
     - id: 2
       name: "accion_ascendente"
@@ -33,13 +90,21 @@ beats_spec:
         - "romper la regla o ignorar la advertencia"
         - "mostrar un evento anomalo concreto"
         - "intentar explicacion racional"
-      must_not:
-        - "aceptar lo paranormal como hecho"
+      must_not: []
+      reveal_rules:
+        must_not:
+          default: ["aceptar lo paranormal como hecho"]
+          explicita: []
       state_change:
         from: "incomodidad"
         to: "inquietud concreta"
       success_signal:
         - "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
+      entity_exposure:
+        nunca: senales
+        insinuada: manifestacion_parcial
+        progresiva: manifestacion_parcial
+        explicita: presencia
 
     - id: 3
       name: "climax"
@@ -48,7 +113,10 @@ beats_spec:
       intensity: alta
       must:
         - "invalidar explicacion racional"
-        - "mostrar amenaza o presencia directa"
+      reveal_rules:
+        must:
+          default: ["mostrar amenaza o presencia directa"]
+          nunca: ["mostrar señales intensas de la amenaza sin confirmar qué es"]
       must_not:
         - "explicar origen o reglas completas del fenomeno"
       state_change:
@@ -56,6 +124,11 @@ beats_spec:
         to: "reconocimiento"
       success_signal:
         - "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
+      entity_exposure:
+        nunca: senales_intensas
+        insinuada: revelacion
+        progresiva: presencia_directa
+        explicita: confrontacion
 
     - id: 4
       name: "accion_descendente"
@@ -72,6 +145,11 @@ beats_spec:
         to: "desesperacion"
       success_signal:
         - "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
+      entity_exposure:
+        nunca: senales
+        insinuada: limites_consecuencias
+        progresiva: presencia_plena
+        explicita: consecuencias
 
     - id: 5
       name: "desenlace"
@@ -89,3 +167,8 @@ beats_spec:
         to: "calma inestable"
       success_signal:
         - "quien escucha el relato queda con la sensacion de que el horror no termino"
+      entity_exposure:
+        nunca: segun_acto_5
+        insinuada: huella
+        progresiva: huella
+        explicita: huella

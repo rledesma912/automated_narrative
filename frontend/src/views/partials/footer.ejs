@@ -1,40 +1,22 @@
-<%/* ── Monitor de Actividad Global (Spec-211) ─────────────────────────── */%>
-<div id="global-status-footer" 
+<%/* ── Pie: actividad y estado del Core (Spec-211 → Spec-460 S5) ─────────── */%>
+<%/* Sin polling: lo alimenta el canal global (/js/event-bus.js vía /js/footer.js). */%>
+<%/* El aviso de "Generando" vive en la banda superior (partials/generation_banner). */%>
+<div id="global-status-footer"
      class="fixed bottom-0 left-56 right-0 bg-forge-surface border-t border-forge-border px-6 py-2 z-40 h-10 flex items-center">
-  
   <div class="flex items-center justify-between w-full">
-    
-    <%/* -- Actividad Actual -- */%>
-    <div id="footer-active-content" class="flex items-center gap-3">
-      <div class="flex items-center gap-2 text-forge-accent">
-        <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
-        <span class="text-forge-muted-caps !text-[10px] !tracking-widest">Generando:</span>
-      </div>
-      <span id="footer-story-title" class="text-sm text-forge-text font-serif"></span>
-      <a id="footer-story-link" href="#" 
-         class="text-forge-muted-caps !text-[10px] !tracking-widest !text-forge-accent hover:opacity-70 flex items-center gap-1 ml-2">
-        <i data-lucide="eye" class="w-3 h-3"></i> Ver progreso
-      </a>
-    </div>
 
-    <%/* -- Último Evento (Visible solo si no hay stream activo) -- */%>
-    <div id="footer-idle-content" class="hidden flex items-center gap-3">
-      <div class="flex items-center gap-2 text-forge-muted">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="flex items-center gap-2 text-forge-muted shrink-0">
         <i data-lucide="activity" class="w-3 h-3"></i>
         <span class="text-forge-muted-caps !text-[10px] !tracking-widest">Actividad:</span>
       </div>
-      <span id="footer-last-event" class="text-xs text-forge-muted italic">Esperando eventos...</span>
+      <span id="footer-last-event" class="text-xs text-forge-muted italic truncate">Sin actividad reciente</span>
     </div>
 
-    <%/* -- Indicador de conexión con Core -- */%>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 shrink-0" title="Conexión con el Core">
       <div id="core-status-dot" class="w-2 h-2 rounded-full bg-forge-border"></div>
       <span class="text-forge-muted-caps !text-[9px] !tracking-widest">Core API</span>
     </div>
 
   </div>
 </div>
-
-<%/* Spec-318 §9.C — script extraído a /js/footer.js (incluye guard contra */%>
-<%/* setInterval acumulado bajo hx-boost). */%>
-<script src="/js/footer.js" defer></script>

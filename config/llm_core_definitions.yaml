@@ -8,7 +8,7 @@ version: "1.1"
 # Para cambiar de modelo basta con editar esta línea o exportar LLM_PROFILE.
 # Cada perfil trae su provider y sus 3 roles completamente definidos.
 
-active_profile: ollama-qwen25-14b
+active_profile: ollama-gemma3-12b
 
 # ── Perfiles pre-configurados ────────────────────────────────────────────────
 #
@@ -44,7 +44,7 @@ profiles:
         num_predict: 1500
         stop: []
       journal:
-        model: qwen2.5:14b
+        model: qwen2.ollama-gemma3-12b5:14b
         temperature: 0.3
         num_ctx: 6144
         num_predict: 500
@@ -79,66 +79,6 @@ profiles:
         temperature: 0.3
         num_ctx: 2048
         num_predict: 256
-        stop: []
-
-  ollama-mistral:
-    prompt_variant: compact
-    provider: ollama
-    ollama: { host: "http://localhost:11434" }
-    roles:
-      story_analyst:
-        model: mistral:latest
-        temperature: 0.3
-        num_ctx: 2048
-        num_predict: 500
-        stop: []
-      director:
-        model: mistral:latest
-        temperature: 0.4
-        num_ctx: 4096
-        num_predict: 512
-        stop: []
-      voz:
-        model: mistral:latest
-        temperature: 0.6
-        num_ctx: 4096
-        num_predict: 1000
-        stop: []
-      journal:
-        model: mistral:latest
-        temperature: 0.3
-        num_ctx: 2048
-        num_predict: 256
-        stop: []
-
-  ollama-mistral-nemo:
-    prompt_variant: compact
-    provider: ollama
-    ollama: { host: "http://localhost:11434" }
-    roles:
-      story_analyst:
-        model: mistral-nemo:12b-instruct-2407-q4_0
-        temperature: 0.3
-        num_ctx: 4096
-        num_predict: 600
-        stop: []
-      director:
-        model: mistral-nemo:12b-instruct-2407-q4_0
-        temperature: 0.4
-        num_ctx: 8192
-        num_predict: 700
-        stop: []
-      voz:
-        model: mistral-nemo:12b-instruct-2407-q4_0
-        temperature: 0.6
-        num_ctx: 8192
-        num_predict: 1000
-        stop: []
-      journal:
-        model: mistral-nemo:12b-instruct-2407-q4_0
-        temperature: 0.3
-        num_ctx: 4096
-        num_predict: 500
         stop: []
 
   ollama-qwen3-8b:
@@ -231,7 +171,10 @@ profiles:
         num_predict: 256
         stop: []
 
-  anthropic-sonnet:
+  # Perfil híbrido: la prosa (rol voz) usa Claude Opus 4.7; el resto de roles
+  # usan Sonnet 4.6 para acotar costo. Opus 4.x no acepta parámetros de
+  # sampling — el AnthropicAdapter omite `temperature` automáticamente.
+  anthropic-opus-voz:
     prompt_variant: frontier
     provider: anthropic
     prompting_strategy: assertive
@@ -242,13 +185,13 @@ profiles:
         temperature: 0.3
         num_predict: 600
       director:
-        model: claude-sonnet-4-6
+        model: qwen2.5:14b
         temperature: 0.4
       voz:
-        model: claude-sonnet-4-6
+        model: claude-opus-4-7
         temperature: 0.6
       journal:
-        model: claude-sonnet-4-6
+        model: qwen2.5:14b
         temperature: 0.3
 
   gemini-cli:
