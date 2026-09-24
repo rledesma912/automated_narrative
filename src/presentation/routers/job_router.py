@@ -38,6 +38,10 @@ def _to_response(job: Job) -> JobResponse:
         total_beats=job.total_beats,
         error=job.error,
         narrative_id=str(job.narrative_id) if job.narrative_id else None,
+        params=job.params,
+        started_at=job.started_at.isoformat() if job.started_at else None,
+        finished_at=job.finished_at.isoformat() if job.finished_at else None,
+        elapsed_seconds=job.elapsed_seconds(),
     )
 
 
@@ -104,6 +108,13 @@ async def get_active_job(story_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="La historia no tiene un job en curso")
     return _to_response(job)
+
+
+# Declarada antes de /jobs/{job_id}: si no, "estimates" se toma como un id.
+@router.get("/jobs/estimates")
+async def get_estimates() -> dict[str, dict]:
+    """Duración estimada de cada tipo de job con el perfil activo (Spec-510)."""
+    return await job_manager.estimates()
 
 
 @router.get("/jobs/{job_id}", response_model=JobResponse)

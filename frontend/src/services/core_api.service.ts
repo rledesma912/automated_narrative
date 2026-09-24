@@ -141,3 +141,20 @@ export async function getActiveJob(storyId: string): Promise<CoreJob | null> {
     throw err;
   }
 }
+
+// ── Spec-510: duración estimada de los jobs ──────────────────────────────────
+
+export interface JobEstimate {
+  seconds: number;
+  source: "history" | "default";
+  samples: number;
+}
+
+export type JobEstimates = Record<"full_generation" | "regenerate_voz", JobEstimate>;
+
+export async function getJobEstimates(timeoutMs = 1500): Promise<JobEstimates> {
+  const response = await axios.get(`${CORE_API_URL}/api/v1/jobs/estimates`, {
+    timeout: timeoutMs,
+  });
+  return response.data;
+}

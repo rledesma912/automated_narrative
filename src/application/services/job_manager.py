@@ -23,6 +23,8 @@ from datetime import timedelta
 from uuid import UUID
 
 from src.application.services.event_bus import GLOBAL_CHANNEL, EventBus, job_channel
+from src.application.services.job_duration_estimator import JobDurationEstimator
+from src.config import settings
 from src.domain.jobs import (
     CANCELLED_ERROR,
     INTERRUPTED_ERROR,
@@ -66,9 +68,11 @@ class JobManager:
         job_repo,
         story_repo,
         channel_ttl: float = CHANNEL_TTL_SECONDS,
+        estimator: JobDurationEstimator | None = None,
     ) -> None:
         self._bus = bus
         self._jobs = job_repo
+        self._estimator = estimator or JobDurationEstimator(job_repo)
         self._stories = story_repo
         self._channel_ttl = channel_ttl
         self._tasks: dict[UUID, asyncio.Task] = {}
@@ -96,11 +100,12 @@ class JobManager:
         Raises:
             JobAlreadyActiveError: la historia ya tiene un job activo.
         """
+        params = {**(params or {}), **await self._estimate_params(kind)}
         async with self._lock:
             active = await self._jobs.get_active_for_story(story.id)
             if active is not None:
                 raise JobAlreadyActiveError(active.id)
-            job = Job(story_id=story.id, kind=kind, params=params or {})
+            job = Job(story_id=story.id, kind=kind, params=params)
             try:
                 await self._jobs.create(job)
             except sqlite3.IntegrityError:
@@ -113,6 +118,27 @@ class JobManager:
                 self._run(job, story, run, regenerate), name=f"job:{job.id}"
             )
         return job
+
+    async def estimates(self) -> dict[str, dict]:
+        """Duración estimada de cada tipo de job con el perfil activo (Spec-510)."""
+        profile = settings.active_profile_name
+        return {
+            kind.value: (await self._estimator.estimate(kind, profile)).as_dict()
+            for kind in JobKind
+        }
+
+    async def _estimate_params(self, kind: JobKind) -> dict:
+        """Perfil y duración estimada que el job lleva en `params` (Spec-510).
+
+        Una falla del estimador no impide lanzar el job: queda sin estimación.
+        """
+        profile = settings.active_profile_name
+        try:
+            estimate = await self._estimator.estimate(kind, profile)
+        except Exception:  # noqa: BLE001
+            logger.exception("[JOB] No se pudo estimar la duración (%s)", kind.value)
+            return {"profile": profile}
+        return {"profile": profile, "estimated_seconds": estimate.seconds}
 
     async def cancel(self, job_id: UUID, reason: str = CANCELLED_ERROR) -> bool:
         """Cancela un job en curso y espera a que quede `failed`.
@@ -162,7 +188,7 @@ class JobManager:
         channel = job_channel(job.id)
         status, error, narrative_id = JobStatus.FAILED, NO_RESULT_ERROR, None
         try:
-            await self._jobs.mark_running(job.id)
+            job.started_at = await self._jobs.mark_running(job.id)
             job.status = JobStatus.RUNNING
             if regenerate:
                 await self._stories.clear_story_artifacts(story.id)
@@ -216,9 +242,12 @@ class JobManager:
         if narrative_id and parsed_narrative_id is None:
             logger.warning("[JOB] narrative_id inválido en job %s: %r", job.id, narrative_id)
         try:
-            await self._jobs.finish(job.id, status, error=error, narrative_id=parsed_narrative_id)
+            job.finished_at = await self._jobs.finish(
+                job.id, status, error=error, narrative_id=parsed_narrative_id
+            )
         except Exception:  # noqa: BLE001 — el evento global sale igual
             logger.exception("[JOB] No se pudo persistir el final del job %s", job.id)
+            job.finished_at = now_argentina()
         job.status, job.error, job.narrative_id = status, error, parsed_narrative_id
         self._publish_global(
             StreamEventType.JOB_DONE if status == JobStatus.DONE else StreamEventType.JOB_FAILED,
@@ -262,4 +291,7 @@ class JobManager:
             "narrative_id": str(job.narrative_id) if job.narrative_id else None,
             "error": job.error,
             "params": job.params,
+            "started_at": job.started_at.isoformat() if job.started_at else None,
+            "finished_at": job.finished_at.isoformat() if job.finished_at else None,
+            "elapsed_seconds": job.elapsed_seconds(),
         }

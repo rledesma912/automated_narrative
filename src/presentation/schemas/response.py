@@ -63,3 +63,8 @@ class JobResponse(BaseModel):
     total_beats: int | None = None
     error: str | None = None
     narrative_id: str | None = None
+    # Spec-510: tiempos y estimación (en `params`: profile, estimated_seconds).
+    params: dict = {}
+    started_at: str | None = None
+    finished_at: str | None = None
+    elapsed_seconds: int | None = None

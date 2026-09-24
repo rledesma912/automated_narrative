@@ -49,10 +49,18 @@
     }
   }
 
+  // Spec-510: cuándo llegó cada job, para sumarle el tiempo local a su
+  // `elapsed_seconds` sin depender de la hora del Core.
+  function stamp(job) {
+    job.received_at = Date.now();
+    return job;
+  }
+
   function onJob(kind) {
     return (e) => {
       const job = parse(e);
       if (!job) return;
+      stamp(job);
       markAlive();
       if (kind === "job-done" || kind === "job-failed") {
         activeJobs.delete(job.job_id);
@@ -78,7 +86,7 @@
       if (!snap) return;
       markAlive();
       activeJobs.clear();
-      (snap.active || []).forEach((job) => activeJobs.set(job.job_id, job));
+      (snap.active || []).forEach((job) => activeJobs.set(job.job_id, stamp(job)));
       emit("snapshot", snap);
       emit("jobs-changed");
     });

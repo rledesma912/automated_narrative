@@ -7,11 +7,15 @@ import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, auto
 import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
 import { relatosPage, regenerarActoAction, relatoPanelFragment } from "../controllers/relatos.controller";
+import { loadEstimates } from "../middleware/estimates.middleware";
 
 const router = Router();
 
+// Spec-510: `loadEstimates` (≈ N min junto a lo que lanza un job) solo en las
+// páginas que lo muestran: galería, ficha, sala y relatos.
+
 router.get("/",            homePage);
-router.get("/galeria",     galleryPage);
+router.get("/galeria",     loadEstimates, galleryPage);
 router.get("/debug",       debugPage);
 router.post("/theme",      setTheme);
 
@@ -25,11 +29,11 @@ router.get("/generar/cargar/:storyId", loadWizardData);
 
 // Stream
 router.post("/generar/guardar",             saveWizardStory);
-router.get("/generar/stream/:storyId",      streamingRoomPage);
+router.get("/generar/stream/:storyId",      loadEstimates, streamingRoomPage);
 // Spec-221 T0: rutas Express renombradas a /internal/* para liberar /api/* al proxy del backend.
 
 // Historia (ver detalle + generar desde borrador + eliminar)
-router.get("/historia/:storyId",            historiaPage);
+router.get("/historia/:storyId",            loadEstimates, historiaPage);
 router.post("/historia/:storyId/generar",   generarDesdeHistoria);
 router.post("/historia/:storyId/generar-relato", generateNarrativeHandler);
 router.delete("/internal/historia/:storyId",          deleteStoryHandler);
@@ -38,11 +42,12 @@ router.delete("/internal/historia/:storyId",          deleteStoryHandler);
 router.get("/modales/confirmar-borrar/:storyId", confirmDeleteModal);
 
 // Nueva ruta de relatos (Spec-235)
-router.get("/historia/:storyId/relatos", relatosPage);
+router.get("/historia/:storyId/relatos", loadEstimates, relatosPage);
 router.post(
   "/historia/:storyId/relatos/:narrativeId/actos/:actoNumero/regenerar",
+  loadEstimates,
   regenerarActoAction
 );
-router.get("/historia/:storyId/relatos/:narrativeId/panel", relatoPanelFragment);
+router.get("/historia/:storyId/relatos/:narrativeId/panel", loadEstimates, relatoPanelFragment);
 
 export default router;

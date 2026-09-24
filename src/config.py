@@ -26,6 +26,10 @@ def _load_llm_core() -> dict:
 # Roles del pipeline que llaman al LLM (cada uno puede tener su proveedor, Spec-480).
 LLM_ROLES = ("story_analyst", "director", "voz", "journal")
 
+# Spec-510: duración estimada de un job (segundos) cuando el perfil no la declara
+# (`profiles.<perfil>.estimated_seconds`) y no hay historial.
+DEFAULT_ESTIMATED_SECONDS = {"full_generation": 240, "regenerate_voz": 60}
+
 
 def _resolve_active_profile(core: dict, env_override: str | None) -> tuple[str, dict]:
     """Resuelve el perfil activo aplicando precedencia: env → yaml → fallback.
@@ -139,6 +143,13 @@ class Settings(BaseSettings):
     def llm_providers(self) -> set[str]:
         """Proveedores en uso por los roles del perfil activo (Spec-480)."""
         return {self.role_provider(role) for role in LLM_ROLES}
+
+    def estimated_seconds(self, kind: str) -> int:
+        """Duración inicial estimada de un job del perfil activo (Spec-510)."""
+        value = (_profile.get("estimated_seconds") or {}).get(kind)
+        if isinstance(value, int | float) and not isinstance(value, bool) and value > 0:
+            return int(value)
+        return DEFAULT_ESTIMATED_SECONDS[kind]
 
     def active_profile_config(self) -> dict:
         """Bloque completo del perfil activo (provider, prompt_variant, roles, etc.)."""

@@ -60,9 +60,11 @@ test("la banda aparece en vivo, avanza, sobrevive a la navegación y termina", a
   await expect(page.locator("[data-forge-jobs-dot]")).toBeVisible();
   const link = running(page).locator("[data-banner-link]");
   await expect(link).toHaveAttribute("href", `/generar/stream/${STORY_ID}`);
-  await expect(running(page).locator("[data-banner-step]")).toContainText(/Acto \d de 5/, {
-    timeout: 5_000,
-  });
+  // Spec-510: la etapa lleva el tiempo restante.
+  await expect(running(page).locator("[data-banner-step]")).toContainText(
+    /Acto \d de 5 · .+ — (faltan ≈ \d+ min|falta|tardando)/,
+    { timeout: 5_000 },
+  );
 
   // Navegación hx-boost: el body cambia pero la conexión y el estado siguen.
   await page.locator("aside a[href='/']").click();
@@ -72,6 +74,7 @@ test("la banda aparece en vivo, avanza, sobrevive a la navegación y termina", a
   const done = page.locator('#generation-banner [data-banner-state="done"]');
   await expect(done).toBeVisible({ timeout: 30_000 });
   await expect(done).toContainText("«La ofrenda» está lista");
+  await expect(done).toContainText(/está lista · en \d+ s/); // Spec-510: cuánto tardó
   await expect(done.locator("[data-banner-link]")).toHaveAttribute(
     "href",
     `/historia/${STORY_ID}/relatos`,

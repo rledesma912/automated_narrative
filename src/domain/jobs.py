@@ -68,3 +68,10 @@ class Job(BaseModel):
     @property
     def is_active(self) -> bool:
         return self.status in ACTIVE_JOB_STATUSES
+
+    def elapsed_seconds(self, now: datetime | None = None) -> int | None:
+        """Segundos desde que arrancó hasta que terminó (o hasta `now`) — Spec-510."""
+        if self.started_at is None:
+            return None
+        end = self.finished_at or now or now_argentina()
+        return max(0, int((end - self.started_at).total_seconds()))

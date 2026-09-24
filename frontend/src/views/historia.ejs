@@ -137,12 +137,13 @@ const personajes = story.personajes_full || [];
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (story.status === 'completed') { %>
-        <form method="POST" action="/historia/<%= story.id %>/generar">
+        <form method="POST" action="/historia/<%= story.id %>/generar" class="inline-flex items-center gap-2">
           <button type="submit" class="btn-forge-sm"
                   data-generation-trigger data-story-id="<%= story.id %>" data-busy-label="Abriendo...">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Regenerar
           </button>
+          <%- include('partials/estimate', { kind: 'full_generation' }) %>
         </form>
         <%/* Variante outline-accent única; YAGNI sobre crear .btn-forge-outline-accent. */%>
         <form method="POST" action="/historia/<%= story.id %>/generar-relato">
@@ -158,12 +159,13 @@ const personajes = story.personajes_full || [];
           Ver Relatos
         </a>
       <% } else { %>
-        <form method="POST" action="/historia/<%= story.id %>/generar">
+        <form method="POST" action="/historia/<%= story.id %>/generar" class="inline-flex items-center gap-2">
           <button type="submit" class="btn-forge-sm"
                   data-generation-trigger data-story-id="<%= story.id %>" data-busy-label="Iniciando generación...">
             <i data-lucide="zap" class="w-4 h-4"></i>
             <%= btnLabel %>
           </button>
+          <%- include('partials/estimate', { kind: 'full_generation' }) %>
         </form>
       <% } %>
     <% } %>

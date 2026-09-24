@@ -46,6 +46,9 @@ test("regenerar desde la ficha: confirmación, avance por etapas y fin", async (
   });
   await expect(page.locator("#badge-text")).toHaveText("COMPLETO");
   expect(posts()).toBe(1);
+  // Spec-510: al terminar, cuánto tardó; el restante ya no se muestra.
+  await expect(page.locator("[data-done-duration]")).toHaveText(/^Lista en \d+ s$/);
+  await expect(page.locator("#eta-line")).toHaveText("");
 
   const lines = await logLines(page);
   const idx = (text: string) => lines.findIndex((l) => l.includes(text));
@@ -66,6 +69,8 @@ test("recargar a mitad de camino se ata al mismo job sin lanzar otro", async ({ 
   });
   const before = await activeJob(page);
   expect(before).not.toBeNull();
+  // Spec-510: durante la generación, el tiempo restante.
+  await expect(page.locator("#eta-line")).toHaveText(/^(faltan ≈ \d+ min|falta .+|tardando .+)$/);
 
   await page.reload();
 
