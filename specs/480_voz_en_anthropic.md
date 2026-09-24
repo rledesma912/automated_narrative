@@ -216,4 +216,17 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 - **Evaluación con Claude** (cuando haya presupuesto): `uv run python scripts/evaluate_voice.py --label sonnet5 --profile ollama-gemma3-12b-voz-sonnet5 --runs 2 --out <dir> --yes` (~US$ 0,32 los 4 relatos sin pensamiento; cambiar `thinking: adaptive` en el perfil para la variante con pensamiento, ~US$ 0,52). Arrancar con `--runs 1 --variants con` como prueba corta.
 - **Hallazgo del deploy (EV-8, previo):** prod genera con `ollama-llama31` (`llama3.1:8b`): `LLM_PROFILE=ollama-llama31` en `.env.prod` (y en `.env`) pisa el `active_profile: ollama-gemma3-12b` del YAML. `config.py` lee `LLM_PROFILE` con `os.getenv` (no del `.env`), así que los scripts y tests locales —y las evaluaciones de Spec-450 S5 y Spec-470— corrieron con `gemma3:12b`. Decidir qué modelo local usa prod y alinear `.env`/`.env.prod`/YAML.
+- **Medición del perfil de prod (`ollama-llama31`, 2026-09-24), con el arnés de Spec-470:**
+
+| | `llama3.1:8b` (prod) | `gemma3:12b` (evaluado) |
+|---|---|---|
+| Clichés sin / con entidades | 1 / 1 | 0,5 / 0,5 |
+| Parentescos mal / 3ra persona | 0 / 0,25 | 0 / 0 |
+| Palabras por relato | ~1450–1950 | ~2050–2200 |
+| Tiempo por relato | ~2 min | ~3,7 min |
+| Contexto (`num_ctx`) | **el Analyst desborda siempre** (−292 tokens sin entidades, −1353 con 3); con 3 entidades también la Voz (−272) y el Journal en `mistral` (−755): Ollama recorta el prompt en silencio | todos los roles entran (margen mínimo ~1000) |
+
+  - **Lectura manual (llama3.1, con entidades):** el acto 2 no narra sus eventos (Irene «se acuesta en la cama»; María, que quedó en su casa, aparece en la fiesta preparando una ensalada y dice «¡Venid todos! ¡Es hora de rezar!»); el acto 3 salta de «me quedé dormida… en la casa» al sulki; tiempos verbales mezclados, «Me levantó» por «me levanté», «no estaba seguro» en una narradora; mitología inventada; los actos 4–5 repiten la sinopsis en presente. Las métricas automáticas no captan la incoherencia.
+  - Con `gemma3:12b` (Spec-470 S2) los actos narran sus eventos, en orden y con continuidad.
+- **Decisión (2026-09-24): el modelo local es `gemma3:12b`** (perfil `ollama-gemma3-12b`) en prod y en dev. `LLM_PROFILE` pasó de `ollama-llama31` a `ollama-gemma3-12b` en `.env.prod` y `.env` (no versionados; backups `.env*.bak-20260924`); backend recreado y verificado (`/config/active-profile`: los 4 roles en `gemma3:12b`; `/health` ok). Resuelve el hallazgo EV-8.
 

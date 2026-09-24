@@ -158,7 +158,7 @@ ANTHROPIC_API_KEY=...                              # solo si perfil usa Anthropi
 DATABASE_URL=sqlite+aiosqlite:///data/dev/stories.db
 PROMPTS_DIR=./config/prompts_generation
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
-# LLM_PROFILE=ollama-llama31                       # opcional: pisa active_profile
+# LLM_PROFILE=ollama-gemma3-12b                    # opcional: pisa active_profile
 ```
 
 `frontend/.env` independiente (dev): `PORT=3010`, `CORE_API_URL=http://localhost:8020`.
