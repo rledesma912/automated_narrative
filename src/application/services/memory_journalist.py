@@ -44,6 +44,11 @@ class MemoryJournalist:
             system_prompt=system_prompt,
             model=model,
             temperature=temperature,
+            # Sin role, Ollama ignoraba num_ctx/num_predict/stop del rol journal
+            # (usaba 4096/2048 por defecto en vez de lo configurado).
+            role="journal",
+            num_ctx=role_cfg.get("num_ctx") if role_cfg else None,
+            num_predict=role_cfg.get("num_predict") if role_cfg else None,
         )
 
         normalized = response.text.strip()
