@@ -109,7 +109,11 @@ class NarrativeContextAssembler:
         Nunca la ficha completa si la exposición no la pide: con «señales» la Voz
         no recibe ni el nombre ni la naturaleza, así no puede revelarlos.
         """
-        lines = ["AMENAZA EN ESTE ACTO (revelá solo lo que se indica):"]
+        lines = [
+            "AMENAZA EN ESTE ACTO (revelá solo lo que se indica):",
+            "«Cómo se percibe» es un repertorio para todo el relato, no una lista a cumplir: "
+            "usá solo lo que pida «Cómo mostrarla» y lo que encaje con el EVENTO.",
+        ]
         for e in entities:
             exposure = self._beat_repo.exposure_for(beat_number, e.reveal_level)
             show = exposure.get("show", ["manifestations"])

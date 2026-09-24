@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S4 desplegados en prod (2026-09-23); sigue S5 (evaluación)
+**Estado:** IMPLEMENT — S0–S5 completos; S5 desplegada con la recarga del backend (2026-09-23); sigue S6
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -395,7 +395,28 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S5 — Evaluación
 
-- [ ] **T5.1:** Generar `el_monte_prohibido.yaml` con el perfil activo, sin entidades y con entidades (principal `insinuada` + una secundaria), y comparar a mano: coherencia de nombre/aspecto/poderes entre actos, respeto del nivel de revelación por beat, uso de los límites. Resultado y ejemplos anotados en la spec.
+- [x] **T5.1:** Generar `el_monte_prohibido.yaml` con el perfil activo, sin entidades y con entidades (principal `insinuada` + una secundaria), y comparar a mano: coherencia de nombre/aspecto/poderes entre actos, respeto del nivel de revelación por beat, uso de los límites. Resultado y ejemplos anotados en la spec.
+- **Resultado T5.1 (2026-09-23)** — `gemma3:12b`, perfil `ollama-gemma3-12b`, `generate --input` con `--debug` en una DB descartable. Entidades: «La Sombra del Monte» (folklórica, `insinuada`: toma la forma de María; límites: rezos y vela en el umbral) y «El Monte de los Espinillos» (lugar, `progresiva`: el camino se deforma). ~3,5 min por relato.
+  - **Coherencia (mejora):** con entidades, los rasgos se sostienen entre actos: «no parpadea», olor a tierra mojada y el silencio de los grillos en los actos 1–3; los espinillos que se repiten en los actos 2 y 4. Sin entidades, el rasgo inhumano recién aparece en el acto 3 y en el acto 4 la Voz inventa mitología nueva («el monte se alimenta de los rezos que no llegan al cielo»).
+  - **Límites (mejora):** los rezos preceden la liberación en los actos 3 y 4 (rezan → el sulki se mueve / salen del cerco); la vela en el umbral en el acto 5.
+  - **Revelación (se respeta):** el nombre «La Sombra del Monte» no aparece antes del clímax; se nombra en el acto 4. El monte `progresiva` gana presencia del acto 2 al 4.
+  - **Journal (mejora):** `entity_state` distingue a la María real de la copia («María (la verdadera) está preocupada en la casa. La Sombra del Monte se manifestó como una copia de María»).
+  - **Adelantos (problema):** en **las dos** versiones la aparición de María ocurre ya en el acto 1. El Mapper no la pone (sus eventos del acto 1 son correctos); la inventa la Voz a partir de la regla R4 del YAML («La aparición de María en el monte… asusta a toda la familia», tipo `evento` → sin tipo → **global**, la Voz la recibe en los 5 actos). Es un problema del contenido de la historia (Spec-190 §4.4: lo temporal no es regla), no de las entidades.
+  - **Efecto checklist (problema de Spec-450):** la Voz usa «Cómo se percibe» como lista a cubrir: con `senales` en el acto 1 muestra la figura que no parpadea (estaba en las manifestaciones) y en el acto 2 usa casi todas las señales de las dos entidades, incluida la deformación del camino que la sinopsis ubica en el acto 4.
+  - **Sin relación con entidades:** en las dos versiones la llegada a la casa se narra en el acto 4 y otra vez en el acto 5.
+- **Ajuste y re-evaluación (v2, 2026-09-23):** guías de `senales` («una o dos de la lista, sutiles, no todas; sin mostrar una figura completa»), `senales_intensas` («dos o tres, no todas») y `manifestacion_parcial` («una sola manifestación») + una línea en el bloque de la Voz («"Cómo se percibe" es un repertorio para todo el relato, no una lista a cumplir»). Sin entidades nada cambia (snapshots idénticos).
+  - **Acto 1:** la figura completa que no parpadea (v1) pasa a «por un instante, juré haber visto una sombra moverse entre los espinillos, una figura que se parecía inquietantemente a mi suegra» + el caballo se detiene un segundo: una señal ambigua. La aparición sigue empujada por la regla R4 (ver arriba).
+  - **Acto 2:** ya no adelanta la deformación del camino ni los espinillos repetidos: quedan en el acto 4, donde los pone la sinopsis. Usa silueta borrosa + olor + caballo + mirada que no parpadea.
+  - **Acto 3:** reconocimiento sin nombre («No era mi madre… Era algo más. Algo antiguo, que se alimenta de los miedos y de la noche»). En v2 el nombre no aparece nunca (en v1, en el acto 4): `insinuada` quedó del lado prudente.
+  - **Límites:** rezos → liberación en los actos 3 y 4; vela en el umbral en el acto 5 (igual que v1).
+  - Conteo aproximado de rasgos por acto (A1–A5), v1 → v2: deformación del camino `0 1 0 0 0` → `0 0 0 1 0`; espinillos repetidos `0 2 0 2 0` → `0 0 0 3 0`; «no parpadea» `1 1 1 0 0` → `0 1 1 0 0`.
+  - **Ruido de la Voz, sin relación con entidades:** una oración en tercera persona copiada de la sinopsis en el acto 4 («Ricardo se sume en un silencio catatónico que Irene no se atreve a romper») y «mi madre» / «mi abuela» por «mi suegra».
+- **Conclusión S5:** las entidades mejoran la coherencia de la amenaza entre actos, el uso de sus límites y la continuidad del Journal, y con el ajuste de v2 se respeta la graduación sin el efecto checklist. **Pendientes fuera de Spec-450:** la regla R4 de `el_monte_prohibido.yaml` (tipo `evento`, global) adelanta la aparición al acto 1 → mover R3–R5 a los actos (contenido del autor); la doble llegada a la casa (actos 4 y 5); `run_full` no pasa los `actos` del YAML.
+- **Pendientes fuera de Spec-450, resueltos (2026-09-23)** y verificados con una tercera generación (v3: YAML corregido + las mismas entidades):
+  - `el_monte_prohibido.yaml`: R3 («María se queda en su casa…») pasa al final del acto 1; R4 («La aparición de María en el monte…») se elimina (ya está en el acto 3); R5 («Los rezos… única defensa») queda como regla de tipo `fenomeno` (renumerada R3); R1 `social` → `entorno`. El recibimiento con la vela pasa a la llegada (fin del acto 4) y el acto 5 arranca «Esa noche, ya dentro de la casa, mientras Irene acuesta a los niños…».
+  - **v3 — acto 1:** ya no hay aparición en el monte; solo señales («por un instante, me pareció ver algo extraño en su mirada», el caballo se detiene, un silencio inusual) y María queda en la puerta. **Actos 4–5:** la vela en el umbral cierra el acto 4 y el acto 5 empieza acostando a los niños: **una sola llegada**.
+  - `StoryRunner.run_full` (CLI `generate --input`) no pasaba los `actos` del YAML: la historia quedaba sin el texto de cada acto (el wizard ponía toda la sinopsis en el acto 1 y el export salía sin actos). Arreglado con test.
+  - Queda en la Voz, sin relación con esta spec: confunde «suegra» con «madre»/«abuela» y alguna palabra inventada («La arbolé»).
 
 ### S6 — Documentación y cierre
 

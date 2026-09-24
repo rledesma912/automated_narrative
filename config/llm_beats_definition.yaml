@@ -12,13 +12,13 @@ beats_spec:
   entity_exposures:
     senales:
       show: [manifestations]
-      guide: "Solo señales: lo que se percibe (sonidos, rastros, sensaciones). Sin nombrarla ni decir qué es."
+      guide: "Solo señales: una o dos de la lista, sutiles, no todas (sonidos, rastros, sensaciones). Sin mostrar una figura completa, sin nombrarla ni decir qué es."
     senales_intensas:
       show: [manifestations]
-      guide: "Señales intensas y cercanas, pero sin confirmar qué es ni nombrarla."
+      guide: "Señales intensas y cercanas (dos o tres de la lista, no todas), pero sin confirmar qué es ni nombrarla."
     manifestacion_parcial:
       show: [manifestations]
-      guide: "Se deja ver en parte (un fragmento, una silueta, un efecto directo), sin nombrarla ni explicar qué es."
+      guide: "Se deja ver en parte: una sola manifestación de la lista (un fragmento, una silueta borrosa, un efecto directo), no todas; sin nombrarla ni explicar qué es."
     presencia_directa:
       show: [description, manifestations]
       guide: "Presencia directa: se la ve y se la enfrenta, todavía sin nombrarla ni explicar del todo qué es."
