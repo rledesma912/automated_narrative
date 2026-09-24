@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — preguntas cerradas (2026-09-24); pendiente de OK para pasar a PLAN
+**Estado:** PLAN — SPECIFY aprobada (2026-09-24); plan pendiente de OK para pasar a TASKS
 **Roadmap:** EV-3 (calidad narrativa, sin costo). EV-2 (Voz en Anthropic) queda para después.
 
 ---
@@ -92,4 +92,61 @@ Se generan **2 corridas por variante** (antes / después) para no confundir una 
 2. **Clichés:** la lista propuesta en §1.1; se amplía después editando el template.
 3. **Temperatura:** la evaluación suma una corrida con el prompt nuevo y `temperature: 0.5` en la Voz (override temporal por variable de entorno o perfil de evaluación, sin tocar el perfil activo). Si mejora el léxico sin empobrecer la prosa, se propone el cambio del perfil (cambio de config, con OK).
 4. **Metas:** las de la tabla §2.
+
+---
+
+## PLAN
+
+### Estrategia
+
+Primero la **medición** y la línea base con el prompt de hoy (si no, no hay contra qué comparar); después los cambios de prompt con sus tests; al final la evaluación comparada y el cierre. Nada de esto cambia el esquema ni agrega llamadas LLM.
+
+```
+S0 Arnés + métricas + línea base ─▶ S1 Prompts (compact + frontier + narrative_context) ─▶ S2 Evaluación comparada ─▶ S3 Docs + deploy + DONE
+```
+
+### Decisiones técnicas
+
+1. **Arnés en proceso, sin código de producción nuevo:** `scripts/evaluate_voice.py` corre el pipeline con la app FastAPI en proceso (como `measure_entity_prompts.py`), con el adapter real del perfil activo y una DB temporal. La temperatura de la Voz se sobrescribe **dentro del proceso del script** (`--voz-temperature 0.5` parchea `settings.role_config("voz")`), sin tocar el perfil ni agregar variables de entorno al código.
+2. **Historias de la evaluación:** `input_stories/el_monte_prohibido.yaml` sin entidades y con las 2 entidades de la S5 de Spec-450 (quedan como constante del script, para que la evaluación sea reproducible).
+3. **Métricas como funciones puras** en `scripts/voice_metrics.py`, con tests unitarios:
+   - `cliches(text)` → conteo por expresión de la lista (la misma lista que se publica en el prompt, leída de un único lugar: `config/prompts_generation/voice_cliches.txt`).
+   - `wrong_kinship(text, narrator, cast)` → «mi <parentesco>» que no corresponde: los parentescos válidos salen de los roles que dicen «<parentesco> de <narrador>» (en *El monte prohibido* nadie es madre ni abuela de Irene, así que «mi madre» cuenta como error).
+   - `narrator_outside_dialogue(text, narrator)` → apariciones del nombre fuera de diálogo (líneas que arrancan con «—» o texto entre comillas).
+   - `repeated_4grams(acts)` → 4-gramas presentes en ≥ 3 actos.
+4. **Bloque de parentescos (§1.2):** `PromptBuilder._format_kinship(story)` arma «CÓMO LLAMÁS A CADA PERSONAJE» desde `personajes_full` y el narrador (`narrator_config.storyteller_id` → personaje, o `storyteller_name`). Placeholder `{parentescos}` en los dos templates. Sin narrador identificable → bloque vacío.
+5. **Lista de clichés en un solo lugar:** `voice_cliches.txt` alimenta el placeholder `{cliches}` de los dos templates y las métricas. Agregar un cliché = una línea.
+6. **Guía de oficio (§1.1) y léxico (§1.4):** texto fijo en los dos templates (`voice_system_compact.md`, `system.md`).
+7. **Encabezado del evento (§1.3):** `NarrativeContextAssembler.assemble(..., narrator=...)` → «EVENTO DE ESTE MOMENTO (contalo en primera persona, como Irene; narrá EXACTAMENTE estos eventos, en orden)». Sin narrador, el encabezado de hoy. Cambia el texto para todas las historias con narrador: los snapshots de Spec-450 (`beat_reveal.json`, `pipeline_prompts.json`) se regeneran **a propósito** y el diff se revisa en el commit.
+8. **Presupuesto de tokens:** se vuelve a correr `scripts/measure_entity_prompts.py`; la Voz tiene ~4800 tokens libres con 3 entidades (Spec-450 T3.5) y los agregados son del orden de 300–400.
+
+### S0 — Arnés, métricas y línea base
+
+- **Qué:** `voice_metrics.py` + tests; `evaluate_voice.py` (genera N corridas por variante: sin/con entidades, reporta métricas por relato y por acto, guarda los relatos en `--out`); `voice_cliches.txt`.
+- **Línea base:** 2 corridas × (sin, con entidades) con el prompt de hoy (~15 min con `gemma3:12b`). Resultado en la spec.
+- **Verificación:** pytest de las métricas (casos armados a mano con los ejemplos reales de la S5).
+
+### S1 — Prompts
+
+- **Qué:** §1.1–§1.4 en `voice_system_compact.md` y `system.md`; `_format_kinship` + `{parentescos}` + `{cliches}`; encabezado del evento con el narrador; snapshots regenerados; `measure_entity_prompts.py` de nuevo.
+- **Verificación:** pytest (bloques presentes en las dos variantes; sin narrador → sin bloque y encabezado de hoy; `format()` de los dos templates sin `KeyError`; snapshot regenerado con diff revisado); lint.
+
+### S2 — Evaluación comparada
+
+- **Qué:** 2 corridas × (sin, con entidades) con el prompt nuevo, y 2 × con entidades con el prompt nuevo + `temperature 0.5`. Tabla antes / después / después+0.5 y lectura manual (fidelidad, graduación de Spec-450, ritmo y tensión).
+- **Salida:** resultado en la spec; si 0.5 ayuda sin empobrecer la prosa, **propuesta** de cambio del perfil (con OK, commit aparte).
+
+### S3 — Documentación, deploy y cierre
+
+- `CLAUDE.md` (Prompt System: guía de oficio, parentescos, lista de clichés, `evaluate_voice.py`), nota en Spec-170; deploy del backend (los templates viajan en la imagen); Spec-470 → DONE.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| El modelo local ignora instrucciones largas | Guía corta y concreta; se mide. Si no alcanza, es argumento para EV-2. |
+| Prohibir clichés los reemplaza por otros | La métrica cuenta la lista; la lectura manual busca reemplazos repetidos (4-gramas). |
+| La variación del modelo confunde la comparación | 2 corridas por variante; se miran tendencias, no un relato. |
+| Cambiar el encabezado del evento altera todas las historias | Es intencional; snapshot regenerado con diff revisado; la evaluación cubre sin y con entidades. |
+| La frontier no se puede evaluar con el perfil activo | Tests de prompt; queda lista para EV-2. |
 
