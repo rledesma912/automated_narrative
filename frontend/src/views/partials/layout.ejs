@@ -12,6 +12,7 @@
   <%/* Spec-460: canal global de eventos + componentes que lo consumen. En <head>
        con defer: sobreviven a las navegaciones de hx-boost (1 SSE por pestaña). */%>
   <script src="/js/event-bus.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/eta.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/generation-banner.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/footer.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/generation-guard.js?v=<%= locals.assetVersion || '' %>" defer></script>

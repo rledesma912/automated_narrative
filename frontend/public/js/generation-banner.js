@@ -10,6 +10,7 @@
  *
  * Se carga en <head> con defer: los listeners sobreviven a las navegaciones de
  * hx-boost y re-pintan el body nuevo en cada `forge:jobs-changed`.
+ * El avance sale de /js/eta.js (window.ForgeEta, Spec-510), cargado antes.
  */
 (function () {
   "use strict";
@@ -18,32 +19,17 @@
   window.__forgeBannerReady = true;
 
   const DONE_VISIBLE_MS = 15000;
-  const STAGES = {
-    analyst: { label: "Analizando la sinopsis", weight: 0 },
-    resolver: { label: "Distribuyendo escenarios", weight: 0 },
-    mapper: { label: "Mapeando", weight: 0.1 },
-    voz: { label: "Narrando", weight: 0.4 },
-    journal: { label: "Actualizando la memoria", weight: 0.85 },
-    consolidando: { label: "Consolidando el relato", weight: 1 },
-  };
+  const eta = window.ForgeEta;
   const dismissed = new Set(); // job_id de avisos cerrados (esta pestaña)
 
   function stepText(job) {
     if (job.kind === "regenerate_voz") {
       return `Regenerando el acto ${(job.params && job.params.beat) || job.beat || ""}`.trim();
     }
-    const stage = STAGES[job.stage];
+    const stage = eta.STAGES[job.stage];
     if (!stage) return "Iniciando...";
     if (job.stage === "consolidando" || !job.beat) return stage.label;
     return `Acto ${job.beat} de ${job.total_beats || 5} · ${stage.label}`;
-  }
-
-  function progressPct(job) {
-    if (job.stage === "consolidando") return 100;
-    const stage = STAGES[job.stage];
-    if (!stage || !job.beat) return 3;
-    const total = job.total_beats || 5;
-    return Math.min(99, Math.round(((job.beat - 1 + stage.weight) / total) * 100));
   }
 
   function setText(root, selector, text) {
@@ -87,7 +73,7 @@
       setText(panel, "[data-banner-title]", `«${job.title || "Sin título"}»`);
       setText(panel, "[data-banner-more]", running.length > 1 ? `y ${running.length - 1} más` : "");
       setText(panel, "[data-banner-step]", stepText(job));
-      panel.querySelector("[data-banner-progress]").style.width = `${progressPct(job)}%`;
+      panel.querySelector("[data-banner-progress]").style.width = `${Math.round(eta.progress(job) * 100)}%`;
       // Regenerar un acto se sigue en la vista de relatos, no en la sala.
       panel.querySelector("[data-banner-link]").href =
         job.kind === "regenerate_voz"

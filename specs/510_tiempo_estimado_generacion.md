@@ -60,8 +60,9 @@ En el banner (`data-banner-step`) y en la sala: «Acto 2 de 5 · Narrando — fa
 
 - **Cálculo** (cliente, con el reloj local y `started_at`): con avance `p` (el de `progressPct`) y tiempo transcurrido `t`:
   - `p < 15 %` → restante = `estimated_seconds − t` (al principio el avance dice poco);
-  - `p ≥ 15 %` → proyección del ritmo real `proyectado = t / p`, **mezclada** con la estimación según el avance: `total = (1 − p) · estimado + p · proyectado`. Al principio pesa la estimación; cerca del final, el ritmo real. Así no salta con un acto más lento o más rápido;
-  - restante = `total − t` (puede dar ≤ 0 si viene lento → «tardando más de lo habitual»).
+  - `p ≥ 15 %` → se mezclan dos restantes según el avance: el de la estimación (`estimado − t`) y el del ritmo real (`t / p − t`): `restante = (1 − p) · (estimado − t) + p · (t / p − t)`. Al principio pesa la estimación; cerca del final, el ritmo real. Así no salta con un acto más lento o más rápido (mezclar los *totales* con peso `p` no sirve: se simplifica a `(1 − p) · estimado` e ignora el ritmo);
+  - si da ≤ 0 (viene lento) → «tardando más de lo habitual».
+  - `regenerate_voz` es una sola llamada: `p = 0` (solo la estimación).
 - **Redondeo honesto:** ≥ 90 s → «faltan ≈ N min» (redondeo al minuto); 30–90 s → «falta ≈ 1 min»; < 30 s → «falta menos de 1 min»; si ya se pasó de lo proyectado → «tardando más de lo habitual». Nunca negativos, nunca segundos.
 - Se recalcula con cada evento del job y cada 15 s (el tick del heartbeat), no cada segundo.
 
@@ -191,15 +192,15 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S1 — Lógica del cliente
 
-- [ ] **T1.1:** `eta.js`.
-  - Acceptance: `public/js/eta.js` (UMD: `window.ForgeEta` / `module.exports`) con `STAGES` y `progress(job)` idénticos a los del banner actual (pesos y casos: `consolidando` → 1, sin etapa o sin acto → 0,03, tope 0,99); `remainingSeconds(estimated, elapsed, p)` según §2.3 (`p < 0,15` → `estimated − elapsed`; si no, mezcla); `formatRemaining(s)` → «faltan ≈ N min» (≥ 90 s, redondeo al minuto), «falta ≈ 1 min» (30–89 s), «falta menos de 1 min» (1–29 s), «tardando más de lo habitual» (≤ 0), `""` sin estimación; `formatDuration(s)` → «42 s» / «3 min 42 s» / «12 min»; `formatEstimate(s)` → «≈ N min» (mínimo 1).
+- [x] **T1.1:** `eta.js`.
+  - Acceptance: `public/js/eta.js` (UMD: `window.ForgeEta` / `module.exports`) con `STAGES` y `progress(job)` idénticos a los del banner actual (pesos y casos: `consolidando` → 1, sin etapa o sin acto → 0,03, tope 0,99); `remainingSeconds(estimated, elapsed, p)` según §2.3 (`p < 0,15` → `estimated − elapsed`; si no, la mezcla de los dos restantes); `remainingFor(job, elapsed)` (toma `params.estimated_seconds`; `p = 0` en `regenerate_voz`); `formatRemaining(s)` → «faltan ≈ N min» (≥ 90 s, redondeo al minuto), «falta ≈ 1 min» (30–89 s), «falta menos de 1 min» (1–29 s), «tardando más de lo habitual» (≤ 0), `""` sin estimación; `formatDuration(s)` → «42 s» / «3 min 42 s» / «12 min»; `formatEstimate(s)` → «≈ N min» (mínimo 1).
   - Verify: Vitest con tabla de casos por función (incluidos `p` = 0, `p` = 1, `estimated` nulo, valores negativos y no numéricos).
   - Files: `frontend/public/js/eta.js`, `frontend/tests/unit/public/eta.test.ts`
-- [ ] **T1.2:** El banner usa `eta.js`.
+- [x] **T1.2:** El banner usa `eta.js`.
   - Acceptance: `eta.js` cargado en `<head>` antes de `generation-banner.js`; el banner llama a `ForgeEta.progress` y ya no define `STAGES`/`progressPct` propios; sin cambios visibles.
-  - Verify: Vitest de vista del layout (orden de scripts) + E2E existentes (`generation-banner.spec.ts`) en verde.
-  - Files: `frontend/src/views/partials/layout.ejs`, `frontend/public/js/generation-banner.js`
-- [ ] **Checkpoint S1:** lint + pytest + Vitest + Playwright → commit.
+  - Verify: Vitest del layout (orden de scripts, leyendo la plantilla) + E2E existentes (`generation-banner.spec.ts`) en verde.
+  - Files: `frontend/src/views/partials/layout.ejs`, `frontend/public/js/generation-banner.js`, `frontend/tests/unit/views/layout.view.test.ts`
+- [x] **Checkpoint S1:** lint + pytest + Vitest + Playwright → commit.
 
 ### S2 — Durante y al terminar
 
