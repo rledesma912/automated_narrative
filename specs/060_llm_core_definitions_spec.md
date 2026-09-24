@@ -1,5 +1,7 @@
 # Spec 026: llm_core_definitions — Configuración SDD de Proveedores LLM + Pipeline de Normalización
 
+> **Actualizado por Spec-480 (2026-09-24):** cada rol puede declarar su `provider` (`roles.<rol>.provider`); si los roles mezclan proveedores, `LLMFactory` arma un `RoleRoutingAdapter`. El perfil `anthropic-opus-voz` se reemplazó por `ollama-gemma3-12b-voz-sonnet5` (no activo).
+
 ## Objetivo
 
 Establecer `config/llm_core_definitions.yaml` como **fuente de verdad única** para toda la

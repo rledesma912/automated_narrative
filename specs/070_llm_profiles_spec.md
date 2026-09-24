@@ -1,5 +1,7 @@
 # Spec 027: Perfiles de LLM pre-configurados
 
+> **Actualizado por Spec-480 (2026-09-24):** cada rol puede declarar su `provider` (`roles.<rol>.provider`); si los roles mezclan proveedores, `LLMFactory` arma un `RoleRoutingAdapter`. El perfil `anthropic-opus-voz` se reemplazó por `ollama-gemma3-12b-voz-sonnet5` (no activo).
+
 ## Objetivo
 
 Extender `config/llm_core_definitions.yaml` (Spec 026) con una capa de **perfiles

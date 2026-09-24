@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S2 commiteadas; sigue S3
+**Estado:** DONE (2026-09-24) — integración completa y desplegada; el perfil híbrido no está activo; la evaluación con Claude queda pendiente de presupuesto
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -209,6 +209,11 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S3 — Documentación y cierre
 
-- [ ] **T3.1:** `CLAUDE.md` (proveedor por rol, perfil híbrido, evaluación con costo y `--yes`), notas en Spec-060/070, Spec-480 → DONE con la evaluación real como pendiente (costo estimado).
-- [ ] **T3.2:** Deploy del backend (con tu OK) y verificación de que el perfil activo sigue siendo el local (`/config/active-profile`).
+- [x] **T3.1:** `CLAUDE.md` (proveedor por rol, perfil híbrido, evaluación con costo y `--yes`), notas en Spec-060/070, Spec-480 → DONE con la evaluación real como pendiente (costo estimado).
+- [x] **T3.2:** Deploy del backend (con tu OK) y verificación de que el perfil activo sigue siendo el local (`/config/active-profile`).
+
+## PENDIENTES
+
+- **Evaluación con Claude** (cuando haya presupuesto): `uv run python scripts/evaluate_voice.py --label sonnet5 --profile ollama-gemma3-12b-voz-sonnet5 --runs 2 --out <dir> --yes` (~US$ 0,32 los 4 relatos sin pensamiento; cambiar `thinking: adaptive` en el perfil para la variante con pensamiento, ~US$ 0,52). Arrancar con `--runs 1 --variants con` como prueba corta.
+- **Hallazgo del deploy (EV-8, previo):** prod genera con `ollama-llama31` (`llama3.1:8b`): `LLM_PROFILE=ollama-llama31` en `.env.prod` (y en `.env`) pisa el `active_profile: ollama-gemma3-12b` del YAML. `config.py` lee `LLM_PROFILE` con `os.getenv` (no del `.env`), así que los scripts y tests locales —y las evaluaciones de Spec-450 S5 y Spec-470— corrieron con `gemma3:12b`. Decidir qué modelo local usa prod y alinear `.env`/`.env.prod`/YAML.
 
