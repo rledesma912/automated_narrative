@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** TASKS — PLAN aprobado (2026-09-24); tareas pendientes de OK para pasar a IMPLEMENT
+**Estado:** IMPLEMENT — S0 commiteada; sigue S1
 **Roadmap:** EV-3 (calidad narrativa, sin costo). EV-2 (Voz en Anthropic) queda para después.
 
 ---
@@ -158,22 +158,35 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S0 — Arnés, métricas y línea base
 
-- [ ] **T0.1:** Lista de clichés.
+- [x] **T0.1:** Lista de clichés. *(Nota: «escalofrío» suelto no entra —es una palabra legítima—; sí la frase hecha «un escalofrío me recorrió».)*
   - Acceptance: `config/prompts_generation/voice_cliches.txt`, una expresión por línea (la lista de §1.1), comentarios con `#`; un loader la lee (sin duplicados, en minúsculas para comparar).
   - Verify: pytest (lee la lista; ignora comentarios y líneas vacías).
   - Files: `config/prompts_generation/voice_cliches.txt`, `src/application/services/voice_cliches.py` (nuevo)
-- [ ] **T0.2:** Métricas.
+- [x] **T0.2:** Métricas.
   - Acceptance: `cliches(text)`, `wrong_kinship(text, narrator, cast)`, `narrator_outside_dialogue(text, narrator)` y `repeated_4grams(acts)` como funciones puras, con los criterios de la decisión técnica 3.
   - Verify: pytest con fragmentos reales de la S5 de Spec-450 («me heló la sangre», «¿Será que… las leyendas de mi abuela…?», «Ricardo se sume en un silencio catatónico que Irene no se atreve a romper», diálogo «—Irene, no seas supersticiosa» que **no** cuenta).
   - Files: `scripts/voice_metrics.py`, `tests/unit/scripts/test_voice_metrics.py`
-- [ ] **T0.3:** Arnés de evaluación.
+- [x] **T0.3:** Arnés de evaluación.
   - Acceptance: `uv run python scripts/evaluate_voice.py --runs 2 --variants sin,con [--voz-temperature 0.5] --out <dir> --label <nombre>` genera con el perfil activo en una DB temporal, guarda cada relato y un `metrics.json`, e imprime una tabla (por relato y promedio por variante). La historia con entidades usa las 2 entidades de Spec-450 S5 (constante del script).
   - Verify: corrida con `--mock` (sin Ollama) de punta a punta en un test; corrida real en T0.4.
   - Files: `scripts/evaluate_voice.py`, `tests/unit/scripts/test_evaluate_voice.py`
-- [ ] **T0.4:** Línea base.
+- [x] **T0.4:** Línea base.
   - Acceptance: 2 corridas × (sin, con) con el prompt de hoy; tabla y observaciones en la spec.
-  - Verify: `metrics.json` de la línea base guardado en el scratchpad y resumido en la spec.
-- [ ] **Checkpoint S0:** lint + pytest → commit.
+  - **Resultado (2026-09-24, `gemma3:12b`, Voz T=0.6, ~4 min por relato):**
+
+| Corrida | Clichés | Parentescos (candidatos) | Narradora 3ra persona | Frases repetidas | Palabras |
+|---|---|---|---|---|---|
+| sin #1 | 2 | 0 | 0 | 2 | 2045 |
+| sin #2 | 2 | 2* | 0 | 1 | 1978 |
+| con #1 | 7 | 0 | 0 | 3 | 2005 |
+| con #2 | 3 | 0 | 0 | 0 | 1978 |
+| **Promedio sin / con** | **2 / 5** | **1 / 0** | **0 / 0** | **1,5 / 1,5** | ~2000 |
+
+  - Clichés más frecuentes: «me heló la sangre» (6 en 4 relatos), «me revolvió el estómago» (4).
+  - \* Falsos positivos: «en casa de mi abuela», «una canción que mi abuela me enseñó» hablan de la abuela propia de Irene (fuera del elenco), no de María. **La métrica de parentescos cuenta candidatos; se revisan a mano.**
+  - Error que la métrica no ve: en «con #1» Ricardo le dice a Irene «las historias de **tu** madre» (María es madre de Ricardo). Se revisa en la lectura manual.
+  - Narradora en 3ra persona: 0 (todas las apariciones de «Irene» están en diálogo; métrica validada contra el texto). En esta línea base la Voz no filtró la tercera persona; se sigue midiendo.
+- [x] **Checkpoint S0:** lint + pytest → commit.
 
 ### S1 — Prompts
 
