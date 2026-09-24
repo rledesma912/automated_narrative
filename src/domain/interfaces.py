@@ -26,11 +26,21 @@ class INarrativeValidator(Protocol):
 class LLMResponse:
     """Response from LLM."""
 
-    def __init__(self, text: str, context: list[int] | None = None, elapsed_s: float = 0.0):
+    def __init__(
+        self,
+        text: str,
+        context: list[int] | None = None,
+        elapsed_s: float = 0.0,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+    ):
         self.text = text
         self.context = context
         self.elapsed_s = elapsed_s
         self.word_count = len(text.split())
+        # Spec-480: uso informado por proveedores pagos (para medir costo). None = no informado.
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
 
 
 @runtime_checkable

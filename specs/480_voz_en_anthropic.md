@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 commiteada; sigue S1
+**Estado:** IMPLEMENT — S0 y S1 commiteadas; sigue S2
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -167,18 +167,23 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S1 — AnthropicAdapter al día
 
-- [ ] **T1.1:** Cliente simulado para tests.
+- [x] **T1.1:** Cliente simulado para tests.
   - Acceptance: un doble de `AsyncAnthropic().messages.create` que registra los kwargs y devuelve un `anthropic.types.Message` real (bloques `ThinkingBlock`/`TextBlock`, `Usage`, `stop_reason`, `stop_details`).
   - Files: `tests/support/fake_anthropic.py`
-- [ ] **T1.2:** Request.
+- [x] **T1.2:** Request.
   - Acceptance: sin `temperature` para los modelos sin sampling (Sonnet 5, Opus 5, Opus 4.7/4.8, Fable); `thinking` según el rol (`adaptive` / `disabled` explícito / sin valor → no se manda); `effort` → `output_config` (por `extra_body` si el SDK 0.96 no lo tipa); `max_tokens` = `num_predict` del rol (mínimo 16000 con pensamiento adaptativo); modelo del rol.
   - Verify: pytest sobre los kwargs registrados por el doble.
   - Files: `src/infrastructure/adapters/anthropic_adapter.py`, `tests/unit/infrastructure/test_anthropic_adapter.py`
-- [ ] **T1.3:** Respuesta.
+- [x] **T1.3:** Respuesta.
   - Acceptance: texto = bloques `text` concatenados (aunque el primero sea `thinking`); `refusal` → `LLMRefusalError` con la categoría; `max_tokens` → error; `LLMResponse.input_tokens` / `output_tokens` desde `usage`; errores del SDK con cadena específica.
   - Verify: pytest con respuestas simuladas de cada caso.
   - Files: `src/infrastructure/adapters/anthropic_adapter.py`, `src/domain/interfaces.py`, `src/domain/exceptions.py`
-- [ ] **Checkpoint S1:** lint + pytest → commit.
+- [x] **Notas de S1 (2026-09-24):**
+  - El SDK 0.96 ya tipa `thinking` (adaptive/disabled), `output_config.effort` y `stop_details`: no hizo falta `extra_body`.
+  - El doble del SDK usa los tipos reales (`Message`, `TextBlock`, `ThinkingBlock`, `Usage`, `RefusalStopDetails`) y ya atrapó un error del test: el SDK 0.96 solo tipa las categorías de rechazo `cyber` y `bio`.
+  - `max_tokens`: piso de 16000 salvo `thinking: disabled` (Sonnet 5 / Opus 5 piensan por defecto y el razonamiento sale del mismo tope).
+  - `close()` ahora cierra el cliente HTTP del SDK (antes era un no-op).
+- [x] **Checkpoint S1:** lint + pytest → commit.
 
 ### S2 — Perfil híbrido, health y evaluación preparada
 

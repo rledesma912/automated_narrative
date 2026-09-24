@@ -44,6 +44,17 @@ class LLMResponseError(NarrativeError):
         self.raw_response = raw_response
 
 
+class LLMRefusalError(LLMResponseError):
+    """El modelo declinó la solicitud (`stop_reason: refusal`, Spec-480)."""
+
+    def __init__(self, category: str | None, explanation: str | None = None):
+        super().__init__(
+            f"el modelo declinó la solicitud (categoría: {category or 'sin categoría'})",
+            raw_response=explanation,
+        )
+        self.category = category
+
+
 class DatabaseError(NarrativeError):
     """Error de base de datos durante persistencia."""
 
