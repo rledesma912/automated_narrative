@@ -138,19 +138,19 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S0 — Script y compose
 
-- [ ] **T0.1:** `scripts/prod_db.py`.
+- [x] **T0.1:** `scripts/prod_db.py`.
   - Acceptance: `active-jobs` cuenta `queued`/`running` (exit 0 sin activos, 1 con activos, 2 si la DB no existe); `backup` escribe `<dir>/stories-pre-deploy-<sufijo>.db`, verifica `integrity_check = ok` e imprime la ruta; nunca escribe en la DB de origen.
   - Verify: pytest sobre DBs temporales (sin jobs, con uno `running`, sin archivo; backup legible e íntegro).
   - Files: `scripts/prod_db.py`, `tests/unit/scripts/test_prod_db.py`
-- [ ] **T0.2:** `scripts/bash/deploy_prod.sh`.
+- [x] **T0.2:** `scripts/bash/deploy_prod.sh`.
   - Acceptance: pasos 1–7 de §2.2; `--check` corre 1–4 y termina; cada falla sale con código ≠ 0, un mensaje que dice qué hacer y sin efectos.
   - Verify: `make deploy-check` en esta rama → «no estás en main»; con `PROD_DB` apuntando a una copia con un job `running` (y los chequeos de git salteados solo en esa prueba) → «hay una generación en curso».
   - Files: `scripts/bash/deploy_prod.sh`
-- [ ] **T0.3:** `Makefile` y compose.
+- [x] **T0.3:** `Makefile` y compose.
   - Acceptance: `make deploy` / `make deploy-check` (en `help`); `docker-compose.yml` sin `./config:/app/config:ro` y con el comentario.
   - Verify: `docker compose config` válido y sin el volumen; `make help` los lista.
   - Files: `Makefile`, `docker-compose.yml`
-- [ ] **Checkpoint S0:** lint + pytest → commit.
+- [x] **Checkpoint S0:** lint + pytest → commit.
 
 ### S1 — Documentación y limpieza
 
