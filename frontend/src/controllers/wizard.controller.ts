@@ -61,6 +61,11 @@ export function wizardRedirect(req: Request, res: Response): void {
 export async function showStep(req: Request, res: Response): Promise<void> {
   const num = parseInt(req.params["step"] as string, 10);
   if (!getStep(num)) { res.redirect("/generar/paso/1"); return; }
+  // Con saveUninitialized: false, una sesión nueva no tiene cookie hasta que se
+  // modifica. Sin esto, los primeros auto-saves (p. ej. género + subgénero al
+  // mismo tiempo) creaban cada uno su propia sesión y se pisaban.
+  const session = req.session as WizardSession;
+  session.wizard ??= {};
   await renderPage(res, "wizard", {
     title: "Generar Historia",
     activePage: "generate",
