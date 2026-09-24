@@ -97,6 +97,8 @@ class StoryRunner:
         typed_rules: list[dict] | None = None,
         personajes_full: list[dict] | None = None,
         escenarios_full: list[dict] | None = None,
+        entities: list[dict] | None = None,
+        actos: list[dict] | None = None,
     ) -> Story:
         """Flujo completo: crear story + plan + narrar todos los beats.
 
@@ -136,6 +138,8 @@ class StoryRunner:
             narrator_config=narrator_config,
             typed_rules=typed_rules or [],
             personajes_full=personajes_full or [],
+            entities=entities or [],
+            actos=actos or [],
         )
         story = await create_story.execute(dto)
         logger.info(f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}")

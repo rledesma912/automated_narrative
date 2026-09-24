@@ -186,10 +186,16 @@ def _entity_error(e: ValidationError) -> str:
 async def ensure_valid_entities(
     genre_repository: GenreRepository | None, genero: str, entities: list[Entity]
 ) -> None:
-    """Cada naturaleza debe corresponder al género (Spec-450 §1). Sin repositorio no valida."""
+    """Cada naturaleza debe corresponder al género (Spec-450 §1). Sin repositorio no valida.
+
+    De paso completa `nature_label` desde el catálogo: la historia recién creada
+    (sin releerla de la base) ya lleva la etiqueta que usan los prompts.
+    """
     if genre_repository is None:
         return
+    labels = {n.id: n.label for n in await genre_repository.natures_of(genero)} if genero else {}
     for e in entities:
+        e.nature_label = labels.get(e.nature_id, e.nature_label)
         if not await genre_repository.nature_allowed(genero, e.nature_id):
             where = f"al género '{genero}'" if genero else "a ninguna del catálogo"
             raise InvalidEntityError(

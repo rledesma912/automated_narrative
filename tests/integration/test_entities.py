@@ -12,6 +12,7 @@ from src.domain.exceptions import InvalidEntityError
 from src.domain.models import RevealLevel, Story
 from src.infrastructure.database.connection import get_connection, init_db
 from src.infrastructure.database.repositories import SQLStoryRepository
+from src.infrastructure.exporters import YamlStoryExporter
 from src.main import app
 
 _BASE = {
@@ -232,3 +233,54 @@ def test_loader_yaml_sin_entidades():
 
     dto = YamlStoryLoader().load("title: t\nprotagonista: p\nrelator: r\nsinopsis: s\n")
     assert dto.entities == []
+
+
+async def test_cli_generate_input_conserva_las_entidades(monkeypatch, tmp_path):
+    """`generate --input` (con --mock): antes el orchestrator descartaba las entidades."""
+    from src.cli import commands
+
+    monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'cli.db'}")
+    yaml_path = tmp_path / "h.yaml"
+    yaml_path.write_text(
+        "title: Con amenaza\nprotagonista: Rosa\nrelator: primera\nsinopsis: Algo pasa.\n"
+        "storyteller_config:\n  atmosphere: {genre: folk_horror, subgenre: rural}\n"
+        "  entities:\n    - {name: La Mala Hora, nature: folklorica, reveal_level: nunca}\n",
+        encoding="utf-8",
+    )
+
+    await commands._generate_async(
+        "", "", "", "", "", "", True, tmp_path / "out", input_file=str(yaml_path)
+    )
+
+    (summary,) = await SQLStoryRepository().list_all()
+    assert [(e.name, e.reveal_level.value) for e in summary.entities] == [("La Mala Hora", "nunca")]
+
+
+async def test_cli_generate_input_guarda_el_texto_de_cada_acto(monkeypatch, tmp_path):
+    """`generate --input` (con --mock): antes se perdían los `actos` del YAML."""
+    from src.cli import commands
+
+    monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'cli.db'}")
+    actos = "".join(
+        f"    act_{n}: {{type: {t}, text: Texto del acto {n}.}}\n"
+        for n, t in enumerate(
+            ["exposicion", "accion_ascendente", "climax", "accion_descendente", "desenlace"], 1
+        )
+    )
+    yaml_path = tmp_path / "h.yaml"
+    yaml_path.write_text(
+        "title: Con actos\nprotagonista: Rosa\nrelator: primera\n"
+        "sinopsis: Algo pasa.\nstoryteller_config:\n  actos:\n" + actos,
+        encoding="utf-8",
+    )
+
+    await commands._generate_async(
+        "", "", "", "", "", "", True, tmp_path / "out", input_file=str(yaml_path)
+    )
+
+    (summary,) = await SQLStoryRepository().list_all()
+    story = await SQLStoryRepository().get_by_id(summary.id)
+    config = YamlStoryExporter().authoring_config(story)
+    assert [a["text"] for a in config["actos"].values()] == [
+        f"Texto del acto {n}." for n in range(1, 6)
+    ]

@@ -232,3 +232,38 @@ class TestStoryRunner:
         assert story is not None
         assert runner.last_narrative_id is None
         broken_uc.consolidate_and_save.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_run_full_crea_la_historia_con_sus_entidades(monkeypatch, tmp_path):
+    """Spec-450: `generate --input` pasa las entidades del YAML (antes se perdían)."""
+    from src.infrastructure.database.repositories import SQLGenreRepository
+
+    monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'r.db'}")
+    await init_db()
+    runner = StoryRunner(
+        llm_adapter=MockLLMAdapter(fixed_response="Beat narrado"),
+        story_repo=SQLStoryRepository(),
+        beat_repo=SQLBeatRepository(),
+        prompt_builder=PromptBuilder(),
+        output_dir=tmp_path,
+        genre_repo=SQLGenreRepository(),
+    )
+
+    story = await runner.run_full(
+        "Con amenaza",
+        "Rosa",
+        "primera",
+        [],
+        "Algo pasa.",
+        "folk_horror",
+        entities=[{"name": "La Mala Hora", "nature": "folklorica"}],
+    )
+
+    # En memoria ya con la etiqueta del catálogo (la usan los prompts)…
+    assert [(e.name, e.nature_label) for e in story.entities] == [
+        ("La Mala Hora", "Ser del folklore")
+    ]
+    # …y persistida.
+    saved = await SQLStoryRepository().get_by_id(story.id)
+    assert [e.nature_id for e in saved.entities] == ["folklorica"]
