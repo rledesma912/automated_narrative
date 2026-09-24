@@ -73,4 +73,35 @@ test.describe("Vista de Relatos", () => {
 
     expect(hasBorder || hasOutline || hasShadow).toBeTruthy();
   });
+
+  // Spec-490 T2.4
+  test("Descargar .md baja el relato para el TTS", async ({ page }) => {
+    const panel = page.locator("[data-relato-panel].active").first();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      panel.locator("[data-descargar-relato]").click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^el-monte-prohibido-\d{4}-\d{2}-\d{2}-\d{4}\.md$/);
+    const stream = await download.createReadStream();
+    let text = "";
+    for await (const chunk of stream) text += chunk.toString("utf-8");
+    expect(text.split("\n")[0]).toBe("# El monte prohibido");
+    expect(text).toContain("## Acto 1");
+  });
+
+  test("Copiar Relato copia rótulos y prosa, sin el texto de los botones", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const panel = page.locator("[data-relato-panel].active").first();
+    await panel.getByRole("button", { name: "Copiar Relato" }).click();
+    await expect(panel.getByRole("button", { name: /Copiado/ })).toBeVisible();
+
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toMatch(/^Acto 1\n\n/);
+    expect(copied).not.toContain("Regenerar");
+  });
 });
+

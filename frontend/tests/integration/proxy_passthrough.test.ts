@@ -67,4 +67,28 @@ describe("api proxy — HTTP method passthrough", () => {
 
     await backend.close();
   });
+
+  it("preserves download headers and body (Spec-490)", async () => {
+    const md = "# El monte prohibido\n\n## Acto 1\n\n—¿Quién anda ahí?\n";
+    const backend = await startMockBackend((_req, res) => {
+      res.writeHead(200, {
+        "Content-Type": "text/markdown; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="el-monte-prohibido-2026-09-24-1530.md"',
+      });
+      res.end(md);
+    });
+
+    const app = express();
+    app.use(createApiProxy(backend.url));
+
+    const r = await request(app).get("/api/v1/generated-narratives/abc/export.md");
+    expect(r.status).toBe(200);
+    expect(r.headers["content-type"]).toBe("text/markdown; charset=utf-8");
+    expect(r.headers["content-disposition"]).toBe(
+      'attachment; filename="el-monte-prohibido-2026-09-24-1530.md"',
+    );
+    expect(r.text).toBe(md);
+
+    await backend.close();
+  });
 });
