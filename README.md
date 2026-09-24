@@ -184,18 +184,50 @@ cd frontend && npm test                        # vitest del frontend
 
 ### Specs clave para entender el sistema
 
+Las que describen el sistema tal como funciona hoy. El resto de `specs/` (040–150, 302, 320) son saneamientos y fixes puntuales ya cerrados, útiles como historia.
+
+**Marco y configuración LLM**
+
 | Spec | Tema |
 |---|---|
 | `010_marco_sdd.md` | Framework SDD, naming y reglas arquitecturales. |
-| `060_llm_core_definitions_spec.md` | YAML unificado de configuración LLM + normalizer. |
-| `070_llm_profiles_spec.md` | Perfiles pre-configurados (`active_profile` + `LLM_PROFILE`). |
+| `060_llm_core_definitions_spec.md` | `llm_core_definitions.yaml`: proveedores, filtros de respuesta y normalizer. |
+| `070_llm_profiles_spec.md` | Perfiles LLM (`active_profile` + `LLM_PROFILE`). |
 | `120_cli_service_container_spec.md` | `CLIContainer`: inyección de dependencias para la CLI. |
-| `160_freytag_resonance_spec.md` | Los 5 Pilares Aristotélicos. |
-| `170_prompting_asertivo_spec.md` | Sistema de prompts compact para modelos locales. |
-| `180_saneamiento_architectural_narrativo.md` | Pipeline secuencial + `narrative_context` pre-baked. |
-| `210_arquitectura_web_y_streaming.md` | Frontend Express + SSE + StreamSessionManager. |
-| `220_motor_de_autoria_wizard_y_yaml.md` | Wizard de 5 pasos + bidireccionalidad YAML. |
-| `230_ciclo_de_vida_y_gestion_historias.md` | Estados de historia y persistencia de artefactos. |
-| `300_refactor_dominio_varios_relatos.md` | `GeneratedNarrative` (variantes por historia). |
-| `311_fix_galeria_ver_relato_y_delete.md` | Galería con switcher de variantes + delete. |
-| `312_fix_persistencia_generated_narrative.md` | Persistencia automática del relato consolidado. |
+| `480_voz_en_anthropic.md` | Proveedor por rol (`RoleRoutingAdapter`), `AnthropicAdapter` al día y perfil híbrido con la Voz en Claude (no activo). |
+
+**Pipeline narrativo**
+
+| Spec | Tema |
+|---|---|
+| `160_freytag_resonance_spec.md` | Los 5 pilares de resonancia (Hamartia → Residual), uno por acto. |
+| `170_prompting_asertivo_spec.md` | Prompts compact/frontier, `NarrativeAuditor` y validación del Analyst. |
+| `180_saneamiento_architectural_narrativo.md` | Pipeline de 5 actos (Analyst, Mapper, Voz, Journal) y `narrative_context` pre-armado. |
+| `410_resolver_determinista_frontend_relatos.md` | Reparto de escenarios sin LLM + vista de relatos y temas. |
+| `420_continuidad_narrativa_journal.md` | Misterios sin resolver del journal al acto siguiente. |
+| `450_entidad_narrativa.md` | Entidades (la Amenaza): nivel de revelación y exposición por acto. |
+| `470_prompt_voz_horror.md` | Prompt de la Voz con oficio de horror y arnés de evaluación (`evaluate_voice.py`). |
+
+**Datos y dominio**
+
+| Spec | Tema |
+|---|---|
+| `190_restructuracion_modelo_relacional.md` | Modelo relacional SQLite (`init_db()`, sin migraciones). |
+| `222_journal_relacional_spec.md` | Journal por acto persistido en tablas. |
+| `230_ciclo_de_vida_y_gestion_historias.md` | Estados de la historia y persistencia de artefactos. |
+| `300_dominio_relatos_y_variantes.md` | `GeneratedNarrative`: variantes por historia, galería y consolidación. |
+
+**Web, generación y producción**
+
+| Spec | Tema |
+|---|---|
+| `210_arquitectura_web_y_streaming.md` | Frontend Express como único origen, proxy `/api/*` y SSE. |
+| `220_motor_de_autoria_wizard_y_yaml.md` | Wizard de autoría + round-trip YAML. |
+| `315_arquitectura_frontend_y_diseno.md` | Arquitectura del frontend, CSS y diseño. |
+| `440_wizard_compacto_generos_anidados.md` | Wizard compacto, catálogo de géneros/subgéneros y narrador dinámico. |
+| `430_regeneracion_parcial_por_acto.md` | Regenerar un acto (solo la Voz) sobre una variante. |
+| `460_jobs_asincronos_y_bus_sse.md` | Generación como jobs (`JobManager`) + bus de eventos SSE (banda, sala). |
+| `490_exportar_relato_para_tts.md` | «Descargar .md» para el TTS (`audiogen`) y «Copiar Relato». |
+| `510_tiempo_estimado_generacion.md` | Tiempo estimado: antes de lanzar, restante y cuánto tardó. |
+| `325_separacion_dev_prod.md` | Dev (:8020/:3010) y prod (Docker :8010/:3000) en la misma máquina. |
+| `520_deploy_desde_imagen.md` | Prod cambia solo con `make deploy` desde `main` (config en la imagen). |
