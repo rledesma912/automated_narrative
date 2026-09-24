@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — preguntas cerradas (2026-09-24); pendiente de OK para pasar a PLAN
+**Estado:** PLAN — SPECIFY aprobada (2026-09-24); plan pendiente de OK para pasar a TASKS
 **Roadmap:** EV-2. Sigue a Spec-470 (EV-3), que dejó como techo del modelo local la gramática torpe y los errores de continuidad.
 
 ---
@@ -93,3 +93,53 @@ La evaluación completa (2 corridas × sin/con entidades = 4 relatos) costaría 
 2. **Pensamiento:** configurable por rol (`thinking: adaptive` / `disabled`), para comparar con y sin cuando se evalúe. En Sonnet 5, **omitir** `thinking` corre adaptativo: «sin pensamiento» manda `{"type": "disabled"}` explícito.
 3. **Presupuesto:** ninguno por ahora. Solo integración, probada con el SDK simulado; sin llamadas reales. La evaluación (`evaluate_voice.py --profile …`) queda lista para cuando haya presupuesto.
 4. **Prod:** el perfil híbrido queda definido pero **no se activa**; se decide después de evaluar.
+
+---
+
+## PLAN
+
+### Estrategia
+
+Primero el ruteo por rol (sin él, ningún perfil mixto funciona), después el adapter de Anthropic al día, y al final el perfil híbrido y el arnés de evaluación. **Todo se prueba con el SDK simulado**: los tests reemplazan el cliente de Anthropic por un doble que devuelve respuestas armadas a mano (bloques `thinking` + `text`, `usage`, `stop_reason`), así se verifica exactamente qué se envía y cómo se lee lo que vuelve, sin gastar.
+
+```
+S0 Proveedor por rol ─▶ S1 AnthropicAdapter al día ─▶ S2 Perfil híbrido + health + evaluación preparada ─▶ S3 Docs + DONE
+```
+
+### Decisiones técnicas
+
+1. **`RoleRoutingAdapter`** (`src/infrastructure/adapters/role_routing_adapter.py`): implementa `LLMProvider`; recibe `{rol: adapter}` y un adapter por defecto; en `generate(..., role=...)` despacha al del rol (sin rol o rol desconocido → el por defecto). `close()` cierra cada adapter una vez. Los adapters se crean **una vez por proveedor** (si dos roles usan Ollama, comparten el adapter).
+2. **Config:** `roles.<rol>.provider` opcional en `llm_core_definitions.yaml`; `settings.role_provider(rol)` devuelve el del rol o el del perfil. `settings.llm_providers` (conjunto de proveedores en uso) para el health check y `/config/active-profile`.
+3. **`LLMFactory.get_provider()`**: si todos los roles usan el mismo proveedor, devuelve ese adapter como hoy (cero cambio para los perfiles actuales); si mezclan, arma el `RoleRoutingAdapter`. `--mock` y `provider=` explícito siguen igual.
+4. **`AnthropicAdapter`**:
+   - Modelos sin sampling: `claude-opus-4-7`/`4-8`, `claude-opus-5*`, `claude-sonnet-5*`, `claude-fable-*` (lista de prefijos; ninguno recibe `temperature`/`top_p`/`top_k`).
+   - `thinking` del rol: `adaptive` → `{"type": "adaptive"}`; `disabled` → `{"type": "disabled"}` (en Sonnet 5 omitirlo **no** lo apaga); sin valor → no se manda. `effort` → `output_config={"effort": …}`.
+   - `max_tokens` = `num_predict` del rol (o el recibido); con pensamiento, mínimo 16000 para que el razonamiento no se coma el acto.
+   - Texto = concatenación de los bloques `text`; `stop_reason == "refusal"` → `LLMRefusalError` con la categoría de `stop_details`; `stop_reason == "max_tokens"` → error (un acto truncado no se persiste).
+   - `LLMResponse` suma `input_tokens` / `output_tokens` opcionales (el resto de los adapters no cambia).
+   - Errores del SDK con la cadena específica (`RateLimitError`, `APIStatusError`, `APIConnectionError`), sin reintentos propios: el SDK ya reintenta 429/5xx.
+5. **Perfil `ollama-gemma3-12b-voz-sonnet5`**: copia de los roles de `ollama-gemma3-12b` (Analyst, Mapper, Journal en Ollama) y `voz: {provider: anthropic, model: claude-sonnet-5, num_predict: …, thinking: …}`; variante de prompt compact (igual que hoy). El perfil viejo `anthropic-opus-voz` (roto) se elimina. **No se activa**.
+6. **Health check** (`/health`): verifica cada proveedor en uso (Ollama responde; Anthropic tiene key); `/config/active-profile` muestra el proveedor de cada rol.
+7. **`evaluate_voice.py`**: `--profile <nombre>` (cambia el perfil solo dentro del proceso) y costo por relato cuando la Voz es de Anthropic (suma `input_tokens`/`output_tokens` de las llamadas de la Voz × precio de Sonnet 5, US$ 2 / 10 por millón). Pide confirmación explícita (`--yes`) antes de llamar a una API paga.
+
+### S0 — Proveedor por rol
+- `role_provider()`, `RoleRoutingAdapter`, `LLMFactory`; tests: perfil de un proveedor → mismo adapter que hoy; perfil mixto → cada rol a su adapter; `close()` una vez por adapter.
+
+### S1 — AnthropicAdapter al día
+- §4 completo, con un cliente de Anthropic simulado en los tests: sin `temperature` para Sonnet 5; `thinking` adaptive/disabled; texto desde bloques `text` aunque el primero sea `thinking`; refusal y `max_tokens` como error; `usage` en `LLMResponse`.
+
+### S2 — Perfil híbrido, health y evaluación preparada
+- Perfil nuevo (sin activar), borrar `anthropic-opus-voz`; health y `/config/active-profile` por rol; `evaluate_voice.py --profile` + costo + `--yes`. Prueba de punta a punta con el pipeline completo, el perfil híbrido y el cliente de Anthropic simulado (la Voz va al doble; Analyst/Mapper/Journal al mock local).
+
+### S3 — Documentación y cierre
+- `CLAUDE.md` (LLM Provider Abstraction / LLM Configuration: proveedor por rol, perfil híbrido, cómo evaluarlo con costo), nota en Spec-060/070, Spec-480 → DONE (la evaluación real queda como pendiente con su costo estimado). Deploy del backend (con OK): no cambia el comportamiento en prod porque el perfil activo sigue siendo el local.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| El doble del SDK no se parece a la API real | Se arma con los tipos del SDK instalado (`anthropic.types.Message`, `TextBlock`, `ThinkingBlock`, `Usage`) en vez de dicts sueltos; la primera corrida real (cuando haya presupuesto) arranca con una prueba corta. |
+| La versión 0.96 del SDK no acepta algún parámetro nuevo | Los parámetros que el SDK no tipa (`output_config`) van por `extra_body`, verificado en el test. |
+| El ruteo rompe perfiles existentes | Con un solo proveedor, `LLMFactory` devuelve exactamente el mismo adapter que hoy (test). |
+| Un gasto accidental | El perfil híbrido no se activa; `evaluate_voice.py` exige `--yes` con un proveedor pago; los tests nunca crean un cliente real. |
+
