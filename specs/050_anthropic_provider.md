@@ -1,5 +1,7 @@
 # Spec 020: Anthropic API Provider
 
+> **Actualizado por Spec-480 (2026-09-24):** el perfil `anthropic-opus-voz` se eliminó — no podía funcionar (el pipeline usaba un solo proveedor para todos los roles y Mapper/Journal pedían modelos de Ollama). Lo reemplaza `ollama-gemma3-12b-voz-sonnet5` (Voz en Claude Sonnet 5 vía proveedor por rol, no activo). El `AnthropicAdapter` se puso al día con Sonnet 5 / Opus 5 (sin sampling, `thinking`, bloques `text`, `refusal`).
+
 > **Estado:** implementado. Claude Opus 4.7 está en uso productivo vía el perfil
 > híbrido `anthropic-opus-voz` (rol `voz` con `claude-opus-4-7`, resto de roles
 > con `claude-sonnet-4-6`). Ver `config/llm_core_definitions.yaml` y Spec-070.

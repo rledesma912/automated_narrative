@@ -97,11 +97,12 @@ async def health_check():
     except Exception as exc:
         checks["sqlite"] = f"error: {exc}"
 
-    # Proveedor LLM activo
-    provider = settings.llm_provider
-    checks["provider"] = provider
+    # Proveedores LLM en uso (Spec-480: cada rol puede tener el suyo).
+    providers = sorted(settings.llm_providers)
+    checks["provider"] = settings.llm_provider  # el del perfil (compatibilidad)
+    checks["providers"] = providers
 
-    if provider == "ollama":
+    if "ollama" in providers:
         import httpx
 
         host = settings.ollama_host
@@ -112,17 +113,18 @@ async def health_check():
         except Exception as exc:
             checks["ollama"] = f"error: {exc}"
 
-    elif provider == "anthropic":
-        import os
+    if "anthropic" in providers:
+        # settings lee el .env: os.getenv no ve la clave si solo está ahí.
+        checks["anthropic_key"] = "present" if settings.anthropic_api_key else "missing"
 
-        checks["anthropic_key"] = "present" if os.getenv("ANTHROPIC_API_KEY") else "missing"
-
-    elif provider == "gemini":
+    if "gemini" in providers:
         checks["gemini"] = "cli-based (no ping available)"
 
-    healthy = checks.get("sqlite") == "ok" and (
-        checks.get("ollama") == "ok" or provider in ("anthropic", "gemini", "mock")
-    )
+    provider_ok = {
+        "ollama": checks.get("ollama") == "ok",
+        "anthropic": checks.get("anthropic_key") == "present",
+    }
+    healthy = checks.get("sqlite") == "ok" and all(provider_ok.get(p, True) for p in providers)
 
     return {
         "status": "healthy" if healthy else "degraded",
@@ -187,6 +189,7 @@ async def get_active_profile():
     for role in ("story_analyst", "director", "voz", "journal"):
         cfg = settings.role_config(role)
         roles[role] = {
+            "provider": settings.role_provider(role),
             "model": cfg.get("model"),
             "temperature": cfg.get("temperature"),
         }

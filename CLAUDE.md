@@ -103,9 +103,13 @@ En la web el mismo flujo corre como **job** (Spec-460): `POST /stories/{id}/jobs
 
 ## LLM Provider Abstraction
 
-Protocolo `LLMProvider` (`src/domain/interfaces.py`). Cuatro adapters en `src/infrastructure/adapters/`: `OllamaAdapter`, `AnthropicAdapter`, `GeminiCLIAdapter`, `MockLLMAdapter` (tests, `--mock`).
+Protocolo `LLMProvider` (`src/domain/interfaces.py`). Adapters en `src/infrastructure/adapters/`: `OllamaAdapter`, `AnthropicAdapter`, `GeminiCLIAdapter`, `MockLLMAdapter` (tests, `--mock`) y `RoleRoutingAdapter`.
 
 Provider activo: definido en perfil del YAML. Override: `LLM_PROVIDER` env o `--provider` CLI.
+
+**Proveedor por rol (Spec-480):** un rol puede declarar `provider` en el perfil (`roles.voz.provider: anthropic`); si no, usa el del perfil. Con un solo proveedor `LLMFactory` devuelve el adapter de siempre; si los roles mezclan proveedores, un `RoleRoutingAdapter` despacha cada llamada al adapter de su rol (todas pasan `role`). `/health` verifica cada proveedor en uso y `/config/active-profile` muestra el de cada rol.
+
+**`AnthropicAdapter`:** sin `temperature` para los modelos que no la aceptan (Sonnet 5, Opus 5, Opus 4.7/4.8, Fable); `thinking` por rol (`adaptive` / `disabled` — en Sonnet 5 / Opus 5 omitirlo **piensa**); `effort` en `output_config`; `max_tokens` = `num_predict` con piso 16000 si piensa; texto de los bloques `text`; `refusal` → `LLMRefusalError`, `max_tokens` → error; `LLMResponse.input_tokens/output_tokens`. Tests con `tests/support/fake_anthropic.py` (tipos reales del SDK, sin llamadas).
 
 ## LLM Configuration
 
@@ -114,6 +118,7 @@ Provider activo: definido en perfil del YAML. Override: `LLM_PROVIDER` env o `--
 - Perfiles autocontenidos bajo `profiles:` (cada uno trae provider, bloque adapter, y los 4 roles `story_analyst`/`director`/`voz`/`journal`).
 - Activación: `active_profile:` en YAML o `LLM_PROFILE=<nombre>` (env tiene precedencia). Resolver en `src/config.py`.
 - Convención model-por-rol: el `model` que se envía al LLM vive en `profiles.<perfil>.roles.<rol>.model`.
+- Perfil híbrido `ollama-gemma3-12b-voz-sonnet5` (Spec-480): la Voz en `claude-sonnet-5`, el resto en `gemma3:12b`. **No activo**; cuesta ~US$ 0,08 por relato (~US$ 0,13 con `thinking: adaptive`). Evaluarlo con `scripts/evaluate_voice.py --profile ollama-gemma3-12b-voz-sonnet5 --yes` (sin `--yes` solo muestra el costo estimado y no genera).
 - Filtros (`response_filters`, Spec-080): `thinking_tags`, `strip_line_patterns`, `preserve_paragraph_breaks`, `model_overrides` por substring de modelo. Aplicados por `ResponseNormalizer` antes de persistir.
 
 Detalle completo: Spec-060, Spec-070.
@@ -153,7 +158,7 @@ ANTHROPIC_API_KEY=...                              # solo si perfil usa Anthropi
 DATABASE_URL=sqlite+aiosqlite:///data/dev/stories.db
 PROMPTS_DIR=./config/prompts_generation
 BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
-# LLM_PROFILE=ollama-llama31                       # opcional: pisa active_profile
+# LLM_PROFILE=ollama-gemma3-12b                    # opcional: pisa active_profile
 ```
 
 `frontend/.env` independiente (dev): `PORT=3010`, `CORE_API_URL=http://localhost:8020`.
