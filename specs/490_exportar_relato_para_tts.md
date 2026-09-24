@@ -192,27 +192,27 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S0 — Formateador
 
-- [ ] **T0.1:** Partir el relato consolidado en actos.
+- [x] **T0.1:** Partir el relato consolidado en actos.
   - Acceptance: `split_acts(content) -> list[tuple[int, str]]` a partir de los encabezados `## Acto N` (y el legado `## Beat N`); el texto antes del primer encabezado se descarta si está vacío o se conserva como preámbulo sin número; un acto sin prosa se omite.
   - Verify: pytest con el `content` que produce `_consolidate_content` y casos borde (sin encabezados, acto vacío, preámbulo).
   - Files: `src/application/services/narrative_script_formatter.py`, `tests/unit/application/services/test_narrative_script_formatter.py`
-- [ ] **T0.2:** Limpiar la prosa de cada acto (§2.1 reglas 3 y 4).
+- [x] **T0.2:** Limpiar la prosa de cada acto (§2.1 reglas 3 y 4).
   - Acceptance: un párrafo por línea (saltos simples → espacio, párrafos separados por línea en blanco); guion de diálogo inicial (`-`, `–`) → `—`; se quitan `**…**`, `*…*` y `_…_` (este último solo delimitado por espacio o puntuación); se quitan `>` y `#` iniciales; se eliminan los separadores (`---`, `***`, `* * *`); un párrafo que es solo `[…]` pierde los corchetes. La prosa sin marcas sale idéntica.
   - Verify: pytest, un caso por regla + un párrafo real sin marcas que no cambia + una palabra con `_` interno que no cambia.
   - Files: los de T0.1.
-- [ ] **T0.3:** Armar el `.md` completo.
+- [x] **T0.3:** Armar el `.md` completo.
   - Acceptance: `to_tts_markdown(title, content)` → `# <título>`, cada acto con `## Acto N` y su prosa, `[pause=1500]` entre actos (no después del último), UTF-8 con `\n` y salto final.
   - Verify: pytest comparando la salida completa de un relato de 3 actos con el esperado.
   - Files: los de T0.1.
-- [ ] **T0.4:** Nombre de archivo.
+- [x] **T0.4:** Nombre de archivo.
   - Acceptance: `export_filename(title, created_at)` → `<slug>-AAAA-MM-DD-HHMM.md`; slug ASCII en minúsculas sin diacríticos (`ñ` → `n`), `[^a-z0-9]+` → `-`, sin guiones en los bordes, máx. 60 caracteres, `relato` si queda vacío; la hora en zona AR aunque `created_at` venga en otra zona.
   - Verify: pytest («El monte prohibido», título con `¿?` y `ñ`, título vacío, título largo, `created_at` en UTC).
   - Files: los de T0.1.
-- [ ] **T0.5:** Test de contrato con `audiogen`.
+- [x] **T0.5:** Test de contrato con `audiogen`.
   - Acceptance: un helper de test replica la regla de salto del parser de `audiogen` (línea vacía, empieza con `#`/`-`/`*`/`>`, o calza `^\[…\]$`); sobre la exportación de un relato «hostil» (diálogos con guion, cursivas al inicio, `>`, separadores, `[…]`), cada párrafo de prosa de la entrada sobrevive como segmento, y solo el título, los rótulos y los `[pause=1500]` se saltean o son comandos.
   - Verify: pytest.
   - Files: `tests/unit/application/services/test_narrative_script_audiogen_contract.py`
-- [ ] **Checkpoint S0:** lint + pytest → commit.
+- [x] **Checkpoint S0:** lint + pytest → commit.
 
 ### S1 — Endpoint de descarga
 
