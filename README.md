@@ -84,8 +84,9 @@ make ui               # → http://localhost:3010
 | API Docs | http://localhost:8020/docs | Swagger UI |
 | Health | http://localhost:8020/api/v1/health | Diagnóstico SQLite + LLM activo |
 
-> Estos puertos son del entorno de **desarrollo** (Spec-325). Producción corre vía
-> `docker compose up` en `:3000` (frontend) / `:8010` (API), con la DB `data/prod/stories.db`.
+> Estos puertos son del entorno de **desarrollo** (Spec-325). Producción corre en Docker
+> en `:3000` (frontend) / `:8010` (API), con la DB `data/prod/stories.db`, y se actualiza
+> solo con `make deploy` desde `main` (Spec-520; `make deploy-check` valida sin tocar nada).
 
 **Flujo típico:**
 1. Wizard de 5 pasos (Spec-220) → guarda la historia como YAML y crea fila `story` en estado `draft`.
@@ -198,4 +199,3 @@ cd frontend && npm test                        # vitest del frontend
 | `300_refactor_dominio_varios_relatos.md` | `GeneratedNarrative` (variantes por historia). |
 | `311_fix_galeria_ver_relato_y_delete.md` | Galería con switcher de variantes + delete. |
 | `312_fix_persistencia_generated_narrative.md` | Persistencia automática del relato consolidado. |
-| `500_clean_code_responsability.md` | Refactor incremental del core (S-A→S-F): `PhaseEvent`, `prepare_story()`, `_execute_single_beat()`, inyección de servicios. |

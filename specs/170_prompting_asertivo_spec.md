@@ -2,7 +2,7 @@
 
 > **Actualizado por Spec-470 (2026-09-24):** el system prompt de la Voz (compact `voice_system_compact.md` y frontier `system.md`) suma una guía de oficio compartida (`voice_craft.md`), la lista de clichés prohibidos (`voice_cliches.txt`), el bloque de parentescos desde quien narra y una presentación con el nombre del narrador. Evaluación reproducible con `scripts/evaluate_voice.py`.
 
-**Estado:** APROBADO
+**Estado:** IMPLEMENTADO (verificado en el código 2026-09-24, Spec-520) — el checklist del plan no se actualizó en su momento; lo implementado: `INarrativeValidator` (`domain/interfaces.py`), `NarrativeAuditor`, prompts `*_assertive.md` y estrategias `CompactStrategy`/`FrontierStrategy`.
 **Fecha:** 2026-04-26
 **Autor:** Gemini CLI (Architect & Senior Engineer)
 **Relacionado con:** SPEC-081 (Resonancia), SPEC-160 (Freytag Resonance)
