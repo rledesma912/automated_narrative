@@ -14,7 +14,15 @@ from src.application.services.prompt_strategies import (
 from src.application.services.synopsis_slice_resolver import SynopsisSliceResolver
 from src.application.services.template_loader import TemplateLoader
 from src.config import settings
-from src.domain.models import Beat, BeatStatus, MacroBeat, NarrativeAnchors, NarrativeJournal, Story
+from src.domain.models import (
+    Beat,
+    BeatStatus,
+    Entity,
+    MacroBeat,
+    NarrativeAnchors,
+    NarrativeJournal,
+    Story,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +286,7 @@ Extiende este momento (150-400 palabras)."""
             escenarios=[s.name for s in story.scenarios] if story.scenarios else [],
             atmosfera=story.atmosfera,
             reglas=reglas_str,
+            amenaza_section=self._amenaza_for_analyst(story),
         )
 
     def build_synopsis_mapper_one_prompt(
@@ -310,7 +319,8 @@ Extiende este momento (150-400 palabras)."""
                 "FORMATO:\nESCENARIO: [nombre]\n\nEVENTOS:\n- [evento]"
             )
 
-        beat_info = self.get_beat_info(macro_beat_id)
+        principal = story.principal_entity
+        beat_info = self.get_beat_info(macro_beat_id, principal.reveal_level if principal else None)
 
         synopsis_slice_val = synopsis_slice or story.sinopsis
         active_rules_str = "\n".join(f"- {r}" for r in active_rules) if active_rules else "Ninguna"
@@ -344,10 +354,71 @@ Extiende este momento (150-400 palabras)."""
             macro_beat_id=macro_beat_id,
             beat_name=beat_info.get("name", f"acto_{macro_beat_id}"),
             beat_intent_legacy=beat_info.get("intent", ""),
+            amenaza_section=self._amenaza_for_mapper(story, macro_beat_id),
         )
 
-    def get_beat_info(self, beat_id: int) -> dict:
-        return self._beat_repo.get_by_id(beat_id)
+    def get_beat_info(self, beat_id: int, reveal_level: str | None = None) -> dict:
+        return self._beat_repo.get_by_id(beat_id, reveal_level)
+
+    # -- Spec-450: entidades (la amenaza) --------------------------------------
+    # Sin entidades, cada bloque es "" y el prompt queda idéntico al de antes: los
+    # placeholders van pegados al final de una línea existente del template.
+
+    @staticmethod
+    def _entity_card(entity: "Entity", fields: tuple[str, ...] | list[str]) -> list[str]:
+        """Ficha de una entidad con solo los campos pedidos (principal marcada)."""
+        head = []
+        if "name" in fields:
+            head.append(entity.name or "(sin nombre)")
+        if "nature" in fields:
+            head.append(entity.nature_label or entity.nature_id)
+        title = " — ".join(head) if head else f"Entidad {entity.order_index + 1}"
+        if entity.order_index == 0:
+            title += " [principal]"
+        lines = [f"- {title}"]
+        for key, label in (
+            ("description", "Qué es"),
+            ("manifestations", "Cómo se percibe"),
+            ("limits", "Límites"),
+        ):
+            value = getattr(entity, key)
+            if key in fields and value:
+                lines.append(f"  {label}: {value}")
+        return lines
+
+    _FULL_CARD = ("name", "nature", "description", "manifestations", "limits")
+
+    def _amenaza_for_analyst(self, story: "Story") -> str:
+        if not story.entities:
+            return ""
+        lines = ["", "", "AMENAZA (la primera es la principal; anclá los pilares a ella):"]
+        for e in story.entities:
+            lines += self._entity_card(e, self._FULL_CARD)
+        return "\n".join(lines)
+
+    def _amenaza_for_journal(self, story: "Story") -> str:
+        if not story.entities:
+            return ""
+        lines = ["", "- Amenaza (la primera es la principal):"]
+        for e in story.entities:
+            lines += [f"  {line}" for line in self._entity_card(e, self._FULL_CARD)]
+        return "\n".join(lines)
+
+    def _amenaza_for_mapper(self, story: "Story", beat_id: int) -> str:
+        if not story.entities:
+            return ""
+        lines = [
+            "",
+            "",
+            "### AMENAZA EN ESTE ACTO",
+            "Los eventos no revelan de la entidad más de lo que indica «En este acto».",
+        ]
+        for e in story.entities:
+            lines += self._entity_card(e, self._FULL_CARD)
+            guide = self._beat_repo.exposure_for(beat_id, e.reveal_level).get("guide", "")
+            if guide:
+                lines.append(f"  En este acto: {guide}")
+        return "\n".join(lines)
 
     def _build_narrator_block(self, config: dict) -> str:
         """Formatea narrator_config completo para el prompt (Spec-070/180)."""
@@ -485,6 +556,7 @@ Extiende este momento (150-400 palabras)."""
             previous_journal,
             cast_block=cast_block,
             active_rules=active_rules,
+            entities=story.entities if story else None,
         )
 
     def build_scenario_resolver_prompt(
@@ -570,6 +642,8 @@ Extiende este momento (150-400 palabras)."""
                 f"- Misterios sin resolver: {prev_unresolved}\n"
                 f"- Estado físico/emocional: {prev_state}"
             )
+            if story.entities and previous_journal.entity_state:
+                previous_state_section += f"\n- Amenaza: {previous_journal.entity_state}"
             consistency_rules = (
                 "- Mantener consistencia con el estado anterior\n"
                 "- Si no hay cambios relevantes, mantener el valor anterior"
@@ -587,6 +661,13 @@ Extiende este momento (150-400 palabras)."""
                 if beat.has_content()
                 else "[Aún no generado]",
                 consistency_rules=consistency_rules,
+                amenaza_section=self._amenaza_for_journal(story),
+                entity_state_field=(
+                    ',\n  "entity_state": "Qué sabe el narrador de cada entidad y qué hizo '
+                    'en este beat (1-2 oraciones)"'
+                    if story.entities
+                    else ""
+                ),
             )
 
         raise ValueError(f"Template journal no encontrado: {settings.prompt_file_journal}")

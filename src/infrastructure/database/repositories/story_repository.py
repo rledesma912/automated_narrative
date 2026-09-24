@@ -298,7 +298,10 @@ class SQLStoryRepository:
 
     async def _load_entities(self, conn, story_id: str) -> list[Entity]:
         cursor = await conn.execute(
-            "SELECT * FROM entity WHERE story_id = ? ORDER BY order_index", (story_id,)
+            "SELECT e.*, n.label AS nature_label FROM entity e "
+            "LEFT JOIN entity_nature n ON n.id = e.nature_id "
+            "WHERE e.story_id = ? ORDER BY e.order_index",
+            (story_id,),
         )
         return [
             Entity(
@@ -311,6 +314,7 @@ class SQLStoryRepository:
                 manifestations=r["manifestations"] or "",
                 limits=r["limits"] or "",
                 reveal_level=r["reveal_level"],
+                nature_label=r["nature_label"] or "",
             )
             for r in await cursor.fetchall()
         ]
@@ -398,6 +402,13 @@ class SQLStoryRepository:
                 journal.physical_emotional_state,
             ),
         )
+        # Spec-450: el estado de las entidades vive en su propia tabla.
+        if journal.entity_state:
+            await conn.execute(
+                "INSERT OR REPLACE INTO entity_journal (id, story_id, beat_number, entity_state) "
+                "VALUES (?, ?, ?, ?)",
+                (str(uuid.uuid4()), str(story_id), beat_number, journal.entity_state),
+            )
 
         await conn.commit()
         await conn.close()
@@ -414,15 +425,19 @@ class SQLStoryRepository:
         """
         conn = await get_connection()
 
+        select = (
+            "SELECT j.*, ej.entity_state FROM narrative_journal j "
+            "LEFT JOIN entity_journal ej "
+            "ON ej.story_id = j.story_id AND ej.beat_number = j.beat_number "
+            "WHERE j.story_id = ?"
+        )
         if beat_number is not None:
             cursor = await conn.execute(
-                "SELECT * FROM narrative_journal WHERE story_id = ? AND beat_number = ?",
-                (str(story_id), beat_number),
+                f"{select} AND j.beat_number = ?", (str(story_id), beat_number)
             )
         else:
             cursor = await conn.execute(
-                "SELECT * FROM narrative_journal WHERE story_id = ? ORDER BY beat_number DESC LIMIT 1",
-                (str(story_id),),
+                f"{select} ORDER BY j.beat_number DESC LIMIT 1", (str(story_id),)
             )
 
         row = await cursor.fetchone()
@@ -435,6 +450,7 @@ class SQLStoryRepository:
             last_events=row["last_events"],
             unresolved_mysteries=row["unresolved_mysteries"],
             physical_emotional_state=row["physical_emotional_state"],
+            entity_state=row["entity_state"] or "",
         )
 
     async def clear_story_artifacts(self, story_id) -> None:
@@ -443,6 +459,7 @@ class SQLStoryRepository:
         sid = str(story_id)
         try:
             await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
+            await conn.execute("DELETE FROM entity_journal WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
             await conn.commit()

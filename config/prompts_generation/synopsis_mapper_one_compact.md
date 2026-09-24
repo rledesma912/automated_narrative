@@ -11,7 +11,7 @@ Sos el puente entre la sinopsis y la narración literaria.
 - **ESCENARIO DESIGNADO:** {active_scenario}
 
 ### REGLAS ACTIVAS QUE DEBEN MANIFESTARSE
-{active_rules}
+{active_rules}{amenaza_section}
 
 ### FRAGMENTO DE SINOPSIS (EVENTOS BASE)
 {synopsis_slice}

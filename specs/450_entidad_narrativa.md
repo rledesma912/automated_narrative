@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-22
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); S2 commiteado; sigue S3
+**Estado:** IMPLEMENT — S0 desplegado; S1 commiteado (sin despliegue); S2 commiteado; S3 commiteado (sin despliegue); sigue S4
 **Depende de:** Spec-440 (catálogo de géneros en DB, wizard compacto)
 
 ---
@@ -322,27 +322,50 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S3 — Pipeline
 
-- [ ] **T3.1:** Regresión cero (antes de tocar prompts).
+- [x] **T3.1:** Regresión cero (antes de tocar prompts).
   - Acceptance: test que corre el pipeline completo con `MockLLMAdapter` sobre una historia sin entidades y congela los 17 prompts (system + user).
   - Verify: pytest en verde contra el código actual y al final del slice.
   - Files: `tests/integration/test_pipeline_prompts_snapshot.py` (nuevo)
-- [ ] **T3.2:** Analyst y Mapper.
+- [x] **T3.2:** Analyst y Mapper.
   - Acceptance: bloque «AMENAZA» con las fichas (principal primero) en `story_analyst_*compact.md` y `synopsis_mapper_*compact.md`, solo si hay entidades; el Mapper suma la exposición del beat por entidad; Resolver y Mapper usan el beat resuelto con el nivel de la principal.
   - Verify: pytest de `PromptBuilder` (con entidades: bloque presente y en orden; sin entidades: T3.1 idéntico).
   - Files: `src/application/services/prompt_builder.py`, `config/prompts_generation/story_analyst_compact.md`, `config/prompts_generation/synopsis_mapper_one_compact.md`
-- [ ] **T3.3:** Voz.
+- [x] **T3.3:** Voz.
   - Acceptance: `NarrativeContextAssembler.assemble()` recibe las entidades y el nivel de la principal: bloque «AMENAZA EN ESTE ACTO» con solo la exposición graduada de cada entidad (nunca la ficha completa); `PROHIBIDO`/`Efecto buscado` salen del beat resuelto; `entity_state` del acto anterior en la memoria.
   - Verify: pytest (con `nunca` en el beat 1 no aparecen nombre ni naturaleza; con `explicita` sí; sin entidades = snapshot).
   - Files: `src/application/services/narrative_context_assembler.py`, `src/application/services/prompt_builder.py`
-- [ ] **T3.4:** Journal.
+- [x] **T3.4:** Journal.
   - Acceptance: `journal.md` pide `entity_state` solo si hay entidades; `NarrativeJournal.entity_state` opcional; `save_journal()` lo guarda en `entity_journal` y `get_journal()` lo devuelve; llega a la Voz del beat siguiente y a la regeneración de un acto (Spec-430).
   - Verify: pytest (parseo con y sin la clave; persistencia; `RegenerateBeatVozUseCase` recibe el estado).
   - Files: `config/prompts_generation/journal.md`, `src/application/services/memory_journalist.py`, `src/domain/models.py`, `src/infrastructure/database/repositories/story_repository.py`
-- [ ] **T3.5:** Medición de tokens.
+- [x] **T3.5:** Medición de tokens.
   - Acceptance: script que arma los prompts de los 5 roles con 0, 1 y 3 entidades (campos al tope) y reporta tokens estimados vs `num_ctx` de cada rol del perfil activo; resultado anotado en la spec. Si un rol se pasa, se ajustan topes o se resume la ficha para ese rol antes de cerrar el slice.
   - Verify: salida del script en la spec.
   - Files: `scripts/measure_entity_prompts.py` (nuevo)
-- [ ] **Checkpoint S3:** lint + pytest (T3.1 idéntico) → commit (despliegue junto con S4).
+- [x] **Notas de S3 (2026-09-23):**
+  - **16 llamadas, no 17:** desde Spec-410 el resolver es determinístico; `build_scenario_resolver_prompt` no tiene llamadores (código muerto, no se toca). El punto «Resolver usa el beat resuelto» no aplica.
+  - **Regresión cero:** los placeholders nuevos (`{amenaza_section}`, `{entity_state_field}`) van pegados al final de una línea existente del template; sin entidades valen `""` y los 16 prompts quedan idénticos al snapshot de T3.1.
+  - **`Entity.nature_label`:** etiqueta del catálogo cargada por el repo (JOIN), no se persiste; los prompts dicen «Ser del folklore», no `folklorica`.
+  - **Bug previo arreglado (commit aparte):** `MemoryJournalist` llamaba al LLM sin `role`/`num_ctx`/`num_predict`; Ollama usaba sus valores por defecto (4096/2048) en vez de los del rol journal (p. ej. `num_predict` 256).
+  - **Medición T3.5** (`scripts/measure_entity_prompts.py`, pipeline real con textos de tamaño realista, entidades con todos los campos al tope, tokens contados con el tokenizer de `gemma3:12b` vía Ollama; margen = num_ctx − prompt − num_predict):
+
+| Escenario | Rol | Prompt máx. | Salida | num_ctx | Margen |
+|---|---|---|---|---|---|
+| 0 entidades | story_analyst | 1641 | 500 | 4096 | 1955 |
+| 0 entidades | director | 1235 | 700 | 8192 | 6257 |
+| 0 entidades | voz | 1365 | 1000 | 8192 | 5827 |
+| 0 entidades | journal | 879 | 256 | 4096 | 2961 |
+| 1 entidad | story_analyst | 1955 | 500 | 4096 | 1641 |
+| 1 entidad | director | 1585 | 700 | 8192 | 5907 |
+| 1 entidad | voz | 1747 | 1000 | 8192 | 5445 |
+| 1 entidad | journal | 1267 | 256 | 4096 | 2573 |
+| 3 entidades | story_analyst | 2537 | 500 | 4096 | 1059 |
+| 3 entidades | director | 2231 | 700 | 8192 | 5261 |
+| 3 entidades | voz | 2371 | 1000 | 8192 | 4821 |
+| 3 entidades | journal | 1851 | 256 | 4096 | 1989 |
+
+    Todos los roles entran con margen; el más ajustado es el Analyst con 3 entidades (~1060 tokens libres). **No se ajustan los topes.**
+- [x] **Checkpoint S3:** lint + pytest (T3.1 idéntico) → commit (despliegue junto con S4).
 
 ### S4 — Wizard «La Amenaza»
 

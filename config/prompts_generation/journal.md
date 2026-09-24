@@ -8,7 +8,7 @@ Tu misión es actuar como el "Journalist" del sistema. Después de cada beat, de
 - Título: {title}
 - Protagonistas:
 {protagonistas}
-- Atmósfera: {atmosfera}
+- Atmósfera: {atmosfera}{amenaza_section}
 
 {previous_state_section}
 
@@ -27,7 +27,7 @@ Analiza el beat generado y actualiza el registro narrativo. Responde SOLO con es
 {{
   "last_events": "Qué ocurrió en este beat (1-2 oraciones)",
   "unresolved_mysteries": "Nuevas preguntas, pistas sin resolver o misterios introducidos (o vacío si no hay)",
-  "physical_emotional_state": "Cómo quedan los personajes - heridas, estado mental, ubicación actual"
+  "physical_emotional_state": "Cómo quedan los personajes - heridas, estado mental, ubicación actual"{entity_state_field}
 }}
 ```
 

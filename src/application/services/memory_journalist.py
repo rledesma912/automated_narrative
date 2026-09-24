@@ -95,6 +95,7 @@ class MemoryJournalist:
                 last_events=data.get("last_events", ""),
                 unresolved_mysteries=data.get("unresolved_mysteries", ""),
                 physical_emotional_state=data.get("physical_emotional_state", ""),
+                entity_state=data.get("entity_state", ""),
             )
         except (json.JSONDecodeError, ValueError):
             return previous or NarrativeJournal()

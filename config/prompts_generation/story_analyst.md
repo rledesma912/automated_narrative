@@ -9,7 +9,7 @@ sinopsis para guiar la planificación de beats.
 - Título: {title}
 - Protagonistas: {protagonistas}
 - Escenarios: {escenarios}
-- Atmósfera: {atmosfera}
+- Atmósfera: {atmosfera}{amenaza_section}
 - Sinopsis: {sinopsis}
 
 ## Reglas

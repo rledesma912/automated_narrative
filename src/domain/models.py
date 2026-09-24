@@ -118,6 +118,8 @@ class Entity(BaseModel):
     manifestations: str = Field("", max_length=300)
     limits: str = Field("", max_length=300)
     reveal_level: RevealLevel = RevealLevel.INSINUADA
+    # Etiqueta del catálogo ("Ser del folklore") para los prompts; no se persiste.
+    nature_label: str = ""
 
     @field_validator("name", "nature_id", "description", "manifestations", "limits", mode="before")
     @classmethod
@@ -201,10 +203,17 @@ class NarrativeJournal(BaseModel):
     last_events: str = ""
     unresolved_mysteries: str = ""
     physical_emotional_state: str = ""
+    # Spec-450: qué sabe el narrador de las entidades y qué hicieron (tabla entity_journal).
+    entity_state: str = ""
 
     def is_empty(self) -> bool:
         """True si no tiene ningún campo con datos."""
-        return not (self.last_events or self.unresolved_mysteries or self.physical_emotional_state)
+        return not (
+            self.last_events
+            or self.unresolved_mysteries
+            or self.physical_emotional_state
+            or self.entity_state
+        )
 
 
 class StoryMetadata(BaseModel):
