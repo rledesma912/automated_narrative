@@ -58,6 +58,16 @@
     return (1 - pp) * byEstimate + pp * byPace;
   }
 
+  /**
+   * Segundos transcurridos ahora: `elapsed_seconds` del Core (0 si todavía no
+   * arrancó) más lo que pasó en el reloj local desde `received_at`.
+   */
+  function elapsedNow(job, now) {
+    if (!job || typeof job.received_at !== "number") return null;
+    const base = typeof job.elapsed_seconds === "number" ? job.elapsed_seconds : 0;
+    return base + Math.max(0, (now - job.received_at) / 1000);
+  }
+
   /** Restante de un job a partir de lo que trae su payload. */
   function remainingFor(job, elapsed) {
     const estimated = job && job.params ? job.params.estimated_seconds : null;
@@ -94,6 +104,7 @@
     STAGES,
     progress,
     remainingSeconds,
+    elapsedNow,
     remainingFor,
     formatRemaining,
     formatDuration,

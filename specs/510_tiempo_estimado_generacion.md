@@ -204,19 +204,19 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S2 — Durante y al terminar
 
-- [ ] **T2.1:** Restante en el banner.
+- [x] **T2.1:** Restante en el banner.
   - Acceptance: en estado `running`, `data-banner-step` = `stepText(job)` + « — » + `formatRemaining(...)` (sin sufijo si no hay estimación); el tiempo transcurrido es `elapsed_seconds` del último evento más el tiempo local desde que llegó; se recalcula en cada evento y cada 15 s mientras haya un job `running` (el intervalo se limpia cuando no queda ninguno).
   - Verify: E2E con el LLM mock y un job con `estimated_seconds` grande (el texto contiene «faltan ≈»).
-  - Files: `frontend/public/js/generation-banner.js`, `frontend/tests/e2e/generation-banner.spec.ts`
-- [ ] **T2.2:** «Lista en…» en el banner.
+  - Files: `frontend/public/js/generation-banner.js`, `frontend/public/js/event-bus.js` (marca `received_at` en cada job), `frontend/public/js/eta.js` (`elapsedNow`), `frontend/tests/e2e/generation-banner.spec.ts`
+- [x] **T2.2:** «Lista en…» en el banner.
   - Acceptance: estado `done` → «<título> está lista · en 3 min 42 s» (`formatDuration(finished_at − started_at)`); sin tiempos, como hoy.
   - Verify: E2E (el aviso final contiene «está lista · en»).
   - Files: `frontend/src/views/partials/generation_banner.ejs`, `frontend/public/js/generation-banner.js`, `frontend/tests/e2e/generation-banner.spec.ts`
-- [ ] **T2.3:** Restante y duración en la sala.
+- [x] **T2.3:** Restante y duración en la sala.
   - Acceptance: al conectar a un job, la sala pide `GET /api/v1/jobs/{id}` y muestra bajo `#status-line` el restante (misma función y el mismo tick de 15 s que el banner); en `done`, el panel final dice «Lista en …».
   - Verify: E2E en `streaming-room.spec.ts` (restante visible durante; «Lista en» al final).
   - Files: `frontend/public/js/streaming-room.js`, `frontend/src/views/streaming-room.ejs`, `frontend/src/views/partials/streaming_done_panel.ejs`, `frontend/tests/e2e/streaming-room.spec.ts`
-- [ ] **Checkpoint S2:** lint + pytest + Vitest + Playwright → commit.
+- [x] **Checkpoint S2:** lint + pytest + Vitest + Playwright → commit.
 
 ### S3 — Antes de lanzar
 

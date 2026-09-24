@@ -136,3 +136,22 @@ describe("formatEstimate", () => {
     expect(eta.formatEstimate(seconds)).toBe(expected);
   });
 });
+
+describe("elapsedNow", () => {
+  it("suma el tiempo local desde que llegó el evento", () => {
+    expect(eta.elapsedNow({ elapsed_seconds: 100, received_at: 1_000 }, 16_000)).toBe(115);
+  });
+
+  it("un job que no arrancó cuenta desde que llegó", () => {
+    expect(eta.elapsedNow({ elapsed_seconds: null, received_at: 1_000 }, 4_000)).toBe(3);
+  });
+
+  it("un reloj local que va para atrás no resta", () => {
+    expect(eta.elapsedNow({ elapsed_seconds: 50, received_at: 9_000 }, 1_000)).toBe(50);
+  });
+
+  it("sin received_at → null", () => {
+    expect(eta.elapsedNow({ elapsed_seconds: 50 }, 1_000)).toBeNull();
+    expect(eta.elapsedNow(null, 1_000)).toBeNull();
+  });
+});
