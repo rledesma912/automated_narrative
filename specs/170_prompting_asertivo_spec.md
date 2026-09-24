@@ -1,5 +1,7 @@
 # SPEC-170: Prompting Asertivo y Auditoría de Alfabetismo Narrativo
 
+> **Actualizado por Spec-470 (2026-09-24):** el system prompt de la Voz (compact `voice_system_compact.md` y frontier `system.md`) suma una guía de oficio compartida (`voice_craft.md`), la lista de clichés prohibidos (`voice_cliches.txt`), el bloque de parentescos desde quien narra y una presentación con el nombre del narrador. Evaluación reproducible con `scripts/evaluate_voice.py`.
+
 **Estado:** APROBADO
 **Fecha:** 2026-04-26
 **Autor:** Gemini CLI (Architect & Senior Engineer)

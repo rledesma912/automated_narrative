@@ -124,6 +124,10 @@ Templates Markdown en `config/prompts_generation/`. `PromptBuilder` actúa como 
 
 Templates: `story_analyst_*compact.md`, `synopsis_mapper_*compact.md`, `voice_system_compact.md`, `journal.md`.
 
+**Voz (Spec-470):** `voice_system_compact.md` (compact) y `system.md` (frontier) comparten la guía de oficio `voice_craft.md` (ritmo según la intensidad del acto, sugerir antes que nombrar el miedo, cierre en una imagen, primera persona, léxico) vía `{guia_oficio}`, y el bloque «CÓMO LLAMÁS A CADA PERSONAJE» (`{parentescos}`: el rol de cada personaje leído desde quien narra). La lista de clichés prohibidos vive en `voice_cliches.txt` (una por línea; la usan el prompt y las métricas). `PromptBuilder._voice_extras()` completa los tres builders que usan esos templates; `narrator_name()` resuelve quién narra (`storyteller_name` o `storyteller_id`). El encabezado del evento del `narrative_context` dice en qué persona y como quién contarlo.
+
+**Evaluar la prosa:** `uv run python scripts/evaluate_voice.py --label <nombre> --runs 2 --out <dir> [--variants sin,con] [--voz-temperature 0.5] [--mock]` genera «El monte prohibido» con el perfil activo en una DB temporal y mide clichés, parentescos candidatos (se revisan a mano), nombre del narrador fuera de diálogo y 4-gramas repetidos (`scripts/voice_metrics.py`). ~4 min por relato con `gemma3:12b`.
+
 ## Web & Streaming (Spec-210)
 
 - **Frontend:** Express + EJS + HTMX en `frontend/`. Único origen para el browser. Proxy interno `/api/*` → `CORE_API_URL`.

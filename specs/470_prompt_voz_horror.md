@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — S0–S2 completas (S2 pendiente commit); sigue S3
+**Estado:** DONE (2026-09-24) — S0–S3 completos; backend desplegado en prod
 **Roadmap:** EV-3 (calidad narrativa, sin costo). EV-2 (Voz en Anthropic) queda para después.
 
 ---
@@ -320,6 +320,12 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: lint + p
 
 ### S3 — Documentación, deploy y cierre
 
-- [ ] **T3.1:** `CLAUDE.md` (Prompt System: guía de oficio, parentescos, `voice_cliches.txt`, `evaluate_voice.py`), nota en Spec-170, Spec-470 → DONE.
-- [ ] **T3.2:** Deploy del backend (con tu OK) y prueba rápida: una generación corta en prod no hace falta; se verifica que el contenedor tenga los templates nuevos y que la API responda.
+- [x] **T3.1:** `CLAUDE.md` (Prompt System: guía de oficio, parentescos, `voice_cliches.txt`, `evaluate_voice.py`), nota en Spec-170, Spec-470 → DONE.
+- [x] **T3.2:** Deploy del backend (con tu OK) y prueba rápida: una generación corta en prod no hace falta; se verifica que el contenedor tenga los templates nuevos y que la API responda.
+
+## PENDIENTES (fuera de Spec-470)
+
+- **Adelanto de manifestaciones de la entidad** (Spec-450): con «señales» la Voz a veces usa manifestaciones de actos posteriores (en la S2, el camino que se deforma en el acto 1). Idea: con `senales` / `manifestacion_parcial`, pasarle a la Voz 1–2 manifestaciones y no la lista completa.
+- **Gramática del modelo local** («El taxi toco la puerta de barro», «Rezad» en una narradora rioplatense): techo de `gemma3:12b` → EV-2 (Voz en Anthropic), medible con `scripts/evaluate_voice.py`.
+- **Métrica de parentescos:** no ve «tu madre» dicho a la narradora en un diálogo; los candidatos se siguen revisando a mano.
 
