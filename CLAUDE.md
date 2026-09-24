@@ -27,7 +27,12 @@ cd frontend && npx playwright test    # E2E: levanta su propio Core (:8021, DB d
                                       # sembrada desde data/dev, LLM mock) + UI (:3021).
                                       # Con BASE_URL=... usa un frontend existente.
 uv run python -m src generate --input <yaml>  # CLI completa
+make deploy-check  # valida el pase a prod sin tocar nada
+make deploy        # pase a prod (Spec-520): solo desde main limpio y al día, sin jobs en curso;
+                   # backup de data/prod/stories.db + build de imágenes + verificación
 ```
+
+**Producción cambia solo con `make deploy`.** Los contenedores (`narrative-api` :8010, `narrative-ui` :3000, nginx `storymaker.test`) llevan el código **y `config/`** dentro de la imagen: cambiar de rama o editar prompts en el directorio de trabajo no los afecta. Datos (`data/prod/`) y secretos (`.env.prod`) quedan afuera.
 
 ## Architecture
 
@@ -214,4 +219,4 @@ Checkpoints `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal
 
 ## Specs
 
-Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros + wizard), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `500_clean_code_responsability.md` (smells acumulados del core).
+Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `180_saneamiento_architectural_narrativo.md` (pipeline), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros + wizard), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `520_deploy_desde_imagen.md` (pase a producción).

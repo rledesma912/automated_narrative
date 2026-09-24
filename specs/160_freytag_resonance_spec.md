@@ -1,6 +1,6 @@
 # SPEC-081: Resonancia de Freytag y Unificación de Nomenclatura
 
-**Estado:** IMPLEMENTANDO
+**Estado:** IMPLEMENTADO (verificado en el código 2026-09-24, Spec-520) — el checklist del plan no se actualizó en su momento; lo implementado: columnas `resonance_*` en `narrative_anchors`, pilares en `config/llm_narrative_definition.yaml`, `StoryAnalystService` con las claves desde el YAML.
 **Fecha:** 2026-04-26
 **Autor:** Gemini CLI (Senior Engineer & Professional Writer)
 **Relacionado con:** SPEC-038 (Anclajes Originales), SPEC-043 (Semantic Narrative Model)

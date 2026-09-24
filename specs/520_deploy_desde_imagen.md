@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development) — mantenimiento
-**Estado:** TASKS — pendiente de revisión (SPECIFY aprobado 2026-09-24)
+**Estado:** IMPLEMENT — S0 y S1 hechas; S2 (pase a producción) pendiente de OK
 **Extiende:** Spec-325 (separación dev/prod en host único).
 
 ---
@@ -154,15 +154,15 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S1 — Documentación y limpieza
 
-- [ ] **T1.1:** Deploy documentado.
+- [x] **T1.1:** Deploy documentado.
   - Acceptance: Spec-325 §3.4 remite a Spec-520 (config en la imagen, `make deploy`); `CLAUDE.md` en Commands (`make deploy`, `make deploy-check`) y la regla «prod cambia solo con `make deploy` desde `main`».
   - Verify: lectura.
   - Files: `specs/325_separacion_dev_prod.md`, `CLAUDE.md`
-- [ ] **T1.2:** Referencias y estados.
+- [x] **T1.2:** Referencias y estados.
   - Acceptance: sin referencias a `500_clean_code_responsability.md` en `CLAUDE.md` ni `README.md`; specs 160/170 → `IMPLEMENTADO` con la nota de §2.3; 420/430 → `DONE`.
   - Verify: `grep -rn "500_clean"` sin resultados fuera de git; lectura de los encabezados.
   - Files: `CLAUDE.md`, `README.md`, `specs/160_*.md`, `specs/170_*.md`, `specs/420_*.md`, `specs/430_*.md`
-- [ ] **Checkpoint S1:** lint + pytest → commit → push → PR a `development`.
+- [x] **Checkpoint S1:** lint + pytest → commit → push → PR a `development`.
 
 ### S2 — Pase a producción y aislamiento
 

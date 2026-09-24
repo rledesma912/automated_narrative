@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-21
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** APPROVED
+**Estado:** DONE (todas las tareas marcadas; estado actualizado 2026-09-24, Spec-520)
 
 ---
 
