@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** PLAN — pendiente de revisión (SPECIFY aprobado 2026-09-24)
+**Estado:** TASKS — pendiente de revisión (SPECIFY y PLAN aprobados 2026-09-24)
 **Roadmap:** EV-7 (exportar el relato para el guion de YouTube).
 
 ---
@@ -183,3 +183,85 @@ Exportar relatos generados con `scripts/evaluate_voice.py` (gemma3), contar cuá
 | Quitar `_` como énfasis rompe palabras con guion bajo. | Solo se quita `_texto_` delimitado por espacio o puntuación. Caso de test. |
 | `innerText` depende del layout y jsdom no lo implementa. | El test de vista verifica los `data-copy-part`; la copia real se prueba en E2E con Chromium. |
 | El `download` de un enlace proxyado no respeta el nombre. | El nombre sale del `Content-Disposition` del Core; el E2E verifica `download.suggestedFilename()`. |
+
+---
+
+## TASKS
+
+Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make lint` + `make test` (+ Vitest y Playwright desde S1, que agrega un endpoint que usa el frontend) en verde → commit con tu OK.
+
+### S0 — Formateador
+
+- [ ] **T0.1:** Partir el relato consolidado en actos.
+  - Acceptance: `split_acts(content) -> list[tuple[int, str]]` a partir de los encabezados `## Acto N` (y el legado `## Beat N`); el texto antes del primer encabezado se descarta si está vacío o se conserva como preámbulo sin número; un acto sin prosa se omite.
+  - Verify: pytest con el `content` que produce `_consolidate_content` y casos borde (sin encabezados, acto vacío, preámbulo).
+  - Files: `src/application/services/narrative_script_formatter.py`, `tests/unit/application/services/test_narrative_script_formatter.py`
+- [ ] **T0.2:** Limpiar la prosa de cada acto (§2.1 reglas 3 y 4).
+  - Acceptance: un párrafo por línea (saltos simples → espacio, párrafos separados por línea en blanco); guion de diálogo inicial (`-`, `–`) → `—`; se quitan `**…**`, `*…*` y `_…_` (este último solo delimitado por espacio o puntuación); se quitan `>` y `#` iniciales; se eliminan los separadores (`---`, `***`, `* * *`); un párrafo que es solo `[…]` pierde los corchetes. La prosa sin marcas sale idéntica.
+  - Verify: pytest, un caso por regla + un párrafo real sin marcas que no cambia + una palabra con `_` interno que no cambia.
+  - Files: los de T0.1.
+- [ ] **T0.3:** Armar el `.md` completo.
+  - Acceptance: `to_tts_markdown(title, content)` → `# <título>`, cada acto con `## Acto N` y su prosa, `[pause=1500]` entre actos (no después del último), UTF-8 con `\n` y salto final.
+  - Verify: pytest comparando la salida completa de un relato de 3 actos con el esperado.
+  - Files: los de T0.1.
+- [ ] **T0.4:** Nombre de archivo.
+  - Acceptance: `export_filename(title, created_at)` → `<slug>-AAAA-MM-DD-HHMM.md`; slug ASCII en minúsculas sin diacríticos (`ñ` → `n`), `[^a-z0-9]+` → `-`, sin guiones en los bordes, máx. 60 caracteres, `relato` si queda vacío; la hora en zona AR aunque `created_at` venga en otra zona.
+  - Verify: pytest («El monte prohibido», título con `¿?` y `ñ`, título vacío, título largo, `created_at` en UTC).
+  - Files: los de T0.1.
+- [ ] **T0.5:** Test de contrato con `audiogen`.
+  - Acceptance: un helper de test replica la regla de salto del parser de `audiogen` (línea vacía, empieza con `#`/`-`/`*`/`>`, o calza `^\[…\]$`); sobre la exportación de un relato «hostil» (diálogos con guion, cursivas al inicio, `>`, separadores, `[…]`), cada párrafo de prosa de la entrada sobrevive como segmento, y solo el título, los rótulos y los `[pause=1500]` se saltean o son comandos.
+  - Verify: pytest.
+  - Files: `tests/unit/application/services/test_narrative_script_audiogen_contract.py`
+- [ ] **Checkpoint S0:** lint + pytest → commit.
+
+### S1 — Endpoint de descarga
+
+- [ ] **T1.1:** Caso de uso.
+  - Acceptance: `GenerateNarrativesUseCase.export_tts_markdown(narrative_id)` → `(filename, markdown)` con el título de la historia; si la historia no existe, el título de la variante sin ` · fecha`; `None` si la variante no existe.
+  - Verify: pytest con repos de prueba (historia existente, historia borrada, variante inexistente).
+  - Files: `src/application/use_cases/generate_narratives_use_case.py`, `tests/unit/application/use_cases/test_export_tts_markdown.py`
+- [ ] **T1.2:** Endpoint.
+  - Acceptance: `GET /api/v1/generated-narratives/{id}/export.md` → 200, `text/markdown; charset=utf-8`, `Content-Disposition: attachment; filename="…"` y el `.md` como cuerpo; 400 con id inválido; 404 si no existe.
+  - Verify: pytest con `TestClient` sobre una DB temporal.
+  - Files: `src/presentation/routers/narrative_router.py`, `tests/unit/presentation/routers/test_narrative_router_export.py`
+- [ ] **T1.3:** Proxy.
+  - Acceptance: `Content-Disposition` y `Content-Type` del Core llegan intactos al browser vía `/api/*`.
+  - Verify: Vitest, un caso nuevo en `proxy_passthrough.test.ts`.
+  - Files: `frontend/tests/integration/proxy_passthrough.test.ts`
+- [ ] **Checkpoint S1:** lint + pytest + Vitest → commit.
+
+### S2 — UI: descargar y copiar
+
+- [ ] **T2.1:** Botón «Descargar .md».
+  - Acceptance: en `relato_panel.ejs`, junto a «Copiar Relato», `<a href="/api/v1/generated-narratives/<id>/export.md" download>` con `btn-forge-outline` e ícono `download`; con `regenerating`, sin `href` y con `aria-disabled="true"`.
+  - Verify: Vitest en `relatos.view.test.ts` (href correcto; deshabilitado durante la regeneración).
+  - Files: `frontend/src/views/partials/relato_panel.ejs`, `frontend/tests/unit/views/relatos.view.test.ts`
+- [ ] **T2.2:** Marcar las partes a copiar.
+  - Acceptance: `data-copy-part` en el preámbulo, en cada rótulo `Acto N` y en cada bloque de prosa; los botones «Regenerar» no lo tienen ni quedan dentro de un elemento que lo tenga.
+  - Verify: Vitest en `relatos.view.test.ts` (cantidad y orden de partes; ningún botón dentro de una parte).
+  - Files: `frontend/src/views/partials/relato_panel.ejs`, `frontend/tests/unit/views/relatos.view.test.ts`
+- [ ] **T2.3:** Nuevo `copyRelatoContent()`.
+  - Acceptance: arma el texto con `[data-copy-part]` del panel (`innerText.trim()`, unidos con línea en blanco); sin partes o sin texto → aviso en consola y no copia; se mantienen el fallback `execCommand` y el feedback del botón.
+  - Verify: E2E (T2.4).
+  - Files: `frontend/public/js/relatos.js`
+- [ ] **T2.4:** E2E.
+  - Acceptance: en `/historia/<id>/relatos`, «Descargar .md» baja un archivo cuyo `suggestedFilename()` termina en `.md` y cuya primera línea es `# <título de la historia>`; «Copiar Relato» deja en el portapapeles un texto con «Acto 1» y sin «Regenerar».
+  - Verify: `npx playwright test relatos.spec.ts --reporter=line` (permiso `clipboard-read` en el contexto).
+  - Files: `frontend/tests/e2e/relatos.spec.ts`
+- [ ] **Checkpoint S2:** lint + pytest + Vitest + Playwright completo → commit.
+
+### S3 — Verificación real y cierre
+
+- [ ] **T3.1:** Medir sobre relatos reales.
+  - Acceptance: exportar los relatos de una corrida de `scripts/evaluate_voice.py` (gemma3, 2 relatos, en background) y contar cuántas líneas tocó cada regla de §2.1.4; ninguna línea de prosa salteable por `audiogen` en la salida. Si aparece una forma no prevista, se agrega la regla y su test.
+  - Verify: script de medición en el scratchpad; resultados en la sección RESULTADOS de esta spec.
+  - Files: `specs/490_exportar_relato_para_tts.md` (+ formateador y tests si hace falta una regla)
+- [ ] **T3.2:** Prueba en `audiogen` (usuario).
+  - Acceptance: el usuario pasa un `.md` exportado por `./scripts/generate.sh` y confirma que no falta texto y que las pausas entre actos se oyen.
+  - Verify: escucha manual.
+  - Files: —
+- [ ] **T3.3:** Documentación y cierre.
+  - Acceptance: `CLAUDE.md` lista el endpoint `export.md` y el botón; la spec pasa a DONE con resultados; roadmap EV-7 hecho.
+  - Verify: lectura.
+  - Files: `CLAUDE.md`, `specs/490_exportar_relato_para_tts.md`
+- [ ] **Checkpoint S3:** suite completa en verde → commit → push → PR `feat/ev-7-exportar-guion` → `development`.
