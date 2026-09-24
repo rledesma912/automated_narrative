@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — pendiente de revisión
+**Estado:** PLAN — pendiente de revisión (SPECIFY aprobado 2026-09-24)
 **Roadmap:** EV-6 (mostrar cuánto va a tardar antes de generar). Último evolutivo del alcance acordado.
 
 ---
@@ -45,12 +45,12 @@ Que antes de generar se sepa **cuánto va a tardar**, que durante la generación
 - **Valor inicial por perfil** en `config/llm_core_definitions.yaml`: `profiles.<perfil>.estimated_seconds: {full_generation: 240, regenerate_voz: 60}` (valores de `gemma3:12b` a medir en S-final). Un perfil sin el bloque usa un default global.
 - **Estimador** (servicio en `application`): mediana de la duración (`finished_at − started_at`) de los **últimos 5 jobs `completed`** del mismo `kind` y el mismo perfil. Con menos de 2 muestras, el valor inicial. Devuelve `{seconds, source: "history" | "default", samples}`.
 - Al crear un job se guarda `params.profile` y se calcula `estimated_seconds`, que viaja en el payload del job junto con `started_at` y `finished_at`.
-- `GET /api/v1/jobs/estimate?kind=full_generation|regenerate_voz` → la estimación con el perfil activo (para mostrarla antes de lanzar).
+- `GET /api/v1/jobs/estimates` → la estimación de los dos tipos con el perfil activo (para mostrarla antes de lanzar).
 
 ### 2.2 Antes de lanzar
 
 - Junto a **Generar / Reintentar / Regenerar** (galería y ficha): «≈ 4 min» en texto chico, apagado.
-- En la confirmación de la sala («¿Listo para despertar al narrador?» / «¿Listo para regenerar?»): «Tarda ≈ 4 min. Podés cerrar la pestaña: sigue generándose.»
+- En la confirmación de la sala («¿Listo para despertar al narrador?» / «¿Listo para regenerar?»): «Tarda ≈ 4 min. Podés cerrar la pestaña: sigue generándose.» (la segunda frase siempre; la primera, si hay estimación).
 - Al regenerar un acto (`hx-confirm` del panel de relatos): «¿Regenerar este acto? Tarda ≈ 1 min. Se reemplazará el texto actual.»
 - El frontend pide la estimación al Core al renderizar esas páginas (una llamada por página, sin JS nuevo); si el Core no responde, no se muestra nada.
 
@@ -82,7 +82,7 @@ El aviso de terminado del banner y el panel final de la sala: «Lista en 3 min 4
 ## TESTING
 
 - **Unit (pytest):** estimador (sin historial → default; 1 muestra → default; ≥ 2 → mediana de los últimos 5; filtra por `kind`, perfil y `completed`; ignora jobs sin `started_at`/`finished_at`); config del valor inicial por perfil y default global.
-- **API (pytest):** `GET /jobs/estimate` (ambos kinds, kind inválido → 422); el job creado guarda `params.profile`; el payload del job trae `started_at`, `finished_at`, `estimated_seconds`.
+- **API (pytest):** `GET /jobs/estimates` (los dos tipos, fuente `default` e `history`); el job creado guarda `params.profile`; el payload del job trae `started_at`, `finished_at`, `estimated_seconds`.
 - **Unit (Vitest):** la función de tiempo restante y su redondeo (tabla de casos: inicio, mitad, pasado de tiempo, `p` = 0, sin estimación); el formateo de «lista en».
 - **Vista (Vitest):** los botones y confirmaciones muestran «≈ N min» cuando hay estimación y nada cuando no.
 - **E2E (Playwright):** con el LLM mock, generar muestra la estimación antes, «falta…» durante y «Lista en…» al terminar.
@@ -99,7 +99,62 @@ El aviso de terminado del banner y el panel final de la sala: «Lista en 3 min 4
 
 ---
 
-## OPEN QUESTIONS
+## DECISIONES (2026-09-24)
 
-1. **Valores iniciales:** propongo medirlos en la implementación con `gemma3:12b` (un relato completo y un acto) en vez de adivinarlos. ¿OK?
-2. **«Podés cerrar la pestaña: sigue generándose»:** ¿lo sumamos al texto de la confirmación? Es cierto desde Spec-460 y quizás ellas no lo saben.
+1. Los valores iniciales se **miden** con `gemma3:12b` en la implementación (un relato completo y un acto), no se adivinan.
+2. La confirmación de la sala suma «Podés cerrar la pestaña: sigue generándose».
+3. «Al terminar: cuánto tardó» entra en el alcance (§2.4).
+
+---
+
+## PLAN
+
+### Estrategia
+
+Primero el Core (la estimación y los tiempos del job), después la lógica pura del cliente con sus tests, después la UI durante y al terminar (banner y sala), y al final la UI antes de lanzar. Los valores iniciales se miden al final, con todo terminado, y se cargan en el perfil. Cada slice deja todo en verde y va en su propio commit.
+
+### Decisiones técnicas
+
+| Tema | Decisión |
+|---|---|
+| Valor inicial | `profiles.<perfil>.estimated_seconds: {full_generation, regenerate_voz}` en `llm_core_definitions.yaml`; `settings.estimated_seconds(kind)` lo lee y cae a un default global (`DEFAULT_ESTIMATED_SECONDS = {full_generation: 240, regenerate_voz: 60}` en `config.py`). |
+| Historial | `SQLJobRepository.list_finished(kind, limit)`: jobs `completed` con `started_at` y `finished_at`, más nuevos primero. El filtro por perfil (`params.profile`) y el descarte de duraciones < 5 s (corridas con el LLM mock) se hacen en el estimador, en Python: a esta escala alcanza con traer los últimos 50. |
+| Estimador | `application/services/job_duration_estimator.py`: `JobDurationEstimator(repo).estimate(kind, profile) -> Estimate(seconds, source, samples)`. Mediana de las últimas 5 duraciones válidas; con menos de 2, el valor inicial. |
+| Guardar en el job | `JobManager.start()` agrega `profile` y `estimated_seconds` a `params` al crear el job. Queda fija para ese job (no cambia si en el medio termina otro) y viaja sola en el payload, que ya incluye `params`. |
+| Tiempos en el payload | `JobManager._payload` y `JobResponse` suman `started_at`, `finished_at` y `elapsed_seconds` (calculado en el Core al publicar). El cliente usa `elapsed_seconds` más lo que pasó en su reloj desde que lo recibió: no le afecta una diferencia de hora entre máquinas. |
+| Endpoint | `GET /api/v1/jobs/estimates` → `{full_generation: {seconds, source, samples}, regenerate_voz: {...}}` con el perfil activo. |
+| Lógica del cliente | `public/js/eta.js` (script clásico, patrón UMD: `window.ForgeEta` en el browser, `module.exports` para Vitest): `STAGES` y `progress(job)` (movidos desde `generation-banner.js`, sin cambiar los pesos), `remainingSeconds(estimated, elapsed, p)`, `formatRemaining(s)`, `formatDuration(s)` («3 min 42 s») y `formatEstimate(s)` («≈ 4 min»). Se carga en `<head>` antes del banner. |
+| Durante | Banner: `stepText` + « — faltan ≈ N min»; recalcula con cada evento `job_*` y con un `setInterval` de 15 s mientras haya un job corriendo. Sala: pide `GET /jobs/{id}` al conectar (trae `params` y `elapsed_seconds`) y muestra el restante bajo `#status-line` con la misma función. |
+| Al terminar | Banner (estado `done`) y panel final de la sala: «Lista en N min M s» con `finished_at − started_at`. |
+| Antes de lanzar | Middleware Express `loadEstimates` (una llamada al Core con timeout de 1,5 s → `res.locals.estimates`, `null` si falla), solo en las rutas de galería, ficha, sala y panel de relatos (incluidos los fragmentos HTMX del panel). Un helper EJS `formatEstimate` (el mismo algoritmo que `eta.js`, en TS) arma «≈ N min». |
+| Textos | Botones: «≈ 4 min» en `text-xs text-forge-muted` al lado. Confirmación de la sala: «Tarda ≈ 4 min. Podés cerrar la pestaña: sigue generándose.» Regenerar un acto: `hx-confirm="¿Regenerar este acto? Tarda ≈ 1 min. Se reemplazará el texto actual."` |
+
+### S0 — Estimación en el Core
+
+Config del valor inicial, `list_finished`, `JobDurationEstimator`, `params.profile` y `params.estimated_seconds` al crear el job, `started_at`/`finished_at`/`elapsed_seconds` en el payload y en `JobResponse`, y `GET /jobs/estimates`. Tests unitarios y de API.
+
+### S1 — Lógica del cliente
+
+`public/js/eta.js` con `progress` movido desde el banner (sin cambio de comportamiento) y las funciones de tiempo. Tabla de casos en Vitest. El banner pasa a usar `ForgeEta.progress`; los E2E existentes del banner siguen en verde.
+
+### S2 — Durante y al terminar
+
+Tiempo restante en el banner y en la sala; «Lista en…» en el banner y en la sala. Tests de vista y E2E (con el LLM mock).
+
+### S3 — Antes de lanzar
+
+Middleware `loadEstimates`, helper `formatEstimate` y «≈ N min» en galería, ficha, confirmación de la sala (con «Podés cerrar la pestaña…») y regenerar un acto. Tests de vista, del middleware (Core caído → sin estimación, la página carga igual) y E2E.
+
+### S4 — Valores iniciales y cierre
+
+Medir con `gemma3:12b` en una DB temporal un relato completo y una regeneración de acto (~5 min en background). Cargar `estimated_seconds` en los perfiles de Ollama. Docs (`CLAUDE.md`), cierre de la spec, PR a `development`.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| Las corridas con el LLM mock (E2E, `--mock`) ensucian el historial con duraciones de milisegundos. | El estimador descarta duraciones < 5 s. |
+| Diferencia de hora entre el Core y el browser. | El cliente usa `elapsed_seconds` del Core, no `started_at` contra su reloj. |
+| Los pesos de etapa de `progress` no reflejan el tiempo real (la Voz tarda más que el Mapper). | La mezcla con la estimación suaviza el efecto. En S4 se comparan avance y tiempo reales; si difieren mucho, se propone ajustar los pesos (preguntando antes, §BOUNDARIES). |
+| Una llamada más al Core por página. | Solo en 4 rutas y con timeout corto; si falla, la página se ve como hoy. |
+| Un job que tarda mucho más (Ollama cargando el modelo en frío). | «tardando más de lo habitual» en vez de números; la mediana amortigua un caso aislado en el historial. |
