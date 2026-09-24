@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development) — mantenimiento
-**Estado:** IMPLEMENT — S0 y S1 hechas; S2 (pase a producción) pendiente de OK
+**Estado:** DONE (2026-09-24) — primer `make deploy` real (989ac4f) y aislamiento verificado
 **Extiende:** Spec-325 (separación dev/prod en host único).
 
 ---
@@ -166,12 +166,28 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S2 — Pase a producción y aislamiento
 
-- [ ] **T2.1:** Deploy real (con OK del usuario).
+- [x] **T2.1:** Deploy real (con OK del usuario).
   - Acceptance: merge a `development` y a `main`; `make deploy` desde `main` termina con `/health` sano, perfil `ollama-gemma3-12b` y el commit de `main`.
   - Verify: salida del script + `docker inspect narrative-api` sin montaje de `config/`.
-- [ ] **T2.2:** Aislamiento.
+- [x] **T2.2:** Aislamiento.
   - Acceptance: en otra rama, un cambio en `config/prompts_generation/voice_craft.md` no aparece en `docker exec narrative-api cat /app/config/prompts_generation/voice_craft.md`; se descarta el cambio.
   - Verify: diff entre el archivo del host y el del contenedor.
-- [ ] **T2.3:** Cierre.
+- [x] **T2.3:** Cierre.
   - Acceptance: spec en DONE con resultados; memoria del procedimiento de deploy actualizada.
   - Verify: lectura.
+
+---
+
+## RESULTADOS (2026-09-24)
+
+**T2.1: primer `make deploy` real.** PR #25 → `development`, PR #26 → `main` (`989ac4f`). `make deploy-check` en verde; `make deploy` corrió los 7 pasos:
+
+- backup `data/prod/backup_2026-09-24/stories-pre-deploy-1728-989ac4f.db`;
+- build de las dos imágenes y arranque (backend `Healthy`);
+- verificación: `/health` sano, perfil `ollama-gemma3-12b`, commit `989ac4f`.
+
+`docker inspect narrative-api`: monta solo `data/prod` y `output_stories/prod`; `/app/config` es el de la imagen.
+
+**T2.2: aislamiento.** En una rama temporal se agregó una línea a `config/prompts_generation/voice_craft.md`: el host la tenía y el contenedor no. Descartado el cambio, el archivo de `main` y el del contenedor son idénticos.
+
+**Procedimiento de pase a producción desde ahora:** mergear a `development` → PR `development` → `main` → `git checkout main && git pull --ff-only` → `make deploy`.
