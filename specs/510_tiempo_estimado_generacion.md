@@ -220,19 +220,19 @@ Formato: **Acceptance** / **Verify** / **Files**. Checkpoint por slice: `make li
 
 ### S3 — Antes de lanzar
 
-- [ ] **T3.1:** Middleware y helper.
+- [x] **T3.1:** Middleware y helper.
   - Acceptance: `loadEstimates` pide `GET /api/v1/jobs/estimates` (timeout 1,5 s) y deja `res.locals.estimates` (`null` si falla o tarda, sin romper la página); `formatEstimate(seconds)` en TS con el mismo resultado que `eta.js` (disponible en las vistas vía `res.locals`); montado solo en las rutas de galería, ficha, sala y relatos (página y fragmentos del panel).
   - Verify: Vitest del middleware (Core ok, Core con error, Core lento) y test de paridad `formatEstimate` TS ↔ `eta.js`.
   - Files: `frontend/src/middleware/estimates.middleware.ts`, `frontend/src/services/core_api.service.ts`, `frontend/src/utils/eta.ts`, `frontend/src/routes/index.ts`, `frontend/tests/unit/middleware/estimates.middleware.test.ts`
-- [ ] **T3.2:** Textos en las vistas.
+- [x] **T3.2:** Textos en las vistas.
   - Acceptance: «≈ N min» junto a Generar / Reintentar / Regenerar (galería y ficha); en la sala, «Tarda ≈ N min. Podés cerrar la pestaña: sigue generándose.» (la segunda frase siempre); regenerar un acto: `hx-confirm` con «Tarda ≈ N min.»; sin `estimates`, todo como hoy salvo la frase de la pestaña.
   - Verify: Vitest de vistas (galería, ficha, sala, panel de relatos) con y sin `estimates`.
-  - Files: `frontend/src/views/gallery.ejs`, `frontend/src/views/historia.ejs`, `frontend/src/views/streaming-room.ejs`, `frontend/src/views/partials/relato_panel.ejs`, tests de vista correspondientes
-- [ ] **T3.3:** E2E.
+  - Files: `frontend/src/views/partials/estimate.ejs` (nuevo), `frontend/src/views/gallery.ejs`, `frontend/src/views/historia.ejs`, `frontend/src/views/streaming-room.ejs`, `frontend/src/views/partials/relato_panel.ejs`, `frontend/tests/unit/views/estimates.view.test.ts`. Nota: el panel «¿Listo para despertar al narrador?» solo aparece con la historia en `processing` sin job (Generar lanza el job directo); la confirmación habitual es la de regenerar.
+- [x] **T3.3:** E2E.
   - Acceptance: la galería muestra «≈ … min» junto a «Generar»; la sala de una historia completada muestra la confirmación con la estimación y la frase de la pestaña.
   - Verify: `npx playwright test --reporter=line` completo.
   - Files: `frontend/tests/e2e/estimates.spec.ts`
-- [ ] **Checkpoint S3:** lint + pytest + Vitest + Playwright → commit.
+- [x] **Checkpoint S3:** lint + pytest + Vitest + Playwright → commit.
 
 ### S4 — Valores iniciales y cierre
 

@@ -13,6 +13,8 @@
  *   panelError: string | null — error al lanzar o completar la regeneración
  */
 const regen = (typeof regenerating !== 'undefined' && regenerating) ? regenerating : null;
+// Spec-510: «Tarda ≈ N min» en la confirmación (lo deja el middleware loadEstimates).
+const regenEstimate = locals.estimateLabels ? locals.estimateLabels.regenerate_voz : '';
 const errorMsg = (typeof panelError !== 'undefined' && panelError) ? panelError : null;
 const sections = (relato.content || '').split(/^## (.+)$/m);
 const preamble = (sections[0] || '').trim();
@@ -91,7 +93,7 @@ function extractActNumber(title) {
             hx-post="/historia/<%= story.id %>/relatos/<%= relato.id %>/actos/<%= actNumber %>/regenerar"
             hx-target="#relato-panel-<%= relato.id %>"
             hx-swap="outerHTML"
-            hx-confirm="¿Regenerar este acto? Se reemplazará el texto actual."
+            hx-confirm="¿Regenerar este acto?<%= regenEstimate ? ` Tarda ${regenEstimate}.` : '' %> Se reemplazará el texto actual."
           >
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar
           </button>

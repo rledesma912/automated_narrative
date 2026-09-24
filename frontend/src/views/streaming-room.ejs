@@ -149,6 +149,10 @@
     <div class="text-center max-w-2xl">
       <% if (regenerateMode) { %>
         <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para regenerar?</p>
+        <%/* Spec-510: cuánto tarda y que no hace falta quedarse mirando. */%>
+        <p class="text-sm text-forge-muted mb-8" data-start-estimate>
+          <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: sigue generándose.
+        </p>
         <div class="flex items-start gap-3 mb-8 p-4 border border-orange-700/50 bg-orange-950/20 text-left">
           <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-400 shrink-0 mt-0.5"></i>
           <p class="text-orange-600 text-sm leading-relaxed">
@@ -162,6 +166,10 @@
         </button>
       <% } else { %>
         <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
+        <%/* Spec-510: cuánto tarda y que no hace falta quedarse mirando. */%>
+        <p class="text-sm text-forge-muted mb-8" data-start-estimate>
+          <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: sigue generándose.
+        </p>
         <button type="button" onclick="initiateGeneration()" class="btn-forge-lg group"
                 data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Iniciando generación...">
           <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
