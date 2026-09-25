@@ -75,9 +75,9 @@ function extractActNumber(title) {
       <span data-panel-error><%= errorMsg %></span>
     </div>
   <% } %>
-  <div id="relato-content-<%= relato.id %>" class="text-forge-text leading-relaxed text-base">
+  <div id="relato-content-<%= relato.id %>" class="text-forge-text">
     <% if (preamble) { %>
-      <div class="whitespace-pre-wrap" data-copy-part><%= preamble %></div>
+      <div class="prose-forge whitespace-pre-wrap" data-copy-part><%= preamble %></div>
     <% } %>
     <% for (let i = 1; i < sections.length; i += 2) { %>
       <% const actNumber = extractActNumber(sections[i]); %>
@@ -99,7 +99,7 @@ function extractActNumber(title) {
           </button>
         <% } %>
       </div>
-      <div class="whitespace-pre-wrap" data-copy-part><%= (sections[i + 1] || '').trim() %></div>
+      <div class="prose-forge whitespace-pre-wrap" data-copy-part><%= (sections[i + 1] || '').trim() %></div>
     <% } %>
   </div>
 </section>

@@ -88,6 +88,6 @@ describe('CSS Architecture — Layout Rendering', () => {
   it('Spec-531: el layout no inyecta colores y el body usa los del tema', async () => {
     const html = await fetchHomeHtml();
     expect(html).not.toContain('--forge-bg:');
-    expect(html).toMatch(/<body class="[^"]*bg-forge-bg text-forge-text/);
+    expect(html).toMatch(/<body class="[^"]*font-sans bg-forge-bg text-forge-text/);
   });
 });

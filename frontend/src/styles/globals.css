@@ -132,6 +132,11 @@
     @apply font-serif text-2xl md:text-3xl text-forge-text tracking-tight;
   }
 
+  /* Prosa de los relatos (Spec-531): serif e interlineado amplio para leer largo. */
+  .prose-forge {
+    @apply font-serif text-base text-forge-text leading-[1.7];
+  }
+
   .text-forge-body {
     @apply text-base text-forge-text leading-relaxed opacity-90;
   }
