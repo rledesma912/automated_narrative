@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — PLAN aprobado 2026-09-25 (un solo tema, favicon: vela)
+**Estado:** DONE (2026-09-25) — falta la revisión visual del usuario y el pase a prod cuando lo pida
 **Relación:** independiente de la Spec-530; conviene hacerla antes, porque las vistas nuevas del asistente se diseñan directamente sobre este tema.
 
 ---
@@ -200,3 +200,19 @@ Primero la red de seguridad: capturas «antes» y tests que fallan con colores f
 - **S1:** pregunta abierta 1 (¿`light-contrast` como opción?). Si la respuesta es sí, la decisión 4 cambia: se conserva un selector mínimo de 2 temas.
 - **S4:** pregunta abierta 2 (el dibujo del favicon). Si no hay respuesta, va la vela.
 - **S5:** pregunta abierta 3 (el nombre en la pestaña). No bloquea: se puede cambiar después.
+
+---
+
+## RESULTADOS (2026-09-25)
+
+Commits en `feat/spec-531-tema-claro-favicon`: `495b154` (S0–S2), `3c2906c` (S3), `78b3c31` (S4) y el cierre (S5).
+
+- **Tema único «Papel»:** la paleta está en `theme.css` y todos los pares de texto y fondo cumplen AA (20 casos en `palette-contrast`). Se eliminaron `themes.json`, el servicio, el middleware, el controller, `POST /theme`, el selector, la cookie y `cookie-parser`.
+- **Colores fijos:** hubo **unos 95** (más que los 55 de §1, porque también se contaron las paletas de Tailwind en estados, errores, la terminal de la sala y `public/js`). Todos pasaron a variables semánticas. Queda una sola excepción justificada: `<meta name="theme-color">`, que no acepta variables.
+- **Bug corregido de paso:** las clases con opacidad sobre colores `forge-*` (`bg-forge-accent/10`, `border-forge-accent/30`…) no generaban CSS, porque Tailwind no puede aplicar opacidad a un `var()` plano. Ahora se definen con `color-mix` y `<alpha-value>`.
+- **Semántica de error unificada:** antes `bg-forge-error` pintaba el fondo *pálido* (utilidad hecha a mano en `globals.css`) y `btn-forge-danger` quedaba con texto blanco sobre ese fondo pálido. Ahora `forge-error` es el rojo fuerte y `forge-error-bg` el fondo pálido.
+- **Tipografía:** body en sans; `.prose-forge` (serif, 1,7) en el panel de relatos y en los actos de la sala; `font-mono` solo en debug y en la terminal de la sala.
+- **Favicon:** vela (`favicon.svg`, `favicon-32.png`, `apple-touch-icon.png`) y `theme-color`.
+- **`guia.ejs`** se eliminó: era huérfana.
+- **Tests:** Vitest 227, Playwright 41 (+2 de capturas, que solo corren con `CAPTURAS`), pytest 850, lint en verde.
+- **Capturas** (fuera de git): `frontend/capturas/531/{antes,despues,comparacion}/`.
