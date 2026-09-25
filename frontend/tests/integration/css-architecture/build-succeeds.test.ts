@@ -53,16 +53,11 @@ describe('CSS Architecture — Build Process', () => {
     expect(cssContent).toMatch(/\.border-forge-*/);
   });
 
-  it('public/styles.css contiene naranja personalizado', () => {
+  it('Spec-531: las clases forge admiten opacidad (color-mix)', () => {
     const cssContent = fs.readFileSync(outputCssPath, 'utf-8');
-    
-    // Tailwind purga las clases no usadas, así que verificamos que está
-    // en la config de tailwind.config.js en lugar del CSS compilado
-    const configPath = require.resolve('../../../tailwind.config.js');
-    const config = require(configPath);
-    
-    const orangeColor = config.theme?.extend?.colors?.orange?.['600'];
-    expect(orangeColor).toBe('#F58300');
+
+    expect(cssContent).toContain('.bg-forge-accent\\/10');
+    expect(cssContent).toMatch(/color-mix\(in srgb, var\(--forge-accent\) calc\(0\.1 \* 100%\), transparent\)/);
   });
 
   it('public/styles.css es válido sin errores de sintaxis', () => {

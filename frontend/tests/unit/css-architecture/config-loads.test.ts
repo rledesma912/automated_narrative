@@ -27,20 +27,12 @@ describe('CSS Architecture — Config Validation', () => {
     const forgeColors = config.theme?.extend?.colors?.forge;
     expect(forgeColors).toBeDefined();
     
-    // Verificar colores clave
-    expect(forgeColors.bg).toBe('var(--forge-bg)');
-    expect(forgeColors.surface).toBe('var(--forge-surface)');
-    expect(forgeColors.accent).toBe('var(--forge-accent)');
-    expect(forgeColors.text).toBe('var(--forge-text)');
-  });
-
-  it('tailwind.config.js tiene naranja 600 personalizado', () => {
-    const configPath = path.join(process.cwd(), 'tailwind.config.js');
-    const config = require(configPath);
-    
-    const orangeColors = config.theme?.extend?.colors?.orange;
-    expect(orangeColors).toBeDefined();
-    expect(orangeColors['600']).toBe('#F58300');
+    // Spec-531: cada color apunta a su variable y admite opacidad (<alpha-value>).
+    for (const name of ['bg', 'surface', 'accent', 'text', 'on-accent', 'error-bg', 'warning']) {
+      expect(forgeColors[name]).toContain(`var(--forge-${name})`);
+      expect(forgeColors[name]).toContain('<alpha-value>');
+    }
+    expect(config.theme?.extend?.colors?.orange).toBeUndefined();
   });
 
   it('tailwind.config.js define fontFamily', () => {

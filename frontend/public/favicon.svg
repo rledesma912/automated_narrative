@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Spec-531: vela del tema «Papel» (fondo papel, tinta, llama en el acento). -->
+  <rect width="32" height="32" rx="7" fill="#f7f3ec"/>
+  <path d="M16 3.5C18.6 6.7 20 9.1 20 11.2a4 4 0 0 1-8 0C12 9.1 13.4 6.7 16 3.5Z" fill="#8a2b1f"/>
+  <path d="M16 8.3c1.1 1.5 1.7 2.6 1.7 3.4a1.7 1.7 0 0 1-3.4 0c0-.8.6-1.9 1.7-3.4Z" fill="#f6ecd6"/>
+  <rect x="15.4" y="14.4" width="1.2" height="2.6" rx=".6" fill="#2b2620"/>
+  <rect x="11" y="16.6" width="10" height="12" rx="1.6" fill="#2b2620"/>
+  <path d="M18.2 16.6h1.4v4.2a.7.7 0 0 1-1.4 0Z" fill="#6f6454"/>
+</svg>

@@ -2,7 +2,6 @@ import { Router } from "express";
 import { homePage } from "../controllers/home.controller";
 import { galleryPage } from "../controllers/gallery.controller";
 import { debugPage } from "../controllers/debug.controller";
-import { setTheme } from "../controllers/theme.controller";
 import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField, saveWizardStory } from "../controllers/wizard.controller";
 import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
@@ -17,7 +16,6 @@ const router = Router();
 router.get("/",            homePage);
 router.get("/galeria",     loadEstimates, galleryPage);
 router.get("/debug",       debugPage);
-router.post("/theme",      setTheme);
 
 // Wizard
 router.get("/generar",              wizardRedirect);

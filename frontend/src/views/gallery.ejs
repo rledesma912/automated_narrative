@@ -2,10 +2,10 @@
 /* User update (Spec-213): Vuelven los estados completos y escala aumentada */
 function renderStatusLabel(s) {
   const labels = {
-    draft:      { text: 'Borrador',   cls: '!text-yellow-500 !border-yellow-500/30 !bg-yellow-500/10' },
-    processing: { text: 'Generando',  cls: '!text-blue-400 !border-blue-400/30 !bg-blue-400/10' },
-    completed:  { text: 'Completada', cls: '!text-green-500 !border-green-500/30 !bg-green-500/10' },
-    failed:     { text: 'Error',      cls: '!text-red-500 !border-red-500/30 !bg-red-500/10' },
+    draft:      { text: 'Borrador',   cls: '!text-forge-warning !border-forge-warning-border !bg-forge-warning-bg' },
+    processing: { text: 'Generando',  cls: '!text-forge-info !border-forge-info-border !bg-forge-info-bg' },
+    completed:  { text: 'Completada', cls: '!text-forge-success !border-forge-success-border !bg-forge-success-bg' },
+    failed:     { text: 'Error',      cls: '!text-forge-error !border-forge-error-border !bg-forge-error-bg' },
   };
   const sl = labels[s.status] || labels['draft'];
   return `<span class="badge-forge ${sl.cls}">${sl.text}</span>`;
@@ -101,7 +101,7 @@ function renderStatusLabel(s) {
                 hx-get="/modales/confirmar-borrar/<%= s.id %>"
                 hx-target="#modal-slot"
                 hx-swap="innerHTML"
-                class="btn-forge-outline !px-0 !border-none !text-red-400 hover:!text-red-300 bg-transparent cursor-pointer"
+                class="btn-forge-outline !px-0 !border-none !text-forge-error hover:!text-forge-error/75 bg-transparent cursor-pointer"
               >
                 <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar
               </button>
