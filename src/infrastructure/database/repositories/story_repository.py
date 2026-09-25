@@ -404,14 +404,16 @@ class SQLStoryRepository:
         async with connection() as conn:
             await conn.execute(
                 """INSERT OR REPLACE INTO narrative_journal
-                (story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state)
-                VALUES (?, ?, ?, ?, ?)""",
+                (story_id, beat_number, last_events, unresolved_mysteries,
+                 physical_emotional_state, used_motifs)
+                VALUES (?, ?, ?, ?, ?, ?)""",
                 (
                     str(story_id),
                     beat_number,
                     journal.last_events,
                     journal.unresolved_mysteries,
                     journal.physical_emotional_state,
+                    json.dumps(journal.used_motifs, ensure_ascii=False),
                 ),
             )
             # Spec-450: el estado de las entidades vive en su propia tabla.
@@ -460,6 +462,7 @@ class SQLStoryRepository:
             unresolved_mysteries=row["unresolved_mysteries"],
             physical_emotional_state=row["physical_emotional_state"],
             entity_state=row["entity_state"] or "",
+            used_motifs=json.loads(row["used_motifs"] or "[]"),
         )
 
     async def clear_story_artifacts(self, story_id) -> None:

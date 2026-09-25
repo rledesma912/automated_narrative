@@ -159,6 +159,14 @@ class DirectorUseCase:
             on_stage: Callback estructurado `(etapa, beat)` al iniciar cada etapa
                 (Spec-460). `beat` es None en analyst/resolver.
         """
+        if len(story.outline) == self.prompt_builder.num_beats:
+            # Spec-530 S5: la historia tiene escaleta → cada acto sale de ella.
+            async for item in self._execute_outline(
+                story, initial_journal, on_plan_ready, on_step_start, on_stage
+            ):
+                yield item
+            return
+
         stop_at: int | None = VALID_CHECKPOINTS.get(stop_after) if stop_after else None
 
         def _step_start(msg: str) -> None:
@@ -226,6 +234,56 @@ class DirectorUseCase:
                 on_step_start=on_step_start,
                 on_stage=on_stage,
             )
+            yield macro_beat, journal, llm_elapsed
+
+    async def _execute_outline(
+        self,
+        story: Story,
+        journal: NarrativeJournal | None,
+        on_plan_ready: Callable[[int, float], None] | None,
+        on_step_start: Callable[[str], None] | None,
+        on_stage: Callable[[JobStage, int | None], None] | None,
+    ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
+        """Camino con escaleta (Spec-530 S5): VOZ + JOURNAL por acto.
+
+        Sin Analyst, Resolver ni Mapper: los hechos, el escenario y las reglas de cada
+        acto ya están en la escaleta (las anclas del Analyst solo alimentaban al Mapper
+        y a la resonancia, que la Voz ya no recibe).
+        """
+        from src.application.services.authoring.outline_narrator import OutlineNarrator
+
+        narrator = OutlineNarrator(self.llm, self.prompt_builder)
+        acts = sorted(story.outline, key=lambda a: a.number)
+        if on_plan_ready is not None:
+            on_plan_ready(len(acts), 0.0)
+        for act in acts:
+            info = self.prompt_builder.get_beat_info(act.number)
+            bullets = "\n".join(f"- {e}" for e in act.events)
+            macro_beat = MacroBeat(
+                number=act.number,
+                summary=bullets,
+                synopsis_beat=bullets,
+                active_scenario_description=act.scenario,
+            )
+            try:
+                macro_beat.beat_type = BeatType(info.get("name", ""))
+            except ValueError:
+                pass
+            system_prompt, user_prompt = narrator.voice_prompts(story, act, journal)
+
+            if on_stage:
+                on_stage(JobStage.VOZ, act.number)
+            if on_step_start:
+                on_step_start(f"✍️   Narrando acto {act.number}/{len(acts)}...")
+            macro_beat, llm_elapsed = await self._voz.narrate_with_prompts(
+                macro_beat, system_prompt, user_prompt
+            )
+
+            if on_stage:
+                on_stage(JobStage.JOURNAL, act.number)
+            if on_step_start:
+                on_step_start(f"📓  Memoria del acto {act.number}/{len(acts)}...")
+            journal = await narrator.remember(story, act, macro_beat.generated_act, journal)
             yield macro_beat, journal, llm_elapsed
 
     async def _execute_single_beat(

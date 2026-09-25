@@ -271,3 +271,55 @@ async def test_la_amenaza_desde_la_direccion(client):
         await client.put(f"{API}/stories/{sid}/direction", json={**form, "threat": None})
     ).json()
     assert state["direction"]["threat"] is None
+
+
+async def test_generar_con_escaleta_usa_la_escaleta(client, monkeypatch):
+    """Spec-530 S5: sin Analyst ni Mapper; la Voz recibe los hechos del acto."""
+    roles: list[str] = []
+
+    class RecordingMock(MockLLMAdapter):
+        async def generate(self, prompt, *, role=None, **kwargs):
+            roles.append(role)
+            return await super().generate(prompt, role=role, **kwargs)
+
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: RecordingMock()))
+
+    resp = await client.post(f"/api/v1/stories/{sid}/jobs", json={})
+    job_id = resp.json()["job_id"]
+    await job_manager.wait(uuid.UUID(job_id))
+    job = (await client.get(f"/api/v1/jobs/{job_id}")).json()
+
+    assert job["status"] == "done" and job["narrative_id"]
+    assert roles == ["voz", "journal"] * 5
+    beats = (await client.get(f"/api/v1/stories/{sid}/beats")).json()
+    assert [b["number"] for b in beats] == [1, 2, 3, 4, 5]
+    from src.infrastructure.database.repositories import SQLStoryRepository
+
+    story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    assert story.outline and len(story.outline) == 5  # la escaleta sobrevive a generar
+    journal = await SQLStoryRepository().get_journal(uuid.UUID(sid))
+    assert journal.used_motifs == ["un motivo de ejemplo"]
+    assert journal.last_events.startswith("Acto 1: Pasó lo del acto.")
+    assert "Hecho 3.1 de ejemplo" in story.beats[2].summary
+
+
+async def test_control_de_repeticion_del_relato(client):
+    from src.domain.models import GeneratedNarrative
+    from src.infrastructure.database.repositories import SQLGeneratedNarrativeRepository
+
+    sid = (await _create(client))["story_id"]
+    narrative = GeneratedNarrative(
+        story_template_id=uuid.UUID(sid),
+        title="R",
+        content="## Acto 1\n\nEl olor dulce y putrefacto me llenó la nariz.\n\n"
+        "## Acto 2\n\nOtra vez el olor dulce y putrefacto. Se me heló la sangre.",
+    )
+    await SQLGeneratedNarrativeRepository().save(narrative)
+
+    data = (await client.get(f"/api/v1/generated-narratives/{narrative.id}/repetition")).json()
+
+    assert data["acts"][0] == {"number": 1, "repeated": [], "cliches": [], "invented_names": []}
+    assert data["acts"][1]["repeated"] == ["«el olor dulce y putrefacto» (del acto 1)"]
+    assert data["acts"][1]["cliches"] == ["me heló la sangre"]  # una vez, aunque haya variantes

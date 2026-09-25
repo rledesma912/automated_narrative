@@ -424,6 +424,26 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - Control de repetición (§8.3) con clichés por lema; se muestra en el panel del relato.
 - **Verificación:** snapshots nuevos para el camino con escaleta; los snapshots actuales **sin cambios** (regresión cero); E2E del relato con el aviso de repetición.
 
+**Hecho (2026-09-25).** Relato real de «la pena del colectivo» desde su escaleta, con `gemma3:12b` (en `scripts/research/530/salidas/relato_s5_*.md`):
+
+| | Original (prod, sin escaleta) | Con escaleta (S5) |
+|---|---|---|
+| Llamadas al LLM | 16 | 10 (Voz + memoria × 5) |
+| Duración | 206 s | 161–191 s |
+| Frases repetidas entre actos | 9 | 4–7 (varias son muletillas del estilo «caso entre amigos») |
+| Clichés | 2 | 0 |
+| Espejo / retrovisor por acto | 3·6·2·6·1 | 4·3·0·1·0 |
+| «¿Todo bien, José?» | 6 veces | 0–1 |
+| El protagonista actúa | no | sí: para, investiga, pregunta en el pueblo, confiesa |
+| Historia secreta | no existía | revelada y confesada (Actos 3–4) |
+| Final del autor | respetado | respetado (en paz, sin «escape incompleto») |
+
+- Camino con escaleta en `DirectorUseCase._execute_outline`: sin Analyst, Resolver ni Mapper. Desvío del PLAN: el Analyst no se mide en S6 porque en este camino sus anclas no alimentan nada.
+- Prompt de la Voz (`outline_voice*.md`): «cómo lo cuenta» en una línea (reemplaza al perfil del narrador), guía de oficio, eventos del acto, solo los personajes en escena, reglas del acto, amenaza según la exposición del acto (Spec-450), lo que ya pasó (acumulado), lo ya usado y extensión proporcional. En el Acto 5, el final del autor manda sobre «escape incompleto».
+- Memoria con esquema JSON (`outline_journal*.md`): hechos acumulados, estado y motivos usados (`narrative_journal.used_motifs`). El Journal viejo ya no falla en silencio (log de aviso).
+- Control del relato (`GET /generated-narratives/{id}/repetition`, en el panel del relato): frases repetidas de actos anteriores, clichés por lema (sin falsos positivos con palabras de 2 letras) y **nombres inventados** (con mayúscula en medio de una frase y ausentes de todo lo que cargó el autor).
+- **Límite medido:** con `gemma3:12b`, la Voz inventa nombres propios (Laura, Ramón, un pueblo, una fecha) y a veces tuerce un detalle de la historia secreta, aunque el prompt lo prohíbe. No se resuelve con más prompt: el control lo marca por acto para regenerarlo. Es el caso para evaluar la Voz en Sonnet 5 (EV-E) o para que el taller pida el nombre de quien no lo tiene.
+
 #### S6 — Medición
 - `scripts/evaluate_workshop.py`: sobre «la pena del colectivo» y «El monte prohibido», 2 corridas cada una, compara la línea base (pipeline actual) contra el asistente con escaleta: tiempos por rol, criterios detectados, métricas del relato (§10).
 - Con Analyst y sin Analyst, sobre las historias con escaleta.

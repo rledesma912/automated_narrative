@@ -22,6 +22,7 @@ class Option:
     id: str
     label: str
     detail: str = ""  # `ayuda` o `ejemplo`
+    voice: str = ""  # instrucción de estilo para la Voz («cómo lo cuenta»)
 
 
 @lru_cache
@@ -47,7 +48,8 @@ def effects() -> tuple[Option, ...]:
 
 def tellings() -> tuple[Option, ...]:
     return tuple(
-        Option(t["id"], t["label"], t.get("ejemplo", "")) for t in _options()["como_lo_cuenta"]
+        Option(t["id"], t["label"], t.get("ejemplo", ""), t.get("voz", ""))
+        for t in _options()["como_lo_cuenta"]
     )
 
 

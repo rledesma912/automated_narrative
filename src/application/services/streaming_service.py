@@ -92,8 +92,10 @@ async def stream_story(
                 )
 
             def _on_stage(stage: JobStage, beat: int | None) -> None:
-                # beat_start sale al empezar el beat (mapper), no cuando ya terminó.
-                if stage == JobStage.MAPPER and beat is not None and beat not in started_beats:
+                # beat_start sale al empezar el beat (mapper; con escaleta, la voz),
+                # no cuando ya terminó.
+                starts = stage in (JobStage.MAPPER, JobStage.VOZ)
+                if starts and beat is not None and beat not in started_beats:
                     queue.put_nowait(_beat_start(beat))
                 queue.put_nowait(stage_event(stage, beat, num_beats))
 

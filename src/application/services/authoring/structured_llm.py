@@ -23,6 +23,7 @@ async def generate_structured(
     system_prompt: str,
     output: type[T],
     retries: int = 1,
+    min_predict: int | None = None,
 ) -> tuple[T, float]:
     """Pide al LLM un JSON que cumpla el esquema de `output` y lo valida.
 
@@ -42,7 +43,7 @@ async def generate_structured(
             model=role_cfg.get("model"),
             temperature=role_cfg.get("temperature"),
             num_ctx=role_cfg.get("num_ctx"),
-            num_predict=role_cfg.get("num_predict"),
+            num_predict=max(role_cfg.get("num_predict") or 0, min_predict or 0) or None,
             response_schema=schema,
         )
         elapsed += response.elapsed_s or 0.0

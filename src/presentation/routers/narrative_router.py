@@ -1,11 +1,13 @@
 """GeneratedNarrative router."""
 
 import logging
+import re
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
 
+from src.application.services import repetition_check
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.infrastructure.database.repositories import SQLStoryRepository
 from src.presentation.schemas.response import GeneratedNarrativeResponse
@@ -127,6 +129,50 @@ async def get_narrative_text(
         raise HTTPException(status_code=404, detail="Narrativa no encontrada")
 
     return JSONResponse(content={"text": narrative.content})
+
+
+@router.get("/generated-narratives/{narrative_id}/repetition")
+async def get_narrative_repetition(
+    narrative_id: str,
+    use_case: GenerateNarrativesUseCase = Depends(_narrative_use_case),
+):
+    """Spec-530 §8.3: frases que cada acto repite de uno anterior y clichés (sin LLM)."""
+    try:
+        nid = UUID(narrative_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID de narrativa inválido")
+    narrative = await use_case.get_by_id(nid)
+    if not narrative:
+        raise HTTPException(status_code=404, detail="Narrativa no encontrada")
+    parts = re.split(r"^## Acto \d+\s*$", narrative.content, flags=re.M)
+    acts = [p.strip() for p in parts[1:]] if len(parts) > 1 else [narrative.content]
+    story = await SQLStoryRepository().get_by_id(narrative.story_template_id)
+    known = _authoring_text(story) if story else None
+    return {
+        "acts": [
+            {
+                "number": r.number,
+                "repeated": r.repeated,
+                "cliches": r.cliches,
+                "invented_names": r.invented_names,
+            }
+            for r in repetition_check.check(acts, known=known)
+        ]
+    }
+
+
+def _authoring_text(story) -> str:
+    """Todo lo que cargó el autor: de acá salen los nombres que la Voz puede usar."""
+    parts = [story.title, story.sinopsis, story.protagonista]
+    parts += [p.get("name", "") + " " + p.get("relation", "") for p in story.personajes_full]
+    parts += [s.name + " " + s.description for s in story.scenarios]
+    parts += [e.name + " " + e.description + " " + e.manifestations for e in story.entities]
+    for act in story.outline:
+        parts += [act.goal, act.scenario, *act.events, *act.on_stage]
+    if story.direction:
+        parts += [story.direction.premise, story.direction.ending]
+    parts += [w.answer for w in story.workshop]
+    return " ".join(p for p in parts if p)
 
 
 @router.get("/generated-narratives/{narrative_id}/export.md")

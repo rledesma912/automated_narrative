@@ -205,6 +205,8 @@ class NarrativeJournal(BaseModel):
     physical_emotional_state: str = ""
     # Spec-450: qué sabe el narrador de las entidades y qué hicieron (tabla entity_journal).
     entity_state: str = ""
+    # Spec-530 §8.2: imágenes, frases y comparaciones ya usadas (acumuladas por acto).
+    used_motifs: list[str] = []
 
     def is_empty(self) -> bool:
         """True si no tiene ningún campo con datos."""
@@ -213,6 +215,7 @@ class NarrativeJournal(BaseModel):
             or self.unresolved_mysteries
             or self.physical_emotional_state
             or self.entity_state
+            or self.used_motifs
         )
 
 

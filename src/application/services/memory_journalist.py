@@ -1,12 +1,15 @@
 """MemoryJournalist - gestiona la coherencia narrativa."""
 
 import json
+import logging
 from typing import Optional
 
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.services.prompt_builder import PromptBuilder
 from src.domain.interfaces import LLMProvider
 from src.domain.models import Beat, MacroBeat, NarrativeJournal, Story
+
+logger = logging.getLogger(__name__)
 
 
 class MemoryJournalist:
@@ -98,6 +101,12 @@ class MemoryJournalist:
                 entity_state=data.get("entity_state", ""),
             )
         except (json.JSONDecodeError, ValueError):
+            # Spec-530 (decisión 8): nunca en silencio. El camino con escaleta usa salida
+            # con esquema y falla; este (historias del wizard) conserva el anterior y avisa.
+            logger.warning(
+                "[JOURNAL] JSON inválido: se conserva la memoria del acto anterior. Respuesta: %r",
+                text[:300],
+            )
             return previous or NarrativeJournal()
 
     def _get_system_prompt(self) -> str:

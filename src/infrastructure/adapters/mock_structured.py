@@ -15,6 +15,12 @@ def mock_structured(role: str | None, schema: dict) -> dict:
             "decisiones": [],
             "avisos": [{"acto": 2, "aviso": "El encuentro del acto 2 repite el del acto 1."}],
         }
+    if role == "journal" and "motivos_usados" in schema.get("properties", {}):
+        return {
+            "hechos": "Pasó lo del acto.",
+            "estado": "Sigue en la ruta.",
+            "motivos_usados": ["un motivo de ejemplo"],
+        }
     return _from_schema(schema, schema)
 
 

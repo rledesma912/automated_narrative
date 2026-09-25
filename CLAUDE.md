@@ -104,6 +104,8 @@ API/CLI → CreateStoryUseCase → DB
                                        → generated_narrative (variante UUID)
 ```
 
+**Con escaleta (Spec-530 S5):** si la historia tiene `act_outline` completo, `DirectorUseCase._execute_outline` narra cada acto desde la escaleta: solo Voz (`outline_voice*.md`: «cómo lo cuenta», eventos del acto, personajes en escena, reglas del acto, lo que ya pasó y lo ya usado) + memoria con esquema (`outline_journal*.md`: hechos acumulados, estado, `used_motifs`). Sin Analyst, Resolver ni Mapper (10 llamadas). El panel del relato muestra el control de `GET /generated-narratives/{id}/repetition` (frases repetidas, clichés por lema, nombres inventados).
+
 En la web el mismo flujo corre como **job** (Spec-460): `POST /stories/{id}/jobs` → `JobManager` lanza una `asyncio.Task` independiente de la conexión que consume `stream_story()` (`streaming_service.py`). `stream_story` traduce el pipeline a eventos (`status` con `stage`/`beat`/`total_beats`, `beat_start`, `beat_done`, `heartbeat`, `done`, `stream_error`), tras el último beat consolida y enriquece `done` con `narrative_id`. Heartbeat cada 15s.
 
 ## LLM Provider Abstraction
