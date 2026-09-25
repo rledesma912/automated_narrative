@@ -1,0 +1,161 @@
+title: la pena del colectivo (escaleta)
+personajes_full:
+- id: P1
+  name: José
+  role: Narrador y protagonista; conductor de micro de larga distancia
+  traits:
+  - observador
+  - tradicional
+  - pragmático
+  - sociable
+protagonista: 'José: Narrador y protagonista; conductor de micro de larga distancia
+  [observador, tradicional, pragmático, sociable]'
+relator: 'Primera persona en pasado. Narrador: José. Tono: dramático. Registro: coloquial:
+  Natural y diario.'
+atmosfera: paranormal (fantasmas) - constante
+escenarios: 'El interior del micro: Es un micro moderno que realiza largas distancias,
+  está bien equipado pero es oscuro. Tiene televisores donde se transmiten películas
+  para los pasajeros.; La estación principal de un pueblos alejado.: Es desolada y
+  poco frecuentada. Es antigua y le falta reparaciones, es oscura. Tiene muchas puertas
+  antiguas y con rejas. Está alejada del centro del pueblo. Tiene muy poca ilumminación
+  y defectuosa.; La ruta de noche: Ruta de dos manos sin iluminación, curvas entre
+  campos, banquinas de tierra.; El pedestal al costado de la ruta: Un pequeño pedestal
+  de piedra en la banquina, con una foto de una mujer y una placa con su nombre.'
+sinopsis: 'José termina su turno nocturno en la estación principal, sintiéndose agotado
+  y con la presión de llegar a casa. Recuerda haber llevado a una pasajera con un
+  ramo de flores que le pidió bajar en un parador anterior, y la imagen le genera
+  una leve incomodidad. Le pregunta al sereno de la estación sobre la mujer que falleció
+  en el micro, obteniendo una respuesta vaga y evasiva. José sube al micro para el
+  viaje de vuelta, revisando rápidamente el espejo retrovisor y limpiándolo con un
+  trapo, convencido de que es un reflejo lo que le molestó.
+
+
+  José arranca el micro y comienza el viaje de vuelta, prestando más atención al espejo
+  retrovisor. Por un instante, ve una figura femenina de pelo atado en el asiento
+  trasero, pero al girar, el asiento está vacío. Repite la experiencia varias veces,
+  cada vez más perturbado, pero atribuyéndolo al cansancio y a la oscuridad. Intenta
+  distraerse escuchando la radio, pero la señal es débil y entrecortada, aumentando
+  su nerviosismo.
+
+
+  José vuelve a ver a la mujer en el espejo, esta vez más cerca, sentada en el asiento
+  del copiloto. De repente, siente una presión fría en su hombro, como si alguien
+  lo hubiera tocado. En un instante siguiente, siente un roce en su rostro, y pierde
+  momentáneamente el control del micro, descarrilando unos metros. Con un esfuerzo
+  sobrehumano, José recupera el control del vehículo, evitando un accidente grave.
+
+
+  José detiene el micro en el lugar donde descarriló, sintiéndose abrumado por el
+  terror. Descubre un pequeño pedestal improvisado con una foto de la mujer que ha
+  estado viendo en el espejo. La foto muestra a la mujer con el mismo ramo de flores
+  que recuerda haber llevado en el micro. José, conmovido, baja del micro y deja unas
+  flores frescas en el pedestal, sintiendo una extraña calma.
+
+
+  José vuelve a pasar por el lugar días después, detiene el micro y observa el pedestal.
+  No ve más a la figura femenina en el espejo, sintiendo una paz inusual. José imagina
+  que, al dejar las flores, le dio a la mujer la oportunidad de descansar en paz.
+  Continúa su camino, con la promesa de llegar a tiempo para ver a su hija en el hospital.'
+reglas:
+- El micro siempre presenta casos paranormales cuando el conductor está solo.
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: José
+  voice_style: dramático
+  voice:
+    person: primera
+    tense: pasado
+    style: dramático
+  atmosphere:
+    genre: paranormal
+    subgenre: fantasmas
+    tone: constante
+  scenarios:
+  - id: S1
+    order: 1
+    name: El interior del micro
+    description: Es un micro moderno que realiza largas distancias, está bien equipado
+      pero es oscuro. Tiene televisores donde se transmiten películas para los pasajeros.
+  - id: S2
+    order: 2
+    name: La estación principal de un pueblos alejado.
+    description: Es desolada y poco frecuentada. Es antigua y le falta reparaciones,
+      es oscura. Tiene muchas puertas antiguas y con rejas. Está alejada del centro
+      del pueblo. Tiene muy poca ilumminación y defectuosa.
+  - id: S3
+    order: 3
+    name: La ruta de noche
+    description: Ruta de dos manos sin iluminación, curvas entre campos, banquinas
+      de tierra.
+  - id: S4
+    order: 4
+    name: El pedestal al costado de la ruta
+    description: Un pequeño pedestal de piedra en la banquina, con una foto de una
+      mujer y una placa con su nombre.
+  rules:
+  - id: 76cb3661-7e24-4209-a38d-58bf11c446c2
+    text: El micro siempre presenta casos paranormales cuando el conductor está solo.
+    type: entorno
+  entities: []
+  actos:
+    act_1:
+      type: exposicion
+      text: José termina su turno nocturno en la estación principal, sintiéndose agotado
+        y con la presión de llegar a casa. Recuerda haber llevado a una pasajera con
+        un ramo de flores que le pidió bajar en un parador anterior, y la imagen le
+        genera una leve incomodidad. Le pregunta al sereno de la estación sobre la
+        mujer que falleció en el micro, obteniendo una respuesta vaga y evasiva. José
+        sube al micro para el viaje de vuelta, revisando rápidamente el espejo retrovisor
+        y limpiándolo con un trapo, convencido de que es un reflejo lo que le molestó.
+    act_2:
+      type: accion_ascendente
+      text: José arranca el micro y comienza el viaje de vuelta, prestando más atención
+        al espejo retrovisor. Por un instante, ve una figura femenina de pelo atado
+        en el asiento trasero, pero al girar, el asiento está vacío. Repite la experiencia
+        varias veces, cada vez más perturbado, pero atribuyéndolo al cansancio y a
+        la oscuridad. Intenta distraerse escuchando la radio, pero la señal es débil
+        y entrecortada, aumentando su nerviosismo.
+    act_3:
+      type: climax
+      text: José vuelve a ver a la mujer en el espejo, esta vez más cerca, sentada
+        en el asiento del copiloto. De repente, siente una presión fría en su hombro,
+        como si alguien lo hubiera tocado. En un instante siguiente, siente un roce
+        en su rostro, y pierde momentáneamente el control del micro, descarrilando
+        unos metros. Con un esfuerzo sobrehumano, José recupera el control del vehículo,
+        evitando un accidente grave.
+    act_4:
+      type: accion_descendente
+      text: José detiene el micro en el lugar donde descarriló, sintiéndose abrumado
+        por el terror. Descubre un pequeño pedestal improvisado con una foto de la
+        mujer que ha estado viendo en el espejo. La foto muestra a la mujer con el
+        mismo ramo de flores que recuerda haber llevado en el micro. José, conmovido,
+        baja del micro y deja unas flores frescas en el pedestal, sintiendo una extraña
+        calma.
+    act_5:
+      type: desenlace
+      text: José vuelve a pasar por el lugar días después, detiene el micro y observa
+        el pedestal. No ve más a la figura femenina en el espejo, sintiendo una paz
+        inusual. José imagina que, al dejar las flores, le dio a la mujer la oportunidad
+        de descansar en paz. Continúa su camino, con la promesa de llegar a tiempo
+        para ver a su hija en el hospital.
+  perception:
+    reliability: 'poco_confiable: A veces ve bien, a veces no'
+    distortion:
+      level: 'media: Distorsión notable'
+      triggers:
+      - 'soledad: Cuando está solo'
+      - 'trauma: Cuando recuerda el pasado'
+  knowledge:
+    domain:
+      paranormal: 'nulo: No sabe nada'
+      religioso: 'nulo: No sabe nada'
+    interpretation_style: 'cientifica: Busca explicaciones'
+  language:
+    register: 'coloquial: Natural y diario'
+    figurative_density: 'minima: Apenas usa'
+  bias:
+    fear_focus:
+    - 'revelacion: Descubrir una verdad terrible'
+    attention_focus:
+    - 'sonidos: Sonidos y ruidos'
+    - 'sombras: Sombras y oscuridad'

@@ -1,0 +1,27 @@
+{
+  "label": "escaleta",
+  "perfil": "ollama-gemma3-12b",
+  "voz_temperature": 0.6,
+  "relatos": [
+    {
+      "variante": "sin",
+      "corrida": 1,
+      "palabras": 1894,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 1,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 1
+    }
+  ],
+  "promedios": {
+    "sin": {
+      "cliches": 0.0,
+      "parentescos_mal": 1.0,
+      "narrador_3ra_persona": 0.0,
+      "frases_repetidas": 1.0,
+      "palabras": 1894.0
+    }
+  }
+}
