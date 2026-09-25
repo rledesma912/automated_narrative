@@ -12,7 +12,7 @@ def mock_structured(role: str | None, schema: dict) -> dict:
         return {"actos": [_act(n) for n in range(1, 6)]}
     if role == "verificador":
         return {
-            "decisiones_faltantes": [],
+            "decisiones": [],
             "avisos": [{"acto": 2, "aviso": "El encuentro del acto 2 repite el del acto 1."}],
         }
     return _from_schema(schema, schema)

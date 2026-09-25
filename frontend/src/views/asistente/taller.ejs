@@ -1,0 +1,150 @@
+<%/*
+  Spec-530 S4 — Taller: la IA pregunta solo por los huecos; el autor responde,
+  elige una opción, delega («Decidí vos») o marca «Es así a propósito».
+  Entrada: state, estimateLabels.
+*/%>
+<%
+  const w = state.workshop;
+  const SEMAFORO = {
+    cumple:      { label: 'Cumple',      cls: 'text-forge-success bg-forge-success-bg border-forge-success-border', dot: 'bg-forge-success' },
+    parcial:     { label: 'A medias',    cls: 'text-forge-warning bg-forge-warning-bg border-forge-warning-border', dot: 'bg-forge-warning' },
+    falta:       { label: 'Falta',       cls: 'text-forge-error bg-forge-error-bg border-forge-error-border',       dot: 'bg-forge-error' },
+    intencional: { label: 'A propósito', cls: 'text-forge-muted bg-forge-bg border-forge-border',                   dot: 'bg-forge-muted' },
+  };
+  const abiertas = w.items.filter(i => (i.status === 'falta' || i.status === 'parcial') && i.question);
+  const resueltas = w.items.filter(i => !abiertas.includes(i));
+  const est = locals.estimateLabels || {};
+  const analizado = w.items.length > 0;
+%>
+<div class="max-w-3xl" data-asistente="taller" data-story-id="<%= state.story_id %>">
+  <%- include('_cabecera') %>
+
+  <header class="mb-8">
+    <h2 class="font-serif text-3xl text-forge-accent mb-2">Taller</h2>
+    <p class="text-forge-muted">El asistente lee tu historia y te pregunta solo lo que le falta para que tenga tensión. Respondé lo que quieras; nada es obligatorio.</p>
+  </header>
+
+  <% if (!analizado) { %>
+    <section class="bg-forge-surface border border-forge-border p-10 text-center mb-8">
+      <i data-lucide="sparkles" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
+      <p class="font-serif text-xl mb-2">Todavía no analizaste la historia</p>
+      <p class="text-forge-muted mb-6">La IA la lee y te pregunta lo que le falta. Tarda <%= est.consult || 'unos segundos' %>.</p>
+      <button type="button" class="btn-forge-sm" data-analizar="consult" data-titulo="Interpretando la historia…"
+              data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte.">
+        <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia
+      </button>
+    </section>
+  <% } else { %>
+    <section class="bg-forge-surface border border-forge-border p-6 mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted">Estado de la historia</h3>
+        <span class="text-xs text-forge-muted">Ronda <%= w.round %> de <%= w.max_rounds %></span>
+      </div>
+      <ul class="flex flex-wrap gap-2 mb-5">
+        <% w.items.forEach(i => { const s = SEMAFORO[i.status]; %>
+          <li class="inline-flex items-center gap-2 border px-3 py-1 text-sm <%= s.cls %>" title="<%= s.label %>">
+            <span class="w-2 h-2 rounded-full <%= s.dot %>"></span><%= i.nombre %>
+          </li>
+        <% }) %>
+      </ul>
+      <p class="flex gap-2 text-sm" data-fin="<%= w.finish.kind %>"><i data-lucide="info" class="w-4 h-4 text-forge-info shrink-0 mt-0.5"></i><%= w.finish.text %></p>
+    </section>
+
+    <% if (abiertas.length) { %>
+      <h3 class="font-serif text-xl mb-4">Preguntas abiertas</h3>
+      <div class="space-y-6 mb-12">
+        <% abiertas.forEach(p => { const s = SEMAFORO[p.status]; %>
+          <article class="bg-forge-surface border border-forge-border p-6" data-pregunta="<%= p.criterion %>">
+            <div class="flex items-center justify-between gap-4 mb-3">
+              <span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span>
+              <span class="inline-flex items-center gap-2 border px-2 py-0.5 text-xs <%= s.cls %>"><span class="w-1.5 h-1.5 rounded-full <%= s.dot %>"></span><%= s.label %></span>
+            </div>
+            <p class="font-serif text-xl mb-2"><%= p.question %></p>
+            <p class="text-sm text-forge-muted mb-5 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i><%= p.por_que %></p>
+            <fieldset class="space-y-2 mb-4">
+              <legend class="sr-only">Opciones</legend>
+              <% p.options.forEach(o => { %>
+                <label class="cursor-pointer block">
+                  <input type="radio" name="op-<%= p.criterion %>" value="<%= o %>" class="peer sr-only">
+                  <span class="flex items-center gap-3 border border-forge-border bg-forge-bg px-4 py-3 transition-colors
+                               peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
+                    <i data-lucide="circle" class="w-4 h-4 text-forge-muted shrink-0"></i><%= o %>
+                  </span>
+                </label>
+              <% }) %>
+              <label class="cursor-pointer block">
+                <input type="radio" name="op-<%= p.criterion %>" value="" data-mia class="peer sr-only">
+                <span class="flex items-center gap-3 border border-dashed border-forge-border bg-forge-bg px-4 py-3 text-forge-muted peer-checked:border-forge-accent peer-checked:text-forge-text">
+                  <i data-lucide="pencil" class="w-4 h-4 shrink-0"></i>Escribir la mía…
+                </span>
+              </label>
+              <textarea data-texto-mia rows="2" maxlength="600" placeholder="Tu respuesta"
+                        class="hidden w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2"></textarea>
+            </fieldset>
+            <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
+            <div class="flex flex-wrap items-center gap-3">
+              <button type="button" class="btn-forge-sm" data-taller="answer">Guardar respuesta</button>
+              <button type="button" class="btn-forge-outline-sm" data-taller="decide" title="Elige la primera opción: la que la IA propone como más fuerte. Es instantáneo.">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Decidí vos
+              </button>
+              <button type="button" class="btn-forge-outline-sm" data-taller="intentional" title="Queda como está y no se vuelve a preguntar">
+                <i data-lucide="lock" class="w-4 h-4"></i> Es así a propósito
+              </button>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <% if (resueltas.length) { %>
+      <h3 class="font-serif text-xl mb-4">Ya resuelto</h3>
+      <ul class="space-y-3 mb-12">
+        <% resueltas.forEach(p => { const s = SEMAFORO[p.status]; %>
+          <li class="bg-forge-surface border border-forge-border px-5 py-4" data-pregunta="<%= p.criterion %>">
+            <div class="flex items-start gap-4">
+              <span class="w-2.5 h-2.5 rounded-full mt-2 shrink-0 <%= s.dot %>" title="<%= s.label %>"></span>
+              <div class="flex-1">
+                <p class="text-xs uppercase tracking-widest text-forge-muted mb-1"><%= p.nombre %><% if (p.status === 'intencional') { %> · <i data-lucide="lock" class="w-3 h-3 inline"></i> a propósito<% } %></p>
+                <p><%= p.answer || (p.status === 'cumple' ? 'La historia ya lo resuelve.' : 'Sin pregunta por ahora.') %></p>
+              </div>
+              <button type="button" class="text-sm text-forge-muted hover:text-forge-accent shrink-0" data-cambiar>Cambiar</button>
+            </div>
+            <div class="hidden mt-4 pl-6" data-cambio>
+              <textarea data-texto-mia rows="2" maxlength="600" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= p.answer %></textarea>
+              <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
+              <div class="flex flex-wrap gap-3">
+                <button type="button" class="btn-forge-sm" data-taller="answer">Guardar</button>
+                <button type="button" class="btn-forge-outline-sm" data-taller="reopen" title="Vuelve a evaluarse en el próximo análisis">Que la IA lo vuelva a preguntar</button>
+              </div>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  <% } %>
+
+  <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
+    <div class="flex items-center gap-5">
+      <a href="/asistente/<%= state.story_id %>/direccion" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Dirección</a>
+      <%- include('_guardado') %>
+    </div>
+    <% if (analizado) { %>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="btn-forge-outline-sm" data-analizar="consult" data-titulo="Interpretando tus respuestas…"
+                data-detalle="La IA vuelve a leer la historia con lo que respondiste y pregunta solo lo que siga faltando.">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Analizar de nuevo<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
+        </button>
+        <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando la escaleta…"
+                data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa."
+                data-destino="escaleta"
+                <%- state.outline.acts.length ? 'data-confirmar="Ya hay una escaleta: armarla de nuevo reemplaza la actual (y lo que editaste). ¿Seguir?"' : '' %>>
+          <i data-lucide="list-ordered" class="w-4 h-4"></i> <%= state.outline.acts.length ? 'Rearmar la escaleta' : 'Armar la escaleta' %><% if (est.plan_outline) { %> <span class="normal-case tracking-normal">· <%= est.plan_outline %></span><% } %>
+        </button>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('_analizando') %>
+<script type="application/json" id="asistente-datos"><%- JSON.stringify({ state }).replace(/</g, '\\u003c') %></script>
+<script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

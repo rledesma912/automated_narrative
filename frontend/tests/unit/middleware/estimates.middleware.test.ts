@@ -30,6 +30,25 @@ describe("loadEstimates", () => {
     expect(resp.body.estimateLabels).toEqual({
       full_generation: "≈ 4 min",
       regenerate_voz: "≈ 1 min",
+      consult: "",
+      plan_outline: "",
+      verify_outline: "",
+    });
+  });
+
+  it("Spec-530: los análisis del asistente se muestran en segundos", async () => {
+    const withAuthoring = {
+      ...ESTIMATES,
+      consult: { seconds: 18, source: "default", samples: 0 },
+      plan_outline: { seconds: 62, source: "history", samples: 3 },
+      verify_outline: { seconds: 120, source: "default", samples: 0 },
+    };
+    const resp = await request(appWith(async () => withAuthoring)).get("/");
+
+    expect(resp.body.estimateLabels).toMatchObject({
+      consult: "≈ 20 s",
+      plan_outline: "≈ 60 s",
+      verify_outline: "≈ 2 min",
     });
   });
 

@@ -7,13 +7,18 @@ modal bloquea la página, pero la API no confía en eso).
 """
 
 import sqlite3
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException
 
 from src.application.dto import StoryCreateDTO
 from src.application.services.authoring import catalog, context, workshop_rules
-from src.application.use_cases.create_story import CreateStoryUseCase, ensure_valid_genre
+from src.application.use_cases.create_story import (
+    CreateStoryUseCase,
+    build_entities,
+    ensure_valid_entities,
+    ensure_valid_genre,
+)
 from src.domain.exceptions import InvalidStoryInputError
 from src.domain.models import (
     ActOutline,
@@ -21,6 +26,7 @@ from src.domain.models import (
     CriterionStatus,
     Direction,
     Story,
+    TypedRule,
     WorkshopItem,
     WorkshopLevel,
 )
@@ -30,7 +36,13 @@ from src.infrastructure.database.repositories import (
     SQLStoryRepository,
 )
 from src.presentation.runtime import job_manager
-from src.presentation.schemas.authoring import ActForm, DirectionForm, WorkshopAction
+from src.presentation.schemas.authoring import (
+    ActForm,
+    CharacterForm,
+    DirectionForm,
+    WarningDismiss,
+    WorkshopAction,
+)
 
 router = APIRouter(prefix="/authoring", tags=["authoring"])
 
@@ -58,7 +70,9 @@ async def create_authoring_story(form: DirectionForm) -> dict:
     """Crea el borrador desde la Dirección (primer guardado de «Nuevo relato»)."""
     repo = SQLStoryRepository()
     dto = StoryCreateDTO(
-        **_story_fields(form, existing=None), direction=_direction(form).model_dump()
+        **_story_fields(form, existing=None),
+        direction=_direction(form).model_dump(),
+        entities=_threat(form),
     )
     try:
         story = await CreateStoryUseCase(repo, SQLGenreRepository()).execute(dto)
@@ -72,12 +86,20 @@ async def update_direction(story_id: str, form: DirectionForm) -> dict:
     """Guardado automático de la Dirección. No toca el taller ni la escaleta."""
     repo = SQLStoryRepository()
     story = await _editable(story_id)
+    genres = SQLGenreRepository()
     try:
-        await ensure_valid_genre(SQLGenreRepository(), form.genero, form.subgenero)
+        await ensure_valid_genre(genres, form.genero, form.subgenero)
+        # La amenaza reemplaza a la entidad principal; las demás (del wizard) quedan.
+        threat = build_entities(story.id, _threat(form))
+        entities = threat + [e for e in story.entities if e.order_index > 0]
+        for i, e in enumerate(entities):
+            e.order_index = i
+        await ensure_valid_entities(genres, form.genero, entities)
     except InvalidStoryInputError as e:
         raise _unprocessable(e) from e
     for key, value in _story_fields(form, existing=story).items():
         setattr(story, key, value)
+    story.entities = entities
     await repo.update_inputs(story)
     await repo.update_direction(story.id, _direction(form))
     return await _state(await repo.get_by_id(story.id))
@@ -141,12 +163,54 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
         raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     story = await _editable(story_id)
     previous = next((a for a in story.outline if a.number == number), None)
-    act = ActOutline(
-        number=number,
-        **{k: _clean(v) for k, v in form.model_dump().items()},
-        warnings=previous.warnings if previous else [],
-    )
-    await SQLStoryRepository().save_act(story.id, act)
+    fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
+    act = ActOutline(number=number, **fields, warnings=previous.warnings if previous else [])
+    repo = SQLStoryRepository()
+    await repo.save_act(story.id, act)
+    # Las reglas del acto viven en `rule` con `applies_to_beat` (Spec-190 §4.4).
+    rules = _clean(form.rules)
+    current = [r.content for r in story.typed_rules if r.applies_to_beat == number]
+    if rules != current:
+        others = [r for r in story.typed_rules if r.applies_to_beat != number]
+        story.typed_rules = others + [
+            TypedRule(id=str(uuid4()), story_id=story.id, content=r, applies_to_beat=number)
+            for r in rules
+        ]
+        story.reglas = [r.content for r in story.typed_rules]
+        await repo.update_inputs(story)
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/outline/{number}/warnings/dismiss")
+async def dismiss_warning(story_id: str, number: int, body: WarningDismiss) -> dict:
+    """«Ignorar» un aviso de la revisión."""
+    story = await _editable(story_id)
+    act = next((a for a in story.outline if a.number == number), None)
+    if act is None:
+        raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
+    remaining = [w for w in act.warnings if w != body.text]
+    await SQLStoryRepository().save_act(story.id, act.model_copy(update={"warnings": remaining}))
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/characters")
+async def add_character(story_id: str, body: CharacterForm) -> dict:
+    """Suma un personaje al elenco (desde un acto o desde un aviso de la revisión)."""
+    story = await _editable(story_id)
+    name = " ".join(body.name.split())
+    if not any(p.get("name", "").lower() == name.lower() for p in story.personajes_full):
+        n = len(story.personajes_full) + 1
+        story.personajes_full = [
+            *story.personajes_full,
+            {
+                "id": f"P{n}",
+                "name": name,
+                "role": "",
+                "kind": body.kind,
+                "relation": body.relation.strip(),
+            },
+        ]
+        await SQLStoryRepository().update_inputs(story)
     return await _state(await _story(story_id))
 
 
@@ -189,6 +253,11 @@ def _direction(form: DirectionForm) -> Direction:
         ending_intentional=form.ending_intentional,
         telling=form.telling,
     )
+
+
+def _threat(form: DirectionForm) -> list[dict]:
+    t = form.threat
+    return [t.model_dump()] if t and t.nature.strip() else []
 
 
 def _story_fields(form: DirectionForm, existing: Story | None) -> dict:
@@ -236,7 +305,22 @@ def _form(story: Story) -> dict:
             protagonist_name=lead.get("name", ""),
             protagonist_role=lead.get("role", ""),
             narrator=(story.narrator_config or {}).get("storyteller_name", ""),
+            threat=_threat_form(story),
         ).model_dump()
+    }
+
+
+def _threat_form(story: Story):
+    lead = next((e for e in story.entities if e.order_index == 0), None)
+    if lead is None:
+        return None
+    return {
+        "name": lead.name,
+        "nature": lead.nature_id,
+        "description": lead.description,
+        "manifestations": lead.manifestations,
+        "limits": lead.limits,
+        "reveal_level": lead.reveal_level.value,
     }
 
 
@@ -272,7 +356,15 @@ async def _state(story: Story) -> dict:
             ],
         },
         "outline": {
-            "acts": [a.model_dump(mode="json") for a in story.outline],
+            "acts": [
+                {
+                    **a.model_dump(mode="json"),
+                    "rules": [
+                        r.content for r in story.typed_rules if r.applies_to_beat == a.number
+                    ],
+                }
+                for a in story.outline
+            ],
             "decisions": [
                 {"id": cid, "nombre": nombre, "integrada": cid in used}
                 for cid, nombre, _ in context.decisions(story)

@@ -1,0 +1,32 @@
+<%/*
+  Spec-530: pasos del asistente. Entrada: state (null si la historia todavía no
+  existe), pasoActual.
+*/%>
+<%
+  const sid = state ? state.story_id : null;
+  const pasos = [
+    { id: 'direccion', label: 'Dirección', href: sid ? `/asistente/${sid}/direccion` : '/nuevo' },
+    { id: 'taller',    label: 'Taller',    href: sid ? `/asistente/${sid}/taller` : null },
+    { id: 'escaleta',  label: 'Escaleta',  href: sid ? `/asistente/${sid}/escaleta` : null },
+    { id: 'relato',    label: 'Relato',    href: sid && state.status === 'completed' ? `/historia/${sid}/relatos` : null },
+  ];
+  const idx = pasos.findIndex(p => p.id === pasoActual);
+%>
+<ol class="flex flex-wrap items-center gap-2 mb-10 text-sm" aria-label="Pasos del asistente">
+  <% pasos.forEach((p, i) => { %>
+    <li class="flex items-center gap-2">
+      <% const cls = i === idx ? 'border-forge-accent bg-forge-accent text-forge-on-accent'
+                   : p.href ? 'border-forge-accent/40 text-forge-accent hover:bg-forge-accent/5'
+                   : 'border-forge-border text-forge-muted opacity-60'; %>
+      <% if (p.href && i !== idx) { %>
+        <a href="<%= p.href %>" class="flex items-center gap-2 px-3 py-1.5 rounded-full border <%= cls %>">
+      <% } else { %>
+        <span class="flex items-center gap-2 px-3 py-1.5 rounded-full border <%= cls %>" <%- i === idx ? 'aria-current="step"' : '' %>>
+      <% } %>
+        <span class="w-5 h-5 inline-flex items-center justify-center rounded-full text-xs font-bold <%= i === idx ? 'bg-forge-on-accent text-forge-accent' : 'bg-forge-bg' %>"><%= i + 1 %></span>
+        <%= p.label %>
+      <%- p.href && i !== idx ? '</a>' : '</span>' %>
+      <% if (i < pasos.length - 1) { %><span class="w-6 h-px bg-forge-border"></span><% } %>
+    </li>
+  <% }) %>
+</ol>

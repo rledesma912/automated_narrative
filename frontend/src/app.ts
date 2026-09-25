@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import router from "./routes";
-import maquetasRouter from "./routes/maquetas";
 import { sessionMiddleware } from "./middleware/session.middleware";
 import { createApiProxy } from "./middleware/api_proxy";
 
@@ -28,10 +27,5 @@ app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.use("/", router);
-
-// Spec-530 S0: maquetas del asistente, nunca en producción.
-if (process.env.NODE_ENV !== "production") {
-  app.use("/", maquetasRouter);
-}
 
 export default app;

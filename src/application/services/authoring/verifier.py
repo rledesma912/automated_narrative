@@ -17,6 +17,7 @@ from src.domain.models import ActOutline, Story
 
 ROLE = "verificador"
 MAX_LLM_WARNINGS_PER_ACT = 2
+MAX_WARNINGS_PER_ACT = 3  # reglas primero (más concretas), después el LLM
 
 
 class AvisoActo(BaseModel):
@@ -24,8 +25,13 @@ class AvisoActo(BaseModel):
     aviso: str
 
 
+class UbicacionDecision(BaseModel):
+    decision: str
+    acto: int  # 0 = no aparece en ningún hecho
+
+
 class Revision(BaseModel):
-    decisiones_faltantes: list[str]
+    decisiones: list[UbicacionDecision]
     avisos: list[AvisoActo]
 
 
@@ -62,13 +68,21 @@ class OutlineVerifier:
                 warnings.setdefault(w.acto, []).append(" ".join(w.aviso.split()))
 
         decided = [cid for cid, _, _ in context.decisions(story)]
-        llm_missing = {d for d in result.decisiones_faltantes if d in decided}
+        # La ubicación que da la revisión (leyendo los hechos) manda sobre las etiquetas
+        # del Planificador; lo que la revisión no menciona conserva su etiqueta.
+        located = {u.decision: u.acto for u in result.decisiones if u.decision in decided}
+        if story.direction and story.direction.ending_intentional and "final" in decided:
+            located["final"] = max(numbers)  # el final del autor es el del último acto, siempre
         acts = []
         for act in outline:
-            used = [d for d in act.decisions if d not in llm_missing]
+            used = [d for d in act.decisions if d not in located]
+            used += [d for d, n in located.items() if n == act.number and d not in used]
             acts.append(
                 act.model_copy(
-                    update={"warnings": _dedup(warnings.get(act.number, [])), "decisions": used}
+                    update={
+                        "warnings": _dedup(warnings.get(act.number, []))[:MAX_WARNINGS_PER_ACT],
+                        "decisions": used,
+                    }
                 )
             )
         used_anywhere = {d for a in acts for d in a.decisions}
@@ -108,9 +122,12 @@ def rule_warnings(story: Story, outline: list[ActOutline]) -> dict[int, list[str
                     f"«{name}» está en escena y no en el elenco: ¿lo sumamos como personaje?",
                 )
         later = [a for a in outline if a.number > act.number]
-        for seed in act.seeds:
-            if not any(_mentions(p, seed) for a in later for p in a.payoffs):
-                add(act.number, f"«{seed}» se siembra acá y ningún acto posterior lo retoma.")
+        loose = [s for s in act.seeds if not any(_mentions(p, s) for a in later for p in a.payoffs)]
+        if len(loose) == 1:
+            add(act.number, f"«{loose[0]}» se siembra acá y ningún acto posterior lo retoma.")
+        elif loose:
+            names = ", ".join(f"«{s}»" for s in loose)
+            add(act.number, f"{names} se siembran acá y ningún acto posterior los retoma.")
     return out
 
 

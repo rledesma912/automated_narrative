@@ -1,0 +1,20 @@
+<%/*
+  Spec-530 (decisión 12): modal bloqueante mientras la IA trabaja. Lo maneja
+  public/js/asistente.js: lo abre al lanzar un análisis (o al entrar con uno en
+  curso), deja la página `inert` y se cierra con el job terminado o cancelado.
+*/%>
+<div id="asistente-analizando" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-forge-overlay"
+     role="dialog" aria-modal="true" aria-labelledby="analizando-titulo" aria-describedby="analizando-detalle">
+  <div class="bg-forge-surface border border-forge-border shadow-2xl shadow-forge-text/20 w-full max-w-md mx-4 px-10 py-12 text-center">
+    <div data-analizando-spinner class="mx-auto mb-8 w-20 h-20 rounded-full border-[6px] border-forge-accent/20 border-t-forge-accent animate-spin" aria-hidden="true"></div>
+    <h2 id="analizando-titulo" class="font-serif text-2xl text-forge-accent mb-3" aria-live="polite">Interpretando la historia…</h2>
+    <p id="analizando-detalle" class="text-forge-muted mb-6"></p>
+    <p class="text-sm mb-1" data-analizando-eta></p>
+    <p class="text-xs text-forge-muted mb-8" data-analizando-nota>Podés cerrar la pestaña: sigue trabajando y al volver ves el resultado.</p>
+    <p class="hidden text-sm text-forge-error mb-6" data-analizando-error role="alert"></p>
+    <div class="flex flex-col items-center gap-3">
+      <button type="button" class="btn-forge-outline-sm" data-analizando-cancelar>Cancelar</button>
+      <button type="button" class="hidden btn-forge-sm" data-analizando-cerrar>Cerrar</button>
+    </div>
+  </div>
+</div>

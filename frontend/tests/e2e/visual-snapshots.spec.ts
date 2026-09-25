@@ -1,5 +1,5 @@
 import path from "path";
-import { test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { storyIdByTitle } from "./support/stories";
 
@@ -41,17 +41,39 @@ test.describe("Capturas del tema", () => {
     await capturar(page, "08-debug", "/debug");
   });
 
-  // Spec-530 S0: las maquetas del asistente, enteras (el contenido scrollea dentro de
+  // Spec-530: las vistas del asistente, enteras (el contenido scrollea dentro de
   // <main>, así que se agranda el viewport en vez de usar fullPage).
-  test("maquetas del asistente", async ({ page }) => {
-    for (const [nombre, alto] of [["direccion", 2600], ["taller", 2200], ["escaleta", 4200]] as const) {
+  test("asistente de autoría", async ({ page }) => {
+    const created = await page.request.post("/api/v1/authoring/stories", {
+      data: {
+        title: "Capturas: la pena del colectivo",
+        premise: "José, chofer de micros, ve por el espejo a una mujer que murió en su micro.",
+        effect: "pavor",
+        ending: "Le deja flores y el alma descansa en paz.",
+        ending_intentional: true,
+        telling: "caso",
+        protagonist_name: "José",
+        protagonist_role: "Chofer de micros de larga distancia",
+      },
+    });
+    const sid = (await created.json()).story_id;
+    for (const kind of ["consult", "plan_outline"]) {
+      const job = (await (await page.request.post(`/api/v1/stories/${sid}/jobs`, { data: { kind } })).json()).job_id;
+      await expect
+        .poll(async () => (await (await page.request.get(`/api/v1/jobs/${job}`)).json()).status, { timeout: 20000 })
+        .toBe("done");
+    }
+    await page.setViewportSize({ width: 1440, height: 2400 });
+    await capturar(page, "asistente-nuevo", "/nuevo");
+    for (const [paso, alto] of [["direccion", 2600], ["taller", 2200], ["escaleta", 5200]] as const) {
       await page.setViewportSize({ width: 1440, height: alto });
-      await capturar(page, `maqueta-${nombre}`, `/maquetas/${nombre}`);
+      await capturar(page, `asistente-${paso}`, `/asistente/${sid}/${paso}`);
     }
     await page.setViewportSize({ width: 1440, height: 900 });
-    await capturar(page, "maqueta-analizando", "/maquetas/taller");
-    await page.getByRole("button", { name: /Armar la escaleta/ }).click();
-    await page.screenshot({ path: path.join(DESTINO, "maqueta-analizando.png") });
+    await capturar(page, "asistente-analizando", `/asistente/${sid}/taller`);
+    await page.getByRole("button", { name: /Analizar de nuevo/ }).click();
+    await page.locator("#asistente-analizando").waitFor();
+    await page.screenshot({ path: path.join(DESTINO, "asistente-analizando.png") });
   });
 
   test("modal de confirmación", async ({ page }) => {

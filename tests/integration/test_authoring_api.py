@@ -70,7 +70,7 @@ async def test_opciones(client):
 async def test_crear_desde_la_direccion(client):
     state = await _create(client)
 
-    assert state["direction"] == FORM | {"narrator": "José", "effect_other": ""}
+    assert state["direction"] == FORM | {"narrator": "José", "effect_other": "", "threat": None}
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
     assert state["characters"] == [{"name": "José", "kind": "persona", "relation": ""}]
     story = (await client.get(f"/api/v1/stories/{state['story_id']}")).json()
@@ -213,3 +213,61 @@ async def test_con_la_ia_trabajando_no_se_puede_guardar(client, monkeypatch):
 async def test_estimaciones_de_los_jobs_nuevos(client):
     data = (await client.get("/api/v1/jobs/estimates")).json()
     assert {"consult", "plan_outline", "verify_outline"} <= data.keys()
+
+
+async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+
+    state = (
+        await client.put(
+            f"{API}/stories/{sid}/outline/2",
+            json={"events": ["Frena"], "rules": ["Solo aparece si está solo", " "]},
+        )
+    ).json()
+    assert state["outline"]["acts"][1]["rules"] == ["Solo aparece si está solo"]
+    assert state["outline"]["acts"][2]["rules"] == []
+    rules = (await client.get(f"/api/v1/stories/{sid}")).json()["storyteller_config"]["rules"]
+    assert [(r["text"], r.get("applies_to_beat")) for r in rules] == [
+        ("Solo aparece si está solo", 2)
+    ]
+
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/characters",
+            json={"name": "El sereno", "kind": "sin_nombre", "relation": "Lo conozco de vista"},
+        )
+    ).json()
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "el sereno"})  # no duplica
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert [c["name"] for c in state["characters"]] == ["José", "El sereno"]
+
+    warning = state["outline"]["acts"][1]["warnings"][0]
+    state = (
+        await client.post(f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"text": warning})
+    ).json()
+    assert state["outline"]["acts"][1]["warnings"] == []
+
+
+async def test_la_amenaza_desde_la_direccion(client):
+    threat = {
+        "name": "La mujer del asiento 32",
+        "nature": "espiritu",
+        "description": "Quiere que José se detenga.",
+        "manifestations": "Olor a flores",
+        "limits": "Solo cuando está solo",
+        "reveal_level": "progresiva",
+    }
+    form = {**FORM, "genero": "paranormal", "subgenero": "fantasmas", "threat": threat}
+    state = await _create(
+        client, **{k: v for k, v in form.items() if k not in FORM or FORM[k] != v}
+    )
+    assert state["direction"]["threat"] == threat
+
+    sid = state["story_id"]
+    bad = {**form, "threat": {**threat, "nature": "inexistente"}}
+    assert (await client.put(f"{API}/stories/{sid}/direction", json=bad)).status_code == 422
+    state = (
+        await client.put(f"{API}/stories/{sid}/direction", json={**form, "threat": None})
+    ).json()
+    assert state["direction"]["threat"] is None

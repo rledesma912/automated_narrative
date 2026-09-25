@@ -7,6 +7,7 @@ import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
 import { relatosPage, regenerarActoAction, relatoPanelFragment } from "../controllers/relatos.controller";
 import { loadEstimates } from "../middleware/estimates.middleware";
+import { nuevoPage, asistentePage } from "../controllers/asistente.controller";
 
 const router = Router();
 
@@ -16,6 +17,10 @@ const router = Router();
 router.get("/",            homePage);
 router.get("/galeria",     loadEstimates, galleryPage);
 router.get("/debug",       debugPage);
+
+// Spec-530: asistente de autoría («Nuevo relato»).
+router.get("/nuevo",                          loadEstimates, nuevoPage);
+router.get("/asistente/:storyId/:paso",       loadEstimates, asistentePage);
 
 // Wizard
 router.get("/generar",              wizardRedirect);

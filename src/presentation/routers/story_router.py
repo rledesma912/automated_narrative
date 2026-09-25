@@ -167,6 +167,7 @@ async def list_stories(
             id=str(s.id),
             title=s.title,
             status=s.status.value,
+            authoring=s.direction is not None,
             created_at=s.created_at,
             genero=s.genero,
             subgenero=s.subgenero,
@@ -329,6 +330,7 @@ async def get_story(
     if not story:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
     return StoryResponse(
+        authoring=story.direction is not None,
         id=str(story.id),
         title=story.title,
         status=story.status.value,

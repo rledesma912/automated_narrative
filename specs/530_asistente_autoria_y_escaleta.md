@@ -403,6 +403,20 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - Dirección, Taller y Escaleta con HTMX sobre los parciales de S0. «Nuevo relato» apunta al asistente; la ficha de una historia con escaleta enlaza a sus vistas.
 - **Verificación:** Vitest de controllers y parciales; E2E con Mock: dirección → taller (1 ronda) → escaleta → generar → relato.
 
+**Hecho (2026-09-25).** Probado en el navegador con `gemma3:12b`: Dirección → análisis (8–11 s) → taller → escaleta (56–75 s), con la historia secreta revelada en el Acto 4 y las 3 decisiones integradas.
+- Vistas `/nuevo` y `/asistente/{id}/{direccion|taller|escaleta}` (Express + EJS, sobre los diseños de S0), con `public/js/asistente.js`: guardado automático con cola por formulario (y descarga antes de cualquier acción), comandos explícitos de la IA y modal bloqueante atado al job (bus de eventos + consulta de respaldo; reaparece al entrar con un análisis en curso; muestra el error si la IA falla).
+- «Nuevo relato» apunta al asistente; en la galería y la ficha, «Editar» lleva al asistente para las historias creadas ahí (`StoryResponse.authoring`). El wizard viejo sigue para las demás.
+- Se retiraron las maquetas de S0.
+- La API sumó lo que las vistas necesitaban: la amenaza en la Dirección, reglas por acto (`rule.applies_to_beat`), sumar un personaje desde un acto e ignorar un aviso.
+- Ajustes por lo que mostró el modelo real:
+  - la revisión ubica cada decisión en el acto donde aparece en los hechos (antes solo podía quitar las etiquetas del Planificador);
+  - el final intencional va siempre al último acto;
+  - la historia secreta se pide en el Acto 4;
+  - los escenarios se normalizan sin agregados entre paréntesis;
+  - hilos sueltos en un solo aviso, como máximo 3 avisos por acto.
+- Bug encontrado en la prueba real: «Escribir la mía…» no mostraba el campo; corregido y cubierto por el E2E.
+- **Pendiente para S5:** «Generar relato» todavía usa el pipeline de siempre (la sinopsis); la escaleta entra en la generación en S5.
+
 #### S5 — Pipeline con escaleta, Voz y memoria
 - `DirectorUseCase`: si hay escaleta, los hechos, el escenario y las reglas del acto salen de ella (sin Mapper para ese acto; el Analyst sigue corriendo hasta decidir en S6).
 - Prompt de la Voz para historias con escaleta (§8.1): sin perfil del narrador, «¿cómo lo cuenta?» en una línea, «ya contado» y «ya usado, no repetir», extensión proporcional a los hechos.

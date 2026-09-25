@@ -1,5 +1,7 @@
 """Planificador de la escaleta (Spec-530 §5.2): reparte la historia en 5 actos."""
 
+import re
+
 from pydantic import BaseModel, model_validator
 
 from src.application.services.authoring import context
@@ -70,6 +72,11 @@ class OutlinePlanner:
         )
         valid = {cid for cid, _, _ in context.decisions(story)}
         acts = [_to_outline(a, valid) for a in sorted(result.actos, key=lambda a: a.numero)]
+        if story.direction and story.direction.ending_intentional and "final" in valid:
+            # El final decidido por el autor es, por definición, el del último acto.
+            last = acts[-1]
+            if "final" not in last.decisions:
+                acts[-1] = last.model_copy(update={"decisions": [*last.decisions, "final"]})
         return acts, elapsed
 
     def _prompt(self, story: Story) -> str:
@@ -86,6 +93,7 @@ class OutlinePlanner:
 
     def _acts_block(self, story: Story) -> str:
         ending_fixed = bool(story.direction and story.direction.ending_intentional)
+        has_secret = any(cid == "historia_secreta" for cid, _, _ in context.decisions(story))
         lines = []
         for n in range(1, NUM_ACTS + 1):
             info = self.prompt_builder.get_beat_info(n)
@@ -93,8 +101,15 @@ class OutlinePlanner:
             intent = info.get("intent", "")
             if n == NUM_ACTS and ending_fixed:
                 intent = "cerrar la historia con el final que decidió el autor"
+            if n == NUM_ACTS - 1 and has_secret:
+                intent += "; acá el protagonista descubre o confiesa la historia secreta"
             lines.append(f"{n}. {name} (intensidad {info.get('intensity', '')}): {intent}")
         return "\n".join(lines)
+
+
+def _scenario_name(name: str) -> str:
+    """«Ruta 36 (regreso)» es el mismo lugar que «Ruta 36»: sin agregados entre paréntesis."""
+    return re.sub(r"\s*\([^)]*\)\s*$", "", " ".join(name.split())) or name.strip()
 
 
 def _clean(items: list[str]) -> list[str]:
@@ -108,7 +123,7 @@ def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
         events=_clean(a.hechos),
         change_from=a.cambio_de.strip(),
         change_to=a.cambio_a.strip(),
-        scenario=a.escenario.strip(),
+        scenario=_scenario_name(a.escenario),
         on_stage=_clean(a.en_escena),
         held_back=a.se_guarda.strip(),
         seeds=_clean(a.siembra),

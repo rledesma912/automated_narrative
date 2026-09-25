@@ -23,6 +23,8 @@ class StoryResponse(BaseModel):
     # narrador) para rehidratar el wizard al editar. Solo en GET /stories/{id}.
     storyteller_config: dict | None = None
     personajes_full: list | None = None
+    # Spec-530: la historia se armó con el asistente (se edita ahí, no en el wizard).
+    authoring: bool = False
 
     class Config:
         from_attributes = True

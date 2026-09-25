@@ -1,0 +1,4 @@
+<%/* Spec-530 (decisión 10): estado del guardado automático. Lo actualiza asistente.js. */%>
+<span class="text-sm inline-flex items-center gap-2 text-forge-muted" data-guardado aria-live="polite">
+  <% if (locals.inicial) { %><%= inicial %><% } else { %><i data-lucide="check" class="w-4 h-4"></i> Todo guardado<% } %>
+</span>
