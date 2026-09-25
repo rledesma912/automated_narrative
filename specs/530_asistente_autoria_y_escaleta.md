@@ -108,6 +108,8 @@ cómo lo cuenta, amenaza (opcional)      el usuario responde o marca           r
 3. **Escaleta.** 5 tarjetas, una por acto: qué quiere el protagonista, hechos (lista editable), qué cambia (de → a), escenario (los ya usados como opciones rápidas, o «+ nuevo»), reglas del acto y qué se guarda para después. Los avisos del verificador van en la tarjeta que corresponda. Botones «Revisar con la IA» y «Generar relato».
 4. **Generación y relatos:** la sala y el panel de relatos actuales, sin cambios de fondo.
 
+**Diseño antes que código:** el PLAN de esta spec arranca con un slice de maquetas navegables (sobre el tema de la Spec-531, con datos de «la pena del colectivo») para Dirección, Taller y Escaleta: cómo se muestran las preguntas y sus opciones, los controles para responder, marcar «intencional» o dar un criterio por completo, y la disposición de las tarjetas de acto con sus hechos, escenario y reglas. El usuario las revisa y ajusta antes de construir las vistas reales.
+
 ### 3.3 Cuándo termina el taller
 
 Cualquiera de estas condiciones, y siempre visible cuál se cumplió:
