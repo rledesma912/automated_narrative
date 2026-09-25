@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NarrativeForge — <%= title %></title>
 
+  <%/* Spec-531: favicon (vela) + color de la barra del navegador en móviles. */%>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#f7f3ec">
+
   <!-- CSS compilado (Tailwind CLI compilado con PostCSS) — Offline first -->
   <link rel="stylesheet" href="/styles.css?v=<%= locals.assetVersion || '' %>">
 
@@ -18,19 +24,15 @@
   <script src="/js/generation-guard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 
   <style>
-    :root { 
-      <%- themeCssVars %>; 
-      --sidebar-width: 16rem;
-    }
-    body { background-color: var(--forge-bg); color: var(--forge-text); font-size: 1.125rem; }
+    body { font-size: 1.125rem; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--forge-bg); }
     ::-webkit-scrollbar-thumb { background: var(--forge-accent); border-radius: 3px; }
   </style>
 </head>
-<body class="flex h-screen overflow-hidden font-<%= themeFont %> text-forge-text" hx-boost="true">
+<body class="flex h-screen overflow-hidden font-sans bg-forge-bg text-forge-text" hx-boost="true">
 
-  <%- include('sidebar', { activePage, activeTheme, allThemes }) %>
+  <%- include('sidebar', { activePage }) %>
 
   <main class="flex-1 overflow-y-auto p-12 pb-24">
     <%- include('generation_banner') %>
@@ -42,7 +44,7 @@
   <% if (typeof flashMsg !== 'undefined' && flashMsg) { %>
   <div id="toast-notification"
        class="fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border shadow-lg text-sm font-medium transition-opacity duration-500
-              <%= flashType === 'error' ? 'bg-forge-surface border-red-500 text-red-400' : 'bg-forge-surface border-forge-accent text-forge-accent' %>">
+              <%= flashType === 'error' ? 'bg-forge-surface border-forge-error-border text-forge-error' : 'bg-forge-surface border-forge-accent text-forge-accent' %>">
     <i data-lucide="<%= flashType === 'error' ? 'x-circle' : 'check-circle' %>" class="w-4 h-4 shrink-0"></i>
     <span><%= flashMsg %></span>
   </div>

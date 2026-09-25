@@ -1,0 +1,29 @@
+{
+  "label": "base",
+  "perfil": "ollama-gemma3-12b",
+  "voz_temperature": 0.6,
+  "relatos": [
+    {
+      "variante": "sin",
+      "corrida": 1,
+      "palabras": 1989,
+      "cliches": 3,
+      "cliches_detalle": {
+        "me revolvió el estómago": 3
+      },
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 2,
+      "frases_repetidas": 4
+    }
+  ],
+  "promedios": {
+    "sin": {
+      "cliches": 3.0,
+      "parentescos_mal": 0.0,
+      "narrador_3ra_persona": 2.0,
+      "frases_repetidas": 4.0,
+      "palabras": 1989.0
+    }
+  }
+}

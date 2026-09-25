@@ -16,9 +16,9 @@
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
 <%
   const READ_STATUS = {
-    completed: { text: 'Completada', cls: 'text-green-500', icon: 'check-circle' },
-    failed:    { text: 'Error',      cls: 'text-red-500',   icon: 'alert-triangle' },
-    draft:     { text: 'Borrador',   cls: 'text-yellow-500', icon: 'file' },
+    completed: { text: 'Completada', cls: 'text-forge-success', icon: 'check-circle' },
+    failed:    { text: 'Error',      cls: 'text-forge-error',   icon: 'alert-triangle' },
+    draft:     { text: 'Borrador',   cls: 'text-forge-warning', icon: 'file' },
   };
   const rs = READ_STATUS[storyStatus] || READ_STATUS['draft'];
 %>
@@ -53,7 +53,7 @@
                 <% } %>
               </div>
             </div>
-            <p class="text-base text-forge-text font-serif leading-relaxed whitespace-pre-wrap"><%= b.content %></p>
+            <p class="prose-forge whitespace-pre-wrap"><%= b.content %></p>
           </div>
         <% } %>
       <% }); %>
@@ -153,9 +153,9 @@
         <p class="text-sm text-forge-muted mb-8" data-start-estimate>
           <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: sigue generándose.
         </p>
-        <div class="flex items-start gap-3 mb-8 p-4 border border-orange-700/50 bg-orange-950/20 text-left">
-          <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-400 shrink-0 mt-0.5"></i>
-          <p class="text-orange-600 text-sm leading-relaxed">
+        <div class="flex items-start gap-3 mb-8 p-4 border border-forge-warning-border bg-forge-warning-bg text-left">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-forge-warning shrink-0 mt-0.5"></i>
+          <p class="text-forge-warning text-sm leading-relaxed">
             Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
           </p>
         </div>
@@ -201,7 +201,7 @@
     </div>
     <%/* Spec-460: cancelar detiene el job en el servidor */%>
     <button id="cancel-btn" type="button" onclick="cancelGeneration()"
-            class="flex items-center gap-2 text-xs uppercase tracking-widest text-forge-muted hover:text-red-400 transition-colors">
+            class="flex items-center gap-2 text-xs uppercase tracking-widest text-forge-muted hover:text-forge-error transition-colors">
       <i data-lucide="square" class="w-3 h-3"></i> Cancelar generación
     </button>
   </div>

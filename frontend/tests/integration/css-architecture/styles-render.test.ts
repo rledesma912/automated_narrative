@@ -23,16 +23,7 @@ describe('CSS Architecture — Layout Rendering', () => {
 
   const layoutLocals = {
     title: 'Test Page',
-    themeFont: 'serif',
-    themeCssVars:
-      '--forge-bg: #1a1a1a; --forge-text: #ffffff; --forge-accent: #8b0000;' +
-      ' --forge-surface: #2d2d2d; --forge-border: #444444; --forge-muted: #999999;',
     activePage: 'home',
-    activeTheme: 'dark',
-    allThemes: [
-      { key: 'dark', def: { name: 'Dark', accent: '#8b0000' } },
-      { key: 'light', def: { name: 'Light', accent: '#e0a0a0' } },
-    ],
     body: '<div id="page-body">Layout test body</div>',
   };
 
@@ -94,10 +85,16 @@ describe('CSS Architecture — Layout Rendering', () => {
     expect(html).not.toContain('colors: {');
   });
 
-  it('layout.ejs define las variables CSS forge en :root', async () => {
+  it('Spec-531: el layout declara el favicon', async () => {
     const html = await fetchHomeHtml();
-    expect(html).toContain('--forge-bg:');
-    expect(html).toContain('--forge-text:');
-    expect(html).toContain('--forge-accent:');
+    expect(html).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml">');
+    expect(html).toContain('<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">');
+    expect(html).toContain('<link rel="apple-touch-icon" href="/apple-touch-icon.png">');
+  });
+
+  it('Spec-531: el layout no inyecta colores y el body usa los del tema', async () => {
+    const html = await fetchHomeHtml();
+    expect(html).not.toContain('--forge-bg:');
+    expect(html).toMatch(/<body class="[^"]*font-sans bg-forge-bg text-forge-text/);
   });
 });

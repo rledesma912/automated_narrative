@@ -1,8 +1,6 @@
 import express from "express";
-import cookieParser from "cookie-parser";
 import path from "path";
 import router from "./routes";
-import { themeMiddleware } from "./middleware/theme.middleware";
 import { sessionMiddleware } from "./middleware/session.middleware";
 import { createApiProxy } from "./middleware/api_proxy";
 
@@ -25,10 +23,8 @@ app.use(createApiProxy(CORE_API_URL));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cookieParser());
 app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, "..", "public")));
-app.use(themeMiddleware);
 
 app.use("/", router);
 

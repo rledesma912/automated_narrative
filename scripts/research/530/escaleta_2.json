@@ -1,0 +1,89 @@
+{
+ "actos": [
+  {
+   "numero": 1,
+   "objetivo_jose": "José quiere terminar su turno y llegar a casa antes del amanecer para ver a su hija.",
+   "hechos": [
+    "José revisa el tablero del micro, ajustando el aire acondicionado y comprobando la presión de los neumáticos antes de salir.",
+    "Recuerda haber llevado a una pasajera con un ramo de flores que le pidió bajar en una parada anterior, una imagen que le causa una leve nostalgia.",
+    "Mientras espera en la terminal, José le comenta a un compañero sobre la mujer que falleció en el micro hace unos años, una historia que siempre le da escalofríos.",
+    "José se despide del sereno de la terminal, preguntándole si sabe algo sobre la mujer que murió en el micro, buscando alguna pista que explique los rumores."
+   ],
+   "cambio": {
+    "de": "José se siente cansado pero decidido a cumplir con su turno.",
+    "a": "José siente una ligera inquietud por la pregunta al sereno y la mención de la pasajera."
+   },
+   "motivo_nuevo": "Un persistente olor a flores frescas flota en el aire dentro del micro vacío.",
+   "escenario": "La estación principal de un pueblo alejado.",
+   "no_revelar_todavia": "La razón por la que José no paró el micro la noche de la muerte de la mujer."
+  },
+  {
+   "numero": 2,
+   "objetivo_jose": "José intenta ignorar las extrañas apariciones en el espejo retrovisor, atribuyéndolas a la fatiga.",
+   "hechos": [
+    "José sube al micro para la vuelta y, al mirar por el espejo retrovisor, ve fugazmente la silueta de una mujer en uno de los asientos traseros.",
+    "José frena bruscamente, gira para mirar al asiento, pero no hay nadie allí. Se convence de que es un reflejo de la luz.",
+    "Mientras conduce, José vuelve a ver a la mujer en el espejo, esta vez en un asiento diferente. Limpia el espejo con un trapo, intentando eliminar la ilusión.",
+    "La mujer aparece nuevamente, cada vez más cerca, como si estuviera flotando en el espacio entre el asiento y el espejo."
+   ],
+   "cambio": {
+    "de": "José se siente cansado pero confiado en su capacidad para manejar el micro.",
+    "a": "José empieza a sentir una creciente incomodidad y un miedo sordo."
+   },
+   "motivo_nuevo": "El sonido de un susurro apenas audible, como el roce de una tela, acompaña las apariciones en el espejo.",
+   "escenario": "El interior del micro.",
+   "no_revelar_todavia": "La identidad de la mujer y su conexión con José."
+  },
+  {
+   "numero": 3,
+   "objetivo_jose": "José intenta mantener el control del micro y llegar a su destino, a pesar del pánico que lo invade.",
+   "hechos": [
+    "José siente un roce en su hombro, girándose bruscamente para ver quién lo tocó, pero no hay nadie.",
+    "La mujer aparece en el espejo, a centímetros de su rostro, con una expresión de tristeza y reproche.",
+    "José siente un nuevo roce, esta vez en su mejilla, y pierde momentáneamente el control del volante.",
+    "El micro se sale de la ruta, pero José reacciona rápidamente y logra corregir el rumbo, evitando un accidente grave."
+   ],
+   "cambio": {
+    "de": "José está asustado pero intenta mantener la calma.",
+    "a": "José está aterrorizado y siente una profunda culpa."
+   },
+   "motivo_nuevo": "Una imagen borrosa de una foto en blanco y negro se proyecta brevemente en el rostro de la mujer en el espejo.",
+   "escenario": "El interior del micro, en una zona rural.",
+   "no_revelar_todavia": "El significado del roce en el rostro y su impacto en José."
+  },
+  {
+   "numero": 4,
+   "objetivo_jose": "José busca entender lo que acaba de pasar y, quizás, encontrar alguna explicación a las apariciones.",
+   "hechos": [
+    "José detiene el micro en el lugar donde se salió de la ruta, sintiendo una extraña conexión con el entorno.",
+    "Descubre un pedestal improvisado con una foto de una mujer que es idéntica a la que vio en el espejo, la misma que llevaba un ramo de flores.",
+    "José baja del micro y se acerca al pedestal, sintiendo una profunda tristeza al reconocer a la mujer en la foto.",
+    "Deja un pequeño ramo de flores en el pedestal, como un acto de respeto y arrepentimiento."
+   ],
+   "cambio": {
+    "de": "José está aterrorizado y lleno de culpa.",
+    "a": "José siente una mezcla de tristeza y esperanza, como si hubiera aliviado una carga."
+   },
+   "motivo_nuevo": "El ramo de flores que sostiene la mujer en la foto del pedestal es exactamente el mismo que José recuerda haber visto en otra pasajera.",
+   "escenario": "Nuevo: Pedestal conmemorativo: Un pequeño pedestal de piedra con una foto de una mujer y una placa con su nombre, ubicado al costado de la ruta.",
+   "no_revelar_todavia": "La razón por la que José no paró el micro la noche de la muerte de la mujer."
+  },
+  {
+   "numero": 5,
+   "objetivo_jose": "José intenta aceptar lo sucedido y encontrar la paz interior.",
+   "hechos": [
+    "José vuelve a pasar por el lugar en los días siguientes, deteniendo el micro para observar el pedestal.",
+    "Ya no ve a la mujer en el espejo, ni siente su presencia en el micro.",
+    "José imagina que, al dejar las flores, la mujer ha encontrado la paz y su alma ha descansado.",
+    "José sigue su camino, con la esperanza de que la experiencia lo haya cambiado para bien."
+   ],
+   "cambio": {
+    "de": "José está atormentado por la culpa y el miedo.",
+    "a": "José siente una melancolía serena y una renovada determinación para ser mejor persona."
+   },
+   "motivo_nuevo": "La luz del sol ilumina el pedestal, revelando una inscripción apenas visible en la base: 'Descansa en paz'.",
+   "escenario": "La ruta, en un día soleado.",
+   "no_revelar_todavia": "nada"
+  }
+ ]
+}

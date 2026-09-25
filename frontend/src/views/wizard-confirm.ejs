@@ -42,7 +42,7 @@ function displayValue(field, rawVal) {
   <p class="text-forge-muted text-xs uppercase tracking-widest mb-8">Confirmá los datos y guardá la historia. La generación se inicia desde la galería.</p>
 
   <% if (typeof saveError !== 'undefined' && saveError) { %>
-    <div role="alert" class="flex items-start gap-3 mb-8 p-4 border border-red-800 text-red-400 bg-forge-surface">
+    <div role="alert" class="flex items-start gap-3 mb-8 p-4 border border-forge-error-border text-forge-error bg-forge-surface">
       <i data-lucide="x-circle" class="w-5 h-5 shrink-0 mt-0.5"></i>
       <div>
         <p class="text-sm font-bold mb-1">No se pudo guardar la historia</p>

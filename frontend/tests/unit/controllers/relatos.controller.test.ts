@@ -46,7 +46,7 @@ describe("relatosPage", () => {
     const res = {
       render,
       setHeader,
-      locals: { themeCssVars: "", themeFont: "serif", activeTheme: "default", allThemes: [] },
+      locals: {},
     } as unknown as Response;
 
     await relatosPage(req, res);

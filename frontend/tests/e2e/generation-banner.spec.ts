@@ -37,7 +37,7 @@ test("sin generaciones no aparece la banda ni hay polling", async ({ page }) => 
   const requests = trackRequests(page);
   await page.goto("/galeria");
 
-  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-green-500/); // snapshot recibido
+  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-forge-success/); // snapshot recibido
   await page.waitForTimeout(3_000);
 
   await expect(banner(page)).toBeHidden();
@@ -51,7 +51,7 @@ test("sin generaciones no aparece la banda ni hay polling", async ({ page }) => 
 test("la banda aparece en vivo, avanza, sobrevive a la navegación y termina", async ({ page }) => {
   const requests = trackRequests(page);
   await page.goto("/galeria");
-  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-green-500/);
+  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-forge-success/);
 
   await startJobFromAnotherTab(page);
 
@@ -89,7 +89,7 @@ test("la banda aparece en vivo, avanza, sobrevive a la navegación y termina", a
 
 test("«Ver progreso» lleva a la sala del job en curso", async ({ page }) => {
   await page.goto("/galeria");
-  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-green-500/);
+  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-forge-success/);
   const jobId = await startJobFromAnotherTab(page);
   await expect(running(page)).toBeVisible({ timeout: 1_000 });
 

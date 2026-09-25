@@ -1,75 +1,39 @@
 /* ════════════════════════════════════════════════════════════════════════════
-   Theme Variables (CSS Custom Properties)
-   
-   Nota: Estos valores se sobrescriben dinámicamente desde el backend
-   mediante inyección de themeCssVars en layout.ejs.
-   
-   Este archivo sirve como fallback y documentación de las variables disponibles.
+   Tema «Papel» (Spec-531) — único tema del sitio.
+
+   Es el ÚNICO lugar con colores literales: vistas, estilos y scripts usan las
+   variables (clases `forge-*` de Tailwind). Lo verifican los tests
+   `no-hardcoded-colors` y `palette-contrast` (WCAG AA ≥ 4,5:1).
    ════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Colores principales — Fallback (se inyectan desde backend) */
-  --forge-bg: #1a1a1a;
-  --forge-surface: #2d2d2d;
-  --forge-border: #444444;
-  --forge-accent: #8b0000;
-  --forge-muted: #999999;
-  --forge-text: #ffffff;
+  /* Base */
+  --forge-bg: #f7f3ec;          /* papel cálido: fondo de página */
+  --forge-surface: #fffdf8;     /* tarjetas y paneles */
+  --forge-border: #e2d9c8;
+  --forge-text: #2b2620;        /* tinta — 13,6:1 sobre bg */
+  --forge-muted: #6f6454;       /* texto secundario — 5,2:1 */
 
-  /* Colores secundarios */
-  --orange-primary: #f58300;
-  --orange-light: #ffa500;
-  --orange-dark: #cc6600;
+  /* Acento: rojo óxido */
+  --forge-accent: #8a2b1f;      /* 7,8:1 sobre bg */
+  --forge-on-accent: #ffffff;   /* texto sobre el acento — 8,6:1 */
 
-  /* Espaciado */
+  /* Estados (texto fuerte + fondo pálido + borde) */
+  --forge-error: #a3261a;
+  --forge-error-bg: #f8e3df;
+  --forge-error-border: #d9958a;
+  --forge-warning: #8a5d0f;
+  --forge-warning-bg: #f6ecd6;
+  --forge-warning-border: #d8b877;
+  --forge-success: #3f6b3a;
+  --forge-success-bg: #e4eedf;
+  --forge-success-border: #9dbb95;
+  --forge-info: #2f5d8a;
+  --forge-info-bg: #e3ebf3;
+  --forge-info-border: #9bb4cf;
+
+  /* Velo detrás de los modales: tinta traslúcida */
+  --forge-overlay: rgb(43 38 32 / 0.55);
+
   --sidebar-width: 16rem;
-
-  /* Tipografía */
-  --font-serif: Georgia, serif;
-  --font-mono: "Courier New", monospace;
-}
-
-/* Temas adicionales (opcional) */
-
-/* Dark mode (default) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --forge-bg: #1a1a1a;
-    --forge-surface: #2d2d2d;
-    --forge-border: #444444;
-    --forge-accent: #8b0000;
-    --forge-muted: #999999;
-    --forge-text: #ffffff;
-  }
-}
-
-/* Light mode */
-@media (prefers-color-scheme: light) {
-  :root {
-    --forge-bg: #ffffff;
-    --forge-surface: #f5f5f5;
-    --forge-border: #cccccc;
-    --forge-accent: #cc0000;
-    --forge-muted: #666666;
-    --forge-text: #1a1a1a;
-  }
-}
-
-/* Atributo data-theme para soporte manual */
-html[data-theme="light"] {
-  --forge-bg: #ffffff;
-  --forge-surface: #f5f5f5;
-  --forge-border: #cccccc;
-  --forge-accent: #cc0000;
-  --forge-muted: #666666;
-  --forge-text: #1a1a1a;
-}
-
-html[data-theme="dark"] {
-  --forge-bg: #1a1a1a;
-  --forge-surface: #2d2d2d;
-  --forge-border: #444444;
-  --forge-accent: #8b0000;
-  --forge-muted: #999999;
-  --forge-text: #ffffff;
 }

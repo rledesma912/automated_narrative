@@ -123,7 +123,7 @@ function catalogSelectHtml(field, effective) {
   });
   html += '</select>';
   if (!CATALOG && !field.depends_on) {
-    html += `<p role="alert" class="text-sm text-red-400 mt-2" data-catalog-error>${esc(MSG_SIN_CATALOGO)}</p>`;
+    html += `<p role="alert" class="text-sm text-forge-error mt-2" data-catalog-error>${esc(MSG_SIN_CATALOGO)}</p>`;
   }
   return html;
 }
@@ -203,7 +203,7 @@ function fieldHtml(field) {
   }
 
   if (FIELD_ERRORS[field.name]) {
-    html += `<p role="alert" class="text-sm text-red-400 mt-2" data-field-error="${esc(field.name)}">${esc(FIELD_ERRORS[field.name])}</p>`;
+    html += `<p role="alert" class="text-sm text-forge-error mt-2" data-field-error="${esc(field.name)}">${esc(FIELD_ERRORS[field.name])}</p>`;
   }
   if (field.note) {
     html += `<p class="text-xs text-forge-muted mt-2 italic">${esc(field.note)}</p>`;
@@ -442,7 +442,7 @@ function hasCardData(fields) {
 
 <%/* ── Modal de confirmación de eliminación ────────────────────────────── */%>
 <div id="delete-modal"
-     class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+     class="hidden fixed inset-0 bg-forge-overlay flex items-center justify-center z-50">
   <div class="card-forge !p-6 max-w-sm w-full mx-4">
     <h3 class="text-forge-muted-caps font-bold mb-3">Confirmar eliminación</h3>
     <p id="delete-modal-msg" class="text-forge-body !text-sm mb-5"></p>
@@ -451,7 +451,7 @@ function hasCardData(fields) {
         Cancelar
       </button>
       <button type="button" id="delete-modal-confirm"
-              class="btn-forge-outline !bg-red-900 !text-red-100 !border-red-800 hover:!bg-red-800">
+              class="btn-forge-outline !bg-forge-error !text-forge-on-accent !border-forge-error-border hover:!bg-forge-error/90">
         Eliminar
       </button>
     </div>

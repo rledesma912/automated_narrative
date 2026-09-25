@@ -1,0 +1,102 @@
+title: la pena del colectivo
+personajes_full:
+- id: P1
+  name: José
+  role: Narrador y protagonista; conductor de micro de larga distancia
+  traits:
+  - observador
+  - tradicional
+  - pragmático
+  - sociable
+protagonista: 'José: Narrador y protagonista; conductor de micro de larga distancia [observador, tradicional,
+  pragmático, sociable]'
+relator: 'Primera persona en pasado. Narrador: José. Tono: dramático. Registro: coloquial: Natural y diario.'
+atmosfera: paranormal (fantasmas) - constante
+escenarios: 'El interior del micro: Es un micro moderno que realiza largas distancias, está bien equipado
+  pero es oscuro. Tiene televisores donde se transmiten películas para los pasajeros.; La estación principal
+  de un pueblos alejado.: Es desolada y poco frecuentada. Es antigua y le falta reparaciones, es oscura.
+  Tiene muchas puertas antiguas y con rejas. Está alejada del centro del pueblo. Tiene muy poca ilumminación
+  y defectuosa.'
+sinopsis: |-
+  El conductor cuenta como trabaja largas horas y distancias entre estaciones y cuenta que en el micro desafortunadamente falleció una mujer en circunstancias poco claras. Cuenta que José es una persona que trabaja en turnos nocturnos y que muchas veces compañeros le contaron hechos paranormales pero que a él nunca le había tocado hasta el momento nada semejante.
+
+  En una noche muy oscura en la terminal de un pueblo queda sólo y no hay pasajeros para la vuelta. Él sube al micro y por el espejo retrovisor ve en varias ocasiones una mujer de pelo atado en distintos asientos pero cuando gira la persona o entidad desaparece. El momento más tenso es cuando ve en el espejo al espiritu solo a centimetros de él y siente que le tocan el hombro.
+
+  La entidad lo toca una segunda vez pero en el rostro haciendo que José se asuste y y pierda el control del micro por lo que descarrila de la ruta pero finalmente puede puede controlar el vehículo sin sufrir un accidente grave.
+
+  José asustado baja del micro horrorizado por descarrilar y se da cuenta que donde sucede el acto es el lugar donde la mujer murió ya que hay un pedestal en su nombre con una foto que es identica a la mujer que veia a traves del espejo retrovisor del micro.
+
+  José vuelve a pasar a los días por el lugar, detiene el micro y baja para dejar unas flores en el improvisado pedestal. A partir de allí no vuelve a ver a la entidad e imagina que de alguna manera presentar respetos al espiritu de la mujer hizo que su alma se vaya en paz o al menos no se le presente más.
+reglas:
+- El micro siempre presenta casos paranormales cuando el conductor está solo.
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: José
+  voice_style: dramático
+  voice:
+    person: primera
+    tense: pasado
+    style: dramático
+  atmosphere:
+    genre: paranormal
+    subgenre: fantasmas
+    tone: constante
+  scenarios:
+  - id: S1
+    order: 1
+    name: El interior del micro
+    description: Es un micro moderno que realiza largas distancias, está bien equipado pero es oscuro.
+      Tiene televisores donde se transmiten películas para los pasajeros.
+  - id: S2
+    order: 2
+    name: La estación principal de un pueblos alejado.
+    description: Es desolada y poco frecuentada. Es antigua y le falta reparaciones, es oscura. Tiene
+      muchas puertas antiguas y con rejas. Está alejada del centro del pueblo. Tiene muy poca ilumminación
+      y defectuosa.
+  rules:
+  - id: 76cb3661-7e24-4209-a38d-58bf11c446c2
+    text: El micro siempre presenta casos paranormales cuando el conductor está solo.
+    type: entorno
+  entities: []
+  actos:
+    act_1:
+      type: exposicion
+      text: |-
+        El conductor cuenta como trabaja largas horas y distancias entre estaciones y cuenta que en el micro desafortunadamente falleció una mujer en circunstancias poco claras. Cuenta que José es una persona que trabaja en turnos nocturnos y que muchas veces compañeros le contaron hechos paranormales pero que a él nunca le había tocado hasta el momento nada semejante.
+    act_2:
+      type: accion_ascendente
+      text: |-
+        En una noche muy oscura en la terminal de un pueblo queda sólo y no hay pasajeros para la vuelta. Él sube al micro y por el espejo retrovisor ve en varias ocasiones una mujer de pelo atado en distintos asientos pero cuando gira la persona o entidad desaparece. El momento más tenso es cuando ve en el espejo al espiritu solo a centimetros de él y siente que le tocan el hombro.
+    act_3:
+      type: climax
+      text: |-
+        La entidad lo toca una segunda vez pero en el rostro haciendo que José se asuste y y pierda el control del micro por lo que descarrila de la ruta pero finalmente puede puede controlar el vehículo sin sufrir un accidente grave.
+    act_4:
+      type: accion_descendente
+      text: |-
+        José asustado baja del micro horrorizado por descarrilar y se da cuenta que donde sucede el acto es el lugar donde la mujer murió ya que hay un pedestal en su nombre con una foto que es identica a la mujer que veia a traves del espejo retrovisor del micro.
+    act_5:
+      type: desenlace
+      text: |-
+        José vuelve a pasar a los días por el lugar, detiene el micro y baja para dejar unas flores en el improvisado pedestal. A partir de allí no vuelve a ver a la entidad e imagina que de alguna manera presentar respetos al espiritu de la mujer hizo que su alma se vaya en paz o al menos no se le presente más.
+  perception:
+    reliability: 'poco_confiable: A veces ve bien, a veces no'
+    distortion:
+      level: 'media: Distorsión notable'
+      triggers:
+      - 'soledad: Cuando está solo'
+      - 'trauma: Cuando recuerda el pasado'
+  knowledge:
+    domain:
+      paranormal: 'nulo: No sabe nada'
+      religioso: 'nulo: No sabe nada'
+    interpretation_style: 'cientifica: Busca explicaciones'
+  language:
+    register: 'coloquial: Natural y diario'
+    figurative_density: 'minima: Apenas usa'
+  bias:
+    fear_focus:
+    - 'revelacion: Descubrir una verdad terrible'
+    attention_focus:
+    - 'sonidos: Sonidos y ruidos'
+    - 'sombras: Sombras y oscuridad'
