@@ -289,25 +289,24 @@ def _story_fields(form: DirectionForm, existing: Story | None) -> dict:
 
 
 def _form(story: Story) -> dict:
+    """La Dirección como la lee la vista. Sin validar: una historia vieja puede
+    exceder los topes del formulario (p. ej. una sinopsis larga)."""
     d = story.direction or Direction()
     lead = (story.personajes_full or [{}])[0]
     return {
-        # Lectura: sin validar (una historia vieja puede exceder los topes del formulario).
-        **DirectionForm.model_construct(
-            title=story.title,
-            genero=story.genero,
-            subgenero=story.subgenero,
-            premise=d.premise,
-            effect=d.effect,
-            effect_other=d.effect_other,
-            ending=d.ending,
-            ending_intentional=d.ending_intentional,
-            telling=d.telling,
-            protagonist_name=lead.get("name", ""),
-            protagonist_role=lead.get("role", ""),
-            narrator=(story.narrator_config or {}).get("storyteller_name", ""),
-            threat=_threat_form(story),
-        ).model_dump()
+        "title": story.title,
+        "genero": story.genero,
+        "subgenero": story.subgenero,
+        "premise": d.premise,
+        "effect": d.effect,
+        "effect_other": d.effect_other,
+        "ending": d.ending,
+        "ending_intentional": d.ending_intentional,
+        "telling": d.telling,
+        "protagonist_name": lead.get("name", ""),
+        "protagonist_role": lead.get("role", ""),
+        "narrator": (story.narrator_config or {}).get("storyteller_name", ""),
+        "threat": _threat_form(story),
     }
 
 
