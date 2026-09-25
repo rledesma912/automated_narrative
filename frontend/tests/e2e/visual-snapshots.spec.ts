@@ -41,6 +41,15 @@ test.describe("Capturas del tema", () => {
     await capturar(page, "08-debug", "/debug");
   });
 
+  // Spec-530 S0: las maquetas del asistente, enteras (el contenido scrollea dentro de
+  // <main>, así que se agranda el viewport en vez de usar fullPage).
+  test("maquetas del asistente", async ({ page }) => {
+    for (const [nombre, alto] of [["direccion", 2600], ["taller", 2200], ["escaleta", 4200]] as const) {
+      await page.setViewportSize({ width: 1440, height: alto });
+      await capturar(page, `maqueta-${nombre}`, `/maquetas/${nombre}`);
+    }
+  });
+
   test("modal de confirmación", async ({ page }) => {
     await page.goto("/galeria");
     await page.getByRole("button", { name: "Eliminar" }).first().click();
