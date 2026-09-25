@@ -173,6 +173,26 @@ profiles:
         num_ctx: 4096
         num_predict: 256
         stop: []
+      # Spec-530: asistente de autoría (salida JSON con esquema). Medido con
+      # «la pena del colectivo»: análisis ~35 s, escaleta ~45 s.
+      consultor:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 8192
+        num_predict: 1500
+        stop: []
+      planificador:
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 2500
+        stop: []
+      verificador:
+        model: gemma3:12b
+        temperature: 0.2
+        num_ctx: 8192
+        num_predict: 1200
+        stop: []
 
   # Spec-480 (EV-2): perfil híbrido. Analyst, Mapper y Journal como `ollama-gemma3-12b`;
   # la Voz en Claude Sonnet 5 (`provider` por rol → RoleRoutingAdapter). Cuesta ~US$ 0,08
@@ -209,6 +229,26 @@ profiles:
         temperature: 0.3
         num_ctx: 4096
         num_predict: 256
+        stop: []
+      # Spec-530: asistente de autoría (salida JSON con esquema). Medido con
+      # «la pena del colectivo»: análisis ~35 s, escaleta ~45 s.
+      consultor:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 8192
+        num_predict: 1500
+        stop: []
+      planificador:
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 2500
+        stop: []
+      verificador:
+        model: gemma3:12b
+        temperature: 0.2
+        num_ctx: 8192
+        num_predict: 1200
         stop: []
 
   gemini-cli:

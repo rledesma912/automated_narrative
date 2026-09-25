@@ -377,6 +377,16 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - Servicios `WorkshopConsultant`, `OutlinePlanner` y `OutlineVerifier`, más `WorkshopRules` (criterios determinísticos y condiciones de fin de §3.3).
 - **Verificación:** unit con Mock (JSON válido, JSON inválido con reintento, filtro de «ya no suma», «intencional» respetado); prueba manual con `gemma3:12b` sobre «la pena del colectivo» (tiempos y calidad, contra §1.2).
 
+**Hecho (2026-09-25).** Probado con `gemma3:12b` sobre «la pena del colectivo»: ronda del taller 7–17 s, escaleta ~45 s, revisión ~12 s, JSON válido siempre (también con `$ref`).
+- `response_schema` en el protocolo: Ollama lo manda como `format`; Anthropic como `output_config.format` (`json_schema`), adaptado a sus límites (`additionalProperties: false`, sin `minItems`/`maxLength`…). Helper `generate_structured`: valida con Pydantic, reintenta una vez y después `LLMStructuredOutputError`.
+- Roles `consultor`, `planificador` y `verificador` en los perfiles de `gemma3:12b`; en los demás heredan la config del `director`.
+- Criterios en `config/workshop_criteria.yaml` y opciones de la Dirección en `config/authoring_options.yaml` (fuente única para la UI y los prompts). La teoría (`origen`) no va al prompt.
+- **El historial del taller retroalimenta al modelo** (pregunta del usuario, 2026-09-25): cada ronda recibe las decisiones como pares pregunta → respuesta y las preguntas pendientes. Con eso, la escaleta revela la historia secreta en el Acto 4 (en la prueba de S0, sin el historial, se perdía).
+- **Una pregunta sin responder no se reformula:** el Consultor tendía a reescribirla en cada ronda; se mantiene la original y solo se actualiza el semáforo. Una ronda sin preguntas nuevas termina en «no suma».
+- El Verificador empujaba las convenciones del género («el final podría ser más ambiguo»): el prompt le prohíbe opinar sobre tono y estilo y discutir lo decidido por el autor. Máximo 2 avisos del LLM por acto, además de las reglas determinísticas.
+- La amenaza no cuenta como elenco: el Planificador pone solo personas «en escena».
+- **Para S5:** `llm_beats_definition.yaml` define el Acto 5 como «escape incompleto y secuela», que choca con un final intencional en paz. El Planificador ya prioriza el final del autor; la Voz tiene que hacer lo mismo.
+
 #### S3 — API y jobs
 - `PUT /stories/{id}/direction`; `GET/PATCH /stories/{id}/workshop` (responder, marcar intencional o completo); `GET/PUT /stories/{id}/outline` y `PATCH …/outline/{n}`.
 - `POST /stories/{id}/jobs` con `kind` `consult` | `plan_outline` | `verify_outline`, con eventos y ETA como los jobs actuales.

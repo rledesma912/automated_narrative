@@ -24,7 +24,18 @@ def _load_llm_core() -> dict:
 
 
 # Roles del pipeline que llaman al LLM (cada uno puede tener su proveedor, Spec-480).
-LLM_ROLES = ("story_analyst", "director", "voz", "journal")
+LLM_ROLES = (
+    "story_analyst",
+    "director",
+    "voz",
+    "journal",
+    # Spec-530: asistente de autoría.
+    "consultor",
+    "planificador",
+    "verificador",
+)
+# Los roles del asistente que un perfil no declara heredan la config del director.
+_ROLE_FALLBACK = {"consultor": "director", "planificador": "director", "verificador": "director"}
 
 # Spec-510: duración estimada de un job (segundos) cuando el perfil no la declara
 # (`profiles.<perfil>.estimated_seconds`) y no hay historial.
@@ -132,8 +143,12 @@ class Settings(BaseSettings):
         return _profile.get("roles", {})
 
     def role_config(self, role: str) -> dict:
-        """Config de un rol específico (director | voz | journal) del perfil activo."""
-        return self.llm_role_config.get(role, {})
+        """Config de un rol del perfil activo; los del asistente sin declarar heredan
+        la del director (Spec-530)."""
+        roles = self.llm_role_config
+        if role not in roles and role in _ROLE_FALLBACK:
+            return roles.get(_ROLE_FALLBACK[role], {})
+        return roles.get(role, {})
 
     def role_provider(self, role: str) -> str:
         """Proveedor de un rol (Spec-480): `roles.<rol>.provider` o el del perfil."""

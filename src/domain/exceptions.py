@@ -87,6 +87,18 @@ class InvalidGenreError(InvalidStoryInputError):
         self.subgenero = subgenero
 
 
+class LLMStructuredOutputError(NarrativeError):
+    """El LLM no devolvió un JSON válido para el esquema pedido, ni al reintentar (Spec-530)."""
+
+    def __init__(self, role: str, reason: str):
+        super().__init__(
+            f"La IA ({role}) no devolvió una respuesta válida: {reason}",
+            details={"role": role, "reason": reason},
+        )
+        self.role = role
+        self.reason = reason
+
+
 class InvalidAuthoringError(InvalidStoryInputError):
     """Dirección, taller o escaleta inválidos (Spec-530)."""
 

@@ -1,0 +1,32 @@
+# Spec-530: opciones de la vista Dirección (fuente única para la UI y los prompts).
+
+efectos:
+  - id: pavor
+    label: Pavor creciente
+    ayuda: La inquietud sube acto a acto hasta el clímax.
+  - id: susto
+    label: Susto
+    ayuda: "Golpes de sorpresa: el miedo llega de repente."
+  - id: melancolia
+    label: Melancolía inquietante
+    ayuda: "Más pena que miedo: algo queda doliendo."
+  - id: revelacion
+    label: Horror que se revela
+    ayuda: Lo peor se entiende recién al final.
+  - id: otro
+    label: Otro
+    ayuda: Contalo con tus palabras.
+
+como_lo_cuenta:
+  - id: caso
+    label: Como un caso entre amigos
+    ejemplo: "«Mirá, yo no creía en nada de eso, pero esa noche…»"
+  - id: confesion
+    label: Como una confesión
+    ejemplo: "«Nunca se lo conté a nadie. Ni a mi mujer.»"
+  - id: cronica
+    label: Como una crónica seca
+    ejemplo: "«Eran las tres y diez. La terminal estaba vacía.»"
+  - id: literario
+    label: Literario
+    ejemplo: "«La terminal dormía bajo una luz que parpadeaba sin ganas.»"

@@ -25,6 +25,36 @@ _THINKING_MIN_MAX_TOKENS = 16000
 _DEFAULT_MAX_TOKENS = 4096
 
 
+# Restricciones de JSON Schema que los structured outputs de Anthropic no aceptan.
+_UNSUPPORTED_SCHEMA_KEYS = (
+    "minItems",
+    "maxItems",
+    "minLength",
+    "maxLength",
+    "minimum",
+    "maximum",
+    "multipleOf",
+)
+
+
+def anthropic_json_schema(schema: dict) -> dict:
+    """Adapta un JSON Schema a los structured outputs de Anthropic (Spec-530).
+
+    Exigen `additionalProperties: false` en cada objeto y no aceptan restricciones
+    numéricas, de largo ni de cantidad de ítems: se quitan (quien llama valida igual).
+    """
+    if isinstance(schema, list):
+        return [anthropic_json_schema(s) for s in schema]
+    if not isinstance(schema, dict):
+        return schema
+    out = {
+        k: anthropic_json_schema(v) for k, v in schema.items() if k not in _UNSUPPORTED_SCHEMA_KEYS
+    }
+    if out.get("type") == "object":
+        out["additionalProperties"] = False
+    return out
+
+
 class AnthropicAdapter:
     """Adapter para la API de Anthropic.
 
@@ -58,6 +88,7 @@ class AnthropicAdapter:
         temperature: float | None,
         role: str | None,
         num_predict: int | None,
+        response_schema: dict | None = None,
     ) -> dict:
         role_cfg = settings.role_config(role) if role else {}
         model_name = model or role_cfg.get("model") or self.default_model
@@ -77,8 +108,17 @@ class AnthropicAdapter:
             request["system"] = system_prompt
         if thinking in ("adaptive", "disabled"):
             request["thinking"] = {"type": thinking}
+        output_config: dict = {}
         if role_cfg.get("effort"):
-            request["output_config"] = {"effort": role_cfg["effort"]}
+            output_config["effort"] = role_cfg["effort"]
+        if response_schema:
+            # Spec-530: JSON outputs (structured outputs); compatible con thinking.
+            output_config["format"] = {
+                "type": "json_schema",
+                "schema": anthropic_json_schema(response_schema),
+            }
+        if output_config:
+            request["output_config"] = output_config
         if temperature is not None and not model_name.startswith(_NO_SAMPLING_PREFIXES):
             request["temperature"] = temperature
         return request
@@ -93,10 +133,13 @@ class AnthropicAdapter:
         role: str | None = None,
         num_ctx: int | None = None,  # Ollama; sin efecto acá
         num_predict: int | None = None,
+        response_schema: dict | None = None,
         **kwargs,
     ) -> LLMResponse:
         """Genera texto con la API de Anthropic."""
-        request = self._request(prompt, system_prompt, model, temperature, role, num_predict)
+        request = self._request(
+            prompt, system_prompt, model, temperature, role, num_predict, response_schema
+        )
         logger.debug(
             f"[ANTHROPIC] model={request['model']} max_tokens={request['max_tokens']} "
             f"thinking={request.get('thinking')} sampling={'temperature' in request}"
