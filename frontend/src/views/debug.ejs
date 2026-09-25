@@ -19,9 +19,9 @@
         <td class="py-2 pr-4 text-forge-muted w-40">Estado</td>
         <td class="py-2">
           <% if (coreHealth.reachable) { %>
-            <span class="px-2 py-0.5 bg-green-950 text-green-400 text-xs font-bold rounded">ONLINE</span>
+            <span class="px-2 py-0.5 bg-forge-success-bg text-forge-success text-xs font-bold rounded">ONLINE</span>
           <% } else { %>
-            <span class="px-2 py-0.5 bg-red-950 text-red-400 text-xs font-bold rounded">OFFLINE</span>
+            <span class="px-2 py-0.5 bg-forge-error-bg text-forge-error text-xs font-bold rounded">OFFLINE</span>
           <% } %>
         </td>
       </tr>
@@ -32,7 +32,7 @@
       <% if (coreHealth.reachable && coreHealth.checks) { %>
       <tr class="border-b border-forge-border">
         <td class="py-2 pr-4 text-forge-muted">Health</td>
-        <td class="py-2 <%= coreHealth.checks.sqlite?.includes('error') ? 'text-red-400' : 'text-green-400' %>">
+        <td class="py-2 <%= coreHealth.checks.sqlite?.includes('error') ? 'text-forge-error' : 'text-forge-success' %>">
           <%= coreHealth.status %>
         </td>
       </tr>
@@ -48,7 +48,7 @@
     <table class="w-full text-sm">
       <tr class="border-b border-forge-border">
         <td class="py-2 pr-4 text-forge-muted w-40">Estado</td>
-        <td class="py-2 <%= coreHealth.checks.sqlite?.includes('error') ? 'text-red-400' : 'text-green-400' %>">
+        <td class="py-2 <%= coreHealth.checks.sqlite?.includes('error') ? 'text-forge-error' : 'text-forge-success' %>">
           <%= coreHealth.checks.sqlite?.replace('error: ', '') || 'OK' %>
         </td>
       </tr>

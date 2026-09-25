@@ -99,7 +99,7 @@ test("doble click en «Generar» de la galería envía un solo pedido", async ({
 
 test("la galería se actualiza sola mientras se genera", async ({ page }) => {
   await page.goto("/galeria");
-  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-green-500/);
+  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-forge-success/);
   await page.evaluate(() => ((window as unknown as { __sinRecargar: boolean }).__sinRecargar = true));
   const card = page.locator(`[data-story-card="${OFRENDA}"]`);
   await expect(card).toContainText("Completada");

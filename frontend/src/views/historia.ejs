@@ -8,10 +8,10 @@
  *   }
  */
 const STATUS_LABEL = {
-  draft:      { text: 'Borrador',    cls: 'text-yellow-500' },
-  processing: { text: 'Generando',   cls: 'text-blue-400' },
-  failed:     { text: 'Error',       cls: 'text-red-500' },
-  completed:  { text: 'Completada',  cls: 'text-green-500' },
+  draft:      { text: 'Borrador',    cls: 'text-forge-warning' },
+  processing: { text: 'Generando',   cls: 'text-forge-info' },
+  failed:     { text: 'Error',       cls: 'text-forge-error' },
+  completed:  { text: 'Completada',  cls: 'text-forge-success' },
 };
 const sl = STATUS_LABEL[story.status] || STATUS_LABEL['draft'];
 

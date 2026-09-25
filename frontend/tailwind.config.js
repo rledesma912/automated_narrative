@@ -19,20 +19,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        forge: {
-          bg:      'var(--forge-bg)',
-          surface: 'var(--forge-surface)',
-          border:  'var(--forge-border)',
-          accent:  'var(--forge-accent)',
-          muted:   'var(--forge-muted)',
-          text:    'var(--forge-text)',
-        },
-        // Colores adicionales
-        orange: {
-          '600': '#F58300',  // RGB(245, 131, 0)
-          'light': '#ffa500',
-          'dark': '#cc6600',
-        },
+        // Spec-531: la paleta vive en src/styles/theme.css. Con `color-mix` las
+        // clases admiten opacidad (`bg-forge-accent/10`); con `var()` plano
+        // Tailwind no generaba esas clases.
+        forge: Object.fromEntries(
+          [
+            "bg", "surface", "border", "text", "muted", "accent", "on-accent",
+            "error", "error-bg", "error-border",
+            "warning", "warning-bg", "warning-border",
+            "success", "success-bg", "success-border",
+            "info", "info-bg", "info-border",
+          ].map((name) => [
+            name,
+            `color-mix(in srgb, var(--forge-${name}) calc(<alpha-value> * 100%), transparent)`,
+          ]).concat([["overlay", "var(--forge-overlay)"]]),
+        ),
       },
       fontFamily: {
         serif: ['Georgia', 'serif'],

@@ -69,7 +69,7 @@
 
     if (state === "active") {
       dot.className =
-        "w-14 h-14 -mt-1 rounded-full border-4 border-forge-accent bg-forge-surface flex items-center justify-center z-10 animate-pulse shadow-[0_0_20px_rgba(var(--forge-accent-rgb),0.3)]";
+        "w-14 h-14 -mt-1 rounded-full border-4 border-forge-accent bg-forge-surface flex items-center justify-center z-10 animate-pulse shadow-lg shadow-forge-accent/30";
       dot.innerHTML = `<i data-lucide="loader" class="w-6 h-6 text-forge-accent animate-spin"></i>`;
       if (label) {
         label.classList.remove("text-forge-muted");
@@ -154,7 +154,7 @@
 
   function showError(msg) {
     stopEta();
-    setBadge("ERROR", "border-red-900 text-red-400");
+    setBadge("ERROR", "border-forge-error-border text-forge-error");
     hideSpinner();
 
     let displayMsg = msg;
@@ -177,7 +177,7 @@
   function showDone() {
     stopEta();
     showDuration(currentJobId);
-    setBadge("COMPLETO", "border-green-900 text-green-400");
+    setBadge("COMPLETO", "border-forge-success-border text-forge-success");
     setStatus("Historia generada con éxito");
     hideSpinner();
 

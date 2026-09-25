@@ -77,12 +77,12 @@ describe('CSS Architecture — Cutover (Sin CDN)', () => {
     expect(stats.size).toBeGreaterThan(10000); // > 10KB
   });
 
-  it('layout.ejs define variables CSS en :root', () => {
+  it('Spec-531: la paleta viene del CSS compilado, no la inyecta el layout', () => {
     const content = fs.readFileSync(layoutPath, 'utf-8');
-    
-    // Debe tener inyección de variables desde backend
-    expect(content).toContain('<%- themeCssVars %>');
-    expect(content).toContain(':root');
+    const css = fs.readFileSync(cssPath, 'utf-8');
+
+    expect(content).not.toContain('themeCssVars');
+    expect(css).toMatch(/--forge-bg:\s*#f7f3ec/);
   });
 
   it('CSS compilado contiene estilos base de Tailwind', () => {

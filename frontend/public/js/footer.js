@@ -43,8 +43,8 @@
         alive === null
           ? "w-2 h-2 rounded-full bg-forge-border"
           : alive
-            ? "w-2 h-2 rounded-full bg-green-500"
-            : "w-2 h-2 rounded-full bg-red-500 animate-pulse";
+            ? "w-2 h-2 rounded-full bg-forge-success"
+            : "w-2 h-2 rounded-full bg-forge-error animate-pulse";
     }
     const el = document.getElementById("footer-last-event");
     if (el && lastEvent) {

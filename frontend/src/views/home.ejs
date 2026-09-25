@@ -48,12 +48,12 @@
     </div>
 
     <!-- Anatomía de Sinopsis -->
-    <section class="bg-black/30 p-12 rounded-lg border border-white/10 mb-20 shadow-inner">
+    <section class="bg-forge-surface p-12 rounded-lg border border-forge-border mb-20 shadow-inner">
         <h2 class="heading-forge-lg mb-10 text-center">Anatomía de una Sinopsis Ganadora</h2>
         <div class="grid md:grid-cols-2 gap-10 font-mono">
-            <div class="p-6 bg-black/50 rounded border border-white/5">
+            <div class="p-6 bg-forge-bg rounded border border-forge-border">
                 <p class="text-forge-muted text-sm mb-4 uppercase tracking-widest">// Evita resúmenes genéricos:</p>
-                <p class="text-red-400/50 text-lg line-through leading-snug">"Un payaso malvado asusta a un niño en un día de lluvia."</p>
+                <p class="text-forge-error/50 text-lg line-through leading-snug">"Un payaso malvado asusta a un niño en un día de lluvia."</p>
             </div>
             <div class="p-6 bg-forge-accent/10 rounded border border-forge-accent/30">
                 <p class="text-forge-accent text-sm mb-4 uppercase tracking-widest">// Inyecta densidad sensorial (IT):</p>
@@ -80,11 +80,11 @@
                 { nombre: 'Final', sub: 'La Mancha', ex: 'Bill hereda un trauma que no puede explicar. El barco desaparece, pero el miedo queda impregnado.' }
             ];
             actosInfo.forEach((acto, i) => { %>
-                <div class="card-forge !p-10 flex flex-col transition-all duration-300 hover:scale-125 hover:w-[140%] hover:mx-[-20%] hover:bg-black/95 hover:z-50 hover:shadow-[0_0_40px_rgba(0,0,0,0.9)] cursor-default rounded-sm <%= i === 2 ? 'card-forge-active' : '' %>">
+                <div class="card-forge !p-10 flex flex-col transition-all duration-300 hover:scale-125 hover:w-[140%] hover:mx-[-20%] hover:bg-forge-surface hover:z-50 hover:shadow-2xl hover:shadow-forge-text/20 cursor-default rounded-sm <%= i === 2 ? 'card-forge-active' : '' %>">
                     <span class="text-forge-muted text-[10px] uppercase tracking-[0.2em] mb-4">Acto <%= i + 1 %></span>
                     <span class="text-forge-text text-2xl font-bold uppercase tracking-widest mb-2 group-hover:text-forge-accent transition-colors"><%= acto.nombre %></span>
                     <span class="text-forge-accent text-xs uppercase font-bold mb-8 tracking-tighter"><%= acto.sub %></span>
-                    <p class="text-forge-body italic border-t border-white/10 pt-8 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <p class="text-forge-body italic border-t border-forge-border pt-8 opacity-80 group-hover:opacity-100 transition-opacity">
                         <%= acto.ex %>
                     </p>
                 </div>
@@ -93,7 +93,7 @@
     </section>
 
     <!-- Botón de Acción Final -->
-    <div class="text-center py-16 border-t border-white/10">
+    <div class="text-center py-16 border-t border-forge-border">
         <a href="/generar" class="btn-forge group">
             <i data-lucide="skull" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
             Comenzar historia
