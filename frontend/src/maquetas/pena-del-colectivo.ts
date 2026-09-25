@@ -130,6 +130,7 @@ export interface Acto {
   siembra: string[];
   cobra: string[];
   decisiones: string[];
+  enEscena: string[];
   avisos: string[];
 }
 
@@ -140,7 +141,21 @@ export const ESCENARIOS = [
   "El pedestal al costado de la ruta",
 ];
 
-export const PERSONAJES = ["José", "El sereno de la estación"];
+export type TipoPersonaje = "persona" | "sin_nombre" | "grupo";
+
+export const TIPOS_PERSONAJE: Record<TipoPersonaje, { label: string; ayuda: string }> = {
+  persona: { label: "Con nombre", ayuda: "Alguien con nombre propio" },
+  sin_nombre: { label: "Sin nombre", ayuda: "Se lo nombra por lo que es: «el sereno», «una señora»" },
+  grupo: { label: "Grupo", ayuda: "Muchos que actúan juntos: «las familias», «los compañeros»" },
+};
+
+/** Elenco: `quienEs` = cómo lo ve quien narra (la Voz lo usa para nombrarlo bien). */
+export const PERSONAJES: Array<{ nombre: string; quienEs: string; tipo: TipoPersonaje; narra?: boolean }> = [
+  { nombre: "José", quienEs: "Quien cuenta la historia", tipo: "persona", narra: true },
+  { nombre: "Su hija", quienEs: "Mi hija, internada", tipo: "sin_nombre" },
+  { nombre: "El sereno de la estación", quienEs: "Lo conozco de vista, de la terminal", tipo: "sin_nombre" },
+  { nombre: "Los compañeros de la empresa", quienEs: "Los otros choferes, que cuentan casos", tipo: "grupo" },
+];
 
 /** Lo que el taller dejó decidido (respuestas + intencionales) y si la escaleta lo usa. */
 export const DECISIONES = [
@@ -168,7 +183,8 @@ export const ESCALETA: Acto[] = [
     siembra: ["El ramo de la pasajera", "La promesa a la hija"],
     cobra: [],
     decisiones: ["Qué quiere José"],
-    avisos: [],
+    enEscena: ["José", "El sereno de la estación"],
+    avisos: ["«El sereno» aparece en un hecho y no estaba en el elenco: lo sumé como personaje sin nombre. ¿Tiene nombre?"],
   },
   {
     numero: 2,
@@ -187,6 +203,7 @@ export const ESCALETA: Acto[] = [
     siembra: [],
     cobra: [],
     decisiones: [],
+    enEscena: ["José"],
     avisos: ["El espejo es el encuentro de los actos 2, 3 y 4: probá otro tipo de encuentro en alguno (un sonido, el olor a flores)."],
   },
   {
@@ -207,6 +224,7 @@ export const ESCALETA: Acto[] = [
     siembra: [],
     cobra: [],
     decisiones: [],
+    enEscena: ["José"],
     avisos: [],
   },
   {
@@ -227,6 +245,7 @@ export const ESCALETA: Acto[] = [
     siembra: [],
     cobra: ["El ramo de la pasajera"],
     decisiones: [],
+    enEscena: ["José"],
     avisos: [
       "«Deja unas flores en el pedestal» también está en el Acto 5: dejalo en uno solo.",
       "La historia secreta no aparece en ningún acto: ¿la revela José acá, frente a la foto?",
@@ -250,6 +269,7 @@ export const ESCALETA: Acto[] = [
     siembra: [],
     cobra: ["La promesa a la hija"],
     decisiones: ["El final en paz", "Qué quiere José"],
+    enEscena: ["José"],
     avisos: [],
   },
 ];

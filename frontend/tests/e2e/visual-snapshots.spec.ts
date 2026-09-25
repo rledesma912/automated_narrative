@@ -48,6 +48,10 @@ test.describe("Capturas del tema", () => {
       await page.setViewportSize({ width: 1440, height: alto });
       await capturar(page, `maqueta-${nombre}`, `/maquetas/${nombre}`);
     }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await capturar(page, "maqueta-analizando", "/maquetas/taller");
+    await page.getByRole("button", { name: /Armar la escaleta/ }).click();
+    await page.screenshot({ path: path.join(DESTINO, "maqueta-analizando.png") });
   });
 
   test("modal de confirmación", async ({ page }) => {

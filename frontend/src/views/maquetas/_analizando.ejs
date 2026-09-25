@@ -1,0 +1,60 @@
+<%/*
+  Spec-530 S0 — Modal bloqueante mientras la IA trabaja (análisis, escaleta,
+  revisión). Tapa toda la página y deja la página `inert`: no se puede tocar
+  ningún campo ni botón hasta que termina o se cancela.
+
+  En la maqueta lo abre cualquier botón con `data-maqueta-analizar`:
+    data-titulo   → «Interpretando la historia…»
+    data-detalle  → qué está haciendo
+    data-eta      → «≈ 40 s»
+    data-destino  → a dónde va al terminar (botón «Simular fin»)
+  En S4 lo abrirá el job real (evento job_* del bus) y se cerrará con job_done.
+*/%>
+<div id="maqueta-analizando" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-forge-overlay"
+     role="dialog" aria-modal="true" aria-labelledby="analizando-titulo" aria-describedby="analizando-detalle">
+  <div class="bg-forge-surface border border-forge-border shadow-2xl shadow-forge-text/20 w-full max-w-md mx-4 px-10 py-12 text-center">
+    <div class="mx-auto mb-8 w-20 h-20 rounded-full border-[6px] border-forge-accent/20 border-t-forge-accent animate-spin" aria-hidden="true"></div>
+    <h2 id="analizando-titulo" class="font-serif text-2xl text-forge-accent mb-3" aria-live="polite">Interpretando la historia…</h2>
+    <p id="analizando-detalle" class="text-forge-muted mb-6"></p>
+    <p class="text-sm mb-1">Falta <span data-analizando-eta>≈ 40 s</span></p>
+    <p class="text-xs text-forge-muted mb-8">Podés cerrar la pestaña: sigue trabajando y al volver ves el resultado.</p>
+    <div class="flex flex-col items-center gap-3">
+      <button type="button" class="btn-forge-outline-sm" data-analizando-cancelar>Cancelar</button>
+      <button type="button" class="text-xs text-forge-muted underline" data-analizando-fin>Simular que terminó (solo maqueta)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const modal = document.getElementById("maqueta-analizando");
+    // Fuera de <main>: si no, al volver inerte la página el modal también quedaría inerte.
+    document.body.appendChild(modal);
+    const page = [...document.body.children].filter((el) => el !== modal && el.tagName !== "SCRIPT");
+    let destino = null;
+
+    function abrir(btn) {
+      modal.querySelector("#analizando-titulo").textContent = btn.dataset.titulo || "Interpretando la historia…";
+      modal.querySelector("#analizando-detalle").textContent = btn.dataset.detalle || "";
+      modal.querySelector("[data-analizando-eta]").textContent = btn.dataset.eta || "≈ 40 s";
+      destino = btn.dataset.destino || null;
+      page.forEach((el) => el.setAttribute("inert", ""));
+      modal.classList.remove("hidden");
+      modal.querySelector("[data-analizando-cancelar]").focus();
+    }
+
+    function cerrar() {
+      modal.classList.add("hidden");
+      page.forEach((el) => el.removeAttribute("inert"));
+    }
+
+    document.querySelectorAll("[data-maqueta-analizar]").forEach((btn) =>
+      btn.addEventListener("click", () => abrir(btn)),
+    );
+    modal.querySelector("[data-analizando-cancelar]").addEventListener("click", cerrar);
+    modal.querySelector("[data-analizando-fin]").addEventListener("click", () => {
+      cerrar();
+      if (destino) window.location.href = destino;
+    });
+  })();
+</script>

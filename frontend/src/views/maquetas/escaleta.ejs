@@ -124,9 +124,21 @@
               </div>
 
               <div>
-                <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Personajes</p>
+                <p class="text-xs uppercase tracking-widest text-forge-muted mb-1">En escena</p>
+                <p class="text-xs text-forge-muted mb-2">Solo ellos llegan a la voz en este acto.</p>
                 <div class="flex flex-wrap gap-2">
-                  <% PERSONAJES.forEach(p => { %><span class="px-2 py-1 bg-forge-bg border border-forge-border"><%= p %></span><% }) %>
+                  <% PERSONAJES.forEach(p => { const on = a.enEscena.includes(p.nombre); %>
+                    <label class="cursor-pointer">
+                      <input type="checkbox" class="peer sr-only" <%= on ? 'checked' : '' %> <%= p.narra ? 'disabled' : '' %>>
+                      <span class="inline-flex items-center gap-1 px-2 py-1 border border-forge-border text-forge-muted
+                                   peer-checked:border-forge-accent peer-checked:text-forge-text peer-checked:bg-forge-accent/5
+                                   peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent"
+                            title="<%= p.quienEs %> · <%= TIPOS_PERSONAJE[p.tipo].label.toLowerCase() %>">
+                        <% if (p.tipo === 'grupo') { %><i data-lucide="users" class="w-3 h-3"></i><% } %>
+                        <%= p.nombre %><% if (p.narra) { %> <span class="text-[10px] uppercase tracking-widest">· narra</span><% } %>
+                      </span>
+                    </label>
+                  <% }) %>
                   <span class="px-2 py-1 border border-dashed border-forge-border text-forge-muted">+ personaje</span>
                 </div>
               </div>
@@ -138,11 +150,22 @@
   </ol>
 
   <%/* ── Acciones ───────────────────────────────────────────────────────── */%>
-  <div class="flex flex-wrap items-center justify-between gap-4 border-t border-forge-border pt-6">
-    <a href="/maquetas/taller" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Taller</a>
+  <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
+    <div class="flex items-center gap-5">
+      <a href="/maquetas/taller" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Taller</a>
+      <span class="text-sm text-forge-success inline-flex items-center gap-2" aria-live="polite"><i data-lucide="check" class="w-4 h-4"></i> Guardado hace un momento</span>
+    </div>
     <div class="flex flex-wrap items-center gap-3">
-      <button type="button" class="btn-forge-outline-sm"><i data-lucide="search-check" class="w-4 h-4"></i> Revisar con la IA <span class="normal-case tracking-normal text-forge-muted">≈ 45 s</span></button>
-      <button type="button" class="btn-forge-sm"><i data-lucide="feather" class="w-4 h-4"></i> Generar relato <span class="normal-case tracking-normal">≈ 4 min</span></button>
+      <button type="button" class="btn-forge-outline-sm"
+              data-maqueta-analizar
+              data-titulo="Revisando la escaleta…"
+              data-detalle="La IA busca decisiones que faltan, hechos repetidos o fuera de lugar y secretos que nunca se revelan."
+              data-eta="≈ 30 s">
+        <i data-lucide="search-check" class="w-4 h-4"></i> Revisar con la IA <span class="normal-case tracking-normal text-forge-muted">· ≈ 30 s</span>
+      </button>
+      <button type="button" class="btn-forge-sm" title="Va a la sala de generación, como hoy"><i data-lucide="feather" class="w-4 h-4"></i> Generar relato <span class="normal-case tracking-normal">· ≈ 4 min</span></button>
     </div>
   </div>
 </div>
+
+<%- include('_analizando') %>

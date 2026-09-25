@@ -331,6 +331,24 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 8. Salida JSON inválida: un reintento y después `job_failed` con un mensaje claro. Nunca se usa el resultado anterior en silencio (se corrige también en el Journal).
 9. Maquetas como vistas EJS reales con datos fijos detrás de `/maquetas/*` (solo con `ENV=dev`). Se ven con `make dev` y con el tema real, y sus parciales se reusan en S4.
 
+### Decisiones de la revisión de S0 (2026-09-25)
+
+10. **Guardado automático real.** Cada campo se guarda en el Core mientras se escribe (con debounce, como el `autoSaveField` del wizard actual), con un indicador «Guardado hace un momento». No hay botón «Guardar».
+11. **La IA nunca se dispara sola.** Cada llamada tiene un comando explícito, con su tiempo estimado en el botón:
+    - Dirección: «Analizar mi historia»;
+    - Taller: «Analizar de nuevo» y «Armar la escaleta» (Planificador + Verificador);
+    - Escaleta: «Revisar con la IA».
+
+    Pasar de una vista a otra es solo navegación.
+12. **Modal bloqueante mientras la IA trabaja:** spinner grande, un título que dice qué está haciendo («Interpretando la historia…», «Armando la escaleta…», «Revisando la escaleta…»), el tiempo que falta y «Cancelar». Toda la página queda `inert`: no se puede tocar ningún campo ni botón. Si se cierra la pestaña, el job sigue; al volver, el modal reaparece atado al job activo hasta que termina. Con un job activo, el guardado automático responde 409 (ya pasa hoy con `PATCH /stories`).
+13. **«Decidí vos» no llama a la IA:** elige la primera opción, que es la que la IA propone como más fuerte. Es instantáneo.
+14. **Personajes** (caso «El galpón»: 3 con nombre, otros sin nombre y grupos enteros):
+    - Cada personaje tiene **tipo** (con nombre · sin nombre · grupo) y **qué es para quien narra** («mi mamá», «el patrón»). Así la Voz los nombra bien; es el insumo de los parentescos de la Spec-470.
+    - En la Dirección hay una sección opcional «¿Quiénes más aparecen?». Esto reemplaza la decisión 6: se pueden cargar al principio o sumar después, desde un acto.
+    - Cada acto marca **quiénes están en escena**, y la Voz recibe solo a esos (más quien narra). Con muchos personajes, así evita meter a todos en todos los actos.
+    - El Verificador avisa cuando un hecho nombra a alguien que no está en el elenco, y lo propone como personaje sin nombre.
+    - Impacto en §7: `character` suma `kind` (`persona` / `sin_nombre` / `grupo`) y `relation` (qué es para quien narra); `act_outline` suma `on_stage` (JSON con los personajes en escena).
+
 ### Slices
 
 #### S0 — Maquetas navegables

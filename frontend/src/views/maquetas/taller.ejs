@@ -66,7 +66,7 @@
 
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" class="btn-forge-sm">Guardar respuesta</button>
-          <button type="button" class="btn-forge-outline-sm" title="El asistente elige una opción que encaje con tu dirección">
+          <button type="button" class="btn-forge-outline-sm" title="Elige la primera opción: la que la IA propone como más fuerte. Es instantáneo (no vuelve a llamar a la IA).">
             <i data-lucide="sparkles" class="w-4 h-4"></i> Decidí vos
           </button>
           <button type="button" class="btn-forge-outline-sm" title="Queda como está y no se vuelve a preguntar">
@@ -93,11 +93,29 @@
   </ul>
 
   <%/* ── Acciones ───────────────────────────────────────────────────────── */%>
-  <div class="flex flex-wrap items-center justify-between gap-4 border-t border-forge-border pt-6">
-    <a href="/maquetas/direccion" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Dirección</a>
+  <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
+    <div class="flex items-center gap-5">
+      <a href="/maquetas/direccion" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Dirección</a>
+      <span class="text-sm text-forge-success inline-flex items-center gap-2" aria-live="polite"><i data-lucide="check" class="w-4 h-4"></i> Respuestas guardadas</span>
+    </div>
     <div class="flex flex-wrap items-center gap-3">
-      <button type="button" class="btn-forge-outline-sm"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Analizar de nuevo <span class="normal-case tracking-normal text-forge-muted">≈ 40 s</span></button>
-      <a href="/maquetas/escaleta" class="btn-forge-sm">Pasar a la escaleta <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+      <button type="button" class="btn-forge-outline-sm"
+              data-maqueta-analizar
+              data-titulo="Interpretando tus respuestas…"
+              data-detalle="La IA vuelve a leer la historia con lo que respondiste y pregunta solo lo que siga faltando."
+              data-eta="≈ 40 s">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Analizar de nuevo <span class="normal-case tracking-normal text-forge-muted">· ≈ 40 s</span>
+      </button>
+      <button type="button" class="btn-forge-sm"
+              data-maqueta-analizar
+              data-titulo="Armando la escaleta…"
+              data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa."
+              data-eta="≈ 1 min 15 s"
+              data-destino="/maquetas/escaleta">
+        <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar la escaleta <span class="normal-case tracking-normal">· ≈ 1 min</span>
+      </button>
     </div>
   </div>
 </div>
+
+<%- include('_analizando') %>
