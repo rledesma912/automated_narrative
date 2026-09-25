@@ -61,7 +61,7 @@ class YamlStoryExporter:
         sc = story.narrator_config or {}
         personajes = self._build_personajes(story)
 
-        return {
+        doc = {
             "title": story.title,
             "personajes_full": personajes,
             "protagonista": story.protagonista,
@@ -72,6 +72,14 @@ class YamlStoryExporter:
             "reglas": list(story.reglas or []),
             "storyteller_config": self._build_storyteller_config(sc, story),
         }
+        # Spec-530: solo si la historia pasó por el asistente (los YAML viejos no cambian).
+        if story.direction:
+            doc["direction"] = story.direction.model_dump(mode="json")
+        if story.workshop:
+            doc["workshop"] = [w.model_dump(mode="json") for w in story.workshop]
+        if story.outline:
+            doc["outline"] = [a.model_dump(mode="json") for a in story.outline]
+        return doc
 
     def _build_personajes(self, story: Story) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -84,6 +92,11 @@ class YamlStoryExporter:
                     "traits": list(p.get("traits") or []),
                 }
             )
+            # Spec-530: tipo y relación con quien narra, solo si no son los de siempre.
+            if p.get("kind") and p["kind"] != "persona":
+                out[-1]["kind"] = p["kind"]
+            if p.get("relation"):
+                out[-1]["relation"] = p["relation"]
         return out
 
     def _derive_escenarios_str(self, sc: dict, story: Story) -> str:
@@ -201,6 +214,8 @@ class YamlStoryExporter:
                         "type": rule_type,
                     }
                 )
+                if r.applies_to_beat:
+                    out[-1]["applies_to_beat"] = r.applies_to_beat
             return out
         # Último fallback: reglas como strings
         return [

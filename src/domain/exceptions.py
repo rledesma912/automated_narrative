@@ -87,6 +87,13 @@ class InvalidGenreError(InvalidStoryInputError):
         self.subgenero = subgenero
 
 
+class InvalidAuthoringError(InvalidStoryInputError):
+    """Dirección, taller o escaleta inválidos (Spec-530)."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 class InvalidEntityError(InvalidStoryInputError):
     """Entidades narrativas inválidas: cantidad, largo, nivel o naturaleza (Spec-450 §1)."""
 

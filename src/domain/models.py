@@ -259,6 +259,88 @@ class GeneratedNarrative(BaseModel):
     created_at: datetime = Field(default_factory=now_argentina)
 
 
+# ── Spec-530: asistente de autoría ───────────────────────────────────────────
+
+
+class CharacterKind(str, Enum):
+    """Tipo de personaje (Spec-530 §14): cómo lo nombra la Voz."""
+
+    PERSONA = "persona"  # con nombre propio
+    SIN_NOMBRE = "sin_nombre"  # «el sereno», «una señora»
+    GRUPO = "grupo"  # «las familias del galpón»
+
+
+class Direction(BaseModel):
+    """Lo que el autor decide al empezar (vista Dirección, Spec-530 §3.2).
+
+    Las decisiones del taller (meta, qué está en juego, historia secreta…) viven
+    en `WorkshopItem`, no acá: la dirección es solo lo que el autor escribe.
+    """
+
+    premise: str = ""  # «¿De qué trata?»
+    effect: str = ""  # pavor | susto | melancolia | revelacion | otro
+    effect_other: str = ""  # texto libre cuando effect == "otro"
+    ending: str = ""
+    ending_intentional: bool = False
+    telling: str = ""  # «¿Cómo lo cuenta?»: caso | confesion | cronica | literario
+
+
+class WorkshopLevel(str, Enum):
+    """Nivel del taller en el que se evalúa un criterio (Spec-530 §4)."""
+
+    DIRECCION = "direccion"
+    ESCALETA = "escaleta"
+
+
+class CriterionStatus(str, Enum):
+    """Semáforo de un criterio del taller."""
+
+    CUMPLE = "cumple"
+    PARCIAL = "parcial"
+    FALTA = "falta"
+    INTENCIONAL = "intencional"
+
+
+class WorkshopItem(BaseModel):
+    """Estado de un criterio del taller: la pregunta vigente y la respuesta.
+
+    Hay una fila por (historia, nivel, criterio); `asked` guarda las preguntas de
+    rondas anteriores para filtrar las que «ya no suman» (Spec-530 §3.3).
+    """
+
+    level: WorkshopLevel = WorkshopLevel.DIRECCION
+    criterion: str = Field(..., min_length=1)
+    status: CriterionStatus = CriterionStatus.FALTA
+    question: str = ""
+    options: list[str] = Field(default_factory=list)
+    answer: str = ""
+    round: int = Field(1, ge=1)
+    asked: list[str] = Field(default_factory=list)
+
+
+class ActOutline(BaseModel):
+    """Un acto de la escaleta (Spec-530 §3.2): lo edita el usuario y lo propone la IA.
+
+    Es la entrada del acto, separada de `MacroBeat` (que es la salida generada).
+    `on_stage` y `scenario` van por nombre: personajes y escenarios se reescriben
+    con ids nuevos al editar la historia.
+    """
+
+    number: int = Field(..., ge=1, le=5)
+    goal: str = ""
+    events: list[str] = Field(default_factory=list)
+    change_from: str = ""
+    change_to: str = ""
+    scenario: str = ""
+    on_stage: list[str] = Field(default_factory=list)
+    held_back: str = ""  # «se guarda para después»
+    seeds: list[str] = Field(default_factory=list)
+    payoffs: list[str] = Field(default_factory=list)
+    decisions: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    needs_review: bool = False
+
+
 class Story(BaseModel):
     """Historia base."""
 
@@ -281,6 +363,11 @@ class Story(BaseModel):
     narrator_config: Optional[dict] = None
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
+
+    # Spec-530: asistente de autoría (vacíos en las historias del wizard).
+    direction: Optional[Direction] = None
+    workshop: list[WorkshopItem] = []
+    outline: list[ActOutline] = []
 
     @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod

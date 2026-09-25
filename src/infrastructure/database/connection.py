@@ -116,6 +116,7 @@ async def init_db() -> None:
             subgenero TEXT,
             tono TEXT,
             narrator_config TEXT,
+            direction TEXT,
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (genero) REFERENCES genre(id),
@@ -161,6 +162,8 @@ async def init_db() -> None:
             name TEXT NOT NULL,
             role TEXT,
             traits TEXT DEFAULT '[]',
+            kind TEXT NOT NULL DEFAULT 'persona',
+            relation TEXT DEFAULT '',
             order_index INTEGER NOT NULL,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
@@ -247,6 +250,48 @@ async def init_db() -> None:
             status TEXT DEFAULT 'completed',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_template_id) REFERENCES story(id) ON DELETE CASCADE
+        )
+    """)
+
+    # Spec-530: taller del asistente. Una fila por criterio y nivel, con la pregunta
+    # vigente, la respuesta y las preguntas de rondas anteriores (`asked`).
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS story_workshop (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            story_id TEXT NOT NULL,
+            level TEXT NOT NULL DEFAULT 'direccion',
+            criterion TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'falta',
+            question TEXT DEFAULT '',
+            options TEXT DEFAULT '[]',
+            answer TEXT DEFAULT '',
+            round INTEGER NOT NULL DEFAULT 1,
+            asked TEXT DEFAULT '[]',
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            UNIQUE (story_id, level, criterion)
+        )
+    """)
+    # Spec-530: escaleta (entrada de cada acto; `macro_beat` es la salida generada).
+    # Escenario y personajes en escena van por nombre: se reescriben con ids nuevos.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS act_outline (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            story_id TEXT NOT NULL,
+            number INTEGER NOT NULL CHECK (number BETWEEN 1 AND 5),
+            goal TEXT DEFAULT '',
+            events TEXT DEFAULT '[]',
+            change_from TEXT DEFAULT '',
+            change_to TEXT DEFAULT '',
+            scenario TEXT DEFAULT '',
+            on_stage TEXT DEFAULT '[]',
+            held_back TEXT DEFAULT '',
+            seeds TEXT DEFAULT '[]',
+            payoffs TEXT DEFAULT '[]',
+            decisions TEXT DEFAULT '[]',
+            warnings TEXT DEFAULT '[]',
+            needs_review INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            UNIQUE (story_id, number)
         )
     """)
 

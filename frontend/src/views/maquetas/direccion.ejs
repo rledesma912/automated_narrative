@@ -94,32 +94,6 @@
       </select>
     </section>
 
-    <%/* ── 5b. Quiénes más aparecen ──────────────────────────────────── */%>
-    <section class="bg-forge-surface border border-forge-border p-6">
-      <h3 class="font-serif text-xl mb-1">¿Quiénes más aparecen? <span class="ml-1 text-xs uppercase tracking-widest text-forge-muted font-sans">opcional</span></h3>
-      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
-        <span>Anotá cómo los ve quien cuenta la historia («mi mamá», «el patrón»): así la voz los llama bien.
-        Si son muchos parecidos, cargalos como <strong>grupo</strong> («las familias del galpón»). Los que falten los podés sumar después, en cada acto.</span></p>
-      <div class="hidden sm:grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem_1.5rem] gap-3 text-xs uppercase tracking-widest text-forge-muted mb-2">
-        <span>Quién</span><span>Qué es para <%= d.narrador %></span><span>Tipo</span><span></span>
-      </div>
-      <ul class="space-y-3 mb-3">
-        <% PERSONAJES.filter(p => !p.narra).forEach(p => { %>
-          <li class="grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_8rem_1.5rem] gap-3 items-center">
-            <input type="text" value="<%= p.nombre %>" class="bg-forge-bg border border-forge-border px-3 py-2" aria-label="Quién">
-            <input type="text" value="<%= p.quienEs %>" class="bg-forge-bg border border-forge-border px-3 py-2" aria-label="Qué es para quien narra">
-            <select class="bg-forge-bg border border-forge-border px-2 py-2" aria-label="Tipo" title="<%= TIPOS_PERSONAJE[p.tipo].ayuda %>">
-              <% Object.entries(TIPOS_PERSONAJE).forEach(([id, t]) => { %>
-                <option <%= id === p.tipo ? 'selected' : '' %>><%= t.label %></option>
-              <% }) %>
-            </select>
-            <button type="button" class="text-forge-muted hover:text-forge-error justify-self-center" title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>
-          </li>
-        <% }) %>
-      </ul>
-      <button type="button" class="text-sm text-forge-accent inline-flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Agregar persona o grupo</button>
-    </section>
-
     <%/* ── 6. Cómo lo cuenta ─────────────────────────────────────────── */%>
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1">¿Cómo lo cuenta?</h3>

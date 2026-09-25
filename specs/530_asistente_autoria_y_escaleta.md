@@ -344,7 +344,7 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 13. **«Decidí vos» no llama a la IA:** elige la primera opción, que es la que la IA propone como más fuerte. Es instantáneo.
 14. **Personajes** (caso «El galpón»: 3 con nombre, otros sin nombre y grupos enteros):
     - Cada personaje tiene **tipo** (con nombre · sin nombre · grupo) y **qué es para quien narra** («mi mamá», «el patrón»). Así la Voz los nombra bien; es el insumo de los parentescos de la Spec-470.
-    - En la Dirección hay una sección opcional «¿Quiénes más aparecen?». Esto reemplaza la decisión 6: se pueden cargar al principio o sumar después, desde un acto.
+    - **Cada personaje se agrega cuando hace falta, en el acto donde aparece** («+ personaje» en «En escena»), o cuando el Verificador lo propone. La Dirección pide solo al protagonista y a quien narra: no hay una lista de personajes para cargar de antemano (confirma la decisión 6; revisión del usuario, 2026-09-25).
     - Cada acto marca **quiénes están en escena**, y la Voz recibe solo a esos (más quien narra). Con muchos personajes, así evita meter a todos en todos los actos.
     - El Verificador avisa cuando un hecho nombra a alguien que no está en el elenco, y lo propone como personaje sin nombre.
     - Impacto en §7: `character` suma `kind` (`persona` / `sin_nombre` / `grupo`) y `relation` (qué es para quien narra); `act_outline` suma `on_stage` (JSON con los personajes en escena).
@@ -361,6 +361,14 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - Modelos de dominio (`Direction`, `WorkshopItem`, `ActOutline`) y repositorios; `Story` los carga.
 - YAML: `export-yaml` / `import-yaml` incluyen la dirección y la escaleta; los YAML viejos se importan igual.
 - **Verificación:** unit de repos y round-trip YAML; pytest completo en verde; `make db` recrea sin errores.
+
+**Hecho (2026-09-25).** Además de lo previsto:
+- `Direction` guarda solo lo que el autor escribe; las decisiones del taller (meta, qué está en juego, historia secreta…) viven en `WorkshopItem`, sin duplicarse en la dirección. Esto ajusta §7.
+- `character` suma `kind` y `relation` (§14); `act_outline` guarda el escenario y los personajes en escena **por nombre**, porque se reescriben con ids nuevos al editar.
+- `update_inputs` (edición desde el wizard) no toca la dirección, el taller ni la escaleta: tienen sus propios métodos (`update_direction`, `save_workshop_items`, `save_outline`, `save_act`).
+- `CreateStoryUseCase` ahora conserva el acto de cada regla (`applies_to_beat`, que antes se perdía al crear) y rechaza con `InvalidAuthoringError` (422) una escaleta o un taller inválidos, o un tipo de personaje desconocido.
+- El YAML exporta las claves nuevas solo si existen: los YAML de las historias viejas salen idénticos.
+- **Deploy:** es un cambio de esquema. El primer `make deploy` que incluya S1 necesita el pase de datos de prod (`export-yaml --all` → recrear `data/prod/stories.db` → `import-yaml`), ensayado antes sobre una copia. Sin eso, prod arranca con el esquema viejo y falla al guardar.
 
 #### S2 — Salida estructurada y roles nuevos
 - `response_schema` en el protocolo y en los adapters (Ollama `format`; Anthropic; Mock con un JSON por rol).

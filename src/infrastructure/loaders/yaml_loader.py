@@ -79,6 +79,7 @@ class YamlStoryLoader:
                 typed_rules=self._extract_typed_rules(data),
                 actos=actos_full,
                 entities=list(sc.get("entities") or []),
+                **_authoring_fields(data),
             )
         except ValidationError as e:
             raise YamlStoryLoaderError(f"Validación de campos: {e}")
@@ -111,6 +112,7 @@ class YamlStoryLoader:
                 typed_rules=self._extract_typed_rules(data),
                 actos=actos_full,
                 entities=list(sc.get("entities") or []),
+                **_authoring_fields(data),
             )
         except ValidationError as e:
             raise YamlStoryLoaderError(f"Validación de campos: {e}")
@@ -162,7 +164,12 @@ class YamlStoryLoader:
             return []
 
         return [
-            {"id": r.get("id", ""), "content": r.get("text", ""), "type": r.get("type")}
+            {
+                "id": r.get("id", ""),
+                "content": r.get("text", ""),
+                "type": r.get("type"),
+                "applies_to_beat": r.get("applies_to_beat"),
+            }
             for r in rules
             if r.get("text")
         ]
@@ -187,3 +194,12 @@ class YamlStoryLoader:
             parts = legacy_atmosfera.split(" - ")
             return parts[0] if parts else "", "", parts[1] if len(parts) > 1 else ""
         return "", "", ""
+
+
+def _authoring_fields(data: dict) -> dict:
+    """Dirección, taller y escaleta del asistente (Spec-530); ausentes en YAML viejos."""
+    return {
+        "direction": data.get("direction") or None,
+        "workshop": list(data.get("workshop") or []),
+        "outline": list(data.get("outline") or []),
+    }

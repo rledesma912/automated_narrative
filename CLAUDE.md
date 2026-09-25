@@ -174,14 +174,14 @@ BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 
 ## Database
 
-SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Quince tablas** (Spec-190 + Spec-460 + Spec-440 + Spec-450):
+SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Diecisiete tablas** (Spec-190 + Spec-460 + Spec-440 + Spec-450 + Spec-530):
 
 - `genre`: id, label, order_index — catálogo sembrado por `init_db()` desde `src/infrastructure/database/seeds/genre_catalog.py` (idempotente)
 - `subgenre`: genre_id, id, label, order_index — PK compuesta (`otro` existe en cada género)
 - `entity_nature`: id, label, order_index — catálogo de naturalezas de entidad; seed `seeds/entity_natures.py` con **upsert** (el seed manda: una etiqueta editada llega a las bases existentes)
 - `genre_entity_nature`: genre_id, nature_id — qué naturalezas admite cada género (`desconocida` en todos); el seed solo agrega pares
-- `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, tono, narrator_config (JSON), status, created_at — FK `genero` → `genre` y FK compuesta `(genero, subgenero)` → `subgenre`; par inválido → 422 (`ensure_valid_genre`)
-- `character`: id, story_id, name, role, traits (JSON), order_index
+- `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, tono, narrator_config (JSON), direction (JSON, Spec-530), status, created_at — FK `genero` → `genre` y FK compuesta `(genero, subgenero)` → `subgenre`; par inválido → 422 (`ensure_valid_genre`)
+- `character`: id, story_id, name, role, traits (JSON), kind (`persona`|`sin_nombre`|`grupo`), relation (qué es para quien narra), order_index
 - `rule`: id, story_id, content, type, intensity, applies_to_beat
 - `macro_beat`: id, story_id, number, summary, synopsis_beat, generated_act, status, active_scenario_id, active_scenario_description, system_prompt, user_prompt, type
 - `scenario`: id, story_id, order_index, name, description
@@ -190,6 +190,8 @@ SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.
 - `generated_narrative`: id, story_template_id, title, content, status
 - `entity`: id, story_id, order_index (0 = principal), name, nature_id, description, manifestations, limits, reveal_level — máx. 3 por historia; se reescribe con los datos de entrada
 - `entity_journal`: id, story_id, beat_number, entity_state — cuelga de `story` (no de `entity`) para sobrevivir a las ediciones
+- `story_workshop` (Spec-530): story_id, level (`direccion`|`escaleta`), criterion, status (`cumple`|`parcial`|`falta`|`intencional`), question, options (JSON), answer, round, asked (JSON) — único por (story_id, level, criterion)
+- `act_outline` (Spec-530): la escaleta, entrada de cada acto (separada de `macro_beat`, que es la salida): story_id, number 1–5, goal, events, change_from/to, scenario y on_stage (por nombre), held_back, seeds, payoffs, decisions, warnings, needs_review
 - `generation_job`: id, story_id, kind (`full_generation`|`regenerate_voz`), status, stage, beat, total_beats, params (JSON), error, narrative_id, created_at, started_at, finished_at — índice único parcial: 1 job activo por historia
 
 Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`, `SQLGenreRepository`.

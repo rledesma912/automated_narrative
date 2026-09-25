@@ -5,6 +5,9 @@ import uuid
 from uuid import UUID
 
 from src.domain.models import (
+    ActOutline,
+    CharacterKind,
+    Direction,
     Entity,
     NarrativeAnchors,
     NarrativeJournal,
@@ -12,6 +15,7 @@ from src.domain.models import (
     Story,
     StoryStatus,
     TypedRule,
+    WorkshopItem,
 )
 from src.infrastructure.database.connection import connection, get_connection
 from src.utils.timezone import now_argentina
@@ -21,7 +25,12 @@ class SQLStoryRepository:
     """SQLite implementation of StoryRepository."""
 
     async def save(self, story: Story) -> Story:
-        """Save a story."""
+        """Save a story (alta de una historia: creación o import-yaml).
+
+        `INSERT OR REPLACE` sobre `story` borra en cascada todo lo que cuelga de
+        ella (actos, journal, taller, escaleta, relatos, jobs): no usar para editar
+        una historia existente; para eso está `update_inputs()`.
+        """
         conn = await get_connection()
         # try/finally: una conexión sin cerrar (p. ej. la FK del catálogo rechaza el
         # INSERT) deja vivo el hilo de aiosqlite.
@@ -29,8 +38,8 @@ class SQLStoryRepository:
             await conn.execute(
                 """INSERT OR REPLACE INTO story
                 (id, title, protagonista, relator, sinopsis, genero, subgenero, tono,
-                 narrator_config, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                 narrator_config, direction, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(story.id),
                     story.title,
@@ -41,12 +50,16 @@ class SQLStoryRepository:
                     story.subgenero or None,
                     story.tono,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
+                    _direction_json(story.direction),
                     story.status.value,
                     story.created_at.isoformat(),
                 ),
             )
 
             await self._write_inputs(conn, story)
+            for item in story.workshop:
+                await self._upsert_workshop_item(conn, str(story.id), item)
+            await self._replace_outline(conn, str(story.id), story.outline)
 
             # Persistir beats en la tabla macro_beat (borrar y re-insertar)
             # Spec-190 T7.1: pre-crear 5 filas macro_beat al guardar la historia
@@ -116,6 +129,8 @@ class SQLStoryRepository:
 
             personajes = await self._load_personajes(conn, str(story_id))
             entities = await self._load_entities(conn, str(story_id))
+            workshop = await self._load_workshop(conn, str(story_id))
+            outline = await self._load_outline(conn, str(story_id))
 
             beats = await self._load_beats(conn, str(story_id))
 
@@ -125,6 +140,8 @@ class SQLStoryRepository:
         story.scenarios = scenarios
         story.entities = entities
         story.personajes_full = personajes
+        story.workshop = workshop
+        story.outline = outline
         story.beats = beats
         return story
 
@@ -171,8 +188,12 @@ class SQLStoryRepository:
 
             personajes = await self._load_personajes(conn, story_id)
             entities = await self._load_entities(conn, story_id)
+            workshop = await self._load_workshop(conn, story_id)
+            outline = await self._load_outline(conn, story_id)
 
         story = self._row_to_story(row)
+        story.workshop = workshop
+        story.outline = outline
         story.reglas = reglas
         story.typed_rules = typed_rules
         story.scenarios = scenarios
@@ -186,6 +207,9 @@ class SQLStoryRepository:
         A diferencia de `save()`, no toca lo generado: nada de `INSERT OR REPLACE`
         sobre `story` (con FKs en cascada borraría actos, journal, anclas, relatos
         y jobs) ni reescritura de `macro_beat`. Tampoco cambia `status`.
+
+        Tampoco toca la dirección, el taller ni la escaleta (Spec-530): tienen sus
+        propios métodos, así una edición que no los manda no los borra.
         """
         conn = await get_connection()
         try:
@@ -219,14 +243,16 @@ class SQLStoryRepository:
         await conn.execute("DELETE FROM character WHERE story_id = ?", (str(story.id),))
         for idx, p in enumerate(story.personajes_full or [], start=1):
             await conn.execute(
-                "INSERT INTO character (id, story_id, name, role, traits, order_index) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO character (id, story_id, name, role, traits, kind, relation, "
+                "order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     str(uuid.uuid4()),
                     str(story.id),
                     p.get("name", ""),
                     p.get("role", ""),
                     json.dumps(list(p.get("traits") or [])),
+                    CharacterKind(p.get("kind") or CharacterKind.PERSONA).value,
+                    p.get("relation", "") or "",
                     idx,
                 ),
             )
@@ -539,6 +565,139 @@ class SQLStoryRepository:
             resonance_residual=row["resonance_residual"],
         )
 
+    # ── Spec-530: dirección, taller y escaleta ─────────────────────────────────
+
+    async def update_direction(self, story_id: UUID, direction: Direction | None) -> None:
+        """Guarda la dirección de una historia (vista Dirección)."""
+        async with connection() as conn:
+            await conn.execute(
+                "UPDATE story SET direction = ? WHERE id = ?",
+                (_direction_json(direction), str(story_id)),
+            )
+            await conn.commit()
+
+    async def get_workshop(self, story_id: UUID) -> list[WorkshopItem]:
+        async with connection() as conn:
+            return await self._load_workshop(conn, str(story_id))
+
+    async def save_workshop_items(self, story_id: UUID, items: list[WorkshopItem]) -> None:
+        """Crea o actualiza criterios del taller (uno por nivel y criterio)."""
+        async with connection() as conn:
+            for item in items:
+                await self._upsert_workshop_item(conn, str(story_id), item)
+            await conn.commit()
+
+    async def get_outline(self, story_id: UUID) -> list[ActOutline]:
+        async with connection() as conn:
+            return await self._load_outline(conn, str(story_id))
+
+    async def save_outline(self, story_id: UUID, acts: list[ActOutline]) -> None:
+        """Reemplaza la escaleta completa (la arma el Planificador)."""
+        async with connection() as conn:
+            await self._replace_outline(conn, str(story_id), acts)
+            await conn.commit()
+
+    async def save_act(self, story_id: UUID, act: ActOutline) -> None:
+        """Crea o actualiza un acto de la escaleta (edición del usuario)."""
+        async with connection() as conn:
+            await self._upsert_act(conn, str(story_id), act)
+            await conn.commit()
+
+    async def _upsert_workshop_item(self, conn, story_id: str, item: WorkshopItem) -> None:
+        await conn.execute(
+            "INSERT INTO story_workshop (story_id, level, criterion, status, question, "
+            "options, answer, round, asked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (story_id, level, criterion) DO UPDATE SET status = excluded.status, "
+            "question = excluded.question, options = excluded.options, "
+            "answer = excluded.answer, round = excluded.round, asked = excluded.asked",
+            (
+                story_id,
+                item.level.value,
+                item.criterion,
+                item.status.value,
+                item.question,
+                json.dumps(item.options, ensure_ascii=False),
+                item.answer,
+                item.round,
+                json.dumps(item.asked, ensure_ascii=False),
+            ),
+        )
+
+    async def _load_workshop(self, conn, story_id: str) -> list[WorkshopItem]:
+        cursor = await conn.execute(
+            "SELECT * FROM story_workshop WHERE story_id = ? ORDER BY level, id", (story_id,)
+        )
+        return [
+            WorkshopItem(
+                level=r["level"],
+                criterion=r["criterion"],
+                status=r["status"],
+                question=r["question"] or "",
+                options=json.loads(r["options"] or "[]"),
+                answer=r["answer"] or "",
+                round=r["round"],
+                asked=json.loads(r["asked"] or "[]"),
+            )
+            for r in await cursor.fetchall()
+        ]
+
+    async def _replace_outline(self, conn, story_id: str, acts: list[ActOutline]) -> None:
+        await conn.execute("DELETE FROM act_outline WHERE story_id = ?", (story_id,))
+        for act in acts:
+            await self._upsert_act(conn, story_id, act)
+
+    async def _upsert_act(self, conn, story_id: str, act: ActOutline) -> None:
+        def js(value: list[str]) -> str:
+            return json.dumps(value, ensure_ascii=False)
+
+        await conn.execute(
+            "INSERT INTO act_outline (story_id, number, goal, events, change_from, change_to, "
+            "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, needs_review) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (story_id, number) DO UPDATE SET goal = excluded.goal, "
+            "events = excluded.events, change_from = excluded.change_from, "
+            "change_to = excluded.change_to, scenario = excluded.scenario, "
+            "on_stage = excluded.on_stage, held_back = excluded.held_back, "
+            "seeds = excluded.seeds, payoffs = excluded.payoffs, "
+            "decisions = excluded.decisions, warnings = excluded.warnings, "
+            "needs_review = excluded.needs_review",
+            (
+                story_id,
+                act.number,
+                act.goal,
+                js(act.events),
+                act.change_from,
+                act.change_to,
+                act.scenario,
+                js(act.on_stage),
+                act.held_back,
+                js(act.seeds),
+                js(act.payoffs),
+                js(act.decisions),
+                js(act.warnings),
+                int(act.needs_review),
+            ),
+        )
+
+    async def _load_outline(self, conn, story_id: str) -> list[ActOutline]:
+        cursor = await conn.execute(
+            "SELECT * FROM act_outline WHERE story_id = ? ORDER BY number", (story_id,)
+        )
+        lists = ("events", "on_stage", "seeds", "payoffs", "decisions", "warnings")
+        return [
+            ActOutline(
+                number=r["number"],
+                goal=r["goal"] or "",
+                change_from=r["change_from"] or "",
+                change_to=r["change_to"] or "",
+                scenario=r["scenario"] or "",
+                held_back=r["held_back"] or "",
+                needs_review=bool(r["needs_review"]),
+                **{k: json.loads(r[k] or "[]") for k in lists},
+            )
+            for r in await cursor.fetchall()
+        ]
+
     async def _load_personajes(self, conn, story_id: str) -> list[dict]:
         """Carga los personajes de una historia desde la tabla character.
 
@@ -547,7 +706,7 @@ class SQLStoryRepository:
         rule/scenario). El resultado alimenta `Story.personajes_full`.
         """
         cursor = await conn.execute(
-            "SELECT name, role, traits, order_index FROM character "
+            "SELECT name, role, traits, kind, relation, order_index FROM character "
             "WHERE story_id = ? ORDER BY order_index",
             (story_id,),
         )
@@ -561,6 +720,8 @@ class SQLStoryRepository:
                     "name": c["name"],
                     "role": c["role"] or "",
                     "traits": json.loads(raw_traits) if raw_traits else [],
+                    "kind": c["kind"] or CharacterKind.PERSONA.value,
+                    "relation": c["relation"] or "",
                 }
             )
         return personajes
@@ -608,6 +769,7 @@ class SQLStoryRepository:
 
         keys = row.keys()
         raw_cfg = row["narrator_config"] if "narrator_config" in keys else None
+        raw_direction = row["direction"] if "direction" in keys else None
         raw_created_at = row["created_at"] if "created_at" in keys else None
         created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
         return Story(
@@ -620,6 +782,7 @@ class SQLStoryRepository:
             subgenero=(row["subgenero"] if "subgenero" in keys else "") or "",
             tono=(row["tono"] if "tono" in keys else "") or "",
             narrator_config=json.loads(raw_cfg) if raw_cfg else None,
+            direction=Direction.model_validate_json(raw_direction) if raw_direction else None,
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,
@@ -646,3 +809,7 @@ class SQLStoryRepository:
                 )
             )
         return result
+
+
+def _direction_json(direction: Direction | None) -> str | None:
+    return direction.model_dump_json() if direction else None
