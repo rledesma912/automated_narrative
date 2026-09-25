@@ -39,7 +39,14 @@ _ROLE_FALLBACK = {"consultor": "director", "planificador": "director", "verifica
 
 # Spec-510: duración estimada de un job (segundos) cuando el perfil no la declara
 # (`profiles.<perfil>.estimated_seconds`) y no hay historial.
-DEFAULT_ESTIMATED_SECONDS = {"full_generation": 240, "regenerate_voz": 60}
+DEFAULT_ESTIMATED_SECONDS = {
+    "full_generation": 240,
+    "regenerate_voz": 60,
+    # Spec-530: asistente de autoría.
+    "consult": 40,
+    "plan_outline": 75,
+    "verify_outline": 30,
+}
 
 
 def _resolve_active_profile(core: dict, env_override: str | None) -> tuple[str, dict]:

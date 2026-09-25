@@ -18,6 +18,10 @@ class JobKind(str, Enum):
 
     FULL_GENERATION = "full_generation"
     REGENERATE_VOZ = "regenerate_voz"
+    # Spec-530: asistente de autoría.
+    CONSULT = "consult"  # una ronda del taller
+    PLAN_OUTLINE = "plan_outline"  # armar la escaleta (y revisarla)
+    VERIFY_OUTLINE = "verify_outline"  # revisar la escaleta
 
 
 class JobStatus(str, Enum):
@@ -46,6 +50,10 @@ class JobStage(str, Enum):
     VOZ = "voz"
     JOURNAL = "journal"
     CONSOLIDANDO = "consolidando"
+    # Spec-530: asistente de autoría.
+    CONSULTOR = "consultor"
+    PLANIFICADOR = "planificador"
+    VERIFICADOR = "verificador"
 
 
 class Job(BaseModel):

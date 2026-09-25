@@ -9,6 +9,7 @@ from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories.job_repository import SQLJobRepository
 from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
 from src.presentation.routers import (
+    authoring_router,
     beat_router,
     catalog_router,
     events_router,
@@ -51,6 +52,7 @@ app.include_router(stream_router, prefix="/api/v1")
 app.include_router(job_router, prefix="/api/v1")
 app.include_router(events_router, prefix="/api/v1")
 app.include_router(catalog_router, prefix="/api/v1")
+app.include_router(authoring_router, prefix="/api/v1")
 
 
 @app.get("/")

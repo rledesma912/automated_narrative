@@ -102,6 +102,7 @@ def merge_round(
         if question:
             new_questions += 1
         options = clean_options(ev.options) if question else []
+        question_round = round_ if question else 0
         out.append(
             item.model_copy(
                 update={
@@ -109,6 +110,7 @@ def merge_round(
                     "question": question,
                     "options": options,
                     "round": round_,
+                    "question_round": question_round,
                     "asked": asked,
                 }
             )
@@ -116,14 +118,21 @@ def merge_round(
     return out, new_questions
 
 
-def finish(items: list[WorkshopItem], round_: int, new_questions: int | None = None) -> Finish:
+def current_round(items: list[WorkshopItem]) -> int:
+    return max((w.round for w in items), default=0)
+
+
+def finish(items: list[WorkshopItem], round_: int | None = None) -> Finish:
     """Por qué terminó (o no) el taller, siempre visible para el usuario.
 
-    `new_questions` = preguntas nuevas de esta ronda (None: no hubo ronda con el LLM).
+    Se calcula solo con lo guardado: una pregunta es «nueva» si se hizo en la
+    última ronda (`question_round`).
     """
+    round_ = current_round(items) if round_ is None else round_
     pending = [w for w in items if w.status in OPEN]
     questions = [w for w in pending if w.question]
     n = len(questions)
+    new_questions = sum(1 for w in questions if w.question_round == round_)
     if not pending:
         return Finish(
             "cumple",
@@ -166,6 +175,7 @@ def answer(item: WorkshopItem, text: str) -> WorkshopItem:
             "answer": text.strip(),
             "question": "",
             "options": [],
+            "question_round": 0,
             "asked": _with_question(item),
         }
     )
@@ -186,6 +196,7 @@ def mark_intentional(item: WorkshopItem, text: str = "") -> WorkshopItem:
             "answer": text.strip() or item.answer,
             "question": "",
             "options": [],
+            "question_round": 0,
             "asked": _with_question(item),
         }
     )

@@ -67,19 +67,32 @@ def test_una_pregunta_ya_hecha_no_vuelve():
     assert (items[0].question, new) == ("", 0)
 
 
+def _q(round_asked: int) -> WorkshopItem:
+    return WorkshopItem(
+        criterion="a", status=S.FALTA, question="q", round=round_asked, question_round=round_asked
+    )
+
+
 @pytest.mark.parametrize(
-    ("items", "round_", "new", "kind"),
+    ("items", "round_", "kind"),
     [
-        ([WorkshopItem(criterion="a", status=S.CUMPLE)], 1, 0, "cumple"),
-        ([WorkshopItem(criterion="a", status=S.FALTA, question="q")], 1, 1, "abierto"),
-        ([WorkshopItem(criterion="a", status=S.FALTA, question="q")], 2, 0, "no_suma"),
-        ([WorkshopItem(criterion="a", status=S.FALTA)], 1, 0, "sin_preguntas"),
-        ([WorkshopItem(criterion="a", status=S.FALTA, question="q")], 5, 1, "tope"),
-        ([WorkshopItem(criterion="a", status=S.FALTA)], 5, 0, "tope"),
+        ([WorkshopItem(criterion="a", status=S.CUMPLE)], 1, "cumple"),
+        ([_q(1)], 1, "abierto"),
+        ([_q(1)], 2, "no_suma"),  # la pregunta es de una ronda anterior
+        ([WorkshopItem(criterion="a", status=S.FALTA)], 1, "sin_preguntas"),
+        ([_q(5)], 5, "tope"),
+        ([WorkshopItem(criterion="a", status=S.FALTA)], 5, "tope"),
     ],
 )
-def test_fin_del_taller(items, round_, new, kind):
-    assert wr.finish(items, round_, new).kind == kind
+def test_fin_del_taller(items, round_, kind):
+    assert wr.finish(items, round_).kind == kind
+
+
+def test_el_fin_se_recalcula_con_lo_guardado():
+    items = [_q(2), WorkshopItem(criterion="b", status=S.CUMPLE, round=2)]
+    assert wr.finish(items).kind == "abierto"
+    items = [_q(1).model_copy(update={"round": 2}), WorkshopItem(criterion="b", round=2)]
+    assert wr.finish(items).kind == "no_suma"
 
 
 def test_responder_cierra_la_pregunta():

@@ -315,6 +315,7 @@ class WorkshopItem(BaseModel):
     options: list[str] = Field(default_factory=list)
     answer: str = ""
     round: int = Field(1, ge=1)
+    question_round: int = Field(0, ge=0)  # ronda en que se hizo la pregunta vigente
     asked: list[str] = Field(default_factory=list)
 
 

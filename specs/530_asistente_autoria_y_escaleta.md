@@ -392,6 +392,13 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - `POST /stories/{id}/jobs` con `kind` `consult` | `plan_outline` | `verify_outline`, con eventos y ETA como los jobs actuales.
 - **Verificación:** tests de API (202/409/422) y de jobs con Mock.
 
+**Hecho (2026-09-25).** Probado de punta a punta con `gemma3:12b` (API → JobManager → Ollama): taller 12 s (estimado 20), escaleta con revisión 56 s (estimado 60).
+- Rutas bajo `/api/v1/authoring`: `GET /options`; `POST /stories` (crea el borrador desde la Dirección); `PUT /stories/{id}/direction` (guardado automático; deriva protagonista, relator, sinopsis y narrador); `GET /stories/{id}` (todo el estado de las 3 vistas, con el job activo); `PATCH /stories/{id}/workshop/{criterio}` (`answer` | `decide` | `intentional` | `reopen`, sin IA); `PUT /stories/{id}/outline/{n}` (guardado de un acto; los avisos quedan hasta revisar de nuevo). Con un job activo, todo guardado responde 409 con `X-Job-Id`.
+- Jobs `consult`, `plan_outline` (Planificador + Verificador) y `verify_outline` por `POST /stories/{id}/jobs`, con etapas `consultor` / `planificador` / `verificador` y tiempo estimado. Precondiciones: dirección con «¿de qué trata?» (taller y escaleta), escaleta existente (revisión); si no, 422.
+- El motivo de fin del taller se recalcula siempre desde lo guardado: `WorkshopItem.question_round` dice en qué ronda se hizo la pregunta vigente.
+- El LLM simulado responde JSON coherente para cada rol (`mock_structured.py`): los tests de la API y los E2E recorren el flujo sin un modelo real.
+- La banda de generación y el punto del sidebar ignoran los jobs del asistente: antes de esto, un análisis terminado habría mostrado «está lista · Leer relato». El aviso del asistente es su modal (S4).
+
 #### S4 — Vistas reales
 - Dirección, Taller y Escaleta con HTMX sobre los parciales de S0. «Nuevo relato» apunta al asistente; la ficha de una historia con escaleta enlaza a sus vistas.
 - **Verificación:** Vitest de controllers y parciales; E2E con Mock: dirección → taller (1 ronda) → escaleta → generar → relato.

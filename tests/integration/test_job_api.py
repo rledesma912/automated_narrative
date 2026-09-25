@@ -436,7 +436,13 @@ async def test_estimates_sin_historial_usa_el_valor_inicial(client):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert set(body) == {"full_generation", "regenerate_voz"}
+    assert set(body) == {
+        "full_generation",
+        "regenerate_voz",
+        "consult",
+        "plan_outline",
+        "verify_outline",
+    }
     assert body["full_generation"] == {
         "seconds": settings.estimated_seconds("full_generation"),
         "source": "default",

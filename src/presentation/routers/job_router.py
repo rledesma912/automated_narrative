@@ -17,6 +17,7 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
+from src.presentation.authoring_jobs import AUTHORING_KINDS, submit_authoring
 from src.presentation.generation import submit_full_generation, submit_regenerate_voz
 from src.presentation.runtime import event_bus, job_manager
 from src.presentation.schemas.request import JobCreateRequest
@@ -84,11 +85,26 @@ async def create_job(story_id: str, request: JobCreateRequest):
         if request.kind == JobKind.REGENERATE_VOZ:
             await _validate_regenerate_voz(story, request)
             job = await submit_regenerate_voz(story, request.beat, request.narrative_id)
+        elif request.kind in AUTHORING_KINDS:
+            _validate_authoring(story, request.kind)
+            job = await submit_authoring(story, request.kind)
         else:
             job = await submit_full_generation(story)
     except JobAlreadyActiveError as exc:
         return _already_active(exc.job_id)
     return _to_response(job)
+
+
+def _validate_authoring(story, kind: JobKind) -> None:
+    """Spec-530: el taller y la escaleta parten de la dirección; revisar, de una escaleta."""
+    if kind == JobKind.VERIFY_OUTLINE:
+        if not story.outline:
+            raise HTTPException(status_code=422, detail="No hay escaleta para revisar")
+        return
+    if story.direction is None or not story.direction.premise.strip():
+        raise HTTPException(
+            status_code=422, detail="Falta contar de qué trata la historia (Dirección)"
+        )
 
 
 async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:

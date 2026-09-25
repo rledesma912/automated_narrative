@@ -214,8 +214,9 @@ Checkpoints `--hasta` (Spec-040): `analyst`, `mapper:1..5`, `voz:1..5`, `journal
 
 - `story_router` — CRUD `/stories` (`PATCH /stories/{id}` edita también generadas; 409 con job activo; 422 si el par género/subgénero no existe o las entidades son inválidas: más de 3, campo largo o naturaleza de otro género), PATCH `status` y `file-path`.
 - `catalog_router` (Spec-440, Spec-450) — `GET /catalog/genres` (géneros con sus subgéneros y sus `entity_natures`, ordenados).
+- `authoring_router` (Spec-530) — `/authoring/options`, `POST /authoring/stories`, `GET /authoring/stories/{id}` (estado de Dirección/Taller/Escaleta), `PUT …/direction`, `PATCH …/workshop/{criterio}` (`answer`|`decide`|`intentional`|`reopen`), `PUT …/outline/{n}`; 409 con un job activo. La IA corre como jobs `consult` | `plan_outline` | `verify_outline` (`POST /stories/{id}/jobs`).
 - `beat_router` — `GET/PUT /stories/{id}/beats[/{n}]`.
-- `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id}; 202/409), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `GET /jobs/estimates` (Spec-510), `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
+- `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id} | `consult` | `plan_outline` | `verify_outline`; 202/409/422), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `GET /jobs/estimates` (Spec-510), `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
 - `events_router` (Spec-460) — `GET /events` (SSE global: `snapshot` + `job_*` + heartbeat).
 - `narrative_router` (Spec-300) — `/story-templates/{id}/narratives`, `/generated-narratives/{id}` (GET/DELETE/text), `/generated-narratives/{id}/export.md` (Spec-490: descarga para el TTS).
 - `stream_router` (Spec-210) — `GET /stories/{id}/stream` (SSE de **solo lectura**: se ata al job activo o reproduce los beats), `/full`, `/health`, `/config/active-profile`.

@@ -29,6 +29,10 @@ _STAGE_MESSAGES = {
     JobStage.VOZ: "Narrando acto {beat} de {total}...",
     JobStage.JOURNAL: "Actualizando la memoria del acto {beat}...",
     JobStage.CONSOLIDANDO: "Consolidando el relato...",
+    # Spec-530: asistente de autoría (los mismos textos del modal).
+    JobStage.CONSULTOR: "Interpretando la historia…",
+    JobStage.PLANIFICADOR: "Armando la escaleta…",
+    JobStage.VERIFICADOR: "Revisando la escaleta…",
 }
 
 

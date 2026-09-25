@@ -52,8 +52,8 @@ class WorkshopConsultant:
             )
             for e in result.evaluaciones
         ]
-        merged, new_questions = workshop_rules.merge_round(items, evaluations, round_)
-        return WorkshopRound(merged, workshop_rules.finish(merged, round_, new_questions), elapsed)
+        merged, _new = workshop_rules.merge_round(items, evaluations, round_)
+        return WorkshopRound(merged, workshop_rules.finish(merged, round_), elapsed)
 
     def _prompt(self, story: Story, pending: list[WorkshopItem]) -> str:
         criterios = "\n".join(

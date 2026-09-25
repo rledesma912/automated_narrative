@@ -266,6 +266,7 @@ async def init_db() -> None:
             options TEXT DEFAULT '[]',
             answer TEXT DEFAULT '',
             round INTEGER NOT NULL DEFAULT 1,
+            question_round INTEGER NOT NULL DEFAULT 0,
             asked TEXT DEFAULT '[]',
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE (story_id, level, criterion)

@@ -606,10 +606,12 @@ class SQLStoryRepository:
     async def _upsert_workshop_item(self, conn, story_id: str, item: WorkshopItem) -> None:
         await conn.execute(
             "INSERT INTO story_workshop (story_id, level, criterion, status, question, "
-            "options, answer, round, asked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "options, answer, round, question_round, asked) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT (story_id, level, criterion) DO UPDATE SET status = excluded.status, "
             "question = excluded.question, options = excluded.options, "
-            "answer = excluded.answer, round = excluded.round, asked = excluded.asked",
+            "answer = excluded.answer, round = excluded.round, "
+            "question_round = excluded.question_round, asked = excluded.asked",
             (
                 story_id,
                 item.level.value,
@@ -619,6 +621,7 @@ class SQLStoryRepository:
                 json.dumps(item.options, ensure_ascii=False),
                 item.answer,
                 item.round,
+                item.question_round,
                 json.dumps(item.asked, ensure_ascii=False),
             ),
         )
@@ -636,6 +639,7 @@ class SQLStoryRepository:
                 options=json.loads(r["options"] or "[]"),
                 answer=r["answer"] or "",
                 round=r["round"],
+                question_round=r["question_round"],
                 asked=json.loads(r["asked"] or "[]"),
             )
             for r in await cursor.fetchall()
