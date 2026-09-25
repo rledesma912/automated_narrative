@@ -85,6 +85,13 @@ describe('CSS Architecture — Layout Rendering', () => {
     expect(html).not.toContain('colors: {');
   });
 
+  it('Spec-531: el layout declara el favicon', async () => {
+    const html = await fetchHomeHtml();
+    expect(html).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml">');
+    expect(html).toContain('<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">');
+    expect(html).toContain('<link rel="apple-touch-icon" href="/apple-touch-icon.png">');
+  });
+
   it('Spec-531: el layout no inyecta colores y el body usa los del tema', async () => {
     const html = await fetchHomeHtml();
     expect(html).not.toContain('--forge-bg:');
