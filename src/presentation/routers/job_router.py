@@ -75,6 +75,11 @@ async def create_job(story_id: str, request: JobCreateRequest):
     story = await SQLStoryRepository().get_by_id(UUID(story_id))
     if story is None:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
+    # Primero el job activo: si una generación en curso ya limpió los actos, validar
+    # antes respondía 422 («el acto no está narrado») en vez de 409 con el job.
+    active = await SQLJobRepository().get_active_for_story(story.id)
+    if active is not None:
+        return _already_active(active.id)
     try:
         if request.kind == JobKind.REGENERATE_VOZ:
             await _validate_regenerate_voz(story, request)
