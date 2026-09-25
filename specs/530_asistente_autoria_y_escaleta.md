@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — borrador para revisar con el usuario (las filas de §6 y las preguntas de §13 esperan su acuerdo)
+**Estado:** IMPLEMENT — PLAN aprobado 2026-09-25 (decisiones 1–9 adoptadas); las filas de §6 se marcan antes de S7
 **Origen:** relato «la pena del colectivo» (prod, `4a4d8cab-…`): repetitivo, el fantasma aparece en todos los actos y el protagonista no hace nada. Diagnóstico y pruebas del 2026-09-25 (§1).
 
 ---
@@ -301,7 +301,7 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 
 ## PLAN
 
-**Estado:** borrador para revisar (2026-09-25). Se escribe sobre la Spec-531 (tema «Papel»), que ya está implementada (PR #30).
+**Estado:** aprobado (2026-09-25). Se escribe sobre la Spec-531 (tema «Papel»), que ya está implementada (PR #30).
 
 ### Estrategia
 
