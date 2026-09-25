@@ -323,3 +323,13 @@ async def test_control_de_repeticion_del_relato(client):
     assert data["acts"][0] == {"number": 1, "repeated": [], "cliches": [], "invented_names": []}
     assert data["acts"][1]["repeated"] == ["«el olor dulce y putrefacto» (del acto 1)"]
     assert data["acts"][1]["cliches"] == ["me heló la sangre"]  # una vez, aunque haya variantes
+
+
+async def test_una_historia_con_sinopsis_larga_se_lee_y_se_guarda(client):
+    sid = (await _create(client, premise="x" * 5000))["story_id"]
+    assert (await client.get(f"{API}/stories/{sid}")).status_code == 200
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "y" * 5500})
+    assert resp.status_code == 200
+    assert (
+        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "z" * 7000})
+    ).status_code == 422

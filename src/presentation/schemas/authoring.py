@@ -22,7 +22,7 @@ class DirectionForm(BaseModel):
     title: str = Field(..., min_length=1, max_length=120)
     genero: str = ""
     subgenero: str = ""
-    premise: str = Field("", max_length=2000)  # «¿De qué trata?»
+    premise: str = Field("", max_length=6000)  # «¿De qué trata?» (hay sinopsis largas)
     effect: str = ""
     effect_other: str = Field("", max_length=200)
     ending: str = Field("", max_length=600)

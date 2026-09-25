@@ -292,7 +292,8 @@ def _form(story: Story) -> dict:
     d = story.direction or Direction()
     lead = (story.personajes_full or [{}])[0]
     return {
-        **DirectionForm(
+        # Lectura: sin validar (una historia vieja puede exceder los topes del formulario).
+        **DirectionForm.model_construct(
             title=story.title,
             genero=story.genero,
             subgenero=story.subgenero,
