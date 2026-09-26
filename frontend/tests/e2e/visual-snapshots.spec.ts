@@ -36,8 +36,6 @@ test.describe("Capturas del tema", () => {
     await capturar(page, "03-ficha", `/historia/${storyId}`);
     await capturar(page, "04-relatos", `/historia/${storyId}/relatos`);
     await capturar(page, "05-sala", `/generar/stream/${storyId}`);
-    await capturar(page, "06-wizard-paso1", "/generar/paso/1");
-    await capturar(page, "07-wizard-paso4", "/generar/paso/4");
     await capturar(page, "08-debug", "/debug");
   });
 

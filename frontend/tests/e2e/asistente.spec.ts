@@ -98,3 +98,25 @@ test("la galería edita las historias del asistente en el asistente", async ({ p
   await expect(card.getByRole("link", { name: /Editar/ })).toHaveAttribute("href", /\/asistente\/.+\/direccion$/);
   await expect(page.getByRole("link", { name: "Nuevo relato" })).toHaveAttribute("href", "/nuevo");
 });
+
+test("género → estilo y la amenaza dependen del catálogo y se guardan", async ({ page }) => {
+  await crearDesdeNuevo(page, "E2E amenaza");
+  const estilo = page.getByLabel("Estilo");
+  const naturaleza = page.getByLabel("Qué es");
+  await expect(estilo).toBeDisabled();
+
+  await page.getByLabel("Tipo de horror").selectOption("paranormal");
+  await expect(estilo).toBeEnabled();
+  await estilo.selectOption("fantasmas");
+  await page.getByText("La amenaza").click();
+  await expect(naturaleza).toBeEnabled();
+  await naturaleza.selectOption("espiritu");
+  await page.getByLabel("Qué quiere").fill("Que José se detenga.");
+  await expect(guardado(page)).toContainText("Guardado hace un momento");
+
+  await page.reload();
+  await expect(page.getByLabel("Tipo de horror")).toHaveValue("paranormal");
+  await expect(page.getByLabel("Estilo")).toHaveValue("fantasmas");
+  await expect(page.getByLabel("Qué es")).toHaveValue("espiritu");
+  await expect(page.getByLabel("Qué quiere")).toHaveValue("Que José se detenga.");
+});

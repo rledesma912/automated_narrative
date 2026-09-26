@@ -333,3 +333,22 @@ async def test_una_historia_con_sinopsis_larga_se_lee_y_se_guarda(client):
     assert (
         await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "z" * 7000})
     ).status_code == 422
+
+
+async def test_una_historia_importada_se_abre_en_el_asistente(client):
+    """Spec-530 S7: sin wizard, las historias sin dirección se editan en el asistente."""
+    payload = {
+        "title": "Importada",
+        "protagonista": "Irene: narradora",
+        "relator": "Primera persona",
+        "sinopsis": "Irene cruza el monte de noche.",
+        "escenarios": "El monte",
+        "personajes_full": [{"id": "P1", "name": "Irene", "role": "Narradora"}],
+    }
+    sid = (await client.post("/api/v1/stories?action=save", json=payload)).json()["id"]
+
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+
+    assert state["direction"]["premise"] == "Irene cruza el monte de noche."
+    assert state["direction"]["protagonist_name"] == "Irene"
+    assert state["workshop"]["finish"]["kind"] == "sin_analizar"

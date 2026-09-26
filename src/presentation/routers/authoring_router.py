@@ -297,7 +297,8 @@ def _form(story: Story) -> dict:
         "title": story.title,
         "genero": story.genero,
         "subgenero": story.subgenero,
-        "premise": d.premise,
+        # Sin dirección (historia importada): la sinopsis es su «¿de qué trata?».
+        "premise": d.premise if story.direction else story.sinopsis,
         "effect": d.effect,
         "effect_other": d.effect_other,
         "ending": d.ending,

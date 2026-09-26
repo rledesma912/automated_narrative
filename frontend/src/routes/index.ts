@@ -2,7 +2,6 @@ import { Router } from "express";
 import { homePage } from "../controllers/home.controller";
 import { galleryPage } from "../controllers/gallery.controller";
 import { debugPage } from "../controllers/debug.controller";
-import { wizardRedirect, showStep, submitStep, confirmPage, loadWizardData, autoSaveField, saveWizardStory } from "../controllers/wizard.controller";
 import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
 import { relatosPage, regenerarActoAction, relatoPanelFragment } from "../controllers/relatos.controller";
@@ -22,16 +21,11 @@ router.get("/debug",       debugPage);
 router.get("/nuevo",                          loadEstimates, nuevoPage);
 router.get("/asistente/:storyId/:paso",       loadEstimates, asistentePage);
 
-// Wizard
-router.get("/generar",              wizardRedirect);
-router.get("/generar/paso/:step",   showStep);
-router.post("/generar/paso/:step",  submitStep);
-router.patch("/generar/paso/:step/guardar", autoSaveField);
-router.get("/generar/confirmar",    confirmPage);
-router.get("/generar/cargar/:storyId", loadWizardData);
+// Spec-530 S7: el wizard se retiró; las rutas viejas llevan al asistente.
+router.get("/generar",                     (_req, res) => res.redirect(301, "/nuevo"));
+router.get("/generar/cargar/:storyId",     (req, res) => res.redirect(301, `/asistente/${req.params["storyId"]}/direccion`));
 
 // Stream
-router.post("/generar/guardar",             saveWizardStory);
 router.get("/generar/stream/:storyId",      loadEstimates, streamingRoomPage);
 // Spec-221 T0: rutas Express renombradas a /internal/* para liberar /api/* al proxy del backend.
 

@@ -133,7 +133,7 @@ const personajes = story.personajes_full || [];
         <i data-lucide="eye" class="w-4 h-4"></i> Ver progreso
       </a>
     <% } else { %>
-      <a href="<%= story.authoring ? `/asistente/${story.id}/escaleta` : `/generar/cargar/${story.id}` %>" class="btn-forge-outline">
+      <a href="/asistente/<%= story.id %>/escaleta" class="btn-forge-outline">
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (story.status === 'completed') { %>
