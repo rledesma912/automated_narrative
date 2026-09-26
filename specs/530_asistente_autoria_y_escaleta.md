@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — PLAN aprobado 2026-09-25 (decisiones 1–9 adoptadas); filas de §6 aprobadas 2026-09-25; S0–S7 hechos, falta S8 (cierre)
+**Estado:** DONE (2026-09-25) — S0–S8 en `feat/spec-530-asistente`. Pase a prod pendiente: recrea la DB de prod (ver resultado de S7).
 **Origen:** relato «la pena del colectivo» (prod, `4a4d8cab-…`): repetitivo, el fantasma aparece en todos los actos y el protagonista no hace nada. Diagnóstico y pruebas del 2026-09-25 (§1).
 
 ---
@@ -486,6 +486,13 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 
 #### S8 — Cierre
 - `CLAUDE.md`, estado de la spec y del roadmap. El pase a prod, cuando el usuario lo pida.
+- **Resultado (2026-09-25):** `CLAUDE.md` describe el asistente, el pipeline de la escaleta y el esquema nuevo (15 tablas); las specs 180 y 220 quedan marcadas como reemplazadas. PR a `development`.
+- **Pase a prod (cuando se pida):**
+  1. `export-yaml --all` con el código que está en prod (desde `main` o dentro de `narrative-api`), antes del deploy.
+  2. `make deploy`, que hace el backup. `init_db()` no altera tablas existentes: la DB vieja no sirve con el código nuevo.
+  3. Apartar `data/prod/stories.db` (queda el backup), crear la DB nueva e importar con `import-yaml`.
+  4. Reiniciar `narrative-api` y verificar `/config/active-profile`.
+  - Los comandos exactos se arman al hacer el pase.
 
 ### Riesgos
 

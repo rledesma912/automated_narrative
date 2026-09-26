@@ -1,5 +1,7 @@
 # Spec-220: Motor de Autoría (Wizard y Configuración)
 
+> **Reemplazada por Spec-530 (2026-09-25):** el wizard se retiró; las historias se crean y editan en el asistente (`/nuevo`, `/asistente/{id}/…`). El round-trip YAML sigue (exporta dirección, taller y escaleta; importa los YAML viejos ignorando lo eliminado). Queda como registro histórico.
+
 > **Actualizado por Spec-460 §2.5 (2026-09-22):** el wizard ya no genera ni guarda en silencio al pasar el último paso. La confirmación tiene un único "Guardar historia" (`POST /generar/guardar`, errores visibles) y la generación se lanza desde la galería o la ficha como job. Se eliminó `POST /generar/submit`.
 
 > **Actualizado por Spec-450 (2026-09-23):** el paso 4 (*El Mundo*) suma el grupo opcional «La Amenaza»: hasta 3 entidades (la primera es la principal) con naturaleza filtrada por el género del paso 1 (`source: entity_natures`), topes de largo (`maxlength`) y nivel de revelación. Round-trip en `storyteller_config.entities` (wizard, API, `export-yaml` / `import-yaml`, `generate --input`).
