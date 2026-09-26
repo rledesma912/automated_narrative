@@ -16,7 +16,6 @@ class StoryCreateDTO(BaseModel):
     sinopsis: str = Field(..., min_length=1)
     genero: str = ""
     subgenero: str = ""
-    tono: str = ""
     reglas: list[str] = []
     narrator_config: Optional[dict] = None
     typed_rules: list[dict] = []

@@ -94,7 +94,6 @@ async def _generate_async(
     personajes_full: list[dict] | None = None,
     input_file: str | None = None,
     subgenero: str = "",
-    tono: str = "",
     escenarios_full: list[dict] | None = None,
 ) -> None:
     """Async implementation of generate."""
@@ -102,6 +101,7 @@ async def _generate_async(
     # Solo vienen del YAML (--input): entidades (Spec-450) y el texto de cada acto.
     entities: list[dict] = []
     actos: list[dict] = []
+    authoring: dict = {}  # Spec-530: dirección, taller y escaleta del YAML
 
     if input_file:
         from src.infrastructure.loaders import YamlStoryLoader, YamlStoryLoaderError
@@ -117,13 +117,13 @@ async def _generate_async(
             sinopsis = dto.sinopsis
             genero = dto.genero
             subgenero = dto.subgenero
-            tono = dto.tono
             reglas = dto.reglas
             narrator_config = dto.narrator_config
             typed_rules = dto.typed_rules
             personajes_full = dto.personajes_full
             entities = dto.entities
             actos = dto.actos
+            authoring = dto.model_dump(include={"direction", "workshop", "outline"})
         except YamlStoryLoaderError as e:
             raise ValidationError(f"Error al cargar YAML: {e}")
 
@@ -142,7 +142,6 @@ async def _generate_async(
         sinopsis=sinopsis,
         genero=genero,
         subgenero=subgenero,
-        tono=tono,
         reglas=reglas or [],
         narrator_config=narrator_config,
         typed_rules=typed_rules or [],
@@ -150,6 +149,7 @@ async def _generate_async(
         escenarios_full=escenarios_full or [],
         entities=entities,
         actos=actos,
+        **authoring,
     )
 
     await container.story_repo.update_status(story.id, StoryStatus.COMPLETED.value)

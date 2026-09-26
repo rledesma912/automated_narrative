@@ -179,7 +179,7 @@ async def get_story_full(story_id: str):
 async def get_active_profile():
     """Devuelve el perfil LLM activo y su configuración de roles."""
     roles = {}
-    for role in ("story_analyst", "director", "voz", "journal"):
+    for role in ("planificador", "verificador", "voz", "journal"):
         cfg = settings.role_config(role)
         roles[role] = {
             "provider": settings.role_provider(role),

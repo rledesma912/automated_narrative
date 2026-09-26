@@ -67,7 +67,6 @@ class TestPerfilMixto:
                 "provider": "ollama",
                 "ollama": {"host": "http://localhost:11434"},
                 "roles": {
-                    "story_analyst": {"model": "gemma3:12b"},
                     "director": {"model": "gemma3:12b"},
                     "voz": voz,
                     "journal": {"model": "gemma3:12b"},

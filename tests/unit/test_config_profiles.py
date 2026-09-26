@@ -146,7 +146,6 @@ class TestRoleProvider:
             {
                 "provider": "ollama",
                 "roles": {
-                    "story_analyst": {"model": "gemma3:12b"},
                     "director": {"model": "gemma3:12b"},
                     "voz": {"provider": "anthropic", "model": "claude-sonnet-5"},
                     "journal": {"model": "gemma3:12b"},

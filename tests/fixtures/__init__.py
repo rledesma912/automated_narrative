@@ -32,6 +32,5 @@ def create_sample_journal() -> NarrativeJournal:
     """Create a sample journal for testing."""
     return NarrativeJournal(
         last_events="Los hermanos llegaron al pueblo",
-        unresolved_mysteries="¿Por qué abandonó todo el mundo?",
         physical_emotional_state="Carlos está nervioso, María es escéptica",
     )

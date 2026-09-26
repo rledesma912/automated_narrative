@@ -25,7 +25,6 @@ def _load_llm_core() -> dict:
 
 # Roles del pipeline que llaman al LLM (cada uno puede tener su proveedor, Spec-480).
 LLM_ROLES = (
-    "story_analyst",
     "director",
     "voz",
     "journal",
@@ -116,25 +115,12 @@ class Settings(BaseSettings):
     input_dir: str = "input_stories"
     beats_definition_file: str = "config/llm_beats_definition.yaml"
 
-    # Prompt filenames
-
-    # Prompting strategy (Spec-170): assertive | auto | descriptive
-    # Vacío = no forzado por env → se lee del perfil YAML o se usa "auto"
-    prompting_strategy: str = ""
-
     # ── Properties del perfil activo ─────────────────────────────────────────
 
     @property
     def active_profile_name(self) -> str:
         """Nombre del perfil actualmente activo."""
         return _active_profile_name
-
-    @property
-    def effective_prompting_strategy(self) -> str:
-        """Estrategia de prompting activa: env PROMPTING_STRATEGY > perfil YAML > 'auto'."""
-        if self.prompting_strategy:
-            return self.prompting_strategy
-        return _profile.get("prompting_strategy", "auto")
 
     @property
     def llm_provider(self) -> str:

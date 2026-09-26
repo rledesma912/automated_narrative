@@ -41,9 +41,7 @@ async def test_sin_rol_o_rol_desconocido_va_al_por_defecto():
 
 async def test_close_una_vez_por_adapter():
     local, claude = FakeAdapter("local"), FakeAdapter("claude")
-    router = RoleRoutingAdapter(
-        {"story_analyst": local, "director": local, "voz": claude, "journal": local}, default=local
-    )
+    router = RoleRoutingAdapter({"director": local, "voz": claude, "journal": local}, default=local)
 
     await router.close()
 

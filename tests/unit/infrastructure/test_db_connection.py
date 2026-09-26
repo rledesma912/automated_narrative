@@ -72,7 +72,6 @@ class TestDbConnection:
             "sinopsis",
             "genero",
             "subgenero",
-            "tono",
             "narrator_config",
             "status",
             "created_at",
@@ -118,7 +117,7 @@ class TestDbConnection:
             "id",
             "story_id",
             "last_events",
-            "unresolved_mysteries",
+            "used_motifs",
             "physical_emotional_state",
         }
         assert required.issubset(columns), f"Missing: {required - columns}"

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** IMPLEMENT — PLAN aprobado 2026-09-25 (decisiones 1–9 adoptadas); las filas de §6 se marcan antes de S7
+**Estado:** IMPLEMENT — PLAN aprobado 2026-09-25 (decisiones 1–9 adoptadas); filas de §6 aprobadas 2026-09-25; S0–S7 hechos, falta S8 (cierre)
 **Origen:** relato «la pena del colectivo» (prod, `4a4d8cab-…`): repetitivo, el fantasma aparece en todos los actos y el protagonista no hace nada. Diagnóstico y pruebas del 2026-09-25 (§1).
 
 ---
@@ -182,20 +182,20 @@ Hoy se piden **76 campos**: título y atmósfera 4, personajes y narrador 17, «
 
 | Variable actual | Decisión | Evidencia | Acuerdo |
 |---|---|---|---|
-| `distortion_triggers`, `paranormal_knowledge`, `religioso_knowledge` | Se eliminan | No llegan a ningún prompt | ☐ |
-| `perception_reliability`, `distortion_level`, `interpretation_style`, `figurative_density`, `fear_focus`, `attention_focus` | Se eliminan | Ablación sin efecto medible | ☐ |
-| `traits` («Cómo es») | Se elimina; lo reemplaza el criterio «Vulnerabilidad» del taller | No llega a la Voz | ☐ |
-| `rule.type` | Se elimina | No se usa | ☐ |
-| `voice_style` + `language_register` + «Tono» del relator | Se fusionan en **«¿Cómo lo cuenta?»**: 3–4 opciones preparadas (p. ej. «como un caso entre amigos», «como una confesión», «literario») | El registro es lo único que mueve la prosa | ☐ |
-| `tono` (evolución de la tensión) | Lo reemplaza **«Efecto buscado»** | Choca con la curva de intensidad fija de los 5 actos | ☐ |
-| Escenarios cargados al inicio (hasta 4) | Se eligen o crean **dentro de cada acto** | Error del Resolver en los actos 3–5 | ☐ |
-| Reglas globales (hasta 7) | **Por acto**, o como límites de la amenaza | La regla global puso el fantasma en el Acto 1 | ☐ |
-| Entidades (hasta 3 × 6) | Se mantienen; la UI arranca con una y es opcional | Es la ficha de la amenaza | ☐ |
-| Personajes (5 × 3) | Nombre y qué hace. Al inicio solo el protagonista; el resto se agrega desde un hecho de la escaleta | La Voz los usa | ☐ |
-| Quién narra | Se mantiene, con el protagonista por defecto | Mueve la persona gramatical y los parentescos | ☐ |
-| Título, género, subgénero | Se mantienen | Catálogo y naturalezas de la amenaza | ☐ |
-| 5 textos de actos | Pasan a la escaleta | §1.3 | ☐ |
-| — | **Nuevo:** «¿de qué trata?», efecto buscado, final (+ intencional) | §1.2 | ☐ |
+| `distortion_triggers`, `paranormal_knowledge`, `religioso_knowledge` | Se eliminan | No llegan a ningún prompt | ☑ |
+| `perception_reliability`, `distortion_level`, `interpretation_style`, `figurative_density`, `fear_focus`, `attention_focus` | Se eliminan | Ablación sin efecto medible | ☑ |
+| `traits` («Cómo es») | Se elimina; lo reemplaza el criterio «Vulnerabilidad» del taller | No llega a la Voz | ☑ |
+| `rule.type` | Se elimina | No se usa | ☑ |
+| `voice_style` + `language_register` + «Tono» del relator | Se fusionan en **«¿Cómo lo cuenta?»**: 3–4 opciones preparadas (p. ej. «como un caso entre amigos», «como una confesión», «literario») | El registro es lo único que mueve la prosa | ☑ |
+| `tono` (evolución de la tensión) | Lo reemplaza **«Efecto buscado»** | Choca con la curva de intensidad fija de los 5 actos | ☑ |
+| Escenarios cargados al inicio (hasta 4) | Se eligen o crean **dentro de cada acto** | Error del Resolver en los actos 3–5 | ☑ |
+| Reglas globales (hasta 7) | **Por acto**, o como límites de la amenaza | La regla global puso el fantasma en el Acto 1 | ☑ |
+| Entidades (hasta 3 × 6) | Se mantienen; la UI arranca con una y es opcional | Es la ficha de la amenaza | ☑ |
+| Personajes (5 × 3) | Nombre y qué hace. Al inicio solo el protagonista; el resto se agrega desde un hecho de la escaleta | La Voz los usa | ☑ |
+| Quién narra | Se mantiene, con el protagonista por defecto | Mueve la persona gramatical y los parentescos | ☑ |
+| Título, género, subgénero | Se mantienen | Catálogo y naturalezas de la amenaza | ☑ |
+| 5 textos de actos | Pasan a la escaleta | §1.3 | ☑ |
+| — | **Nuevo:** «¿de qué trata?», efecto buscado, final (+ intencional) | §1.2 | ☑ |
 
 **Resultado:** unos 10 datos al inicio. El resto lo completa el taller y la escaleta.
 
@@ -474,6 +474,15 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - Se eliminan las variables aprobadas (`traits`, `rule.type`, `rule.intensity`, las claves de `narrator_config`, `tono` → `direction.efecto`), el wizard viejo (`ui_definitions.yaml` y sus vistas y controllers) y lo que S6 permita del pipeline.
 - Loader tolerante a los YAML viejos. Datos de prod: `export-yaml --all` → recrear la DB → `import-yaml` (probado antes contra una copia de `data/prod`).
 - **Verificación:** suite completa en verde; los 3 YAML de `input_stories/` y los 3 de prod se importan y generan.
+- **Resultado (2026-09-25):**
+  - **S7a** (5b9f454): se retiró el wizard; toda historia se edita en el asistente.
+  - **S7b** (7f600f0): un solo pipeline. Si la historia no tiene escaleta, primero la arma (Planificador + Verificador) y la guarda; después, Voz + memoria por acto. Salen Analyst, Resolver, Mapper, el Journal viejo, `narrative_context`, `--hasta`, `narrate`, `NarrativeAnchors`, `prompt_variant` y las etapas `analyst`/`resolver`/`mapper`.
+  - **S7c:**
+    - Salen `character.traits`, `rule.type`/`intensity` (y `RuleType`), `story.tono` (`atmosfera` = «género (subgénero)»), las claves viejas de `narrator_config` (queda `{storyteller_id, storyteller_name, voice: {person, tense}}`).
+    - También salen `NarrativeJournal.unresolved_mysteries`/`entity_state`, la tabla `entity_journal`, `StoryMetadata`, `TemplateMapper`, el rol `story_analyst` y `prompting_strategy`.
+    - El loader acepta los YAML viejos e ignora lo eliminado; el `tono` no se mapea, porque ningún valor viejo corresponde a un efecto.
+    - `generate --input` respeta la dirección y la escaleta del YAML.
+  - **Datos de prod (ensayo sobre una copia):** `export-yaml --all` corre con el código de `main`, porque la DB de prod no tiene las columnas de S1. Después: DB nueva → `import-yaml` con esta rama. Las 3 de prod y las 3 de `input_stories/` se importan y generan con el mock (30 actos de escaleta, 6 relatos).
 
 #### S8 — Cierre
 - `CLAUDE.md`, estado de la spec y del roadmap. El pase a prod, cuando el usuario lo pida.

@@ -50,7 +50,7 @@ def test_perfil_hibrido_definido_pero_no_activo():
     assert roles["voz"]["model"] == "claude-sonnet-5"
     assert roles["voz"]["thinking"] in ("adaptive", "disabled")
     assert "temperature" not in roles["voz"]
-    for role in ("story_analyst", "director", "journal"):
+    for role in ("planificador", "verificador", "journal"):
         assert "provider" not in roles[role]  # heredan ollama del perfil
         assert roles[role]["model"] == "gemma3:12b"
 

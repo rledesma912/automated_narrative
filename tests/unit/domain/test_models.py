@@ -1,14 +1,10 @@
 """Tests for domain models."""
 
-import pytest
-
 from src.domain.models import (
     Beat,
     MacroBeat,
     NarrativeJournal,
-    RuleType,
     Story,
-    StoryMetadata,
     StoryStatus,
 )
 
@@ -78,14 +74,12 @@ class TestNarrativeJournal:
         journal = NarrativeJournal()
 
         assert journal.last_events == ""
-        assert journal.unresolved_mysteries == ""
         assert journal.physical_emotional_state == ""
 
     def test_create_journal_with_data(self):
         """Test journal with data."""
         journal = NarrativeJournal(
             last_events="Event occurred",
-            unresolved_mysteries="Mystery question",
             emotional_state="Character is scared",
         )
 
@@ -192,78 +186,15 @@ class TestNarrativeJournalBehavior:
     def test_is_empty_false_con_last_events(self):
         assert NarrativeJournal(last_events="algo").is_empty() is False
 
-    def test_is_empty_false_con_unresolved(self):
-        assert NarrativeJournal(unresolved_mysteries="?").is_empty() is False
+    def test_is_empty_false_con_motivos(self):
+        assert NarrativeJournal(used_motifs=["el espejo"]).is_empty() is False
 
     def test_is_empty_false_con_estado(self):
         assert NarrativeJournal(physical_emotional_state="asustado").is_empty() is False
 
     def test_is_empty_false_con_todo(self):
-        j = NarrativeJournal(
-            last_events="E", unresolved_mysteries="?", physical_emotional_state="S"
-        )
+        j = NarrativeJournal(last_events="E", physical_emotional_state="S")
         assert j.is_empty() is False
-
-
-class TestStoryMetadata:
-    def _story(self, **kwargs):
-        defaults = dict(
-            title="T",
-            protagonista="Irene",
-            relator="tercera_persona",
-            sinopsis="Una historia de terror.",
-            genero="terror",
-            subgenero="psicologico",
-            tono="oscuro",
-            reglas=["Regla A"],
-            narrator_config={"voz": "primera"},
-        )
-        defaults.update(kwargs)
-        return Story(**defaults)
-
-    def test_from_story_copia_protagonista(self):
-        m = StoryMetadata.from_story(self._story())
-        assert m.protagonista == "Irene"
-
-    def test_from_story_copia_relator(self):
-        m = StoryMetadata.from_story(self._story())
-        assert m.relator == "tercera_persona"
-
-    def test_from_story_copia_sinopsis(self):
-        m = StoryMetadata.from_story(self._story())
-        assert m.sinopsis == "Una historia de terror."
-
-    def test_from_story_copia_genero_subgenero_tono(self):
-        m = StoryMetadata.from_story(self._story())
-        assert m.genero == "terror"
-        assert m.subgenero == "psicologico"
-        assert m.tono == "oscuro"
-
-    def test_from_story_copia_reglas(self):
-        m = StoryMetadata.from_story(self._story())
-        assert m.reglas == ["Regla A"]
-
-    def test_from_story_copia_narrator_config(self):
-        m = StoryMetadata.from_story(self._story())
-        assert m.narrator_config == {"voz": "primera"}
-
-    def test_has_rules_true_con_reglas(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", genero="g", reglas=["x"])
-        assert m.has_rules() is True
-
-    def test_has_rules_true_con_narrator_config(self):
-        m = StoryMetadata(
-            protagonista="P",
-            relator="r",
-            sinopsis="s",
-            genero="a",
-            narrator_config={"k": "v"},
-        )
-        assert m.has_rules() is True
-
-    def test_has_rules_false_sin_nada(self):
-        m = StoryMetadata(protagonista="P", relator="r", sinopsis="s", genero="a")
-        assert m.has_rules() is False
 
 
 class TestStoryAggregate:
@@ -277,15 +208,10 @@ class TestStoryAggregate:
             beats=beats or [],
         )
 
-    def test_metadata_property_retorna_story_metadata(self):
-        from src.domain.models import StoryMetadata
-
+    def test_atmosfera_es_genero_y_subgenero(self):
         story = self._story()
-        assert isinstance(story.metadata, StoryMetadata)
-
-    def test_metadata_refleja_campos_actuales(self):
-        story = self._story()
-        assert story.metadata.protagonista == story.protagonista
+        assert story.atmosfera == "a"
+        assert story.model_copy(update={"subgenero": "b"}).atmosfera == "a (b)"
 
     def test_has_content_false_sin_beats(self):
         assert self._story().has_content is False
@@ -325,27 +251,3 @@ class TestStoryAggregate:
 
     def test_get_last_beat_none_sin_beats(self):
         assert self._story().get_last_beat() is None
-
-
-class TestRuleTypeFromRaw:
-    """Spec-440 §9: tipos del wizard viejo mapeados al dominio."""
-
-    @pytest.mark.parametrize(
-        ("raw", "expected"),
-        [
-            ("entorno", RuleType.ENTORNO),
-            ("psicologica", RuleType.PSICOLOGICA),
-            ("fenomeno", RuleType.FENOMENO),
-            ("indicador", RuleType.INDICADOR),
-            ("paranormal", RuleType.FENOMENO),
-            ("social", RuleType.ENTORNO),
-            ("social: Social", RuleType.ENTORNO),
-            ("Fenomeno", RuleType.FENOMENO),
-            ("evento", None),
-            ("inventado", None),
-            ("", None),
-            (None, None),
-        ],
-    )
-    def test_mapeo(self, raw, expected):
-        assert RuleType.from_raw(raw) is expected

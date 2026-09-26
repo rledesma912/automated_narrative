@@ -114,7 +114,6 @@ async def init_db() -> None:
             sinopsis TEXT,
             genero TEXT,
             subgenero TEXT,
-            tono TEXT,
             narrator_config TEXT,
             direction TEXT,
             status TEXT DEFAULT 'pending',
@@ -141,19 +140,6 @@ async def init_db() -> None:
             FOREIGN KEY (nature_id) REFERENCES entity_nature(id)
         )
     """)
-    # Estado de las entidades por beat (lo escribe el Journal, Spec-450 §3). Cuelga
-    # de `story` y no de `entity`: editar la historia reinserta las entidades con
-    # ids nuevos y el estado del journal debe sobrevivir.
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS entity_journal (
-            id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL,
-            beat_number INTEGER NOT NULL,
-            entity_state TEXT NOT NULL DEFAULT '',
-            UNIQUE (story_id, beat_number),
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
-        )
-    """)
 
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS character (
@@ -161,7 +147,6 @@ async def init_db() -> None:
             story_id TEXT NOT NULL,
             name TEXT NOT NULL,
             role TEXT,
-            traits TEXT DEFAULT '[]',
             kind TEXT NOT NULL DEFAULT 'persona',
             relation TEXT DEFAULT '',
             order_index INTEGER NOT NULL,
@@ -174,8 +159,6 @@ async def init_db() -> None:
             id TEXT PRIMARY KEY,
             story_id TEXT NOT NULL,
             content TEXT NOT NULL,
-            type TEXT,
-            intensity TEXT,
             applies_to_beat INTEGER,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             CHECK (applies_to_beat IS NULL OR applies_to_beat >= 1)
@@ -219,7 +202,6 @@ async def init_db() -> None:
             story_id TEXT NOT NULL,
             beat_number INTEGER NOT NULL,
             last_events TEXT DEFAULT '',
-            unresolved_mysteries TEXT DEFAULT '',
             physical_emotional_state TEXT DEFAULT '',
             used_motifs TEXT DEFAULT '[]',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

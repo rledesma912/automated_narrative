@@ -10,7 +10,6 @@ from src.domain.models import (
     Direction,
     Entity,
     NarrativeJournal,
-    RuleType,
     Story,
     StoryStatus,
     TypedRule,
@@ -35,9 +34,9 @@ class SQLStoryRepository:
         try:
             await conn.execute(
                 """INSERT OR REPLACE INTO story
-                (id, title, protagonista, relator, sinopsis, genero, subgenero, tono,
+                (id, title, protagonista, relator, sinopsis, genero, subgenero,
                  narrator_config, direction, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(story.id),
                     story.title,
@@ -46,7 +45,6 @@ class SQLStoryRepository:
                     story.sinopsis,
                     story.genero or None,  # NULL: la FK del catálogo rechaza ""
                     story.subgenero or None,
-                    story.tono,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
                     _direction_json(story.direction),
                     story.status.value,
@@ -99,7 +97,7 @@ class SQLStoryRepository:
 
             # Cargar reglas
             cursor_rules = await conn.execute(
-                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                "SELECT id, content, applies_to_beat FROM rule WHERE story_id = ?",
                 (str(story_id),),
             )
             rule_rows = await cursor_rules.fetchall()
@@ -158,7 +156,7 @@ class SQLStoryRepository:
 
             # Cargar reglas
             cursor_rules = await conn.execute(
-                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                "SELECT id, content, applies_to_beat FROM rule WHERE story_id = ?",
                 (story_id,),
             )
             rule_rows = await cursor_rules.fetchall()
@@ -213,7 +211,7 @@ class SQLStoryRepository:
         try:
             await conn.execute(
                 """UPDATE story SET title = ?, protagonista = ?, relator = ?, sinopsis = ?,
-                   genero = ?, subgenero = ?, tono = ?, narrator_config = ?
+                   genero = ?, subgenero = ?, narrator_config = ?
                    WHERE id = ?""",
                 (
                     story.title,
@@ -222,7 +220,6 @@ class SQLStoryRepository:
                     story.sinopsis,
                     story.genero or None,  # NULL: la FK del catálogo rechaza ""
                     story.subgenero or None,
-                    story.tono,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
                     str(story.id),
                 ),
@@ -241,14 +238,13 @@ class SQLStoryRepository:
         await conn.execute("DELETE FROM character WHERE story_id = ?", (str(story.id),))
         for idx, p in enumerate(story.personajes_full or [], start=1):
             await conn.execute(
-                "INSERT INTO character (id, story_id, name, role, traits, kind, relation, "
-                "order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO character (id, story_id, name, role, kind, relation, order_index) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     str(uuid.uuid4()),
                     str(story.id),
                     p.get("name", ""),
                     p.get("role", ""),
-                    json.dumps(list(p.get("traits") or [])),
                     CharacterKind(p.get("kind") or CharacterKind.PERSONA).value,
                     p.get("relation", "") or "",
                     idx,
@@ -263,16 +259,8 @@ class SQLStoryRepository:
             for r in story.typed_rules:
                 db_rule_id = str(uuid.uuid4())
                 await conn.execute(
-                    "INSERT INTO rule (id, story_id, content, type, intensity, applies_to_beat) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (
-                        db_rule_id,
-                        str(story.id),
-                        r.content,
-                        r.type.value if r.type else None,
-                        r.intensity,
-                        r.applies_to_beat,
-                    ),
+                    "INSERT INTO rule (id, story_id, content, applies_to_beat) VALUES (?, ?, ?, ?)",
+                    (db_rule_id, str(story.id), r.content, r.applies_to_beat),
                 )
         elif story.reglas:
             for r in story.reglas:
@@ -292,8 +280,7 @@ class SQLStoryRepository:
                     (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
                 )
 
-        # Spec-450: entidades (borrar y re-insertar). `entity_journal` no depende de
-        # estos ids, así que editar la historia no pierde el estado del journal.
+        # Spec-450: entidades (borrar y re-insertar).
         await conn.execute("DELETE FROM entity WHERE story_id = ?", (str(story.id),))
         for e in story.entities:
             await conn.execute(
@@ -359,7 +346,7 @@ class SQLStoryRepository:
                 story_id = row["id"]
                 # Cargar reglas
                 cursor_rules = await conn.execute(
-                    "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                    "SELECT id, content, applies_to_beat FROM rule WHERE story_id = ?",
                     (story_id,),
                 )
                 rule_rows = await cursor_rules.fetchall()
@@ -402,26 +389,16 @@ class SQLStoryRepository:
         async with connection() as conn:
             await conn.execute(
                 """INSERT OR REPLACE INTO narrative_journal
-                (story_id, beat_number, last_events, unresolved_mysteries,
-                 physical_emotional_state, used_motifs)
-                VALUES (?, ?, ?, ?, ?, ?)""",
+                (story_id, beat_number, last_events, physical_emotional_state, used_motifs)
+                VALUES (?, ?, ?, ?, ?)""",
                 (
                     str(story_id),
                     beat_number,
                     journal.last_events,
-                    journal.unresolved_mysteries,
                     journal.physical_emotional_state,
                     json.dumps(journal.used_motifs, ensure_ascii=False),
                 ),
             )
-            # Spec-450: el estado de las entidades vive en su propia tabla.
-            if journal.entity_state:
-                await conn.execute(
-                    "INSERT OR REPLACE INTO entity_journal (id, story_id, beat_number, entity_state) "
-                    "VALUES (?, ?, ?, ?)",
-                    (str(uuid.uuid4()), str(story_id), beat_number, journal.entity_state),
-                )
-
             await conn.commit()
 
     async def get_journal(
@@ -435,12 +412,7 @@ class SQLStoryRepository:
                         Si es None, retorna el journal del último beat completado.
         """
         async with connection() as conn:
-            select = (
-                "SELECT j.*, ej.entity_state FROM narrative_journal j "
-                "LEFT JOIN entity_journal ej "
-                "ON ej.story_id = j.story_id AND ej.beat_number = j.beat_number "
-                "WHERE j.story_id = ?"
-            )
+            select = "SELECT j.* FROM narrative_journal j WHERE j.story_id = ?"
             if beat_number is not None:
                 cursor = await conn.execute(
                     f"{select} AND j.beat_number = ?", (str(story_id), beat_number)
@@ -457,19 +429,16 @@ class SQLStoryRepository:
 
         return NarrativeJournal(
             last_events=row["last_events"],
-            unresolved_mysteries=row["unresolved_mysteries"],
             physical_emotional_state=row["physical_emotional_state"],
-            entity_state=row["entity_state"] or "",
             used_motifs=json.loads(row["used_motifs"] or "[]"),
         )
 
     async def clear_story_artifacts(self, story_id) -> None:
-        """Limpia artefactos generados (beats, journal, anchors) para reinicio limpio (Spec-212)."""
+        """Limpia artefactos generados (actos y memoria) para reinicio limpio (Spec-212)."""
         conn = await get_connection()
         sid = str(story_id)
         try:
             await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
-            await conn.execute("DELETE FROM entity_journal WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
             await conn.commit()
         except Exception:
@@ -653,20 +622,18 @@ class SQLStoryRepository:
         rule/scenario). El resultado alimenta `Story.personajes_full`.
         """
         cursor = await conn.execute(
-            "SELECT name, role, traits, kind, relation, order_index FROM character "
+            "SELECT name, role, kind, relation, order_index FROM character "
             "WHERE story_id = ? ORDER BY order_index",
             (story_id,),
         )
         rows = await cursor.fetchall()
         personajes = []
         for c in rows:
-            raw_traits = c["traits"]
             personajes.append(
                 {
                     "id": f"P{c['order_index']}",
                     "name": c["name"],
                     "role": c["role"] or "",
-                    "traits": json.loads(raw_traits) if raw_traits else [],
                     "kind": c["kind"] or CharacterKind.PERSONA.value,
                     "relation": c["relation"] or "",
                 }
@@ -727,7 +694,6 @@ class SQLStoryRepository:
             sinopsis=row["sinopsis"],
             genero=(row["genero"] if "genero" in keys else "") or "",
             subgenero=(row["subgenero"] if "subgenero" in keys else "") or "",
-            tono=(row["tono"] if "tono" in keys else "") or "",
             narrator_config=json.loads(raw_cfg) if raw_cfg else None,
             direction=Direction.model_validate_json(raw_direction) if raw_direction else None,
             status=StoryStatus(row["status"])
@@ -741,17 +707,12 @@ class SQLStoryRepository:
         result = []
         for r in rule_rows:
             keys = r.keys()
-            raw_type = r["type"] if "type" in keys else None
-            raw_intensity = r["intensity"] if "intensity" in keys else None
             raw_applies = r["applies_to_beat"] if "applies_to_beat" in keys else None
-            rule_type = RuleType.from_raw(raw_type)
             result.append(
                 TypedRule(
                     id=r["id"],
                     story_id=UUID(story_id) if len(story_id) == 36 else story_id,  # type: ignore[arg-type]
                     content=r["content"],
-                    type=rule_type,
-                    intensity=raw_intensity,
                     applies_to_beat=raw_applies,
                 )
             )

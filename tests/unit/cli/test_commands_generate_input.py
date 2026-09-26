@@ -19,6 +19,11 @@ protagonista: Protagonista de prueba
 relator: tercera_persona
 sinopsis: Sinopsis de prueba para test
 genero: terror
+direction:
+  premise: De qué trata
+outline:
+  - number: 1
+    events: [Rosa llega al galpón]
 """
             )
             f.flush()
@@ -56,6 +61,9 @@ genero: terror
                 assert call_kwargs["protagonista"] == "Protagonista de prueba"
                 assert call_kwargs["sinopsis"] == "Sinopsis de prueba para test"
                 assert call_kwargs["genero"] == "terror"
+                # Spec-530: la dirección y la escaleta del YAML llegan al runner.
+                assert call_kwargs["direction"]["premise"] == "De qué trata"
+                assert call_kwargs["outline"][0]["events"] == ["Rosa llega al galpón"]
 
         Path(yaml_path).unlink()
 

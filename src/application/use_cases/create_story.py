@@ -16,7 +16,6 @@ from src.domain.models import (
     Entity,
     MacroBeat,
     RevealLevel,
-    RuleType,
     Scenario,
     Story,
     StoryStatus,
@@ -53,7 +52,6 @@ class CreateStoryUseCase:
             sinopsis=dto.sinopsis,
             genero=dto.genero,
             subgenero=dto.subgenero,
-            tono=dto.tono,
             reglas=dto.reglas,
             status=initial_status,
             narrator_config=dto.narrator_config,
@@ -83,22 +81,16 @@ class CreateStoryUseCase:
 
         # Crear TypedRule si el DTO trae reglas tipadas
         if dto.typed_rules:
-            typed = []
-            for r in dto.typed_rules:
-                raw_type = r.get("type")
-                rule_type = RuleType.from_raw(raw_type)
-                typed.append(
-                    TypedRule(
-                        id=r.get("id") or str(uuid4()),
-                        story_id=story.id,
-                        content=r.get("content", ""),
-                        type=rule_type,
-                        intensity=r.get("intensity"),
-                        # Spec-530: las reglas se cargan dentro de un acto.
-                        applies_to_beat=r.get("applies_to_beat"),
-                    )
+            story.typed_rules = [
+                TypedRule(
+                    id=r.get("id") or str(uuid4()),
+                    story_id=story.id,
+                    content=r.get("content", ""),
+                    # Spec-530: las reglas se cargan dentro de un acto.
+                    applies_to_beat=r.get("applies_to_beat"),
                 )
-            story.typed_rules = typed
+                for r in dto.typed_rules
+            ]
 
         # Pre-crear los 5 MacroBeat desde los actos del YAML (Spec-190 T7.1)
         if dto.actos:

@@ -89,7 +89,6 @@ class StoryRunner:
         sinopsis: str,
         genero: str = "",
         subgenero: str = "",
-        tono: str = "",
         reglas: list[str] | None = None,
         narrator_config: dict | None = None,
         typed_rules: list[dict] | None = None,
@@ -97,6 +96,9 @@ class StoryRunner:
         escenarios_full: list[dict] | None = None,
         entities: list[dict] | None = None,
         actos: list[dict] | None = None,
+        direction: dict | None = None,
+        workshop: list[dict] | None = None,
+        outline: list[dict] | None = None,
     ) -> Story:
         """Flujo completo: crear la historia, armar su escaleta y narrar los 5 actos."""
         from src.config import settings as cfg
@@ -124,13 +126,15 @@ class StoryRunner:
             sinopsis=sinopsis,
             genero=genero,
             subgenero=subgenero,
-            tono=tono,
             reglas=reglas or [],
             narrator_config=narrator_config,
             typed_rules=typed_rules or [],
             personajes_full=personajes_full or [],
             entities=entities or [],
             actos=actos or [],
+            direction=direction,
+            workshop=workshop or [],
+            outline=outline or [],
         )
         story = await create_story.execute(dto)
         logger.info(f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}")

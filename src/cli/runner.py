@@ -53,7 +53,7 @@ def main() -> None:
     generate_parser.add_argument("--sinopsis", help="Sinopsis de la historia")
     generate_parser.add_argument(
         "--genero",
-        help="Género de la historia (atmósfera). El YAML (--input) trae además subgénero y tono.",
+        help="Género de la historia (atmósfera). El YAML (--input) trae además el subgénero.",
     )
     generate_parser.add_argument(
         "--input",
