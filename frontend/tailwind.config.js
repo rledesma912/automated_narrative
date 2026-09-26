@@ -7,6 +7,8 @@ module.exports = {
     // del Core en el pie o los estados de la sala no existían en el CSS compilado).
     './public/js/**/*.js',
     './src/styles/**/*.css',
+    // Clases armadas en TS (Spec-530).
+    './src/**/*.ts',
   ],
   safelist: [
     'btn-forge',

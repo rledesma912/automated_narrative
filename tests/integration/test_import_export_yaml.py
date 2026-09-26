@@ -69,7 +69,7 @@ def _use_db(monkeypatch, path: Path) -> None:
 
 
 async def _authoring_views() -> dict[str, dict]:
-    """Vista de autoría (lo que ve el wizard) de cada historia, por título."""
+    """Vista de autoría (lo que ve la ficha) de cada historia, por título."""
     repo = SQLStoryRepository()
     exporter = YamlStoryExporter()
     out = {}
@@ -78,7 +78,6 @@ async def _authoring_views() -> dict[str, dict]:
         out[story.title] = {
             "genero": story.genero,
             "subgenero": story.subgenero,
-            "tono": story.tono,
             "status": story.status.value,
             "personajes": story.personajes_full,
             "config": exporter.authoring_config(story),
@@ -109,7 +108,9 @@ async def test_round_trip_export_import_conserva_la_autoria(monkeypatch, tmp_pat
 
     assert after == before
     config = after["Round trip"]["config"]
-    assert [r["type"] for r in config["rules"]] == ["fenomeno", "entorno"]  # social → entorno
+    assert [r["text"] for r in config["rules"]] == ["Nadie entra de noche", "Los perros no ladran"]
+    assert "type" not in config["rules"][0] and "perception" not in config  # Spec-530 §6
+    assert all("traits" not in p for p in after["Round trip"]["personajes"])
     assert [a["text"] for a in config["actos"].values()] == [a["text"] for a in _ACTOS.values()]
     assert [(e["name"], e["nature"], e["reveal_level"]) for e in config["entities"]] == [
         ("La Mala Hora", "folklorica", "insinuada"),

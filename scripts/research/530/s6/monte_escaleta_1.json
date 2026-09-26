@@ -1,0 +1,210 @@
+{
+ "acts": [
+  {
+   "number": 1,
+   "goal": "Presentar a la familia y establecer la atmósfera de calma y tradición, sembrando una inquietud sutil.",
+   "events": [
+    "Irene, Ricardo, Mariano y Soledad llegan a la casa de María en taxi al amanecer.",
+    "Desayunan café de olla y pan casero mientras Mariano juega en el patio de tierra.",
+    "María les cuenta historias de su vida y leyendas locales como la luz mala y el lobizón.",
+    "Ricardo desestima los cuentos como folklore, prometiendo no cruzar el monte por respeto a su madre.",
+    "Irene observa a su hijo Mariano inquieto, preguntándole si le asustan las historias de su abuela."
+   ],
+   "change_from": "Calma y normalidad en una mañana rural.",
+   "change_to": "Una sutil inquietud sembrada por las historias y la promesa rota.",
+   "scenario": "Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "La razón por la que Ricardo desestima las leyendas.",
+   "seeds": [
+    "La inquietud de Mariano con las historias.",
+    "La promesa de Ricardo de no cruzar el monte."
+   ],
+   "payoffs": [],
+   "decisions": [
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    "La inquietud de Mariano se anticipa al conflicto, mejor mostrarla más adelante para aumentar la tensión."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 2,
+   "goal": "Provocar el conflicto al transgresir la advertencia de María y sumergir a la familia en una situación peligrosa.",
+   "events": [
+    "La familia se dirige a la fiesta en sulki, disfrutando de la alegría y la charla con los amigos de Ricardo.",
+    "Se desata una tormenta eléctrica con rayos y truenos mientras regresan a la casa de María.",
+    "Ricardo decide atravesar el Monte de los Espinillos para evitar un camino largo y barroso.",
+    "Irene le advierte a Ricardo sobre la promesa hecha a María, pero discuten.",
+    "El caballo comienza a empacarse al acercarse al monte, pero Ricardo lo azota para avanzar."
+   ],
+   "change_from": "Alegría y normalidad en el camino a la fiesta.",
+   "change_to": "Tensión y peligro al atravesar el monte durante una tormenta.",
+   "scenario": "Camino al sulki / Monte de los Espinillos",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María (mencionada)"
+   ],
+   "held_back": "La razón por la que Ricardo ignora la advertencia de su madre.",
+   "seeds": [
+    "La resistencia del caballo al entrar al monte.",
+    "La discusión entre Irene y Ricardo."
+   ],
+   "payoffs": [
+    "La promesa de Ricardo de no cruzar el monte."
+   ],
+   "decisions": [
+    "en_juego"
+   ],
+   "warnings": [
+    "«La resistencia del caballo al entrar al monte.», «La discusión entre Irene y Ricardo.» se siembran acá y ningún acto posterior los retoma."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 3,
+   "goal": "Forzar el reconocimiento del horror a través de un encuentro sobrenatural que desafía la lógica.",
+   "events": [
+    "El caballo se clava en seco frente al sulki, encabritado por el terror.",
+    "La figura de María aparece bloqueando el paso, vestida con la misma ropa de la mañana.",
+    "Ricardo intenta avanzar, pero el sulki parece atrapado en raíces que no estaban allí.",
+    "Irene abraza a sus hijos y comienza a rezar en voz alta, instando a Ricardo a hacer lo mismo.",
+    "La figura de María desaparece tras el rezo."
+   ],
+   "change_from": "Tensión y temor al entrar al monte.",
+   "change_to": "Pánico y confusión ante un encuentro sobrenatural inexplicable.",
+   "scenario": "Monte de los Espinillos",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María (aparición)"
+   ],
+   "held_back": "La razón por la que María aparece en el monte.",
+   "seeds": [
+    "El terror del caballo.",
+    "La rigidez inhumana de la figura de María."
+   ],
+   "payoffs": [
+    "La inquietud de Mariano con las historias."
+   ],
+   "decisions": [
+    "historia_secreta"
+   ],
+   "warnings": [
+    "«El terror del caballo.», «La rigidez inhumana de la figura de María.» se siembran acá y ningún acto posterior los retoma.",
+    "La razón por la que María aparece en el monte se guarda para después, pero no hay acto posterior que la revele."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 4,
+   "goal": "Llevar al protagonista al colapso emocional y revelar una parte de su historia secreta.",
+   "events": [
+    "Ricardo azota las riendas con desesperación, huyendo del monte.",
+    "El camino parece deformarse, con los mismos grupos de espinillos repitiéndose.",
+    "Un silbido agudo empieza a vibrar en el sulki, afectando a Irene y Mariano.",
+    "Irene recuerda un antiguo favor que su familia le debió a María, explicando su superstición.",
+    "Logran romper el cerco de ramas tras un rezo desesperado y llegan a la casa de María."
+   ],
+   "change_from": "Alivio momentáneo tras la desaparición de María.",
+   "change_to": "Desesperación y colapso emocional al descubrir que el horror los persigue.",
+   "scenario": "Monte de los Espinillos / Camino a la Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad"
+   ],
+   "held_back": "El significado del antiguo favor.",
+   "seeds": [
+    "El aroma a ozono y tierra muerta.",
+    "La luz de amanecer cenicienta."
+   ],
+   "payoffs": [
+    "La promesa de Ricardo de no cruzar el monte."
+   ],
+   "decisions": [
+    "historia_secreta"
+   ],
+   "warnings": [
+    "«El aroma a ozono y tierra muerta.», «La luz de amanecer cenicienta.» se siembran acá y ningún acto posterior los retoma.",
+    "El antiguo favor se menciona, pero no se explica su significado, dejándolo inconcluso."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 5,
+   "goal": "Cerrar la historia con una sensación de escape incompleto y una inquietante secuela.",
+   "events": [
+    "María los recibe en el umbral, en silencio, con una vela encendida.",
+    "Ricardo guarda el caballo en el corral con movimientos mecánicos, evitando mirar hacia el monte.",
+    "Irene nota una rama de espinillo fresca en la manta de la bebé Soledad.",
+    "Al asomarse a la ventana, Irene ve que no hay rastros de la tormenta en el patio.",
+    "Irene reflexiona sobre la posibilidad de que lo sobrenatural sea real."
+   ],
+   "change_from": "Alivio aparente al llegar a la casa de María.",
+   "change_to": "Una inquietante sensación de que el horror persiste y se ha infiltrado en su hogar.",
+   "scenario": "Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "",
+   "seeds": [],
+   "payoffs": [
+    "La inquietud de Mariano con las historias."
+   ],
+   "decisions": [
+    "final"
+   ],
+   "warnings": [],
+   "needs_review": false,
+   "rules": []
+  }
+ ],
+ "decisions": [
+  {
+   "id": "meta",
+   "nombre": "Qué quiere",
+   "integrada": false
+  },
+  {
+   "id": "en_juego",
+   "nombre": "Qué está en juego",
+   "integrada": true
+  },
+  {
+   "id": "vulnerabilidad",
+   "nombre": "Qué lo expone",
+   "integrada": true
+  },
+  {
+   "id": "historia_secreta",
+   "nombre": "La historia secreta",
+   "integrada": true
+  },
+  {
+   "id": "final",
+   "nombre": "El final",
+   "integrada": true
+  }
+ ]
+}

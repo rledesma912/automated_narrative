@@ -76,17 +76,6 @@
     // Ejecutar después de swaps de HTMX (si se usa en el proyecto)
     document.addEventListener('htmx:afterSwap', focusFirstField);
     document.addEventListener('htmx:afterSettle', () => { lucide.createIcons(); });
-
-    // htmx 1.x no reemplaza el contenido ante un 4xx: con hx-boost, las páginas de
-    // validación del wizard (422: paso con errores, "Guardar historia" rechazado)
-    // quedaban invisibles. Se muestran si la respuesta es HTML.
-    document.addEventListener('htmx:beforeSwap', (e) => {
-      const xhr = e.detail.xhr;
-      if (xhr.status === 422 && (xhr.getResponseHeader('Content-Type') || '').includes('text/html')) {
-        e.detail.shouldSwap = true;
-        e.detail.isError = false;
-      }
-    });
   </script>
 </body>
 </html>

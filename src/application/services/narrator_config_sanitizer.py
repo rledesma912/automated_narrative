@@ -1,34 +1,32 @@
 """Depuración del JSON `narrator_config` (Spec-190 §4.3, Slice 6).
 
-El bloque `storyteller_config` del YAML/wizard trae datos que ya viven en tablas
-o columnas propias: `scenarios`, `rules` y `entities` (Spec-450) van a sus tablas,
-`atmosphere` pasa a `genero`/`subgenero`/`tono`, y `actos` lo rutea el Slice 7. El
-JSON que se *persiste* como `narrator_config` debe quedar sin esas claves.
+El bloque `storyteller_config` del YAML trae datos que viven en tablas o columnas
+propias (`scenarios`, `rules`, `entities`, `atmosphere`, `actos`) y, en los YAML
+viejos, claves que ya no se usan (`voice_style`, `perception`, `knowledge`,
+`language`, `bias`; Spec-530 §6). El JSON que se *persiste* como `narrator_config`
+guarda solo quién narra y la voz gramatical.
 """
 
-# Claves que no deben quedar dentro del `narrator_config` persistido.
-_DROPPED_KEYS = ("scenarios", "rules", "actos", "atmosphere", "entities")
+# Lo único que queda en el `narrator_config` persistido (Spec-530 §7).
+_KEPT_KEYS = ("storyteller_id", "storyteller_name", "voice")
+_VOICE_KEYS = ("person", "tense")
 
 
 def sanitize_narrator_config(raw: dict | None) -> dict | None:
-    """Devuelve el config del narrador sin `scenarios`/`rules`/`actos`/`atmosphere`/`entities`.
-
-    Conserva el resto tal cual: `storyteller_id`, `storyteller_name`,
-    `voice_style`, `voice`, `perception`, `knowledge`, `language`, `bias`.
-    """
+    """El config del narrador con solo `storyteller_id`, `storyteller_name` y `voice`."""
     if not raw:
         return raw
-    return {k: v for k, v in raw.items() if k not in _DROPPED_KEYS}
+    kept = {k: raw[k] for k in _KEPT_KEYS if k in raw}
+    if isinstance(kept.get("voice"), dict):
+        kept["voice"] = {k: v for k, v in kept["voice"].items() if k in _VOICE_KEYS}
+    return kept
 
 
-def extract_atmosphere(raw: dict | None) -> tuple[str, str, str]:
-    """Devuelve `(genero, subgenero, tono)` desde `atmosphere` del config crudo."""
+def extract_atmosphere(raw: dict | None) -> tuple[str, str]:
+    """Devuelve `(genero, subgenero)` desde `atmosphere` del config crudo (el `tone`
+    de los YAML viejos se ignora: lo reemplaza el efecto buscado de la Dirección)."""
     atmosphere = (raw or {}).get("atmosphere") or {}
-    return (
-        atmosphere.get("genre", "") or "",
-        atmosphere.get("subgenre", "") or "",
-        atmosphere.get("tone", "") or "",
-    )
+    return atmosphere.get("genre", "") or "", atmosphere.get("subgenre", "") or ""
 
 
 def extract_actos(raw: dict | None) -> list[dict]:

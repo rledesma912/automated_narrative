@@ -5,31 +5,37 @@ import uuid
 from uuid import UUID
 
 from src.domain.models import (
+    ActOutline,
+    CharacterKind,
+    Direction,
     Entity,
-    NarrativeAnchors,
     NarrativeJournal,
-    RuleType,
     Story,
     StoryStatus,
     TypedRule,
+    WorkshopItem,
 )
 from src.infrastructure.database.connection import connection, get_connection
-from src.utils.timezone import now_argentina
 
 
 class SQLStoryRepository:
     """SQLite implementation of StoryRepository."""
 
     async def save(self, story: Story) -> Story:
-        """Save a story."""
+        """Save a story (alta de una historia: creación o import-yaml).
+
+        `INSERT OR REPLACE` sobre `story` borra en cascada todo lo que cuelga de
+        ella (actos, journal, taller, escaleta, relatos, jobs): no usar para editar
+        una historia existente; para eso está `update_inputs()`.
+        """
         conn = await get_connection()
         # try/finally: una conexión sin cerrar (p. ej. la FK del catálogo rechaza el
         # INSERT) deja vivo el hilo de aiosqlite.
         try:
             await conn.execute(
                 """INSERT OR REPLACE INTO story
-                (id, title, protagonista, relator, sinopsis, genero, subgenero, tono,
-                 narrator_config, status, created_at)
+                (id, title, protagonista, relator, sinopsis, genero, subgenero,
+                 narrator_config, direction, status, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(story.id),
@@ -39,14 +45,17 @@ class SQLStoryRepository:
                     story.sinopsis,
                     story.genero or None,  # NULL: la FK del catálogo rechaza ""
                     story.subgenero or None,
-                    story.tono,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
+                    _direction_json(story.direction),
                     story.status.value,
                     story.created_at.isoformat(),
                 ),
             )
 
             await self._write_inputs(conn, story)
+            for item in story.workshop:
+                await self._upsert_workshop_item(conn, str(story.id), item)
+            await self._replace_outline(conn, str(story.id), story.outline)
 
             # Persistir beats en la tabla macro_beat (borrar y re-insertar)
             # Spec-190 T7.1: pre-crear 5 filas macro_beat al guardar la historia
@@ -88,7 +97,7 @@ class SQLStoryRepository:
 
             # Cargar reglas
             cursor_rules = await conn.execute(
-                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                "SELECT id, content, applies_to_beat FROM rule WHERE story_id = ?",
                 (str(story_id),),
             )
             rule_rows = await cursor_rules.fetchall()
@@ -116,6 +125,8 @@ class SQLStoryRepository:
 
             personajes = await self._load_personajes(conn, str(story_id))
             entities = await self._load_entities(conn, str(story_id))
+            workshop = await self._load_workshop(conn, str(story_id))
+            outline = await self._load_outline(conn, str(story_id))
 
             beats = await self._load_beats(conn, str(story_id))
 
@@ -125,6 +136,8 @@ class SQLStoryRepository:
         story.scenarios = scenarios
         story.entities = entities
         story.personajes_full = personajes
+        story.workshop = workshop
+        story.outline = outline
         story.beats = beats
         return story
 
@@ -143,7 +156,7 @@ class SQLStoryRepository:
 
             # Cargar reglas
             cursor_rules = await conn.execute(
-                "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                "SELECT id, content, applies_to_beat FROM rule WHERE story_id = ?",
                 (story_id,),
             )
             rule_rows = await cursor_rules.fetchall()
@@ -171,8 +184,12 @@ class SQLStoryRepository:
 
             personajes = await self._load_personajes(conn, story_id)
             entities = await self._load_entities(conn, story_id)
+            workshop = await self._load_workshop(conn, story_id)
+            outline = await self._load_outline(conn, story_id)
 
         story = self._row_to_story(row)
+        story.workshop = workshop
+        story.outline = outline
         story.reglas = reglas
         story.typed_rules = typed_rules
         story.scenarios = scenarios
@@ -186,12 +203,15 @@ class SQLStoryRepository:
         A diferencia de `save()`, no toca lo generado: nada de `INSERT OR REPLACE`
         sobre `story` (con FKs en cascada borraría actos, journal, anclas, relatos
         y jobs) ni reescritura de `macro_beat`. Tampoco cambia `status`.
+
+        Tampoco toca la dirección, el taller ni la escaleta (Spec-530): tienen sus
+        propios métodos, así una edición que no los manda no los borra.
         """
         conn = await get_connection()
         try:
             await conn.execute(
                 """UPDATE story SET title = ?, protagonista = ?, relator = ?, sinopsis = ?,
-                   genero = ?, subgenero = ?, tono = ?, narrator_config = ?
+                   genero = ?, subgenero = ?, narrator_config = ?
                    WHERE id = ?""",
                 (
                     story.title,
@@ -200,7 +220,6 @@ class SQLStoryRepository:
                     story.sinopsis,
                     story.genero or None,  # NULL: la FK del catálogo rechaza ""
                     story.subgenero or None,
-                    story.tono,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
                     str(story.id),
                 ),
@@ -219,14 +238,15 @@ class SQLStoryRepository:
         await conn.execute("DELETE FROM character WHERE story_id = ?", (str(story.id),))
         for idx, p in enumerate(story.personajes_full or [], start=1):
             await conn.execute(
-                "INSERT INTO character (id, story_id, name, role, traits, order_index) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO character (id, story_id, name, role, kind, relation, order_index) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     str(uuid.uuid4()),
                     str(story.id),
                     p.get("name", ""),
                     p.get("role", ""),
-                    json.dumps(list(p.get("traits") or [])),
+                    CharacterKind(p.get("kind") or CharacterKind.PERSONA).value,
+                    p.get("relation", "") or "",
                     idx,
                 ),
             )
@@ -239,16 +259,8 @@ class SQLStoryRepository:
             for r in story.typed_rules:
                 db_rule_id = str(uuid.uuid4())
                 await conn.execute(
-                    "INSERT INTO rule (id, story_id, content, type, intensity, applies_to_beat) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (
-                        db_rule_id,
-                        str(story.id),
-                        r.content,
-                        r.type.value if r.type else None,
-                        r.intensity,
-                        r.applies_to_beat,
-                    ),
+                    "INSERT INTO rule (id, story_id, content, applies_to_beat) VALUES (?, ?, ?, ?)",
+                    (db_rule_id, str(story.id), r.content, r.applies_to_beat),
                 )
         elif story.reglas:
             for r in story.reglas:
@@ -268,8 +280,7 @@ class SQLStoryRepository:
                     (str(s.id), str(story.id), s.order_index, s.name, s.description or ""),
                 )
 
-        # Spec-450: entidades (borrar y re-insertar). `entity_journal` no depende de
-        # estos ids, así que editar la historia no pierde el estado del journal.
+        # Spec-450: entidades (borrar y re-insertar).
         await conn.execute("DELETE FROM entity WHERE story_id = ?", (str(story.id),))
         for e in story.entities:
             await conn.execute(
@@ -335,7 +346,7 @@ class SQLStoryRepository:
                 story_id = row["id"]
                 # Cargar reglas
                 cursor_rules = await conn.execute(
-                    "SELECT id, content, type, intensity, applies_to_beat FROM rule WHERE story_id = ?",
+                    "SELECT id, content, applies_to_beat FROM rule WHERE story_id = ?",
                     (story_id,),
                 )
                 rule_rows = await cursor_rules.fetchall()
@@ -378,24 +389,16 @@ class SQLStoryRepository:
         async with connection() as conn:
             await conn.execute(
                 """INSERT OR REPLACE INTO narrative_journal
-                (story_id, beat_number, last_events, unresolved_mysteries, physical_emotional_state)
+                (story_id, beat_number, last_events, physical_emotional_state, used_motifs)
                 VALUES (?, ?, ?, ?, ?)""",
                 (
                     str(story_id),
                     beat_number,
                     journal.last_events,
-                    journal.unresolved_mysteries,
                     journal.physical_emotional_state,
+                    json.dumps(journal.used_motifs, ensure_ascii=False),
                 ),
             )
-            # Spec-450: el estado de las entidades vive en su propia tabla.
-            if journal.entity_state:
-                await conn.execute(
-                    "INSERT OR REPLACE INTO entity_journal (id, story_id, beat_number, entity_state) "
-                    "VALUES (?, ?, ?, ?)",
-                    (str(uuid.uuid4()), str(story_id), beat_number, journal.entity_state),
-                )
-
             await conn.commit()
 
     async def get_journal(
@@ -409,12 +412,7 @@ class SQLStoryRepository:
                         Si es None, retorna el journal del último beat completado.
         """
         async with connection() as conn:
-            select = (
-                "SELECT j.*, ej.entity_state FROM narrative_journal j "
-                "LEFT JOIN entity_journal ej "
-                "ON ej.story_id = j.story_id AND ej.beat_number = j.beat_number "
-                "WHERE j.story_id = ?"
-            )
+            select = "SELECT j.* FROM narrative_journal j WHERE j.story_id = ?"
             if beat_number is not None:
                 cursor = await conn.execute(
                     f"{select} AND j.beat_number = ?", (str(story_id), beat_number)
@@ -431,19 +429,16 @@ class SQLStoryRepository:
 
         return NarrativeJournal(
             last_events=row["last_events"],
-            unresolved_mysteries=row["unresolved_mysteries"],
             physical_emotional_state=row["physical_emotional_state"],
-            entity_state=row["entity_state"] or "",
+            used_motifs=json.loads(row["used_motifs"] or "[]"),
         )
 
     async def clear_story_artifacts(self, story_id) -> None:
-        """Limpia artefactos generados (beats, journal, anchors) para reinicio limpio (Spec-212)."""
+        """Limpia artefactos generados (actos y memoria) para reinicio limpio (Spec-212)."""
         conn = await get_connection()
         sid = str(story_id)
         try:
             await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
-            await conn.execute("DELETE FROM entity_journal WHERE story_id = ?", (sid,))
-            await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
             await conn.commit()
         except Exception:
@@ -477,7 +472,6 @@ class SQLStoryRepository:
                 "DELETE FROM generated_narrative WHERE story_template_id = ?", (sid,)
             )
             await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
-            await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))
@@ -485,59 +479,140 @@ class SQLStoryRepository:
             await conn.execute("DELETE FROM story WHERE id = ?", (sid,))
             await conn.commit()
 
-    async def save_narrative_anchors(self, story_id, anchors) -> None:
-        """Persiste los 5 anclajes de resonancia aristotélica (Spec-081)."""
+    async def update_direction(self, story_id: UUID, direction: Direction | None) -> None:
+        """Guarda la dirección de una historia (vista Dirección)."""
         async with connection() as conn:
-            # Nota: Usamos una subquery para el ID o generamos uno si es nuevo,
-            # pero para simplificar seguiremos el patrón de INSERT OR REPLACE por story_id
-            # si la tabla tiene story_id como UNIQUE o PK. En SQLite actual es story_id NOT NULL.
-            # Vamos a asegurar que id sea único.
-            import uuid
-
-            # Primero buscamos si ya existe un ID para este story_id
-            cursor = await conn.execute(
-                "SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
-            )
-            row = await cursor.fetchone()
-            anchor_id = row[0] if row else str(uuid.uuid4())
-
             await conn.execute(
-                """INSERT OR REPLACE INTO narrative_anchors
-                (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis,
-                 resonance_peripeteia, resonance_residual, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    anchor_id,
-                    str(story_id),
-                    anchors.resonance_hamartia,
-                    anchors.resonance_hybris,
-                    anchors.resonance_anagnorisis,
-                    anchors.resonance_peripeteia,
-                    anchors.resonance_residual,
-                    now_argentina().isoformat(),
-                ),
+                "UPDATE story SET direction = ? WHERE id = ?",
+                (_direction_json(direction), str(story_id)),
             )
             await conn.commit()
 
-    async def get_narrative_anchors(self, story_id: UUID) -> NarrativeAnchors | None:
-        """Lee los 5 anclajes de resonancia persistidos (Spec-081/Spec-430)."""
+    async def get_workshop(self, story_id: UUID) -> list[WorkshopItem]:
         async with connection() as conn:
-            cursor = await conn.execute(
-                "SELECT * FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
-            )
-            row = await cursor.fetchone()
+            return await self._load_workshop(conn, str(story_id))
 
-        if not row:
-            return None
+    async def save_workshop_items(self, story_id: UUID, items: list[WorkshopItem]) -> None:
+        """Crea o actualiza criterios del taller (uno por nivel y criterio)."""
+        async with connection() as conn:
+            for item in items:
+                await self._upsert_workshop_item(conn, str(story_id), item)
+            await conn.commit()
 
-        return NarrativeAnchors(
-            story_id=story_id,
-            resonance_hamartia=row["resonance_hamartia"],
-            resonance_hybris=row["resonance_hybris"],
-            resonance_anagnorisis=row["resonance_anagnorisis"],
-            resonance_peripeteia=row["resonance_peripeteia"],
-            resonance_residual=row["resonance_residual"],
+    async def get_outline(self, story_id: UUID) -> list[ActOutline]:
+        async with connection() as conn:
+            return await self._load_outline(conn, str(story_id))
+
+    async def save_outline(self, story_id: UUID, acts: list[ActOutline]) -> None:
+        """Reemplaza la escaleta completa (la arma el Planificador)."""
+        async with connection() as conn:
+            await self._replace_outline(conn, str(story_id), acts)
+            await conn.commit()
+
+    async def save_act(self, story_id: UUID, act: ActOutline) -> None:
+        """Crea o actualiza un acto de la escaleta (edición del usuario)."""
+        async with connection() as conn:
+            await self._upsert_act(conn, str(story_id), act)
+            await conn.commit()
+
+    async def _upsert_workshop_item(self, conn, story_id: str, item: WorkshopItem) -> None:
+        await conn.execute(
+            "INSERT INTO story_workshop (story_id, level, criterion, status, question, "
+            "options, answer, round, question_round, asked) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (story_id, level, criterion) DO UPDATE SET status = excluded.status, "
+            "question = excluded.question, options = excluded.options, "
+            "answer = excluded.answer, round = excluded.round, "
+            "question_round = excluded.question_round, asked = excluded.asked",
+            (
+                story_id,
+                item.level.value,
+                item.criterion,
+                item.status.value,
+                item.question,
+                json.dumps(item.options, ensure_ascii=False),
+                item.answer,
+                item.round,
+                item.question_round,
+                json.dumps(item.asked, ensure_ascii=False),
+            ),
         )
+
+    async def _load_workshop(self, conn, story_id: str) -> list[WorkshopItem]:
+        cursor = await conn.execute(
+            "SELECT * FROM story_workshop WHERE story_id = ? ORDER BY level, id", (story_id,)
+        )
+        return [
+            WorkshopItem(
+                level=r["level"],
+                criterion=r["criterion"],
+                status=r["status"],
+                question=r["question"] or "",
+                options=json.loads(r["options"] or "[]"),
+                answer=r["answer"] or "",
+                round=r["round"],
+                question_round=r["question_round"],
+                asked=json.loads(r["asked"] or "[]"),
+            )
+            for r in await cursor.fetchall()
+        ]
+
+    async def _replace_outline(self, conn, story_id: str, acts: list[ActOutline]) -> None:
+        await conn.execute("DELETE FROM act_outline WHERE story_id = ?", (story_id,))
+        for act in acts:
+            await self._upsert_act(conn, story_id, act)
+
+    async def _upsert_act(self, conn, story_id: str, act: ActOutline) -> None:
+        def js(value: list[str]) -> str:
+            return json.dumps(value, ensure_ascii=False)
+
+        await conn.execute(
+            "INSERT INTO act_outline (story_id, number, goal, events, change_from, change_to, "
+            "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, needs_review) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT (story_id, number) DO UPDATE SET goal = excluded.goal, "
+            "events = excluded.events, change_from = excluded.change_from, "
+            "change_to = excluded.change_to, scenario = excluded.scenario, "
+            "on_stage = excluded.on_stage, held_back = excluded.held_back, "
+            "seeds = excluded.seeds, payoffs = excluded.payoffs, "
+            "decisions = excluded.decisions, warnings = excluded.warnings, "
+            "needs_review = excluded.needs_review",
+            (
+                story_id,
+                act.number,
+                act.goal,
+                js(act.events),
+                act.change_from,
+                act.change_to,
+                act.scenario,
+                js(act.on_stage),
+                act.held_back,
+                js(act.seeds),
+                js(act.payoffs),
+                js(act.decisions),
+                js(act.warnings),
+                int(act.needs_review),
+            ),
+        )
+
+    async def _load_outline(self, conn, story_id: str) -> list[ActOutline]:
+        cursor = await conn.execute(
+            "SELECT * FROM act_outline WHERE story_id = ? ORDER BY number", (story_id,)
+        )
+        lists = ("events", "on_stage", "seeds", "payoffs", "decisions", "warnings")
+        return [
+            ActOutline(
+                number=r["number"],
+                goal=r["goal"] or "",
+                change_from=r["change_from"] or "",
+                change_to=r["change_to"] or "",
+                scenario=r["scenario"] or "",
+                held_back=r["held_back"] or "",
+                needs_review=bool(r["needs_review"]),
+                **{k: json.loads(r[k] or "[]") for k in lists},
+            )
+            for r in await cursor.fetchall()
+        ]
 
     async def _load_personajes(self, conn, story_id: str) -> list[dict]:
         """Carga los personajes de una historia desde la tabla character.
@@ -547,20 +622,20 @@ class SQLStoryRepository:
         rule/scenario). El resultado alimenta `Story.personajes_full`.
         """
         cursor = await conn.execute(
-            "SELECT name, role, traits, order_index FROM character "
+            "SELECT name, role, kind, relation, order_index FROM character "
             "WHERE story_id = ? ORDER BY order_index",
             (story_id,),
         )
         rows = await cursor.fetchall()
         personajes = []
         for c in rows:
-            raw_traits = c["traits"]
             personajes.append(
                 {
                     "id": f"P{c['order_index']}",
                     "name": c["name"],
                     "role": c["role"] or "",
-                    "traits": json.loads(raw_traits) if raw_traits else [],
+                    "kind": c["kind"] or CharacterKind.PERSONA.value,
+                    "relation": c["relation"] or "",
                 }
             )
         return personajes
@@ -608,6 +683,7 @@ class SQLStoryRepository:
 
         keys = row.keys()
         raw_cfg = row["narrator_config"] if "narrator_config" in keys else None
+        raw_direction = row["direction"] if "direction" in keys else None
         raw_created_at = row["created_at"] if "created_at" in keys else None
         created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
         return Story(
@@ -618,8 +694,8 @@ class SQLStoryRepository:
             sinopsis=row["sinopsis"],
             genero=(row["genero"] if "genero" in keys else "") or "",
             subgenero=(row["subgenero"] if "subgenero" in keys else "") or "",
-            tono=(row["tono"] if "tono" in keys else "") or "",
             narrator_config=json.loads(raw_cfg) if raw_cfg else None,
+            direction=Direction.model_validate_json(raw_direction) if raw_direction else None,
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,
@@ -631,18 +707,17 @@ class SQLStoryRepository:
         result = []
         for r in rule_rows:
             keys = r.keys()
-            raw_type = r["type"] if "type" in keys else None
-            raw_intensity = r["intensity"] if "intensity" in keys else None
             raw_applies = r["applies_to_beat"] if "applies_to_beat" in keys else None
-            rule_type = RuleType.from_raw(raw_type)
             result.append(
                 TypedRule(
                     id=r["id"],
                     story_id=UUID(story_id) if len(story_id) == 36 else story_id,  # type: ignore[arg-type]
                     content=r["content"],
-                    type=rule_type,
-                    intensity=raw_intensity,
                     applies_to_beat=raw_applies,
                 )
             )
         return result
+
+
+def _direction_json(direction: Direction | None) -> str | None:
+    return direction.model_dump_json() if direction else None

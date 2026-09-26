@@ -1,0 +1,197 @@
+{
+ "acts": [
+  {
+   "number": 1,
+   "goal": "José quiere terminar su turno nocturno para saldar sus deudas.",
+   "events": [
+    "José termina su turno en la terminal principal del pueblo, la estación está casi vacía y hace frío.",
+    "Recibe indicaciones del encargado para tomar la última vuelta de la noche, una ruta larga y poco concurrida.",
+    "José sube al micro, revisa los espejos y enciende la radio para pasar el rato.",
+    "Mientras espera, recuerda que un compañero le contó una historia sobre un fantasma que aparece en esa ruta, pero José lo descarta como una exageración."
+   ],
+   "change_from": "Normalidad, rutina de trabajo, escepticismo.",
+   "change_to": "Inquietud, primer indicio de lo paranormal, tensión latente.",
+   "scenario": "La estación principal del pueblo",
+   "on_stage": [
+    "José",
+    "Encargado"
+   ],
+   "held_back": "La identidad de la mujer y el motivo de su muerte.",
+   "seeds": [
+    "La historia del compañero sobre el fantasma",
+    "La promesa rota que José le hizo a alguien"
+   ],
+   "payoffs": [],
+   "decisions": [
+    "meta",
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    "«Encargado» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+    "La mención de la historia del fantasma en el Acto 1 anticipa la trama, mejor dejarla como un rumor sin confirmar hasta el Acto 2."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 2,
+   "goal": "José intenta ignorar las apariciones en el espejo retrovisor.",
+   "events": [
+    "José se pone en marcha y recorre la ruta, la oscuridad es casi total.",
+    "Por el espejo retrovisor, José ve brevemente una mujer de pelo atado en un asiento vacío. Al girar, la imagen desaparece.",
+    "José se convence de que es un reflejo o una sombra, pero la sensación de incomodidad aumenta.",
+    "La mujer aparece de nuevo, esta vez en otro asiento, José vuelve a girar y ella se desvanece.",
+    "José acelera el ritmo, intentando distraerse con la radio, pero la inquietud persiste."
+   ],
+   "change_from": "Inquietud latente, escepticismo.",
+   "change_to": "Tensión creciente, miedo incipiente, cuestionamiento de la realidad.",
+   "scenario": "La ruta del colectivo",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "La razón por la que José le hizo la promesa rota.",
+   "seeds": [
+    "La frecuencia de las apariciones",
+    "La insistencia de José en racionalizar lo que ve"
+   ],
+   "payoffs": [
+    "La historia del compañero sobre el fantasma"
+   ],
+   "decisions": [
+    "en_juego",
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    "«La insistencia de José en racionalizar lo que ve» se siembra acá y ningún acto posterior lo retoma."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 3,
+   "goal": "José intenta mantener el control mientras la aparición se manifiesta de forma más agresiva.",
+   "events": [
+    "José mira por el espejo y la mujer está a centímetros de su rostro, su expresión es seria y melancólica.",
+    "José siente una mano fría en su hombro, se sobresalta y pierde el control del micro.",
+    "El colectivo se descarrila, pero José reacciona rápidamente y lo vuelve a poner en la ruta, evitando un accidente grave.",
+    "José, aterrorizado, frena el colectivo en el lugar del descarrilamiento.",
+    "José baja del micro, tembloroso, y ve un pedestal con una foto de la mujer que aparecía en el espejo."
+   ],
+   "change_from": "Tensión extrema, miedo paralizante.",
+   "change_to": "Colapso emocional, revelación, horror.",
+   "scenario": "La ruta del colectivo, lugar del accidente",
+   "on_stage": [
+    "José",
+    "La mujer (fantasma)"
+   ],
+   "held_back": "La conexión específica entre José y la mujer fallecida.",
+   "seeds": [
+    "La foto en el pedestal",
+    "El impacto emocional del contacto físico"
+   ],
+   "payoffs": [
+    "La frecuencia de las apariciones"
+   ],
+   "decisions": [
+    "en_juego",
+    "historia_secreta"
+   ],
+   "warnings": [
+    "«La mujer (fantasma)» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+    "«La foto en el pedestal», «El impacto emocional del contacto físico» se siembran acá y ningún acto posterior los retoma.",
+    "La promesa rota se menciona en el Acto 4, pero la razón por la que José le hizo esa promesa se mantiene en secreto, necesitás revelarla antes o en el Acto 4."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 4,
+   "goal": "José intenta comprender lo sucedido y confrontar su pasado.",
+   "events": [
+    "José observa el pedestal, la foto es idéntica a la mujer que vio en el espejo.",
+    "José recuerda una promesa que le hizo a una mujer hace años, una promesa que nunca cumplió.",
+    "José se siente culpable y comprende que la mujer es el fantasma de alguien a quien lastimó en el pasado.",
+    "José pasa varios días por el lugar, siempre deteniendo el micro.",
+    "Un día, José baja del micro y deja unas flores en el pedestal, sintiendo una profunda tristeza."
+   ],
+   "change_from": "Horror, confusión, culpa.",
+   "change_to": "Comprensión, arrepentimiento, búsqueda de redención.",
+   "scenario": "Lugar del accidente, pedestal con la foto",
+   "on_stage": [
+    "José",
+    "La mujer (fantasma) - implícita"
+   ],
+   "held_back": "",
+   "seeds": [],
+   "payoffs": [
+    "La promesa rota"
+   ],
+   "decisions": [
+    "historia_secreta"
+   ],
+   "warnings": [
+    "«La mujer (fantasma) - implícita» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+    "La conexión específica entre José y la mujer fallecida se guarda para después en el Acto 3, pero no se revela en el Acto 4, necesitás mostrarla."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 5,
+   "goal": "José busca la paz interior y el descanso del alma de la mujer.",
+   "events": [
+    "José vuelve a pasar por el lugar, pero ya no ve a la mujer en el espejo.",
+    "José siente que la entidad se ha desvanecido, al menos por ahora.",
+    "José imagina que al presentar respeto a la memoria de la mujer, su alma ha encontrado la paz.",
+    "José continúa con su trabajo, pero ahora con una nueva perspectiva sobre la vida y la muerte.",
+    "José se siente aliviado y espera que nunca más tenga que enfrentarse a una experiencia similar."
+   ],
+   "change_from": "Arrepentimiento, esperanza.",
+   "change_to": "Alivio, aceptación, paz interior.",
+   "scenario": "La ruta del colectivo",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "",
+   "seeds": [],
+   "payoffs": [
+    "La historia del compañero sobre el fantasma"
+   ],
+   "decisions": [
+    "final"
+   ],
+   "warnings": [
+    "El encargado de la terminal aparece en el Acto 1 y no vuelve a aparecer, considerá agregarlo a la lista de personajes o darle una breve aparición en el Acto 5."
+   ],
+   "needs_review": false,
+   "rules": []
+  }
+ ],
+ "decisions": [
+  {
+   "id": "meta",
+   "nombre": "Qué quiere",
+   "integrada": true
+  },
+  {
+   "id": "en_juego",
+   "nombre": "Qué está en juego",
+   "integrada": true
+  },
+  {
+   "id": "vulnerabilidad",
+   "nombre": "Qué lo expone",
+   "integrada": true
+  },
+  {
+   "id": "historia_secreta",
+   "nombre": "La historia secreta",
+   "integrada": true
+  },
+  {
+   "id": "final",
+   "nombre": "El final",
+   "integrada": true
+  }
+ ]
+}

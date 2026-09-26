@@ -1,5 +1,7 @@
 # Spec-180: Saneamiento Arquitectural y Desacoplamiento Narrativo
 
+> **Reemplazada por Spec-530 (2026-09-25):** el pipeline de esta spec (Analyst, Resolver, Mapper, `narrative_context`, Journal con anclajes) se retiró. El relato sale de la escaleta: Voz + memoria por acto (10 llamadas; 12 si hay que armar la escaleta). Queda como registro histórico.
+
 > **Actualizado por Spec-450 (2026-09-23):** el `narrative_context` suma un bloque opcional de entidades: `beat_spec + resonance + synopsis_event + active_scenario + entity_exposure + memory_snapshot`. Con entidades, `must`/`must_not` de revelación salen de `reveal_rules` según el `reveal_level` de la entidad principal y la Voz recibe solo los campos que permite la exposición del acto; el Journal suma `entity_state` (tabla `entity_journal`). Sin entidades, los prompts son idénticos a los de antes (snapshots en `tests/fixtures/snapshots/`). Desde Spec-410 el resolver es determinístico: 16 llamadas LLM por historia, no 17.
 
 ## 1. Problema Narrativo y Técnico

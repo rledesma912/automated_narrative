@@ -1,7 +1,7 @@
 """Tests de `_request_to_dto`: contrato del wizard web → StoryCreateDTO.
 
 El wizard envía `storyteller_config` (no `narrator_config`) y no manda
-`genero`/`subgenero`/`tono` explícitos: vienen dentro de `atmosphere`.
+`genero`/`subgenero` explícitos: vienen dentro de `atmosphere`.
 """
 
 from src.application.services.narrator_config_sanitizer import (
@@ -48,30 +48,29 @@ def _wizard_payload(**overrides) -> dict:
 def test_storyteller_config_se_acepta_como_narrator_config():
     dto = _request_to_dto(StoryCreateRequest(**_wizard_payload()))
 
-    assert dto.narrator_config == {
-        "storyteller_id": "P1",
-        "voice_style": "intimista",
-        "perception": {"reliability": "subjetiva"},
-    }
+    # Spec-530 §6: las claves viejas (voice_style, perception…) no se guardan.
+    assert dto.narrator_config == {"storyteller_id": "P1"}
 
 
-def test_genero_subgenero_tono_se_derivan_de_atmosphere():
+def test_genero_y_subgenero_se_derivan_de_atmosphere():
     dto = _request_to_dto(StoryCreateRequest(**_wizard_payload()))
 
-    assert (dto.genero, dto.subgenero, dto.tono) == ("folk_horror", "rural", "creciente")
+    assert (dto.genero, dto.subgenero) == ("folk_horror", "rural")
 
 
 def test_genero_explicito_tiene_prioridad_sobre_atmosphere():
-    dto = _request_to_dto(StoryCreateRequest(**_wizard_payload(genero="suspenso", tono="ambiguo")))
+    dto = _request_to_dto(StoryCreateRequest(**_wizard_payload(genero="suspenso")))
 
-    assert (dto.genero, dto.subgenero, dto.tono) == ("suspenso", "rural", "ambiguo")
+    assert (dto.genero, dto.subgenero) == ("suspenso", "rural")
 
 
 def test_escenarios_con_descripcion_y_reglas_tipadas():
     dto = _request_to_dto(StoryCreateRequest(**_wizard_payload()))
 
     assert dto.escenarios_full == [{"name": "Casa", "description": "vieja y húmeda"}]
-    assert dto.typed_rules == [{"id": "R1", "content": "No mirar el espejo", "type": "paranormal"}]
+    assert dto.typed_rules == [
+        {"id": "R1", "content": "No mirar el espejo", "applies_to_beat": None}
+    ]
 
 
 def test_actos_se_extraen_de_storyteller_config():
@@ -89,7 +88,7 @@ def test_sin_config_no_inventa_datos():
     dto = _request_to_dto(StoryCreateRequest(**payload))
 
     assert dto.narrator_config is None
-    assert (dto.genero, dto.subgenero, dto.tono) == ("", "", "")
+    assert (dto.genero, dto.subgenero) == ("", "")
     assert dto.actos == []
 
 
@@ -103,6 +102,6 @@ def test_narrator_config_por_su_nombre_sigue_funcionando():
 
 
 def test_extract_atmosphere_y_actos_con_config_vacio():
-    assert extract_atmosphere(None) == ("", "", "")
-    assert extract_atmosphere({"atmosphere": None}) == ("", "", "")
+    assert extract_atmosphere(None) == ("", "")
+    assert extract_atmosphere({"atmosphere": None}) == ("", "")
     assert [a["synopsis"] for a in extract_actos({})] == ["", "", "", "", ""]

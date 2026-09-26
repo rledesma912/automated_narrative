@@ -6,7 +6,8 @@ version: "1.1"
 # Precedencia: env LLM_PROFILE → active_profile (YAML) → fallback ollama-natsumura.
 #
 # Para cambiar de modelo basta con editar esta línea o exportar LLM_PROFILE.
-# Cada perfil trae su provider y sus 3 roles completamente definidos.
+# Cada perfil trae su provider y sus roles (director = base de consultor, planificador
+# y verificador cuando el perfil no los declara; voz; journal).
 
 active_profile: ollama-gemma3-12b
 
@@ -20,17 +21,9 @@ active_profile: ollama-gemma3-12b
 profiles:
 
   ollama-qwen25-14b:
-    prompt_variant: compact
-    prompting_strategy: assertive
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
-      story_analyst:
-        model: qwen2.5:14b
-        temperature: 0.3
-        num_ctx: 6144
-        num_predict: 700
-        stop: []
       director:
         model: qwen2.5:14b
         temperature: 0.4
@@ -44,24 +37,16 @@ profiles:
         num_predict: 1500
         stop: []
       journal:
-        model: qwen2.ollama-gemma3-12b5:14b
+        model: qwen2.5:14b
         temperature: 0.3
         num_ctx: 6144
         num_predict: 500
         stop: []
 
   ollama-llama31:
-    prompt_variant: compact
-    prompting_strategy: assertive
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
-      story_analyst:
-        model: llama3.1:8b
-        temperature: 0.3
-        num_ctx: 2048
-        num_predict: 500
-        stop: ["###", "---\n"]
       director:
         model: llama3.1:8b
         temperature: 0.4
@@ -82,16 +67,9 @@ profiles:
         stop: []
 
   ollama-qwen3-8b:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
-      story_analyst:
-        model: qwen3:8b
-        temperature: 0.3
-        num_ctx: 4096
-        num_predict: 500
-        stop: []
       director:
         model: qwen3:8b
         temperature: 0.4
@@ -112,16 +90,9 @@ profiles:
         stop: []
 
   ollama-hybrid-voz-qwen3:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
-      story_analyst:
-        model: qwen2.5:14b
-        temperature: 0.3
-        num_ctx: 6144
-        num_predict: 700
-        stop: []
       director:
         model: qwen2.5:14b
         temperature: 0.4
@@ -142,19 +113,12 @@ profiles:
         stop: []
 
   ollama-gemma3-12b:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     # Spec-510: valor inicial de la duración estimada (s), medido 2026-09-24
     # (relato completo 206 s, regenerar un acto 22 s). Con historial manda la mediana.
-    estimated_seconds: { full_generation: 210, regenerate_voz: 20 }
+    estimated_seconds: { full_generation: 210, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15 }
     roles:
-      story_analyst:
-        model: gemma3:12b
-        temperature: 0.3
-        num_ctx: 4096
-        num_predict: 500
-        stop: []
       director:
         model: gemma3:12b
         temperature: 0.4
@@ -173,6 +137,26 @@ profiles:
         num_ctx: 4096
         num_predict: 256
         stop: []
+      # Spec-530: asistente de autoría (salida JSON con esquema). Medido con
+      # «la pena del colectivo»: análisis ~35 s, escaleta ~45 s.
+      consultor:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 8192
+        num_predict: 1500
+        stop: []
+      planificador:
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 2500
+        stop: []
+      verificador:
+        model: gemma3:12b
+        temperature: 0.2
+        num_ctx: 8192
+        num_predict: 1200
+        stop: []
 
   # Spec-480 (EV-2): perfil híbrido. Analyst, Mapper y Journal como `ollama-gemma3-12b`;
   # la Voz en Claude Sonnet 5 (`provider` por rol → RoleRoutingAdapter). Cuesta ~US$ 0,08
@@ -180,19 +164,12 @@ profiles:
   # evaluarlo antes con `scripts/evaluate_voice.py --profile … --yes`.
   # Sonnet 5 no acepta temperature (el adapter la omite) y piensa si se omite `thinking`.
   ollama-gemma3-12b-voz-sonnet5:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     anthropic: { model: claude-sonnet-5 }
     # Spec-510: sin medir con la Voz en Claude; mismos valores que gemma3 hasta tener historial.
-    estimated_seconds: { full_generation: 210, regenerate_voz: 20 }
+    estimated_seconds: { full_generation: 210, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15 }
     roles:
-      story_analyst:
-        model: gemma3:12b
-        temperature: 0.3
-        num_ctx: 4096
-        num_predict: 500
-        stop: []
       director:
         model: gemma3:12b
         temperature: 0.4
@@ -210,17 +187,31 @@ profiles:
         num_ctx: 4096
         num_predict: 256
         stop: []
+      # Spec-530: asistente de autoría (salida JSON con esquema). Medido con
+      # «la pena del colectivo»: análisis ~35 s, escaleta ~45 s.
+      consultor:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 8192
+        num_predict: 1500
+        stop: []
+      planificador:
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 2500
+        stop: []
+      verificador:
+        model: gemma3:12b
+        temperature: 0.2
+        num_ctx: 8192
+        num_predict: 1200
+        stop: []
 
   gemini-cli:
-    prompt_variant: frontier
     provider: gemini
-    prompting_strategy: assertive
     gemini: { cli_command: gemini, model: gemini-2.5-flash }
     roles:
-      story_analyst:
-        model: gemini-2.5-flash
-        temperature: 0.3
-        num_predict: 600
       director:
         model: gemini-2.5-flash
         temperature: 0.4

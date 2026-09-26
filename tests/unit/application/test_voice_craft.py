@@ -3,9 +3,7 @@
 import pytest
 
 from src.application.services import PromptBuilder
-from src.application.services.beat_spec_repository import BeatSpecRepository
-from src.application.services.narrative_context_assembler import NarrativeContextAssembler
-from src.domain.models import MacroBeat, Story
+from src.domain.models import Story
 
 CAST = [
     {"id": "P1", "name": "Irene", "role": "Narradora y protagonista; nuera de María"},
@@ -52,48 +50,25 @@ def test_sin_narrador_o_sin_elenco_no_hay_bloque(pb):
     assert pb._format_kinship(story, "Irene") == ""
 
 
-@pytest.mark.parametrize("variant", ["compact", "frontier"])
-def test_las_dos_variantes_llevan_guia_clichés_y_parentescos(pb, variant):
-    story = _story(storyteller_name="Irene")
-    if variant == "compact":
-        prompt = pb.build_voice_system_compact(story, 1)
-    else:
-        prompt = pb.build_voice_prompt(story)
-    assert "OFICIO DE HORROR:" in prompt
-    assert "«me heló la sangre»" in prompt
-    assert "Contalos siempre desde vos, Irene" in prompt
-    assert "CÓMO LLAMÁS A CADA PERSONAJE (sos Irene):" in prompt
-    assert "{" not in prompt  # ningún placeholder sin completar
-
-
-def test_build_system_prompt_frontier_tambien_completa_los_placeholders(pb):
-    assert "{" not in pb.build_system_prompt(_story(storyteller_name="Irene"))
+def test_extras_de_la_voz_guia_clichés_y_parentescos(pb):
+    extras = pb._voice_extras(_story(storyteller_name="Irene"))
+    assert "OFICIO DE HORROR:" in extras["guia_oficio"]
+    assert "«me heló la sangre»" in extras["guia_oficio"]
+    assert "Contalos siempre desde vos, Irene" in extras["guia_oficio"]
+    assert "CÓMO LLAMÁS A CADA PERSONAJE (sos Irene):" in extras["parentescos"]
+    assert "{" not in "".join(extras.values())  # ningún placeholder sin completar
 
 
 def test_sin_narrador_la_guia_habla_del_narrador(pb):
-    prompt = pb.build_voice_system_compact(_story(), 1)
-    assert "Contalos siempre desde vos, el narrador" in prompt
-    assert "CÓMO LLAMÁS A CADA PERSONAJE" not in prompt
-
-
-def test_encabezado_del_evento_con_y_sin_narrador():
-    assembler = NarrativeContextAssembler(BeatSpecRepository())
-    beat = MacroBeat(number=1, summary="Irene llega.")
-    with_narrator = assembler.assemble(beat, {}, narrator="Irene")
-    assert with_narrator.startswith(
-        "EVENTO DE ESTE MOMENTO (contalo en primera persona, como Irene; "
-        "narrá EXACTAMENTE estos eventos, en orden):"
-    )
-    assert assembler.assemble(beat, {}).startswith(
-        "EVENTO DE ESTE MOMENTO (narrá EXACTAMENTE estos eventos, en orden):"
-    )
+    extras = pb._voice_extras(_story())
+    assert "Contalos siempre desde vos, el narrador" in extras["guia_oficio"]
+    assert extras["parentescos"] == ""
 
 
 def test_presentacion_con_el_nombre_de_quien_narra(pb):
-    prompt = pb.build_voice_system_compact(_story(storyteller_name="Irene"), 1)
-    assert (
+    presentacion = pb._voice_extras(_story(storyteller_name="Irene"))["presentacion"]
+    assert presentacion.startswith(
         "Sos Irene y contás en primera persona los hechos de la historia (Primera persona."
-        in prompt
     )
-    sin = pb.build_voice_system_compact(_story(), 1)
+    sin = pb._voice_extras(_story())["presentacion"]
     assert "Sos Primera persona. Narrador: Irene., narrando en primera persona" in sin

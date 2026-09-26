@@ -12,10 +12,10 @@ describe("progress", () => {
     [{}, 0.03],
     [{ stage: "voz" }, 0.03],
     [{ stage: "desconocida", beat: 2 }, 0.03],
-    [{ stage: "mapper", beat: 1, total_beats: 5 }, 0.02],
-    [{ stage: "voz", beat: 3, total_beats: 5 }, 0.48],
+    [{ stage: "voz", beat: 1, total_beats: 5 }, 0.02],
+    [{ stage: "voz", beat: 3, total_beats: 5 }, 0.42],
     [{ stage: "journal", beat: 5, total_beats: 5 }, 0.97],
-    [{ stage: "voz", beat: 2 }, 0.28], // total_beats por defecto: 5
+    [{ stage: "voz", beat: 2 }, 0.22], // total_beats por defecto: 5
     [{ stage: "journal", beat: 1, total_beats: 1 }, 0.85],
   ])("%o → %s", (job, expected) => {
     expect(eta.progress(job)).toBeCloseTo(expected, 5);
@@ -73,8 +73,8 @@ describe("remainingFor", () => {
       total_beats: 5,
       params: { estimated_seconds: 200 },
     };
-    // p = 0,48 → (0,52·100) + (0,48·(100/0,48 − 100)) = 52 + 52
-    expect(eta.remainingFor(job, 100)).toBeCloseTo(104, 5);
+    // p = 0,42 → (0,58·100) + (0,42·(100/0,42 − 100)) = 58 + 58
+    expect(eta.remainingFor(job, 100)).toBeCloseTo(116, 5);
   });
 
   it("regenerar un acto usa solo la estimación", () => {

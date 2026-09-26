@@ -114,8 +114,8 @@ async def init_db() -> None:
             sinopsis TEXT,
             genero TEXT,
             subgenero TEXT,
-            tono TEXT,
             narrator_config TEXT,
+            direction TEXT,
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (genero) REFERENCES genre(id),
@@ -140,19 +140,6 @@ async def init_db() -> None:
             FOREIGN KEY (nature_id) REFERENCES entity_nature(id)
         )
     """)
-    # Estado de las entidades por beat (lo escribe el Journal, Spec-450 §3). Cuelga
-    # de `story` y no de `entity`: editar la historia reinserta las entidades con
-    # ids nuevos y el estado del journal debe sobrevivir.
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS entity_journal (
-            id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL,
-            beat_number INTEGER NOT NULL,
-            entity_state TEXT NOT NULL DEFAULT '',
-            UNIQUE (story_id, beat_number),
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
-        )
-    """)
 
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS character (
@@ -160,7 +147,8 @@ async def init_db() -> None:
             story_id TEXT NOT NULL,
             name TEXT NOT NULL,
             role TEXT,
-            traits TEXT DEFAULT '[]',
+            kind TEXT NOT NULL DEFAULT 'persona',
+            relation TEXT DEFAULT '',
             order_index INTEGER NOT NULL,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
         )
@@ -171,8 +159,6 @@ async def init_db() -> None:
             id TEXT PRIMARY KEY,
             story_id TEXT NOT NULL,
             content TEXT NOT NULL,
-            type TEXT,
-            intensity TEXT,
             applies_to_beat INTEGER,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             CHECK (applies_to_beat IS NULL OR applies_to_beat >= 1)
@@ -211,27 +197,13 @@ async def init_db() -> None:
     """)
 
     await conn.execute("""
-        CREATE TABLE IF NOT EXISTS narrative_anchors (
-            id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL,
-            resonance_hamartia TEXT NOT NULL,
-            resonance_hybris TEXT NOT NULL,
-            resonance_anagnorisis TEXT NOT NULL,
-            resonance_peripeteia TEXT NOT NULL,
-            resonance_residual TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
-        )
-    """)
-
-    await conn.execute("""
         CREATE TABLE IF NOT EXISTS narrative_journal (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             story_id TEXT NOT NULL,
             beat_number INTEGER NOT NULL,
             last_events TEXT DEFAULT '',
-            unresolved_mysteries TEXT DEFAULT '',
             physical_emotional_state TEXT DEFAULT '',
+            used_motifs TEXT DEFAULT '[]',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, beat_number)
@@ -247,6 +219,49 @@ async def init_db() -> None:
             status TEXT DEFAULT 'completed',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_template_id) REFERENCES story(id) ON DELETE CASCADE
+        )
+    """)
+
+    # Spec-530: taller del asistente. Una fila por criterio y nivel, con la pregunta
+    # vigente, la respuesta y las preguntas de rondas anteriores (`asked`).
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS story_workshop (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            story_id TEXT NOT NULL,
+            level TEXT NOT NULL DEFAULT 'direccion',
+            criterion TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'falta',
+            question TEXT DEFAULT '',
+            options TEXT DEFAULT '[]',
+            answer TEXT DEFAULT '',
+            round INTEGER NOT NULL DEFAULT 1,
+            question_round INTEGER NOT NULL DEFAULT 0,
+            asked TEXT DEFAULT '[]',
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            UNIQUE (story_id, level, criterion)
+        )
+    """)
+    # Spec-530: escaleta (entrada de cada acto; `macro_beat` es la salida generada).
+    # Escenario y personajes en escena van por nombre: se reescriben con ids nuevos.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS act_outline (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            story_id TEXT NOT NULL,
+            number INTEGER NOT NULL CHECK (number BETWEEN 1 AND 5),
+            goal TEXT DEFAULT '',
+            events TEXT DEFAULT '[]',
+            change_from TEXT DEFAULT '',
+            change_to TEXT DEFAULT '',
+            scenario TEXT DEFAULT '',
+            on_stage TEXT DEFAULT '[]',
+            held_back TEXT DEFAULT '',
+            seeds TEXT DEFAULT '[]',
+            payoffs TEXT DEFAULT '[]',
+            decisions TEXT DEFAULT '[]',
+            warnings TEXT DEFAULT '[]',
+            needs_review INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            UNIQUE (story_id, number)
         )
     """)
 

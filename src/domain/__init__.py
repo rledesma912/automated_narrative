@@ -13,7 +13,6 @@ from src.domain.models import (
     Beat,
     NarrativeJournal,
     Story,
-    StoryMetadata,
     StoryStatus,
 )
 
@@ -24,7 +23,6 @@ __all__ = [
     "NarrativeError",
     "NarrativeJournal",
     "Story",
-    "StoryMetadata",
     "StoryNotFoundError",
     "StoryRepository",
     "StoryStatus",

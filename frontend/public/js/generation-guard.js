@@ -31,9 +31,8 @@
     '<path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>';
 
   const STAGE_LABELS = {
-    analyst: "Analizando",
-    resolver: "Distribuyendo escenarios",
-    mapper: "Mapeando",
+    planificador: "Armando la escaleta",
+    verificador: "Revisando la escaleta",
     voz: "Narrando",
     journal: "Actualizando memoria",
     consolidando: "Consolidando",

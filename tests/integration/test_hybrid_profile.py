@@ -50,7 +50,7 @@ def test_perfil_hibrido_definido_pero_no_activo():
     assert roles["voz"]["model"] == "claude-sonnet-5"
     assert roles["voz"]["thinking"] in ("adaptive", "disabled")
     assert "temperature" not in roles["voz"]
-    for role in ("story_analyst", "director", "journal"):
+    for role in ("planificador", "verificador", "journal"):
         assert "provider" not in roles[role]  # heredan ollama del perfil
         assert roles[role]["model"] == "gemma3:12b"
 
@@ -115,15 +115,15 @@ async def test_pipeline_completo_la_voz_va_a_claude_y_el_resto_a_ollama(client, 
     done = (await client.get(f"/api/v1/jobs/{job['job_id']}")).json()
 
     assert done["status"] == "done", done
-    # Las 5 llamadas de la Voz fueron a Claude, con el prompt compact de Spec-470.
+    # Las 5 llamadas de la Voz fueron a Claude, con el prompt de la escaleta (Spec-530).
     assert len(fake.messages.calls) == 5
     request = fake.messages.calls[0]
     assert request["model"] == "claude-sonnet-5"
     assert request["thinking"] == {"type": "disabled"}
     assert "temperature" not in request
     assert "OFICIO DE HORROR" in request["system"]
-    assert request["messages"][0]["content"].startswith("EVENTO DE ESTE MOMENTO (contalo")
+    assert request["messages"][0]["content"].startswith("ACTO 1 DE 5")
     # El resto, al modelo local; ninguna llamada de la Voz ahí.
-    assert {c["role"] for c in local.calls} == {"story_analyst", "director", "journal"}
+    assert {c["role"] for c in local.calls} == {"planificador", "verificador", "journal"}
     narrative = (await client.get(f"/api/v1/generated-narratives/{done['narrative_id']}")).json()
     assert narrative["content"].count("Prosa de Claude para el acto.") == 5

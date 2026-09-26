@@ -1,0 +1,194 @@
+{
+ "acts": [
+  {
+   "number": 1,
+   "goal": "José quiere terminar su turno y llegar a casa, sin que nada inusual ocurra.",
+   "events": [
+    "José termina su turno en la terminal principal del pueblo, cansado pero aliviado.",
+    "Mientras espera la vuelta, escucha a un compañero hablar sobre sucesos extraños en la ruta, pero José lo descarta como cháchara.",
+    "José sube al micro y revisa los espejos retrovisores, notando que la terminal está casi vacía.",
+    "José enciende el motor y sale de la terminal, sintiendo una leve incomodidad por la oscuridad."
+   ],
+   "change_from": "Normalidad, rutina, escepticismo.",
+   "change_to": "Incomodidad, inquietud sutil, primer indicio de algo extraño.",
+   "scenario": "La estación principal del pueblo",
+   "on_stage": [
+    "José",
+    "Compañero"
+   ],
+   "held_back": "La deuda pendiente de José con alguien del pasado.",
+   "seeds": [
+    "El escepticismo de José hacia lo paranormal.",
+    "La mención de sucesos extraños por parte del compañero."
+   ],
+   "payoffs": [],
+   "decisions": [
+    "meta",
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    "«Compañero» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+    "«La mención de sucesos extraños por parte del compañero.» se siembra acá y ningún acto posterior lo retoma.",
+    "El comentario del compañero sobre sucesos paranormales en el Acto 1 anticipa la trama, mejor dejarlo más sutil o para más adelante."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 2,
+   "goal": "José intenta ignorar las apariciones, pensando que son producto de su cansancio.",
+   "events": [
+    "José conduce por la ruta, la oscuridad es casi total y la visibilidad limitada.",
+    "Por el espejo retrovisor, José ve brevemente una mujer de pelo atado en un asiento vacío, pero al girar, no hay nadie.",
+    "La aparición se repite varias veces, en diferentes asientos, siempre fugaz y desapareciendo al girar.",
+    "José se molesta, pensando que está alucinando por el cansancio y la falta de sueño.",
+    "José acelera el micro, tratando de llegar rápido a su casa y olvidarse de lo que está viendo."
+   ],
+   "change_from": "Incomodidad, inquietud sutil.",
+   "change_to": "Malestar, frustración, creciente sensación de que algo no está bien.",
+   "scenario": "La ruta",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "La identidad de la mujer y su conexión con José.",
+   "seeds": [
+    "La insistencia de las apariciones.",
+    "La aceleración del micro como una forma de escape."
+   ],
+   "payoffs": [
+    "El escepticismo de José."
+   ],
+   "decisions": [
+    "en_juego"
+   ],
+   "warnings": [
+    "«La aceleración del micro como una forma de escape.» se siembra acá y ningún acto posterior lo retoma.",
+    "La repetición de la aparición de la mujer en diferentes asientos se repite en el Acto 3, podés variar la descripción o la intensidad de las apariciones."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 3,
+   "goal": "José intenta mantener el control, pero la aparición se vuelve más agresiva.",
+   "events": [
+    "José mira por el espejo retrovisor y la mujer está a centímetros de su rostro.",
+    "José siente un roce en el hombro, como si alguien lo hubiera tocado.",
+    "José se sobresalta y pierde el control del micro, que se sale de la ruta.",
+    "El micro descarrila, pero José logra recuperar el control y evitar un accidente grave.",
+    "José, aterrorizado, se detiene en un lugar desconocido y ve el rostro de la mujer en el espejo, sonriendo."
+   ],
+   "change_from": "Malestar, frustración.",
+   "change_to": "Terror, pánico, pérdida de control.",
+   "scenario": "La ruta",
+   "on_stage": [
+    "José",
+    "La mujer (fantasma)"
+   ],
+   "held_back": "La razón por la que la mujer está atormentando a José.",
+   "seeds": [
+    "El roce en el hombro como una forma de contacto físico.",
+    "La sonrisa de la mujer como una amenaza."
+   ],
+   "payoffs": [
+    "La insistencia de las apariciones."
+   ],
+   "decisions": [
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    "«La mujer (fantasma)» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+    "«El roce en el hombro como una forma de contacto físico.», «La sonrisa de la mujer como una amenaza.» se siembran acá y ningún acto posterior los retoma.",
+    "La deuda pendiente de José se guarda para después en el Acto 1, pero no se menciona hasta el Acto 4, necesitás una pista más temprana."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 4,
+   "goal": "José busca entender lo que está pasando y enfrenta la verdad sobre su pasado.",
+   "events": [
+    "José baja del micro, tembloroso, y observa el lugar donde descarriló.",
+    "Ve un pedestal con una foto de una mujer que es idéntica a la que ha estado viendo en el espejo.",
+    "Lee una placa que indica que la mujer falleció en ese lugar en circunstancias poco claras.",
+    "José recuerda una deuda que tenía con la mujer hace años, una promesa que nunca cumplió.",
+    "José se da cuenta de que la mujer es el fantasma de alguien a quien engañó y abandonó."
+   ],
+   "change_from": "Terror, pánico.",
+   "change_to": "Comprensión, arrepentimiento, confrontación con el pasado.",
+   "scenario": "El lugar del accidente",
+   "on_stage": [
+    "José",
+    "La mujer (foto en el pedestal)"
+   ],
+   "held_back": "",
+   "seeds": [],
+   "payoffs": [
+    "La deuda pendiente."
+   ],
+   "decisions": [
+    "historia_secreta"
+   ],
+   "warnings": [
+    "«La mujer (foto en el pedestal)» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+    "La placa con la información de la mujer debería haber aparecido antes, quizás en el Acto 3, para aumentar la tensión.",
+    "La conexión entre José y la mujer (la deuda) es un secreto importante, necesitás sembrar pistas más claras antes de revelarla."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 5,
+   "goal": "José busca la redención y el alma de la mujer encuentra la paz.",
+   "events": [
+    "José vuelve a pasar por el lugar al día siguiente y detiene el micro.",
+    "Baja del micro y deja unas flores en el pedestal con la foto de la mujer.",
+    "José observa el lugar, sintiendo una calma inesperada.",
+    "José vuelve a conducir, sin volver a ver a la mujer en el espejo.",
+    "José imagina que, al presentar sus respetos, el alma de la mujer finalmente ha encontrado la paz."
+   ],
+   "change_from": "Comprensión, arrepentimiento.",
+   "change_to": "Calma, aceptación, cierre.",
+   "scenario": "El lugar del accidente",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "",
+   "seeds": [],
+   "payoffs": [],
+   "decisions": [
+    "final"
+   ],
+   "warnings": [],
+   "needs_review": false,
+   "rules": []
+  }
+ ],
+ "decisions": [
+  {
+   "id": "meta",
+   "nombre": "Qué quiere",
+   "integrada": true
+  },
+  {
+   "id": "en_juego",
+   "nombre": "Qué está en juego",
+   "integrada": true
+  },
+  {
+   "id": "vulnerabilidad",
+   "nombre": "Qué lo expone",
+   "integrada": true
+  },
+  {
+   "id": "historia_secreta",
+   "nombre": "La historia secreta",
+   "integrada": true
+  },
+  {
+   "id": "final",
+   "nombre": "El final",
+   "integrada": true
+  }
+ ]
+}

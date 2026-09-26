@@ -5,19 +5,22 @@ from uuid import UUID, uuid4
 from pydantic import ValidationError
 
 from src.application.dto import StoryCreateDTO
-from src.domain.exceptions import InvalidEntityError, InvalidGenreError
+from src.domain.exceptions import InvalidAuthoringError, InvalidEntityError, InvalidGenreError
 from src.domain.interfaces import GenreRepository, StoryRepository
 from src.domain.models import (
     MAX_ENTITIES,
+    ActOutline,
     BeatType,
+    CharacterKind,
+    Direction,
     Entity,
     MacroBeat,
     RevealLevel,
-    RuleType,
     Scenario,
     Story,
     StoryStatus,
     TypedRule,
+    WorkshopItem,
 )
 
 
@@ -49,13 +52,13 @@ class CreateStoryUseCase:
             sinopsis=dto.sinopsis,
             genero=dto.genero,
             subgenero=dto.subgenero,
-            tono=dto.tono,
             reglas=dto.reglas,
             status=initial_status,
             narrator_config=dto.narrator_config,
             personajes_full=dto.personajes_full,
         )
         story.entities = build_entities(story.id, dto.entities)
+        story.direction, story.workshop, story.outline = build_authoring(dto)
         await ensure_valid_entities(self.genre_repository, dto.genero, story.entities)
 
         # Crear objetos Scenario. Si el DTO trae escenarios_full (con
@@ -78,20 +81,16 @@ class CreateStoryUseCase:
 
         # Crear TypedRule si el DTO trae reglas tipadas
         if dto.typed_rules:
-            typed = []
-            for r in dto.typed_rules:
-                raw_type = r.get("type")
-                rule_type = RuleType.from_raw(raw_type)
-                typed.append(
-                    TypedRule(
-                        id=r.get("id") or str(uuid4()),
-                        story_id=story.id,
-                        content=r.get("content", ""),
-                        type=rule_type,
-                        intensity=r.get("intensity"),
-                    )
+            story.typed_rules = [
+                TypedRule(
+                    id=r.get("id") or str(uuid4()),
+                    story_id=story.id,
+                    content=r.get("content", ""),
+                    # Spec-530: las reglas se cargan dentro de un acto.
+                    applies_to_beat=r.get("applies_to_beat"),
                 )
-            story.typed_rules = typed
+                for r in dto.typed_rules
+            ]
 
         # Pre-crear los 5 MacroBeat desde los actos del YAML (Spec-190 T7.1)
         if dto.actos:
@@ -139,6 +138,38 @@ _ENTITY_FIELD_LABELS = {
     "limits": "«Límites»",
     "reveal_level": "«Nivel de revelación»",
 }
+
+
+def build_authoring(
+    dto: StoryCreateDTO,
+) -> tuple[Direction | None, list[WorkshopItem], list[ActOutline]]:
+    """Dirección, taller y escaleta desde el DTO (Spec-530). Raises InvalidAuthoringError."""
+    direction = _validate(Direction, dto.direction, "dirección") if dto.direction else None
+    workshop = [
+        _validate(WorkshopItem, w, f"taller, elemento {i}") for i, w in enumerate(dto.workshop, 1)
+    ]
+    outline = [
+        _validate(ActOutline, a, f"escaleta, elemento {i}") for i, a in enumerate(dto.outline, 1)
+    ]
+    kinds = {k.value for k in CharacterKind}
+    for p in dto.personajes_full:
+        if p.get("kind") and p["kind"] not in kinds:
+            raise InvalidAuthoringError(
+                f"Tipo de personaje inválido para «{p.get('name', '')}»: {p['kind']}"
+            )
+    numbers = [a.number for a in outline]
+    if len(numbers) != len(set(numbers)):
+        raise InvalidAuthoringError("La escaleta repite un número de acto")
+    return direction, workshop, outline
+
+
+def _validate(model, raw: dict, where: str):
+    try:
+        return model.model_validate(raw)
+    except ValidationError as e:
+        first = e.errors()[0]
+        field = ".".join(str(p) for p in first["loc"])
+        raise InvalidAuthoringError(f"Dato inválido en {where} ({field}): {first['msg']}") from e
 
 
 def build_entities(story_id: UUID, raw: list[dict]) -> list[Entity]:

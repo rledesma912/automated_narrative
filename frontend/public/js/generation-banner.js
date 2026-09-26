@@ -23,6 +23,10 @@
   const TICK_MS = 15000; // recalcula el tiempo restante (Spec-510)
   const eta = window.ForgeEta;
   const dismissed = new Set(); // job_id de avisos cerrados (esta pestaña)
+  // Spec-530: los jobs del asistente (taller, escaleta, revisión) se siguen con el
+  // modal de su propia vista; no son generaciones de relato.
+  const AUTHORING_KINDS = ["consult", "plan_outline", "verify_outline"];
+  const isGeneration = (job) => !AUTHORING_KINDS.includes(job.kind);
 
   function stepText(job) {
     if (job.kind === "regenerate_voz") {
@@ -49,7 +53,7 @@
   function lastFinished() {
     const now = Date.now();
     return window.ForgeEvents.finishedJobs().find(({ job, at }) => {
-      if (dismissed.has(job.job_id)) return false;
+      if (dismissed.has(job.job_id) || !isGeneration(job)) return false;
       return job.status === "failed" || now - at < DONE_VISIBLE_MS;
     });
   }
@@ -57,7 +61,7 @@
   function render() {
     const bus = window.ForgeEvents;
     const banner = document.getElementById("generation-banner");
-    const running = bus ? bus.activeJobs() : [];
+    const running = bus ? bus.activeJobs().filter(isGeneration) : [];
 
     document.querySelectorAll("[data-forge-jobs-dot]").forEach((dot) => {
       dot.classList.toggle("hidden", running.length === 0);
@@ -115,7 +119,7 @@
 
   document.addEventListener("forge:jobs-changed", render);
   setInterval(() => {
-    if (window.ForgeEvents && window.ForgeEvents.activeJobs().length > 0) render();
+    if (window.ForgeEvents && window.ForgeEvents.activeJobs().some(isGeneration)) render();
   }, TICK_MS);
   render();
 })();

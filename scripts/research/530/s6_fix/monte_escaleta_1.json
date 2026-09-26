@@ -1,0 +1,214 @@
+{
+ "acts": [
+  {
+   "number": 1,
+   "goal": "Irene intenta disfrutar de un día tranquilo con su familia, mientras se prepara para la fiesta.",
+   "events": [
+    "Irene y su familia llegan a la casa de María en taxi, el sol apenas asoma.",
+    "Mariano juega en el patio mientras Irene y Ricardo ayudan a María a preparar el café de olla y el pan casero.",
+    "María cuenta historias de su vida y leyendas locales, como la del lobizón, mientras Irene observa a Mariano.",
+    "Ricardo desestima las historias de María como folklore, pero promete no cruzar el monte de los espinillos por respeto a su madre.",
+    "Irene se siente un poco incómoda con la insistencia de María en las supersticiones, pero intenta complacerla."
+   ],
+   "change_from": "Calma y normalidad en una casa rural.",
+   "change_to": "Una atmósfera ligeramente tensa por las supersticiones de María y la promesa de Ricardo.",
+   "scenario": "Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "María"
+   ],
+   "held_back": "La razón por la que Ricardo desestima las historias de María.",
+   "seeds": [
+    "La promesa de Ricardo de no cruzar el monte.",
+    "La incomodidad de Irene al intentar complacer a María."
+   ],
+   "payoffs": [],
+   "decisions": [
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    "«La promesa de Ricardo de no cruzar el monte.», «La incomodidad de Irene al intentar complacer a María.» se siembran acá y ningún acto posterior los retoma.",
+    "La razón por la que Ricardo desestima las historias de María se guarda para después, pero no se revela en ningún acto posterior.",
+    "El hecho de que Ricardo desestima las historias de María se repite en el Acto 2, donde se menciona que ignora la advertencia de María."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 2,
+   "goal": "Ricardo, impulsado por la prisa, decide tomar un atajo por el monte de los espinillos, desafiando la advertencia de María.",
+   "events": [
+    "La familia se dirige a la fiesta en sulki, disfrutando del paisaje y la compañía.",
+    "La fiesta es alegre y llena de charlas entre los dueños de la estancia y los invitados.",
+    "Una tormenta eléctrica se desata, pero la familia decide emprender el regreso a casa en sulki.",
+    "Ricardo, para evitar un camino largo y barroso, decide atravesar el monte de los espinillos, ignorando la advertencia de María.",
+    "Irene protesta, sintiendo que el aire en el monte es denso y frío, pero Ricardo la ignora."
+   ],
+   "change_from": "Un regreso alegre y despreocupado en sulki.",
+   "change_to": "Tensión y desacuerdo entre Ricardo e Irene al decidir atravesar el monte.",
+   "scenario": "Camino al sulki / Monte de los Espinillos",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad"
+   ],
+   "held_back": "La razón por la que Ricardo se niega a escuchar a Irene.",
+   "seeds": [
+    "La desobediencia de Ricardo a la advertencia de María.",
+    "La intuición de Irene sobre el peligro del monte."
+   ],
+   "payoffs": [
+    "La promesa de Ricardo del acto 1."
+   ],
+   "decisions": [
+    "en_juego"
+   ],
+   "warnings": [
+    "«La desobediencia de Ricardo a la advertencia de María.», «La intuición de Irene sobre el peligro del monte.» se siembran acá y ningún acto posterior los retoma.",
+    "La razón por la que Ricardo se niega a escuchar a Irene se guarda para después, pero no se revela en ningún acto posterior."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 3,
+   "goal": "La familia se enfrenta a una presencia imposible en el monte, que desafía la lógica y la razón.",
+   "events": [
+    "El caballo se empacaba y o querer caminar al entrar al monte, Ricardo le grita para apurarlo.",
+    "Frente al sulki, aparece María, vestida con la misma ropa que llevaba en la casa, con una mirada inexpresiva.",
+    "Ricardo intenta avanzar, pero el sulki está atrapado en raíces que no estaban allí.",
+    "Irene, presa del pánico, abraza a sus hijos y comienza a rezar en voz alta, instando a Ricardo a hacer lo mismo.",
+    "La figura de María desaparece cuando la familia reza."
+   ],
+   "change_from": "Un camino oscuro y amenazante en el monte.",
+   "change_to": "Terror y confusión ante una aparición sobrenatural.",
+   "scenario": "Monte de los Espinillos",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "El origen de la aparición de María.",
+   "seeds": [
+    "La mirada inexpresiva de María.",
+    "Las raíces que atrapan el sulki."
+   ],
+   "payoffs": [
+    "La advertencia de María del acto 1.",
+    "La incomodidad de Irene del acto 1."
+   ],
+   "decisions": [
+    "meta"
+   ],
+   "warnings": [
+    "«La mirada inexpresiva de María.», «Las raíces que atrapan el sulki.» se siembran acá y ningún acto posterior los retoma.",
+    "El origen de la aparición de María se guarda para después, pero no se revela en ningún acto posterior."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 4,
+   "goal": "Ricardo, traumatizado, intenta escapar del monte, mientras Irene se enfrenta a sus miedos y a la posible pérdida de la confianza en su esposo.",
+   "events": [
+    "Ricardo azota las riendas con desesperación, intentando huir del monte.",
+    "El camino parece deformarse, repitiéndose los mismos grupos de espinillos y el aroma a tierra muerta.",
+    "Un silbido agudo, como un lamento humano, comienza a vibrar en el sulki, afectando a Irene y Mariano.",
+    "Irene recuerda un rescate fallido de su infancia en el monte, un evento que la marcó profundamente.",
+    "Tras un rezo desesperado, logran romper el cerco de ramas y escapar a campo abierto."
+   ],
+   "change_from": "Una huida desesperada del monte.",
+   "change_to": "Un alivio momentáneo seguido de una sensación de inquietud y desconfianza.",
+   "scenario": "Monte de los Espinillos / Campo abierto",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad"
+   ],
+   "held_back": "La naturaleza del silbido agudo.",
+   "seeds": [
+    "El aroma a tierra muerta.",
+    "El silbido agudo."
+   ],
+   "payoffs": [
+    "La promesa rota de Ricardo del acto 2.",
+    "La incomodidad de Irene del acto 1."
+   ],
+   "decisions": [
+    "historia_secreta"
+   ],
+   "warnings": [
+    "«El aroma a tierra muerta.», «El silbido agudo.» se siembran acá y ningún acto posterior los retoma.",
+    "La naturaleza del silbido agudo se guarda para después, pero no se revela en ningún acto posterior."
+   ],
+   "needs_review": false,
+   "rules": []
+  },
+  {
+   "number": 5,
+   "goal": "Irene se enfrenta a la posibilidad de que lo sobrenatural sea real, mientras se enfrenta a una amenaza latente en su propia casa.",
+   "events": [
+    "La tormenta cesa abruptamente al salir del monte, revelando un paisaje bañado por una luz cenicienta y fría.",
+    "Llegan a la casa de María, empapados y temblando, donde ella los recibe en silencio con una vela encendida.",
+    "Ricardo guarda el caballo en el corral con movimientos mecánicos, evitando mirar hacia el monte.",
+    "Irene nota una rama de espinillo fresca y negra enganchada en la manta de la bebé Soledad.",
+    "Al asomarse a la ventana, Irene ve que no hay rastros de la tormenta en el patio, confirmando sus sospechas sobre lo sobrenatural."
+   ],
+   "change_from": "Un regreso a la normalidad aparente.",
+   "change_to": "Una creciente sensación de temor y la certeza de que algo siniestro está presente.",
+   "scenario": "Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "",
+   "seeds": [],
+   "payoffs": [
+    "La advertencia de María del acto 1.",
+    "La desobediencia de Ricardo del acto 2."
+   ],
+   "decisions": [
+    "final"
+   ],
+   "warnings": [],
+   "needs_review": false,
+   "rules": []
+  }
+ ],
+ "decisions": [
+  {
+   "id": "meta",
+   "nombre": "Qué quiere",
+   "integrada": true
+  },
+  {
+   "id": "en_juego",
+   "nombre": "Qué está en juego",
+   "integrada": true
+  },
+  {
+   "id": "vulnerabilidad",
+   "nombre": "Qué lo expone",
+   "integrada": true
+  },
+  {
+   "id": "historia_secreta",
+   "nombre": "La historia secreta",
+   "integrada": true
+  },
+  {
+   "id": "final",
+   "nombre": "El final",
+   "integrada": true
+  }
+ ]
+}

@@ -2,7 +2,7 @@
 
 El YAML producido es input válido del comando `generate --input` (round-trip
 bidireccional) y refleja 1:1 la estructura interna de `storyteller_config`
-que `mapStoryToWizard()` consume para rehidratar el wizard del frontend.
+que lee la ficha de la historia.
 
 Spec-190 §T6.2: el `narrator_config` persistido ya no contiene `atmosphere`,
 `scenarios`, `rules` ni `actos` (ni `entities`, Spec-450). El exporter los
@@ -61,7 +61,7 @@ class YamlStoryExporter:
         sc = story.narrator_config or {}
         personajes = self._build_personajes(story)
 
-        return {
+        doc = {
             "title": story.title,
             "personajes_full": personajes,
             "protagonista": story.protagonista,
@@ -72,6 +72,14 @@ class YamlStoryExporter:
             "reglas": list(story.reglas or []),
             "storyteller_config": self._build_storyteller_config(sc, story),
         }
+        # Spec-530: solo si la historia pasó por el asistente (los YAML viejos no cambian).
+        if story.direction:
+            doc["direction"] = story.direction.model_dump(mode="json")
+        if story.workshop:
+            doc["workshop"] = [w.model_dump(mode="json") for w in story.workshop]
+        if story.outline:
+            doc["outline"] = [a.model_dump(mode="json") for a in story.outline]
+        return doc
 
     def _build_personajes(self, story: Story) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -81,9 +89,13 @@ class YamlStoryExporter:
                     "id": p.get("id") or f"P{idx}",
                     "name": p.get("name", ""),
                     "role": p.get("role", ""),
-                    "traits": list(p.get("traits") or []),
                 }
             )
+            # Spec-530: tipo y relación con quien narra, solo si no son los de siempre.
+            if p.get("kind") and p["kind"] != "persona":
+                out[-1]["kind"] = p["kind"]
+            if p.get("relation"):
+                out[-1]["relation"] = p["relation"]
         return out
 
     def _derive_escenarios_str(self, sc: dict, story: Story) -> str:
@@ -95,7 +107,7 @@ class YamlStoryExporter:
         return ""
 
     def authoring_config(self, story: Story) -> dict[str, Any]:
-        """`storyteller_config` completo (mismo que el YAML) para rehidratar el wizard."""
+        """`storyteller_config` completo (mismo que el YAML) para la ficha de la historia."""
         return self._build_storyteller_config(story.narrator_config or {}, story)
 
     def _build_storyteller_config(self, sc: dict, story: Story) -> dict[str, Any]:
@@ -107,51 +119,15 @@ class YamlStoryExporter:
         return {
             "storyteller_id": sc.get("storyteller_id") or "P1",
             "storyteller_name": sc.get("storyteller_name") or "",
-            "voice_style": sc.get("voice_style") or sc.get("voice", {}).get("style") or "intimista",
             "voice": {
                 "person": sc.get("voice", {}).get("person", "primera"),
                 "tense": sc.get("voice", {}).get("tense", "pasado"),
-                "style": sc.get("voice", {}).get("style") or sc.get("voice_style") or "intimista",
             },
-            "atmosphere": {
-                "genre": story.genero,
-                "subgenre": story.subgenero,
-                "tone": story.tono,
-            },
+            "atmosphere": {"genre": story.genero, "subgenre": story.subgenero},
             "scenarios": scenarios,
             "rules": rules,
             "entities": self._build_entities(story),
             "actos": actos,
-            "perception": {
-                "reliability": sc.get("perception", {}).get("reliability", "subjetiva"),
-                "distortion": {
-                    "level": sc.get("perception", {}).get("distortion", {}).get("level", "media"),
-                    "triggers": list(
-                        sc.get("perception", {}).get("distortion", {}).get("triggers") or []
-                    ),
-                },
-            },
-            "knowledge": {
-                "domain": {
-                    "paranormal": sc.get("knowledge", {})
-                    .get("domain", {})
-                    .get("paranormal", "medio"),
-                    "religioso": sc.get("knowledge", {})
-                    .get("domain", {})
-                    .get("religioso", "medio"),
-                },
-                "interpretation_style": sc.get("knowledge", {}).get(
-                    "interpretation_style", "simbolica"
-                ),
-            },
-            "language": {
-                "register": sc.get("language", {}).get("register", "coloquial"),
-                "figurative_density": sc.get("language", {}).get("figurative_density", "media"),
-            },
-            "bias": {
-                "fear_focus": list(sc.get("bias", {}).get("fear_focus") or []),
-                "attention_focus": list(sc.get("bias", {}).get("attention_focus") or []),
-            },
         }
 
     def _build_scenarios(self, sc: dict, story: Story) -> list[dict[str, Any]]:
@@ -177,36 +153,20 @@ class YamlStoryExporter:
         ]
 
     def _build_rules(self, sc: dict, story: Story) -> list[dict[str, Any]]:
-        rich = sc.get("rules") or []
-        if rich:
-            out = []
-            for idx, r in enumerate(rich, start=1):
-                out.append(
-                    {
-                        "id": r.get("id") or f"R{idx}",
-                        "text": r.get("text") or r.get("content", ""),
-                        "type": r.get("type") or "",
-                    }
-                )
-            return out
-        # Fallback: typed_rules
         if story.typed_rules:
             out = []
             for idx, r in enumerate(story.typed_rules, start=1):
-                rule_type = r.type.value if hasattr(r.type, "value") and r.type else (r.type or "")
-                out.append(
-                    {
-                        "id": r.id or f"R{idx}",
-                        "text": r.content,
-                        "type": rule_type,
-                    }
-                )
+                out.append({"id": r.id or f"R{idx}", "text": r.content})
+                if r.applies_to_beat:
+                    out[-1]["applies_to_beat"] = r.applies_to_beat
             return out
-        # Último fallback: reglas como strings
-        return [
-            {"id": f"R{i}", "text": txt, "type": ""}
-            for i, txt in enumerate(story.reglas or [], start=1)
-        ]
+        rich = sc.get("rules") or []  # historias viejas: el JSON aún las traía
+        if rich:
+            return [
+                {"id": r.get("id") or f"R{i}", "text": r.get("text") or r.get("content", "")}
+                for i, r in enumerate(rich, start=1)
+            ]
+        return [{"id": f"R{i}", "text": txt} for i, txt in enumerate(story.reglas or [], start=1)]
 
     def _build_actos(self, sc: dict, story: Story) -> dict[str, dict[str, Any]]:
         """Texto de cada acto, de la fuente más fiel disponible (Spec-440 §8).

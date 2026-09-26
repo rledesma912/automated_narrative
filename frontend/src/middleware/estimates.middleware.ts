@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { getJobEstimates, type JobEstimates } from "../services/core_api.service";
-import { formatEstimate } from "../utils/eta";
+import { formatEstimate, formatShortEstimate } from "../utils/eta";
 
 /**
  * Spec-510: deja en `res.locals.estimateLabels` cuánto tarda cada tipo de job
@@ -14,6 +14,10 @@ export const ESTIMATES_TIMEOUT_MS = 1500;
 export interface EstimateLabels {
   full_generation: string;
   regenerate_voz: string;
+  // Spec-530: análisis del asistente.
+  consult?: string;
+  plan_outline?: string;
+  verify_outline?: string;
 }
 
 export function createLoadEstimates(
@@ -31,6 +35,9 @@ export function createLoadEstimates(
       const labels: EstimateLabels = {
         full_generation: formatEstimate(estimates?.full_generation?.seconds),
         regenerate_voz: formatEstimate(estimates?.regenerate_voz?.seconds),
+        consult: formatShortEstimate(estimates?.consult?.seconds),
+        plan_outline: formatShortEstimate(estimates?.plan_outline?.seconds),
+        verify_outline: formatShortEstimate(estimates?.verify_outline?.seconds),
       };
       if (labels.full_generation || labels.regenerate_voz) res.locals.estimateLabels = labels;
     } catch {

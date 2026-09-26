@@ -6,13 +6,12 @@ from typing import TYPE_CHECKING
 
 from src.application.dto import StoryCreateDTO
 from src.application.services import PromptBuilder
-from src.application.services.checkpoint import ordinal, validate
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases import CreateStoryUseCase, DirectorUseCase
 from src.cli.logger import logger
 from src.cli.progress import SilentReporter
 from src.domain.interfaces import GenreRepository, LLMProvider
-from src.domain.models import BeatStatus, Story
+from src.domain.models import Story
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 from src.infrastructure.normalizers import ResponseNormalizer
 
@@ -90,31 +89,25 @@ class StoryRunner:
         sinopsis: str,
         genero: str = "",
         subgenero: str = "",
-        tono: str = "",
         reglas: list[str] | None = None,
-        stop_after: str | None = None,
         narrator_config: dict | None = None,
         typed_rules: list[dict] | None = None,
         personajes_full: list[dict] | None = None,
         escenarios_full: list[dict] | None = None,
         entities: list[dict] | None = None,
         actos: list[dict] | None = None,
+        direction: dict | None = None,
+        workshop: list[dict] | None = None,
+        outline: list[dict] | None = None,
     ) -> Story:
-        """Flujo completo: crear story + plan + narrar todos los beats.
-
-        Args:
-            stop_after: Checkpoint para detener el pipeline (Spec-040).
-                Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
-        """
-        if stop_after is not None:
-            validate(stop_after)
+        """Flujo completo: crear la historia, armar su escaleta y narrar los 5 actos."""
         from src.config import settings as cfg
 
         logger.info("[SESSION] ── Iniciando generación ──────────────────────────────")
         logger.info(
             f"[SESSION] title={title!r} profile={cfg.active_profile_name} "
             f"provider={cfg.llm_provider} "
-            f"director={cfg.role_config('director').get('model')} "
+            f"planificador={cfg.role_config('planificador').get('model')} "
             f"voz={cfg.role_config('voz').get('model')}"
         )
 
@@ -133,13 +126,15 @@ class StoryRunner:
             sinopsis=sinopsis,
             genero=genero,
             subgenero=subgenero,
-            tono=tono,
             reglas=reglas or [],
             narrator_config=narrator_config,
             typed_rules=typed_rules or [],
             personajes_full=personajes_full or [],
             entities=entities or [],
             actos=actos or [],
+            direction=direction,
+            workshop=workshop or [],
+            outline=outline or [],
         )
         story = await create_story.execute(dto)
         logger.info(f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}")
@@ -157,24 +152,12 @@ class StoryRunner:
             director.execute_full(
                 story,
                 on_plan_ready=lambda n, t: self.reporter.plan_done(n, t),
-                on_step_done=lambda label, t: self.reporter.step_done(label, t),
                 on_step_start=lambda msg: self.reporter.step_start(msg),
-                stop_after=stop_after,
             ),
         )
-
-        if stop_after is not None:
-            cp_ordinal = ordinal(stop_after)
-            debug_path = (
-                str(Path(cfg.output_dir) / f"debug_{title}_{cp_ordinal}.md")
-                if self.debug_collector.is_active()
-                else None
-            )
-            self.reporter.checkpoint_pause(stop_after, str(story.id), cp_ordinal, debug_path)
-
         story.beats = completed
 
-        if stop_after is None and self.narrative_use_case is not None:
+        if self.narrative_use_case is not None:
             await self._consolidate_narrative(story)
 
         if self.debug_collector.is_active():
@@ -198,19 +181,9 @@ class StoryRunner:
         return story
 
     async def run_from_story(self, story: Story) -> Story:
-        """Narra beats pendientes de una historia ya existente en DB."""
-        logger.info(f"[ORQUESTADOR] Iniciando desde historia existente: {story.title}")
-
-        all_beats = await self.beat_repo.get_by_story(story.id)
-        pending_beats = [b for b in all_beats if b.status != BeatStatus.COMPLETED]
-
-        if not pending_beats:
-            logger.info("[VOZ] No hay beats pendientes por narrar")
-            story.beats = [b for b in all_beats if b.status == BeatStatus.COMPLETED]
-            return story
-
-        journal = await self.story_repo.get_journal(story.id)
-
+        """Regenera entera una historia ya existente (arma la escaleta si le falta)."""
+        logger.info(f"[ORQUESTADOR] Regenerando: {story.title}")
+        await self.story_repo.clear_story_artifacts(story.id)
         director = DirectorUseCase(
             self.llm,
             self.prompt_builder,
@@ -218,21 +191,16 @@ class StoryRunner:
             debug_collector=self.debug_collector,
             story_repo=self.story_repo,
         )
-
-        completed = await self._narrate_beats(
+        story.beats = await self._narrate_beats(
             story,
-            director.execute_narration(story, pending_beats, initial_journal=journal),
+            director.execute_full(
+                story,
+                on_plan_ready=lambda n, t: self.reporter.plan_done(n, t),
+                on_step_start=lambda msg: self.reporter.step_start(msg),
+            ),
         )
-
-        full_beats = await self.beat_repo.get_by_story(story.id)
-        all_completed = full_beats and all(b.status == BeatStatus.COMPLETED for b in full_beats)
-        if all_completed and self.narrative_use_case is not None:
-            story.beats = full_beats
+        if self.narrative_use_case is not None:
             await self._consolidate_narrative(story)
-        else:
-            story.beats = completed
-
-        logger.info(f"[ORQUESTADOR] Narración finalizada para: {story.title}")
         return story
 
     async def _consolidate_narrative(self, story: Story) -> None:

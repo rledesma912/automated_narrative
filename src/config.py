@@ -24,11 +24,28 @@ def _load_llm_core() -> dict:
 
 
 # Roles del pipeline que llaman al LLM (cada uno puede tener su proveedor, Spec-480).
-LLM_ROLES = ("story_analyst", "director", "voz", "journal")
+LLM_ROLES = (
+    "director",
+    "voz",
+    "journal",
+    # Spec-530: asistente de autoría.
+    "consultor",
+    "planificador",
+    "verificador",
+)
+# Los roles del asistente que un perfil no declara heredan la config del director.
+_ROLE_FALLBACK = {"consultor": "director", "planificador": "director", "verificador": "director"}
 
 # Spec-510: duración estimada de un job (segundos) cuando el perfil no la declara
 # (`profiles.<perfil>.estimated_seconds`) y no hay historial.
-DEFAULT_ESTIMATED_SECONDS = {"full_generation": 240, "regenerate_voz": 60}
+DEFAULT_ESTIMATED_SECONDS = {
+    "full_generation": 240,
+    "regenerate_voz": 60,
+    # Spec-530: asistente de autoría.
+    "consult": 40,
+    "plan_outline": 75,
+    "verify_outline": 30,
+}
 
 
 def _resolve_active_profile(core: dict, env_override: str | None) -> tuple[str, dict]:
@@ -98,28 +115,12 @@ class Settings(BaseSettings):
     input_dir: str = "input_stories"
     beats_definition_file: str = "config/llm_beats_definition.yaml"
 
-    # Prompt filenames
-    prompt_file_voice: str = "voice.md"
-    prompt_file_system: str = "system.md"
-    prompt_file_journal: str = "journal.md"
-
-    # Prompting strategy (Spec-170): assertive | auto | descriptive
-    # Vacío = no forzado por env → se lee del perfil YAML o se usa "auto"
-    prompting_strategy: str = ""
-
     # ── Properties del perfil activo ─────────────────────────────────────────
 
     @property
     def active_profile_name(self) -> str:
         """Nombre del perfil actualmente activo."""
         return _active_profile_name
-
-    @property
-    def effective_prompting_strategy(self) -> str:
-        """Estrategia de prompting activa: env PROMPTING_STRATEGY > perfil YAML > 'auto'."""
-        if self.prompting_strategy:
-            return self.prompting_strategy
-        return _profile.get("prompting_strategy", "auto")
 
     @property
     def llm_provider(self) -> str:
@@ -132,8 +133,12 @@ class Settings(BaseSettings):
         return _profile.get("roles", {})
 
     def role_config(self, role: str) -> dict:
-        """Config de un rol específico (director | voz | journal) del perfil activo."""
-        return self.llm_role_config.get(role, {})
+        """Config de un rol del perfil activo; los del asistente sin declarar heredan
+        la del director (Spec-530)."""
+        roles = self.llm_role_config
+        if role not in roles and role in _ROLE_FALLBACK:
+            return roles.get(_ROLE_FALLBACK[role], {})
+        return roles.get(role, {})
 
     def role_provider(self, role: str) -> str:
         """Proveedor de un rol (Spec-480): `roles.<rol>.provider` o el del perfil."""

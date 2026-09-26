@@ -18,7 +18,6 @@ class StoryCreateRequest(BaseModel):
     sinopsis: str
     genero: str = ""
     subgenero: str = ""
-    tono: str = ""
     reglas: list[str] = Field(default_factory=list)
     # El wizard web lo envía como `storyteller_config` (mismo nombre que el YAML).
     narrator_config: Optional[dict] = Field(

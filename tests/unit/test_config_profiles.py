@@ -114,14 +114,13 @@ class TestResolveActiveProfile:
         assert fallback["provider"] == "ollama"  # fallback = ollama-natsumura
 
     def test_active_profile_config_returns_full_block(self):
-        """settings.active_profile_config() devuelve el bloque completo con prompt_variant."""
+        """settings.active_profile_config() devuelve el bloque completo del perfil."""
         from src.config import settings
 
         profile = settings.active_profile_config()
         assert isinstance(profile, dict)
         assert "provider" in profile
         assert "roles" in profile
-        assert "prompt_variant" in profile
 
 
 class TestRoleProvider:
@@ -147,7 +146,6 @@ class TestRoleProvider:
             {
                 "provider": "ollama",
                 "roles": {
-                    "story_analyst": {"model": "gemma3:12b"},
                     "director": {"model": "gemma3:12b"},
                     "voz": {"provider": "anthropic", "model": "claude-sonnet-5"},
                     "journal": {"model": "gemma3:12b"},

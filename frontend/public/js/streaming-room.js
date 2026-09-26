@@ -384,7 +384,7 @@
     });
 
     // beat_start abre el beat (llega antes de sus etapas): solo marca el punto;
-    // el log ya muestra cada etapa ("Mapeando/Narrando acto N...").
+    // el log ya muestra cada etapa ("Narrando acto N...").
     es.addEventListener("beat_start", (e) => {
       revealLogs();
       try {
