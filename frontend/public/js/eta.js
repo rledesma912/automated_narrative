@@ -17,10 +17,9 @@
 
   // Peso de cada etapa dentro de un acto (Spec-460 S5).
   const STAGES = {
-    analyst: { label: "Analizando la sinopsis", weight: 0 },
-    resolver: { label: "Distribuyendo escenarios", weight: 0 },
-    mapper: { label: "Mapeando", weight: 0.1 },
-    voz: { label: "Narrando", weight: 0.4 },
+    planificador: { label: "Armando la escaleta", weight: 0 },
+    verificador: { label: "Revisando la escaleta", weight: 0 },
+    voz: { label: "Narrando", weight: 0.1 },
     journal: { label: "Actualizando la memoria", weight: 0.85 },
     consolidando: { label: "Consolidando el relato", weight: 1 },
   };

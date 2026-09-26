@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from src.application.services.authoring import catalog, context, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
-from src.application.services.narrative_context_assembler import NarrativeContextAssembler
+from src.application.services.manifestations import manifestations_for_act
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
@@ -137,9 +137,46 @@ class OutlineNarrator:
     def _threat(self, story: Story, act: ActOutline) -> str:
         if not story.entities:
             return ""
-        assembler = NarrativeContextAssembler(self.prompt_builder._beat_repo)
         act_texts = [" ".join(a.events) for a in story.outline]
-        return "\n".join(assembler._amenaza_block(act.number, story.entities, act_texts)) + "\n"
+        return "\n".join(self._threat_lines(act.number, story.entities, act_texts)) + "\n"
+
+    def _threat_lines(self, beat_number: int, entities, act_texts: list[str]) -> list[str]:
+        """Solo los campos que la exposición del acto permite ver de cada entidad (Spec-450).
+
+        Con «señales» la Voz no recibe ni el nombre ni la naturaleza: no puede revelarlos.
+        """
+        lines = [
+            "AMENAZA EN ESTE ACTO (revelá solo lo que se indica):",
+            "«Cómo se percibe» es un repertorio para todo el relato, no una lista a cumplir: "
+            "usá solo lo que pida «Cómo mostrarla» y lo que encaje con los eventos.",
+        ]
+        beat_repo = self.prompt_builder._beat_repo
+        for e in entities:
+            exposure = beat_repo.exposure_for(beat_number, e.reveal_level)
+            show = exposure.get("show", ["manifestations"])
+            head = []
+            if "name" in show and e.name:
+                head.append(e.name)
+            if "nature" in show:
+                head.append(e.nature_label or e.nature_id)
+            lines.append(f"- {' — '.join(head) if head else f'Presencia {e.order_index + 1}'}")
+            for key, label in (
+                ("description", "Qué es"),
+                ("manifestations", "Cómo se percibe"),
+                ("limits", "Límites"),
+            ):
+                value = getattr(e, key)
+                if key == "manifestations" and exposure.get("max_manifestations") and act_texts:
+                    value = "; ".join(
+                        manifestations_for_act(
+                            value, beat_number, act_texts, exposure["max_manifestations"]
+                        )
+                    )
+                if key in show and value:
+                    lines.append(f"  {label}: {value}")
+            if exposure.get("guide"):
+                lines.append(f"  Cómo mostrarla: {exposure['guide']}")
+        return lines
 
     @staticmethod
     def _scene_story(story: Story, act: ActOutline, narrator: str) -> Story:

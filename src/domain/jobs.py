@@ -44,9 +44,6 @@ NO_RESULT_ERROR = "el pipeline terminó sin resultado"
 class JobStage(str, Enum):
     """Etapa del pipeline en la que está el job."""
 
-    ANALYST = "analyst"
-    RESOLVER = "resolver"
-    MAPPER = "mapper"
     VOZ = "voz"
     JOURNAL = "journal"
     CONSOLIDANDO = "consolidando"

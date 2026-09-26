@@ -20,7 +20,6 @@ active_profile: ollama-gemma3-12b
 profiles:
 
   ollama-qwen25-14b:
-    prompt_variant: compact
     prompting_strategy: assertive
     provider: ollama
     ollama: { host: "http://localhost:11434" }
@@ -51,7 +50,6 @@ profiles:
         stop: []
 
   ollama-llama31:
-    prompt_variant: compact
     prompting_strategy: assertive
     provider: ollama
     ollama: { host: "http://localhost:11434" }
@@ -82,7 +80,6 @@ profiles:
         stop: []
 
   ollama-qwen3-8b:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
@@ -112,7 +109,6 @@ profiles:
         stop: []
 
   ollama-hybrid-voz-qwen3:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     roles:
@@ -142,7 +138,6 @@ profiles:
         stop: []
 
   ollama-gemma3-12b:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     # Spec-510: valor inicial de la duración estimada (s), medido 2026-09-24
@@ -200,7 +195,6 @@ profiles:
   # evaluarlo antes con `scripts/evaluate_voice.py --profile … --yes`.
   # Sonnet 5 no acepta temperature (el adapter la omite) y piensa si se omite `thinking`.
   ollama-gemma3-12b-voz-sonnet5:
-    prompt_variant: compact
     provider: ollama
     ollama: { host: "http://localhost:11434" }
     anthropic: { model: claude-sonnet-5 }
@@ -252,7 +246,6 @@ profiles:
         stop: []
 
   gemini-cli:
-    prompt_variant: frontier
     provider: gemini
     prompting_strategy: assertive
     gemini: { cli_command: gemini, model: gemini-2.5-flash }

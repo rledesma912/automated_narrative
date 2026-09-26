@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from src.application.services.checkpoint import PHASE_LABELS
 from src.cli.spinner import Spinner
 
 
@@ -26,9 +25,8 @@ class ProgressReporter:
         print(f"📐  Perfil: {profile}")
         print("─" * 50)
 
-    def phase_start(self, checkpoint: str) -> None:
-        label = PHASE_LABELS.get(checkpoint, checkpoint)
-        print(label)
+    def phase_start(self, phase: str) -> None:
+        print(phase)
 
     def step_start(self, message: str) -> None:
         """Inicia el spinner con el mensaje de la fase en curso."""
@@ -67,20 +65,6 @@ class ProgressReporter:
         self._spinner.stop()
         print(f"❌  {msg}  ({_fmt_time(elapsed_s)})")
 
-    def checkpoint_pause(
-        self,
-        stop_after: str,
-        story_id: str,
-        total_llms: int,
-        debug_path: str | None = None,
-    ) -> None:
-        """Informa que el pipeline fue detenido en un checkpoint."""
-        self._spinner.stop()
-        print(f"\n[PAUSA] Pipeline detenido en '{stop_after}' ({total_llms}/17 llamadas LLM).")
-        print(f"[PAUSA] Story ID: {story_id}")
-        if debug_path:
-            print(f"[PAUSA] Debug: {debug_path}")
-
 
 class SilentReporter:
     """Implementación no-op para tests y modo API."""
@@ -91,7 +75,7 @@ class SilentReporter:
     def config_summary(self, profile: str) -> None:
         pass
 
-    def phase_start(self, checkpoint: str) -> None:
+    def phase_start(self, phase: str) -> None:
         pass
 
     def step_start(self, message: str) -> None:
@@ -116,13 +100,4 @@ class SilentReporter:
         pass
 
     def error(self, msg: str, elapsed_s: float) -> None:
-        pass
-
-    def checkpoint_pause(
-        self,
-        stop_after: str,
-        story_id: str,
-        total_llms: int,
-        debug_path: str | None = None,
-    ) -> None:
         pass

@@ -330,7 +330,7 @@ async def test_events_de_job_terminado_hace_replay_completo_con_ids(client):
     assert kinds[-1] == "done"
     assert [int(e["id"]) for e in events] == list(range(1, len(events) + 1))
     stages = [e["data"]["stage"] for e in events if e["event"] == "status"]
-    assert stages[:2] == ["analyst", "resolver"] and stages[-1] == "consolidando"
+    assert stages[:2] == ["planificador", "verificador"] and stages[-1] == "consolidando"
 
 
 async def test_events_con_last_event_id_no_repite(client):

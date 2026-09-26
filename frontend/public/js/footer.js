@@ -19,9 +19,8 @@
   let lastEvent = null;
 
   const STAGE_LABELS = {
-    analyst: "analizando la sinopsis",
-    resolver: "distribuyendo escenarios",
-    mapper: "mapeando",
+    planificador: "armando la escaleta",
+    verificador: "revisando la escaleta",
     voz: "narrando",
     journal: "actualizando la memoria",
     consolidando: "consolidando el relato",

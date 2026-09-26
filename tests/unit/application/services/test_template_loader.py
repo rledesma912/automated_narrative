@@ -1,7 +1,6 @@
 """Tests para TemplateLoader — Spec 063 Slice B."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -34,40 +33,3 @@ class TestTemplateLoaderLoad:
     def test_strip_contenido(self, loader, tmp_path):
         _write(tmp_path, "space.md", "  contenido  \n")
         assert loader.load("space.md") == "contenido"
-
-
-class TestTemplateLoaderVariant:
-    def test_variante_compact(self, loader):
-        with patch("src.application.services.template_loader.settings") as m:
-            m.active_profile_config.return_value = {"prompt_variant": "compact"}
-            assert loader.get_variant() == "compact"
-
-    def test_variante_frontier(self, loader):
-        with patch("src.application.services.template_loader.settings") as m:
-            m.active_profile_config.return_value = {"prompt_variant": "frontier"}
-            assert loader.get_variant() == "frontier"
-
-    def test_variante_default_frontier(self, loader):
-        with patch("src.application.services.template_loader.settings") as m:
-            m.active_profile_config.return_value = {}
-            assert loader.get_variant() == "frontier"
-
-
-class TestTemplateLoaderVoiceTemplateName:
-    def test_compact_con_archivo_existente(self, loader, tmp_path):
-        _write(tmp_path, "voice_compact.md", "x")
-        with patch("src.application.services.template_loader.settings") as m:
-            m.active_profile_config.return_value = {"prompt_variant": "compact"}
-            assert loader.voice_template_name() == "voice_compact.md"
-
-    def test_compact_sin_archivo_usa_fallback(self, loader, tmp_path):
-        with patch("src.application.services.template_loader.settings") as m:
-            m.active_profile_config.return_value = {"prompt_variant": "compact"}
-            m.prompt_file_voice = "voice.md"
-            assert loader.voice_template_name() == "voice.md"
-
-    def test_frontier_usa_settings(self, loader):
-        with patch("src.application.services.template_loader.settings") as m:
-            m.active_profile_config.return_value = {"prompt_variant": "frontier"}
-            m.prompt_file_voice = "voice.md"
-            assert loader.voice_template_name() == "voice.md"

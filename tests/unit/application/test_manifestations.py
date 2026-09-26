@@ -5,14 +5,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src.application.services.beat_spec_repository import BeatSpecRepository
+from src.application.services.authoring.outline_narrator import OutlineNarrator
 from src.application.services.manifestations import (
     manifestations_for_act,
     reserved_act,
     split_manifestations,
 )
-from src.application.services.narrative_context_assembler import NarrativeContextAssembler
-from src.domain.models import Entity, MacroBeat, RevealLevel
+from src.domain.models import Entity, RevealLevel
 
 STORY = yaml.safe_load(
     (Path(__file__).parents[3] / "input_stories" / "el_monte_prohibido.yaml").read_text("utf-8")
@@ -80,10 +79,8 @@ def _entity(manifestations: str, level: RevealLevel) -> Entity:
 
 
 def _amenaza(beat: int, entity: Entity) -> str:
-    context = NarrativeContextAssembler(BeatSpecRepository()).assemble(
-        MacroBeat(number=beat, summary="Algo pasa."), {}, entities=[entity], act_texts=ACTS
-    )
-    return context.split("AMENAZA EN ESTE ACTO")[1].split("\n\n")[0]
+    """El bloque de la amenaza que recibe la Voz (Spec-530 S7: vive en OutlineNarrator)."""
+    return "\n".join(OutlineNarrator(llm=None)._threat_lines(beat, [entity], ACTS))
 
 
 def test_la_voz_no_recibe_manifestaciones_de_actos_posteriores():

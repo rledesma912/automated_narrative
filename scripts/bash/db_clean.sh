@@ -48,7 +48,6 @@ if target_id:
         'generated_narrative',
         'macro_beat',
         'narrative_journal',
-        'narrative_anchors',
         'rule',
         'scenario',
     ]
@@ -65,7 +64,6 @@ else:
         'generated_narrative',
         'rule',
         'macro_beat',
-        'narrative_anchors',
         'narrative_journal',
         'scenario',
         'story',

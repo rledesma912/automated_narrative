@@ -142,17 +142,6 @@ class TypedRule(BaseModel):
     applies_to_beat: Optional[int] = None
 
 
-class NarrativeAnchors(BaseModel):
-    """Anclajes de resonancia narrativa extraídos de la sinopsis global (Spec 081)."""
-
-    story_id: UUID4
-    resonance_hamartia: str  # La Grieta (Acto 1)
-    resonance_hybris: str  # La Transgresión (Acto 2)
-    resonance_anagnorisis: str  # La Epifanía (Acto 3)
-    resonance_peripeteia: str  # La Claustrofobia (Acto 4)
-    resonance_residual: str  # La Mancha (Acto 5)
-
-
 class Scenario(BaseModel):
     """Escenario cronológico de la historia (Spec 038)."""
 

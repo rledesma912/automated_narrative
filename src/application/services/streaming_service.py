@@ -23,9 +23,6 @@ _SENTINEL = object()
 
 # Mensaje legible por etapa (Spec-460). `{beat}`/`{total}` se completan si aplica.
 _STAGE_MESSAGES = {
-    JobStage.ANALYST: "Analizando sinopsis y extrayendo anclajes...",
-    JobStage.RESOLVER: "Distribuyendo escenarios y reglas...",
-    JobStage.MAPPER: "Mapeando acto {beat} de {total}...",
     JobStage.VOZ: "Narrando acto {beat} de {total}...",
     JobStage.JOURNAL: "Actualizando la memoria del acto {beat}...",
     JobStage.CONSOLIDANDO: "Consolidando el relato...",
@@ -92,10 +89,8 @@ async def stream_story(
                 )
 
             def _on_stage(stage: JobStage, beat: int | None) -> None:
-                # beat_start sale al empezar el beat (mapper; con escaleta, la voz),
-                # no cuando ya terminó.
-                starts = stage in (JobStage.MAPPER, JobStage.VOZ)
-                if starts and beat is not None and beat not in started_beats:
+                # beat_start sale al empezar el beat (la voz), no cuando ya terminó.
+                if stage == JobStage.VOZ and beat is not None and beat not in started_beats:
                     queue.put_nowait(_beat_start(beat))
                 queue.put_nowait(stage_event(stage, beat, num_beats))
 

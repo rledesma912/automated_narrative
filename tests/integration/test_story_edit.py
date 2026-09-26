@@ -67,7 +67,6 @@ async def _counts(story_id: str) -> dict[str, int]:
     for table, col in (
         ("macro_beat", "story_id"),
         ("narrative_journal", "story_id"),
-        ("narrative_anchors", "story_id"),
         ("generated_narrative", "story_template_id"),
         ("generation_job", "story_id"),
     ):

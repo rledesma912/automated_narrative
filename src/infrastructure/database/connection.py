@@ -214,20 +214,6 @@ async def init_db() -> None:
     """)
 
     await conn.execute("""
-        CREATE TABLE IF NOT EXISTS narrative_anchors (
-            id TEXT PRIMARY KEY,
-            story_id TEXT NOT NULL,
-            resonance_hamartia TEXT NOT NULL,
-            resonance_hybris TEXT NOT NULL,
-            resonance_anagnorisis TEXT NOT NULL,
-            resonance_peripeteia TEXT NOT NULL,
-            resonance_residual TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
-        )
-    """)
-
-    await conn.execute("""
         CREATE TABLE IF NOT EXISTS narrative_journal (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             story_id TEXT NOT NULL,

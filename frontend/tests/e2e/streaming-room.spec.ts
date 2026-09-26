@@ -52,9 +52,9 @@ test("regenerar desde la ficha: confirmación, avance por etapas y fin", async (
 
   const lines = await logLines(page);
   const idx = (text: string) => lines.findIndex((l) => l.includes(text));
-  expect(idx("Mapeando acto 1 de 5")).toBeGreaterThan(-1);
+  expect(idx("Narrando acto 1 de 5")).toBeGreaterThan(-1);
   // Cada acto: sus etapas y después "completado" (antes "Narrando Beat N" llegaba tarde).
-  expect(idx("Mapeando acto 1 de 5")).toBeLessThan(idx("Beat 1 completado"));
+  expect(idx("Narrando acto 1 de 5")).toBeLessThan(idx("Beat 1 completado"));
   expect(idx("Actualizando la memoria del acto 1")).toBeLessThan(idx("Beat 1 completado"));
   expect(idx("Consolidando el relato")).toBeGreaterThan(idx("Beat 5 completado"));
   expect(lines.some((l) => l.includes("Narrando Beat"))).toBe(false);

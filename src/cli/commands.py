@@ -2,7 +2,6 @@
 
 import time
 from pathlib import Path
-from uuid import UUID
 
 from src.cli.exceptions import (
     ExportError,
@@ -38,14 +37,8 @@ def generate(
     input_file: str | None = None,
     provider: str | None = None,
     debug: bool = False,
-    hasta: str | None = None,
 ) -> None:
-    """Generate complete story with plan and narrated beats.
-
-    Args:
-        hasta: Checkpoint para detener el pipeline (Spec-040).
-            Valores: analyst, mapper:1..5, voz:1..5, journal:1..5.
-    """
+    """Genera la historia completa: escaleta (si falta) y los actos narrados."""
     reglas: list[str] = []
     narrator_config: dict | None = None
     typed_rules: list[dict] = []
@@ -69,7 +62,6 @@ def generate(
                 provider,
                 reglas,
                 debug=debug,
-                hasta=hasta,
                 narrator_config=narrator_config,
                 typed_rules=typed_rules,
                 personajes_full=personajes_full,
@@ -97,7 +89,6 @@ async def _generate_async(
     provider: str | None = None,
     reglas: list[str] | None = None,
     debug: bool = False,
-    hasta: str | None = None,
     narrator_config: dict | None = None,
     typed_rules: list[dict] | None = None,
     personajes_full: list[dict] | None = None,
@@ -153,7 +144,6 @@ async def _generate_async(
         subgenero=subgenero,
         tono=tono,
         reglas=reglas or [],
-        stop_after=hasta,
         narrator_config=narrator_config,
         typed_rules=typed_rules or [],
         personajes_full=personajes_full or [],
@@ -166,66 +156,6 @@ async def _generate_async(
 
     container.reporter.done(time.perf_counter() - t_total)
     logger.info("[COMANDOS] Historia completada")
-
-
-def narrate(
-    story_id: str,
-    beats: str,
-    use_mock: bool,
-    provider: str | None = None,
-) -> None:
-    """Narrate specific beats from an existing story."""
-    logger.info(f"[COMANDOS] Iniciando narración para historia: {story_id}")
-
-    try:
-        import asyncio
-
-        asyncio.run(_narrate_async(story_id, beats, use_mock, provider))
-    except StoryNotFoundError:
-        raise
-    except Exception as e:
-        logger.error(f"[COMANDOS] Error en la narración: {e}")
-        raise GenerationError(str(e)) from e
-
-    logger.info(f"[COMANDOS] Narración completada para historia: {story_id}")
-
-
-async def _narrate_async(
-    story_id: str,
-    beats_csv: str,
-    use_mock: bool,
-    provider: str | None = None,
-) -> None:
-    """Async implementation of narrate."""
-    await _init_database()
-
-    try:
-        story_uuid = UUID(story_id)
-    except ValueError:
-        raise ValidationError(f"Formato de UUID inválido: {story_id}")
-
-    container = CLIContainer(use_mock=use_mock, provider=provider)
-
-    story = await container.story_repo.get_by_id(story_uuid)
-    if not story:
-        raise StoryNotFoundError(story_id)
-
-    beat_list = [int(b.strip()) for b in beats_csv.split(",") if b.strip().isdigit()]
-    if not beat_list:
-        raise ValidationError(f"Formato de beats inválido: {beats_csv}")
-
-    all_beats = await container.beat_repo.get_by_story(story_uuid)
-    beats_to_narrate = [b for b in all_beats if b.number in beat_list]
-
-    if not beats_to_narrate:
-        raise ValidationError("No se encontraron beats que coincidan con la selección")
-
-    narrate_beat = container.voz_use_case()
-    for beat in beats_to_narrate:
-        logger.info(f"[COMANDOS] Narrando beat #{beat.number}")
-        generated_beat, _, _ = await narrate_beat.execute(story, beat)
-        await container.beat_repo.save(generated_beat, story_uuid)
-        logger.info(f"[COMANDOS] Beat #{beat.number} completado")
 
 
 def generate_from_db(

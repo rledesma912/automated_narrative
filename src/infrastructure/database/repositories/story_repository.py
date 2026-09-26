@@ -9,7 +9,6 @@ from src.domain.models import (
     CharacterKind,
     Direction,
     Entity,
-    NarrativeAnchors,
     NarrativeJournal,
     RuleType,
     Story,
@@ -18,7 +17,6 @@ from src.domain.models import (
     WorkshopItem,
 )
 from src.infrastructure.database.connection import connection, get_connection
-from src.utils.timezone import now_argentina
 
 
 class SQLStoryRepository:
@@ -472,7 +470,6 @@ class SQLStoryRepository:
         try:
             await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM entity_journal WHERE story_id = ?", (sid,))
-            await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
             await conn.commit()
         except Exception:
@@ -506,69 +503,12 @@ class SQLStoryRepository:
                 "DELETE FROM generated_narrative WHERE story_template_id = ?", (sid,)
             )
             await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
-            await conn.execute("DELETE FROM narrative_anchors WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM scenario WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM character WHERE story_id = ?", (sid,))
             await conn.execute("DELETE FROM story WHERE id = ?", (sid,))
             await conn.commit()
-
-    async def save_narrative_anchors(self, story_id, anchors) -> None:
-        """Persiste los 5 anclajes de resonancia aristotélica (Spec-081)."""
-        async with connection() as conn:
-            # Nota: Usamos una subquery para el ID o generamos uno si es nuevo,
-            # pero para simplificar seguiremos el patrón de INSERT OR REPLACE por story_id
-            # si la tabla tiene story_id como UNIQUE o PK. En SQLite actual es story_id NOT NULL.
-            # Vamos a asegurar que id sea único.
-            import uuid
-
-            # Primero buscamos si ya existe un ID para este story_id
-            cursor = await conn.execute(
-                "SELECT id FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
-            )
-            row = await cursor.fetchone()
-            anchor_id = row[0] if row else str(uuid.uuid4())
-
-            await conn.execute(
-                """INSERT OR REPLACE INTO narrative_anchors
-                (id, story_id, resonance_hamartia, resonance_hybris, resonance_anagnorisis,
-                 resonance_peripeteia, resonance_residual, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    anchor_id,
-                    str(story_id),
-                    anchors.resonance_hamartia,
-                    anchors.resonance_hybris,
-                    anchors.resonance_anagnorisis,
-                    anchors.resonance_peripeteia,
-                    anchors.resonance_residual,
-                    now_argentina().isoformat(),
-                ),
-            )
-            await conn.commit()
-
-    async def get_narrative_anchors(self, story_id: UUID) -> NarrativeAnchors | None:
-        """Lee los 5 anclajes de resonancia persistidos (Spec-081/Spec-430)."""
-        async with connection() as conn:
-            cursor = await conn.execute(
-                "SELECT * FROM narrative_anchors WHERE story_id = ?", (str(story_id),)
-            )
-            row = await cursor.fetchone()
-
-        if not row:
-            return None
-
-        return NarrativeAnchors(
-            story_id=story_id,
-            resonance_hamartia=row["resonance_hamartia"],
-            resonance_hybris=row["resonance_hybris"],
-            resonance_anagnorisis=row["resonance_anagnorisis"],
-            resonance_peripeteia=row["resonance_peripeteia"],
-            resonance_residual=row["resonance_residual"],
-        )
-
-    # ── Spec-530: dirección, taller y escaleta ─────────────────────────────────
 
     async def update_direction(self, story_id: UUID, direction: Direction | None) -> None:
         """Guarda la dirección de una historia (vista Dirección)."""

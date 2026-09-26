@@ -1,8 +1,7 @@
-"""Spec-450 T3.1: los prompts de una generación sin entidades no cambian.
+"""Los prompts del pipeline (escaleta → Voz + memoria) no cambian sin querer.
 
-Corre el pipeline completo (job de la API) con un LLM que graba cada llamada y
-compara los prompts contra un snapshot tomado antes de sumar las entidades al
-pipeline. Una historia sin entidades tiene que generar exactamente igual.
+Corre el job completo de la API con un LLM que graba cada llamada (sin escaleta:
+primero la arma el Planificador) y compara los prompts contra un snapshot.
 
 Regenerar el snapshot (solo si el cambio de texto es intencional):
     SNAPSHOT_UPDATE=1 uv run pytest tests/integration/test_pipeline_prompts_snapshot.py
@@ -70,7 +69,7 @@ async def generate(monkeypatch, tmp_path, story: dict, llm: RecordingLLM) -> lis
     return llm.calls
 
 
-async def test_prompts_de_una_historia_sin_entidades_no_cambian(monkeypatch, tmp_path):
+async def test_prompts_del_pipeline_no_cambian(monkeypatch, tmp_path):
     calls = await generate(monkeypatch, tmp_path, STORY, RecordingLLM())
 
     if os.environ.get("SNAPSHOT_UPDATE"):

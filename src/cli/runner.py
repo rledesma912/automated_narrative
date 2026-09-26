@@ -69,21 +69,10 @@ def main() -> None:
         help="Genera debug_prompts_responses_YYYYMMDDHHМM.md con prompts y respuestas completas",
     )
     generate_parser.add_argument(
-        "--hasta",
-        help="Checkpoint para detener el pipeline (Spec-040). Valores: analyst, mapper:1..5, voz:1..5, journal:1..5",
-    )
-    generate_parser.add_argument(
         "--output",
         type=Path,
         default=Path(settings.output_dir),
         help="Directorio de output",
-    )
-
-    narrate_parser = subparsers.add_parser("narrate", help="Narrar beats específicos")
-    narrate_parser.add_argument("--story-id", required=True, help="UUID de la historia")
-    narrate_parser.add_argument("--beats", required=True, help="Beats a narrar (csv: 1,2,3)")
-    narrate_parser.add_argument(
-        "--mock", action="store_true", help="Usar Mock LLM (solo para tests)"
     )
 
     export_yaml_parser = subparsers.add_parser(
@@ -153,7 +142,6 @@ def main() -> None:
                     provider=args.provider,
                     input_file=args.input,
                     debug=args.debug,
-                    hasta=args.hasta,
                 )
             else:
                 # Validación de campos obligatorios para nueva historia SIN --input
@@ -192,14 +180,7 @@ def main() -> None:
                     provider=args.provider,
                     input_file=args.input,
                     debug=args.debug,
-                    hasta=args.hasta,
                 )
-        elif args.command == "narrate":
-            commands.narrate(
-                story_id=args.story_id,
-                beats=args.beats,
-                use_mock=args.mock,
-            )
         elif args.command == "export-yaml":
             if args.all:
                 if args.output_dir is None:

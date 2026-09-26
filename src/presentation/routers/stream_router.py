@@ -138,7 +138,7 @@ async def health_check():
 
 @router.get("/stories/{story_id}/full")
 async def get_story_full(story_id: str):
-    """Devuelve Story + Beats + NarrativeAnchors en una sola petición."""
+    """Devuelve Story + Beats en una sola petición."""
     story_repo = SQLStoryRepository()
     beat_repo = SQLBeatRepository()
 
@@ -147,12 +147,6 @@ async def get_story_full(story_id: str):
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     beats = await beat_repo.get_by_story(story.id)
-
-    anchors_row = None
-    try:
-        anchors_row = await story_repo.get_narrative_anchors(story.id)
-    except AttributeError:
-        pass  # método aún no implementado en el repo
 
     return {
         "story": {
@@ -175,7 +169,6 @@ async def get_story_full(story_id: str):
             }
             for b in beats
         ],
-        "narrative_anchors": anchors_row,
     }
 
 
