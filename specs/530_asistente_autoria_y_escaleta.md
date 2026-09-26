@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** DONE (2026-09-25) — S0–S8 en `feat/spec-530-asistente`. Pase a prod pendiente: recrea la DB de prod (ver resultado de S7).
+**Estado:** DONE y desplegado (2026-09-25, prod en 8165a51).
 **Origen:** relato «la pena del colectivo» (prod, `4a4d8cab-…`): repetitivo, el fantasma aparece en todos los actos y el protagonista no hace nada. Diagnóstico y pruebas del 2026-09-25 (§1).
 
 ---
@@ -493,6 +493,11 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
   3. Apartar `data/prod/stories.db` (queda el backup), crear la DB nueva e importar con `import-yaml`.
   4. Reiniciar `narrative-api` y verificar `/config/active-profile`.
   - Los comandos exactos se arman al hacer el pase.
+- **Pase a prod (2026-09-25):**
+  - Export desde una copia consistente de la DB (`prod_db.py backup`) con un worktree de `main`. El `python` del contenedor no trae las dependencias del CLI.
+  - `make deploy` falló una vez: el Dockerfile del frontend copiaba `frontend/config/`, retirado en S7a. Se corrigió en el PR #34.
+  - Después: `docker compose stop backend`, DB vieja a `data/prod/pre_530/`, `init_db` + `import-yaml` y `start`.
+  - Prod en 8165a51 con las 3 historias en borrador; health y perfil `ollama-gemma3-12b` OK.
 
 ### Riesgos
 
