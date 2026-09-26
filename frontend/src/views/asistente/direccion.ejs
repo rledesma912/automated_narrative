@@ -1,0 +1,189 @@
+<%/*
+  Spec-530 S4 — Dirección: pocas decisiones, una por tarjeta, cada una con su
+  «por qué importa». Guardado automático; la IA solo con «Analizar mi historia».
+  Entrada: state (null = historia nueva), options, genres, estimateLabels.
+*/%>
+<%
+  const d = state ? state.direction : {
+    title: '', genero: '', subgenero: '', premise: '', effect: '', effect_other: '', ending: '',
+    ending_intentional: false, telling: '', protagonist_name: '', protagonist_role: '', narrator: '', threat: null,
+  };
+  const t = d.threat || { name: '', nature: '', description: '', manifestations: '', limits: '', reveal_level: 'insinuada' };
+  const genre = genres.find(g => g.id === d.genero);
+  const others = state ? state.characters.slice(1).filter(c => c.kind === 'persona') : [];
+  const est = (locals.estimateLabels && estimateLabels.consult) || '';
+  const REVEAL = [
+    ['nunca', 'Nunca se muestra'], ['insinuada', 'Se insinúa'],
+    ['progresiva', 'Se va mostrando'], ['explicita', 'Se muestra entera'],
+  ];
+%>
+<div class="max-w-3xl" data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>">
+  <%- include('_cabecera') %>
+
+  <header class="mb-10">
+    <h2 class="font-serif text-3xl text-forge-accent mb-2">¿Qué historia querés contar?</h2>
+    <p class="text-forge-muted">Con esto alcanza para empezar. Después el asistente te va a hacer preguntas para llenar los huecos.</p>
+  </header>
+
+  <form class="space-y-6" data-autosave="direction" onsubmit="return false" novalidate>
+
+    <section class="bg-forge-surface border border-forge-border p-6">
+      <h3 class="font-serif text-xl mb-4">El título y el tipo de horror</h3>
+      <label class="block text-sm text-forge-muted mb-1" for="a-title">Título</label>
+      <input id="a-title" name="title" type="text" required maxlength="120" value="<%= d.title %>"
+             placeholder="Por ejemplo: la pena del colectivo"
+             class="w-full bg-forge-bg border border-forge-border px-3 py-2 mb-4 focus:outline-none focus:border-forge-accent">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-forge-muted mb-1" for="a-genero">Tipo de horror</label>
+          <select id="a-genero" name="genero" class="w-full bg-forge-bg border border-forge-border px-3 py-2">
+            <option value="">Elegí uno…</option>
+            <% genres.forEach(g => { %><option value="<%= g.id %>" <%= g.id === d.genero ? 'selected' : '' %>><%= g.label %></option><% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-forge-muted mb-1" for="a-subgenero">Estilo</label>
+          <select id="a-subgenero" name="subgenero" class="w-full bg-forge-bg border border-forge-border px-3 py-2" <%= genre ? '' : 'disabled' %>>
+            <option value="">Elegí uno…</option>
+            <% (genre ? genre.subgenres : []).forEach(s => { %><option value="<%= s.id %>" <%= s.id === d.subgenero ? 'selected' : '' %>><%= s.label %></option><% }) %>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-forge-surface border border-forge-border p-6">
+      <h3 class="font-serif text-xl mb-1"><label for="a-premise">¿De qué trata?</label></h3>
+      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+        Contalo como se lo contarías a alguien en dos o tres frases. No hace falta ordenarlo en actos: eso lo hacemos después.</p>
+      <textarea id="a-premise" name="premise" rows="4" maxlength="6000"
+                class="w-full [field-sizing:content] min-h-[6rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= d.premise %></textarea>
+    </section>
+
+    <section class="bg-forge-surface border border-forge-border p-6">
+      <h3 class="font-serif text-xl mb-1">¿Qué querés que sienta quien lo escuche?</h3>
+      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+        Es la brújula del asistente: las preguntas y la escaleta van a apuntar a este efecto.</p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <% options.effects.forEach(e => { %>
+          <label class="cursor-pointer">
+            <input type="radio" name="effect" value="<%= e.id %>" class="peer sr-only" <%= e.id === d.effect ? 'checked' : '' %>>
+            <span class="block h-full border border-forge-border bg-forge-bg p-4 transition-colors
+                         peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
+              <span class="block font-semibold"><%= e.label %></span>
+              <span class="block text-sm text-forge-muted"><%= e.detail %></span>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+      <input type="text" name="effect_other" maxlength="200" value="<%= d.effect_other %>" data-solo-si-efecto="otro"
+             placeholder="Contá qué efecto buscás"
+             class="<%= d.effect === 'otro' ? '' : 'hidden' %> mt-3 w-full bg-forge-bg border border-forge-border px-3 py-2">
+    </section>
+
+    <section class="bg-forge-surface border border-forge-border p-6">
+      <h3 class="font-serif text-xl mb-1"><label for="a-ending">¿Cómo termina?</label></h3>
+      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+        Si ya lo tenés decidido, marcalo: el asistente no te va a proponer otro final.</p>
+      <textarea id="a-ending" name="ending" rows="2" maxlength="600"
+                class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3 focus:outline-none focus:border-forge-accent"><%= d.ending %></textarea>
+      <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
+        <input type="checkbox" name="ending_intentional" class="accent-forge-accent w-4 h-4" <%= d.ending_intentional ? 'checked' : '' %>>
+        Es así a propósito: no lo cambies
+      </label>
+    </section>
+
+    <section class="bg-forge-surface border border-forge-border p-6">
+      <h3 class="font-serif text-xl mb-4">¿A quién le pasa y quién lo cuenta?</h3>
+      <div class="grid sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm text-forge-muted mb-1" for="a-prota">Protagonista</label>
+          <input id="a-prota" name="protagonist_name" type="text" maxlength="60" value="<%= d.protagonist_name %>" placeholder="Nombre"
+                 class="w-full bg-forge-bg border border-forge-border px-3 py-2">
+        </div>
+        <div>
+          <label class="block text-sm text-forge-muted mb-1" for="a-quehace">¿Qué hace?</label>
+          <input id="a-quehace" name="protagonist_role" type="text" maxlength="160" value="<%= d.protagonist_role %>"
+                 placeholder="Por ejemplo: chofer de micros, turno noche"
+                 class="w-full bg-forge-bg border border-forge-border px-3 py-2">
+        </div>
+      </div>
+      <label class="block text-sm text-forge-muted mb-1" for="a-narra">Quién lo cuenta</label>
+      <select id="a-narra" name="narrator" class="w-full sm:w-1/2 bg-forge-bg border border-forge-border px-3 py-2">
+        <option value="">El protagonista</option>
+        <% others.forEach(c => { %><option value="<%= c.name %>" <%= c.name === d.narrator ? 'selected' : '' %>><%= c.name %></option><% }) %>
+      </select>
+      <p class="text-xs text-forge-muted mt-2">Los demás personajes los sumás en el acto donde aparecen.</p>
+    </section>
+
+    <section class="bg-forge-surface border border-forge-border p-6">
+      <h3 class="font-serif text-xl mb-1">¿Cómo lo cuenta?</h3>
+      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+        Elegí cómo suena la voz. Cada opción tiene un ejemplo de cómo arrancaría.</p>
+      <div class="space-y-3">
+        <% options.tellings.forEach(c => { %>
+          <label class="cursor-pointer block">
+            <input type="radio" name="telling" value="<%= c.id %>" class="peer sr-only" <%= c.id === d.telling ? 'checked' : '' %>>
+            <span class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 border border-forge-border bg-forge-bg p-4 transition-colors
+                         peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
+              <span class="font-semibold sm:w-56 shrink-0"><%= c.label %></span>
+              <span class="prose-forge italic text-forge-muted"><%= c.detail %></span>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+    </section>
+
+    <details class="bg-forge-surface border border-forge-border p-6 group" <%= d.threat ? 'open' : '' %>>
+      <summary class="cursor-pointer list-none flex items-center justify-between">
+        <span>
+          <span class="font-serif text-xl">La amenaza</span>
+          <span class="ml-2 text-xs uppercase tracking-widest text-forge-muted">opcional</span>
+        </span>
+        <i data-lucide="chevron-down" class="w-5 h-5 text-forge-muted transition-transform group-open:rotate-180"></i>
+      </summary>
+      <p class="text-sm text-forge-muted mt-3 mb-4">Si tu historia tiene un ser, un lugar o una fuerza que acecha, describilo: qué quiere, cómo se manifiesta y qué no puede hacer. Si preferís, dejalo para después.</p>
+      <div class="grid sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm text-forge-muted mb-1" for="a-t-nature">Qué es</label>
+          <select id="a-t-nature" name="threat_nature" class="w-full bg-forge-bg border border-forge-border px-3 py-2" <%= genre ? '' : 'disabled' %>>
+            <option value="">Sin amenaza</option>
+            <% (genre && genre.entity_natures ? genre.entity_natures : []).forEach(n => { %>
+              <option value="<%= n.id %>" <%= n.id === t.nature ? 'selected' : '' %>><%= n.label %></option>
+            <% }) %>
+          </select>
+          <% if (!genre) { %><p class="text-xs text-forge-muted mt-1">Elegí primero el tipo de horror.</p><% } %>
+        </div>
+        <div>
+          <label class="block text-sm text-forge-muted mb-1" for="a-t-name">Nombre <span class="text-xs">(si tiene)</span></label>
+          <input id="a-t-name" name="threat_name" type="text" maxlength="60" value="<%= t.name %>" class="w-full bg-forge-bg border border-forge-border px-3 py-2">
+        </div>
+      </div>
+      <label class="block text-sm text-forge-muted mb-1" for="a-t-desc">Qué quiere</label>
+      <textarea id="a-t-desc" name="threat_description" rows="2" maxlength="400" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.description %></textarea>
+      <label class="block text-sm text-forge-muted mb-1" for="a-t-man">Cómo se percibe</label>
+      <textarea id="a-t-man" name="threat_manifestations" rows="2" maxlength="300" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.manifestations %></textarea>
+      <label class="block text-sm text-forge-muted mb-1" for="a-t-lim">Qué no puede hacer</label>
+      <textarea id="a-t-lim" name="threat_limits" rows="2" maxlength="300" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.limits %></textarea>
+      <label class="block text-sm text-forge-muted mb-1" for="a-t-reveal">Cuánto se muestra</label>
+      <select id="a-t-reveal" name="threat_reveal_level" class="w-full sm:w-1/2 bg-forge-bg border border-forge-border px-3 py-2">
+        <% REVEAL.forEach(([id, label]) => { %><option value="<%= id %>" <%= id === t.reveal_level ? 'selected' : '' %>><%= label %></option><% }) %>
+      </select>
+    </details>
+
+    <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
+      <%- include('_guardado', { inicial: state ? null : 'Se guarda solo cuando escribas el título' }) %>
+      <button type="button" class="btn-forge-sm"
+              data-analizar="consult"
+              data-titulo="Interpretando la historia…"
+              data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte."
+              data-destino="taller"
+              <%= state ? '' : 'disabled' %>>
+        <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
+      </button>
+    </div>
+  </form>
+</div>
+
+<%- include('_analizando') %>
+<script type="application/json" id="asistente-datos"><%- JSON.stringify({ state, genres }).replace(/</g, '\\u003c') %></script>
+<script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

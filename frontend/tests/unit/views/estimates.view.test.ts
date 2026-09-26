@@ -18,7 +18,6 @@ function story(status: string) {
     sinopsis: "Algo pasa.",
     genero: "paranormal",
     subgenero: "fantasmas",
-    tono: "constante",
     characters: [],
     rules: [],
     scenarios: [],

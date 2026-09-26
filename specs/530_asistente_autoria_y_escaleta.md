@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
-**Estado:** SPECIFY — borrador para revisar con el usuario (las filas de §6 y las preguntas de §13 esperan su acuerdo)
+**Estado:** DONE (2026-09-25) — S0–S8 en `feat/spec-530-asistente`. Pase a prod pendiente: recrea la DB de prod (ver resultado de S7).
 **Origen:** relato «la pena del colectivo» (prod, `4a4d8cab-…`): repetitivo, el fantasma aparece en todos los actos y el protagonista no hace nada. Diagnóstico y pruebas del 2026-09-25 (§1).
 
 ---
@@ -182,20 +182,20 @@ Hoy se piden **76 campos**: título y atmósfera 4, personajes y narrador 17, «
 
 | Variable actual | Decisión | Evidencia | Acuerdo |
 |---|---|---|---|
-| `distortion_triggers`, `paranormal_knowledge`, `religioso_knowledge` | Se eliminan | No llegan a ningún prompt | ☐ |
-| `perception_reliability`, `distortion_level`, `interpretation_style`, `figurative_density`, `fear_focus`, `attention_focus` | Se eliminan | Ablación sin efecto medible | ☐ |
-| `traits` («Cómo es») | Se elimina; lo reemplaza el criterio «Vulnerabilidad» del taller | No llega a la Voz | ☐ |
-| `rule.type` | Se elimina | No se usa | ☐ |
-| `voice_style` + `language_register` + «Tono» del relator | Se fusionan en **«¿Cómo lo cuenta?»**: 3–4 opciones preparadas (p. ej. «como un caso entre amigos», «como una confesión», «literario») | El registro es lo único que mueve la prosa | ☐ |
-| `tono` (evolución de la tensión) | Lo reemplaza **«Efecto buscado»** | Choca con la curva de intensidad fija de los 5 actos | ☐ |
-| Escenarios cargados al inicio (hasta 4) | Se eligen o crean **dentro de cada acto** | Error del Resolver en los actos 3–5 | ☐ |
-| Reglas globales (hasta 7) | **Por acto**, o como límites de la amenaza | La regla global puso el fantasma en el Acto 1 | ☐ |
-| Entidades (hasta 3 × 6) | Se mantienen; la UI arranca con una y es opcional | Es la ficha de la amenaza | ☐ |
-| Personajes (5 × 3) | Nombre y qué hace. Al inicio solo el protagonista; el resto se agrega desde un hecho de la escaleta | La Voz los usa | ☐ |
-| Quién narra | Se mantiene, con el protagonista por defecto | Mueve la persona gramatical y los parentescos | ☐ |
-| Título, género, subgénero | Se mantienen | Catálogo y naturalezas de la amenaza | ☐ |
-| 5 textos de actos | Pasan a la escaleta | §1.3 | ☐ |
-| — | **Nuevo:** «¿de qué trata?», efecto buscado, final (+ intencional) | §1.2 | ☐ |
+| `distortion_triggers`, `paranormal_knowledge`, `religioso_knowledge` | Se eliminan | No llegan a ningún prompt | ☑ |
+| `perception_reliability`, `distortion_level`, `interpretation_style`, `figurative_density`, `fear_focus`, `attention_focus` | Se eliminan | Ablación sin efecto medible | ☑ |
+| `traits` («Cómo es») | Se elimina; lo reemplaza el criterio «Vulnerabilidad» del taller | No llega a la Voz | ☑ |
+| `rule.type` | Se elimina | No se usa | ☑ |
+| `voice_style` + `language_register` + «Tono» del relator | Se fusionan en **«¿Cómo lo cuenta?»**: 3–4 opciones preparadas (p. ej. «como un caso entre amigos», «como una confesión», «literario») | El registro es lo único que mueve la prosa | ☑ |
+| `tono` (evolución de la tensión) | Lo reemplaza **«Efecto buscado»** | Choca con la curva de intensidad fija de los 5 actos | ☑ |
+| Escenarios cargados al inicio (hasta 4) | Se eligen o crean **dentro de cada acto** | Error del Resolver en los actos 3–5 | ☑ |
+| Reglas globales (hasta 7) | **Por acto**, o como límites de la amenaza | La regla global puso el fantasma en el Acto 1 | ☑ |
+| Entidades (hasta 3 × 6) | Se mantienen; la UI arranca con una y es opcional | Es la ficha de la amenaza | ☑ |
+| Personajes (5 × 3) | Nombre y qué hace. Al inicio solo el protagonista; el resto se agrega desde un hecho de la escaleta | La Voz los usa | ☑ |
+| Quién narra | Se mantiene, con el protagonista por defecto | Mueve la persona gramatical y los parentescos | ☑ |
+| Título, género, subgénero | Se mantienen | Catálogo y naturalezas de la amenaza | ☑ |
+| 5 textos de actos | Pasan a la escaleta | §1.3 | ☑ |
+| — | **Nuevo:** «¿de qué trata?», efecto buscado, final (+ intencional) | §1.2 | ☑ |
 
 **Resultado:** unos 10 datos al inicio. El resto lo completa el taller y la escaleta.
 
@@ -296,3 +296,217 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - `escaleta.py`, `escaleta_{1,2}.json`: escaleta generada a partir de la sinopsis y las respuestas.
 - `build_yaml.py`, `run_pipe.py`, `salidas/relato_*.txt`, `salidas/metrics_*.json`: relatos y métricas.
 - `ablation.py`, `ablation.log`, `salidas/abl_*.txt`: ablación del perfil del narrador.
+
+---
+
+## PLAN
+
+**Estado:** aprobado (2026-09-25). Se escribe sobre la Spec-531 (tema «Papel»), que ya está implementada (PR #30).
+
+### Estrategia
+
+1. **Diseño primero:** maquetas navegables antes de cualquier cambio de dominio (S0). Lo que se ajuste ahí actualiza §3 y §7 antes de seguir.
+2. **Sumar antes de quitar:** los slices S1–S6 **agregan** el camino nuevo (dirección, taller, escaleta, pipeline con escaleta) sin romper el actual. Las historias sin escaleta se siguen generando igual (regresión cero, con los snapshots de prompts actuales).
+3. **Medir antes de recortar:** sacar el Mapper, el Analyst o el Resolver, y eliminar variables del dominio (S7), recién después de medir (S6) y con las filas de §6 marcadas por el usuario.
+
+### Hallazgos del relevamiento (complementan §1)
+
+| Hallazgo | Consecuencia |
+|---|---|
+| `LLMProvider.generate()` no admite salida estructurada; `OllamaAdapter` usa `/api/generate` sin `format`. El Journal parsea JSON «a mano» (`split("{")`) y, si falla, devuelve el journal anterior en silencio. | Se agrega `response_schema: dict \| None` al protocolo. Ollama lo manda como `format`; Anthropic usa su salida estructurada; Gemini CLI y Mock lo ignoran (Mock devuelve un JSON fijo por rol). |
+| `DirectorUseCase._execute_single_beat` arma cada acto así: `synopsis_slice` → `mapper.map_one()` → `build_narrative_context()` → Voz → Journal. El escenario sale de `rule_distribution` (Resolver). | El camino con escaleta se inserta ahí: si el acto tiene `act_outline`, se saltea el Mapper y el escenario sale de la escaleta. |
+| `StoryCreateDTO` exige `protagonista`, `relator` y `sinopsis` no vacíos. | La Dirección crea el borrador con esos campos derivados (`protagonista` = nombre + qué hace; `relator` desde «¿cómo lo cuenta?»; `sinopsis` = «¿de qué trata?»). El DTO no cambia hasta S7. |
+| `JobKind` tiene `full_generation` y `regenerate_voz`. `JobManager` ya resuelve el lock por historia, las estimaciones, los eventos SSE y la cancelación. | El taller, la escaleta y la verificación corren como **jobs** (`consult`, `plan_outline`, `verify_outline`): tardan 30–60 s, sobreviven a cerrar la pestaña y reusan el banner y el ETA (Spec-510). |
+| El wizard sale de `ui_definitions.yaml` y guarda en sesión hasta «Guardar historia». | Las vistas nuevas guardan en el Core a cada paso (borrador persistido), no en sesión: el taller necesita la historia en la DB. |
+
+### Decisiones (se adoptan las propuestas de §13 salvo que el usuario diga otra cosa)
+
+1. El asistente **reemplaza** al wizard. El wizard viejo se retira en S7, no antes; mientras tanto conviven y «Nuevo relato» apunta al asistente desde S4.
+2. «¿Cómo lo cuenta?»: caso entre amigos · confesión íntima · crónica seca · literario. Cada opción se traduce en **una** línea del prompt de la Voz (se define y se mide en S5).
+3. Efecto buscado: lista cerrada (pavor creciente · susto · melancolía inquietante · horror que se revela) + «otro» con texto libre.
+4. «¿De qué trata?» se conserva (2–5 líneas) y la escaleta pasa a ser la fuente de verdad de los hechos.
+5. Entidades: la UI muestra una y deja «agregar otra» (máx. 3, como el dominio).
+6. Personajes secundarios: se agregan desde la escaleta («+ personaje» en la tarjeta del acto) y quedan en la lista de la historia.
+7. Consultor, Planificador y Verificador en `gemma3:12b`, con el rol configurable por proveedor (Spec-480) por si hace falta mandar el Consultor a Claude.
+8. Salida JSON inválida: un reintento y después `job_failed` con un mensaje claro. Nunca se usa el resultado anterior en silencio (se corrige también en el Journal).
+9. Maquetas como vistas EJS reales con datos fijos detrás de `/maquetas/*` (solo con `ENV=dev`). Se ven con `make dev` y con el tema real, y sus parciales se reusan en S4.
+
+### Decisiones de la revisión de S0 (2026-09-25)
+
+10. **Guardado automático real.** Cada campo se guarda en el Core mientras se escribe (con debounce, como el `autoSaveField` del wizard actual), con un indicador «Guardado hace un momento». No hay botón «Guardar».
+11. **La IA nunca se dispara sola.** Cada llamada tiene un comando explícito, con su tiempo estimado en el botón:
+    - Dirección: «Analizar mi historia»;
+    - Taller: «Analizar de nuevo» y «Armar la escaleta» (Planificador + Verificador);
+    - Escaleta: «Revisar con la IA».
+
+    Pasar de una vista a otra es solo navegación.
+12. **Modal bloqueante mientras la IA trabaja:** spinner grande, un título que dice qué está haciendo («Interpretando la historia…», «Armando la escaleta…», «Revisando la escaleta…»), el tiempo que falta y «Cancelar». Toda la página queda `inert`: no se puede tocar ningún campo ni botón. Si se cierra la pestaña, el job sigue; al volver, el modal reaparece atado al job activo hasta que termina. Con un job activo, el guardado automático responde 409 (ya pasa hoy con `PATCH /stories`).
+13. **«Decidí vos» no llama a la IA:** elige la primera opción, que es la que la IA propone como más fuerte. Es instantáneo.
+14. **Personajes** (caso «El galpón»: 3 con nombre, otros sin nombre y grupos enteros):
+    - Cada personaje tiene **tipo** (con nombre · sin nombre · grupo) y **qué es para quien narra** («mi mamá», «el patrón»). Así la Voz los nombra bien; es el insumo de los parentescos de la Spec-470.
+    - **Cada personaje se agrega cuando hace falta, en el acto donde aparece** («+ personaje» en «En escena»), o cuando el Verificador lo propone. La Dirección pide solo al protagonista y a quien narra: no hay una lista de personajes para cargar de antemano (confirma la decisión 6; revisión del usuario, 2026-09-25).
+    - Cada acto marca **quiénes están en escena**, y la Voz recibe solo a esos (más quien narra). Con muchos personajes, así evita meter a todos en todos los actos.
+    - El Verificador avisa cuando un hecho nombra a alguien que no está en el elenco, y lo propone como personaje sin nombre.
+    - Impacto en §7: `character` suma `kind` (`persona` / `sin_nombre` / `grupo`) y `relation` (qué es para quien narra); `act_outline` suma `on_stage` (JSON con los personajes en escena).
+
+### Slices
+
+#### S0 — Maquetas navegables
+- `/maquetas/direccion`, `/maquetas/taller` y `/maquetas/escaleta`, con los datos de «la pena del colectivo» y las preguntas y la escaleta reales de las pruebas (`scripts/research/530/`).
+- Controles visibles, aunque todavía no funcionen: opciones, «escribir la mía», «decidí vos», «intencional», semáforo por criterio, motivo de fin del taller, tarjetas de acto (hechos editables, escenario con opciones rápidas, reglas del acto, «+ personaje»), avisos del verificador.
+- **Verificación:** revisión del usuario. Los cambios que pida van a §3 y §7 antes de S1.
+
+#### S1 — Dominio (aditivo)
+- `init_db()`: `story.direction` (JSON), tablas `story_workshop` y `act_outline`. No se borra nada.
+- Modelos de dominio (`Direction`, `WorkshopItem`, `ActOutline`) y repositorios; `Story` los carga.
+- YAML: `export-yaml` / `import-yaml` incluyen la dirección y la escaleta; los YAML viejos se importan igual.
+- **Verificación:** unit de repos y round-trip YAML; pytest completo en verde; `make db` recrea sin errores.
+
+**Hecho (2026-09-25).** Además de lo previsto:
+- `Direction` guarda solo lo que el autor escribe; las decisiones del taller (meta, qué está en juego, historia secreta…) viven en `WorkshopItem`, sin duplicarse en la dirección. Esto ajusta §7.
+- `character` suma `kind` y `relation` (§14); `act_outline` guarda el escenario y los personajes en escena **por nombre**, porque se reescriben con ids nuevos al editar.
+- `update_inputs` (edición desde el wizard) no toca la dirección, el taller ni la escaleta: tienen sus propios métodos (`update_direction`, `save_workshop_items`, `save_outline`, `save_act`).
+- `CreateStoryUseCase` ahora conserva el acto de cada regla (`applies_to_beat`, que antes se perdía al crear) y rechaza con `InvalidAuthoringError` (422) una escaleta o un taller inválidos, o un tipo de personaje desconocido.
+- El YAML exporta las claves nuevas solo si existen: los YAML de las historias viejas salen idénticos.
+- **Deploy:** es un cambio de esquema. El primer `make deploy` que incluya S1 necesita el pase de datos de prod (`export-yaml --all` → recrear `data/prod/stories.db` → `import-yaml`), ensayado antes sobre una copia. Sin eso, prod arranca con el esquema viejo y falla al guardar.
+
+#### S2 — Salida estructurada y roles nuevos
+- `response_schema` en el protocolo y en los adapters (Ollama `format`; Anthropic; Mock con un JSON por rol).
+- Roles `consultor`, `planificador` y `verificador` en los perfiles de `llm_core_definitions.yaml`.
+- Templates `consultant.md`, `outline_planner.md` y `outline_verifier.md`, con los criterios de §4 como preguntas operativas y la dirección del autor como contexto.
+- Servicios `WorkshopConsultant`, `OutlinePlanner` y `OutlineVerifier`, más `WorkshopRules` (criterios determinísticos y condiciones de fin de §3.3).
+- **Verificación:** unit con Mock (JSON válido, JSON inválido con reintento, filtro de «ya no suma», «intencional» respetado); prueba manual con `gemma3:12b` sobre «la pena del colectivo» (tiempos y calidad, contra §1.2).
+
+**Hecho (2026-09-25).** Probado con `gemma3:12b` sobre «la pena del colectivo»: ronda del taller 7–17 s, escaleta ~45 s, revisión ~12 s, JSON válido siempre (también con `$ref`).
+- `response_schema` en el protocolo: Ollama lo manda como `format`; Anthropic como `output_config.format` (`json_schema`), adaptado a sus límites (`additionalProperties: false`, sin `minItems`/`maxLength`…). Helper `generate_structured`: valida con Pydantic, reintenta una vez y después `LLMStructuredOutputError`.
+- Roles `consultor`, `planificador` y `verificador` en los perfiles de `gemma3:12b`; en los demás heredan la config del `director`.
+- Criterios en `config/workshop_criteria.yaml` y opciones de la Dirección en `config/authoring_options.yaml` (fuente única para la UI y los prompts). La teoría (`origen`) no va al prompt.
+- **El historial del taller retroalimenta al modelo** (pregunta del usuario, 2026-09-25): cada ronda recibe las decisiones como pares pregunta → respuesta y las preguntas pendientes. Con eso, la escaleta revela la historia secreta en el Acto 4 (en la prueba de S0, sin el historial, se perdía).
+- **Una pregunta sin responder no se reformula:** el Consultor tendía a reescribirla en cada ronda; se mantiene la original y solo se actualiza el semáforo. Una ronda sin preguntas nuevas termina en «no suma».
+- El Verificador empujaba las convenciones del género («el final podría ser más ambiguo»): el prompt le prohíbe opinar sobre tono y estilo y discutir lo decidido por el autor. Máximo 2 avisos del LLM por acto, además de las reglas determinísticas.
+- La amenaza no cuenta como elenco: el Planificador pone solo personas «en escena».
+- **Para S5:** `llm_beats_definition.yaml` define el Acto 5 como «escape incompleto y secuela», que choca con un final intencional en paz. El Planificador ya prioriza el final del autor; la Voz tiene que hacer lo mismo.
+
+#### S3 — API y jobs
+- `PUT /stories/{id}/direction`; `GET/PATCH /stories/{id}/workshop` (responder, marcar intencional o completo); `GET/PUT /stories/{id}/outline` y `PATCH …/outline/{n}`.
+- `POST /stories/{id}/jobs` con `kind` `consult` | `plan_outline` | `verify_outline`, con eventos y ETA como los jobs actuales.
+- **Verificación:** tests de API (202/409/422) y de jobs con Mock.
+
+**Hecho (2026-09-25).** Probado de punta a punta con `gemma3:12b` (API → JobManager → Ollama): taller 12 s (estimado 20), escaleta con revisión 56 s (estimado 60).
+- Rutas bajo `/api/v1/authoring`: `GET /options`; `POST /stories` (crea el borrador desde la Dirección); `PUT /stories/{id}/direction` (guardado automático; deriva protagonista, relator, sinopsis y narrador); `GET /stories/{id}` (todo el estado de las 3 vistas, con el job activo); `PATCH /stories/{id}/workshop/{criterio}` (`answer` | `decide` | `intentional` | `reopen`, sin IA); `PUT /stories/{id}/outline/{n}` (guardado de un acto; los avisos quedan hasta revisar de nuevo). Con un job activo, todo guardado responde 409 con `X-Job-Id`.
+- Jobs `consult`, `plan_outline` (Planificador + Verificador) y `verify_outline` por `POST /stories/{id}/jobs`, con etapas `consultor` / `planificador` / `verificador` y tiempo estimado. Precondiciones: dirección con «¿de qué trata?» (taller y escaleta), escaleta existente (revisión); si no, 422.
+- El motivo de fin del taller se recalcula siempre desde lo guardado: `WorkshopItem.question_round` dice en qué ronda se hizo la pregunta vigente.
+- El LLM simulado responde JSON coherente para cada rol (`mock_structured.py`): los tests de la API y los E2E recorren el flujo sin un modelo real.
+- La banda de generación y el punto del sidebar ignoran los jobs del asistente: antes de esto, un análisis terminado habría mostrado «está lista · Leer relato». El aviso del asistente es su modal (S4).
+
+#### S4 — Vistas reales
+- Dirección, Taller y Escaleta con HTMX sobre los parciales de S0. «Nuevo relato» apunta al asistente; la ficha de una historia con escaleta enlaza a sus vistas.
+- **Verificación:** Vitest de controllers y parciales; E2E con Mock: dirección → taller (1 ronda) → escaleta → generar → relato.
+
+**Hecho (2026-09-25).** Probado en el navegador con `gemma3:12b`: Dirección → análisis (8–11 s) → taller → escaleta (56–75 s), con la historia secreta revelada en el Acto 4 y las 3 decisiones integradas.
+- Vistas `/nuevo` y `/asistente/{id}/{direccion|taller|escaleta}` (Express + EJS, sobre los diseños de S0), con `public/js/asistente.js`: guardado automático con cola por formulario (y descarga antes de cualquier acción), comandos explícitos de la IA y modal bloqueante atado al job (bus de eventos + consulta de respaldo; reaparece al entrar con un análisis en curso; muestra el error si la IA falla).
+- «Nuevo relato» apunta al asistente; en la galería y la ficha, «Editar» lleva al asistente para las historias creadas ahí (`StoryResponse.authoring`). El wizard viejo sigue para las demás.
+- Se retiraron las maquetas de S0.
+- La API sumó lo que las vistas necesitaban: la amenaza en la Dirección, reglas por acto (`rule.applies_to_beat`), sumar un personaje desde un acto e ignorar un aviso.
+- Ajustes por lo que mostró el modelo real:
+  - la revisión ubica cada decisión en el acto donde aparece en los hechos (antes solo podía quitar las etiquetas del Planificador);
+  - el final intencional va siempre al último acto;
+  - la historia secreta se pide en el Acto 4;
+  - los escenarios se normalizan sin agregados entre paréntesis;
+  - hilos sueltos en un solo aviso, como máximo 3 avisos por acto.
+- Bug encontrado en la prueba real: «Escribir la mía…» no mostraba el campo; corregido y cubierto por el E2E.
+- **Pendiente para S5:** «Generar relato» todavía usa el pipeline de siempre (la sinopsis); la escaleta entra en la generación en S5.
+
+#### S5 — Pipeline con escaleta, Voz y memoria
+- `DirectorUseCase`: si hay escaleta, los hechos, el escenario y las reglas del acto salen de ella (sin Mapper para ese acto; el Analyst sigue corriendo hasta decidir en S6).
+- Prompt de la Voz para historias con escaleta (§8.1): sin perfil del narrador, «¿cómo lo cuenta?» en una línea, «ya contado» y «ya usado, no repetir», extensión proporcional a los hechos.
+- Journal con `response_schema`: `hechos`, `estado` y `motivos_usados` (acumulados), y sin fallback silencioso.
+- Control de repetición (§8.3) con clichés por lema; se muestra en el panel del relato.
+- **Verificación:** snapshots nuevos para el camino con escaleta; los snapshots actuales **sin cambios** (regresión cero); E2E del relato con el aviso de repetición.
+
+**Hecho (2026-09-25).** Relato real de «la pena del colectivo» desde su escaleta, con `gemma3:12b` (en `scripts/research/530/salidas/relato_s5_*.md`):
+
+| | Original (prod, sin escaleta) | Con escaleta (S5) |
+|---|---|---|
+| Llamadas al LLM | 16 | 10 (Voz + memoria × 5) |
+| Duración | 206 s | 161–191 s |
+| Frases repetidas entre actos | 9 | 4–7 (varias son muletillas del estilo «caso entre amigos») |
+| Clichés | 2 | 0 |
+| Espejo / retrovisor por acto | 3·6·2·6·1 | 4·3·0·1·0 |
+| «¿Todo bien, José?» | 6 veces | 0–1 |
+| El protagonista actúa | no | sí: para, investiga, pregunta en el pueblo, confiesa |
+| Historia secreta | no existía | revelada y confesada (Actos 3–4) |
+| Final del autor | respetado | respetado (en paz, sin «escape incompleto») |
+
+- Camino con escaleta en `DirectorUseCase._execute_outline`: sin Analyst, Resolver ni Mapper. Desvío del PLAN: el Analyst no se mide en S6 porque en este camino sus anclas no alimentan nada.
+- Prompt de la Voz (`outline_voice*.md`): «cómo lo cuenta» en una línea (reemplaza al perfil del narrador), guía de oficio, eventos del acto, solo los personajes en escena, reglas del acto, amenaza según la exposición del acto (Spec-450), lo que ya pasó (acumulado), lo ya usado y extensión proporcional. En el Acto 5, el final del autor manda sobre «escape incompleto».
+- Memoria con esquema JSON (`outline_journal*.md`): hechos acumulados, estado y motivos usados (`narrative_journal.used_motifs`). El Journal viejo ya no falla en silencio (log de aviso).
+- Control del relato (`GET /generated-narratives/{id}/repetition`, en el panel del relato): frases repetidas de actos anteriores, clichés por lema (sin falsos positivos con palabras de 2 letras) y **nombres inventados** (con mayúscula en medio de una frase y ausentes de todo lo que cargó el autor).
+- **Límite medido:** con `gemma3:12b`, la Voz inventa nombres propios (Laura, Ramón, un pueblo, una fecha) y a veces tuerce un detalle de la historia secreta, aunque el prompt lo prohíbe. No se resuelve con más prompt: el control lo marca por acto para regenerarlo. Es el caso para evaluar la Voz en Sonnet 5 (EV-E) o para que el taller pida el nombre de quien no lo tiene.
+
+#### S6 — Medición
+- `scripts/evaluate_workshop.py`: sobre «la pena del colectivo» y «El monte prohibido», 2 corridas cada una, compara la línea base (pipeline actual) contra el asistente con escaleta: tiempos por rol, criterios detectados, métricas del relato (§10).
+- Con Analyst y sin Analyst, sobre las historias con escaleta.
+- **Verificación:** informe en la spec (RESULTADOS). **Preguntar antes** de sacar el Mapper, el Analyst o el Resolver.
+
+**Hecho (2026-09-25).** `scripts/evaluate_workshop.py`: 2 historias × 2 caminos × 2 corridas con `gemma3:12b`. El «autor» delega todo el taller con «Decidí vos», para que sea reproducible. Relatos, escaletas y `metrics.json` en `scripts/research/530/s6/`; re-corrida de «El monte» con la corrección de parentescos en `s6_fix/`. Promedios por relato:
+
+| | la pena · base | la pena · asistente | el monte · base | el monte · asistente |
+|---|---|---|---|---|
+| Generación | 229 s | 151 s | 222 s | 165 s |
+| + taller + escaleta | — | 14 s + 61 s | — | 22 s + 71 s |
+| Decisiones en la escaleta | — | 5/5, 5/5 | — | 5/5, 5/5 |
+| Clichés | 1 | 0 | 2 | 0,5 |
+| Nombres inventados | 9,5 | 3 | 0 | 0,5 |
+| Parentescos mal | 1 | 0 | 0 | 1 |
+| Frases repetidas entre actos | 7,5 | 11,5 | 10,5 | 6,5 |
+
+- **Mejora clara:** clichés, nombres inventados (la base inventa geografía: Ushuaia, Bariloche…), tiempo de generación (−30 %) y estructura (el protagonista actúa, se revelan los secretos; ver §S5).
+- **No mejora en «la pena»:** frases repetidas. En el detalle son muletillas del estilo («mirá, te juro que»), conectores genéricos («algo que no podía») y «el espejo retrovisor», que la propia escaleta pone en varios actos. En «El monte» sí mejora (10,5 → 6,5).
+- **Bugs encontrados y corregidos:**
+  - «El monte» tenía 3,5 parentescos mal: el Planificador anotaba «María (aparición)» y la escena de la Voz no la reconocía, así que perdía el «tu suegra». Ahora los nombres en escena van sin agregados y la escena suma a quien nombran los eventos (3,5 → 1).
+  - El asistente daba 500 con sinopsis de más de 2000 caracteres.
+  - El detector de nombres contaba los rezos («Padrenuestro», «Dios»).
+- **Analyst / Resolver / Mapper:** no participan del camino con escaleta. Solo los usan las historias sin escaleta (wizard e `import-yaml`).
+- **Pendiente de calidad** (no bloquea S7): el Planificador repite el mismo tipo de encuentro (el espejo) y la Voz inventa algún nombre. Candidatos: una regla del Verificador para «el mismo elemento en 3 o más actos» y evaluar la Voz en Sonnet 5.
+
+#### S7 — Limpieza del dominio (solo las filas de §6 aprobadas)
+- Se eliminan las variables aprobadas (`traits`, `rule.type`, `rule.intensity`, las claves de `narrator_config`, `tono` → `direction.efecto`), el wizard viejo (`ui_definitions.yaml` y sus vistas y controllers) y lo que S6 permita del pipeline.
+- Loader tolerante a los YAML viejos. Datos de prod: `export-yaml --all` → recrear la DB → `import-yaml` (probado antes contra una copia de `data/prod`).
+- **Verificación:** suite completa en verde; los 3 YAML de `input_stories/` y los 3 de prod se importan y generan.
+- **Resultado (2026-09-25):**
+  - **S7a** (5b9f454): se retiró el wizard; toda historia se edita en el asistente.
+  - **S7b** (7f600f0): un solo pipeline. Si la historia no tiene escaleta, primero la arma (Planificador + Verificador) y la guarda; después, Voz + memoria por acto. Salen Analyst, Resolver, Mapper, el Journal viejo, `narrative_context`, `--hasta`, `narrate`, `NarrativeAnchors`, `prompt_variant` y las etapas `analyst`/`resolver`/`mapper`.
+  - **S7c:**
+    - Salen `character.traits`, `rule.type`/`intensity` (y `RuleType`), `story.tono` (`atmosfera` = «género (subgénero)»), las claves viejas de `narrator_config` (queda `{storyteller_id, storyteller_name, voice: {person, tense}}`).
+    - También salen `NarrativeJournal.unresolved_mysteries`/`entity_state`, la tabla `entity_journal`, `StoryMetadata`, `TemplateMapper`, el rol `story_analyst` y `prompting_strategy`.
+    - El loader acepta los YAML viejos e ignora lo eliminado; el `tono` no se mapea, porque ningún valor viejo corresponde a un efecto.
+    - `generate --input` respeta la dirección y la escaleta del YAML.
+  - **Datos de prod (ensayo sobre una copia):** `export-yaml --all` corre con el código de `main`, porque la DB de prod no tiene las columnas de S1. Después: DB nueva → `import-yaml` con esta rama. Las 3 de prod y las 3 de `input_stories/` se importan y generan con el mock (30 actos de escaleta, 6 relatos).
+
+#### S8 — Cierre
+- `CLAUDE.md`, estado de la spec y del roadmap. El pase a prod, cuando el usuario lo pida.
+- **Resultado (2026-09-25):** `CLAUDE.md` describe el asistente, el pipeline de la escaleta y el esquema nuevo (15 tablas); las specs 180 y 220 quedan marcadas como reemplazadas. PR a `development`.
+- **Pase a prod (cuando se pida):**
+  1. `export-yaml --all` con el código que está en prod (desde `main` o dentro de `narrative-api`), antes del deploy.
+  2. `make deploy`, que hace el backup. `init_db()` no altera tablas existentes: la DB vieja no sirve con el código nuevo.
+  3. Apartar `data/prod/stories.db` (queda el backup), crear la DB nueva e importar con `import-yaml`.
+  4. Reiniciar `narrative-api` y verificar `/config/active-profile`.
+  - Los comandos exactos se arman al hacer el pase.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| El Consultor empuja convenciones del género por encima del autor (§1.2). | «Intencional» persistido y enviado en cada ronda; test de que un criterio intencional no vuelve a preguntarse. |
+| El Planificador pierde decisiones o adelanta hechos (§1.3). | Verificador obligatorio después de planificar; la escaleta es editable y los avisos se ven en la tarjeta. |
+| La escaleta queda desactualizada al cambiar la dirección. | Estado «a revisar» en `act_outline`; no se borra nada automáticamente. |
+| Regresión en las historias viejas. | S1–S6 son aditivos; los snapshots actuales tienen que seguir iguales. |
+| Tiempos: 3 roles nuevos en un 12B local. | Jobs con ETA (Spec-510); una llamada por ronda; tope de rondas. |
+| Datos de prod en S7. | Backup automático de `make deploy` más un ensayo previo sobre una copia. |
+
+### Qué necesita el usuario y cuándo
+
+- **Antes de S0:** OK a este PLAN y a las decisiones 1–9.
+- **Al cerrar S0:** feedback sobre las maquetas.
+- **Antes de S7:** marcar las filas de §6 (se pueden validar con el uso de S4–S6).

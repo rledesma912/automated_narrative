@@ -17,6 +17,7 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
+from src.presentation.authoring_jobs import AUTHORING_KINDS, submit_authoring
 from src.presentation.generation import submit_full_generation, submit_regenerate_voz
 from src.presentation.runtime import event_bus, job_manager
 from src.presentation.schemas.request import JobCreateRequest
@@ -75,15 +76,35 @@ async def create_job(story_id: str, request: JobCreateRequest):
     story = await SQLStoryRepository().get_by_id(UUID(story_id))
     if story is None:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
+    # Primero el job activo: si una generación en curso ya limpió los actos, validar
+    # antes respondía 422 («el acto no está narrado») en vez de 409 con el job.
+    active = await SQLJobRepository().get_active_for_story(story.id)
+    if active is not None:
+        return _already_active(active.id)
     try:
         if request.kind == JobKind.REGENERATE_VOZ:
             await _validate_regenerate_voz(story, request)
             job = await submit_regenerate_voz(story, request.beat, request.narrative_id)
+        elif request.kind in AUTHORING_KINDS:
+            _validate_authoring(story, request.kind)
+            job = await submit_authoring(story, request.kind)
         else:
             job = await submit_full_generation(story)
     except JobAlreadyActiveError as exc:
         return _already_active(exc.job_id)
     return _to_response(job)
+
+
+def _validate_authoring(story, kind: JobKind) -> None:
+    """Spec-530: el taller y la escaleta parten de la dirección; revisar, de una escaleta."""
+    if kind == JobKind.VERIFY_OUTLINE:
+        if not story.outline:
+            raise HTTPException(status_code=422, detail="No hay escaleta para revisar")
+        return
+    if story.direction is None or not story.direction.premise.strip():
+        raise HTTPException(
+            status_code=422, detail="Falta contar de qué trata la historia (Dirección)"
+        )
 
 
 async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from src.application.services import PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
-from src.application.use_cases import CreateStoryUseCase, DirectorUseCase, VozUseCase
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.infrastructure.database.repositories import (
     SQLBeatRepository,
@@ -17,6 +16,7 @@ from src.infrastructure.database.repositories import (
 from src.infrastructure.factories import LLMFactory
 
 if TYPE_CHECKING:
+    from src.application.use_cases import CreateStoryUseCase, DirectorUseCase, VozUseCase
     from src.cli.progress import ProgressReporter
     from src.core.orchestrator import StoryRunner
 
@@ -81,13 +81,21 @@ class CLIContainer:
             self._debug_collector = DebugCollector() if self._debug else NullDebugCollector()
         return self._debug_collector
 
+    # Imports locales: `infrastructure` se importa desde los casos de uso (normalizers),
+    # y a nivel de módulo formaba un ciclo.
     def create_story_use_case(self) -> CreateStoryUseCase:
+        from src.application.use_cases import CreateStoryUseCase
+
         return CreateStoryUseCase(self.story_repo, SQLGenreRepository())
 
     def director_use_case(self) -> DirectorUseCase:
+        from src.application.use_cases import DirectorUseCase
+
         return DirectorUseCase(self.llm, self.prompt_builder)
 
     def voz_use_case(self) -> VozUseCase:
+        from src.application.use_cases import VozUseCase
+
         return VozUseCase(self.llm)
 
     def narrative_use_case(self) -> GenerateNarrativesUseCase:

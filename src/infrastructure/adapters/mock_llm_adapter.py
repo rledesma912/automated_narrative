@@ -1,6 +1,9 @@
 """Mock LLM adapter for testing."""
 
+import json
+
 from src.domain.interfaces import LLMResponse
+from src.infrastructure.adapters.mock_structured import mock_structured
 
 
 class MockLLMAdapter:
@@ -18,10 +21,13 @@ class MockLLMAdapter:
         model: str = "mock",
         temperature: float = 0.6,
         role: str | None = None,
+        response_schema: dict | None = None,
         **kwargs,
     ) -> LLMResponse:
-        """Generate mock text."""
+        """Generate mock text (o un JSON coherente con el esquema pedido, Spec-530)."""
         self.call_count += 1
+        if response_schema is not None:
+            return LLMResponse(text=json.dumps(mock_structured(role, response_schema)))
         return LLMResponse(
             text=self.fixed_response,
             context=None,

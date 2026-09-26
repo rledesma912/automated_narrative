@@ -23,64 +23,20 @@ function countPosts(page: Page, fragment: string): () => number {
   return () => n;
 }
 
-async function next(page: Page, label = "Siguiente") {
-  await page.getByRole("button", { name: label }).click();
-}
-
-test("el wizard termina en «Guardar historia» y vuelve a la galería resaltada", async ({ page }) => {
+test("una historia guardada desde el asistente queda como borrador y no genera", async ({ page }) => {
   const jobPosts = countPosts(page, "/jobs");
-  await page.goto("/generar");
+  const created = await page.request.post("/api/v1/authoring/stories", {
+    data: { title: "Historia E2E", premise: "Algo pasa en la casa.", protagonist_name: "Irene" },
+  });
+  expect(created.status()).toBe(201);
+  savedStoryId = (await created.json()).story_id;
 
-  await page.fill('[name="title"]', "Historia E2E");
-  await page.locator('[name="atmosfera"]').selectOption({ index: 1 });
-  await next(page);
-  await page.fill('[name="protagonista_1_name"]', "Irene");
-  await page.fill('[name="protagonista_1_role"]', "Narradora");
-  await page.locator('[name="storyteller_id"]').selectOption({ index: 1 });
-  await next(page);
-  // paso 3: sin obligatorios; se eligen valores para verificar el contrato (Spec-440 S1)
-  await page
-    .locator('[name="perception_reliability"]')
-    .selectOption("poco_confiable: A veces ve bien, a veces no");
-  await page.locator('[name="language_register"][value="rural_tradicional: Del campo"]').check();
-  await next(page);
-  await page.fill('[name="scenario_1_name"]', "La casa");
-  await page.fill('[name="rule_1_text"]', "Los espejos muestran el pasado");
-  await page.locator('[name="rule_1_type"]').selectOption("fenomeno: Sobrenatural");
-  await next(page);
-  for (const name of [
-    "acto_1_exposicion",
-    "acto_2_accion",
-    "acto_3_climax",
-    "acto_4_accion",
-    "acto_5_desenlace",
-  ]) {
-    await page.fill(`[name="${name}"]`, `Texto de ${name}.`);
-  }
-  await next(page, "Revisar");
-
-  await expect(page).toHaveURL(/\/generar\/confirmar$/);
-  await expect(page.getByRole("button", { name: /Generar historia/i })).toHaveCount(0);
-  await page.getByRole("button", { name: "Guardar historia" }).click();
-
-  await expect(page).toHaveURL(/\/galeria\?success=saved&guardada=/);
-  savedStoryId = new URL(page.url()).searchParams.get("guardada")!;
-  await expect(page.locator("#toast-notification")).toContainText("Historia guardada");
+  await page.goto("/galeria");
   const card = page.locator(`[data-story-card="${savedStoryId}"]`);
-  await expect(card).toHaveClass(/card-forge-active/);
   await expect(card).toContainText("Borrador");
   expect(jobPosts()).toBe(0); // guardar no genera
-
   const story = await (await page.request.get(`/api/v1/stories/${savedStoryId}`)).json();
   expect(story.status).toBe("draft");
-  // Contrato wizard → API (Spec-440 §4 y §9): campos explícitos, solo IDs, reglas tipadas.
-  expect(story.genero).not.toBe("");
-  expect(story.genero).not.toContain(":");
-  const sc = story.storyteller_config;
-  expect(sc.perception.reliability).toBe("poco_confiable");
-  expect(sc.language.register).toBe("rural_tradicional");
-  expect(sc.rules[0]).toMatchObject({ text: "Los espejos muestran el pasado", type: "fenomeno" });
-  expect(story.relator).toContain("Registro: rural_tradicional.");
 });
 
 test("doble click en «Generar» de la galería envía un solo pedido", async ({ page }) => {

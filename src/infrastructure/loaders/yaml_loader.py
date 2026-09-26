@@ -1,5 +1,6 @@
 """YAML story loader."""
 
+import re
 from pathlib import Path
 
 import yaml
@@ -53,35 +54,7 @@ class YamlStoryLoader:
         if not data.get("title"):
             raise YamlStoryLoaderError("Falta campo obligatorio: title")
 
-        try:
-            sc = data.get("storyteller_config") or {}
-            atmosphere = sc.get("atmosphere") or {}
-            legacy_atmosfera = data.get("atmosfera", "")
-            genero_top = data.get("genero", "")
-            genero, subgenero, tono = self._parse_atmosfera(
-                atmosphere, legacy_atmosfera, genero_top
-            )
-            escenarios_full = self._extract_escenarios_full(data)
-            actos_full = self._extract_actos(sc)
-            return StoryCreateDTO(
-                title=data.get("title", ""),
-                protagonista=data.get("protagonista", ""),
-                relator=data.get("relator", "tercera_persona"),
-                sinopsis=data.get("sinopsis", ""),
-                genero=genero,
-                subgenero=subgenero,
-                tono=tono,
-                escenarios=[s["name"] for s in escenarios_full],
-                escenarios_full=escenarios_full,
-                reglas=data.get("reglas", []),
-                personajes_full=data.get("personajes_full", []),
-                narrator_config=sanitize_narrator_config(data.get("storyteller_config")),
-                typed_rules=self._extract_typed_rules(data),
-                actos=actos_full,
-                entities=list(sc.get("entities") or []),
-            )
-        except ValidationError as e:
-            raise YamlStoryLoaderError(f"Validación de campos: {e}")
+        return self.load_from_dict(data)
 
     def load_from_dict(self, data: dict) -> StoryCreateDTO:
         """Carga un YAML desde dict y retorna un DTO."""
@@ -90,9 +63,7 @@ class YamlStoryLoader:
             atmosphere = sc.get("atmosphere") or {}
             legacy_atmosfera = data.get("atmosfera", "")
             genero_top = data.get("genero", "")
-            genero, subgenero, tono = self._parse_atmosfera(
-                atmosphere, legacy_atmosfera, genero_top
-            )
+            genero, subgenero = self._parse_atmosfera(atmosphere, legacy_atmosfera, genero_top)
             escenarios_full = self._extract_escenarios_full(data)
             actos_full = self._extract_actos(sc)
             return StoryCreateDTO(
@@ -102,15 +73,15 @@ class YamlStoryLoader:
                 sinopsis=data.get("sinopsis", ""),
                 genero=genero,
                 subgenero=subgenero,
-                tono=tono,
                 escenarios=[s["name"] for s in escenarios_full],
                 escenarios_full=escenarios_full,
                 reglas=data.get("reglas", []),
-                personajes_full=data.get("personajes_full", []),
+                personajes_full=_characters(data.get("personajes_full") or []),
                 narrator_config=sanitize_narrator_config(data.get("storyteller_config")),
                 typed_rules=self._extract_typed_rules(data),
                 actos=actos_full,
                 entities=list(sc.get("entities") or []),
+                **_authoring_fields(data),
             )
         except ValidationError as e:
             raise YamlStoryLoaderError(f"Validación de campos: {e}")
@@ -162,7 +133,11 @@ class YamlStoryLoader:
             return []
 
         return [
-            {"id": r.get("id", ""), "content": r.get("text", ""), "type": r.get("type")}
+            {
+                "id": r.get("id", ""),
+                "content": r.get("text", ""),
+                "applies_to_beat": r.get("applies_to_beat"),
+            }
             for r in rules
             if r.get("text")
         ]
@@ -173,17 +148,36 @@ class YamlStoryLoader:
 
     def _parse_atmosfera(
         self, atmosphere: dict, legacy_atmosfera: str, genero_top: str = ""
-    ) -> tuple[str, str, str]:
-        """Parsea atmósfera desde múltiples fuentes.
+    ) -> tuple[str, str]:
+        """`(genero, subgenero)` desde múltiples fuentes.
 
-        Prioridad: genero a nivel superior > atmosphere (genre/subgenre/tone) > campo legacy 'atmosfera'.
+        Prioridad: genero a nivel superior > atmosphere (genre/subgenre) > campo
+        `atmosfera` («genero (subgenero)», con « - tono» en los YAML viejos: el tono
+        se ignora, Spec-530 §6).
         """
         if genero_top:
-            return genero_top, "", ""
+            return genero_top, ""
         genre = atmosphere.get("genre", "")
         if genre:
-            return genre, atmosphere.get("subgenre", ""), atmosphere.get("tone", "")
-        if legacy_atmosfera:
-            parts = legacy_atmosfera.split(" - ")
-            return parts[0] if parts else "", "", parts[1] if len(parts) > 1 else ""
-        return "", "", ""
+            return genre, atmosphere.get("subgenre", "")
+        match = re.match(r"\s*([^(\-]*?)\s*(?:\(([^)]*)\))?\s*(?:-.*)?$", legacy_atmosfera or "")
+        if match:
+            return match.group(1), match.group(2) or ""
+        return "", ""
+
+
+# Claves de un personaje que se conservan (`traits` ya no existe, Spec-530 §6).
+_CHARACTER_KEYS = ("id", "name", "role", "kind", "relation")
+
+
+def _characters(raw: list[dict]) -> list[dict]:
+    return [{k: p[k] for k in _CHARACTER_KEYS if k in p} for p in raw if isinstance(p, dict)]
+
+
+def _authoring_fields(data: dict) -> dict:
+    """Dirección, taller y escaleta del asistente (Spec-530); ausentes en YAML viejos."""
+    return {
+        "direction": data.get("direction") or None,
+        "workshop": list(data.get("workshop") or []),
+        "outline": list(data.get("outline") or []),
+    }

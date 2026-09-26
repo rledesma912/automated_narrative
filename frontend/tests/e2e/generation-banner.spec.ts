@@ -104,3 +104,23 @@ test("«Ver progreso» lleva a la sala del job en curso", async ({ page }) => {
     timeout: 30_000,
   });
 });
+
+test("un análisis del asistente (Spec-530) no aparece como generación", async ({ page }) => {
+  const created = await page.request.post("/api/v1/authoring/stories", {
+    data: { title: "Banda: asistente", premise: "Algo pasa en la ruta.", protagonist_name: "José" },
+  });
+  expect(created.status()).toBe(201);
+  const storyId = (await created.json()).story_id;
+  await page.goto("/galeria");
+  await expect(page.locator("#core-status-dot")).toHaveClass(/bg-forge-success/);
+
+  const job = await page.request.post(`/api/v1/stories/${storyId}/jobs`, { data: { kind: "consult" } });
+  expect(job.status()).toBe(202);
+  const jobId = (await job.json()).job_id;
+  await expect
+    .poll(async () => (await (await page.request.get(`/api/v1/jobs/${jobId}`)).json()).status)
+    .toBe("done");
+
+  await expect(banner(page)).toBeHidden();
+  await expect(page.locator("[data-forge-jobs-dot]")).toBeHidden();
+});

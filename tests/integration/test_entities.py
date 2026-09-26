@@ -10,7 +10,7 @@ from src.application.use_cases.create_story import build_entities
 from src.config import settings
 from src.domain.exceptions import InvalidEntityError
 from src.domain.models import RevealLevel, Story
-from src.infrastructure.database.connection import get_connection, init_db
+from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLStoryRepository
 from src.infrastructure.exporters import YamlStoryExporter
 from src.main import app
@@ -174,36 +174,6 @@ async def test_patch_invalido_422_y_no_cambia_nada(client):
     story = (await client.get(f"/api/v1/stories/{story_id}")).json()
     assert story["title"] == "t"
     assert [e["name"] for e in story["storyteller_config"]["entities"]] == ["La Mala Hora"]
-
-
-async def _journal_rows(story_id: str) -> list[tuple]:
-    conn = await get_connection()
-    try:
-        cursor = await conn.execute(
-            "SELECT beat_number, entity_state FROM entity_journal WHERE story_id = ?", (story_id,)
-        )
-        return [tuple(r) for r in await cursor.fetchall()]
-    finally:
-        await conn.close()
-
-
-async def test_editar_no_borra_el_journal_de_entidades_y_borrar_la_historia_si(client):
-    story_id = (await client.post("/api/v1/stories?action=save", json=_body(_MALA_HORA))).json()[
-        "id"
-    ]
-    conn = await get_connection()
-    await conn.execute(
-        "INSERT INTO entity_journal (id, story_id, beat_number, entity_state) VALUES (?, ?, 1, ?)",
-        (str(uuid4()), story_id, "La Mala Hora rondó el galpón"),
-    )
-    await conn.commit()
-    await conn.close()
-
-    await client.patch(f"/api/v1/stories/{story_id}", json=_body({"nature": "culto"}))
-    assert await _journal_rows(story_id) == [(1, "La Mala Hora rondó el galpón")]
-
-    await client.delete(f"/api/v1/stories/{story_id}")
-    assert await _journal_rows(story_id) == []
 
 
 async def test_list_all_carga_las_entidades(client):

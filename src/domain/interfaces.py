@@ -57,8 +57,13 @@ class LLMProvider(Protocol):
         role: str | None = None,
         num_ctx: int | None = None,
         num_predict: int | None = None,
+        response_schema: dict | None = None,
     ) -> LLMResponse:
-        """Generate text with LLM. `role` permite al adapter leer config específica del rol."""
+        """Generate text with LLM. `role` permite al adapter leer config específica del rol.
+
+        `response_schema` (JSON Schema, Spec-530): pide salida JSON que lo cumpla. Los
+        adapters que no pueden forzarlo lo ignoran; quien llama valida igual.
+        """
         ...
 
     async def close(self) -> None:

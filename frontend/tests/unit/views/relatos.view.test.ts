@@ -102,3 +102,41 @@ describe("relatos view", () => {
     expect(html.match(/data-regenerar-acto=/g)).toHaveLength(2);
   });
 });
+
+describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
+  it("muestra lo que repite cada acto y no lo copia", async () => {
+    const html = await ejs.renderFile(panelPath, {
+      story: { id: "s-1" },
+      relato: {
+        id: "r-1",
+        content: CONTENT,
+        repetition: {
+          acts: [
+            { number: 1, repeated: [], cliches: [] },
+            {
+              number: 2,
+              repeated: ["«el olor dulce» (del acto 1)"],
+              cliches: ["me heló la sangre"],
+              invented_names: ["Laura"],
+            },
+          ],
+        },
+      },
+      displayTitle: "Primera versión",
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+
+    expect(html.match(/data-repeticion/g)).toHaveLength(1);
+    expect(html).toContain("Repite 1 frase de actos anteriores · 1 cliché · 1 nombre inventado");
+    expect(html).toContain("Nombres que no están en la historia: Laura");
+    expect(html).toContain("Cliché: «me heló la sangre»");
+    expect(copyParts(html).join(" ")).not.toContain("Repite");
+  });
+
+  it("sin control de repetición (Core caído) el panel se ve como antes", async () => {
+    const html = await renderPanel();
+    expect(html).not.toContain("data-repeticion");
+  });
+});

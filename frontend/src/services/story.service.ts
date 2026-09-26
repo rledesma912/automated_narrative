@@ -13,6 +13,13 @@ export interface Story {
   sinopsis?: string;
 }
 
+export interface ActRepetition {
+  number: number;
+  repeated: string[];
+  cliches: string[];
+  invented_names?: string[];
+}
+
 export interface Relato {
   id: string;
   story_template_id: string;
@@ -20,6 +27,20 @@ export interface Relato {
   content: string;
   status: string;
   created_at: string;
+  /** Spec-530 §8.3: frases repetidas entre actos y clichés (null si el Core no respondió). */
+  repetition?: { acts: ActRepetition[] } | null;
+}
+
+async function withRepetition(relato: Relato): Promise<Relato> {
+  try {
+    const resp = await axios.get<{ acts: ActRepetition[] }>(
+      `${CORE_API_URL}/api/v1/generated-narratives/${relato.id}/repetition`,
+      { timeout: 3000 },
+    );
+    return { ...relato, repetition: resp.data };
+  } catch {
+    return { ...relato, repetition: null };
+  }
 }
 
 export const getStoryById = async (storyId: string): Promise<Story | null> => {
@@ -41,7 +62,7 @@ export const getRelatosForStory = async (storyId: string): Promise<Relato[]> => 
       `${CORE_API_URL}/api/v1/story-templates/${storyId}/narratives`,
       { timeout: 5000 }
     );
-    return response.data;
+    return await Promise.all(response.data.map(withRepetition));
   } catch (error) {
     console.error(`Error fetching narratives for story ${storyId}:`, error);
     return [];

@@ -147,10 +147,10 @@ async def test_stream_emite_status_con_etapa_estructurada():
     director.prompt_builder.num_beats = 2
 
     async def _execute_full(_story, on_stage=None, **_kwargs):
-        on_stage(JobStage.ANALYST, None)
-        on_stage(JobStage.RESOLVER, None)
+        on_stage(JobStage.PLANIFICADOR, None)
+        on_stage(JobStage.VERIFICADOR, None)
         for i in range(1, 3):
-            for stage in (JobStage.MAPPER, JobStage.VOZ, JobStage.JOURNAL):
+            for stage in (JobStage.VOZ, JobStage.JOURNAL):
                 on_stage(stage, i)
             yield _make_beat(i), None, 0.0
 
@@ -175,19 +175,17 @@ async def test_stream_emite_status_con_etapa_estructurada():
 
     statuses = [e.data for e in events if e.event == StreamEventType.STATUS]
     assert [(d["stage"], d["beat"]) for d in statuses] == [
-        ("analyst", None),
-        ("resolver", None),
-        ("mapper", 1),
+        ("planificador", None),
+        ("verificador", None),
         ("voz", 1),
         ("journal", 1),
-        ("mapper", 2),
         ("voz", 2),
         ("journal", 2),
         ("consolidando", None),
     ]
     assert all(d["total_beats"] == 2 for d in statuses)
-    assert statuses[3]["msg"] == "Narrando acto 1 de 2..."
-    assert statuses[3]["step"] == "voz"  # campo legado que usa la sala
+    assert statuses[2]["msg"] == "Narrando acto 1 de 2..."
+    assert statuses[2]["step"] == "voz"  # campo legado que usa la sala
     # beat_start abre cada beat (antes de sus etapas) y beat_done lo cierra.
     beat_1 = [
         (e.event.value, e.data.get("stage"))
@@ -196,7 +194,6 @@ async def test_stream_emite_status_con_etapa_estructurada():
     ]
     assert beat_1 == [
         ("beat_start", None),
-        ("status", "mapper"),
         ("status", "voz"),
         ("status", "journal"),
         ("beat_done", None),

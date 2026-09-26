@@ -99,6 +99,22 @@ function extractActNumber(title) {
           </button>
         <% } %>
       </div>
+      <% const rep = relato.repetition && relato.repetition.acts.find((a) => a.number === Number(actNumber)); %>
+      <% const names = (rep && rep.invented_names) || []; %>
+      <% if (rep && (rep.repeated.length || rep.cliches.length || names.length)) { %>
+        <%/* Spec-530 §8.3: control de repetición (no se copia ni va al .md). */%>
+        <details class="mb-4 text-sm border border-forge-warning-border bg-forge-warning-bg text-forge-warning px-3 py-2" data-repeticion>
+          <summary class="cursor-pointer">
+            <i data-lucide="repeat" class="w-3.5 h-3.5 inline"></i>
+            <%= [rep.repeated.length ? `Repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : ''].filter(Boolean).join(' · ') %>
+          </summary>
+          <ul class="mt-2 space-y-1">
+            <% rep.repeated.forEach((r) => { %><li>Repite <%= r %></li><% }) %>
+            <% rep.cliches.forEach((c) => { %><li>Cliché: «<%= c %>»</li><% }) %>
+            <% if (names.length) { %><li>Nombres que no están en la historia: <%= names.join(', ') %> (si no los querés, regenerá el acto)</li><% } %>
+          </ul>
+        </details>
+      <% } %>
       <div class="prose-forge whitespace-pre-wrap" data-copy-part><%= (sections[i + 1] || '').trim() %></div>
     <% } %>
   </div>

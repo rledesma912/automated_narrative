@@ -30,7 +30,7 @@ export async function galleryPage(req: Request, res: Response): Promise<void> {
     stories,
     flashMsg:  flashKey ? (FLASH_MESSAGES[flashKey] ?? null) : null,
     flashType,
-    // Spec-460 §2.5: tarjeta resaltada tras guardar desde el wizard.
+    // Spec-460 §2.5: tarjeta resaltada con ?guardada=<id>.
     savedId:   (req.query["guardada"] as string | undefined) ?? null,
   });
 }

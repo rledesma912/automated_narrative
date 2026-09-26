@@ -231,6 +231,23 @@ async def test_regenerate_voz_con_otro_job_activo_409(client, monkeypatch):
     await job_manager.wait(uuid.UUID(active["job_id"]))
 
 
+async def test_regenerate_voz_con_job_activo_y_actos_sin_narrar_da_409_no_422(client, hold):
+    """El job activo manda: aunque el acto no esté narrado (la generación en curso
+    limpia los actos), la respuesta es 409 con el job, no 422 por el acto."""
+    story_id = await _create_story(client)
+    active = (await client.post(f"/api/v1/stories/{story_id}/jobs", json={})).json()
+
+    resp = await client.post(
+        f"/api/v1/stories/{story_id}/jobs",
+        json={"kind": "regenerate_voz", "beat": 1, "narrative_id": str(uuid.uuid4())},
+    )
+
+    assert resp.status_code == 409
+    assert resp.json()["job_id"] == active["job_id"]
+    hold.set()
+    await job_manager.wait(uuid.UUID(active["job_id"]))
+
+
 async def test_cancelar_regenerate_voz_no_marca_la_historia_como_fallida(client, monkeypatch):
     story_id, narrative_id = await _generated_story(client)
     block = asyncio.Event()
@@ -313,7 +330,7 @@ async def test_events_de_job_terminado_hace_replay_completo_con_ids(client):
     assert kinds[-1] == "done"
     assert [int(e["id"]) for e in events] == list(range(1, len(events) + 1))
     stages = [e["data"]["stage"] for e in events if e["event"] == "status"]
-    assert stages[:2] == ["analyst", "resolver"] and stages[-1] == "consolidando"
+    assert stages[:2] == ["planificador", "verificador"] and stages[-1] == "consolidando"
 
 
 async def test_events_con_last_event_id_no_repite(client):
@@ -419,7 +436,13 @@ async def test_estimates_sin_historial_usa_el_valor_inicial(client):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert set(body) == {"full_generation", "regenerate_voz"}
+    assert set(body) == {
+        "full_generation",
+        "regenerate_voz",
+        "consult",
+        "plan_outline",
+        "verify_outline",
+    }
     assert body["full_generation"] == {
         "seconds": settings.estimated_seconds("full_generation"),
         "source": "default",

@@ -1,0 +1,38 @@
+# Spec-530: opciones de la vista Dirección (fuente única para la UI y los prompts).
+# `voz` (en «como_lo_cuenta») es la única instrucción de estilo que recibe la Voz:
+# reemplaza al perfil del narrador del wizard, que no movía la prosa (§1.4).
+
+efectos:
+  - id: pavor
+    label: Pavor creciente
+    ayuda: La inquietud sube acto a acto hasta el clímax.
+  - id: susto
+    label: Susto
+    ayuda: "Golpes de sorpresa: el miedo llega de repente."
+  - id: melancolia
+    label: Melancolía inquietante
+    ayuda: "Más pena que miedo: algo queda doliendo."
+  - id: revelacion
+    label: Horror que se revela
+    ayuda: Lo peor se entiende recién al final.
+  - id: otro
+    label: Otro
+    ayuda: Contalo con tus palabras.
+
+como_lo_cuenta:
+  - id: caso
+    label: Como un caso entre amigos
+    ejemplo: "«Mirá, yo no creía en nada de eso, pero esa noche…»"
+    voz: "Contalo como un caso que le contás a unos amigos: habla rioplatense coloquial, con alguna marca oral («mirá», «te juro») sin abusar, frases que alternan cortas y largas."
+  - id: confesion
+    label: Como una confesión
+    ejemplo: "«Nunca se lo conté a nadie. Ni a mi mujer.»"
+    voz: "Contalo como una confesión íntima: tono bajo, en voz de alguien que carga algo, frases que a veces se detienen antes de decir lo peor."
+  - id: cronica
+    label: Como una crónica seca
+    ejemplo: "«Eran las tres y diez. La terminal estaba vacía.»"
+    voz: "Contalo como una crónica seca: hechos precisos, horas y lugares concretos, casi sin adjetivos ni comparaciones."
+  - id: literario
+    label: Literario
+    ejemplo: "«La terminal dormía bajo una luz que parpadeaba sin ganas.»"
+    voz: "Contalo con prosa literaria cuidada: imágenes precisas y propias, ritmo trabajado, sin adornos gratuitos."

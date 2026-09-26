@@ -42,7 +42,7 @@ class TestDbConnection:
         assert "story" in table_names
         assert "macro_beat" in table_names
         assert "scenario" in table_names
-        assert "narrative_anchors" in table_names
+        assert "act_outline" in table_names
         assert "narrative_journal" in table_names
 
     @pytest.mark.asyncio
@@ -72,7 +72,6 @@ class TestDbConnection:
             "sinopsis",
             "genero",
             "subgenero",
-            "tono",
             "narrator_config",
             "status",
             "created_at",
@@ -118,7 +117,7 @@ class TestDbConnection:
             "id",
             "story_id",
             "last_events",
-            "unresolved_mysteries",
+            "used_motifs",
             "physical_emotional_state",
         }
         assert required.issubset(columns), f"Missing: {required - columns}"
@@ -132,24 +131,6 @@ class TestDbConnection:
         columns = {row["name"] for row in rows}
         await conn.close()
         assert {"id", "story_id", "order_index", "name"}.issubset(columns)
-
-    @pytest.mark.asyncio
-    async def test_narrative_anchors_table_has_correct_columns(self, temp_db_path, setup_db):
-        """Test narrative_anchors table columns (Spec-038)."""
-        conn = await get_connection()
-        cursor = await conn.execute("PRAGMA table_info(narrative_anchors)")
-        rows = await cursor.fetchall()
-        columns = {row["name"] for row in rows}
-        await conn.close()
-        assert {
-            "id",
-            "story_id",
-            "resonance_hamartia",
-            "resonance_hybris",
-            "resonance_anagnorisis",
-            "resonance_peripeteia",
-            "resonance_residual",
-        }.issubset(columns)
 
     @pytest.mark.asyncio
     async def test_generation_job_table_has_correct_columns(self, temp_db_path, setup_db):

@@ -18,7 +18,7 @@ let cache: { genres: CatalogGenre[]; at: number } | null = null;
 
 /**
  * Catálogo de géneros del Core (Spec-440 §2), con caché en memoria de 5 min.
- * Core caído → la última copia si la hay; si no, `null` (el wizard se renderiza
+ * Core caído → la última copia si la hay; si no, `null` (la Dirección se renderiza
  * igual, con los combos deshabilitados).
  * Los fallos no se cachean: el próximo pedido vuelve a intentar.
  */

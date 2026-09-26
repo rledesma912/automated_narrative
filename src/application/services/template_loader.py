@@ -26,16 +26,3 @@ class TemplateLoader:
                 logger.warning(f"[TemplateLoader] not found: {filename}")
                 self._cache[filename] = ""
         return self._cache[filename]
-
-    def get_variant(self) -> str:
-        """Retorna 'compact' o 'frontier' según el perfil activo."""
-        return settings.active_profile_config().get("prompt_variant", "frontier")
-
-    def voice_template_name(self) -> str:
-        """Retorna el nombre de archivo del template de voz según la variante."""
-        if self.get_variant() == "compact":
-            path = self._dir / "voice_compact.md"
-            if path.exists():
-                return "voice_compact.md"
-            logger.warning("[TemplateLoader] voice_compact.md no encontrado — usando voice.md")
-        return settings.prompt_file_voice

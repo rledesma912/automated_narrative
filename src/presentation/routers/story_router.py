@@ -69,12 +69,12 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
     2. typed_rules: ausente en request → list[dict] desde narrator_config.rules
     3. rules[].text → content  (campo renombrado entre frontend y use case)
     4. narrator_config persistido se depura (Spec-190 §4.3).
-    5. genero/subgenero/tono y actos: si no vienen explícitos, se derivan de
+    5. genero/subgenero y actos: si no vienen explícitos, se derivan de
        narrator_config.atmosphere / .actos (mismo criterio que YamlStoryLoader).
     6. entities: desde narrator_config.entities (Spec-450).
     """
     sc: dict = req.narrator_config or {}
-    genero, subgenero, tono = extract_atmosphere(sc)
+    genero, subgenero = extract_atmosphere(sc)
 
     # 1. Escenarios: preferir estructura rica de narrator_config, fallback al string
     raw_scenarios: list[dict] = sc.get("scenarios") or []
@@ -99,7 +99,7 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
         {
             "id": r.get("id", ""),
             "content": r.get("text") or r.get("content", ""),
-            "type": r.get("type", ""),
+            "applies_to_beat": r.get("applies_to_beat"),
         }
         for r in raw_rules
         if r.get("text") or r.get("content")
@@ -114,7 +114,6 @@ def _request_to_dto(req: StoryCreateRequest) -> StoryCreateDTO:
         sinopsis=req.sinopsis,
         genero=req.genero or genero,
         subgenero=req.subgenero or subgenero,
-        tono=req.tono or tono,
         reglas=req.reglas,
         narrator_config=sanitize_narrator_config(req.narrator_config),
         typed_rules=typed_rules,
@@ -167,10 +166,10 @@ async def list_stories(
             id=str(s.id),
             title=s.title,
             status=s.status.value,
+            authoring=s.direction is not None,
             created_at=s.created_at,
             genero=s.genero,
             subgenero=s.subgenero,
-            tono=s.tono,
             protagonista=s.protagonista,
         )
         for s in stories
@@ -222,7 +221,7 @@ async def update_story(
     """Actualiza los datos de entrada de una historia (Spec-214 F2, Spec-440 §8)."""
     from uuid import uuid4
 
-    from src.domain.models import RuleType, Scenario, TypedRule
+    from src.domain.models import Scenario, TypedRule
 
     story = await repo.get_by_id(UUID(story_id))
     if not story:
@@ -253,7 +252,6 @@ async def update_story(
     story.sinopsis = dto.sinopsis
     story.genero = dto.genero
     story.subgenero = dto.subgenero
-    story.tono = dto.tono
     story.reglas = dto.reglas
     story.narrator_config = dto.narrator_config
     story.personajes_full = dto.personajes_full or []
@@ -276,20 +274,15 @@ async def update_story(
         ]
 
     if dto.typed_rules:
-        typed = []
-        for r in dto.typed_rules:
-            raw_type = r.get("type")
-            rule_type = RuleType.from_raw(raw_type)
-            typed.append(
-                TypedRule(
-                    id=r.get("id") or str(uuid4()),
-                    story_id=story.id,
-                    content=r.get("content", ""),
-                    type=rule_type,
-                    intensity=r.get("intensity"),
-                )
+        story.typed_rules = [
+            TypedRule(
+                id=r.get("id") or str(uuid4()),
+                story_id=story.id,
+                content=r.get("content", ""),
+                applies_to_beat=r.get("applies_to_beat"),
             )
-        story.typed_rules = typed
+            for r in dto.typed_rules
+        ]
 
     # update_inputs y no save(): save() hace INSERT OR REPLACE y reescribe los actos,
     # lo que borraría en cascada todo lo generado de una historia ya generada.
@@ -329,13 +322,13 @@ async def get_story(
     if not story:
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
     return StoryResponse(
+        authoring=story.direction is not None,
         id=str(story.id),
         title=story.title,
         status=story.status.value,
         created_at=story.created_at,
         genero=story.genero,
         subgenero=story.subgenero,
-        tono=story.tono,
         protagonista=story.protagonista,
         relator=story.relator,
         sinopsis=story.sinopsis,

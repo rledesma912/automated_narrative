@@ -270,6 +270,10 @@ class JobManager:
         payload = self._payload(job, self._titles.get(job.id, ""))
         self._bus.publish(GLOBAL_CHANNEL, StreamEvent(event=event_type, data=payload))
 
+    async def payload(self, job: Job) -> dict:
+        """Payload público de un job (el mismo de los eventos `job_*`)."""
+        return await self._payload_for(job)
+
     async def _payload_for(self, job: Job) -> dict:
         title = self._titles.get(job.id)
         if title is None:

@@ -162,3 +162,44 @@ async def test_errores_de_la_api(error, match):
 async def test_close_sin_cliente_http_no_falla():
     adapter, _ = _adapter()
     await adapter.close()
+
+
+# ── Spec-530: salida estructurada ────────────────────────────────────────────
+
+
+async def test_response_schema_va_en_output_config_con_el_effort(role_config):
+    role_config["consultor"] = {"model": "claude-sonnet-5", "num_predict": 1500, "effort": "low"}
+    schema = {
+        "type": "object",
+        "properties": {
+            "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "properties": {"x": {"type": "string", "maxLength": 20}},
+                },
+            },
+        },
+        "required": ["items"],
+    }
+    adapter, client = _adapter()
+    await adapter.generate("p", role="consultor", response_schema=schema)
+
+    fmt = client.messages.calls[0]["output_config"]
+    assert fmt["effort"] == "low"
+    assert fmt["format"]["type"] == "json_schema"
+    sent = fmt["format"]["schema"]
+    assert sent["additionalProperties"] is False
+    items = sent["properties"]["items"]
+    assert "minItems" not in items
+    assert items["items"]["additionalProperties"] is False
+    assert "maxLength" not in items["items"]["properties"]["x"]
+    assert "minItems" in schema["properties"]["items"]  # no muta el esquema de quien llama
+
+
+async def test_sin_response_schema_no_hay_format(role_config):
+    role_config["voz"] = {"model": "claude-sonnet-5", "num_predict": 1500, "thinking": "disabled"}
+    adapter, client = _adapter()
+    await adapter.generate("p", role="voz")
+    assert "output_config" not in client.messages.calls[0]

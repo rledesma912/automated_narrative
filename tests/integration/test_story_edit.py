@@ -67,7 +67,6 @@ async def _counts(story_id: str) -> dict[str, int]:
     for table, col in (
         ("macro_beat", "story_id"),
         ("narrative_journal", "story_id"),
-        ("narrative_anchors", "story_id"),
         ("generated_narrative", "story_template_id"),
         ("generation_job", "story_id"),
     ):
@@ -89,7 +88,7 @@ async def test_editar_historia_generada_conserva_todo_lo_generado(client):
     edited = {**_PAYLOAD, "title": "Historia editada", "reglas": ["Regla nueva"]}
     edited["storyteller_config"] = {
         **_PAYLOAD["storyteller_config"],
-        "rules": [{"id": "R1", "text": "Regla nueva", "type": "psicologica"}],
+        "rules": [{"id": "R1", "text": "Regla nueva", "applies_to_beat": 2}],
     }
     resp = await client.patch(f"/api/v1/stories/{story_id}", json=edited)
 
@@ -99,10 +98,12 @@ async def test_editar_historia_generada_conserva_todo_lo_generado(client):
     assert story["title"] == "Historia editada"
     assert story["status"] == "completed"  # editar no cambia el estado
     conn = await get_connection()
-    cursor = await conn.execute("SELECT content, type FROM rule WHERE story_id = ?", (story_id,))
+    cursor = await conn.execute(
+        "SELECT content, applies_to_beat FROM rule WHERE story_id = ?", (story_id,)
+    )
     rules = [tuple(r) for r in await cursor.fetchall()]
     await conn.close()
-    assert rules == [("Regla nueva", "psicologica")]
+    assert rules == [("Regla nueva", 2)]
 
 
 async def test_editar_historia_fallida(client):
@@ -149,19 +150,17 @@ def test_payload_de_prueba_es_json_valido():
     assert json.loads(json.dumps(_PAYLOAD))["title"] == "Historia original"
 
 
-# ── Vista de autoría para rehidratar el wizard (Spec-440 §8) ──────────────────
+# ── Vista de autoría de la ficha (Spec-440 §8) ──────────────────
 
 
 def _assert_authoring(sc: dict) -> None:
-    assert sc["atmosphere"] == {"genre": "folk_horror", "subgenre": "rural", "tone": "constante"}
+    assert sc["atmosphere"] == {"genre": "folk_horror", "subgenre": "rural"}
     assert [(x["name"], x["description"]) for x in sc["scenarios"]] == [("El micro", "moderno")]
-    assert [(r["text"], r["type"]) for r in sc["rules"]] == [
-        ("El micro trae casos paranormales", "entorno")
-    ]
+    assert [r["text"] for r in sc["rules"]] == ["El micro trae casos paranormales"]
     assert [sc["actos"][f"act_{n}"]["text"] for n in range(1, 6)] == [
         f"Acto {n}: algo pasa." for n in range(1, 6)
     ]
-    assert sc["perception"]["reliability"] == "poco_confiable"
+    assert "perception" not in sc  # Spec-530 §6
 
 
 async def test_get_devuelve_la_vista_de_autoria_completa(client):
@@ -179,28 +178,3 @@ async def test_la_vista_de_autoria_sobrevive_a_una_generacion(client):
     story = (await client.get(f"/api/v1/stories/{story_id}")).json()
 
     _assert_authoring(story["storyteller_config"])
-
-
-async def _rule_types(story_id: str) -> dict[str, str | None]:
-    conn = await get_connection()
-    cursor = await conn.execute("SELECT content, type FROM rule WHERE story_id = ?", (story_id,))
-    rows = await cursor.fetchall()
-    await conn.close()
-    return {content: type_ for content, type_ in rows}
-
-
-async def test_tipos_de_regla_viejos_se_guardan_mapeados(client):
-    """Spec-440 §9: social → entorno, paranormal → fenomeno, evento → sin tipo."""
-    payload = json.loads(json.dumps(_PAYLOAD))
-    payload["storyteller_config"]["rules"] = [
-        {"id": "R1", "text": "Regla social", "type": "social"},
-        {"id": "R2", "text": "Regla paranormal", "type": "paranormal"},
-        {"id": "R3", "text": "Regla evento", "type": "evento"},
-    ]
-    story_id = (await client.post("/api/v1/stories?action=save", json=payload)).json()["id"]
-
-    assert await _rule_types(story_id) == {
-        "Regla social": "entorno",
-        "Regla paranormal": "fenomeno",
-        "Regla evento": None,
-    }

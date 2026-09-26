@@ -2,12 +2,11 @@
 
 import os
 import tempfile
-import uuid
 
 import pytest
 
 from src.config import settings
-from src.domain.models import BeatStatus, MacroBeat, NarrativeAnchors, Story, StoryStatus
+from src.domain.models import BeatStatus, MacroBeat, Story, StoryStatus
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 
@@ -126,42 +125,6 @@ class TestSqlStoryRepository:
         titles = {r.title for r in results}
         assert "Story 1" in titles
         assert "Story 2" in titles
-
-    @pytest.mark.asyncio
-    async def test_get_narrative_anchors_returns_none_when_not_saved(
-        self, repo, setup_db, temp_db_path
-    ):
-        """Sin anclajes persistidos, retorna None (Spec-430)."""
-        result = await repo.get_narrative_anchors(uuid.uuid4())
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_get_narrative_anchors_returns_saved_anchors(self, repo, setup_db, temp_db_path):
-        """Los anclajes guardados se leen de vuelta con los mismos valores (Spec-430)."""
-        story = Story(
-            title="Story con anclajes",
-            protagonista="P",
-            relator="primera_persona",
-            sinopsis="S",
-            genero="terror_psicologico",
-        )
-        await repo.save(story)
-
-        anchors = NarrativeAnchors(
-            story_id=story.id,
-            resonance_hamartia="La grieta inicial.",
-            resonance_hybris="La transgresión.",
-            resonance_anagnorisis="La epifanía.",
-            resonance_peripeteia="La claustrofobia.",
-            resonance_residual="La mancha final.",
-        )
-        await repo.save_narrative_anchors(story.id, anchors)
-
-        result = await repo.get_narrative_anchors(story.id)
-
-        assert result is not None
-        assert result.resonance_hamartia == "La grieta inicial."
-        assert result.resonance_residual == "La mancha final."
 
     @pytest.mark.asyncio
     async def test_get_by_id_carga_generated_act_y_escenario_de_los_beats(

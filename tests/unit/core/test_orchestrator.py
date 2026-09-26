@@ -175,35 +175,6 @@ class TestStoryRunner:
         assert runner.last_narrative_id == str(narratives[0].id)
 
     @pytest.mark.asyncio
-    async def test_run_full_skips_narrative_when_stop_after_set(
-        self, setup_db, temp_output_dir, mock_llm, story_repo, beat_repo, prompt_builder
-    ):
-        """Con stop_after activo, el pipeline parcial no debe crear generated_narrative."""
-        narrative_uc = GenerateNarrativesUseCase()
-        runner = StoryRunner(
-            llm_adapter=mock_llm,
-            story_repo=story_repo,
-            beat_repo=beat_repo,
-            prompt_builder=prompt_builder,
-            output_dir=temp_output_dir,
-            narrative_use_case=narrative_uc,
-        )
-
-        story = await runner.run_full(
-            "Spec312 Stop",
-            "Protagonist",
-            "tercera_persona",
-            [],
-            "Synopsis",
-            "terror_psicologico",
-            stop_after="analyst",
-        )
-
-        narratives = await SQLGeneratedNarrativeRepository().get_by_story_template_id(story.id)
-        assert narratives == []
-        assert runner.last_narrative_id is None
-
-    @pytest.mark.asyncio
     async def test_run_full_does_not_fail_if_narrative_save_raises(
         self, setup_db, temp_output_dir, mock_llm, story_repo, beat_repo, prompt_builder
     ):

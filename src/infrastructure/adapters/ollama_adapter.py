@@ -28,6 +28,7 @@ class OllamaAdapter:
         role: str | None = None,
         num_ctx: int | None = None,
         num_predict: int | None = None,
+        response_schema: dict | None = None,
     ) -> LLMResponse:
         """Generate text with Ollama.
 
@@ -57,6 +58,10 @@ class OllamaAdapter:
             "options": options,
             "keep_alive": "30m",
         }
+
+        if response_schema:
+            # Spec-530: Ollama restringe la salida al esquema (structured outputs).
+            payload["format"] = response_schema
 
         stop_sequences = role_cfg.get("stop", [])
         if stop_sequences:

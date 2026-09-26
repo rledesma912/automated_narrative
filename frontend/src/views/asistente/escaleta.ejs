@@ -1,0 +1,209 @@
+<%/*
+  Spec-530 S4 — Escaleta: una tarjeta por acto, con guardado automático. Los
+  avisos de la revisión van en la tarjeta del acto. Personajes y escenarios se
+  suman acá, cuando hacen falta (decisión 14).
+  Entrada: state, estimateLabels.
+*/%>
+<%
+  const acts = state.outline.acts;
+  const decisions = state.outline.decisions;
+  const integradas = decisions.filter(d => d.integrada).length;
+  const avisos = acts.reduce((n, a) => n + a.warnings.length, 0);
+  const narrador = state.direction.narrator || state.direction.protagonist_name;
+  const NOMBRES = { 1: 'Exposición', 2: 'Acción ascendente', 3: 'Clímax', 4: 'Acción descendente', 5: 'Desenlace' };
+  const INTENSIDAD = { 1: 'baja', 2: 'media', 3: 'alta', 4: 'media-alta', 5: 'baja' };
+  const TIPOS = { persona: 'Con nombre', sin_nombre: 'Sin nombre', grupo: 'Grupo' };
+  const est = locals.estimateLabels || {};
+  const PERSONAJE_FUERA = /^«(.+?)» está en escena y no en el elenco/;
+  const field = 'bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent';
+%>
+<div class="max-w-5xl" data-asistente="escaleta" data-story-id="<%= state.story_id %>">
+  <%- include('_cabecera') %>
+
+  <header class="mb-8 max-w-3xl">
+    <h2 class="font-serif text-3xl text-forge-accent mb-2">Escaleta</h2>
+    <p class="text-forge-muted">Los cinco actos de tu historia antes de escribirla. Cambiá lo que quieras: el relato se genera a partir de esto.</p>
+  </header>
+
+  <% if (!acts.length) { %>
+    <section class="bg-forge-surface border border-forge-border p-10 text-center mb-8 max-w-3xl">
+      <i data-lucide="list-ordered" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
+      <p class="font-serif text-xl mb-2">Todavía no hay escaleta</p>
+      <p class="text-forge-muted mb-6">La IA reparte tu historia en cinco actos con lo que decidiste en el taller, y después la revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
+      <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando la escaleta…"
+              data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa.">
+        <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar la escaleta
+      </button>
+    </section>
+  <% } else { %>
+    <section class="grid md:grid-cols-2 gap-4 mb-10">
+      <div class="bg-forge-surface border border-forge-border p-5">
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que decidiste en el taller · <%= integradas %>/<%= decisions.length %> en la escaleta</h3>
+        <% if (!decisions.length) { %>
+          <p class="text-sm text-forge-muted">No hay decisiones del taller todavía.</p>
+        <% } %>
+        <ul class="space-y-2 text-sm">
+          <% decisions.forEach(d => { %>
+            <li class="flex items-center gap-2 <%= d.integrada ? '' : 'text-forge-error' %>">
+              <i data-lucide="<%= d.integrada ? 'check-circle-2' : 'alert-circle' %>" class="w-4 h-4 shrink-0 <%= d.integrada ? 'text-forge-success' : '' %>"></i>
+              <%= d.nombre %><% if (!d.integrada) { %> — no aparece en ningún acto<% } %>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+      <div class="bg-forge-surface border border-forge-border p-5">
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Revisión de la IA</h3>
+        <p class="text-sm mb-2"><span class="font-semibold <%= avisos ? 'text-forge-warning' : 'text-forge-success' %>"><%= avisos ? `${avisos} ${avisos === 1 ? 'aviso' : 'avisos'}` : 'Sin avisos' %></span><%= avisos ? ' en las tarjetas de los actos.' : '.' %></p>
+        <p class="text-sm text-forge-muted">Busca decisiones que faltan, hechos repetidos o fuera de lugar, y secretos que nunca se revelan. Los avisos son sugerencias: vos decidís.</p>
+      </div>
+    </section>
+
+    <ol class="space-y-8 mb-12">
+      <% acts.forEach(a => { %>
+        <li class="grid grid-cols-[3rem_1fr] gap-4">
+          <div class="flex flex-col items-center">
+            <span class="w-10 h-10 rounded-full bg-forge-accent text-forge-on-accent font-serif text-lg flex items-center justify-center"><%= a.number %></span>
+            <span class="flex-1 w-px bg-forge-border mt-2"></span>
+          </div>
+
+          <form class="bg-forge-surface border border-forge-border" data-autosave="act" data-number="<%= a.number %>" onsubmit="return false" novalidate>
+            <header class="flex flex-wrap items-baseline justify-between gap-2 px-6 pt-5 pb-3 border-b border-forge-border">
+              <h3 class="font-serif text-2xl">Acto <%= a.number %> · <%= NOMBRES[a.number] %></h3>
+              <span class="text-xs uppercase tracking-widest text-forge-muted">intensidad <%= INTENSIDAD[a.number] %></span>
+            </header>
+
+            <% if (a.warnings.length) { %>
+              <div class="mx-6 mt-4 border border-forge-warning-border bg-forge-warning-bg px-4 py-3 space-y-2">
+                <% a.warnings.forEach(w => { const fuera = w.match(PERSONAJE_FUERA); %>
+                  <div class="flex items-start gap-3 text-sm text-forge-warning">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                    <p class="flex-1"><%= w %></p>
+                    <% if (fuera) { %><button type="button" class="underline shrink-0" data-sumar-personaje="<%= fuera[1] %>" data-aviso="<%= w %>">Sumar al elenco</button><% } %>
+                    <button type="button" class="shrink-0 opacity-75 hover:opacity-100" data-ignorar="<%= w %>">Ignorar</button>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <div class="grid lg:grid-cols-[1fr_18rem] gap-6 p-6">
+              <div>
+                <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="goal-<%= a.number %>">Qué quiere <%= state.direction.protagonist_name || 'el protagonista' %></label>
+                <textarea id="goal-<%= a.number %>" name="goal" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %> mb-5"><%= a.goal %></textarea>
+
+                <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Qué pasa</p>
+                <ol class="space-y-2 mb-3" data-lista="events">
+                  <% a.events.forEach(h => { %>
+                    <li class="group flex items-start gap-2" data-item>
+                      <button type="button" class="mt-2 text-forge-muted hover:text-forge-accent" data-subir title="Subir"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+                      <textarea name="events" rows="1" maxlength="400" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= h %></textarea>
+                      <button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </li>
+                  <% }) %>
+                </ol>
+                <button type="button" class="text-sm text-forge-accent inline-flex items-center gap-1 mb-5" data-agregar="events"><i data-lucide="plus" class="w-4 h-4"></i> Agregar hecho</button>
+
+                <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Qué cambia</p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <textarea name="change_from" rows="1" maxlength="200" aria-label="Al empezar" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= a.change_from %></textarea>
+                  <i data-lucide="arrow-right" class="w-4 h-4 text-forge-accent shrink-0 self-center"></i>
+                  <textarea name="change_to" rows="1" maxlength="200" aria-label="Al terminar" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= a.change_to %></textarea>
+                </div>
+              </div>
+
+              <aside class="space-y-5 text-sm">
+                <fieldset>
+                  <legend class="text-xs uppercase tracking-widest text-forge-muted mb-2">Dónde pasa</legend>
+                  <div class="flex flex-wrap gap-2">
+                    <% state.scenarios.forEach(e => { %>
+                      <label class="cursor-pointer">
+                        <input type="radio" name="scenario" value="<%= e %>" class="peer sr-only" <%= e === a.scenario ? 'checked' : '' %>>
+                        <span class="inline-block px-2 py-1 border border-forge-border text-forge-muted peer-checked:border-forge-accent peer-checked:bg-forge-accent peer-checked:text-forge-on-accent peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent"><%= e %></span>
+                      </label>
+                    <% }) %>
+                    <button type="button" class="px-2 py-1 border border-dashed border-forge-border text-forge-muted hover:text-forge-accent" data-escenario-nuevo>+ nuevo</button>
+                  </div>
+                  <input type="text" name="scenario_new" maxlength="120" placeholder="Nombre del lugar" class="hidden mt-2 w-full <%= field %>">
+                </fieldset>
+
+                <div>
+                  <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Reglas en este acto</p>
+                  <ul class="space-y-2 mb-1" data-lista="rules">
+                    <% a.rules.forEach(r => { %>
+                      <li class="flex items-start gap-2" data-item>
+                        <textarea name="rules" rows="1" maxlength="300" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= r %></textarea>
+                        <button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>
+                      </li>
+                    <% }) %>
+                  </ul>
+                  <button type="button" class="text-forge-accent inline-flex items-center gap-1" data-agregar="rules" title="Algo que vale solo en este acto: «solo aparece cuando está solo»"><i data-lucide="plus" class="w-3 h-3"></i> Regla</button>
+                </div>
+
+                <% if (a.seeds.length || a.payoffs.length) { %>
+                  <div>
+                    <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Hilos</p>
+                    <% a.seeds.forEach(s => { %><p class="flex items-center gap-2 mb-1"><i data-lucide="sprout" class="w-4 h-4 text-forge-success shrink-0"></i>Siembra: <%= s %></p><% }) %>
+                    <% a.payoffs.forEach(c => { %><p class="flex items-center gap-2 mb-1"><i data-lucide="link" class="w-4 h-4 text-forge-info shrink-0"></i>Retoma: <%= c %></p><% }) %>
+                  </div>
+                <% } %>
+
+                <div>
+                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-2" for="held-<%= a.number %>">Se guarda para después</label>
+                  <textarea id="held-<%= a.number %>" name="held_back" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %>"><%= a.held_back %></textarea>
+                </div>
+
+                <fieldset>
+                  <legend class="text-xs uppercase tracking-widest text-forge-muted mb-1">En escena</legend>
+                  <p class="text-xs text-forge-muted mb-2">Solo ellos llegan a la voz en este acto.</p>
+                  <div class="flex flex-wrap gap-2">
+                    <% state.characters.forEach(c => { const narra = c.name === narrador; const on = narra || a.on_stage.includes(c.name); %>
+                      <label class="cursor-pointer">
+                        <input type="checkbox" name="on_stage" value="<%= c.name %>" class="peer sr-only" <%= on ? 'checked' : '' %> <%= narra ? 'disabled' : '' %>>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 border border-forge-border text-forge-muted peer-checked:border-forge-accent peer-checked:text-forge-text peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent"
+                              title="<%= c.relation || TIPOS[c.kind] %>">
+                          <% if (c.kind === 'grupo') { %><i data-lucide="users" class="w-3 h-3"></i><% } %>
+                          <%= c.name %><% if (narra) { %> <span class="text-[10px] uppercase tracking-widest">· narra</span><% } %>
+                        </span>
+                      </label>
+                    <% }) %>
+                    <button type="button" class="px-2 py-1 border border-dashed border-forge-border text-forge-muted hover:text-forge-accent" data-personaje-nuevo>+ personaje</button>
+                  </div>
+                  <div class="hidden mt-3 space-y-2 border border-forge-border bg-forge-bg p-3" data-personaje-form>
+                    <input type="text" data-p-nombre maxlength="60" placeholder="Quién (por ejemplo: el sereno)" class="w-full bg-forge-surface border border-forge-border px-2 py-1">
+                    <input type="text" data-p-relacion maxlength="160" placeholder="Qué es para <%= narrador %>" class="w-full bg-forge-surface border border-forge-border px-2 py-1">
+                    <select data-p-tipo class="w-full bg-forge-surface border border-forge-border px-2 py-1">
+                      <% Object.entries(TIPOS).forEach(([id, label]) => { %><option value="<%= id %>" <%= id === 'sin_nombre' ? 'selected' : '' %>><%= label %></option><% }) %>
+                    </select>
+                    <button type="button" class="btn-forge-outline-sm w-full" data-personaje-guardar>Sumar al elenco</button>
+                  </div>
+                </fieldset>
+              </aside>
+            </div>
+            <input type="hidden" name="keep" value="<%= JSON.stringify({ seeds: a.seeds, payoffs: a.payoffs, decisions: a.decisions }) %>">
+          </form>
+        </li>
+      <% }) %>
+    </ol>
+  <% } %>
+
+  <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
+    <div class="flex items-center gap-5">
+      <a href="/asistente/<%= state.story_id %>/taller" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Taller</a>
+      <%- include('_guardado') %>
+    </div>
+    <% if (acts.length) { %>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="btn-forge-outline-sm" data-analizar="verify_outline" data-titulo="Revisando la escaleta…"
+                data-detalle="La IA busca decisiones que faltan, hechos repetidos o fuera de lugar y secretos que nunca se revelan.">
+          <i data-lucide="search-check" class="w-4 h-4"></i> Revisar con la IA<% if (est.verify_outline) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.verify_outline %></span><% } %>
+        </button>
+        <a href="/generar/stream/<%= state.story_id %>" class="btn-forge-sm" data-generar>
+          <i data-lucide="feather" class="w-4 h-4"></i> Generar relato<% if (est.full_generation) { %> <span class="normal-case tracking-normal">· <%= est.full_generation %></span><% } %>
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('_analizando') %>
+<script type="application/json" id="asistente-datos"><%- JSON.stringify({ state }).replace(/</g, '\\u003c') %></script>
+<script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

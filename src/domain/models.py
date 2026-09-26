@@ -37,35 +37,6 @@ class BeatStatus(str, Enum):
     COMPLETED = "completed"
 
 
-class RuleType(str, Enum):
-    """Categoría semántica de una regla narrativa (Spec-043).
-
-    Spec-190 §4.4: lo temporal (eventos, acciones de personaje) no es regla —
-    va en `macro_beat.synopsis_beat`. Quedan las categorías estables.
-    """
-
-    PSICOLOGICA = "psicologica"
-    ENTORNO = "entorno"
-    FENOMENO = "fenomeno"
-    INDICADOR = "indicador"
-
-    @classmethod
-    def from_raw(cls, raw: Optional[str]) -> Optional["RuleType"]:
-        """Tipo desde texto libre. Acepta los valores que el wizard ofrecía antes
-        de alinearse con el dominio (Spec-440 §9): `paranormal` → `fenomeno`,
-        `social` → `entorno`; `evento` o desconocido → `None`.
-        """
-        value = (raw or "").split(":")[0].strip().lower()
-        value = _LEGACY_RULE_TYPES.get(value, value)
-        try:
-            return cls(value) if value else None
-        except ValueError:
-            return None
-
-
-_LEGACY_RULE_TYPES = {"paranormal": "fenomeno", "social": "entorno"}
-
-
 class Subgenre(BaseModel):
     """Subgénero del catálogo (Spec-440 §2). El id se repite entre géneros (`otro`)."""
 
@@ -137,20 +108,7 @@ class TypedRule(BaseModel):
     id: str
     story_id: UUID4
     content: str
-    type: Optional[RuleType] = None
-    intensity: Optional[str] = None
     applies_to_beat: Optional[int] = None
-
-
-class NarrativeAnchors(BaseModel):
-    """Anclajes de resonancia narrativa extraídos de la sinopsis global (Spec 081)."""
-
-    story_id: UUID4
-    resonance_hamartia: str  # La Grieta (Acto 1)
-    resonance_hybris: str  # La Transgresión (Acto 2)
-    resonance_anagnorisis: str  # La Epifanía (Acto 3)
-    resonance_peripeteia: str  # La Claustrofobia (Acto 4)
-    resonance_residual: str  # La Mancha (Acto 5)
 
 
 class Scenario(BaseModel):
@@ -201,51 +159,13 @@ class NarrativeJournal(BaseModel):
     """Memoria narrativa para coherencia."""
 
     last_events: str = ""
-    unresolved_mysteries: str = ""
     physical_emotional_state: str = ""
-    # Spec-450: qué sabe el narrador de las entidades y qué hicieron (tabla entity_journal).
-    entity_state: str = ""
+    # Spec-530 §8.2: imágenes, frases y comparaciones ya usadas (acumuladas por acto).
+    used_motifs: list[str] = []
 
     def is_empty(self) -> bool:
         """True si no tiene ningún campo con datos."""
-        return not (
-            self.last_events
-            or self.unresolved_mysteries
-            or self.physical_emotional_state
-            or self.entity_state
-        )
-
-
-class StoryMetadata(BaseModel):
-    """Value object con los datos de input del usuario (Spec 080)."""
-
-    protagonista: str
-    relator: str
-    sinopsis: str
-    genero: str = ""
-    subgenero: str = ""
-    tono: str = ""
-    reglas: list[str] = []
-    narrator_config: Optional[dict] = None
-    personajes_full: list[dict] = []
-
-    @classmethod
-    def from_story(cls, story: "Story") -> "StoryMetadata":
-        return cls(
-            protagonista=story.protagonista,
-            relator=story.relator,
-            sinopsis=story.sinopsis,
-            genero=story.genero,
-            subgenero=story.subgenero,
-            tono=story.tono,
-            reglas=story.reglas,
-            narrator_config=story.narrator_config,
-            personajes_full=story.personajes_full,
-        )
-
-    def has_rules(self) -> bool:
-        """True si hay reglas de narrativa o configuración de narrador."""
-        return bool(self.reglas or self.narrator_config)
+        return not (self.last_events or self.physical_emotional_state or self.used_motifs)
 
 
 class GeneratedNarrative(BaseModel):
@@ -259,6 +179,89 @@ class GeneratedNarrative(BaseModel):
     created_at: datetime = Field(default_factory=now_argentina)
 
 
+# ── Spec-530: asistente de autoría ───────────────────────────────────────────
+
+
+class CharacterKind(str, Enum):
+    """Tipo de personaje (Spec-530 §14): cómo lo nombra la Voz."""
+
+    PERSONA = "persona"  # con nombre propio
+    SIN_NOMBRE = "sin_nombre"  # «el sereno», «una señora»
+    GRUPO = "grupo"  # «las familias del galpón»
+
+
+class Direction(BaseModel):
+    """Lo que el autor decide al empezar (vista Dirección, Spec-530 §3.2).
+
+    Las decisiones del taller (meta, qué está en juego, historia secreta…) viven
+    en `WorkshopItem`, no acá: la dirección es solo lo que el autor escribe.
+    """
+
+    premise: str = ""  # «¿De qué trata?»
+    effect: str = ""  # pavor | susto | melancolia | revelacion | otro
+    effect_other: str = ""  # texto libre cuando effect == "otro"
+    ending: str = ""
+    ending_intentional: bool = False
+    telling: str = ""  # «¿Cómo lo cuenta?»: caso | confesion | cronica | literario
+
+
+class WorkshopLevel(str, Enum):
+    """Nivel del taller en el que se evalúa un criterio (Spec-530 §4)."""
+
+    DIRECCION = "direccion"
+    ESCALETA = "escaleta"
+
+
+class CriterionStatus(str, Enum):
+    """Semáforo de un criterio del taller."""
+
+    CUMPLE = "cumple"
+    PARCIAL = "parcial"
+    FALTA = "falta"
+    INTENCIONAL = "intencional"
+
+
+class WorkshopItem(BaseModel):
+    """Estado de un criterio del taller: la pregunta vigente y la respuesta.
+
+    Hay una fila por (historia, nivel, criterio); `asked` guarda las preguntas de
+    rondas anteriores para filtrar las que «ya no suman» (Spec-530 §3.3).
+    """
+
+    level: WorkshopLevel = WorkshopLevel.DIRECCION
+    criterion: str = Field(..., min_length=1)
+    status: CriterionStatus = CriterionStatus.FALTA
+    question: str = ""
+    options: list[str] = Field(default_factory=list)
+    answer: str = ""
+    round: int = Field(1, ge=1)
+    question_round: int = Field(0, ge=0)  # ronda en que se hizo la pregunta vigente
+    asked: list[str] = Field(default_factory=list)
+
+
+class ActOutline(BaseModel):
+    """Un acto de la escaleta (Spec-530 §3.2): lo edita el usuario y lo propone la IA.
+
+    Es la entrada del acto, separada de `MacroBeat` (que es la salida generada).
+    `on_stage` y `scenario` van por nombre: personajes y escenarios se reescriben
+    con ids nuevos al editar la historia.
+    """
+
+    number: int = Field(..., ge=1, le=5)
+    goal: str = ""
+    events: list[str] = Field(default_factory=list)
+    change_from: str = ""
+    change_to: str = ""
+    scenario: str = ""
+    on_stage: list[str] = Field(default_factory=list)
+    held_back: str = ""  # «se guarda para después»
+    seeds: list[str] = Field(default_factory=list)
+    payoffs: list[str] = Field(default_factory=list)
+    decisions: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    needs_review: bool = False
+
+
 class Story(BaseModel):
     """Historia base."""
 
@@ -269,7 +272,6 @@ class Story(BaseModel):
     sinopsis: str = Field(..., min_length=1)
     genero: str = ""
     subgenero: str = ""
-    tono: str = ""
     reglas: list[str] = []
     beats: list[Beat] = []
     scenarios: list[Scenario] = []
@@ -282,6 +284,11 @@ class Story(BaseModel):
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
 
+    # Spec-530: asistente de autoría (vacíos en las historias del wizard).
+    direction: Optional[Direction] = None
+    workshop: list[WorkshopItem] = []
+    outline: list[ActOutline] = []
+
     @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod
     def _strip_whitespace(cls, v: str) -> str:
@@ -291,15 +298,9 @@ class Story(BaseModel):
 
     @property
     def atmosfera(self) -> str:
-        """String de atmósfera derivado de genero/subgenero/tono (Spec-190 §T6.3).
-
-        Formato: `genero (subgenero) - tono`. Sustituye a la columna `atmosfera`
-        eliminada; los prompts que necesitan un único string lo consumen por acá.
-        """
-        genero = self.genero or ""
+        """`genero (subgenero)`: el tipo de horror en un solo string (Spec-530 S7)."""
         subgenero = f" ({self.subgenero})" if self.subgenero else ""
-        tono = f" - {self.tono}" if self.tono else ""
-        return f"{genero}{subgenero}{tono}".strip()
+        return f"{self.genero or ''}{subgenero}".strip()
 
     @property
     def principal_entity(self) -> Optional[Entity]:
@@ -323,13 +324,6 @@ class Story(BaseModel):
     def get_completed_beats(self) -> list[Beat]:
         """Retorna los beats completamente narrados."""
         return [b for b in self.beats if b.is_narrated()]
-
-    # -- Spec 080: aggregate root --
-
-    @property
-    def metadata(self) -> StoryMetadata:
-        """Value object con los datos de input del usuario."""
-        return StoryMetadata.from_story(self)
 
     @property
     def has_content(self) -> bool:

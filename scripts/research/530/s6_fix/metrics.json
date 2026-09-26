@@ -1,0 +1,164 @@
+{
+  "perfil": "ollama-gemma3-12b",
+  "corridas": [
+    {
+      "historia": "monte",
+      "variante": "asistente",
+      "corrida": 1,
+      "segundos": 167,
+      "segundos_taller": 23,
+      "segundos_escaleta": 71,
+      "taller": {
+        "meta": "parcial",
+        "en_juego": "falta",
+        "vulnerabilidad": "parcial",
+        "historia_secreta": "falta",
+        "final": "parcial"
+      },
+      "decisiones_integradas": "5/5",
+      "avisos_escaleta": 9,
+      "palabras": 2275,
+      "cliches": 0,
+      "frases_repetidas": 6,
+      "nombres_inventados": 1,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 1,
+      "palabras_por_acto": [
+        594,
+        467,
+        426,
+        525,
+        248
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«monte de los espinillos» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«ricardo me miró con» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«el olor a tierra» (del acto 3)",
+            "«soledad dormía ajena a todo» (del acto 3)",
+            "«pero la sensación de» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Esperanza"
+          ]
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«acerqué a la ventana» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "monte",
+      "variante": "asistente",
+      "corrida": 2,
+      "segundos": 163,
+      "segundos_taller": 20,
+      "segundos_escaleta": 70,
+      "taller": {
+        "meta": "falta",
+        "en_juego": "parcial",
+        "vulnerabilidad": "falta",
+        "historia_secreta": "falta",
+        "final": "falta"
+      },
+      "decisiones_integradas": "5/5",
+      "avisos_escaleta": 8,
+      "palabras": 2208,
+      "cliches": 1,
+      "frases_repetidas": 7,
+      "nombres_inventados": 0,
+      "narrador_3ra_persona": 1,
+      "parentescos_mal": 1,
+      "palabras_por_acto": [
+        579,
+        525,
+        421,
+        453,
+        215
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«casa de mi suegra» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«ajena a la tensión» (del acto 2)",
+            "«yo sentía algo más» (del acto 2)",
+            "«soledad seguía durmiendo ajena a» (del acto 2)",
+            "«el olor a tierra húmeda a hojas» (del acto 2)"
+          ],
+          "cliches": [
+            "un silencio pesado"
+          ],
+          "nombres": []
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«algo que no entendía» (del acto 3)",
+            "«las riendas el caballo» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 5,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    }
+  ],
+  "promedios": {
+    "monte/asistente": {
+      "segundos": 165,
+      "palabras": 2241.5,
+      "cliches": 0.5,
+      "frases_repetidas": 6.5,
+      "nombres_inventados": 0.5,
+      "narrador_3ra_persona": 0.5,
+      "parentescos_mal": 1
+    }
+  }
+}

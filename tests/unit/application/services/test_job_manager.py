@@ -64,7 +64,7 @@ class _SlowDirector:
         self._delay = delay
 
     async def execute_full(self, story, on_stage=None, **_kwargs):
-        on_stage(JobStage.ANALYST, None)
+        on_stage(JobStage.PLANIFICADOR, None)
         for n in range(1, self._beats + 1):
             on_stage(JobStage.VOZ, n)
             await asyncio.sleep(self._delay)  # "llamada LLM"
@@ -75,7 +75,7 @@ def _quick_run(narrative_id: str | None = None, total: int = 2):
     """Runner rápido: etapas + DONE."""
 
     async def _gen() -> AsyncIterator[StreamEvent]:
-        yield stage_event(JobStage.ANALYST, None, total)
+        yield stage_event(JobStage.PLANIFICADOR, None, total)
         for n in range(1, total + 1):
             yield stage_event(JobStage.VOZ, n, total)
             yield StreamEvent(event=StreamEventType.BEAT_DONE, data={"number": n})
@@ -157,7 +157,7 @@ async def test_submit_corre_el_pipeline_y_publica_en_ambos_canales(
     glob = _drain(global_q)
     assert [e.event for e in glob] == [
         StreamEventType.JOB_STARTED,
-        StreamEventType.JOB_PROGRESS,  # analyst
+        StreamEventType.JOB_PROGRESS,  # planificador
         StreamEventType.JOB_PROGRESS,  # voz 1
         StreamEventType.JOB_PROGRESS,  # voz 2
         StreamEventType.JOB_DONE,
@@ -270,7 +270,7 @@ async def test_excepcion_del_runner_deja_el_job_failed(manager, bus, job_repo, s
 
 async def test_runner_sin_done_ni_error_queda_failed(manager, job_repo, story_repo):
     story = await _story(story_repo)
-    run = _events_run(stage_event(JobStage.ANALYST, None, 5))
+    run = _events_run(stage_event(JobStage.PLANIFICADOR, None, 5))
 
     job = await manager.submit(story, JobKind.FULL_GENERATION, run)
     await manager.wait(job.id)

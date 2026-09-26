@@ -16,7 +16,6 @@ class StoryCreateDTO(BaseModel):
     sinopsis: str = Field(..., min_length=1)
     genero: str = ""
     subgenero: str = ""
-    tono: str = ""
     reglas: list[str] = []
     narrator_config: Optional[dict] = None
     typed_rules: list[dict] = []
@@ -25,6 +24,10 @@ class StoryCreateDTO(BaseModel):
     # Spec-450: `{name, nature, description, manifestations, limits, reveal_level}`;
     # la primera es la principal.
     entities: list[dict] = []
+    # Spec-530: asistente de autoría (formato de `Direction`, `WorkshopItem`, `ActOutline`).
+    direction: Optional[dict] = None
+    workshop: list[dict] = []
+    outline: list[dict] = []
 
     @field_validator("title", "protagonista", "relator", "sinopsis", mode="before")
     @classmethod
