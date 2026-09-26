@@ -449,6 +449,27 @@ Scripts y salidas de las pruebas del 2026-09-25 en `scripts/research/530/` (ver 
 - Con Analyst y sin Analyst, sobre las historias con escaleta.
 - **Verificación:** informe en la spec (RESULTADOS). **Preguntar antes** de sacar el Mapper, el Analyst o el Resolver.
 
+**Hecho (2026-09-25).** `scripts/evaluate_workshop.py`: 2 historias × 2 caminos × 2 corridas con `gemma3:12b`. El «autor» delega todo el taller con «Decidí vos», para que sea reproducible. Relatos, escaletas y `metrics.json` en `scripts/research/530/s6/`; re-corrida de «El monte» con la corrección de parentescos en `s6_fix/`. Promedios por relato:
+
+| | la pena · base | la pena · asistente | el monte · base | el monte · asistente |
+|---|---|---|---|---|
+| Generación | 229 s | 151 s | 222 s | 165 s |
+| + taller + escaleta | — | 14 s + 61 s | — | 22 s + 71 s |
+| Decisiones en la escaleta | — | 5/5, 5/5 | — | 5/5, 5/5 |
+| Clichés | 1 | 0 | 2 | 0,5 |
+| Nombres inventados | 9,5 | 3 | 0 | 0,5 |
+| Parentescos mal | 1 | 0 | 0 | 1 |
+| Frases repetidas entre actos | 7,5 | 11,5 | 10,5 | 6,5 |
+
+- **Mejora clara:** clichés, nombres inventados (la base inventa geografía: Ushuaia, Bariloche…), tiempo de generación (−30 %) y estructura (el protagonista actúa, se revelan los secretos; ver §S5).
+- **No mejora en «la pena»:** frases repetidas. En el detalle son muletillas del estilo («mirá, te juro que»), conectores genéricos («algo que no podía») y «el espejo retrovisor», que la propia escaleta pone en varios actos. En «El monte» sí mejora (10,5 → 6,5).
+- **Bugs encontrados y corregidos:**
+  - «El monte» tenía 3,5 parentescos mal: el Planificador anotaba «María (aparición)» y la escena de la Voz no la reconocía, así que perdía el «tu suegra». Ahora los nombres en escena van sin agregados y la escena suma a quien nombran los eventos (3,5 → 1).
+  - El asistente daba 500 con sinopsis de más de 2000 caracteres.
+  - El detector de nombres contaba los rezos («Padrenuestro», «Dios»).
+- **Analyst / Resolver / Mapper:** no participan del camino con escaleta. Solo los usan las historias sin escaleta (wizard e `import-yaml`).
+- **Pendiente de calidad** (no bloquea S7): el Planificador repite el mismo tipo de encuentro (el espejo) y la Voz inventa algún nombre. Candidatos: una regla del Verificador para «el mismo elemento en 3 o más actos» y evaluar la Voz en Sonnet 5.
+
 #### S7 — Limpieza del dominio (solo las filas de §6 aprobadas)
 - Se eliminan las variables aprobadas (`traits`, `rule.type`, `rule.intensity`, las claves de `narrator_config`, `tono` → `direction.efecto`), el wizard viejo (`ui_definitions.yaml` y sus vistas y controllers) y lo que S6 permita del pipeline.
 - Loader tolerante a los YAML viejos. Datos de prod: `export-yaml --all` → recrear la DB → `import-yaml` (probado antes contra una copia de `data/prod`).

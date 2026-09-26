@@ -170,7 +170,13 @@ async def _run_asistente(client, key: str, data: dict, i: int, out: Path) -> dic
     }
 
 
-async def run(stories: list[str], runs: int, out: Path, mock: bool) -> dict:
+async def run(
+    stories: list[str],
+    runs: int,
+    out: Path,
+    mock: bool,
+    variants: tuple[str, ...] = ("base", "asistente"),
+) -> dict:
     from src.main import app
 
     out.mkdir(parents=True, exist_ok=True)
@@ -192,6 +198,8 @@ async def run(stories: list[str], runs: int, out: Path, mock: bool) -> dict:
                     data = yaml.safe_load(STORIES[key]["file"].read_text(encoding="utf-8"))
                     for i in range(1, runs + 1):
                         for variant, fn in (("base", _run_base), ("asistente", _run_asistente)):
+                            if variant not in variants:
+                                continue
                             m = await fn(client, key, data, i, out)
                             report["corridas"].append(
                                 {"historia": key, "variante": variant, "corrida": i, **m}
@@ -211,7 +219,7 @@ async def run(stories: list[str], runs: int, out: Path, mock: bool) -> dict:
             for m in METRICS
         }
         for k in stories
-        for v in ("base", "asistente")
+        for v in variants
     }
     (out / "metrics.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -244,9 +252,11 @@ def main() -> None:
     parser.add_argument("--stories", default="pena,monte")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--mock", action="store_true", help="LLM simulado (probar el arnés)")
+    parser.add_argument("--variants", default="base,asistente")
     args = parser.parse_args()
     stories = [s for s in args.stories.split(",") if s in STORIES]
-    print_table(asyncio.run(run(stories, args.runs, args.out, args.mock)))
+    variants = tuple(v for v in args.variants.split(",") if v in ("base", "asistente"))
+    print_table(asyncio.run(run(stories, args.runs, args.out, args.mock, variants)))
 
 
 if __name__ == "__main__":

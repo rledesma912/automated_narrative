@@ -56,3 +56,8 @@ def test_nombres_inventados():
 def test_nombres_compuestos_juntos():
     r = check(["Llegué a la entrada de Villa Escondida, de noche."], [], known="José")
     assert r[0].invented_names == ["Villa Escondida"]
+
+
+def test_rezos_no_son_nombres_inventados():
+    r = check(["Recé un Padrenuestro y le pedí a Dios, al Señor, a la Virgen."], [], known="Irene")
+    assert r[0].invented_names == []

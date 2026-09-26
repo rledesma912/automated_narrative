@@ -41,6 +41,9 @@ def _content(gram: tuple[str, ...]) -> bool:
     return sum(len(w) > 3 for w in gram) >= 2
 
 
+# Nombres que se escriben con mayúscula sin ser personajes ni lugares inventados.
+_NOT_INVENTED = {"dios", "señor", "padrenuestro", "padre", "nuestro", "virgen", "ave", "maría"}
+
 _NAME = re.compile(r"(?<=[a-záéíóúñ,;:] )([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?: [A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*)")
 
 
@@ -50,7 +53,7 @@ def invented_names(text: str, known: str) -> list[str]:
     `known` es todo el texto de autoría (elenco, escaleta, dirección, amenaza). Una
     palabra que también aparece en minúscula en el relato no cuenta como nombre.
     """
-    known_words = {w.lower() for w in re.findall(r"\w+", known)}
+    known_words = {w.lower() for w in re.findall(r"\w+", known)} | _NOT_INVENTED
     lowered = set(re.findall(r"\b[a-záéíóúñ]+\b", text))
     found: list[str] = []
     for name in _NAME.findall(text):

@@ -1,0 +1,664 @@
+{
+  "perfil": "ollama-gemma3-12b",
+  "corridas": [
+    {
+      "historia": "pena",
+      "variante": "base",
+      "corrida": 1,
+      "segundos": 223,
+      "palabras": 2054,
+      "cliches": 1,
+      "frases_repetidas": 5,
+      "nombres_inventados": 14,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 2,
+      "palabras_por_acto": [
+        518,
+        458,
+        396,
+        469,
+        198
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": [
+            "Río Grande",
+            "Ushuaia",
+            "Turco",
+            "Chile",
+            "Tía Marta",
+            "El Calafate",
+            "Comodoro",
+            "Puerto Madryn"
+          ]
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«el asiento de atrás» (del acto 1)"
+          ],
+          "cliches": [
+            "me revolvió el estómago"
+          ],
+          "nombres": [
+            "Villa Mercedes",
+            "Córdoba",
+            "Recorrido"
+          ]
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«frío de la noche» (del acto 2)",
+            "«el olor a cuero viejo» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«opresivo que me hacía sentir» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Peralta",
+            "Elvira",
+            "Elvira Peralta"
+          ]
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«el olor a humedad» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "pena",
+      "variante": "asistente",
+      "corrida": 1,
+      "segundos": 153,
+      "segundos_taller": 13,
+      "segundos_escaleta": 64,
+      "taller": {
+        "meta": "falta",
+        "en_juego": "parcial",
+        "vulnerabilidad": "parcial",
+        "historia_secreta": "falta",
+        "final": "intencional"
+      },
+      "decisiones_integradas": "5/5",
+      "avisos_escaleta": 9,
+      "palabras": 2082,
+      "cliches": 0,
+      "frases_repetidas": 9,
+      "nombres_inventados": 1,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 0,
+      "palabras_por_acto": [
+        351,
+        457,
+        486,
+        491,
+        282
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": [
+            "Polo Sur"
+          ]
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«en el espejo retrovisor» (del acto 1)",
+            "«cualquier cosa pero la» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«mujer en el retrovisor» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«mirá te juro que» (del acto 3)",
+            "«me quedé ahí plantado» (del acto 3)",
+            "«el retrovisor la misma» (del acto 3)",
+            "«vino a la cabeza» (del acto 1)",
+            "«encendí el motor y» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«los pelos de punta» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "pena",
+      "variante": "base",
+      "corrida": 2,
+      "segundos": 235,
+      "palabras": 2191,
+      "cliches": 1,
+      "frases_repetidas": 10,
+      "nombres_inventados": 5,
+      "narrador_3ra_persona": 2,
+      "parentescos_mal": 0,
+      "palabras_por_acto": [
+        589,
+        458,
+        364,
+        534,
+        231
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": [
+            "Buenos Aires",
+            "Bariloche",
+            "San Martín"
+          ]
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«los ojos hundidos una boca» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Buenos Aires"
+          ]
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«ahí estaba de nuevo» (del acto 2)",
+            "«no era clara como una foto mal» (del acto 2)",
+            "«que no podía explicar» (del acto 2)"
+          ],
+          "cliches": [
+            "el corazón me latía con fuerza"
+          ],
+          "nombres": []
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«cargado de humedad y» (del acto 2)",
+            "«algo más algo que» (del acto 2)",
+            "«la gente empezó a» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Elena"
+          ]
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«más denso casi palpable» (del acto 4)",
+            "«me acerqué al pedestal» (del acto 4)",
+            "«la misma sonrisa triste» (del acto 4)"
+          ],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "pena",
+      "variante": "asistente",
+      "corrida": 2,
+      "segundos": 149,
+      "segundos_taller": 14,
+      "segundos_escaleta": 58,
+      "taller": {
+        "meta": "falta",
+        "en_juego": "falta",
+        "vulnerabilidad": "parcial",
+        "historia_secreta": "falta",
+        "final": "intencional"
+      },
+      "decisiones_integradas": "5/5",
+      "avisos_escaleta": 11,
+      "palabras": 1853,
+      "cliches": 0,
+      "frases_repetidas": 14,
+      "nombres_inventados": 5,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 0,
+      "palabras_por_acto": [
+        405,
+        344,
+        388,
+        464,
+        237
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": [
+            "Negro"
+          ]
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«el espejo retrovisor la» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«mirá te juro que» (del acto 2)",
+            "«pie a fondo tratando de» (del acto 2)",
+            "«por el espejo retrovisor» (del acto 1)",
+            "«algo que no podía» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«silencio de la noche» (del acto 1)",
+            "«como si me estuviera» (del acto 1)",
+            "«algo que no podía» (del acto 1)",
+            "«el silencio volvió a» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Vargas",
+            "Elena"
+          ]
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«micro el olor a» (del acto 1)",
+            "«como si me estuvieran» (del acto 3)",
+            "«la foto de elena» (del acto 4)",
+            "«miré a mi alrededor» (del acto 4)",
+            "«me recorrió el cuerpo» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Elena Vargas",
+            "Elena"
+          ]
+        }
+      ]
+    },
+    {
+      "historia": "monte",
+      "variante": "base",
+      "corrida": 1,
+      "segundos": 224,
+      "palabras": 2248,
+      "cliches": 1,
+      "frases_repetidas": 13,
+      "nombres_inventados": 1,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 0,
+      "palabras_por_acto": [
+        576,
+        483,
+        449,
+        484,
+        241
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«ricardo como siempre se» (del acto 1)",
+            "«sonrisa que no llegaba» (del acto 1)",
+            "«monte de los espinillos» (del acto 1)",
+            "«son cuentos para asustar a los» (del acto 1)"
+          ],
+          "cliches": [
+            "me revolvió el estómago"
+          ],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«con el delantal floreado y» (del acto 1)",
+            "«maría pero ya no estaba» (del acto 1)",
+            "«del monte el caballo» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Dios"
+          ]
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«como si el monte» (del acto 3)",
+            "«a mariano contra mí» (del acto 3)",
+            "«el olor a tierra» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«como si el monte» (del acto 3)",
+            "«a algo más algo» (del acto 4)",
+            "«para asustar a los» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "monte",
+      "variante": "asistente",
+      "corrida": 1,
+      "segundos": 171,
+      "segundos_taller": 15,
+      "segundos_escaleta": 65,
+      "taller": {
+        "meta": "falta",
+        "en_juego": "parcial",
+        "vulnerabilidad": "falta",
+        "historia_secreta": "falta",
+        "final": "falta"
+      },
+      "decisiones_integradas": "4/5",
+      "avisos_escaleta": 6,
+      "palabras": 2386,
+      "cliches": 2,
+      "frases_repetidas": 7,
+      "nombres_inventados": 1,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 3,
+      "palabras_por_acto": [
+        530,
+        572,
+        492,
+        492,
+        285
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [
+            "un escalofrío me recorrió"
+          ],
+          "nombres": []
+        },
+        {
+          "acto": 2,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«soledad en brazos dormía plácidamente» (del acto 1)",
+            "«el olor a tierra mojada» (del acto 2)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Rosario"
+          ]
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«mariano se acurrucó más» (del acto 3)",
+            "«mi abuela me contaba de» (del acto 1)",
+            "«y empecé a rezar» (del acto 3)",
+            "«líbranos de todo mal ricardo» (del acto 3)"
+          ],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«algo más algo que» (del acto 3)"
+          ],
+          "cliches": [
+            "un silencio pesado"
+          ],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "monte",
+      "variante": "base",
+      "corrida": 2,
+      "segundos": 219,
+      "palabras": 2144,
+      "cliches": 3,
+      "frases_repetidas": 8,
+      "nombres_inventados": 2,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 0,
+      "palabras_por_acto": [
+        511,
+        489,
+        451,
+        453,
+        225
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«monte de los espinillos» (del acto 1)",
+            "«nudo en la garganta» (del acto 1)",
+            "«son cuentos para asustar a los chicos» (del acto 1)",
+            "«camino se fue haciendo» (del acto 1)",
+            "«olor a tierra mojada» (del acto 1)"
+          ],
+          "cliches": [
+            "el corazón me latía con fuerza"
+          ],
+          "nombres": []
+        },
+        {
+          "acto": 3,
+          "repetidas": [],
+          "cliches": [
+            "me revolvió el estómago"
+          ],
+          "nombres": [
+            "Dios"
+          ]
+        },
+        {
+          "acto": 4,
+          "repetidas": [
+            "«el caballo se movió» (del acto 2)",
+            "«como si el monte» (del acto 3)",
+            "«la mirada fija en el» (del acto 1)"
+          ],
+          "cliches": [
+            "como una mortaja"
+          ],
+          "nombres": [
+            "Padre Nuestro"
+          ]
+        },
+        {
+          "acto": 5,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        }
+      ]
+    },
+    {
+      "historia": "monte",
+      "variante": "asistente",
+      "corrida": 2,
+      "segundos": 222,
+      "segundos_taller": 20,
+      "segundos_escaleta": 72,
+      "taller": {
+        "meta": "falta",
+        "en_juego": "falta",
+        "vulnerabilidad": "parcial",
+        "historia_secreta": "falta",
+        "final": "falta"
+      },
+      "decisiones_integradas": "5/5",
+      "avisos_escaleta": 8,
+      "palabras": 2388,
+      "cliches": 1,
+      "frases_repetidas": 5,
+      "nombres_inventados": 5,
+      "narrador_3ra_persona": 1,
+      "parentescos_mal": 4,
+      "palabras_por_acto": [
+        520,
+        573,
+        536,
+        482,
+        262
+      ],
+      "detalle": [
+        {
+          "acto": 1,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": []
+        },
+        {
+          "acto": 2,
+          "repetidas": [
+            "«monte de los espinillos» (del acto 1)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Padrenuestro"
+          ]
+        },
+        {
+          "acto": 3,
+          "repetidas": [
+            "«ricardo tiró de las riendas» (del acto 2)",
+            "«me ponía los pelos de punta» (del acto 2)",
+            "«casi sin darme cuenta» (del acto 2)"
+          ],
+          "cliches": [
+            "me revolvió el estómago"
+          ],
+          "nombres": [
+            "Señor",
+            "Padrenuestro"
+          ]
+        },
+        {
+          "acto": 4,
+          "repetidas": [],
+          "cliches": [],
+          "nombres": [
+            "Padrenuestro"
+          ]
+        },
+        {
+          "acto": 5,
+          "repetidas": [
+            "«a tierra mojada y» (del acto 3)"
+          ],
+          "cliches": [],
+          "nombres": [
+            "Padrenuestro"
+          ]
+        }
+      ]
+    }
+  ],
+  "promedios": {
+    "pena/base": {
+      "segundos": 229,
+      "palabras": 2122.5,
+      "cliches": 1,
+      "frases_repetidas": 7.5,
+      "nombres_inventados": 9.5,
+      "narrador_3ra_persona": 1,
+      "parentescos_mal": 1
+    },
+    "pena/asistente": {
+      "segundos": 151,
+      "palabras": 1967.5,
+      "cliches": 0,
+      "frases_repetidas": 11.5,
+      "nombres_inventados": 3,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 0
+    },
+    "monte/base": {
+      "segundos": 221.5,
+      "palabras": 2196,
+      "cliches": 2,
+      "frases_repetidas": 10.5,
+      "nombres_inventados": 1.5,
+      "narrador_3ra_persona": 0,
+      "parentescos_mal": 0
+    },
+    "monte/asistente": {
+      "segundos": 196.5,
+      "palabras": 2387,
+      "cliches": 1.5,
+      "frases_repetidas": 6,
+      "nombres_inventados": 3,
+      "narrador_3ra_persona": 0.5,
+      "parentescos_mal": 3.5
+    }
+  }
+}

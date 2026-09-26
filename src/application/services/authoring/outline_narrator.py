@@ -7,6 +7,8 @@ el escenario, las reglas del acto, la amenaza según la exposición del acto
 La memoria (Journal) sale con esquema JSON: hechos, estado y motivos usados.
 """
 
+import re
+
 from pydantic import BaseModel
 
 from src.application.services.authoring import catalog, context, workshop_rules
@@ -141,11 +143,17 @@ class OutlineNarrator:
 
     @staticmethod
     def _scene_story(story: Story, act: ActOutline, narrator: str) -> Story:
-        """La historia con solo los personajes en escena (y quien narra): la Voz no ve al resto."""
-        on_stage = {workshop_rules.normalize(n) for n in [*act.on_stage, narrator]}
+        """La historia con los personajes de este acto: los que están en escena, quien narra
+        y los que los eventos nombran (así la Voz sabe cómo llamarlos: «mi suegra»).
+
+        La Voz no ve al resto del elenco.
+        """
+        on_stage = {workshop_rules.normalize(n.split("(")[0]) for n in [*act.on_stage, narrator]}
+        events = workshop_rules.normalize(" ".join([act.goal, *act.events]))
         cast = []
         for p in story.personajes_full or []:
-            if workshop_rules.normalize(p.get("name", "")) in on_stage:
+            name = workshop_rules.normalize(p.get("name", ""))
+            if name and (name in on_stage or re.search(rf"\b{re.escape(name)}\b", events)):
                 cast.append({**p, "role": p.get("role") or p.get("relation", "")})
         return story.model_copy(update={"personajes_full": cast})
 

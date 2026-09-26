@@ -121,3 +121,23 @@ async def test_la_memoria_acumula_hechos_y_motivos(story):
     assert llm.calls[0]["role"] == "journal"
     assert llm.calls[0]["num_predict"] >= 700  # el JSON con motivos no entra en 256
     assert "Texto del acto 2" in llm.calls[0]["prompt"]
+
+
+def test_la_escena_incluye_a_quien_nombran_los_eventos(story):
+    story = story.model_copy(
+        update={
+            "personajes_full": [
+                {"name": "José", "role": "Chofer"},
+                {"name": "María", "role": "Suegra de José"},
+                {"name": "Ricardo", "role": "Hermano de José"},
+            ]
+        }
+    )
+    act = ActOutline(
+        number=4,
+        events=["José piensa en lo que le dijo María."],
+        on_stage=["Ricardo (de espaldas)"],
+    )
+    system, user = OutlineNarrator(ScriptedLLM()).voice_prompts(story, act, None)
+    assert "EN ESCENA: José, María, Ricardo" in user
+    assert "María" in system and "Suegra" in system

@@ -108,7 +108,8 @@ class OutlinePlanner:
 
 
 def _scenario_name(name: str) -> str:
-    """«Ruta 36 (regreso)» es el mismo lugar que «Ruta 36»: sin agregados entre paréntesis."""
+    """«Ruta 36 (regreso)» es el mismo lugar que «Ruta 36», y «María (aparición)» la misma
+    María: sin agregados entre paréntesis."""
     return re.sub(r"\s*\([^)]*\)\s*$", "", " ".join(name.split())) or name.strip()
 
 
@@ -124,7 +125,7 @@ def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
         change_from=a.cambio_de.strip(),
         change_to=a.cambio_a.strip(),
         scenario=_scenario_name(a.escenario),
-        on_stage=_clean(a.en_escena),
+        on_stage=list(dict.fromkeys(_scenario_name(n) for n in _clean(a.en_escena))),
         held_back=a.se_guarda.strip(),
         seeds=_clean(a.siembra),
         payoffs=_clean(a.retoma),
