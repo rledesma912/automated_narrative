@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mejoras de UI
-**Estado:** SPECIFY — recorrido en curso: se van sumando hallazgos; PLAN cuando el usuario cierre el recorrido
+**Estado:** SPECIFY — H1–H10 decididos (2026-09-27); abierta a nuevos hallazgos; PLAN cuando el usuario cierre el recorrido
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente), Spec-531 (tema), Spec-540 (tema de dev).
 
@@ -114,7 +114,7 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 
 **Tests:** los E2E que esperan «Guardado hace un momento» siguen valiendo (el texto queda en el DOM, oculto con opacidad); se agrega uno que verifica que tras unos segundos el aviso queda transparente y otro que un error queda visible.
 
-### H7 — Taller: «Qué quiere» no dice de quién ni para qué · **decidido (textos a validar)**
+### H7 — Taller: «Qué quiere» no dice de quién ni para qué · **decidido (textos aprobados)**
 
 **Lo que ve el usuario:** el criterio «QUÉ QUIERE» no se entiende: no dice a quién se refiere ni qué objetivo cubre.
 
@@ -232,7 +232,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
 - **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
 - **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
-- **D7 (H7):** criterios del taller con sujeto (el nombre del protagonista) y «para qué sirve» en lenguaje llano visible en todos lados; textos de la tabla a validar por el usuario.
+- **D7 (H7):** ✅ decidido (2026-09-27) — criterios del taller con sujeto y «para qué sirve» en lenguaje llano, visibles en todos lados; **textos de las tablas de H7 aprobados** tal como están.
 - **D8 (H8):** confirmaciones con un componente propio (`<dialog>` con el tema) para «Rearmar la escaleta» y todo `hx-confirm` (regenerar acto); sin diálogos nativos del navegador.
 - **D9 (H9):** tres familias con forma propia — botón (redondeado, acento), chip (píldora, sin borde, sin interacción), nota (barra lateral de color, sin caja) — más tarjetas de opción con radio visible; clases compartidas en `globals.css`. Se valida con capturas antes de convertir todas las vistas. Catálogo `/componentes` en dev: opcional.
 - **D10 (H10):** los avisos ignorados quedan ignorados al volver a revisar (claves estables para los de regla; los de la IA se le pasan al Verificador y se filtran); se pueden volver a mostrar; se olvidan solo al rearmar la escaleta. Sin cambio de esquema (JSON de `act_outline.warnings`).
