@@ -58,8 +58,8 @@ El SessionStart hook lista el set completo de specs disponibles.
 
 | Servicio | Desarrollo (host) | Producción (Docker) |
 |----------|-------------------|---------------------|
-| Frontend (Express) | `3010` | `3000` |
-| Backend (FastAPI)  | `8020` | `8010` |
+| Frontend (Express) | `3040` | `3000` |
+| Backend (FastAPI)  | `8040` | `8010` |
 | SQLite DB          | `data/dev/stories.db` | `data/prod/stories.db` |
 | Config de entorno  | `.env` (lee `src/config.py`) | `.env.prod` (vía `docker-compose.yml`) |
 
@@ -69,8 +69,8 @@ El SessionStart hook lista el set completo de specs disponibles.
 
 ```bash
 make install     # uv sync + npm install
-make api         # uvicorn dev con hot-reload (→ :8020)
-make ui          # frontend Express con hot-reload (→ :3010)
+make api         # uvicorn dev con hot-reload (→ :8040)
+make ui          # frontend Express con hot-reload (→ :3040)
 make dev         # api + ui en paralelo
 make db          # inicializa data/dev/stories.db (idempotente)
 make db-clean    # vacía registros de dev sin tirar el esquema

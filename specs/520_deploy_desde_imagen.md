@@ -3,6 +3,7 @@
 **Fecha:** 2026-09-24
 **Tipo:** SDD (Spec-Driven Development) — mantenimiento
 **Estado:** DONE (2026-09-24) — primer `make deploy` real (989ac4f) y aislamiento verificado
+**Nota (2026-09-27, Spec-540):** prod ahora es `storymaker.prd` (y la IP); `storymaker.test` pasó a ser dev.
 **Extiende:** Spec-325 (separación dev/prod en host único).
 
 ---

@@ -30,8 +30,9 @@ const PATTERNS: Array<[string, RegExp]> = [
 
 /** Excepciones justificadas: `archivo` → fragmentos permitidos. */
 const EXCEPTIONS: Record<string, string[]> = {
-  // <meta name="theme-color"> no acepta variables CSS: repite --forge-bg.
-  "src/views/partials/layout.ejs": ["#f7f3ec"],
+  // <meta name="theme-color"> no acepta variables CSS: repite --forge-bg de
+  // «Papel» y, en dev, de «Latte» (Spec-540).
+  "src/views/partials/layout.ejs": ["#f7f3ec", "#eff1f5"],
 };
 
 function files(dir: string): string[] {

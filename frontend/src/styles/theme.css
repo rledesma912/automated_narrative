@@ -37,3 +37,41 @@
 
   --sidebar-width: 16rem;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Tema «Latte» (Spec-540) — solo en dev (`<html data-env="dev">`).
+
+   Basado en Catppuccin Latte: frío (gris lavanda y violeta), el opuesto de
+   «Papel», para no confundir dev con prod. Los tonos de estado de Latte no
+   llegan a AA como texto: se usan oscurecidos, y los originales en fondos.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root[data-env="dev"] {
+  /* Base */
+  --forge-bg: #eff1f5;          /* base */
+  --forge-surface: #ffffff;
+  --forge-border: #ccd0da;      /* surface0 */
+  --forge-text: #4c4f69;        /* text — 7,1:1 sobre bg */
+  --forge-muted: #5c5f77;       /* subtext1 — 5,5:1 */
+
+  /* Acento: mauve */
+  --forge-accent: #8839ef;      /* 4,8:1 sobre bg */
+  --forge-on-accent: #ffffff;   /* 5,4:1 */
+
+  /* Estados (red / yellow / green / blue oscurecidos) */
+  --forge-error: #b30d30;
+  --forge-error-bg: #f7dfe4;
+  --forge-error-border: #e79aab;
+  --forge-warning: #8a5a0c;
+  --forge-warning-bg: #f8ecd9;
+  --forge-warning-border: #e5bf82;
+  --forge-success: #276d1a;
+  --forge-success-bg: #e1f0dc;
+  --forge-success-border: #9fcb94;
+  --forge-info: #1650c8;
+  --forge-info-bg: #dfe8fb;
+  --forge-info-border: #93b1f3;
+
+  /* Velo: el texto de Latte, traslúcido */
+  --forge-overlay: rgb(76 79 105 / 0.55);
+}

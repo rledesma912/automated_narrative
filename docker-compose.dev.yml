@@ -1,0 +1,67 @@
+# Spec-540: entorno DEV siempre levantado (storymaker.test → :3040).
+#
+# Proyecto de Compose aparte (`narrative-dev`): `make deploy` usa docker-compose.yml
+# y no ve ni toca estos contenedores. El código se MONTA del directorio de trabajo
+# (la rama activa), no se copia: uvicorn y nodemon recargan con cada cambio.
+# Datos solo de data/dev/ y secretos de .env (nunca data/prod/ ni .env.prod).
+#
+# Se usa a través de scripts/bash/dev_env.sh (`make dev-up`, `make dev-status`…),
+# que exporta DEV_UID/DEV_GID para que los archivos queden a nombre del usuario.
+name: narrative-dev
+
+services:
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: narrative-dev-api
+    container_name: narrative-api-dev
+    restart: unless-stopped
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    ports:
+      - "8040:8040"
+    env_file: .env
+    environment:
+      - ENV=dev
+      - HOME=/tmp
+      - DATABASE_URL=sqlite+aiosqlite:///data/dev/stories.db
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./data/dev:/app/data/dev
+      - ./frontend/public/output_stories:/app/frontend/public/output_stories
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8040/api/v1/health')\" 2>/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: narrative-dev-ui
+    container_name: narrative-ui-dev
+    restart: unless-stopped
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    ports:
+      - "3040:3040"
+    environment:
+      - ENV=dev
+      - HOME=/tmp
+      - PORT=3040
+      - CORE_API_URL=http://api:8040
+      - GIT_DIR=/repo.git          # marca «DEV · rama · commit» (Spec-540 §2.3)
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/tailwind.config.js:/app/tailwind.config.js:ro
+      - ./.git:/repo.git:ro
+    depends_on:
+      api:
+        condition: service_started

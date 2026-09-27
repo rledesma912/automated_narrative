@@ -2,7 +2,9 @@
 /*
  * Variables de entrada:
  *   activePage:  string — 'home' | 'generate' | 'gallery' | 'debug' | 'components'
+ *   environment: (opcional) Spec-540 — { isDev, branch, commit }; sin él, prod.
  */
+const environment = locals.environment || { isDev: false };
 const navItems = [
   { page: 'home',       href: '/',           icon: 'home',         label: 'Inicio'      },
   { page: 'generate',   href: '/nuevo',      icon: 'pen-line',     label: 'Nuevo relato'     },
@@ -14,7 +16,9 @@ const navItems = [
 
   <div class="px-5 py-6 border-b border-forge-border">
     <span class="text-forge-accent font-serif text-lg tracking-widest uppercase">Narrative</span>
-    <span class="block text-forge-muted text-xs tracking-widest">Forge</span>
+    <span class="flex items-center gap-2 text-forge-muted text-xs tracking-widest">Forge
+      <% if (environment.isDev) { %><span class="px-1.5 py-0.5 rounded bg-forge-accent text-forge-on-accent font-bold tracking-wider" data-env-badge>DEV</span><% } %>
+    </span>
   </div>
 
   <nav class="flex-1 py-4">
@@ -35,7 +39,12 @@ const navItems = [
     <% }); %>
   </nav>
 
-  <div class="px-5 py-3 text-xs text-forge-muted">
-    v0.3.0 — Slice 3
+  <div class="px-5 py-3 text-xs text-forge-muted" data-env-version>
+    <% if (environment.isDev) { %>
+      <%/* Spec-540: qué se está mirando en dev. */%>
+      <span class="font-bold text-forge-accent">DEV</span> · <%= environment.branch || 'sin git' %><% if (environment.commit) { %> · <code><%= environment.commit %></code><% } %>
+    <% } else { %>
+      v0.3.0 — Slice 3
+    <% } %>
   </div>
 </aside>

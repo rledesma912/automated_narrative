@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import router from "./routes";
 import { createApiProxy } from "./middleware/api_proxy";
+import { getEnvironment } from "./utils/environment";
 
 const app = express();
 
@@ -23,6 +24,13 @@ app.use(createApiProxy(CORE_API_URL));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
+
+// Spec-540: ambiente (y en dev, rama y commit) en cada página. Se lee en cada
+// request para que la marca muestre siempre el último commit.
+app.use((_req, res, next) => {
+  res.locals.environment = getEnvironment();
+  next();
+});
 
 app.use("/", router);
 
