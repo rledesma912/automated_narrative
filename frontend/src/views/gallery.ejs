@@ -72,7 +72,7 @@ function renderStatusLabel(s) {
                 </form>
                 <a href="/historia/<%= s.id %>/relatos"
                    class="btn-forge-outline !px-0 !border-none">
-                  <i data-lucide="book-open" class="w-4 h-4"></i> Ver Relato
+                  <i data-lucide="book-open" class="w-4 h-4"></i> Ver relato
                 </a>
               <% } else if (s.status === 'failed') { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">

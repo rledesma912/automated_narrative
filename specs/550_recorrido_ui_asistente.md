@@ -319,10 +319,10 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 
 Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-status` en verde y al usuario la URL de `storymaker.test` con qué mirar.
 
-### S1 — Ficha (H4, H5)
-- [ ] **T1.1** Botón de generación según el estado en `historia.ejs` (Generar relato / Reintentar / Regenerar; «Generando…» sin cambios). Fuera «Generar Relato». — *Verify:* test de vista por estado. — *Files:* `historia.ejs`, test nuevo.
-- [ ] **T1.2** Fuera `POST /historia/:id/generar-relato`, `generateNarrativeHandler` y `generateNarrative()`. — *Verify:* la ruta da 404; `tsc` sin errores. — *Files:* `routes/index.ts`, `historia.controller.ts`, `core_api.service.ts`.
-- [ ] **T1.3** «Ver relato» en ficha y galería. — *Verify:* tests de vista (galería ya lo verifica). — *Files:* `historia.ejs`, `gallery.ejs`.
+### S1 — Ficha (H4, H5) · ✅ 2026-09-27
+- [x] **T1.1** Botón de generación según el estado en `historia.ejs` (Generar relato / Reintentar / Regenerar; «Generando…» sin cambios). Fuera «Generar Relato». — *Verify:* test de vista por estado. — *Files:* `historia.ejs`, test nuevo.
+- [x] **T1.2** Fuera `POST /historia/:id/generar-relato`, `generateNarrativeHandler` y `generateNarrative()`. — *Verify:* la ruta da 404; `tsc` sin errores. — *Files:* `routes/index.ts`, `historia.controller.ts`, `core_api.service.ts`.
+- [x] **T1.3** «Ver relato» en ficha y galería. — *Verify:* tests de vista (galería ya lo verifica). — *Files:* `historia.ejs`, `gallery.ejs`.
 
 ### S2 — Base visual en Taller y Escaleta (H9 base, H2) · checkpoint visual
 - [ ] **T2.1** Clases en `globals.css`: botones revisados, `.chip-forge*`, `.nota-forge*`, `.pista-forge`, `.opcion-forge` (radio visible; seleccionada = acento + `on-accent`). — *Verify:* `palette-contrast` suma los pares nuevos (dos paletas). — *Files:* `globals.css`, `palette-contrast.test.ts`.
