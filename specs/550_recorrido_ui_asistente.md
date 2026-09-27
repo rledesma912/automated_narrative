@@ -114,6 +114,41 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 
 **Tests:** los E2E que esperan «Guardado hace un momento» siguen valiendo (el texto queda en el DOM, oculto con opacidad); se agrega uno que verifica que tras unos segundos el aviso queda transparente y otro que un error queda visible.
 
+### H7 — Taller: «Qué quiere» no dice de quién ni para qué · **decidido (textos a validar)**
+
+**Lo que ve el usuario:** el criterio «QUÉ QUIERE» no se entiende: no dice a quién se refiere ni qué objetivo cubre.
+
+**Hoy** (`config/workshop_criteria.yaml`, la UI muestra `nombre` y `por_que`):
+- Los nombres no tienen sujeto: «Qué quiere», «Qué está en juego», «Qué lo expone». El sujeto es el protagonista, pero no se dice.
+- El «por qué importa» está en jerga («Una meta concreta le da a la amenaza algo que frustrar») y **solo** aparece en las preguntas abiertas: en «Ya resuelto» y en los chips del estado se ve el nombre suelto.
+- Un criterio marcado «a propósito» sin respuesta muestra «Sin pregunta por ahora.», que no explica nada. (En «La presencia del colectivo», en dev, «Qué quiere» quedó así.)
+- La pregunta que escribe la IA puede no nombrar al protagonista: el prompt pide preguntas «sobre esta historia», pero no que lo nombre.
+
+**Cambio:**
+1. **Nombres con sujeto**, usando el nombre del protagonista de la Dirección (si no hay, «el protagonista»):
+
+   | Criterio | Hoy | Propuesto |
+   |---|---|---|
+   | `meta` | Qué quiere | **Qué busca José** |
+   | `en_juego` | Qué está en juego | **Qué arriesga José** |
+   | `vulnerabilidad` | Qué lo expone | **Qué expone a José** |
+   | `historia_secreta` | La historia secreta | La historia secreta |
+   | `final` | El final | El final |
+
+2. **«Para qué sirve» en lenguaje llano, con ejemplos**, visible en las preguntas abiertas, en «Ya resuelto» y como `title` de los chips:
+
+   | Criterio | Texto propuesto |
+   |---|---|
+   | `meta` | Lo que José quiere conseguir en esta historia: llegar a destino, cobrar el viaje, proteger a alguien. El miedo crece cuando la amenaza se interpone en eso. |
+   | `en_juego` | Lo que José pierde si la amenaza gana: el trabajo, la cordura, a alguien querido. Si no arriesga nada, quien escucha no teme por él. |
+   | `vulnerabilidad` | Algo que José hace o cree que lo deja a merced de la amenaza. Si le pasa por algo suyo, el miedo pesa más que si le pasa por azar. |
+   | `historia_secreta` | Lo que no se ve al principio y explica por qué le pasa a José: un vínculo, una culpa, un secreto. |
+   | `final` | Si el final deja en quien escucha la marca que buscás (el efecto de la Dirección). |
+
+   En el YAML, `nombre` y `por_que` llevan `{protagonista}`, que la vista reemplaza.
+3. **«A propósito» sin respuesta** dice «Lo dejaste así a propósito: la IA no lo va a preguntar.» en vez de «Sin pregunta por ahora.».
+4. **Consultor:** una regla más en `authoring_consultant_system.md`: la pregunta nombra al protagonista por su nombre. Cambia el snapshot de prompts (`SNAPSHOT_UPDATE=1`, a propósito).
+
 ---
 
 ## 2. DECISIONES
@@ -124,6 +159,7 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
 - **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
 - **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
+- **D7 (H7):** criterios del taller con sujeto (el nombre del protagonista) y «para qué sirve» en lenguaje llano visible en todos lados; textos de la tabla a validar por el usuario.
 
 ---
 
@@ -134,4 +170,5 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 3. **H4:** una historia con relato muestra «Regenerar» y no «Generar Relato»; sin relato, «Generar relato»; fallida, «Reintentar»; `POST /historia/:id/generar-relato` ya no existe (404).
 4. **H5:** ficha y galería dicen «Ver relato».
 5. **H6:** al guardar, el aviso parpadea y a los ~2 s queda transparente sin mover la barra; un error de guardado queda visible; con movimiento reducido no parpadea.
-6. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+6. **H7:** en el Taller, cada criterio dice de quién habla (nombre del protagonista) y para qué sirve, en las preguntas abiertas, en «Ya resuelto» y en los chips; las preguntas nuevas de la IA nombran al protagonista.
+7. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
