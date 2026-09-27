@@ -115,7 +115,7 @@
                   <legend class="text-xs uppercase tracking-widest text-forge-muted mb-2">Dónde pasa</legend>
                   <div class="flex flex-wrap gap-2">
                     <% state.scenarios.forEach(e => { %>
-                      <label class="cursor-pointer">
+                      <label class="relative cursor-pointer">
                         <input type="radio" name="scenario" value="<%= e %>" class="peer sr-only" <%= e === a.scenario ? 'checked' : '' %>>
                         <span class="inline-block px-2 py-1 border border-forge-border text-forge-muted peer-checked:border-forge-accent peer-checked:bg-forge-accent peer-checked:text-forge-on-accent peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent"><%= e %></span>
                       </label>
@@ -156,7 +156,7 @@
                   <p class="text-xs text-forge-muted mb-2">Solo ellos llegan a la voz en este acto.</p>
                   <div class="flex flex-wrap gap-2">
                     <% state.characters.forEach(c => { const narra = c.name === narrador; const on = narra || a.on_stage.includes(c.name); %>
-                      <label class="cursor-pointer">
+                      <label class="relative cursor-pointer">
                         <input type="checkbox" name="on_stage" value="<%= c.name %>" class="peer sr-only" <%= on ? 'checked' : '' %> <%= narra ? 'disabled' : '' %>>
                         <span class="inline-flex items-center gap-1 px-2 py-1 border border-forge-border text-forge-muted peer-checked:border-forge-accent peer-checked:text-forge-text peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent"
                               title="<%= c.relation || TIPOS[c.kind] %>">

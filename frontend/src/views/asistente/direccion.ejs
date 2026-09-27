@@ -65,7 +65,7 @@
         Es la brújula del asistente: las preguntas y la escaleta van a apuntar a este efecto.</p>
       <div class="grid sm:grid-cols-2 gap-3">
         <% options.effects.forEach(e => { %>
-          <label class="cursor-pointer">
+          <label class="relative cursor-pointer">
             <input type="radio" name="effect" value="<%= e.id %>" class="peer sr-only" <%= e.id === d.effect ? 'checked' : '' %>>
             <span class="block h-full border border-forge-border bg-forge-bg p-4 transition-colors
                          peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
@@ -121,7 +121,7 @@
         Elegí cómo suena la voz. Cada opción tiene un ejemplo de cómo arrancaría.</p>
       <div class="space-y-3">
         <% options.tellings.forEach(c => { %>
-          <label class="cursor-pointer block">
+          <label class="relative cursor-pointer block">
             <input type="radio" name="telling" value="<%= c.id %>" class="peer sr-only" <%= c.id === d.telling ? 'checked' : '' %>>
             <span class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 border border-forge-border bg-forge-bg p-4 transition-colors
                          peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
