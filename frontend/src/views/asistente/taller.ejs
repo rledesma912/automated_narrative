@@ -64,7 +64,7 @@
             <fieldset class="space-y-2 mb-4">
               <legend class="sr-only">Opciones</legend>
               <% p.options.forEach(o => { %>
-                <label class="cursor-pointer block">
+                <label class="relative cursor-pointer block">
                   <input type="radio" name="op-<%= p.criterion %>" value="<%= o %>" class="peer sr-only">
                   <span class="flex items-center gap-3 border border-forge-border bg-forge-bg px-4 py-3 transition-colors
                                peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
@@ -72,7 +72,7 @@
                   </span>
                 </label>
               <% }) %>
-              <label class="cursor-pointer block">
+              <label class="relative cursor-pointer block">
                 <input type="radio" name="op-<%= p.criterion %>" value="" data-mia class="peer sr-only">
                 <span class="flex items-center gap-3 border border-dashed border-forge-border bg-forge-bg px-4 py-3 text-forge-muted peer-checked:border-forge-accent peer-checked:text-forge-text">
                   <i data-lucide="pencil" class="w-4 h-4 shrink-0"></i>Escribir la mía…

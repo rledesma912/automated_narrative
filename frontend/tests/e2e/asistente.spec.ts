@@ -120,3 +120,24 @@ test("género → estilo y la amenaza dependen del catálogo y se guardan", asyn
   await expect(page.getByLabel("Qué es")).toHaveValue("espiritu");
   await expect(page.getByLabel("Qué quiere")).toHaveValue("Que José se detenga.");
 });
+
+// Bug (2026-09-27): con Tab desde «¿De qué trata?» a las tarjetas de efecto, la
+// página quedaba en blanco. Los radios `sr-only` (absolutos) escapaban de su tarjeta
+// y el navegador desplazaba el <body> (overflow-hidden) para mostrarlos. Solo debe
+// scrollear <main>; la barra lateral y el formulario siguen a la vista.
+test("navegar con Tab por las tarjetas no desplaza la página fuera de la vista", async ({ page }) => {
+  await crearDesdeNuevo(page, "E2E tab");
+  await page.getByLabel("¿De qué trata?").focus();
+
+  const fueraDeLugar = () =>
+    page.evaluate(() => ({
+      html: document.documentElement.scrollTop,
+      body: document.body.scrollTop,
+      sidebar: Math.round(document.querySelector("aside")!.getBoundingClientRect().top),
+    }));
+
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press("Tab");
+    expect(await fueraDeLugar()).toEqual({ html: 0, body: 0, sidebar: 0 });
+  }
+});
