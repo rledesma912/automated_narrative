@@ -16,10 +16,14 @@ Flujo obligatorio: **SPECIFY → PLAN → TASKS → IMPLEMENT**.
 
 ```bash
 make install     # uv sync + npm install
-make api         # uvicorn dev (8040)
-make ui          # frontend Express (3040)
-make dev         # api + ui en paralelo
-make db          # crea data/dev/stories.db
+make dev-up      # dev siempre levantado (Spec-540): contenedores narrative-dev, API :8040, UI :3040
+make dev-status  # rama, commit, contenedores, /health y UI en modo dev (≠ 0 si algo falla)
+make dev-logs    # últimas líneas de api y ui de dev
+make dev-rebuild # reconstruye las imágenes de dev (tras cambiar pyproject.toml / package.json)
+make dev-down    # baja dev
+make dev-db      # recrea data/dev/stories.db vacía con los catálogos y la verifica
+                 # (si tiene historias pide ARGS=--yes; make db = alias)
+make api / ui / dev  # dev a mano en la terminal, mismos puertos (antes make dev-down)
 make test        # pytest -v --cov=src
 make lint        # ruff check + format
 cd frontend && npm test               # Vitest (unit + integración del proxy)
@@ -32,7 +36,11 @@ make deploy        # pase a prod (Spec-520): solo desde main limpio y al día, s
                    # backup de data/prod/stories.db + build de imágenes + verificación
 ```
 
-**Producción cambia solo con `make deploy`.** Los contenedores (`narrative-api` :8010, `narrative-ui` :3000, nginx `storymaker.test`) llevan el código **y `config/`** dentro de la imagen: cambiar de rama o editar prompts en el directorio de trabajo no los afecta. Datos (`data/prod/`) y secretos (`.env.prod`) quedan afuera.
+**Producción cambia solo con `make deploy`.** Los contenedores (`narrative-api` :8010, `narrative-ui` :3000, nginx `storymaker.prd` y `http://192.168.0.65`) llevan el código **y `config/`** dentro de la imagen: cambiar de rama o editar prompts en el directorio de trabajo no los afecta. Datos (`data/prod/`) y secretos (`.env.prod`) quedan afuera.
+
+**Dev siempre publicado en `storymaker.test` (Spec-540).** `docker-compose.dev.yml` (proyecto `narrative-dev`, aparte del de prod): `narrative-api-dev` :8040 y `narrative-ui-dev` :3040, con el código del directorio de trabajo **montado** (la rama activa, con sus cambios sin commitear), `restart: unless-stopped`, datos de `data/dev/` y `.env`. uvicorn (`src/`, `config/*.yaml`) y nodemon + `tailwind --watch` recargan solos; las vistas `.ejs` y los prompts se leen en cada request/generación. Dependencias nuevas → `make dev-rebuild`; esquema nuevo → `make dev-db`. Una recarga de uvicorn interrumpe un job de dev en curso. El proxy (`/mnt/LLM/apps/reverse_proxy/nginx_config/default.conf`, fuera del repo) manda `storymaker.test` → :3040 y `storymaker.prd` + la IP (`default_server`) → prod :3000.
+
+**Cierre de cada checkpoint (Spec-540 §2.5):** tests en verde **y** dev reflejando el cambio (`make dev-status` en verde; antes `make dev-rebuild` / `make dev-db` si hace falta). Al usuario: la URL exacta en `https://storymaker.test` y qué mirar para validar.
 
 ## Architecture
 
@@ -142,7 +150,7 @@ Templates Markdown en `config/prompts_generation/`, cargados por `TemplateLoader
 ## Web & Streaming (Spec-210)
 
 - **Frontend:** Express + EJS + HTMX en `frontend/`. Único origen para el browser. Proxy interno `/api/*` → `CORE_API_URL`.
-- **Tema (Spec-531):** un solo tema claro, «Papel». La paleta vive **solo** en `frontend/src/styles/theme.css` (`--forge-*`, importado en `globals.css`) y se usa con las clases `forge-*` de Tailwind, que admiten opacidad (`bg-forge-accent/10`, vía `color-mix`). Estados: `error` / `warning` / `success` / `info`, cada uno con `-bg` y `-border`; además `on-accent` y `overlay`. Nada de colores fijos en vistas, estilos ni JS: lo verifican `no-hardcoded-colors` y `palette-contrast` (AA ≥ 4,5:1). Tipografía: sans en la interfaz, `.prose-forge` (serif, interlineado 1,7) para la prosa. Favicon: vela (`public/favicon.svg`; PNG con `npx ts-node scripts/build-favicons.ts`). Capturas para comparar: `CAPTURAS=<carpeta> npx playwright test visual-snapshots` → `frontend/capturas/531/<carpeta>/`.
+- **Tema (Spec-531 / Spec-540):** tema claro «Papel» (prod); en dev (`ENV=dev` → `<html data-env="dev">`, `utils/environment.ts`) el tema «Latte» (Catppuccin Latte, bloque `:root[data-env="dev"]` de `theme.css`), `[DEV]` en el título, `favicon-dev.svg` y «DEV · rama · commit» en la barra lateral (leídos de `.git/` en cada request; `GIT_DIR` en el contenedor). Sin `ENV=dev` todo se ve como prod (también los E2E; `E2E_ENV=dev` para capturas de Latte). La paleta vive **solo** en `frontend/src/styles/theme.css` (`--forge-*`, importado en `globals.css`) y se usa con las clases `forge-*` de Tailwind, que admiten opacidad (`bg-forge-accent/10`, vía `color-mix`). Estados: `error` / `warning` / `success` / `info`, cada uno con `-bg` y `-border`; además `on-accent` y `overlay`. Nada de colores fijos en vistas, estilos ni JS: lo verifican `no-hardcoded-colors` y `palette-contrast` (AA ≥ 4,5:1, las dos paletas). Tipografía: sans en la interfaz, `.prose-forge` (serif, interlineado 1,7) para la prosa. Favicon: vela (`public/favicon.svg`; PNG con `npx ts-node scripts/build-favicons.ts`). Capturas para comparar: `CAPTURAS=<carpeta> npx playwright test visual-snapshots` → `frontend/capturas/531/<carpeta>/`.
 - **Jobs (Spec-460):** generar y regenerar un acto son jobs (`generation_job`). `JobManager` (singleton en `src/presentation/runtime.py`) corre cada job como `asyncio.Task`: cerrar la pestaña no lo detiene, `POST /jobs/{id}/cancel` sí. Un solo job activo por historia (lock + índice único parcial) → 409 con el job existente. Al arrancar, los jobs que quedaron activos pasan a `failed` ("interrumpida por reinicio").
 - **Eventos (Spec-460):** `EventBus` en memoria con canales `job:<id>` (detalle, lo usa la sala) y `global` (ciclo de vida `job_*`, lo usa todo el resto). Ids por canal → reconexión con `Last-Event-ID`. Ningún GET arranca trabajo.
 - **Cliente:** `public/js/event-bus.js` abre 1 `EventSource` global por pestaña (en `<head>`, sobrevive a hx-boost; se cierra en la sala) y re-emite `forge:*` en el DOM. Consumidores: banda de generación, pie (estado del Core), botones `[data-generation-trigger]` (`generation-guard.js`), galería en vivo y paneles atados a un job. Heartbeat 15s no negociable.
@@ -218,4 +226,4 @@ uv run python -m src import-yaml <archivos...> [--descartar-subgenero-invalido]
 
 ## Specs
 
-Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `530_asistente_autoria_y_escaleta.md` (asistente, escaleta y pipeline actual; reemplaza al de la 180 y al wizard de la 220/440), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `520_deploy_desde_imagen.md` (pase a producción), `531_tema_claro_y_favicon.md` (tema único y favicon).
+Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `530_asistente_autoria_y_escaleta.md` (asistente, escaleta y pipeline actual; reemplaza al de la 180 y al wizard de la 220/440), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `520_deploy_desde_imagen.md` (pase a producción), `531_tema_claro_y_favicon.md` (tema y favicon), `540_entorno_dev_siempre_publicado.md` (dev en contenedores detrás de `storymaker.test`, tema de dev).

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mantenimiento / infraestructura local
-**Estado:** TASKS — SPECIFY y PLAN aprobados (2026-09-27); tareas pendientes de OK
+**Estado:** DONE (2026-09-27) — S1–S4 implementados y verificados; falta que el usuario confirme el criterio 3 (dev vuelve solo tras reiniciar la máquina)
 **Extiende:** Spec-325 (separación dev/prod en host único), Spec-520 (prod solo cambia con `make deploy`) y Spec-531 (tema y favicon).
 
 ---
@@ -293,23 +293,23 @@ Cada tarea cierra con su verificación. Al final de cada slice: lint + pytest + 
 
 ### S3 — Proxy y dominios (se confirma antes de empezar)
 
-- [ ] **T3.1 — Backup y edición de `default.conf`**
+- [x] **T3.1 — Backup y edición de `default.conf`**
   - Acceptance: copia `default.conf.bak-2026-09-27-<HHMM>`; los bloques de prod pasan a `server_name storymaker.prd` (el de `:80` sigue siendo `default_server`); bloques nuevos `storymaker.test` `:80`/`:443` → `host.docker.internal:3040` con la misma preparación para SSE.
   - Verify: `diff` contra el backup revisado con el usuario.
   - Files: `/mnt/LLM/apps/reverse_proxy/nginx_config/default.conf` (fuera del repo).
-- [ ] **T3.2 — Certificado y recarga**
+- [x] **T3.2 — Certificado y recarga**
   - Acceptance: `storymaker.prd.pem` y su clave en `certificados_locales`; `nginx -t` OK; `nginx -s reload`.
   - Verify: `docker exec mi_reverse_proxy nginx -t`; los otros dominios (`portainer.test`, `n8n.test`, `cellwar.test`) siguen respondiendo.
   - Files: fuera del repo.
-- [ ] **T3.3 — `/etc/hosts` y verificación**
+- [x] **T3.3 — `/etc/hosts` y verificación**
   - Acceptance: el usuario agrega `storymaker.prd`; `storymaker.test` → dev (`data-env="dev"`), `storymaker.prd` y `http://192.168.0.65` → prod; el SSE de dev por el proxy entrega `snapshot` y heartbeat.
   - Verify: `curl -k` a los tres; `curl -N` a `https://storymaker.test/api/v1/events` durante ≥ 16 s; el usuario valida en el navegador.
   - Files: ninguno del repo.
-- **Checkpoint S3:** criterios 1, 2 y 5.
+- **Checkpoint S3:** criterios 1, 2 y 5. ✅ 2026-09-27: backup `default.conf.bak-2026-09-27-1110`; certificado de `storymaker.prd` generado; `nginx -t` OK (solo los avisos previos de `listen … http2`); `storymaker.test` (80/443) → dev, `storymaker.prd` (80/443) e IP → prod; SSE de dev por el proxy con `snapshot` y `heartbeat`; portainer, n8n y cellwar siguen respondiendo.
 
 ### S4 — Documentación y dinámica
 
-- [ ] **T4.1 — `CLAUDE.md`**: dominios, puertos, `make dev-*`, tema por ambiente, regla de cierre de checkpoint (§2.5).
-- [ ] **T4.2 — Specs vigentes**: nota en Spec-520 y Spec-531 sobre el cambio de dominio; esta spec a DONE con fecha y commit.
-- [ ] **T4.3 — Memoria**: regla de checkpoint con dev actualizado; mapa de dominios y puertos; actualizar el punto de retomo.
-- **Checkpoint S4:** suite completa en verde; PR a `development`; el usuario confirma el criterio 3 tras un reinicio.
+- [x] **T4.1 — `CLAUDE.md`**: dominios, puertos, `make dev-*`, tema por ambiente, regla de cierre de checkpoint (§2.5).
+- [x] **T4.2 — Specs vigentes**: nota en Spec-520 y Spec-531 sobre el cambio de dominio; esta spec a DONE con fecha y commit.
+- [x] **T4.3 — Memoria**: regla de checkpoint con dev actualizado; mapa de dominios y puertos; actualizar el punto de retomo.
+- **Checkpoint S4:** suite completa en verde; PR a `development`; el usuario confirma el criterio 3 tras un reinicio. ✅ 2026-09-27 (salvo el reinicio, que queda a cargo del usuario).
