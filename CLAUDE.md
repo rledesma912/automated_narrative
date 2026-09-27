@@ -66,6 +66,8 @@ Entry points: `src/main.py` (FastAPI) y `src/__main__.py` (CLI vía `python -m s
 
 El autor arma la historia en el **asistente**: Dirección → Taller (preguntas de la IA) → Escaleta (5 actos). Las historias se narran en **5 actos** (estructura en `config/llm_beats_definition.yaml`: nombre, intención, intensidad, reglas de revelación y exposición de la amenaza por acto).
 
+**Máxima del pipeline (2026-09-27):** la Voz recibe un arnés **simple y asertivo**: la escaleta del acto, la memoria y listas cortas de «no repetir»; nunca reglas de continuidad para resolver mientras escribe. Lo conceptual —continuidad, tiempo, lugares, personajes, qué se revela— se resuelve **antes**, en la escaleta: análisis de la IA (Consultor, Planificador, Verificador) y confirmación del autor en la UI (taller y escaleta). Lo que solo aparece en la prosa (repeticiones, clichés, nombres inventados) se **detecta después** y se muestra; **nunca se corrige solo**. Cada campo o chequeo nuevo tiene que prevenir un error que se vio de verdad (para no volver al formulario gigante).
+
 **La IA nunca corre sola:** cada llamada es un comando explícito del usuario (job) y la página se bloquea con un modal hasta que termina.
 
 | Rol | Componente | Cuándo | Responsabilidad |

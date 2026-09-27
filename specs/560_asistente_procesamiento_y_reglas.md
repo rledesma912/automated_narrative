@@ -8,6 +8,14 @@
 
 ---
 
+## PRINCIPIO
+
+**Máxima del pipeline (2026-09-27):** la Voz recibe un arnés **simple y asertivo**: la escaleta del acto, la memoria y listas cortas de «no repetir»; nunca reglas de continuidad para resolver mientras escribe. Lo conceptual —continuidad, tiempo, lugares, personajes, qué se revela— se resuelve **antes**, en la escaleta: análisis de la IA (Consultor, Planificador, Verificador) y confirmación del autor en la UI (taller y escaleta). Lo que solo aparece en la prosa (repeticiones, clichés, nombres inventados) se **detecta después** y se muestra; **nunca se corrige solo**. Cada campo o chequeo nuevo tiene que prevenir un error que se vio de verdad (para no volver al formulario gigante).
+
+Todas las propuestas de esta spec se juzgan contra este principio.
+
+---
+
 ## ASSUMPTIONS
 
 1. Los hallazgos salen de la primera generación con esta versión («La presencia del colectivo», en dev, con `gemma3:12b`).
