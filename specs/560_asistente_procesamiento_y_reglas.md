@@ -106,7 +106,7 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 
 - **A1:** ✅ decidido (2026-09-27) — **campo nuevo** «Cómo llega acá» en los actos 2–5 (columna nueva en `act_outline`; en prod, export/import de las historias) y **sí** se le pasan a la Voz las últimas 2–3 oraciones del acto anterior (con la indicación de no repetirlas).
 - **A2:** pendiente — recomendación: 1 + 2 + 3.
-- **A3:** pendiente — recomendación: los dos chequeos nuevos del Verificador.
+- **A3:** ✅ decidido (2026-09-27) — se suma solo el chequeo de **continuidad** (regla: actos 2–5 sin «Cómo llega acá»; IA: el acto arranca en un lugar o momento que no se explica desde el anterior). El de **función del acto** queda afuera por ahora.
 - **A4:** pendiente — recomendación: mantener, renombrar, explicar y mostrar dónde se revela.
 
 ---
