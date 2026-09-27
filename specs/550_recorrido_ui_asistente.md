@@ -308,6 +308,6 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 | Riesgo | Mitigación |
 |---|---|
 | S2/S3 cambian el aspecto de todo: puede no gustar. | Checkpoint visual en S2 sobre dos pantallas antes de convertir el resto. |
-| H1 fija finales que hoy están escritos sin la casilla. | Se avisa en el pase; en prod hay 3 borradores: se revisan con el usuario antes del deploy. |
+| H1 fija finales que hoy están escritos sin la casilla. | Verificado en prod (solo lectura, 2026-09-27): ninguna de las 3 historias tiene final escrito, así que ninguna cambia. En dev se avisa. |
 | H10 cambia el formato de `warnings`. | Lectura compatible de la lista vieja + test; sin cambio de esquema. |
 | Tests E2E atados a textos o clases viejas. | Se actualizan en el mismo slice; nada de `skip`. |
