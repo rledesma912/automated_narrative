@@ -11,7 +11,7 @@
 ## ASSUMPTIONS
 
 1. El usuario recorre la UI en dev (`storymaker.test`, tema «Latte») y anota lo que quiere cambiar; cada hallazgo entra acá con su decisión (o como pendiente).
-2. Los cambios de tema se hacen con los tokens `--forge-*` de `theme.css` y valen para **los dos temas**: donde el usuario ve violeta (Latte, dev), en prod se ve el acento de «Papel» (rojo óxido). Ver D2.
+2. Los cambios de tema se hacen con los tokens `--forge-*` de `theme.css` y valen para **los dos temas** (confirmado): donde el usuario ve violeta (Latte, dev), en prod se ve el acento de «Papel» (rojo óxido). Ver D2.
 3. Nada de colores fijos en vistas (tests `no-hardcoded-colors` y `palette-contrast`, ambas paletas AA ≥ 4,5:1).
 4. Escala: 1–2 usuarios, escritorio; la UI tiene que seguir usable en una ventana angosta.
 
@@ -174,7 +174,7 @@ Ya existe un modal con el tema, pero solo para borrar historias (`partials/modal
 ## 2. DECISIONES
 
 - **D1 (H1):** pendiente; el usuario lo retoma después. Recomendación: opción 2.
-- **D2 (H2):** «fondo violeta con letras blancas» = **fondo del acento del tema + `on-accent`**. En dev (Latte) es violeta; en prod (Papel) es el rojo óxido. *A confirmar por el usuario:* ¿o quiere violeta también en prod?
+- **D2 (H2):** «fondo violeta con letras blancas» = **fondo del acento del tema + `on-accent`**: violeta en dev (Latte) y rojo óxido en prod (Papel). Confirmado por el usuario (2026-09-27): todos los cambios de UI de esta spec aplican a los dos temas, cada uno con sus colores.
 - **D3 (H3):** ancho abierto 13rem, colapsado a íconos, estado recordado por navegador.
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
 - **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
