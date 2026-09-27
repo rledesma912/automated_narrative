@@ -169,7 +169,7 @@ Ya existe un modal con el tema, pero solo para borrar historias (`partials/modal
 - Nada de `window.confirm`/`alert`/`prompt` en el frontend: un test lo verifica (como `no-hardcoded-colors`).
 - El modal de borrar historia queda como está (ya tiene el tema); unificarlo es opcional.
 
-### H9 — No se distingue qué es chip, qué es botón y qué es nota · **decidido (propuesta visual a validar con capturas)**
+### H9 — No se distingue qué es chip, qué es botón y qué es nota · **decidido (se valida con capturas)**
 
 **Lo que ve el usuario:** chips, botones y notas se confunden: no se sabe qué se puede tocar y qué solo informa.
 
@@ -202,7 +202,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 | Relato | — | «Repite N frases» (con «Ver detalle») | Regenerar, Descargar .md, Copiar |
 | Sala / Debug | ONLINE / OFFLINE | aviso de la sala, panel de error | Cancelar |
 
-**Catálogo en dev (opcional):** una página `/componentes`, solo con `ENV=dev`, que muestra las tres familias y las tarjetas de opción en sus variantes, para validar de un vistazo y como referencia para lo que venga.
+**Validación:** con capturas de las pantallas reales (Taller y Escaleta primero, en los dos temas) antes de convertir el resto. El catálogo `/componentes` se descartó (2026-09-27).
 
 ### H10 — Los avisos ignorados vuelven a aparecer al revisar de nuevo · **decidido**
 
@@ -234,7 +234,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 - **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
 - **D7 (H7):** ✅ decidido (2026-09-27) — criterios del taller con sujeto y «para qué sirve» en lenguaje llano, visibles en todos lados; **textos de las tablas de H7 aprobados** tal como están.
 - **D8 (H8):** confirmaciones con un componente propio (`<dialog>` con el tema) para «Rearmar la escaleta» y todo `hx-confirm` (regenerar acto); sin diálogos nativos del navegador.
-- **D9 (H9):** tres familias con forma propia — botón (redondeado, acento), chip (píldora, sin borde, sin interacción), nota (barra lateral de color, sin caja) — más tarjetas de opción con radio visible; clases compartidas en `globals.css`. Se valida con capturas antes de convertir todas las vistas. Catálogo `/componentes` en dev: opcional.
+- **D9 (H9):** tres familias con forma propia — botón (redondeado, acento), chip (píldora, sin borde, sin interacción), nota (barra lateral de color, sin caja) — más tarjetas de opción con radio visible; clases compartidas en `globals.css`. Se valida con capturas de las pantallas reales antes de convertir todas las vistas; sin catálogo `/componentes`.
 - **D10 (H10):** los avisos ignorados quedan ignorados al volver a revisar (claves estables para los de regla; los de la IA se le pasan al Verificador y se filtran); se pueden volver a mostrar; se olvidan solo al rearmar la escaleta. Sin cambio de esquema (JSON de `act_outline.warnings`).
 
 ---
