@@ -105,7 +105,7 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 ## 2. DECISIONES
 
 - **A1:** ✅ decidido (2026-09-27) — **campo nuevo** «Cómo llega acá» en los actos 2–5 (columna nueva en `act_outline`; en prod, export/import de las historias) y **sí** se le pasan a la Voz las últimas 2–3 oraciones del acto anterior (con la indicación de no repetirlas).
-- **A2:** pendiente — recomendación: 1 + 2 + 3.
+- **A2:** ✅ decidido (2026-09-27) — las tres: pasarle a la Voz lo que marcó el control de repetición, actualizar la memoria del acto regenerado (+1 llamada) y avisar que los actos siguientes se escribieron con la versión vieja.
 - **A3:** ✅ decidido (2026-09-27) — se suma solo el chequeo de **continuidad** (regla: actos 2–5 sin «Cómo llega acá»; IA: el acto arranca en un lugar o momento que no se explica desde el anterior). El de **función del acto** queda afuera por ahora.
 - **A4:** pendiente — recomendación: mantener, renombrar, explicar y mostrar dónde se revela.
 
