@@ -215,14 +215,14 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 - Cada revisión (`OutlineVerifier.verify`) **reescribe** la lista entera del acto: las reglas determinísticas (`rule_warnings`: siembras que nadie retoma, personajes fuera del elenco) vuelven a dar el mismo aviso, y el LLM vuelve a señalar lo mismo, a veces con otras palabras.
 
 **Cambio:**
-1. **Se guarda qué descartó el autor**, por acto. Sin cambio de esquema: la columna JSON `act_outline.warnings` pasa de lista de textos a lista de objetos `{text, key, source: "regla"|"ia", dismissed}` (se siguen leyendo los textos sueltos de hoy). Así no hace falta migrar la DB de prod.
+1. **Se guarda qué descartó el autor**, por acto. Sin cambio de esquema: la columna JSON `act_outline.warnings` pasa de lista de textos a lista de objetos `{text, key, source: "regla"|"ia", dismissed}`. Sin compatibilidad con el formato viejo: los datos son descartables y se recrean las DB.
 2. **Avisos de regla:** cada uno lleva una clave estable por tema (p. ej. `siembra:<texto de la siembra>`, `elenco:<nombre>`). Un aviso descartado no vuelve mientras su clave siga igual. Si un aviso junta varias siembras, se arma solo con las que no se descartaron.
 3. **Avisos de la IA:** el Verificador recibe los que el autor descartó en ese acto («el autor ya descartó estos avisos: no los repitas ni los reformules») —el mismo criterio que usa el Consultor con las preguntas ya hechas—, y además se filtran los que coincidan con uno descartado (texto normalizado).
 4. **Se puede deshacer:** si un acto tiene avisos ignorados, un link discreto «N ignorados» los muestra (atenuados) con «Volver a mostrar».
 5. **Cuándo se olvidan:** al **rearmar la escaleta** (actos nuevos, contenido nuevo) los descartes se borran; editar un acto o volver a revisar **no** los borra.
 6. El máximo de avisos por acto (`MAX_WARNINGS_PER_ACT`) cuenta solo los visibles.
 
-**Tests:** revisar dos veces con un aviso de regla descartado → no vuelve; con uno de la IA descartado → el prompt lo incluye y un aviso igual se filtra; «Volver a mostrar» lo restaura; rearmar la escaleta limpia los descartes; lectura de la lista vieja (solo textos). Cambia el snapshot de prompts (`SNAPSHOT_UPDATE=1`, a propósito).
+**Tests:** revisar dos veces con un aviso de regla descartado → no vuelve; con uno de la IA descartado → el prompt lo incluye y un aviso igual se filtra; «Volver a mostrar» lo restaura; rearmar la escaleta limpia los descartes. Cambia el snapshot de prompts (`SNAPSHOT_UPDATE=1`, a propósito).
 
 ---
 
