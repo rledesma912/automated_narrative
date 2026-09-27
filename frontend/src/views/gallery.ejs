@@ -1,14 +1,15 @@
 <%
 /* User update (Spec-213): Vuelven los estados completos y escala aumentada */
 function renderStatusLabel(s) {
+  /* Spec-550 H9: el estado es un chip. */
   const labels = {
-    draft:      { text: 'Borrador',   cls: '!text-forge-warning !border-forge-warning-border !bg-forge-warning-bg' },
-    processing: { text: 'Generando',  cls: '!text-forge-info !border-forge-info-border !bg-forge-info-bg' },
-    completed:  { text: 'Completada', cls: '!text-forge-success !border-forge-success-border !bg-forge-success-bg' },
-    failed:     { text: 'Error',      cls: '!text-forge-error !border-forge-error-border !bg-forge-error-bg' },
+    draft:      { text: 'Borrador',   cls: 'chip-forge--parcial' },
+    processing: { text: 'Generando',  cls: 'chip-forge--info' },
+    completed:  { text: 'Completada', cls: 'chip-forge--cumple' },
+    failed:     { text: 'Error',      cls: 'chip-forge--falta' },
   };
   const sl = labels[s.status] || labels['draft'];
-  return `<span class="badge-forge ${sl.cls}">${sl.text}</span>`;
+  return `<span class="chip-forge ${sl.cls}">${sl.text}</span>`;
 }
 %>
 <div class="max-w-4xl mx-auto">
@@ -45,52 +46,52 @@ function renderStatusLabel(s) {
             <%- renderStatusLabel(s) %>
           </div>
 
-          <div class="flex items-center gap-6 flex-wrap">
+          <div class="flex items-center gap-3 flex-wrap">
             <a href="/historia/<%= s.id %>"
-               class="btn-forge-outline !px-0 !border-none">
+               class="btn-forge-outline-sm">
               <i data-lucide="file-text" class="w-4 h-4"></i> Vista
             </a>
             <% if (s.status === 'processing') { %>
               <a href="/generar/stream/<%= s.id %>"
-                 class="btn-forge-outline !px-0 !border-none">
+                 class="btn-forge-outline-sm">
                 <i data-lucide="eye" class="w-4 h-4"></i> Ver avance
               </a>
               <span class="text-xs text-forge-muted italic" data-job-progress="<%= s.id %>">Generación en curso...</span>
             <% } else { %>
               <a href="/asistente/<%= s.id %>/direccion"
-                 class="btn-forge-outline !px-0 !border-none">
+                 class="btn-forge-outline-sm">
                 <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
               </a>
 
               <% if (s.status === 'completed') { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Abriendo..."
-                          class="btn-forge-outline !px-0 !border-none bg-transparent cursor-pointer">
+                          class="btn-forge-outline-sm">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
                   </button>
                   <%- include('partials/estimate', { kind: 'full_generation' }) %>
                 </form>
                 <a href="/historia/<%= s.id %>/relatos"
-                   class="btn-forge-outline !px-0 !border-none">
+                   class="btn-forge-outline-sm">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver relato
                 </a>
               <% } else if (s.status === 'failed') { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Iniciando..."
-                          class="btn-forge-outline !px-0 !border-none bg-transparent cursor-pointer">
+                          class="btn-forge-outline-sm">
                     <i data-lucide="zap" class="w-4 h-4"></i> Reintentar
                   </button>
                   <%- include('partials/estimate', { kind: 'full_generation' }) %>
                 </form>
                 <a href="/generar/stream/<%= s.id %>"
-                   class="btn-forge-outline !px-0 !border-none !text-forge-muted hover:!text-forge-accent">
+                   class="btn-forge-outline-sm">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver avance
                 </a>
               <% } else { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Iniciando..."
-                          class="btn-forge-outline !px-0 !border-none bg-transparent cursor-pointer">
-                    <i data-lucide="zap" class="w-4 h-4"></i> Generar
+                          class="btn-forge-outline-sm">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Generar relato
                   </button>
                   <%- include('partials/estimate', { kind: 'full_generation' }) %>
                 </form>
@@ -101,7 +102,7 @@ function renderStatusLabel(s) {
                 hx-get="/modales/confirmar-borrar/<%= s.id %>"
                 hx-target="#modal-slot"
                 hx-swap="innerHTML"
-                class="btn-forge-outline !px-0 !border-none !text-forge-error hover:!text-forge-error/75 bg-transparent cursor-pointer"
+                class="btn-forge-outline-danger-sm"
               >
                 <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar
               </button>

@@ -65,6 +65,11 @@
     @apply active:scale-95;
   }
 
+  /* Secundario destructivo (Eliminar): borde y texto de error. */
+  .btn-forge-outline-danger-sm {
+    @apply btn-forge-outline-sm border-forge-error text-forge-error hover:bg-forge-error/10;
+  }
+
   /* Botón de peligro / destructivo */
   .btn-forge-danger {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md;

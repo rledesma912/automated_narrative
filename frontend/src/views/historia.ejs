@@ -7,11 +7,12 @@
  *     storyteller_config, personajes_full
  *   }
  */
+/* Spec-550 H9: el estado es un chip. */
 const STATUS_LABEL = {
-  draft:      { text: 'Borrador',    cls: 'text-forge-warning' },
-  processing: { text: 'Generando',   cls: 'text-forge-info' },
-  failed:     { text: 'Error',       cls: 'text-forge-error' },
-  completed:  { text: 'Completada',  cls: 'text-forge-success' },
+  draft:      { text: 'Borrador',    cls: 'chip-forge--parcial' },
+  processing: { text: 'Generando',   cls: 'chip-forge--info' },
+  failed:     { text: 'Error',       cls: 'chip-forge--falta' },
+  completed:  { text: 'Completada',  cls: 'chip-forge--cumple' },
 };
 const sl = STATUS_LABEL[story.status] || STATUS_LABEL['draft'];
 
@@ -31,7 +32,7 @@ const personajes = story.personajes_full || [];
         <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' }) %>
       </p>
     </div>
-    <span class="text-[10px] font-bold uppercase tracking-widest shrink-0 <%= sl.cls %>">
+    <span class="chip-forge shrink-0 <%= sl.cls %>">
       <%= sl.text %>
     </span>
   </div>

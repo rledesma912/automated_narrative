@@ -337,14 +337,14 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-st
 - [x] **T2.1** Clases en `globals.css`: botones revisados, `.chip-forge*`, `.nota-forge*`, `.pista-forge`, `.opcion-forge` (radio visible; seleccionada = acento + `on-accent`). — *Verify:* `palette-contrast` suma los pares nuevos (dos paletas). — *Files:* `globals.css`, `palette-contrast.test.ts`.
 - [x] **T2.2** Taller con las clases (semáforo y estado = chips, «Quedan N» = nota, pistas, opciones, botones secundarios). — *Verify:* E2E del asistente. — *Files:* `taller.ejs`.
 - [x] **T2.3** Escaleta con las clases (avisos = nota, «a revisar»/decisiones = chips, escenario y «en escena» = opciones). — *Verify:* E2E del asistente. — *Files:* `escaleta.ejs`.
-- [ ] **T2.4** Capturas Papel y Latte de Taller y Escaleta → **el usuario valida antes de S3**.
+- [x] **T2.4** Capturas Papel y Latte de Taller y Escaleta → **el usuario valida antes de S3**.
 
-### S3 — Gramática en el resto (H9, H2)
-- [ ] **T3.1** Dirección (pistas, tarjetas de efecto y «cómo lo cuenta» = opciones). — *Files:* `direccion.ejs`.
-- [ ] **T3.2** Ficha y galería (estado = chip; botones). — *Files:* `historia.ejs`, `gallery.ejs`, `home.ejs`.
-- [ ] **T3.3** Relato («Repite N frases» = nota + «Ver detalle»), sala (aviso y error = nota), debug (ONLINE/OFFLINE = chip). — *Files:* `relato_panel.ejs`, `streaming-room.ejs`, `streaming_error_panel.ejs`, `debug.ejs`.
-- [ ] **T3.4** Test de vistas: chips y notas no son `<button>` ni llevan `hover:`; sin estilos de estado armados a mano fuera de las clases. — *Files:* test nuevo.
-- [ ] **T3.5** Capturas antes/después en los dos temas.
+### S3 — Gramática en el resto (H9, H2) · ✅ 2026-09-27 (también las acciones de galería y relato como botones; `.btn-forge-outline-danger-sm` para «Eliminar»)
+- [x] **T3.1** Dirección (pistas, tarjetas de efecto y «cómo lo cuenta» = opciones). — *Files:* `direccion.ejs`.
+- [x] **T3.2** Ficha y galería (estado = chip; botones). — *Files:* `historia.ejs`, `gallery.ejs`, `home.ejs`.
+- [x] **T3.3** Relato («Repite N frases» = nota + «Ver detalle»), sala (aviso y error = nota), debug (ONLINE/OFFLINE = chip). — *Files:* `relato_panel.ejs`, `streaming-room.ejs`, `streaming_error_panel.ejs`, `debug.ejs`.
+- [x] **T3.4** Test de vistas: chips y notas no son `<button>` ni llevan `hover:`; sin estilos de estado armados a mano fuera de las clases. — *Files:* test nuevo.
+- [x] **T3.5** Capturas antes/después en los dos temas.
 
 ### S4 — Menú lateral (H3)
 - [ ] **T4.1** `--sidebar-width: 13rem` + `--sidebar-width-collapsed`; menú y pie leen el token (pie: `left-[var(--sidebar-width)]`). — *Files:* `theme.css`, `sidebar.ejs`, `footer.ejs`.
