@@ -1,9 +1,9 @@
-"""DirectorUseCase (Spec-530 S7): un solo camino, el relato sale de la escaleta."""
+"""GenerateStoryUseCase (Spec-530 S7): un solo camino, el relato sale de la escaleta."""
 
 from unittest.mock import AsyncMock
 
 from src.application.services.prompt_builder import PromptBuilder
-from src.application.use_cases.director_use_case import DirectorUseCase
+from src.application.use_cases.generate_story_use_case import GenerateStoryUseCase
 from src.domain.jobs import JobStage
 from src.domain.models import ActOutline, Story
 from src.infrastructure.adapters import MockLLMAdapter
@@ -33,7 +33,7 @@ def _story(outline: bool) -> Story:
     )
 
 
-async def _run(director: DirectorUseCase, story: Story) -> tuple[list, list]:
+async def _run(director: GenerateStoryUseCase, story: Story) -> tuple[list, list]:
     stages: list = []
     beats = [
         b
@@ -46,7 +46,7 @@ async def _run(director: DirectorUseCase, story: Story) -> tuple[list, list]:
 
 async def test_con_escaleta_solo_voz_y_memoria():
     llm = RecordingMock()
-    beats, stages = await _run(DirectorUseCase(llm, PromptBuilder()), _story(outline=True))
+    beats, stages = await _run(GenerateStoryUseCase(llm, PromptBuilder()), _story(outline=True))
 
     assert [b.number for b in beats] == [1, 2, 3, 4, 5]
     assert llm.roles == ["voz", "journal"] * 5
@@ -58,7 +58,7 @@ async def test_sin_escaleta_primero_la_arma_y_la_guarda():
     repo = AsyncMock()
     story = _story(outline=False)
 
-    beats, stages = await _run(DirectorUseCase(llm, PromptBuilder(), story_repo=repo), story)
+    beats, stages = await _run(GenerateStoryUseCase(llm, PromptBuilder(), story_repo=repo), story)
 
     assert llm.roles[:2] == ["planificador", "verificador"]
     assert llm.roles[2:] == ["voz", "journal"] * 5

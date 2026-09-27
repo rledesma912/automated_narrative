@@ -8,7 +8,7 @@ import pytest
 from src.application.use_cases.get_story import GetStoryByIdUseCase
 from src.application.use_cases.list_beats import ListBeatsUseCase
 from src.application.use_cases.list_stories import ListStoriesUseCase
-from src.domain.models import Beat, Story
+from src.domain.models import ActText, Story
 
 
 def _story(title: str = "T") -> Story:
@@ -17,8 +17,8 @@ def _story(title: str = "T") -> Story:
     )
 
 
-def _beat(number: int = 1, summary: str = "evento") -> Beat:
-    return Beat(number=number, generated_act=summary, status="pending")
+def _beat(number: int = 1, summary: str = "evento") -> ActText:
+    return ActText(number=number, generated_act=summary, status="pending")
 
 
 class TestListStoriesUseCase:

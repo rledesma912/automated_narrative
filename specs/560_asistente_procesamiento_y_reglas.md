@@ -183,7 +183,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - `import-yaml`: la sinopsis por acto de los YAML viejos va a la escaleta como primer hecho (D2).
 - **Verificación:** snapshot de prompts sin cambios; round-trip de `input_stories/`; E2E de la sala en modo lectura.
 
-### S2 — Spec-570: nombres
+### S2 — Spec-570: nombres · ✅ 2026-09-27 (`ActText`, `GenerateStoryUseCase` —y `container.generate_story_use_case`—; `BeatType` ya había salido en S1; la tabla sigue llamándose `macro_beat`)
 - `MacroBeat` → `ActText`, `DirectorUseCase` → `GenerateStoryUseCase`, `BeatType` → `ActType`; fuera el alias `Beat`. API (`/beats`), evento `beat_start` y `applies_to_beat` sin cambios (D3).
 - **Verificación:** refactor mecánico; suite en verde; `grep` sin los nombres viejos en `src/`.
 
@@ -243,8 +243,8 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [x] **T1.3** `import-yaml`: sinopsis por acto → escaleta (primer hecho). — *Verify:* pytest del import de `input_stories/` (escaleta con 5 actos y su sinopsis). — *Files:* `create_story.py`, tests.
 
 ### S2 — Spec-570: nombres
-- [ ] **T2.1** `MacroBeat` → `ActText`, `BeatType` → `ActType`, fuera el alias `Beat`. — *Verify:* `grep` en `src/` sin los nombres viejos; suite.
-- [ ] **T2.2** `DirectorUseCase` → `GenerateStoryUseCase` (archivo, contenedor DI, routers, CLI, tests). — *Verify:* suite.
+- [x] **T2.1** `MacroBeat` → `ActText`, `BeatType` → `ActType`, fuera el alias `Beat`. — *Verify:* `grep` en `src/` sin los nombres viejos; suite.
+- [x] **T2.2** `DirectorUseCase` → `GenerateStoryUseCase` (archivo, contenedor DI, routers, CLI, tests). — *Verify:* suite.
 
 ### S3 — A1 + A3: puente y continuidad
 - [ ] **T3.1** Esquema `act_outline.bridge`; `ActOutline.bridge`; `ActForm`; export/import YAML. — *Files:* `connection.py`, `models.py`, `story_repository.py`, schemas, exporter/loader.

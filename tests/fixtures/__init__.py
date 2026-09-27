@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from src.domain.models import Beat, NarrativeJournal, Story, StoryStatus
+from src.domain.models import ActText, NarrativeJournal, Story, StoryStatus
 
 
 def create_sample_story() -> Story:
@@ -19,9 +19,9 @@ def create_sample_story() -> Story:
     )
 
 
-def create_sample_beat(number: int = 1, summary: str = "Test beat") -> Beat:
+def create_sample_beat(number: int = 1, summary: str = "Test beat") -> ActText:
     """Create a sample beat for testing."""
-    return Beat(
+    return ActText(
         number=number,
         summary=summary,
         status="pending",

@@ -10,7 +10,7 @@ import logging
 from collections.abc import AsyncGenerator
 
 from src.application.services.observability_service import observability
-from src.application.use_cases.director_use_case import DirectorUseCase
+from src.application.use_cases.generate_story_use_case import GenerateStoryUseCase
 from src.domain.jobs import JobStage
 from src.domain.models import Story, StoryStatus
 from src.domain.streaming import StreamEvent, StreamEventType
@@ -48,7 +48,7 @@ def stage_event(stage: JobStage, beat: int | None, total_beats: int) -> StreamEv
 
 
 async def stream_story(
-    director: DirectorUseCase,
+    director: GenerateStoryUseCase,
     story: Story,
     story_repo=None,
     beat_repo=None,

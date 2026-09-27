@@ -10,9 +10,9 @@ from src.application.use_cases.regenerate_beat_voz_use_case import RegenerateBea
 from src.domain.exceptions import StoryNotFoundError
 from src.domain.models import (
     ActOutline,
+    ActText,
     BeatStatus,
     GeneratedNarrative,
-    MacroBeat,
     NarrativeJournal,
     Story,
 )
@@ -20,15 +20,15 @@ from src.domain.models import (
 _STORY_ID = uuid.uuid4()
 
 
-def _make_beat(number: int, content: str = "prosa original") -> MacroBeat:
-    return MacroBeat(
+def _make_beat(number: int, content: str = "prosa original") -> ActText:
+    return ActText(
         number=number,
         generated_act=content,
         status=BeatStatus.COMPLETED,
     )
 
 
-def _make_story(beats: list[MacroBeat], outline: bool = True) -> Story:
+def _make_story(beats: list[ActText], outline: bool = True) -> Story:
     return Story(
         id=_STORY_ID,
         title="Historia de prueba",

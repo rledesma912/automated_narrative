@@ -13,7 +13,7 @@ from src.application.use_cases.generate_narratives_use_case import GenerateNarra
 from src.application.use_cases.voz_use_case import VozUseCase
 from src.domain.exceptions import StoryNotFoundError
 from src.domain.interfaces import LLMProvider
-from src.domain.models import GeneratedNarrative, MacroBeat
+from src.domain.models import ActText, GeneratedNarrative
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class RegenerateBeatVozUseCase:
 
     async def execute(
         self, story_id: UUID, beat_number: int, narrative_id: UUID
-    ) -> tuple[MacroBeat, GeneratedNarrative]:
+    ) -> tuple[ActText, GeneratedNarrative]:
         story = await self.story_repo.get_by_id(story_id)
         if not story:
             raise StoryNotFoundError(f"Historia no encontrada: {story_id}")

@@ -1,13 +1,10 @@
-"""SQL MacroBeat Repository."""
+"""SQL ActText Repository."""
 
 from datetime import datetime
 from uuid import UUID
 
-from src.domain.models import MacroBeat
+from src.domain.models import ActText
 from src.infrastructure.database.connection import connection
-
-# Alias público para código existente que importa Beat
-Beat = MacroBeat
 
 
 class SQLBeatRepository:
@@ -18,7 +15,7 @@ class SQLBeatRepository:
     `rule.applies_to_beat` al generar.
     """
 
-    async def save(self, beat: MacroBeat, story_id: UUID) -> MacroBeat:
+    async def save(self, beat: ActText, story_id: UUID) -> ActText:
         """Persiste un macro_beat (upsert: actualiza o inserta)."""
         async with connection() as conn:
             cursor = await conn.execute(
@@ -59,7 +56,7 @@ class SQLBeatRepository:
             await conn.commit()
         return beat
 
-    async def get_by_story(self, story_id: UUID) -> list[MacroBeat]:
+    async def get_by_story(self, story_id: UUID) -> list[ActText]:
         """Retorna todos los macro_beats de una historia."""
         async with connection() as conn:
             cursor = await conn.execute(
@@ -69,7 +66,7 @@ class SQLBeatRepository:
             rows = await cursor.fetchall()
         return [self._row_to_beat(row) for row in rows]
 
-    async def get_by_number(self, story_id: UUID, number: int) -> MacroBeat | None:
+    async def get_by_number(self, story_id: UUID, number: int) -> ActText | None:
         """Retorna un macro_beat específico."""
         async with connection() as conn:
             cursor = await conn.execute(
@@ -82,15 +79,15 @@ class SQLBeatRepository:
             return None
         return self._row_to_beat(row)
 
-    async def update(self, beat: MacroBeat, story_id: UUID) -> MacroBeat:
+    async def update(self, beat: ActText, story_id: UUID) -> ActText:
         """Actualiza un macro_beat existente."""
         return await self.save(beat, story_id)
 
-    def _row_to_beat(self, row) -> MacroBeat:
-        """Convierte una fila de macro_beat a la entidad MacroBeat."""
+    def _row_to_beat(self, row) -> ActText:
+        """Convierte una fila de macro_beat a la entidad ActText."""
         raw_created_at = row["created_at"] if "created_at" in row.keys() else None
         created_at = datetime.fromisoformat(raw_created_at) if raw_created_at else None
-        return MacroBeat(
+        return ActText(
             number=row["number"],
             generated_act=row["generated_act"] or "",
             status=row["status"],

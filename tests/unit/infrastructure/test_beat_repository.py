@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 
 from src.config import settings
-from src.domain.models import Beat, Story
+from src.domain.models import ActText, Story
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 
@@ -57,7 +57,7 @@ class TestSqlBeatRepository:
     @pytest.mark.asyncio
     async def test_save_beat(self, repo, saved_story_id):
         """Test saving a beat to database."""
-        beat = Beat(number=1, generated_act="Beat summary")
+        beat = ActText(number=1, generated_act="Beat summary")
 
         result = await repo.save(beat, saved_story_id)
 
@@ -67,8 +67,8 @@ class TestSqlBeatRepository:
     @pytest.mark.asyncio
     async def test_get_by_story(self, repo, saved_story_id):
         """Test retrieving beats by story ID."""
-        beat1 = Beat(number=1, generated_act="First beat")
-        beat2 = Beat(number=2, generated_act="Second beat")
+        beat1 = ActText(number=1, generated_act="First beat")
+        beat2 = ActText(number=2, generated_act="Second beat")
 
         await repo.save(beat1, saved_story_id)
         await repo.save(beat2, saved_story_id)
@@ -82,7 +82,7 @@ class TestSqlBeatRepository:
     @pytest.mark.asyncio
     async def test_get_by_number(self, repo, saved_story_id):
         """Test retrieving a specific beat by number."""
-        beat = Beat(number=3, generated_act="Third beat")
+        beat = ActText(number=3, generated_act="Third beat")
 
         await repo.save(beat, saved_story_id)
         result = await repo.get_by_number(saved_story_id, 3)
@@ -101,7 +101,7 @@ class TestSqlBeatRepository:
     @pytest.mark.asyncio
     async def test_update_beat(self, repo, saved_story_id):
         """Test updating a beat."""
-        beat = Beat(number=1, generated_act="Original", status="pending")
+        beat = ActText(number=1, generated_act="Original", status="pending")
 
         await repo.save(beat, saved_story_id)
 

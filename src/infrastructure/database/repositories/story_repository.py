@@ -639,7 +639,7 @@ class SQLStoryRepository:
 
     async def _load_beats(self, conn, story_id: str) -> list:
         """Carga la prosa de cada acto (macro_beat, Spec-570: solo la salida)."""
-        from src.domain.models import BeatStatus, MacroBeat
+        from src.domain.models import ActText, BeatStatus
 
         cursor = await conn.execute(
             "SELECT number, status, generated_act FROM macro_beat "
@@ -647,7 +647,7 @@ class SQLStoryRepository:
             (story_id,),
         )
         return [
-            MacroBeat(
+            ActText(
                 number=b["number"],
                 status=BeatStatus(b["status"]) if b["status"] else BeatStatus.PENDING,
                 generated_act=b["generated_act"] or "",

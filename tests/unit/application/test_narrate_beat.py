@@ -7,12 +7,12 @@ import pytest
 from src.application.use_cases import VozUseCase
 from src.domain.exceptions import LLMResponseError
 from src.domain.interfaces import LLMResponse
-from src.domain.models import BeatStatus, MacroBeat
+from src.domain.models import ActText, BeatStatus
 from src.infrastructure.adapters import MockLLMAdapter
 
 
-def _beat() -> MacroBeat:
-    return MacroBeat(number=1, generated_act="- Hecho", status="pending")
+def _beat() -> ActText:
+    return ActText(number=1, generated_act="- Hecho", status="pending")
 
 
 async def test_guarda_prosa_y_prompts_en_el_acto():

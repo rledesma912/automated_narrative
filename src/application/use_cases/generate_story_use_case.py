@@ -1,4 +1,4 @@
-"""DirectorUseCase - orquestador de la generación de un relato (Spec-530 S7).
+"""GenerateStoryUseCase - orquestador de la generación de un relato (Spec-530 S7).
 
 Un solo camino: el relato sale de la escaleta. Si la historia no la tiene (p. ej.
 entró por `import-yaml`), primero se arma (Planificador + Verificador) y se guarda;
@@ -14,13 +14,13 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases.voz_use_case import VozUseCase
 from src.domain.interfaces import LLMProvider
 from src.domain.jobs import JobStage
-from src.domain.models import MacroBeat, NarrativeJournal, Story
+from src.domain.models import ActText, NarrativeJournal, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
 
 
-class DirectorUseCase:
+class GenerateStoryUseCase:
     def __init__(
         self,
         llm: LLMProvider,
@@ -48,7 +48,7 @@ class DirectorUseCase:
         on_plan_ready: Callable[[int, float], None] | None = None,
         on_step_start: Callable[[str], None] | None = None,
         on_stage: Callable[[JobStage, int | None], None] | None = None,
-    ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
+    ) -> AsyncIterator[tuple[ActText, NarrativeJournal, float]]:
         """Arma la escaleta si falta y narra acto por acto.
 
         Yields (acto narrado, memoria actualizada, segundos de la Voz) por acto.
@@ -68,7 +68,7 @@ class DirectorUseCase:
             on_plan_ready(len(acts), 0.0)
         journal = initial_journal
         for act in acts:
-            macro_beat = MacroBeat(number=act.number)
+            macro_beat = ActText(number=act.number)
             system_prompt, user_prompt = narrator.voice_prompts(story, act, journal)
 
             if on_stage:

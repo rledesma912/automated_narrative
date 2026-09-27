@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
-from src.domain.models import BeatStatus, GeneratedNarrative, MacroBeat, Story, StoryStatus
+from src.domain.models import ActText, BeatStatus, GeneratedNarrative, Story, StoryStatus
 
 
-def _make_story(beats: list[MacroBeat]) -> Story:
+def _make_story(beats: list[ActText]) -> Story:
     return Story(
         title="La Casa Vacía",
         protagonista="Ana",
@@ -21,8 +21,8 @@ def _make_story(beats: list[MacroBeat]) -> Story:
     )
 
 
-def _make_beat(number: int, content: str) -> MacroBeat:
-    return MacroBeat(
+def _make_beat(number: int, content: str) -> ActText:
+    return ActText(
         number=number,
         generated_act=content,
         status=BeatStatus.COMPLETED,

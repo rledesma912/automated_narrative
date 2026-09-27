@@ -47,7 +47,7 @@ make deploy        # pase a prod (Spec-520): solo desde main limpio y al día, s
 Clean Architecture con cuatro capas + cli + core:
 
 ```
-domain/          → Entities (Story, Direction, WorkshopItem, ActOutline, MacroBeat…),
+domain/          → Entities (Story, Direction, WorkshopItem, ActOutline (entrada del acto), ActText (salida: su prosa)…),
                    Interfaces (LLMProvider), DTOs streaming, exceptions
 application/     → Use Cases (Director, Voz, RegenerateBeatVoz…) + Services
                    (authoring/: Consultor, Planificador, Verificador, OutlineNarrator;
@@ -99,11 +99,11 @@ Asistente (/nuevo → /asistente/{id}/direccion|taller|escaleta)
   PUT direction · PATCH workshop/{criterio} · PUT outline/{n}   (autoguardado)
   jobs consult | plan_outline | verify_outline                   (comandos explícitos)
        ↓
-  POST /stories/{id}/jobs (full_generation) → DirectorUseCase.execute_full():
+  POST /stories/{id}/jobs (full_generation) → GenerateStoryUseCase.execute_full():
     [0] sin escaleta completa → Planificador + Verificador → story_repo.save_outline()
     Para cada acto 1..5:
       OutlineNarrator.voice_prompts()   → prompts (sin LLM)
-      VozUseCase.narrate_with_prompts() → MacroBeat.generated_act (1 LLM)
+      VozUseCase.narrate_with_prompts() → ActText.generated_act (1 LLM)
       OutlineNarrator.remember()        → narrative_journal (1 LLM)
        ↓
   consolidación → GenerateNarrativesUseCase.consolidate_and_save()

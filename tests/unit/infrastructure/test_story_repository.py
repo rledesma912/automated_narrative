@@ -6,7 +6,7 @@ import tempfile
 import pytest
 
 from src.config import settings
-from src.domain.models import BeatStatus, MacroBeat, Story, StoryStatus
+from src.domain.models import ActText, BeatStatus, Story, StoryStatus
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 
@@ -141,7 +141,7 @@ class TestSqlStoryRepository:
         await repo.save(story)
 
         beat_repo = SQLBeatRepository()
-        beat = MacroBeat(
+        beat = ActText(
             number=1,
             generated_act="Prosa ya narrada del beat 1.",
             status=BeatStatus.COMPLETED,

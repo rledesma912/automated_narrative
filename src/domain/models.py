@@ -113,7 +113,7 @@ class Scenario(BaseModel):
     description: str = ""
 
 
-class MacroBeat(BaseModel):
+class ActText(BaseModel):
     """La SALIDA de un acto: su prosa (Spec-570). La entrada es `ActOutline`.
 
     Los prompts quedan para el debug. Lo que era de la entrada (resumen, sinopsis,
@@ -138,10 +138,6 @@ class MacroBeat(BaseModel):
     def has_content(self) -> bool:
         """True si el beat tiene contenido (independientemente del status)."""
         return bool(self.generated_act)
-
-
-# Alias de compatibilidad — se mantiene mientras los tests y repos migran a MacroBeat
-Beat = MacroBeat
 
 
 class NarrativeJournal(BaseModel):
@@ -268,7 +264,7 @@ def normalize_key(text: str) -> str:
 class ActOutline(BaseModel):
     """Un acto de la escaleta (Spec-530 §3.2): lo edita el usuario y lo propone la IA.
 
-    Es la entrada del acto, separada de `MacroBeat` (que es la salida generada).
+    Es la entrada del acto, separada de `ActText` (que es la salida generada).
     `on_stage` y `scenario` van por nombre: personajes y escenarios se reescriben
     con ids nuevos al editar la historia.
     """
@@ -317,7 +313,7 @@ class Story(BaseModel):
     genero: str = ""
     subgenero: str = ""
     reglas: list[str] = []
-    beats: list[Beat] = []
+    beats: list[ActText] = []
     scenarios: list[Scenario] = []
     entities: list[Entity] = []
     journal: NarrativeJournal = Field(default_factory=NarrativeJournal)
@@ -361,11 +357,11 @@ class Story(BaseModel):
         """Número de beats de la historia."""
         return len(self.beats)
 
-    def get_pending_beats(self) -> list[Beat]:
+    def get_pending_beats(self) -> list[ActText]:
         """Retorna los beats que aún no fueron narrados."""
         return [b for b in self.beats if b.is_pending()]
 
-    def get_completed_beats(self) -> list[Beat]:
+    def get_completed_beats(self) -> list[ActText]:
         """Retorna los beats completamente narrados."""
         return [b for b in self.beats if b.is_narrated()]
 
@@ -389,14 +385,14 @@ class Story(BaseModel):
             ]
         return list(self.reglas)
 
-    def get_beat_by_number(self, n: int) -> Beat | None:
+    def get_beat_by_number(self, n: int) -> ActText | None:
         """Retorna el beat con ese número, o None si no existe."""
         return next((b for b in self.beats if b.number == n), None)
 
-    def get_first_beat(self) -> Beat | None:
+    def get_first_beat(self) -> ActText | None:
         """Retorna el primer beat (menor número), o None si no hay beats."""
         return min(self.beats, key=lambda b: b.number) if self.beats else None
 
-    def get_last_beat(self) -> Beat | None:
+    def get_last_beat(self) -> ActText | None:
         """Retorna el último beat (mayor número), o None si no hay beats."""
         return max(self.beats, key=lambda b: b.number) if self.beats else None
