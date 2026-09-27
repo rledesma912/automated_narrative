@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mantenimiento / infraestructura local
-**Estado:** PLAN — SPECIFY aprobado (2026-09-27); plan pendiente de OK
+**Estado:** TASKS — SPECIFY y PLAN aprobados (2026-09-27); tareas pendientes de OK
 **Extiende:** Spec-325 (separación dev/prod en host único), Spec-520 (prod solo cambia con `make deploy`) y Spec-531 (tema y favicon).
 
 ---
@@ -240,3 +240,76 @@ Cuatro slices, en orden de riesgo creciente para prod: primero lo que solo toca 
 | Una recarga de uvicorn interrumpe un job de dev. | Esperado y documentado (§2.2); solo afecta a dev. |
 | Archivos de `data/dev/` a nombre de root. | `user: ${DEV_UID}:${DEV_GID}`; se verifica con `ls -l` en S2. |
 | El commit de la marca queda viejo tras un `git commit` sin cambios en `src/`. | Se lee en cada request, no solo al arrancar: leer dos archivos chicos de `.git/` es despreciable. |
+
+---
+
+## 7. TASKS
+
+Cada tarea cierra con su verificación. Al final de cada slice: lint + pytest + Vitest + Playwright en verde (política vigente) y resumen al usuario de qué mirar.
+
+### S1 — Diferenciación visual
+
+- [ ] **T1.1 — Ambiente y versión de git**
+  - Acceptance: `getEnvironment()` devuelve `{ env, isDev, branch, commit }`; `ENV` ausente o distinto de `dev` → prod; lee `.git/HEAD` → ref suelto o por rama → `refs/heads/…` o `packed-refs`; sin `.git` → `branch: null`, sin excepción. Middleware que lo deja en `res.locals.environment` en cada request.
+  - Verify: `tests/unit/utils/environment.test.ts` (repo git falso en un directorio temporal: rama, HEAD suelto, packed-refs, sin `.git`, ENV ausente/dev/prod).
+  - Files: `frontend/src/utils/environment.ts`, `frontend/src/app.ts`, test nuevo.
+- [ ] **T1.2 — Paleta Latte**
+  - Acceptance: bloque `:root[data-env="dev"]` en `theme.css` con los 20 tokens `--forge-*` (valores de §2.3; `-bg`/`-border`/`overlay` derivados); `palette-contrast` verifica **Papel y Latte** con los mismos pares.
+  - Verify: `npx vitest run tests/unit/css-architecture`.
+  - Files: `frontend/src/styles/theme.css`, `palette-contrast.test.ts`.
+- [ ] **T1.3 — Layout, barra lateral y favicon**
+  - Acceptance: en dev, `<html data-env="dev">`, `<title>[DEV] NarrativeForge — …`, favicon `favicon-dev.svg` (la vela con colores de Latte), `theme-color` `#eff1f5`, etiqueta DEV en la marca y pie `DEV · <rama> · <commit>`; en prod, HTML idéntico al de hoy (sin `data-env="dev"`, sin `[DEV]`, pie `v0.3.0 — Slice 3`).
+  - Verify: `layout.view.test.ts` ampliado con los dos ambientes; `no-hardcoded-colors` con la excepción del `theme-color` de dev.
+  - Files: `partials/layout.ejs`, `partials/sidebar.ejs`, `public/favicon-dev.svg`, `layout.view.test.ts`, `no-hardcoded-colors.test.ts`.
+- [ ] **T1.4 — Capturas de los dos temas**
+  - Acceptance: `visual-snapshots` acepta `ENV=dev` para el frontend del harness y guarda en `capturas/540/<tema>/`.
+  - Verify: `CAPTURAS=papel npx playwright test visual-snapshots` y lo mismo con Latte; revisión visual de las capturas.
+  - Files: `playwright.config.ts`, `tests/e2e/visual-snapshots.spec.ts`.
+- **Checkpoint S1:** suite completa en verde; capturas Papel vs. Latte para el usuario.
+
+### S2 — Contenedores de dev
+
+- [ ] **T2.1 — Imágenes de dev**
+  - Acceptance: `Dockerfile.dev` y `frontend/Dockerfile.dev` construyen con dependencias de dev; la API arranca uvicorn `--reload` en 8040 vigilando `src/` y `config/` (`*.yaml`); la UI corre `npm run dev`.
+  - Verify: `docker build -f Dockerfile.dev .` y `docker build -f frontend/Dockerfile.dev frontend` sin errores.
+  - Files: `Dockerfile.dev`, `frontend/Dockerfile.dev`, `.dockerignore` si hace falta.
+- [ ] **T2.2 — Compose de dev**
+  - Acceptance: `docker-compose.dev.yml` con `name: narrative-dev`, servicios `api` (`narrative-api-dev`, 8040) y `ui` (`narrative-ui-dev`, 3040), montajes de §2.2, `.git` en solo lectura, `user: ${DEV_UID}:${DEV_GID}`, `HOME=/tmp`, `ENV=dev`, `CORE_API_URL=http://api:8040`, `OLLAMA_HOST`, `restart: unless-stopped`; `api` con healthcheck y `ui` que depende de él.
+  - Verify: `docker compose -f docker-compose.dev.yml config` válido; `docker compose ls` muestra `narrative-dev` separado del proyecto de prod.
+  - Files: `docker-compose.dev.yml`.
+- [ ] **T2.3 — Script y atajos**
+  - Acceptance: `scripts/bash/dev_env.sh up|down|rebuild|status|logs|db`; `status` muestra rama, commit, estado de los contenedores, `/health` de la API y respuesta de la UI, y sale ≠ 0 si algo falla; `db` baja la API, recrea la base con `init_db()` en el contenedor, verifica catálogos > 0 y `story` = 0, y la levanta; `make dev-up|dev-down|dev-rebuild|dev-status|dev-logs|dev-db`, y `make db` como alias de `dev-db`.
+  - Verify: `make dev-up && make dev-status`; `make dev-db` (imprime los conteos); `ls -l data/dev` a nombre del usuario.
+  - Files: `scripts/bash/dev_env.sh`, `Makefile`.
+- [ ] **T2.4 — Puertos de dev 8040/3040 en todo el repo**
+  - Acceptance: ningún `8020`/`3010` de dev queda en `.env`, `frontend/.env`, `Makefile`, `scripts/bash/run_dev.sh`, `pyproject.toml`, `config/.env.sample`, README, `docs/frontend_architecture_map.md` ni en los comentarios de tests (los E2E siguen en 8021/3021).
+  - Verify: `grep -rn "8020\|3010"` fuera de `specs/` sin resultados de dev.
+  - Files: los listados (cambios de una línea).
+- [ ] **T2.5 — Recarga en vivo**
+  - Acceptance: con dev levantado, un cambio en un `.ejs`, un `.ts` del server, un `.py` y un `.yaml` de `config/` se ve en :3040/:8040 sin comandos; `docker restart narrative-ui-dev` recupera sola.
+  - Verify: prueba manual con un cambio temporal en cada tipo, que se revierte al terminar.
+  - Files: ninguno (verificación).
+- **Checkpoint S2:** suite completa en verde; `make deploy-check` pasa; contenedores de prod sin cambios (`docker ps`, misma imagen y uptime); el usuario puede entrar a `http://localhost:3040`.
+
+### S3 — Proxy y dominios (se confirma antes de empezar)
+
+- [ ] **T3.1 — Backup y edición de `default.conf`**
+  - Acceptance: copia `default.conf.bak-2026-09-27-<HHMM>`; los bloques de prod pasan a `server_name storymaker.prd` (el de `:80` sigue siendo `default_server`); bloques nuevos `storymaker.test` `:80`/`:443` → `host.docker.internal:3040` con la misma preparación para SSE.
+  - Verify: `diff` contra el backup revisado con el usuario.
+  - Files: `/mnt/LLM/apps/reverse_proxy/nginx_config/default.conf` (fuera del repo).
+- [ ] **T3.2 — Certificado y recarga**
+  - Acceptance: `storymaker.prd.pem` y su clave en `certificados_locales`; `nginx -t` OK; `nginx -s reload`.
+  - Verify: `docker exec mi_reverse_proxy nginx -t`; los otros dominios (`portainer.test`, `n8n.test`, `cellwar.test`) siguen respondiendo.
+  - Files: fuera del repo.
+- [ ] **T3.3 — `/etc/hosts` y verificación**
+  - Acceptance: el usuario agrega `storymaker.prd`; `storymaker.test` → dev (`data-env="dev"`), `storymaker.prd` y `http://192.168.0.65` → prod; el SSE de dev por el proxy entrega `snapshot` y heartbeat.
+  - Verify: `curl -k` a los tres; `curl -N` a `https://storymaker.test/api/v1/events` durante ≥ 16 s; el usuario valida en el navegador.
+  - Files: ninguno del repo.
+- **Checkpoint S3:** criterios 1, 2 y 5.
+
+### S4 — Documentación y dinámica
+
+- [ ] **T4.1 — `CLAUDE.md`**: dominios, puertos, `make dev-*`, tema por ambiente, regla de cierre de checkpoint (§2.5).
+- [ ] **T4.2 — Specs vigentes**: nota en Spec-520 y Spec-531 sobre el cambio de dominio; esta spec a DONE con fecha y commit.
+- [ ] **T4.3 — Memoria**: regla de checkpoint con dev actualizado; mapa de dominios y puertos; actualizar el punto de retomo.
+- **Checkpoint S4:** suite completa en verde; PR a `development`; el usuario confirma el criterio 3 tras un reinicio.
