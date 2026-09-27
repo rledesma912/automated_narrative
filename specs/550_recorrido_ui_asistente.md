@@ -64,6 +64,30 @@ Juntar en un solo lugar las mejoras de UI que surgen del recorrido del usuario, 
 
 **Hallazgo relacionado:** el pie de actividad está fijo con `left-56` (14rem) mientras el menú mide 16rem: se superpone 2rem sobre el menú y tapa su pie («DEV · rama · commit»). Pasa a usar `left-[var(--sidebar-width)]`, y así también acompaña al colapsar.
 
+### H4 — Ficha de la historia: «Regenerar» y «Generar Relato» juntos · **decidido**
+
+**Lo que ve el usuario:** en la ficha (`/historia/{id}`) de una historia con relato aparecen «Regenerar» y «Generar Relato», que parecen hacer lo mismo. Con un relato creado, solo debe verse **«Regenerar»**.
+
+**Lo que hace hoy cada uno** (`historia.ejs:136–151`, solo con `status = completed`):
+- **Regenerar** → job `full_generation`: la IA escribe los 5 actos de nuevo y guarda una **variante nueva** del relato (Spec-460).
+- **Generar Relato** → `POST /historia/{id}/generar-relato` → `generate-narrative` del Core (`generate_from_existing_beats`): **no llama a la IA**; junta los actos ya escritos en otra variante titulada «Relato <fecha>». Como cada generación ya guarda su variante, el resultado es un **duplicado** de la última. Es un resto de antes de la Spec-460.
+
+Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario equivale a **sacarlo de la ficha**.
+
+**Cambio:**
+- Ficha: botones según el estado, excluyentes:
+
+  | Estado | Botón principal |
+  |---|---|
+  | sin relato (`draft`, `pending`) | **Generar relato** |
+  | falló (`failed`) | **Reintentar** |
+  | con relato (`completed`) | **Regenerar** (+ «Ver Relatos» y «Editar», como hoy) |
+  | generando (`processing`) | «Generando…» + «Ver progreso» (como hoy) |
+
+- Se quitan del frontend el botón, la ruta `POST /historia/:id/generar-relato` y su handler (`generateNarrativeHandler`).
+- El endpoint del Core `generate-narrative` **se queda**: lo usa el E2E de relatos para sembrar variantes (`relatos.spec.ts:18`).
+- Texto: hoy el botón de una historia sin relato dice «Generar historia»; pasa a **«Generar relato»**, igual que en la Escaleta («Generar relato»).
+
 ---
 
 ## 2. DECISIONES
@@ -71,6 +95,7 @@ Juntar en un solo lugar las mejoras de UI que surgen del recorrido del usuario, 
 - **D1 (H1):** pendiente; el usuario lo retoma después. Recomendación: opción 2.
 - **D2 (H2):** «fondo violeta con letras blancas» = **fondo del acento del tema + `on-accent`**. En dev (Latte) es violeta; en prod (Papel) es el rojo óxido. *A confirmar por el usuario:* ¿o quiere violeta también en prod?
 - **D3 (H3):** ancho abierto 13rem, colapsado a íconos, estado recordado por navegador.
+- **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
 
 ---
 
@@ -78,4 +103,5 @@ Juntar en un solo lugar las mejoras de UI que surgen del recorrido del usuario, 
 
 1. **H2:** en las 6 tarjetas, la opción elegida se ve con fondo de acento y todo su texto en `on-accent`; contraste ≥ 4,5:1 en Papel y Latte (texto principal y secundario); el foco con teclado se ve sobre una tarjeta elegida.
 2. **H3:** el menú abierto mide 13rem; colapsado muestra solo íconos con nombre accesible; el estado sobrevive a recargar y a navegar (sin parpadeo); el pie de actividad arranca donde termina el menú, abierto o colapsado; nada del contenido queda tapado.
-3. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+3. **H4:** una historia con relato muestra «Regenerar» y no «Generar Relato»; sin relato, «Generar relato»; fallida, «Reintentar»; `POST /historia/:id/generar-relato` ya no existe (404).
+4. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
