@@ -169,6 +169,41 @@ Ya existe un modal con el tema, pero solo para borrar historias (`partials/modal
 - Nada de `window.confirm`/`alert`/`prompt` en el frontend: un test lo verifica (como `no-hardcoded-colors`).
 - El modal de borrar historia queda como está (ya tiene el tema); unificarlo es opcional.
 
+### H9 — No se distingue qué es chip, qué es botón y qué es nota · **decidido (propuesta visual a validar con capturas)**
+
+**Lo que ve el usuario:** chips, botones y notas se confunden: no se sabe qué se puede tocar y qué solo informa.
+
+**Por qué pasa:** casi todo es un **rectángulo recto con borde de 1 px**, y lo que cambia es poco y no es consistente:
+- Los **botones secundarios** (`btn-forge-outline(-sm)`: «Decidí vos», «Es así a propósito», «Analizar de nuevo», «Editar») tienen borde gris y texto gris: se ven apagados, como una etiqueta.
+- Los **chips de estado** (semáforo del Taller: «Qué quiere», «Falta», «A medias»; estado en la Galería: «Borrador», «Completada») son rectángulos con borde y fondo de color: se parecen a botones.
+- Las **notas** usan tres formatos distintos: texto con 💡 (pistas de la Dirección y del Taller), texto con ⓘ («Quedan 4 preguntas abiertas»), y cajas con borde y fondo de aviso (avisos del Verificador en la Escaleta, «Repite 1 frase» en el relato —que además se despliega—, aviso de la sala).
+- Las **tarjetas de opción** (radios) también son rectángulos con borde.
+
+**Cambio — una gramática visual con tres familias, cada una con forma propia** (en `globals.css`, para los dos temas):
+
+| Familia | Qué es | Forma | Color | Interacción |
+|---|---|---|---|---|
+| **Botón** | hace algo | rectángulo con **esquinas redondeadas** (`rounded-md`), alto fijo, ícono + verbo, MAYÚSCULAS como hoy | primario: **acento lleno**; secundario: **borde y texto de acento** (no gris); peligro: error lleno | cursor mano, hover y foco visibles, `active:scale` |
+| **Chip** | dice un estado o una categoría | **píldora** (`rounded-full`), chica, texto normal (sin mayúsculas), punto de color del estado | fondo pálido del estado, **sin borde** | ninguna: sin hover, cursor normal; nunca es `<button>` |
+| **Nota** | explica o avisa | **sin caja**: barra de color a la izquierda (`border-l-4`) + fondo pálido + ícono del tono; las pistas (💡) solo texto gris con ícono | tono `info` / `warning` / `error` / `pista` | ninguna; si tiene detalle desplegable, el que se toca es un **link** «Ver detalle», no la caja |
+
+Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta con un **círculo de radio** visible a la izquierda (hoy solo lo tienen las del Taller) y seleccionada con el acento lleno (H2). Los **campos** siguen con borde y fondo de campo.
+
+**Clases compartidas:** `.btn-forge*` (revisadas), `.chip-forge` + `--cumple|--parcial|--falta|--intencional|--info`, `.nota-forge` + `--info|--warning|--error`, `.pista-forge`. Las vistas dejan de armar estos estilos a mano (hoy: `taller.ejs:9–12` y `:68/:83`, `gallery.ejs:5–11`, `escaleta.ejs:96`, `relato_panel.ejs:106`, `streaming-room.ejs:156`, `debug.ejs:22–24`, las pistas de `direccion.ejs` y `taller.ejs:86`).
+
+**Inventario a convertir:**
+
+| Pantalla | Chips | Notas | Botones secundarios |
+|---|---|---|---|
+| Dirección | — | 5 pistas 💡 | — |
+| Taller | semáforo del estado, estado de cada pregunta | «Quedan N preguntas» (ⓘ), pistas 💡 | Decidí vos, Es así a propósito, Analizar de nuevo, Cambiar, Que la IA lo vuelva a preguntar |
+| Escaleta | «a revisar» / decisiones por acto | avisos del Verificador | Revisar con la IA, Descartar avisos, Sumar personaje |
+| Ficha / Galería | estado de la historia | — | Editar, Ver relato, Eliminar |
+| Relato | — | «Repite N frases» (con «Ver detalle») | Regenerar, Descargar .md, Copiar |
+| Sala / Debug | ONLINE / OFFLINE | aviso de la sala, panel de error | Cancelar |
+
+**Catálogo en dev (opcional):** una página `/componentes`, solo con `ENV=dev`, que muestra las tres familias y las tarjetas de opción en sus variantes, para validar de un vistazo y como referencia para lo que venga.
+
 ---
 
 ## 2. DECISIONES
@@ -181,6 +216,7 @@ Ya existe un modal con el tema, pero solo para borrar historias (`partials/modal
 - **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
 - **D7 (H7):** criterios del taller con sujeto (el nombre del protagonista) y «para qué sirve» en lenguaje llano visible en todos lados; textos de la tabla a validar por el usuario.
 - **D8 (H8):** confirmaciones con un componente propio (`<dialog>` con el tema) para «Rearmar la escaleta» y todo `hx-confirm` (regenerar acto); sin diálogos nativos del navegador.
+- **D9 (H9):** tres familias con forma propia — botón (redondeado, acento), chip (píldora, sin borde, sin interacción), nota (barra lateral de color, sin caja) — más tarjetas de opción con radio visible; clases compartidas en `globals.css`. Se valida con capturas antes de convertir todas las vistas. Catálogo `/componentes` en dev: opcional.
 
 ---
 
@@ -193,4 +229,5 @@ Ya existe un modal con el tema, pero solo para borrar historias (`partials/modal
 5. **H6:** al guardar, el aviso parpadea y a los ~2 s queda transparente sin mover la barra; un error de guardado queda visible; con movimiento reducido no parpadea.
 6. **H7:** en el Taller, cada criterio dice de quién habla (nombre del protagonista) y para qué sirve, en las preguntas abiertas, en «Ya resuelto» y en los chips; las preguntas nuevas de la IA nombran al protagonista.
 7. **H8:** rearmar la escaleta y regenerar un acto piden confirmación con el diálogo del tema (Papel y Latte); «Cancelar» y `Esc` no hacen nada; confirmar sigue el flujo de hoy; no queda `window.confirm`/`alert`/`prompt` en el frontend.
-8. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+8. **H9:** en todas las pantallas del inventario, los botones, chips y notas usan las clases compartidas; ningún chip ni nota tiene hover ni es `<button>`; los botones secundarios usan el acento; capturas antes/después en los dos temas.
+9. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
