@@ -204,6 +204,24 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 
 **Catálogo en dev (opcional):** una página `/componentes`, solo con `ENV=dev`, que muestra las tres familias y las tarjetas de opción en sus variantes, para validar de un vistazo y como referencia para lo que venga.
 
+### H10 — Los avisos ignorados vuelven a aparecer al revisar de nuevo · **decidido**
+
+**Lo que ve el usuario:** en la Escaleta, un aviso marcado «Ignorar» reaparece cuando se vuelve a revisar con la IA. Ignorado tiene que quedar ignorado.
+
+**Por qué pasa:**
+- «Ignorar» (`POST …/outline/{n}/warnings/dismiss`, `authoring_router.py:184`) **borra** el texto de `act_outline.warnings`; no queda registro de que el autor lo descartó.
+- Cada revisión (`OutlineVerifier.verify`) **reescribe** la lista entera del acto: las reglas determinísticas (`rule_warnings`: siembras que nadie retoma, personajes fuera del elenco) vuelven a dar el mismo aviso, y el LLM vuelve a señalar lo mismo, a veces con otras palabras.
+
+**Cambio:**
+1. **Se guarda qué descartó el autor**, por acto. Sin cambio de esquema: la columna JSON `act_outline.warnings` pasa de lista de textos a lista de objetos `{text, key, source: "regla"|"ia", dismissed}` (se siguen leyendo los textos sueltos de hoy). Así no hace falta migrar la DB de prod.
+2. **Avisos de regla:** cada uno lleva una clave estable por tema (p. ej. `siembra:<texto de la siembra>`, `elenco:<nombre>`). Un aviso descartado no vuelve mientras su clave siga igual. Si un aviso junta varias siembras, se arma solo con las que no se descartaron.
+3. **Avisos de la IA:** el Verificador recibe los que el autor descartó en ese acto («el autor ya descartó estos avisos: no los repitas ni los reformules») —el mismo criterio que usa el Consultor con las preguntas ya hechas—, y además se filtran los que coincidan con uno descartado (texto normalizado).
+4. **Se puede deshacer:** si un acto tiene avisos ignorados, un link discreto «N ignorados» los muestra (atenuados) con «Volver a mostrar».
+5. **Cuándo se olvidan:** al **rearmar la escaleta** (actos nuevos, contenido nuevo) los descartes se borran; editar un acto o volver a revisar **no** los borra.
+6. El máximo de avisos por acto (`MAX_WARNINGS_PER_ACT`) cuenta solo los visibles.
+
+**Tests:** revisar dos veces con un aviso de regla descartado → no vuelve; con uno de la IA descartado → el prompt lo incluye y un aviso igual se filtra; «Volver a mostrar» lo restaura; rearmar la escaleta limpia los descartes; lectura de la lista vieja (solo textos). Cambia el snapshot de prompts (`SNAPSHOT_UPDATE=1`, a propósito).
+
 ---
 
 ## 2. DECISIONES
@@ -217,6 +235,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 - **D7 (H7):** criterios del taller con sujeto (el nombre del protagonista) y «para qué sirve» en lenguaje llano visible en todos lados; textos de la tabla a validar por el usuario.
 - **D8 (H8):** confirmaciones con un componente propio (`<dialog>` con el tema) para «Rearmar la escaleta» y todo `hx-confirm` (regenerar acto); sin diálogos nativos del navegador.
 - **D9 (H9):** tres familias con forma propia — botón (redondeado, acento), chip (píldora, sin borde, sin interacción), nota (barra lateral de color, sin caja) — más tarjetas de opción con radio visible; clases compartidas en `globals.css`. Se valida con capturas antes de convertir todas las vistas. Catálogo `/componentes` en dev: opcional.
+- **D10 (H10):** los avisos ignorados quedan ignorados al volver a revisar (claves estables para los de regla; los de la IA se le pasan al Verificador y se filtran); se pueden volver a mostrar; se olvidan solo al rearmar la escaleta. Sin cambio de esquema (JSON de `act_outline.warnings`).
 
 ---
 
@@ -230,4 +249,5 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 6. **H7:** en el Taller, cada criterio dice de quién habla (nombre del protagonista) y para qué sirve, en las preguntas abiertas, en «Ya resuelto» y en los chips; las preguntas nuevas de la IA nombran al protagonista.
 7. **H8:** rearmar la escaleta y regenerar un acto piden confirmación con el diálogo del tema (Papel y Latte); «Cancelar» y `Esc` no hacen nada; confirmar sigue el flujo de hoy; no queda `window.confirm`/`alert`/`prompt` en el frontend.
 8. **H9:** en todas las pantallas del inventario, los botones, chips y notas usan las clases compartidas; ningún chip ni nota tiene hover ni es `<button>`; los botones secundarios usan el acento; capturas antes/después en los dos temas.
-9. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+9. **H10:** un aviso ignorado no reaparece tras «Revisar con la IA» (ni de regla ni de la IA); «N ignorados → Volver a mostrar» lo restaura; rearmar la escaleta los limpia; las escaletas guardadas con el formato viejo se siguen leyendo.
+10. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
