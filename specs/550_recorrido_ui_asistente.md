@@ -98,23 +98,20 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 
 **Cambio:** «**Ver relato**» en la ficha y en la galería (mismo texto en los dos lugares). La página de destino no cambia.
 
-### H6 — El aviso de guardado: parpadear y desaparecer · **decidido**
+### H6 — Guardado automático como notificación flotante · **decidido (revisado 2026-09-27)**
 
-**Lo que ve el usuario:** el aviso de la barra de arriba queda fijo («✓ Guardado hace un momento» / «Todo guardado»). Quiere que, al guardar, **parpadee unos instantes y después desaparezca**.
+**Lo que ve el usuario:** el aviso de guardado queda fijo en la barra. Primero pidió que parpadee y desaparezca; al ver la barra con los pasos (H11), pidió que sea **una notificación flotante por unos instantes** y que después desaparezca.
 
-**Hoy:** `status()` de `asistente.js` reescribe `[data-guardado]` con tres estados: guardando (loader), ok («Guardado hace un momento») y error; el texto queda hasta el próximo cambio. Al cargar la página dice «Todo guardado» (o, en `/nuevo`, «Se guarda solo cuando escribas el título»).
+**Hoy:** `status()` de `asistente.js` reescribe `[data-guardado]` en la barra (guardando / «Guardado hace un momento» / error) y el texto queda; al cargar dice «Todo guardado».
 
 **Cambio:**
-- **Guardando…**: visible mientras dura el guardado, sin parpadeo.
-- **Guardado**: aparece, **parpadea ~1,5 s** (2–3 pulsos de opacidad) y **se desvanece** (~0,5 s). Si llega otro guardado mientras tanto, la animación vuelve a empezar.
-- **Error**: **no desaparece** (y no parpadea): queda hasta que un guardado salga bien. Perder un error de guardado sería peor que el ruido.
-- **Al cargar:** sin aviso («Todo guardado» sobra: no pasó nada todavía). En `/nuevo` se mantiene «Se guarda solo cuando escribas el título» hasta el primer guardado, porque explica por qué no se guarda.
-- **Sin saltos:** el aviso reserva su lugar (se oculta con opacidad, no con `display: none`), así los botones de la barra no se mueven.
-- **Movimiento reducido:** con `prefers-reduced-motion`, sin parpadeo: aparece y se desvanece.
-- **Accesibilidad:** sigue `aria-live="polite"`: el lector de pantalla anuncia «Guardado» aunque después se oculte.
-- Animación con clases de `globals.css` (keyframes), sin colores nuevos.
-
-**Tests:** los E2E que esperan «Guardado hace un momento» siguen valiendo (el texto queda en el DOM, oculto con opacidad); se agrega uno que verifica que tras unos segundos el aviso queda transparente y otro que un error queda visible.
+- El aviso **sale de la barra**: su lugar lo ocupan los pasos (H11).
+- **Notificación flotante** (toast) abajo a la derecha, sobre el pie de actividad, con el tema: «✓ Guardado» aparece, queda ~2 s y se desvanece. Si llega otro guardado, se reinicia.
+- **Guardando…** no se muestra (dura un instante; evita ruido). Si un guardado tarda más de 1 s, aparece «Guardando…» en la misma notificación.
+- **Error:** la notificación **queda** (tono error) hasta que un guardado salga bien o el usuario la cierra (×).
+- En `/nuevo`, la ayuda «Se guarda solo cuando escribas el título» pasa a una **pista** junto al título (no es una notificación).
+- `role="status"` / `aria-live="polite"` (el error, `role="alert"`); con `prefers-reduced-motion`, sin animación de entrada.
+- Los E2E que esperan «Guardado hace un momento» buscan la notificación.
 
 ### H7 — Taller: «Qué quiere» no dice de quién ni para qué · **decidido (textos aprobados)**
 
@@ -224,6 +221,16 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 
 **Tests:** revisar dos veces con un aviso de regla descartado → no vuelve; con uno de la IA descartado → el prompt lo incluye y un aviso igual se filtra; «Volver a mostrar» lo restaura; rearmar la escaleta limpia los descartes. Cambia el snapshot de prompts (`SNAPSHOT_UPDATE=1`, a propósito).
 
+### H11 — Los pasos del asistente, en la barra fija · **decidido**
+
+**Lo que ve el usuario:** los pasos (Dirección · Taller · Escaleta · Relato) quedan abajo de la barra y se van con el scroll; además, como píldoras con borde, se parecen a los chips.
+
+**Cambio:**
+- Los pasos **suben a la barra fija**, a la izquierda (donde estaba el aviso de guardado, H6); las acciones de la IA siguen a la derecha.
+- Estilo de **navegación**, distinto de chip y de botón: pasos compactos unidos por una línea; el actual con acento lleno, los disponibles como links (texto de acento, subrayado al pasar el mouse) y los no disponibles atenuados.
+- Se quitan los links «← Dirección» / «← Taller» de la barra: los pasos ya llevan a cada uno.
+- En pantallas angostas, los pasos se reducen a su número.
+
 ---
 
 ## 2. DECISIONES
@@ -233,11 +240,12 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 - **D3 (H3):** ancho abierto 13rem, colapsado a íconos, estado recordado por navegador.
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
 - **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
-- **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
+- **D6 (H6):** (revisada 2026-09-27) el guardado se avisa con una **notificación flotante** ~2 s; «Guardando…» solo si tarda > 1 s; el error queda hasta resolverse o cerrarse; sale de la barra.
 - **D7 (H7):** ✅ decidido (2026-09-27) — criterios del taller con sujeto y «para qué sirve» en lenguaje llano, visibles en todos lados; **textos de las tablas de H7 aprobados** tal como están.
 - **D8 (H8):** confirmaciones con un componente propio (`<dialog>` con el tema) para «Rearmar la escaleta» y todo `hx-confirm` (regenerar acto); sin diálogos nativos del navegador.
 - **D9 (H9):** tres familias con forma propia — botón (redondeado, acento), chip (píldora, sin borde, sin interacción), nota (barra lateral de color, sin caja) — más tarjetas de opción con radio visible; clases compartidas en `globals.css`. Se valida con capturas de las pantallas reales antes de convertir todas las vistas; sin catálogo `/componentes`.
 - **D10 (H10):** los avisos ignorados quedan ignorados al volver a revisar (claves estables para los de regla; los de la IA se le pasan al Verificador y se filtran); se pueden volver a mostrar; se olvidan solo al rearmar la escaleta. Sin cambio de esquema (JSON de `act_outline.warnings`).
+- **D11 (H11):** los pasos van en la barra fija (izquierda), con estilo de navegación propio; fuera los links «← paso anterior».
 
 ---
 
@@ -247,7 +255,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 2. **H3:** el menú abierto mide 13rem; colapsado muestra solo íconos con nombre accesible; el estado sobrevive a recargar y a navegar (sin parpadeo); el pie de actividad arranca donde termina el menú, abierto o colapsado; nada del contenido queda tapado.
 3. **H4:** una historia con relato muestra «Regenerar» y no «Generar Relato»; sin relato, «Generar relato»; fallida, «Reintentar»; `POST /historia/:id/generar-relato` ya no existe (404).
 4. **H5:** ficha y galería dicen «Ver relato».
-5. **H6:** al guardar, el aviso parpadea y a los ~2 s queda transparente sin mover la barra; un error de guardado queda visible; con movimiento reducido no parpadea.
+5. **H6/H11:** al guardar aparece una notificación flotante que se va sola a los ~2 s; un error queda visible hasta resolverse o cerrarse; los pasos están en la barra fija y siguen a la vista al scrollear.
 6. **H7:** en el Taller, cada criterio dice de quién habla (nombre del protagonista) y para qué sirve, en las preguntas abiertas, en «Ya resuelto» y en los chips; las preguntas nuevas de la IA nombran al protagonista.
 7. **H8:** rearmar la escaleta y regenerar un acto piden confirmación con el diálogo del tema (Papel y Latte); «Cancelar» y `Esc` no hacen nada; confirmar sigue el flujo de hoy; no queda `window.confirm`/`alert`/`prompt` en el frontend.
 8. **H9:** en todas las pantallas del inventario, los botones, chips y notas usan las clases compartidas; ningún chip ni nota tiene hover ni es `<button>`; los botones secundarios usan el acento; capturas antes/después en los dos temas.
@@ -281,8 +289,9 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 - Pie de actividad con `left-[var(--sidebar-width)]` (arregla la superposición actual).
 - **Verificación:** E2E: colapsar → recargar y navegar → sigue colapsado; el pie arranca donde termina el menú (abierto y colapsado); unit del script de estado.
 
-### S5 — Barra del asistente: aviso de guardado y confirmaciones (H6, H8)
-- `asistente.js` + `globals.css`: «Guardando…» fijo; «Guardado» parpadea ~1,5 s y se desvanece; error fijo; sin aviso al cargar (salvo la ayuda de `/nuevo`); lugar reservado; `prefers-reduced-motion`.
+### S5 — Barra del asistente: pasos, notificación de guardado y confirmaciones (H11, H6, H8)
+- Pasos en la barra (`_cabecera.ejs` → barra; estilo de navegación; fuera «← paso anterior»).
+- Notificación flotante de guardado (`asistente.js` + partial + `globals.css`): «Guardado» ~2 s; «Guardando…» solo si tarda > 1 s; error fijo con ×; pista en `/nuevo`; `prefers-reduced-motion`.
 - `public/js/confirm-dialog.js` (`ForgeConfirm.ask`, UMD) + partial `<dialog>` en el layout; `data-confirmar` y `htmx:confirm` lo usan.
 - Test que no quede `window.confirm`/`alert`/`prompt` en el frontend.
 - **Verificación:** Vitest de `ForgeConfirm` (aceptar, cancelar, `Esc`, foco); E2E: rearmar la escaleta y regenerar un acto con el diálogo (cancelar no hace nada; confirmar sigue el flujo); el aviso queda transparente a los ~2 s y un error queda visible.
@@ -341,8 +350,9 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-st
 - [ ] **T4.1** `--sidebar-width: 13rem` + `--sidebar-width-collapsed`; menú y pie leen el token (pie: `left-[var(--sidebar-width)]`). — *Files:* `theme.css`, `sidebar.ejs`, `footer.ejs`.
 - [ ] **T4.2** Botón colapsar (tira de íconos con `aria-label`/`title`, marca en inicial, DEV en un punto); estado en `localStorage` (try/catch) aplicado desde `<head>`. — *Verify:* E2E colapsar → recargar → navegar → sigue colapsado; el pie arranca donde termina el menú. — *Files:* `sidebar.ejs`, `layout.ejs`, `public/js/sidebar.js`, `globals.css`, E2E nuevo.
 
-### S5 — Barra del asistente (H6, H8)
-- [ ] **T5.1** Aviso de guardado: guardando fijo; guardado parpadea ~1,5 s y se desvanece; error fijo; sin aviso al cargar (salvo `/nuevo`); lugar reservado; `prefers-reduced-motion`. — *Verify:* E2E (transparente a los ~2 s; error visible). — *Files:* `asistente.js`, `_guardado.ejs`, `globals.css`, `asistente.spec.ts`.
+### S5 — Barra del asistente (H11, H6, H8)
+- [ ] **T5.0** Pasos en la barra fija con estilo de navegación; fuera «← paso anterior»; en angosto, solo números. — *Verify:* E2E: los pasos siguen a la vista al scrollear y navegan. — *Files:* `_cabecera.ejs`, `direccion.ejs`, `taller.ejs`, `escaleta.ejs`, `globals.css`.
+- [ ] **T5.1** Notificación flotante de guardado: «Guardado» ~2 s y se va; «Guardando…» solo si tarda > 1 s; error fijo con ×; pista de `/nuevo` junto al título; `prefers-reduced-motion`. — *Verify:* E2E (aparece y desaparece; error queda). — *Files:* `asistente.js`, `_guardado.ejs`, `globals.css`, `asistente.spec.ts`.
 - [ ] **T5.2** `public/js/confirm-dialog.js` (`ForgeConfirm.ask`, UMD) + partial `<dialog>` en el layout. — *Verify:* Vitest (aceptar, cancelar, `Esc`, foco inicial en «Cancelar», foco de vuelta). — *Files:* `confirm-dialog.js`, `partials/confirm_dialog.ejs`, `layout.ejs`, test nuevo.
 - [ ] **T5.3** `data-confirmar` y `htmx:confirm` usan `ForgeConfirm`; test que prohíbe `window.confirm`/`alert`/`prompt` en el frontend. — *Verify:* E2E rearmar escaleta y regenerar acto (cancelar / confirmar). — *Files:* `asistente.js`, `confirm-dialog.js`, test nuevo, E2E.
 
