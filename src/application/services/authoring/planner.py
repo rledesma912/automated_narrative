@@ -97,6 +97,7 @@ class OutlinePlanner:
             decisiones=context.decisions_block(story),
             borradores=_drafts_block(story),
             problemas=_problems_block(story),
+            efecto=context.effect_block(story),
             escenarios=scenarios or "(ninguno todavía)",
             actos=self._acts_block(story),
         )

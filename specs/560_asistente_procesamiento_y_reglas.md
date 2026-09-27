@@ -208,7 +208,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - A6: el Planificador recibe los avisos visibles al rearmar; la generación completa recibe, por acto, lo marcado en la última versión.
 - **Verificación:** pytest del prompt de regeneración y de la marca; E2E del aviso en el panel; pytest de los prompts de A6.
 
-### S6 — A5: el efecto pesa
+### S6 — A5: el efecto pesa · ✅ 2026-09-27 (`context.effect_block`; «otro» usa el texto del autor; sin efecto no hay receta)
 - `authoring_options.yaml`: receta `planificador` por efecto; «otro» usa el texto del autor.
 - Planificador: sección «CÓMO TIENE QUE PEGAR»; Verificador: aviso si un acto no cumple la receta.
 - **Verificación:** snapshot regenerado; pytest de la receta por efecto.
@@ -264,8 +264,8 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [x] **T5.3** Esquema `macro_beat.stale`: se marca en los actos > N, se limpia al regenerarlos o al generar todo; aviso en el panel del relato. — *Verify:* pytest + E2E del aviso.
 
 ### S6 — A5: el efecto pesa
-- [ ] **T6.1** `authoring_options.yaml`: `planificador` por efecto; `catalog.Option`. — *Verify:* pytest.
-- [ ] **T6.2** Planificador «CÓMO TIENE QUE PEGAR» y aviso del Verificador si un acto no cumple la receta. — *Verify:* pytest; snapshot regenerado.
+- [x] **T6.1** `authoring_options.yaml`: `planificador` por efecto; `catalog.Option`. — *Verify:* pytest.
+- [x] **T6.2** Planificador «CÓMO TIENE QUE PEGAR» y aviso del Verificador si un acto no cumple la receta. — *Verify:* pytest; snapshot regenerado.
 
 ### S7 — Medición, documentación y pase
 - [ ] **T7.1** `evaluate_voice.py` después de S3–S6 contra la base; A5: «pavor» y «susto», 2 corridas cada uno, para la lectura a ciegas del usuario. Resultados en esta spec.

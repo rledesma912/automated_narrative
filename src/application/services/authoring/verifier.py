@@ -101,6 +101,7 @@ class OutlineVerifier:
             decisiones=context.decisions_block(story),
             elenco=", ".join(cast_names(story)) or "(solo quien narra)",
             escaleta="\n\n".join(_act_text(a, context.protagonist(story)) for a in outline),
+            efecto=context.effect_block(story, verifier=True),
             descartados="\n".join(
                 f"- Acto {a.number}: {w.text}" for a in outline for w in a.warnings if w.dismissed
             )

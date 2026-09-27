@@ -317,3 +317,40 @@ async def test_al_rearmar_recibe_los_avisos_visibles_y_no_los_ignorados(story):
     assert "PROBLEMAS QUE MARCÓ LA REVISIÓN" in prompt
     assert "- Acto 2: El encuentro repite el del acto 1." in prompt
     assert "Aviso ignorado." not in prompt
+
+
+# ── Spec-560 A5: el efecto pesa en la escaleta ──────────────────────────────
+
+
+def _with_effect(story, effect, other=""):
+    direction = story.direction.model_copy(update={"effect": effect, "effect_other": other})
+    return story.model_copy(update={"direction": direction})
+
+
+async def test_el_planificador_recibe_la_receta_del_efecto(story):
+    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
+    await OutlinePlanner(llm).plan(_with_effect(story, "susto"))
+    prompt = llm.calls[0]["prompt"]
+    assert "CÓMO TIENE QUE PEGAR (el efecto que busca el autor: Susto)" in prompt
+    assert "dos irrupciones bruscas" in prompt
+
+
+async def test_otro_usa_el_texto_del_autor(story):
+    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
+    await OutlinePlanner(llm).plan(_with_effect(story, "otro", "Que dé asco más que miedo"))
+    assert "Que dé asco más que miedo" in llm.calls[0]["prompt"]
+
+
+async def test_el_verificador_controla_la_receta(story):
+    outline = [ActOutline(number=n, bridge="sigue", events=["x"]) for n in range(1, 6)]
+    llm = ScriptedLLM({"decisiones": [], "avisos": []})
+    await OutlineVerifier(llm).verify(_with_effect(story, "revelacion"), outline)
+    prompt = llm.calls[0]["prompt"]
+    assert "EFECTO QUE BUSCA EL AUTOR: Horror que se revela" in prompt
+    assert "se revela en el acto 4" in prompt
+
+
+def test_sin_efecto_no_hay_receta(story):
+    from src.application.services.authoring import context
+
+    assert context.effect_block(_with_effect(story, "")) == ""
