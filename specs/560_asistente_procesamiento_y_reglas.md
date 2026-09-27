@@ -201,7 +201,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - Escaleta: rótulo «Lo que todavía no se cuenta», pista («La Voz no lo revela en este acto; se tiene que revelar en uno posterior») y «Se revela en el Acto N» (elegible).
 - **Verificación:** pytest de la regla; E2E del rótulo y del selector.
 
-### S5 — A2 + A6: regenerar sin repetir y cerrar el circuito
+### S5 — A2 + A6: regenerar sin repetir y cerrar el circuito · ✅ 2026-09-27 (el job de regenerar queda en la etapa «voz» también mientras actualiza la memoria; el aviso de actos desactualizados va en el panel activo, desde `GET /stories/{id}` → `stale_acts`; snapshot sin cambios: las secciones nuevas solo aparecen cuando hay algo que decir)
 - Voz al regenerar: sección con lo que marcó el control de repetición en ese acto (frases repetidas con su acto de origen, clichés, nombres inventados).
 - Después de regenerar, la Memoria del acto se actualiza (+1 llamada; el job pasa por la etapa `journal`).
 - Esquema: `macro_beat.stale` (se escribió con la memoria de una versión anterior): al regenerar el acto N se marca en los actos > N y se limpia al regenerarlos o al generar todo; el panel del relato lo avisa en esos actos.
@@ -258,10 +258,10 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [x] **T4.2** Escaleta: rótulo, pista y «Se revela en el Acto N» (selector). — *Verify:* E2E.
 
 ### S5 — A2 + A6: regenerar sin repetir y cerrar el circuito
-- [ ] **T5.1** Prompt de regeneración con lo marcado por `repetition_check` en ese acto. — *Verify:* pytest del prompt.
-- [ ] **T5.2** Memoria del acto actualizada al regenerar (etapa `journal` en el job). — *Verify:* pytest del use case.
-- [ ] **T5.4** A6: Planificador recibe los avisos visibles al rearmar; la generación completa recibe lo marcado por acto en la última versión. — *Verify:* pytest de los dos prompts; snapshot regenerado.
-- [ ] **T5.3** Esquema `macro_beat.stale`: se marca en los actos > N, se limpia al regenerarlos o al generar todo; aviso en el panel del relato. — *Verify:* pytest + E2E del aviso.
+- [x] **T5.1** Prompt de regeneración con lo marcado por `repetition_check` en ese acto. — *Verify:* pytest del prompt.
+- [x] **T5.2** Memoria del acto actualizada al regenerar (etapa `journal` en el job). — *Verify:* pytest del use case.
+- [x] **T5.4** A6: Planificador recibe los avisos visibles al rearmar; la generación completa recibe lo marcado por acto en la última versión. — *Verify:* pytest de los dos prompts; snapshot regenerado.
+- [x] **T5.3** Esquema `macro_beat.stale`: se marca en los actos > N, se limpia al regenerarlos o al generar todo; aviso en el panel del relato. — *Verify:* pytest + E2E del aviso.
 
 ### S6 — A5: el efecto pesa
 - [ ] **T6.1** `authoring_options.yaml`: `planificador` por efecto; `catalog.Option`. — *Verify:* pytest.

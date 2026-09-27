@@ -123,6 +123,9 @@ class ActText(BaseModel):
     number: int
     generated_act: str = ""
     status: BeatStatus = BeatStatus.PENDING
+    # Spec-560 A2: se escribió con la memoria de una versión anterior de un acto previo
+    # (se regeneró un acto de antes). Se limpia al regenerarlo o al generar todo.
+    stale: bool = False
     created_at: datetime = Field(default_factory=now_argentina)
     system_prompt: Optional[str] = None
     user_prompt: Optional[str] = None

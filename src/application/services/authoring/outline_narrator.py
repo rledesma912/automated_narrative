@@ -77,7 +77,9 @@ class OutlineNarrator:
         act: ActOutline,
         memory: NarrativeJournal | None,
         previous_text: str = "",
+        avoid=None,
     ) -> tuple[str, str]:
+        """`avoid`: lo que el control marcó en la versión anterior de este acto (A2/A6)."""
         narrator = context.narrator(story)
         scene = self._scene_story(story, act, narrator)
         extras = self.prompt_builder._voice_extras(scene)
@@ -94,6 +96,7 @@ class OutlineNarrator:
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
             puente=_bridge(act),
+            evitar=_avoid(avoid),
             final_anterior=_ending_of(previous_text),
             nombre=_ACT_NAMES.get(info.get("name", ""), info.get("name", "")),
             intensidad=info.get("intensity", ""),
@@ -231,6 +234,26 @@ class OutlineNarrator:
                 previous.used_motifs if previous else [], memoria.motivos_usados
             ),
         )
+
+
+def _avoid(rep) -> str:
+    """Spec-560 A2/A6: lo que la versión anterior de este acto repitió o inventó."""
+    if rep is None:
+        return ""
+    lines = [f"- Repetiste {r}" for r in rep.repeated]
+    lines += [f"- Cliché: «{c}»" for c in rep.cliches]
+    if rep.invented_names:
+        lines.append(
+            "- Nombres que no están en la historia (no inventes nombres): "
+            + ", ".join(rep.invented_names)
+        )
+    if not lines:
+        return ""
+    return (
+        "EN LA VERSIÓN ANTERIOR DE ESTE ACTO PASÓ ESTO — NO LO VUELVAS A HACER:\n"
+        + "\n".join(lines)
+        + "\n\n"
+    )
 
 
 def _bridge(act: ActOutline) -> str:

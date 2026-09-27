@@ -7,6 +7,7 @@ acto anterior: lo ya pasado y lo ya usado, para no repetirlo. 1 llamada LLM.
 import logging
 from uuid import UUID
 
+from src.application.services import repetition_check
 from src.application.services.authoring.outline_narrator import OutlineNarrator
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
@@ -59,12 +60,27 @@ class RegenerateBeatVozUseCase:
         narrator = OutlineNarrator(self.llm, self.prompt_builder)
         # Spec-560 A1: el final del acto anterior, para seguir desde ahí.
         before = next((b for b in story.beats if b.number == beat_number - 1), None)
+        # Spec-560 A2: lo que el control marcó en la versión que se reemplaza.
+        findings = repetition_check.last_version_findings(story)
         system_prompt, user_prompt = narrator.voice_prompts(
-            story, act, previous, before.generated_act if before else ""
+            story,
+            act,
+            previous,
+            before.generated_act if before else "",
+            findings.get(beat_number),
         )
         logger.debug(f"[REGEN-VOZ] beat={beat_number} story={story_id} narrative={narrative_id}")
         beat, _elapsed = await self.voz.narrate_with_prompts(beat, system_prompt, user_prompt)
+        beat.stale = False
         await self.beat_repo.update(beat, story_id)
+
+        # Spec-560 A2: la memoria del acto sigue a la versión nueva (+1 llamada), y los
+        # actos siguientes quedan marcados: se escribieron con la versión anterior.
+        memory = await narrator.remember(story, act, beat.generated_act, previous)
+        await self.story_repo.save_journal(story_id, memory, beat_number)
+        for later in story.beats:
+            if later.number > beat_number and later.generated_act and not later.stale:
+                await self.beat_repo.update(later.model_copy(update={"stale": True}), story_id)
 
         story.beats = [beat if b.number == beat_number else b for b in story.beats]
         narrative = await self.narrative_use_case.update_content(narrative_id, story)

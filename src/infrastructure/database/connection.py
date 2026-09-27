@@ -172,6 +172,7 @@ async def init_db() -> None:
             number INTEGER NOT NULL,
             generated_act TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
+            stale INTEGER NOT NULL DEFAULT 0,
             system_prompt TEXT,
             user_prompt TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,

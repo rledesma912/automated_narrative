@@ -9,7 +9,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Callable
 
-from src.application.services import PromptBuilder
+from src.application.services import PromptBuilder, repetition_check
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.voz_use_case import VozUseCase
 from src.domain.interfaces import LLMProvider
@@ -68,9 +68,13 @@ class GenerateStoryUseCase:
             on_plan_ready(len(acts), 0.0)
         journal = initial_journal
         previous_text = ""
+        # Spec-560 A6: si ya hubo un relato, cada acto recibe lo que el control le marcó.
+        findings = repetition_check.last_version_findings(story)
         for act in acts:
             macro_beat = ActText(number=act.number)
-            system_prompt, user_prompt = narrator.voice_prompts(story, act, journal, previous_text)
+            system_prompt, user_prompt = narrator.voice_prompts(
+                story, act, journal, previous_text, findings.get(act.number)
+            )
 
             if on_stage:
                 on_stage(JobStage.VOZ, act.number)

@@ -6,6 +6,8 @@ export interface Story {
   id: string;
   title: string;
   status: string;
+  /** Spec-560 A2: actos escritos con la versión anterior de un acto previo. */
+  stale_acts?: number[];
   created_at: string;
   atmosfera?: string;
   protagonista?: string;

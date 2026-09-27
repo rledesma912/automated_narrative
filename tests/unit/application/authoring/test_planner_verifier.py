@@ -289,3 +289,31 @@ def test_regla_lo_guardado_sin_acto_que_lo_revele(story):
     warnings = rule_warnings(story, outline)
     assert 1 not in warnings
     assert [w.key for w in warnings[2]] == ["sin_revelacion"]
+
+
+# ── Spec-560 A6: al rearmar, el Planificador recibe los avisos visibles ─────
+
+
+async def test_al_rearmar_recibe_los_avisos_visibles_y_no_los_ignorados(story):
+    story = story.model_copy(
+        update={
+            "outline": [
+                ActOutline(
+                    number=2,
+                    events=["x"],
+                    warnings=[
+                        OutlineWarning.from_ai("El encuentro repite el del acto 1."),
+                        OutlineWarning.from_ai("Aviso ignorado.").model_copy(
+                            update={"dismissed": True}
+                        ),
+                    ],
+                )
+            ]
+        }
+    )
+    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
+    await OutlinePlanner(llm).plan(story)
+    prompt = llm.calls[0]["prompt"]
+    assert "PROBLEMAS QUE MARCÓ LA REVISIÓN" in prompt
+    assert "- Acto 2: El encuentro repite el del acto 1." in prompt
+    assert "Aviso ignorado." not in prompt

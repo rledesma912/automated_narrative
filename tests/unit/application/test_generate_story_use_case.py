@@ -16,6 +16,7 @@ class RecordingMock(MockLLMAdapter):
 
     async def generate(self, prompt, *, role=None, **kwargs):
         self.roles.append(role)
+        self.prompts = getattr(self, "prompts", []) + [(role, prompt)]
         return await super().generate(prompt, role=role, **kwargs)
 
 
@@ -65,3 +66,21 @@ async def test_sin_escaleta_primero_la_arma_y_la_guarda():
     assert stages[:2] == [(JobStage.PLANIFICADOR, None), (JobStage.VERIFICADOR, None)]
     assert len(story.outline) == 5 and len(beats) == 5
     repo.save_outline.assert_awaited_once_with(story.id, story.outline)
+
+
+async def test_al_regenerar_todo_cada_acto_recibe_lo_marcado_en_la_version_anterior():
+    """Spec-560 A6: la prosa anterior (en memoria) vuelve como «no lo vuelvas a hacer»."""
+    from src.domain.models import ActText
+
+    llm = RecordingMock()
+    story = _story(outline=True)
+    repetida = "Ana miró el reloj detenido de la estación vacía"
+    story.beats = [
+        ActText(number=1, generated_act=repetida + "."),
+        ActText(number=2, generated_act="Luego. " + repetida + " de nuevo."),
+    ]
+    await _run(GenerateStoryUseCase(llm, PromptBuilder()), story)
+
+    voz = [p for r, p in llm.prompts if r == "voz"]
+    assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" not in voz[0]
+    assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" in voz[1] and "(del acto 1)" in voz[1]

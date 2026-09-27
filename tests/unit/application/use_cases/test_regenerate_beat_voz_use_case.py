@@ -16,6 +16,7 @@ from src.domain.models import (
     NarrativeJournal,
     Story,
 )
+from src.infrastructure.adapters import MockLLMAdapter
 
 _STORY_ID = uuid.uuid4()
 
@@ -52,7 +53,8 @@ def deps():
         "beat_repo": AsyncMock(),
         "narrative_use_case": AsyncMock(),
         "voz_use_case": voz,
-        "llm": MagicMock(),
+        # La memoria del acto se actualiza al regenerar (Spec-560 A2): LLM simulado real.
+        "llm": MockLLMAdapter(),
     }
 
 
@@ -111,7 +113,8 @@ async def test_acto_mayor_a_1_usa_la_memoria_del_acto_anterior(use_case, deps):
     deps["story_repo"].get_journal.assert_awaited_once_with(_STORY_ID, 1)
     _, _, user = deps["voz_use_case"].narrate_with_prompts.await_args.args
     assert "Acto 1: Ana llega." in user and "- el reloj detenido" in user
-    deps["story_repo"].save_journal.assert_not_called()  # no toca la memoria
+    # Spec-560 A2: la memoria del acto regenerado se actualiza (antes no se tocaba).
+    assert deps["story_repo"].save_journal.await_args.args[2] == 2
 
 
 async def test_persiste_el_beat_actualizado_y_reconsolida_la_variante(use_case, deps):
@@ -129,3 +132,36 @@ async def test_persiste_el_beat_actualizado_y_reconsolida_la_variante(use_case, 
     updated_story = deps["narrative_use_case"].update_content.await_args.args[1]
     assert [b.generated_act for b in updated_story.beats] == ["prosa original", "prosa REGENERADA"]
     assert (beat, narrative) == (regenerated, expected)
+
+
+# ── Spec-560 A2 ──────────────────────────────────────────────────────────────
+
+
+async def test_actualiza_la_memoria_y_marca_los_actos_siguientes(use_case, deps):
+    beats = [_make_beat(n, f"prosa {n}") for n in range(1, 6)]
+    deps["story_repo"].get_by_id.return_value = _make_story(beats)
+    deps["story_repo"].get_journal.return_value = None
+    deps["voz_use_case"].narrate_with_prompts.return_value = (_make_beat(3, "prosa nueva"), 1.0)
+    deps["narrative_use_case"].update_content.return_value = MagicMock()
+
+    await use_case.execute(_STORY_ID, 3, uuid.uuid4())
+
+    deps["story_repo"].save_journal.assert_awaited_once()
+    assert deps["story_repo"].save_journal.await_args.args[2] == 3
+    saved = [c.args[0] for c in deps["beat_repo"].update.await_args_list]
+    assert [(b.number, b.stale) for b in saved] == [(3, False), (4, True), (5, True)]
+
+
+async def test_la_voz_recibe_lo_que_marco_el_control_en_la_version_anterior(use_case, deps):
+    repetida = "José miró el espejo retrovisor y vio a la mujer sentada atrás"
+    beats = [_make_beat(1, repetida + "."), _make_beat(2, "Después. " + repetida + " otra vez.")]
+    deps["story_repo"].get_by_id.return_value = _make_story(beats)
+    deps["story_repo"].get_journal.return_value = None
+    deps["voz_use_case"].narrate_with_prompts.return_value = (_make_beat(2, "nueva"), 1.0)
+    deps["narrative_use_case"].update_content.return_value = MagicMock()
+
+    await use_case.execute(_STORY_ID, 2, uuid.uuid4())
+
+    user_prompt = deps["voz_use_case"].narrate_with_prompts.await_args.args[2]
+    assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" in user_prompt
+    assert "(del acto 1)" in user_prompt

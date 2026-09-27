@@ -96,6 +96,7 @@ class OutlinePlanner:
             historia=context.story_block(story),
             decisiones=context.decisions_block(story),
             borradores=_drafts_block(story),
+            problemas=_problems_block(story),
             escenarios=scenarios or "(ninguno todavía)",
             actos=self._acts_block(story),
         )
@@ -155,6 +156,23 @@ def _drafts_block(story: Story) -> str:
         return ""
     return (
         "LO QUE EL AUTOR ESCRIBIÓ PARA CADA ACTO (respetalo: es su historia; completá lo que falta):\n"
+        + "\n".join(lines)
+        + "\n\n"
+    )
+
+
+def _problems_block(story: Story) -> str:
+    """Spec-560 A6: al rearmar, los avisos visibles de la escaleta anterior (no los ignorados)."""
+    lines = [
+        f"- Acto {a.number}: {w.text}"
+        for a in sorted(story.outline, key=lambda a: a.number)
+        if not a.draft
+        for w in a.visible_warnings()
+    ]
+    if not lines:
+        return ""
+    return (
+        "PROBLEMAS QUE MARCÓ LA REVISIÓN EN LA ESCALETA ANTERIOR (resolvelos en esta versión):\n"
         + "\n".join(lines)
         + "\n\n"
     )

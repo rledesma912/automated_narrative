@@ -131,3 +131,33 @@ def _has_cliche(words: list[str], expression: str) -> bool:
         if ok:
             return True
     return False
+
+
+# ── Spec-560 A2/A6: lo detectado vuelve a la Voz cuando el autor pide rehacer ──
+
+
+def known_text(story) -> str:
+    """Todo lo que cargó el autor: de acá salen los nombres que la Voz puede usar."""
+    parts = [story.title, story.sinopsis, story.protagonista]
+    parts += [p.get("name", "") + " " + p.get("relation", "") for p in story.personajes_full]
+    parts += [s.name + " " + s.description for s in story.scenarios]
+    parts += [e.name + " " + e.description + " " + e.manifestations for e in story.entities]
+    for act in story.outline:
+        parts += [act.goal, act.scenario, *act.events, *act.on_stage]
+    if story.direction:
+        parts += [story.direction.premise, story.direction.ending]
+    parts += [w.answer for w in story.workshop]
+    return " ".join(p for p in parts if p)
+
+
+def last_version_findings(story) -> dict[int, ActRepetition]:
+    """Lo que el control marca en la última prosa de cada acto (macro_beat)."""
+    beats = sorted((b for b in story.beats if b.generated_act), key=lambda b: b.number)
+    if not beats:
+        return {}
+    reps = check([b.generated_act for b in beats], known=known_text(story))
+    return {
+        b.number: r
+        for b, r in zip(beats, reps, strict=True)
+        if r.repeated or r.cliches or r.invented_names
+    }

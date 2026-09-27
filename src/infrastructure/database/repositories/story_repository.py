@@ -648,7 +648,7 @@ class SQLStoryRepository:
         from src.domain.models import ActText, BeatStatus
 
         cursor = await conn.execute(
-            "SELECT number, status, generated_act FROM macro_beat "
+            "SELECT number, status, generated_act, stale FROM macro_beat "
             "WHERE story_id = ? ORDER BY number",
             (story_id,),
         )
@@ -657,6 +657,7 @@ class SQLStoryRepository:
                 number=b["number"],
                 status=BeatStatus(b["status"]) if b["status"] else BeatStatus.PENDING,
                 generated_act=b["generated_act"] or "",
+                stale=bool(b["stale"]),
             )
             for b in await cursor.fetchall()
         ]

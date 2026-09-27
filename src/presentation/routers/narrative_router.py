@@ -162,17 +162,7 @@ async def get_narrative_repetition(
 
 
 def _authoring_text(story) -> str:
-    """Todo lo que cargó el autor: de acá salen los nombres que la Voz puede usar."""
-    parts = [story.title, story.sinopsis, story.protagonista]
-    parts += [p.get("name", "") + " " + p.get("relation", "") for p in story.personajes_full]
-    parts += [s.name + " " + s.description for s in story.scenarios]
-    parts += [e.name + " " + e.description + " " + e.manifestations for e in story.entities]
-    for act in story.outline:
-        parts += [act.goal, act.scenario, *act.events, *act.on_stage]
-    if story.direction:
-        parts += [story.direction.premise, story.direction.ending]
-    parts += [w.answer for w in story.workshop]
-    return " ".join(p for p in parts if p)
+    return repetition_check.known_text(story)
 
 
 @router.get("/generated-narratives/{narrative_id}/export.md")

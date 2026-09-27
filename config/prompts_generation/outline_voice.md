@@ -10,7 +10,7 @@ EN ESCENA: {en_escena}
 LO QUE YA PASÓ (no lo vuelvas a contar):
 {ya_paso}
 
-YA USADO EN ACTOS ANTERIORES (no repitas estas imágenes, frases ni comparaciones; buscá otras, propias de esta escena):
+{evitar}YA USADO EN ACTOS ANTERIORES (no repitas estas imágenes, frases ni comparaciones; buscá otras, propias de esta escena):
 {ya_usado}
 
 EXTENSIÓN: entre {min_palabras} y {max_palabras} palabras.

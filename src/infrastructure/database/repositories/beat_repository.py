@@ -27,11 +27,12 @@ class SQLBeatRepository:
             status = beat.status.value if hasattr(beat.status, "value") else str(beat.status)
             if existing:
                 await conn.execute(
-                    """UPDATE macro_beat SET generated_act = ?, status = ?,
+                    """UPDATE macro_beat SET generated_act = ?, status = ?, stale = ?,
                     system_prompt = ?, user_prompt = ? WHERE story_id = ? AND number = ?""",
                     (
                         beat.generated_act,
                         status,
+                        int(beat.stale),
                         beat.system_prompt,
                         beat.user_prompt,
                         str(story_id),
@@ -41,13 +42,14 @@ class SQLBeatRepository:
             else:
                 await conn.execute(
                     """INSERT INTO macro_beat
-                    (story_id, number, generated_act, status, system_prompt, user_prompt)
-                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (story_id, number, generated_act, status, stale, system_prompt, user_prompt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
                     (
                         str(story_id),
                         beat.number,
                         beat.generated_act,
                         status,
+                        int(beat.stale),
                         beat.system_prompt,
                         beat.user_prompt,
                     ),
@@ -91,6 +93,7 @@ class SQLBeatRepository:
             number=row["number"],
             generated_act=row["generated_act"] or "",
             status=row["status"],
+            stale=bool(row["stale"]),
             user_prompt=row["user_prompt"],
             system_prompt=row["system_prompt"],
             created_at=created_at,
