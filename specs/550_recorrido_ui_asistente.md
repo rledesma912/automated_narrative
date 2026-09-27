@@ -84,7 +84,7 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
   | con relato (`completed`) | **Regenerar** (+ «Ver Relatos» y «Editar», como hoy) |
   | generando (`processing`) | «Generando…» + «Ver progreso» (como hoy) |
 
-- Se quitan del frontend el botón, la ruta `POST /historia/:id/generar-relato` y su handler (`generateNarrativeHandler`).
+- Se quitan del frontend el botón, la ruta `POST /historia/:id/generar-relato`, su handler (`generateNarrativeHandler`) y `generateNarrative()` de `core_api.service.ts` (no la usa nadie).
 - El endpoint del Core `generate-narrative` **se queda**: lo usa el E2E de relatos para sembrar variantes (`relatos.spec.ts:18`).
 - Texto: hoy el botón de una historia sin relato dice «Generar historia»; pasa a **«Generar relato»**, igual que en la Escaleta («Generar relato»).
 
