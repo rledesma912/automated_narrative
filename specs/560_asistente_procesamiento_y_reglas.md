@@ -104,7 +104,7 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 
 ## 2. DECISIONES
 
-- **A1:** pendiente — ¿opción a (reusar `change_from`, sin cambio de esquema) u opción b (campos nuevos)? Recomendación: a.
+- **A1:** ✅ decidido (2026-09-27) — **campo nuevo** «Cómo llega acá» en los actos 2–5 (columna nueva en `act_outline`; en prod, export/import de las historias) y **sí** se le pasan a la Voz las últimas 2–3 oraciones del acto anterior (con la indicación de no repetirlas).
 - **A2:** pendiente — recomendación: 1 + 2 + 3.
 - **A3:** pendiente — recomendación: los dos chequeos nuevos del Verificador.
 - **A4:** pendiente — recomendación: mantener, renombrar, explicar y mostrar dónde se revela.
