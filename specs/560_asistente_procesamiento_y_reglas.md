@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — calidad del pipeline del asistente
-**Estado:** SPECIFY — A1–A5 decididos (2026-09-27); abierta a nuevos temas
+**Estado:** PLAN — SPECIFY cerrado (A1–A5, 2026-09-27); plan conjunto con la Spec-570, pendiente de OK
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente, escaleta y pipeline del relato). La UI del asistente va en Spec-550.
 
@@ -147,3 +147,62 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 
 - «La presencia del colectivo» y las historias de referencia de `evaluate_voice.py`, antes y después: frases repetidas entre actos (4-gramas), clichés, nombres inventados y —nuevo— **aperturas sin puente** (actos 2–5 cuya primera oración no se conecta con el cierre del anterior; revisión manual sobre una muestra).
 - Regenerar el Acto 3 de un relato con repeticiones marcadas: la versión nueva no repite las frases señaladas.
+
+---
+
+## 4. PLAN (junto con la Spec-570)
+
+Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en **un pase** a prod, que recrea la DB (datos descartables, 2026-09-27). Primero se ordena el dominio (570) y después se suma lo nuevo (560) sobre el dominio ya limpio. Cada slice cierra con suite en verde, `make dev-db` si cambió el esquema, `make dev-status` y qué mirar en `storymaker.test`.
+
+### S0 — Línea base (sin tocar código)
+- `evaluate_voice.py` con el perfil activo (gemma3:12b), 2 corridas, sobre el pipeline actual: frases repetidas, clichés, nombres inventados y, a mano, cómo abren los actos 2–5. Corre en segundo plano (~15 min).
+- Script para medir A5: `evaluate_voice.py --effect <id>` (fija el efecto de la historia en la DB temporal).
+
+### S1 — Spec-570: `macro_beat` solo salida
+- Esquema: fuera `summary`, `synopsis_beat`, `type`, `active_scenario_id`, `active_scenario_description`; modelo y repos.
+- Quien las leía, lee la escaleta: la sala (hechos del acto; `GET /beats` sigue devolviendo `summary`, armado desde `act_outline.events`), el tipo de acto sale del número (`get_beat_info`), el export YAML deja de leer `synopsis_beat`.
+- `import-yaml`: la sinopsis por acto de los YAML viejos va a la escaleta como primer hecho (D2).
+- **Verificación:** snapshot de prompts sin cambios; round-trip de `input_stories/`; E2E de la sala en modo lectura.
+
+### S2 — Spec-570: nombres
+- `MacroBeat` → `ActText`, `DirectorUseCase` → `GenerateStoryUseCase`, `BeatType` → `ActType`; fuera el alias `Beat`. API (`/beats`), evento `beat_start` y `applies_to_beat` sin cambios (D3).
+- **Verificación:** refactor mecánico; suite en verde; `grep` sin los nombres viejos en `src/`.
+
+### S3 — A1 + A3: puente entre actos y continuidad
+- Esquema: `act_outline.bridge` («Cómo llega acá»: tiempo que pasó y cómo se llega).
+- Planificador: devuelve `como_llega` para los actos 2–5.
+- Escaleta: campo «Cómo llega acá» arriba de los hechos (actos 2–5), editable.
+- Voz: secciones «CÓMO SE LLEGA A ESTE ACTO» (con la indicación de abrir contándolo en pocas líneas) y «ASÍ TERMINÓ EL ACTO ANTERIOR» (últimas 2–3 oraciones del acto N−1, con «seguí desde acá, sin repetirlo»); en la generación completa y al regenerar.
+- Verificador: regla «sin puente» (actos 2–5) y chequeo de la IA de continuidad (lugar o momento que no se explica desde el acto anterior).
+- **Verificación:** snapshot regenerado a propósito (Voz, Planificador, Verificador); pytest de las secciones nuevas; E2E del campo en la Escaleta.
+
+### S4 — A4: «Lo que todavía no se cuenta»
+- Esquema: `act_outline.reveal_act` (en qué acto se revela; 0 = ninguno).
+- Planificador: devuelve `se_revela_en`; regla del Verificador si algo guardado no se revela en un acto posterior.
+- Escaleta: rótulo «Lo que todavía no se cuenta», pista («La Voz no lo revela en este acto; se tiene que revelar en uno posterior») y «Se revela en el Acto N» (elegible).
+- **Verificación:** pytest de la regla; E2E del rótulo y del selector.
+
+### S5 — A2: regenerar un acto sin repetir
+- Voz al regenerar: sección con lo que marcó el control de repetición en ese acto (frases repetidas con su acto de origen, clichés, nombres inventados).
+- Después de regenerar, la Memoria del acto se actualiza (+1 llamada; el job pasa por la etapa `journal`).
+- Esquema: `macro_beat.stale` (se escribió con la memoria de una versión anterior): al regenerar el acto N se marca en los actos > N y se limpia al regenerarlos o al generar todo; el panel del relato lo avisa en esos actos.
+- **Verificación:** pytest del prompt de regeneración y de la marca; E2E del aviso en el panel.
+
+### S6 — A5: el efecto pesa
+- `authoring_options.yaml`: receta `planificador` por efecto; «otro» usa el texto del autor.
+- Planificador: sección «CÓMO TIENE QUE PEGAR»; Verificador: aviso si un acto no cumple la receta.
+- **Verificación:** snapshot regenerado; pytest de la receta por efecto.
+
+### S7 — Medición, documentación y pase
+- `evaluate_voice.py` después de S3–S6 contra la línea base de S0; A5: la misma historia con «Pavor creciente» y «Susto», 2 corridas cada uno → el usuario lee sin saber cuál es cuál. Resultados en esta spec; **si A5 no se distingue, se saca el campo** (decisión del usuario).
+- `CLAUDE.md` (pipeline, esquema, escaleta); specs 560 y 570 a DONE; PR a `development`.
+- Pase a prod cuando el usuario lo pida: `make deploy` + DB de prod nueva (se avisa que arranca vacía).
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| Prompts de la Voz más largos pueden empeorar a gemma3 (va contra la máxima si no ayuda). | S0 mide la base; S7 compara. Si el puente o las últimas oraciones no mejoran las aperturas, se sacan. |
+| La Voz repite las últimas oraciones del acto anterior. | Indicación explícita y el control de repetición lo marca; se mide en S7. |
+| El refactor de nombres (S2) toca muchos archivos. | Slice propio, mecánico, sin cambios de comportamiento; suite completa. |
+| Tres cambios de esquema en la rama. | Una sola recreación de DB por slice en dev; en prod, una sola al final. |
