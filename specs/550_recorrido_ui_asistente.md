@@ -88,6 +88,14 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 - El endpoint del Core `generate-narrative` **se queda**: lo usa el E2E de relatos para sembrar variantes (`relatos.spec.ts:18`).
 - Texto: hoy el botón de una historia sin relato dice «Generar historia»; pasa a **«Generar relato»**, igual que en la Escaleta («Generar relato»).
 
+### H5 — «Ver Relatos» en plural · **decidido**
+
+**Lo que ve el usuario:** el botón de la ficha lleva al relato generado: tiene que ir en singular.
+
+**Hoy:** la ficha dice «Ver Relatos» (`historia.ejs:155`) y la galería, para el mismo destino, «Ver Relato» (`gallery.ejs:75`). Los dos llevan a `/historia/{id}/relatos`, que muestra el relato (y, si se regeneró, sus otras versiones como pestañas, con la primera abierta).
+
+**Cambio:** «**Ver relato**» en la ficha y en la galería (mismo texto en los dos lugares). La página de destino no cambia.
+
 ---
 
 ## 2. DECISIONES
@@ -96,6 +104,7 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 - **D2 (H2):** «fondo violeta con letras blancas» = **fondo del acento del tema + `on-accent`**. En dev (Latte) es violeta; en prod (Papel) es el rojo óxido. *A confirmar por el usuario:* ¿o quiere violeta también en prod?
 - **D3 (H3):** ancho abierto 13rem, colapsado a íconos, estado recordado por navegador.
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
+- **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
 
 ---
 
@@ -104,4 +113,5 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 1. **H2:** en las 6 tarjetas, la opción elegida se ve con fondo de acento y todo su texto en `on-accent`; contraste ≥ 4,5:1 en Papel y Latte (texto principal y secundario); el foco con teclado se ve sobre una tarjeta elegida.
 2. **H3:** el menú abierto mide 13rem; colapsado muestra solo íconos con nombre accesible; el estado sobrevive a recargar y a navegar (sin parpadeo); el pie de actividad arranca donde termina el menú, abierto o colapsado; nada del contenido queda tapado.
 3. **H4:** una historia con relato muestra «Regenerar» y no «Generar Relato»; sin relato, «Generar relato»; fallida, «Reintentar»; `POST /historia/:id/generar-relato` ya no existe (404).
-4. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+4. **H5:** ficha y galería dicen «Ver relato».
+5. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
