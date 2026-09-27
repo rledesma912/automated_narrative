@@ -11,6 +11,8 @@ import { defineConfig, devices } from "@playwright/test";
  * Así los E2E no dependen de lo que esté corriendo en la máquina.
  *
  * Con BASE_URL definido se usa ese frontend y no se levanta nada.
+ * Con E2E_ENV=dev el frontend del harness corre como dev (Spec-540: tema «Latte»),
+ * p. ej. para `E2E_ENV=dev CAPTURAS=latte npx playwright test visual-snapshots`.
  */
 const API_PORT = 8021;
 const UI_PORT = 3021;
@@ -57,6 +59,7 @@ export default defineConfig({
           env: {
             CORE_API_URL: `http://127.0.0.1:${API_PORT}`,
             PORT: String(UI_PORT),
+            ENV: process.env.E2E_ENV ?? "",
           },
         },
       ]

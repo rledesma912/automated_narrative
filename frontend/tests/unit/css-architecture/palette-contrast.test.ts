@@ -3,13 +3,19 @@ import path from "path";
 import { describe, it, expect } from "vitest";
 
 /**
- * Spec-531: la paleta «Papel» (`src/styles/theme.css`, `:root`) cumple contraste
- * WCAG AA (≥ 4,5:1) en cada par texto/fondo que usa la UI.
+ * Spec-531 / Spec-540: las paletas de `src/styles/theme.css` — «Papel» (`:root`,
+ * prod) y «Latte» (`:root[data-env="dev"]`) — cumplen contraste WCAG AA
+ * (≥ 4,5:1) en cada par texto/fondo que usa la UI.
  */
 const THEME = fs.readFileSync(path.resolve(__dirname, "../../../src/styles/theme.css"), "utf-8");
 
-function vars(): Record<string, string> {
-  const root = THEME.match(/:root\s*\{([\s\S]*?)\}/)?.[1] ?? "";
+const PALETTES: Array<[string, RegExp]> = [
+  ["Papel", /:root\s*\{([\s\S]*?)\}/],
+  ["Latte", /:root\[data-env="dev"\]\s*\{([\s\S]*?)\}/],
+];
+
+function vars(selector: RegExp): Record<string, string> {
+  const root = THEME.match(selector)?.[1] ?? "";
   return Object.fromEntries(
     [...root.matchAll(/--forge-([\w-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;/g)].map((m) => [m[1], m[2]]),
   );
@@ -39,8 +45,8 @@ const PAIRS: Array<[string, string]> = [
   ["info", "info-bg"],
 ];
 
-describe("Spec-531 — contraste de la paleta", () => {
-  const palette = vars();
+describe.each(PALETTES)("contraste de la paleta %s", (_name, selector) => {
+  const palette = vars(selector);
 
   it("define todas las variables de color como hexadecimales", () => {
     const needed = new Set(PAIRS.flat());

@@ -249,23 +249,23 @@ Cada tarea cierra con su verificación. Al final de cada slice: lint + pytest + 
 
 ### S1 — Diferenciación visual
 
-- [ ] **T1.1 — Ambiente y versión de git**
+- [x] **T1.1 — Ambiente y versión de git**
   - Acceptance: `getEnvironment()` devuelve `{ env, isDev, branch, commit }`; `ENV` ausente o distinto de `dev` → prod; lee `.git/HEAD` → ref suelto o por rama → `refs/heads/…` o `packed-refs`; sin `.git` → `branch: null`, sin excepción. Middleware que lo deja en `res.locals.environment` en cada request.
   - Verify: `tests/unit/utils/environment.test.ts` (repo git falso en un directorio temporal: rama, HEAD suelto, packed-refs, sin `.git`, ENV ausente/dev/prod).
   - Files: `frontend/src/utils/environment.ts`, `frontend/src/app.ts`, test nuevo.
-- [ ] **T1.2 — Paleta Latte**
+- [x] **T1.2 — Paleta Latte**
   - Acceptance: bloque `:root[data-env="dev"]` en `theme.css` con los 20 tokens `--forge-*` (valores de §2.3; `-bg`/`-border`/`overlay` derivados); `palette-contrast` verifica **Papel y Latte** con los mismos pares.
   - Verify: `npx vitest run tests/unit/css-architecture`.
   - Files: `frontend/src/styles/theme.css`, `palette-contrast.test.ts`.
-- [ ] **T1.3 — Layout, barra lateral y favicon**
+- [x] **T1.3 — Layout, barra lateral y favicon**
   - Acceptance: en dev, `<html data-env="dev">`, `<title>[DEV] NarrativeForge — …`, favicon `favicon-dev.svg` (la vela con colores de Latte), `theme-color` `#eff1f5`, etiqueta DEV en la marca y pie `DEV · <rama> · <commit>`; en prod, HTML idéntico al de hoy (sin `data-env="dev"`, sin `[DEV]`, pie `v0.3.0 — Slice 3`).
   - Verify: `layout.view.test.ts` ampliado con los dos ambientes; `no-hardcoded-colors` con la excepción del `theme-color` de dev.
   - Files: `partials/layout.ejs`, `partials/sidebar.ejs`, `public/favicon-dev.svg`, `layout.view.test.ts`, `no-hardcoded-colors.test.ts`.
-- [ ] **T1.4 — Capturas de los dos temas**
-  - Acceptance: `visual-snapshots` acepta `ENV=dev` para el frontend del harness y guarda en `capturas/540/<tema>/`.
-  - Verify: `CAPTURAS=papel npx playwright test visual-snapshots` y lo mismo con Latte; revisión visual de las capturas.
+- [x] **T1.4 — Capturas de los dos temas**
+  - Acceptance: con `E2E_ENV=dev` el frontend del harness corre como dev; las capturas quedan en `capturas/531/<carpeta>/`.
+  - Verify: `CAPTURAS=papel-540 npx playwright test visual-snapshots` y `E2E_ENV=dev CAPTURAS=latte-540 …`; revisión visual de las capturas.
   - Files: `playwright.config.ts`, `tests/e2e/visual-snapshots.spec.ts`.
-- **Checkpoint S1:** suite completa en verde; capturas Papel vs. Latte para el usuario.
+- **Checkpoint S1:** suite completa en verde; capturas Papel vs. Latte para el usuario. ✅ 2026-09-27: ruff OK, pytest 666, Vitest 215, Playwright 31 (+3 capturas a pedido).
 
 ### S2 — Contenedores de dev
 

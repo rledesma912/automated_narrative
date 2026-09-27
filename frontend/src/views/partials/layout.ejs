@@ -1,15 +1,22 @@
+<% const environment = locals.environment || { isDev: false }; -%>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"<%- environment.isDev ? ' data-env="dev"' : '' %>>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NarrativeForge — <%= title %></title>
+  <title><%= environment.isDev ? '[DEV] ' : '' %>NarrativeForge — <%= title %></title>
 
-  <%/* Spec-531: favicon (vela) + color de la barra del navegador en móviles. */%>
+  <%/* Spec-531: favicon (vela) + color de la barra del navegador en móviles.
+       Spec-540: en dev, la vela y el color del tema «Latte». */%>
+  <% if (environment.isDev) { %>
+  <link rel="icon" href="/favicon-dev.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#eff1f5">
+  <% } else { %>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#f7f3ec">
+  <% } %>
 
   <!-- CSS compilado (Tailwind CLI compilado con PostCSS) — Offline first -->
   <link rel="stylesheet" href="/styles.css?v=<%= locals.assetVersion || '' %>">
