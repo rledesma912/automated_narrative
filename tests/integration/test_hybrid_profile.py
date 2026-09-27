@@ -29,11 +29,27 @@ CORE = yaml.safe_load(
 )
 
 
+def hybrid_profile() -> dict:
+    """La Voz en Claude y el resto en el modelo local (ruteo por rol, Spec-480).
+
+    Ya no vive en la configuración (2026-09-27: solo gemma3 y un perfil genérico de
+    Claude); el test lo arma para seguir cubriendo el RoleRoutingAdapter.
+    """
+    profile = copy.deepcopy(CORE["profiles"]["ollama-gemma3-12b"])
+    profile["anthropic"] = {"model": "claude-sonnet-5"}
+    profile["roles"]["voz"] = {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5",
+        "num_predict": 2000,
+        "thinking": "disabled",
+    }
+    return profile
+
+
 @pytest.fixture
 def hybrid(monkeypatch):
     """Activa el perfil híbrido solo dentro del test."""
-    _, profile = _resolve_active_profile(CORE, env_override=HYBRID)
-    profile = copy.deepcopy(profile)  # los tests pueden modificarlo
+    profile = hybrid_profile()
     monkeypatch.setattr(config, "_profile", profile)
     monkeypatch.setattr(config, "_active_profile_name", HYBRID)
     return profile
@@ -42,17 +58,17 @@ def hybrid(monkeypatch):
 # ── T2.1 ─────────────────────────────────────────────────────────────────────
 
 
-def test_perfil_hibrido_definido_pero_no_activo():
+def test_dos_perfiles_el_local_activo_y_uno_de_claude():
     assert CORE["active_profile"] == "ollama-gemma3-12b"
-    assert "anthropic-opus-voz" not in CORE["profiles"]
-    roles = CORE["profiles"][HYBRID]["roles"]
-    assert roles["voz"]["provider"] == "anthropic"
-    assert roles["voz"]["model"] == "claude-sonnet-5"
-    assert roles["voz"]["thinking"] in ("adaptive", "disabled")
-    assert "temperature" not in roles["voz"]
-    for role in ("planificador", "verificador", "journal"):
-        assert "provider" not in roles[role]  # heredan ollama del perfil
-        assert roles[role]["model"] == "gemma3:12b"
+    assert set(CORE["profiles"]) == {"ollama-gemma3-12b", "anthropic-sonnet5"}
+    claude = CORE["profiles"]["anthropic-sonnet5"]
+    assert claude["provider"] == "anthropic"
+    for role, cfg in claude["roles"].items():
+        assert cfg["model"] == "claude-sonnet-5", role
+        assert "temperature" not in cfg  # Sonnet 5 no la acepta
+        assert cfg["thinking"] in ("adaptive", "disabled")
+    _, resolved = _resolve_active_profile(CORE, env_override="anthropic-sonnet5")
+    assert resolved["roles"]["voz"]["model"] == "claude-sonnet-5"
 
 
 # ── T2.2 ─────────────────────────────────────────────────────────────────────

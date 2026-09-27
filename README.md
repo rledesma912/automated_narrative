@@ -130,7 +130,7 @@ Tras una corrida exitosa (`generate` o el flujo SSE), se popula automáticamente
 ### Configuración
 
 - **Perfiles LLM:** `config/llm_core_definitions.yaml` — perfiles autocontenidos (provider + 4 roles + filtros). Activar uno con `active_profile:` o con la env `LLM_PROFILE=<nombre>`.
-  - Perfiles incluidos: `ollama-llama31`, `ollama-mistral`, `ollama-qwen25-14b`, `ollama-mistral-nemo`, `ollama-qwen3-8b`, `ollama-hybrid-voz-qwen3`, `ollama-gemma3-12b`, `anthropic-sonnet`, `gemini-cli`.
+  - Perfiles incluidos: `ollama-gemma3-12b` (local, activo) y `anthropic-sonnet5` (todos los roles en Claude Sonnet 5, para comparar). Un rol puede ir a otro proveedor con `provider`.
 - **Pilares aristotélicos:** `config/llm_narrative_definition.yaml`.
 - **Estructura de beats:** `config/llm_beats_definition.yaml`.
 - **Prompts:** `config/prompts_generation/*.md` (Spec-170).

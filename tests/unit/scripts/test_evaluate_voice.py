@@ -35,7 +35,16 @@ async def test_corre_con_mock_y_restaura_lo_que_parchea(tmp_path):
 HYBRID = "ollama-gemma3-12b-voz-sonnet5"
 
 
+def _hybrid(monkeypatch):
+    """El perfil híbrido ya no está en la configuración: se inyecta solo en el test."""
+    import src.config as config
+    from tests.integration.test_hybrid_profile import hybrid_profile
+
+    monkeypatch.setitem(config._llm_core["profiles"], HYBRID, hybrid_profile())
+
+
 def _fakes(monkeypatch):
+    _hybrid(monkeypatch)
     from src.infrastructure.adapters import AnthropicAdapter
     from tests.support.fake_anthropic import FakeAnthropic, message
     from tests.support.recording_llm import RecordingLLM
