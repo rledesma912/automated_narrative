@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mejoras de UI
-**Estado:** PLAN — SPECIFY cerrado (H1–H10 decididos, 2026-09-27); plan pendiente de OK
+**Estado:** TASKS — SPECIFY y PLAN aprobados (2026-09-27); tareas pendientes de OK
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente), Spec-531 (tema), Spec-540 (tema de dev).
 
@@ -312,3 +312,51 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 | S2/S3 cambian el aspecto de todo: puede no gustar. | Checkpoint visual en S2 sobre dos pantallas antes de convertir el resto. |
 | H10 cambia el formato de `warnings`. | Sin compatibilidad con el formato viejo (datos descartables): se recrean las DB. |
 | Tests E2E atados a textos o clases viejas. | Se actualizan en el mismo slice; nada de `skip`. |
+
+---
+
+## 5. TASKS
+
+Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-status` en verde y al usuario la URL de `storymaker.test` con qué mirar.
+
+### S1 — Ficha (H4, H5)
+- [ ] **T1.1** Botón de generación según el estado en `historia.ejs` (Generar relato / Reintentar / Regenerar; «Generando…» sin cambios). Fuera «Generar Relato». — *Verify:* test de vista por estado. — *Files:* `historia.ejs`, test nuevo.
+- [ ] **T1.2** Fuera `POST /historia/:id/generar-relato`, `generateNarrativeHandler` y `generateNarrative()`. — *Verify:* la ruta da 404; `tsc` sin errores. — *Files:* `routes/index.ts`, `historia.controller.ts`, `core_api.service.ts`.
+- [ ] **T1.3** «Ver relato» en ficha y galería. — *Verify:* tests de vista (galería ya lo verifica). — *Files:* `historia.ejs`, `gallery.ejs`.
+
+### S2 — Base visual en Taller y Escaleta (H9 base, H2) · checkpoint visual
+- [ ] **T2.1** Clases en `globals.css`: botones revisados, `.chip-forge*`, `.nota-forge*`, `.pista-forge`, `.opcion-forge` (radio visible; seleccionada = acento + `on-accent`). — *Verify:* `palette-contrast` suma los pares nuevos (dos paletas). — *Files:* `globals.css`, `palette-contrast.test.ts`.
+- [ ] **T2.2** Taller con las clases (semáforo y estado = chips, «Quedan N» = nota, pistas, opciones, botones secundarios). — *Verify:* E2E del asistente. — *Files:* `taller.ejs`.
+- [ ] **T2.3** Escaleta con las clases (avisos = nota, «a revisar»/decisiones = chips, escenario y «en escena» = opciones). — *Verify:* E2E del asistente. — *Files:* `escaleta.ejs`.
+- [ ] **T2.4** Capturas Papel y Latte de Taller y Escaleta → **el usuario valida antes de S3**.
+
+### S3 — Gramática en el resto (H9, H2)
+- [ ] **T3.1** Dirección (pistas, tarjetas de efecto y «cómo lo cuenta» = opciones). — *Files:* `direccion.ejs`.
+- [ ] **T3.2** Ficha y galería (estado = chip; botones). — *Files:* `historia.ejs`, `gallery.ejs`, `home.ejs`.
+- [ ] **T3.3** Relato («Repite N frases» = nota + «Ver detalle»), sala (aviso y error = nota), debug (ONLINE/OFFLINE = chip). — *Files:* `relato_panel.ejs`, `streaming-room.ejs`, `streaming_error_panel.ejs`, `debug.ejs`.
+- [ ] **T3.4** Test de vistas: chips y notas no son `<button>` ni llevan `hover:`; sin estilos de estado armados a mano fuera de las clases. — *Files:* test nuevo.
+- [ ] **T3.5** Capturas antes/después en los dos temas.
+
+### S4 — Menú lateral (H3)
+- [ ] **T4.1** `--sidebar-width: 13rem` + `--sidebar-width-collapsed`; menú y pie leen el token (pie: `left-[var(--sidebar-width)]`). — *Files:* `theme.css`, `sidebar.ejs`, `footer.ejs`.
+- [ ] **T4.2** Botón colapsar (tira de íconos con `aria-label`/`title`, marca en inicial, DEV en un punto); estado en `localStorage` (try/catch) aplicado desde `<head>`. — *Verify:* E2E colapsar → recargar → navegar → sigue colapsado; el pie arranca donde termina el menú. — *Files:* `sidebar.ejs`, `layout.ejs`, `public/js/sidebar.js`, `globals.css`, E2E nuevo.
+
+### S5 — Barra del asistente (H6, H8)
+- [ ] **T5.1** Aviso de guardado: guardando fijo; guardado parpadea ~1,5 s y se desvanece; error fijo; sin aviso al cargar (salvo `/nuevo`); lugar reservado; `prefers-reduced-motion`. — *Verify:* E2E (transparente a los ~2 s; error visible). — *Files:* `asistente.js`, `_guardado.ejs`, `globals.css`, `asistente.spec.ts`.
+- [ ] **T5.2** `public/js/confirm-dialog.js` (`ForgeConfirm.ask`, UMD) + partial `<dialog>` en el layout. — *Verify:* Vitest (aceptar, cancelar, `Esc`, foco inicial en «Cancelar», foco de vuelta). — *Files:* `confirm-dialog.js`, `partials/confirm_dialog.ejs`, `layout.ejs`, test nuevo.
+- [ ] **T5.3** `data-confirmar` y `htmx:confirm` usan `ForgeConfirm`; test que prohíbe `window.confirm`/`alert`/`prompt` en el frontend. — *Verify:* E2E rearmar escaleta y regenerar acto (cancelar / confirmar). — *Files:* `asistente.js`, `confirm-dialog.js`, test nuevo, E2E.
+
+### S6 — Taller y final (H7, H1)
+- [ ] **T6.1** `workshop_criteria.yaml` con nombres y «para qué sirve» nuevos (`{protagonista}`); el catálogo los expone con el reemplazo. — *Verify:* pytest del reemplazo (con y sin protagonista). — *Files:* `workshop_criteria.yaml`, `catalog.py`, router/estado del asistente, test.
+- [ ] **T6.2** Taller: «para qué sirve» en preguntas abiertas, «Ya resuelto» y `title` de chips; texto nuevo para «a propósito» sin respuesta. — *Verify:* E2E del Taller. — *Files:* `taller.ejs`.
+- [ ] **T6.3** Consultor: la pregunta nombra al protagonista; snapshot regenerado a propósito. — *Files:* `authoring_consultant_system.md`, snapshot.
+- [ ] **T6.4** H1: `Direction` deriva `ending_intentional` de que haya texto en `ending`; la Dirección pierde la casilla; pista nueva. — *Verify:* pytest de la derivación; E2E de la Dirección. — *Files:* `models.py`, `direccion.ejs`, `asistente.js`, tests.
+
+### S7 — Avisos ignorados (H10)
+- [ ] **T7.1** Dominio `Warning {text, key, source, dismissed}` en `ActOutline.warnings`; repos y schemas. — *Files:* `models.py`, `story_repository.py`, schemas.
+- [ ] **T7.2** `rule_warnings` con claves estables; aviso de varias siembras sin las descartadas; Verificador recibe los descartados y filtra; máximo cuenta visibles; snapshot regenerado. — *Verify:* pytest. — *Files:* `verifier.py`, `authoring_verifier.md`, tests, snapshot.
+- [ ] **T7.3** API: ignorar por clave, «volver a mostrar»; rearmar limpia. — *Verify:* pytest del router. — *Files:* `authoring_router.py`, tests.
+- [ ] **T7.4** Escaleta: «N ignorados» → lista atenuada con «Volver a mostrar». — *Verify:* E2E ignorar → revisar (mock) → no vuelve → volver a mostrar. — *Files:* `escaleta.ejs`, `asistente.js`, E2E.
+
+### Cierre
+- [ ] **T8.1** `CLAUDE.md` (gramática visual, menú, barra, confirmaciones, avisos, final); spec a DONE; PR a `development`.
