@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mejoras de UI
-**Estado:** SPECIFY — H1–H10 decididos (2026-09-27); abierta a nuevos hallazgos; PLAN cuando el usuario cierre el recorrido
+**Estado:** PLAN — SPECIFY cerrado (H1–H10 decididos, 2026-09-27); plan pendiente de OK
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente), Spec-531 (tema), Spec-540 (tema de dev).
 
@@ -251,3 +251,63 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 8. **H9:** en todas las pantallas del inventario, los botones, chips y notas usan las clases compartidas; ningún chip ni nota tiene hover ni es `<button>`; los botones secundarios usan el acento; capturas antes/después en los dos temas.
 9. **H10:** un aviso ignorado no reaparece tras «Revisar con la IA» (ni de regla ni de la IA); «N ignorados → Volver a mostrar» lo restaura; rearmar la escaleta los limpia; las escaletas guardadas con el formato viejo se siguen leyendo.
 10. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+
+---
+
+## 4. PLAN
+
+Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de la DB (H10 usa el JSON que ya existe), así que la spec puede pasar a prod **sin migrar datos**. Cada slice cierra con suite en verde, dev actualizado y qué mirar en `storymaker.test` (Spec-540 §2.5).
+
+### S1 — Ficha: un botón de generación y «Ver relato» (H4, H5)
+- `historia.ejs`: botón según el estado (Generar relato / Reintentar / Regenerar); sin «Generar Relato».
+- Frontend: fuera la ruta `POST /historia/:id/generar-relato`, `generateNarrativeHandler` y `generateNarrative()` del servicio. El endpoint del Core queda.
+- «Ver relato» en ficha y galería.
+- **Verificación:** test de vista de la ficha por estado; la ruta vieja da 404; E2E de relatos sin cambios.
+
+### S2 — Base visual: botón, chip, nota, pista y opción (H9 base + H2) · **checkpoint visual con el usuario**
+- `globals.css`: botones revisados (esquinas redondeadas, secundario con acento), `.chip-forge*`, `.nota-forge*`, `.pista-forge`, `.opcion-forge` (tarjeta con radio visible; seleccionada = acento lleno + `on-accent` en todo su texto; foco con `ring-offset`).
+- Se aplican **solo en Taller y Escaleta** (las pantallas con más mezcla).
+- **Verificación:** capturas Papel y Latte de Taller y Escaleta; el usuario valida el estilo **antes** de S3. Contraste AA de los pares nuevos (acento/`on-accent`, chips) en las dos paletas.
+
+### S3 — Gramática visual en el resto (H9 + H2)
+- Dirección, ficha, galería, relato («Repite N frases» como nota con link «Ver detalle»), sala y debug pasan a las clases compartidas; fuera los estilos armados a mano del inventario.
+- **Verificación:** test que ningún chip ni nota sea `<button>` ni tenga `hover:`; capturas antes/después en los dos temas; E2E sin cambios de comportamiento.
+
+### S4 — Menú lateral angosto y colapsable (H3)
+- `--sidebar-width: 13rem` y `--sidebar-width-collapsed`; botón de colapsar (tira de íconos con `aria-label`/`title`, marca en inicial, DEV en un punto).
+- Estado en `localStorage` (con `try/catch`), aplicado desde `<head>` antes de pintar (sin parpadeo con `hx-boost`).
+- Pie de actividad con `left-[var(--sidebar-width)]` (arregla la superposición actual).
+- **Verificación:** E2E: colapsar → recargar y navegar → sigue colapsado; el pie arranca donde termina el menú (abierto y colapsado); unit del script de estado.
+
+### S5 — Barra del asistente: aviso de guardado y confirmaciones (H6, H8)
+- `asistente.js` + `globals.css`: «Guardando…» fijo; «Guardado» parpadea ~1,5 s y se desvanece; error fijo; sin aviso al cargar (salvo la ayuda de `/nuevo`); lugar reservado; `prefers-reduced-motion`.
+- `public/js/confirm-dialog.js` (`ForgeConfirm.ask`, UMD) + partial `<dialog>` en el layout; `data-confirmar` y `htmx:confirm` lo usan.
+- Test que no quede `window.confirm`/`alert`/`prompt` en el frontend.
+- **Verificación:** Vitest de `ForgeConfirm` (aceptar, cancelar, `Esc`, foco); E2E: rearmar la escaleta y regenerar un acto con el diálogo (cancelar no hace nada; confirmar sigue el flujo); el aviso queda transparente a los ~2 s y un error queda visible.
+
+### S6 — Taller y final (H7, H1)
+- `workshop_criteria.yaml`: nombres y «para qué sirve» nuevos con `{protagonista}`; la vista lo reemplaza y lo muestra en preguntas abiertas, «Ya resuelto» y chips; texto nuevo para «a propósito» sin respuesta.
+- `authoring_consultant_system.md`: la pregunta nombra al protagonista. Snapshot de prompts regenerado a propósito.
+- H1: `Direction` deriva `ending_intentional` de que haya texto en `ending` (vale para las historias guardadas y los YAML); la Dirección pierde la casilla y la pista explica el efecto.
+- **Verificación:** unit de la derivación (final con texto → fijo; vacío → libre) y de los textos con protagonista; E2E del Taller con los nombres nuevos; `import-yaml` de `input_stories/` sin cambios de comportamiento salvo el final fijo.
+
+### S7 — Avisos ignorados que no vuelven (H10)
+- Dominio: aviso = `{text, key, source, dismissed}`; lectura compatible de la lista vieja de textos.
+- `rule_warnings` con clave estable por tema (siembra, elenco…); un aviso que junta siembras se arma sin las descartadas.
+- Verificador: recibe los descartados del acto («no los repitas ni los reformules») y filtra coincidencias; el máximo por acto cuenta solo visibles. Snapshot regenerado a propósito.
+- API: «ignorar» marca `dismissed` (por clave); nuevo «volver a mostrar». Rearmar la escaleta los limpia.
+- Escaleta: link «N ignorados» → lista atenuada con «Volver a mostrar».
+- **Verificación:** pytest (regla descartada no vuelve; IA descartada llega al prompt y se filtra; volver a mostrar; rearmar limpia; lista vieja); E2E ignorar → revisar con la IA (mock) → no vuelve → volver a mostrar.
+
+### Cierre
+- `CLAUDE.md` (gramática visual, barra, confirmaciones, avisos), spec a DONE, PR a `development`.
+- Pase a prod cuando el usuario lo pida: `make deploy` sin migración.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| S2/S3 cambian el aspecto de todo: puede no gustar. | Checkpoint visual en S2 sobre dos pantallas antes de convertir el resto. |
+| H1 fija finales que hoy están escritos sin la casilla. | Se avisa en el pase; en prod hay 3 borradores: se revisan con el usuario antes del deploy. |
+| H10 cambia el formato de `warnings`. | Lectura compatible de la lista vieja + test; sin cambio de esquema. |
+| Tests E2E atados a textos o clases viejas. | Se actualizan en el mismo slice; nada de `skip`. |
