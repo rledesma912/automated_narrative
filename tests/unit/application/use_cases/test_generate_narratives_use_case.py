@@ -24,7 +24,6 @@ def _make_story(beats: list[MacroBeat]) -> Story:
 def _make_beat(number: int, content: str) -> MacroBeat:
     return MacroBeat(
         number=number,
-        summary=f"summary {number}",
         generated_act=content,
         status=BeatStatus.COMPLETED,
     )

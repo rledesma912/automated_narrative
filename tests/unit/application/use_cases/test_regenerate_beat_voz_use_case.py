@@ -23,7 +23,6 @@ _STORY_ID = uuid.uuid4()
 def _make_beat(number: int, content: str = "prosa original") -> MacroBeat:
     return MacroBeat(
         number=number,
-        summary=f"evento del beat {number}",
         generated_act=content,
         status=BeatStatus.COMPLETED,
     )

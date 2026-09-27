@@ -12,7 +12,7 @@ from src.infrastructure.adapters import MockLLMAdapter
 
 
 def _beat() -> MacroBeat:
-    return MacroBeat(number=1, summary="- Hecho", status="pending")
+    return MacroBeat(number=1, generated_act="- Hecho", status="pending")
 
 
 async def test_guarda_prosa_y_prompts_en_el_acto():

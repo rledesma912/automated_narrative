@@ -72,6 +72,12 @@ class OutlinePlanner:
         )
         valid = {cid for cid, _, _ in context.decisions(story)}
         acts = [_to_outline(a, valid) for a in sorted(result.actos, key=lambda a: a.numero)]
+        # Spec-570 D2: la sinopsis por acto del autor queda con su acto (vuelve al exportar).
+        synopsis = {a.number: a.synopsis for a in story.outline if a.synopsis}
+        acts = [
+            a.model_copy(update={"synopsis": synopsis[a.number]}) if a.number in synopsis else a
+            for a in acts
+        ]
         if story.direction and story.direction.ending_intentional and "final" in valid:
             # El final decidido por el autor es, por definición, el del último acto.
             last = acts[-1]
@@ -87,6 +93,7 @@ class OutlinePlanner:
             objetivo=context.OBJETIVO,
             historia=context.story_block(story),
             decisiones=context.decisions_block(story),
+            borradores=_drafts_block(story),
             escenarios=scenarios or "(ninguno todavía)",
             actos=self._acts_block(story),
         )
@@ -130,4 +137,20 @@ def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
         seeds=_clean(a.siembra),
         payoffs=_clean(a.retoma),
         decisions=[d for d in _clean(a.decisiones) if d in valid_decisions],
+    )
+
+
+def _drafts_block(story: Story) -> str:
+    """Spec-570 D2: lo que el autor escribió para cada acto (YAML viejo), como guía."""
+    lines = [
+        f"{a.number}. {a.synopsis}"
+        for a in sorted(story.outline, key=lambda a: a.number)
+        if a.synopsis
+    ]
+    if not lines:
+        return ""
+    return (
+        "LO QUE EL AUTOR ESCRIBIÓ PARA CADA ACTO (respetalo: es su historia; completá lo que falta):\n"
+        + "\n".join(lines)
+        + "\n\n"
     )

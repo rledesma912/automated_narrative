@@ -63,17 +63,9 @@ class SQLStoryRepository:
             if story.beats:
                 for b in story.beats:
                     await conn.execute(
-                        """INSERT INTO macro_beat
-                        (story_id, number, summary, synopsis_beat, type, status)
-                        VALUES (?, ?, ?, ?, ?, ?)""",
-                        (
-                            str(story.id),
-                            b.number,
-                            b.summary,
-                            b.synopsis_beat or "",
-                            b.beat_type.value if b.beat_type else None,
-                            b.status.value,
-                        ),
+                        """INSERT INTO macro_beat (story_id, number, generated_act, status)
+                        VALUES (?, ?, ?, ?)""",
+                        (str(story.id), b.number, b.generated_act, b.status.value),
                     )
 
             await conn.commit()
@@ -568,15 +560,16 @@ class SQLStoryRepository:
 
         await conn.execute(
             "INSERT INTO act_outline (story_id, number, goal, events, change_from, change_to, "
-            "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, needs_review) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, needs_review, "
+            "draft, synopsis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT (story_id, number) DO UPDATE SET goal = excluded.goal, "
             "events = excluded.events, change_from = excluded.change_from, "
             "change_to = excluded.change_to, scenario = excluded.scenario, "
             "on_stage = excluded.on_stage, held_back = excluded.held_back, "
             "seeds = excluded.seeds, payoffs = excluded.payoffs, "
             "decisions = excluded.decisions, warnings = excluded.warnings, "
-            "needs_review = excluded.needs_review",
+            "needs_review = excluded.needs_review, draft = excluded.draft, "
+            "synopsis = excluded.synopsis",
             (
                 story_id,
                 act.number,
@@ -592,6 +585,8 @@ class SQLStoryRepository:
                 js(act.decisions),
                 js([w.model_dump() for w in act.warnings]),
                 int(act.needs_review),
+                int(act.draft),
+                act.synopsis,
             ),
         )
 
@@ -609,6 +604,8 @@ class SQLStoryRepository:
                 scenario=r["scenario"] or "",
                 held_back=r["held_back"] or "",
                 needs_review=bool(r["needs_review"]),
+                draft=bool(r["draft"]),
+                synopsis=r["synopsis"] or "",
                 **{k: json.loads(r[k] or "[]") for k in lists},
             )
             for r in await cursor.fetchall()
@@ -641,41 +638,22 @@ class SQLStoryRepository:
         return personajes
 
     async def _load_beats(self, conn, story_id: str) -> list:
-        """Carga los beats de una historia desde la tabla macro_beat."""
+        """Carga la prosa de cada acto (macro_beat, Spec-570: solo la salida)."""
         from src.domain.models import BeatStatus, MacroBeat
 
         cursor = await conn.execute(
-            "SELECT number, summary, synopsis_beat, type, status, "
-            "generated_act, active_scenario_id FROM macro_beat "
+            "SELECT number, status, generated_act FROM macro_beat "
             "WHERE story_id = ? ORDER BY number",
             (story_id,),
         )
-        rows = await cursor.fetchall()
-        beats = []
-        for b in rows:
-            raw_type = b["type"] if "type" in b.keys() else None
-            beat_type = None
-            if raw_type:
-                try:
-                    from src.domain.models import BeatType
-
-                    beat_type = BeatType(raw_type)
-                except ValueError:
-                    pass
-            beats.append(
-                MacroBeat(
-                    number=b["number"],
-                    summary=b["summary"] or "",
-                    synopsis_beat=b["synopsis_beat"] if "synopsis_beat" in b.keys() else None,
-                    beat_type=beat_type,
-                    status=BeatStatus(b["status"]) if b["status"] else BeatStatus.PENDING,
-                    generated_act=b["generated_act"] or "",
-                    active_scenario_id=b["active_scenario_id"]
-                    if "active_scenario_id" in b.keys()
-                    else None,
-                )
+        return [
+            MacroBeat(
+                number=b["number"],
+                status=BeatStatus(b["status"]) if b["status"] else BeatStatus.PENDING,
+                generated_act=b["generated_act"] or "",
             )
-        return beats
+            for b in await cursor.fetchall()
+        ]
 
     def _row_to_story(self, row) -> Story:
         """Convert row to Story."""

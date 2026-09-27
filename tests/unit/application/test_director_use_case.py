@@ -50,7 +50,6 @@ async def test_con_escaleta_solo_voz_y_memoria():
 
     assert [b.number for b in beats] == [1, 2, 3, 4, 5]
     assert llm.roles == ["voz", "journal"] * 5
-    assert beats[0].summary == "- Hecho 1"
     assert stages[:2] == [(JobStage.VOZ, 1), (JobStage.JOURNAL, 1)]
 
 

@@ -77,7 +77,8 @@ class YamlStoryExporter:
             doc["direction"] = story.direction.model_dump(mode="json")
         if story.workshop:
             doc["workshop"] = [w.model_dump(mode="json") for w in story.workshop]
-        if story.outline:
+        # Una escaleta de solo borradores es la sinopsis por acto: ya va en `actos`.
+        if story.outline and not all(a.draft for a in story.outline):
             doc["outline"] = [a.model_dump(mode="json") for a in story.outline]
         return doc
 
@@ -172,12 +173,12 @@ class YamlStoryExporter:
         """Texto de cada acto, de la fuente más fiel disponible (Spec-440 §8).
 
         1. `narrator_config.actos` (historias viejas: el JSON aún los traía);
-        2. `macro_beat.synopsis_beat` (donde los guarda CreateStoryUseCase);
+        2. `act_outline.synopsis` (Spec-570 D2: la sinopsis por acto del YAML);
         3. `sinopsis` partida en 5 párrafos (el wizard la arma uniendo los actos
            con una línea en blanco; tras una generación web es la única copia).
         """
         actos_raw = sc.get("actos") or {}
-        by_beat = {b.number: (b.synopsis_beat or "") for b in (story.beats or [])}
+        by_beat = {a.number: a.synopsis for a in story.outline if a.synopsis}
         paragraphs = [p.strip() for p in (story.sinopsis or "").split("\n\n") if p.strip()]
         from_sinopsis = paragraphs if len(paragraphs) == 5 else []
         canonical_keys = [

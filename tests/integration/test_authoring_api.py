@@ -333,7 +333,9 @@ async def test_generar_con_escaleta_usa_la_escaleta(client, monkeypatch):
     journal = await SQLStoryRepository().get_journal(uuid.UUID(sid))
     assert journal.used_motifs == ["un motivo de ejemplo"]
     assert journal.last_events.startswith("Acto 1: Pasó lo del acto.")
-    assert "Hecho 3.1 de ejemplo" in story.beats[2].summary
+    assert (
+        "Hecho 3.1 de ejemplo" in story.outline[2].events[0]
+    )  # Spec-570: la entrada vive en la escaleta
 
 
 async def test_control_de_repeticion_del_relato(client):

@@ -27,12 +27,6 @@ class StoryCreateRequest(BaseModel):
     personajes_full: list[dict] = Field(default_factory=list)
 
 
-class BeatUpdateRequest(BaseModel):
-    """Request for updating a beat."""
-
-    summary: str
-
-
 class JobCreateRequest(BaseModel):
     """Request para lanzar un job (Spec-460).
 

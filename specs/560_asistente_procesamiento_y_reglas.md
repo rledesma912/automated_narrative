@@ -158,7 +158,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - `evaluate_voice.py` con el perfil activo (gemma3:12b), 2 corridas, sobre el pipeline actual: frases repetidas, clichés, nombres inventados y, a mano, cómo abren los actos 2–5. Corre en segundo plano (~15 min).
 - Script para medir A5: `evaluate_voice.py --effect <id>` (fija el efecto de la historia en la DB temporal).
 
-### S1 — Spec-570: `macro_beat` solo salida
+### S1 — Spec-570: `macro_beat` solo salida · ✅ 2026-09-27 (D2 revisada: `act_outline.draft` y `act_outline.synopsis`; fuera `BeatType` —quedó sin uso— y el `PUT /stories/{id}/beats/{n}`, que editaba el resumen que ya no existe; snapshot: solo suma la sinopsis por acto al Planificador)
 - Esquema: fuera `summary`, `synopsis_beat`, `type`, `active_scenario_id`, `active_scenario_description`; modelo y repos.
 - Quien las leía, lee la escaleta: la sala (hechos del acto; `GET /beats` sigue devolviendo `summary`, armado desde `act_outline.events`), el tipo de acto sale del número (`get_beat_info`), el export YAML deja de leer `synopsis_beat`.
 - `import-yaml`: la sinopsis por acto de los YAML viejos va a la escaleta como primer hecho (D2).
@@ -213,14 +213,14 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 
 Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió el esquema, `make dev-db ARGS=--yes`; `make dev-status`; al usuario, qué mirar en `storymaker.test`. **Mientras corre una medición no se tocan prompts** (se leen del disco en cada generación).
 
-### S0 — Línea base
-- [ ] **T0.1** `evaluate_voice.py --label base-560 --variants con --runs 2 --out scripts/research/560/base` (gemma3:12b, en segundo plano). — *Verify:* `report.json` y los relatos en la carpeta.
-- [ ] **T0.2** `evaluate_voice.py --effect <id>`: fija el efecto de la historia en la DB temporal. — *Verify:* corrida `--mock` con `--effect susto` deja `direction.effect = susto`. — *Files:* `scripts/evaluate_voice.py`.
+### S0 — Línea base · ✅ 2026-09-27 — `base-560` (gemma3:12b, «El monte prohibido» con entidades, 2 corridas): clichés 1,0 · parentescos mal 0,5 · narradora en 3.ª persona 0 · frases repetidas 3,5 · 2 187 palabras. Relatos en `scripts/research/560/base/`.
+- [x] **T0.1** `evaluate_voice.py --label base-560 --variants con --runs 2 --out scripts/research/560/base` (gemma3:12b, en segundo plano). — *Verify:* `report.json` y los relatos en la carpeta.
+- [x] **T0.2** `evaluate_voice.py --effect <id>`: fija el efecto de la historia en la DB temporal. — *Verify:* corrida `--mock` con `--effect susto` deja `direction.effect = susto`. — *Files:* `scripts/evaluate_voice.py`.
 
 ### S1 — Spec-570: `macro_beat` solo salida
-- [ ] **T1.1** Esquema y modelo: fuera `summary`, `synopsis_beat`, `type`, `active_scenario_id`, `active_scenario_description`. — *Files:* `connection.py`, `models.py`, `beat_repository.py`, `story_repository.py`.
-- [ ] **T1.2** Lectores: `director_use_case` (no escribe esas columnas), `streaming_service` (`beat_start` con el tipo desde el número), `beat_router` (`summary` desde `act_outline.events`), `yaml_exporter` (sin `synopsis_beat`). — *Verify:* snapshot sin cambios; E2E de la sala.
-- [ ] **T1.3** `import-yaml`: sinopsis por acto → escaleta (primer hecho). — *Verify:* pytest del import de `input_stories/` (escaleta con 5 actos y su sinopsis). — *Files:* `create_story.py`, tests.
+- [x] **T1.1** Esquema y modelo: fuera `summary`, `synopsis_beat`, `type`, `active_scenario_id`, `active_scenario_description`. — *Files:* `connection.py`, `models.py`, `beat_repository.py`, `story_repository.py`.
+- [x] **T1.2** Lectores: `director_use_case` (no escribe esas columnas), `streaming_service` (`beat_start` con el tipo desde el número), `beat_router` (`summary` desde `act_outline.events`), `yaml_exporter` (sin `synopsis_beat`). — *Verify:* snapshot sin cambios; E2E de la sala.
+- [x] **T1.3** `import-yaml`: sinopsis por acto → escaleta (primer hecho). — *Verify:* pytest del import de `input_stories/` (escaleta con 5 actos y su sinopsis). — *Files:* `create_story.py`, tests.
 
 ### S2 — Spec-570: nombres
 - [ ] **T2.1** `MacroBeat` → `ActText`, `BeatType` → `ActType`, fuera el alias `Beat`. — *Verify:* `grep` en `src/` sin los nombres viejos; suite.

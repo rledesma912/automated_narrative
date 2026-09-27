@@ -14,7 +14,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.use_cases.voz_use_case import VozUseCase
 from src.domain.interfaces import LLMProvider
 from src.domain.jobs import JobStage
-from src.domain.models import BeatType, MacroBeat, NarrativeJournal, Story
+from src.domain.models import MacroBeat, NarrativeJournal, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,10 @@ class DirectorUseCase:
         # Import local: los servicios del asistente importan el paquete `application`.
         from src.application.services.authoring.outline_narrator import OutlineNarrator
 
-        if len(story.outline) != self.prompt_builder.num_beats:
+        # Sin escaleta completa, o solo con borradores importados (Spec-570 D2): se arma.
+        if len(story.outline) != self.prompt_builder.num_beats or all(
+            a.draft for a in story.outline
+        ):
             await self._plan(story, on_stage, on_step_start)
 
         narrator = OutlineNarrator(self.llm, self.prompt_builder)
@@ -64,21 +67,8 @@ class DirectorUseCase:
         if on_plan_ready is not None:
             on_plan_ready(len(acts), 0.0)
         journal = initial_journal
-        # La sinopsis del acto que escribió el autor se conserva (la lee el export YAML).
-        synopsis = {b.number: b.synopsis_beat for b in story.beats if b.synopsis_beat}
         for act in acts:
-            info = self.prompt_builder.get_beat_info(act.number)
-            bullets = "\n".join(f"- {e}" for e in act.events)
-            macro_beat = MacroBeat(
-                number=act.number,
-                summary=bullets,
-                synopsis_beat=synopsis.get(act.number, bullets),
-                active_scenario_description=act.scenario,
-            )
-            try:
-                macro_beat.beat_type = BeatType(info.get("name", ""))
-            except ValueError:
-                pass
+            macro_beat = MacroBeat(number=act.number)
             system_prompt, user_prompt = narrator.voice_prompts(story, act, journal)
 
             if on_stage:

@@ -130,7 +130,7 @@ class TestSqlStoryRepository:
     async def test_get_by_id_carga_generated_act_y_escenario_de_los_beats(
         self, repo, setup_db, temp_db_path
     ):
-        """Regresión Spec-430: _load_beats() omitía generated_act/active_scenario_id."""
+        """Regresión Spec-430: _load_beats() omitía generated_act."""
         story = Story(
             title="Story con beats narrados",
             protagonista="P",
@@ -143,10 +143,8 @@ class TestSqlStoryRepository:
         beat_repo = SQLBeatRepository()
         beat = MacroBeat(
             number=1,
-            summary="evento del beat 1",
             generated_act="Prosa ya narrada del beat 1.",
             status=BeatStatus.COMPLETED,
-            active_scenario_id="La casa vieja",
         )
         await beat_repo.save(beat, story.id)
 
@@ -154,5 +152,4 @@ class TestSqlStoryRepository:
 
         assert len(result.beats) == 1
         assert result.beats[0].generated_act == "Prosa ya narrada del beat 1."
-        assert result.beats[0].active_scenario_id == "La casa vieja"
         assert result.beats[0].has_content()

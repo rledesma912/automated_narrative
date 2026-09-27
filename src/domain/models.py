@@ -21,16 +21,6 @@ class StoryStatus(str, Enum):
     FAILED = "failed"
 
 
-class BeatType(str, Enum):
-    """Función narrativa de un macro-beat (Spec-043)."""
-
-    EXPOSICION = "exposicion"
-    ACCION_ASCENDENTE = "accion_ascendente"
-    CLIMAX = "climax"
-    ACCION_DESCENDENTE = "accion_descendente"
-    DESENLACE = "desenlace"
-
-
 class BeatStatus(str, Enum):
     """Estado del ciclo de vida de un macro-beat (Spec-250)."""
 
@@ -124,21 +114,18 @@ class Scenario(BaseModel):
 
 
 class MacroBeat(BaseModel):
-    """Unidad narrativa estructural (acto)."""
+    """La SALIDA de un acto: su prosa (Spec-570). La entrada es `ActOutline`.
+
+    Los prompts quedan para el debug. Lo que era de la entrada (resumen, sinopsis,
+    tipo, escenario) vive en la escaleta.
+    """
 
     number: int
-    summary: str
     generated_act: str = ""
     status: BeatStatus = BeatStatus.PENDING
     created_at: datetime = Field(default_factory=now_argentina)
-    # Spec 038: campos nuevos
-    active_scenario_id: Optional[str] = None
-    active_scenario_description: str = ""
-    user_prompt: Optional[str] = None
-    beat_type: Optional[BeatType] = None
-    # Spec 190 (Slice 3): trazabilidad de prompting + input del usuario
     system_prompt: Optional[str] = None
-    synopsis_beat: Optional[str] = None
+    user_prompt: Optional[str] = None
 
     def is_narrated(self) -> bool:
         """True si el beat tiene prosa generada y está marcado como completado."""
@@ -299,6 +286,12 @@ class ActOutline(BaseModel):
     decisions: list[str] = Field(default_factory=list)
     warnings: list[OutlineWarning] = Field(default_factory=list)
     needs_review: bool = False
+    # Spec-570 D2: acto importado de un YAML viejo (solo su sinopsis). Una escaleta de
+    # borradores se planifica igual que una vacía; el Planificador los usa de guía.
+    draft: bool = False
+    # Lo que el autor escribió para este acto en un YAML viejo: guía del Planificador y
+    # vuelve al exportar (Spec-440 §8). Sobrevive a que el Planificador arme el acto.
+    synopsis: str = ""
 
     @field_validator("warnings", mode="before")
     @classmethod

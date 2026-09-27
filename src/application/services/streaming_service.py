@@ -81,12 +81,9 @@ async def stream_story(
 
             started_beats: set[int] = set()
 
-            def _beat_start(number: int, beat_type: str = "") -> StreamEvent:
+            def _beat_start(number: int) -> StreamEvent:
                 started_beats.add(number)
-                return StreamEvent(
-                    event=StreamEventType.BEAT_START,
-                    data={"number": number, "type": beat_type},
-                )
+                return StreamEvent(event=StreamEventType.BEAT_START, data={"number": number})
 
             def _on_stage(stage: JobStage, beat: int | None) -> None:
                 # beat_start sale al empezar el beat (la voz), no cuando ya terminó.
@@ -103,12 +100,7 @@ async def stream_story(
                 beats_collected.append(macro_beat)
 
                 if beat_number not in started_beats:  # director sin on_stage
-                    await queue.put(
-                        _beat_start(
-                            beat_number,
-                            macro_beat.beat_type.value if macro_beat.beat_type else "",
-                        )
-                    )
+                    await queue.put(_beat_start(beat_number))
 
                 # Persistir beat y journal en DB antes de emitir al cliente
                 if beat_repo is not None:
