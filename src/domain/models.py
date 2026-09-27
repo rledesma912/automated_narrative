@@ -270,6 +270,9 @@ class ActOutline(BaseModel):
     """
 
     number: int = Field(..., ge=1, le=5)
+    # Spec-560 A1: «Cómo llega acá» (actos 2–5): cuánto tiempo pasó y qué pasó entre el
+    # final del acto anterior y el primer hecho de este. La Voz abre el acto con esto.
+    bridge: str = ""
     goal: str = ""
     events: list[str] = Field(default_factory=list)
     change_from: str = ""

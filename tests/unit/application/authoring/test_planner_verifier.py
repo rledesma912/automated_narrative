@@ -11,6 +11,7 @@ from tests.unit.application.authoring.conftest import ScriptedLLM
 def _acto(n, **kw):
     base = {
         "numero": n,
+        "como_llega": "" if n == 1 else "Esa noche sigue",
         "objetivo": f"quiere {n}",
         "hechos": [f"hecho {n}"],
         "cambio_de": "a",
@@ -92,6 +93,7 @@ async def test_verificador_saca_decisiones_que_faltan_y_limita_avisos(story):
     outline = [
         ActOutline(
             number=n,
+            bridge="Esa noche sigue",
             events=["x"],
             change_from="a",
             change_to="b",
@@ -128,6 +130,7 @@ async def test_el_verificador_no_saca_el_final_intencional(story):
     outline = [
         ActOutline(
             number=n,
+            bridge="Esa noche sigue",
             events=["x"],
             change_from="a",
             change_to="b",
@@ -226,6 +229,7 @@ async def test_un_aviso_de_la_ia_ignorado_llega_al_prompt_y_se_filtra(story):
     outline = [
         ActOutline(
             number=n,
+            bridge="Esa noche sigue",
             events=["x"],
             change_from="a",
             change_to="b",
@@ -243,3 +247,22 @@ async def test_un_aviso_de_la_ia_ignorado_llega_al_prompt_y_se_filtra(story):
 
     assert "El micro aparece de golpe en el acto 2." in llm.calls[0]["prompt"]
     assert [w.dismissed for w in v.outline[1].warnings] == [True]  # no se duplicó
+
+
+# ── Spec-560 A1 + A3: puente entre actos y continuidad ──────────────────────
+
+
+async def test_el_planificador_trae_como_llega_salvo_en_el_acto_1(story):
+    llm = ScriptedLLM({"actos": [_acto(n, como_llega=f"puente {n}") for n in range(1, 6)]})
+    acts, _ = await OutlinePlanner(llm).plan(story)
+    assert [a.bridge for a in acts] == ["", "puente 2", "puente 3", "puente 4", "puente 5"]
+
+
+def test_regla_sin_puente_en_los_actos_2_a_5(story):
+    outline = [
+        ActOutline(number=n, events=["x"], bridge="" if n in (1, 3) else "sigue")
+        for n in range(1, 4)
+    ]
+    warnings = rule_warnings(story, outline)
+    assert [w.key for w in warnings.get(3, [])] == ["sin_puente"]
+    assert 1 not in warnings and 2 not in warnings  # el acto 1 no necesita puente

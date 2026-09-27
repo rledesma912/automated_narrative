@@ -141,3 +141,22 @@ def test_la_escena_incluye_a_quien_nombran_los_eventos(story):
     system, user = OutlineNarrator(ScriptedLLM()).voice_prompts(story, act, None)
     assert "EN ESCENA: José, María, Ricardo" in user
     assert "María" in system and "Suegra" in system
+
+
+# ── Spec-560 A1: la Voz abre el acto con el puente y sigue desde el anterior ──
+
+
+def test_la_voz_recibe_el_puente_y_el_final_del_acto_anterior(story):
+    act = ActOutline(number=2, events=["Algo pasa"], bridge="Esa misma noche vuelve a la terminal.")
+    previo = "Primera oración. Segunda oración. Tercera, larga. Cuarta y última."
+    _, user = OutlineNarrator(ScriptedLLM()).voice_prompts(story, act, None, previo)
+    assert "CÓMO SE LLEGA A ESTE ACTO" in user and "Esa misma noche vuelve a la terminal." in user
+    assert "ASÍ TERMINÓ EL ACTO ANTERIOR" in user
+    assert "«Segunda oración. Tercera, larga. Cuarta y última.»" in user  # las últimas 3
+    assert "Primera oración" not in user
+
+
+def test_el_acto_1_no_tiene_puente_ni_final_anterior(story):
+    act = ActOutline(number=1, events=["Algo pasa"], bridge="no se usa en el acto 1")
+    _, user = OutlineNarrator(ScriptedLLM()).voice_prompts(story, act, None, "")
+    assert "CÓMO SE LLEGA" not in user and "ASÍ TERMINÓ" not in user

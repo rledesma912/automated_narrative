@@ -14,6 +14,7 @@ LOS 5 ACTOS:
 
 Para cada acto devolvé:
 - "numero": 1 a 5.
+- "como_llega": cómo se pasa del final del acto anterior al primer hecho de este: cuánto tiempo pasó y qué pasó en el medio, en una o dos frases ("" en el acto 1). Sin saltos: si cambia el lugar o el momento, tiene que quedar claro cómo se llegó.
 - "objetivo": qué quiere o intenta el protagonista en ese acto (una frase).
 - "hechos": de 3 a 5 hechos concretos y en orden, con acciones del protagonista.
 - "cambio_de" y "cambio_a": cómo está la situación al empezar y al terminar el acto (tienen que ser distintos).

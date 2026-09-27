@@ -72,7 +72,11 @@ class OutlineNarrator:
     # ── Voz ──────────────────────────────────────────────────────────────────
 
     def voice_prompts(
-        self, story: Story, act: ActOutline, memory: NarrativeJournal | None
+        self,
+        story: Story,
+        act: ActOutline,
+        memory: NarrativeJournal | None,
+        previous_text: str = "",
     ) -> tuple[str, str]:
         narrator = context.narrator(story)
         scene = self._scene_story(story, act, narrator)
@@ -89,6 +93,8 @@ class OutlineNarrator:
         low, high = word_range(act)
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
+            puente=_bridge(act),
+            final_anterior=_ending_of(previous_text),
             nombre=_ACT_NAMES.get(info.get("name", ""), info.get("name", "")),
             intensidad=info.get("intensity", ""),
             funcion=self._function(story, act, info),
@@ -225,6 +231,25 @@ class OutlineNarrator:
                 previous.used_motifs if previous else [], memoria.motivos_usados
             ),
         )
+
+
+def _bridge(act: ActOutline) -> str:
+    """Spec-560 A1: cómo se llega al acto (tiempo y camino), para abrirlo sin saltos."""
+    if act.number == 1 or not act.bridge.strip():
+        return ""
+    return (
+        "CÓMO SE LLEGA A ESTE ACTO (abrí el acto contándolo en pocas líneas, antes de los "
+        f"eventos): {act.bridge.strip()}\n"
+    )
+
+
+def _ending_of(previous_text: str, sentences: int = 3) -> str:
+    """Spec-560 A1: las últimas oraciones del acto anterior, textuales, para seguir desde ahí."""
+    parts = re.split(r"(?<=[.!?…»])\s+", " ".join(previous_text.split()))
+    tail = " ".join(p for p in parts[-sentences:] if p).strip()
+    if not tail:
+        return ""
+    return f"ASÍ TERMINÓ EL ACTO ANTERIOR (seguí desde acá; no lo repitas):\n«{tail}»\n"
 
 
 def _section(title: str, items: list[str]) -> str:

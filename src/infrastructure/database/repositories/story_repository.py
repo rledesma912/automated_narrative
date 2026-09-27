@@ -561,7 +561,7 @@ class SQLStoryRepository:
         await conn.execute(
             "INSERT INTO act_outline (story_id, number, goal, events, change_from, change_to, "
             "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, needs_review, "
-            "draft, synopsis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "draft, synopsis, bridge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT (story_id, number) DO UPDATE SET goal = excluded.goal, "
             "events = excluded.events, change_from = excluded.change_from, "
             "change_to = excluded.change_to, scenario = excluded.scenario, "
@@ -569,7 +569,7 @@ class SQLStoryRepository:
             "seeds = excluded.seeds, payoffs = excluded.payoffs, "
             "decisions = excluded.decisions, warnings = excluded.warnings, "
             "needs_review = excluded.needs_review, draft = excluded.draft, "
-            "synopsis = excluded.synopsis",
+            "synopsis = excluded.synopsis, bridge = excluded.bridge",
             (
                 story_id,
                 act.number,
@@ -587,6 +587,7 @@ class SQLStoryRepository:
                 int(act.needs_review),
                 int(act.draft),
                 act.synopsis,
+                act.bridge,
             ),
         )
 
@@ -606,6 +607,7 @@ class SQLStoryRepository:
                 needs_review=bool(r["needs_review"]),
                 draft=bool(r["draft"]),
                 synopsis=r["synopsis"] or "",
+                bridge=r["bridge"] or "",
                 **{k: json.loads(r[k] or "[]") for k in lists},
             )
             for r in await cursor.fetchall()

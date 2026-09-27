@@ -24,6 +24,7 @@ _ACT_NAMES = {
 
 class ActoPlan(BaseModel):
     numero: int
+    como_llega: str  # Spec-560 A1: "" en el acto 1
     objetivo: str
     hechos: list[str]
     cambio_de: str
@@ -127,6 +128,7 @@ def _clean(items: list[str]) -> list[str]:
 def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
     return ActOutline(
         number=a.numero,
+        bridge="" if a.numero == 1 else " ".join(a.como_llega.split()),
         goal=a.objetivo.strip(),
         events=_clean(a.hechos),
         change_from=a.cambio_de.strip(),

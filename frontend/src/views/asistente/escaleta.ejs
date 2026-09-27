@@ -121,6 +121,12 @@
 
             <div class="grid lg:grid-cols-[1fr_18rem] gap-6 p-6">
               <div>
+                <% if (a.number > 1) { %>
+                  <%/* Spec-560 A1: el puente entre actos. */%>
+                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="bridge-<%= a.number %>">Cómo llega acá</label>
+                  <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>Cuánto tiempo pasó desde el acto anterior y qué pasó en el medio. El acto arranca contándolo.</p>
+                  <textarea id="bridge-<%= a.number %>" name="bridge" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %> mb-5"><%= a.bridge %></textarea>
+                <% } %>
                 <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="goal-<%= a.number %>">Qué quiere <%= state.direction.protagonist_name || 'el protagonista' %></label>
                 <textarea id="goal-<%= a.number %>" name="goal" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %> mb-5"><%= a.goal %></textarea>
 

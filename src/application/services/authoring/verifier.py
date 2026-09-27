@@ -128,6 +128,13 @@ def rule_warnings(
     for act in outline:
         if not act.events:
             add(act.number, "sin_hechos", "El acto no tiene hechos: ¿qué pasa acá?")
+        if act.number > 1 and not act.bridge.strip():
+            add(
+                act.number,
+                "sin_puente",
+                "No dice cómo se llega acá desde el acto anterior (cuánto tiempo pasó, qué pasó "
+                "en el medio): completá «Cómo llega acá».",
+            )
         if act.change_from and workshop_rules.normalize(
             act.change_from
         ) == workshop_rules.normalize(act.change_to):
@@ -175,6 +182,8 @@ def _mentions(a: str, b: str) -> bool:
 
 def _act_text(a: ActOutline, protagonist: str = "") -> str:
     lines = [f"ACTO {a.number}" + (f" — {a.scenario}" if a.scenario else "")]
+    if a.bridge:
+        lines.append(f"Cómo llega: {a.bridge}")
     if a.goal:
         lines.append(f"Quiere: {a.goal}")
     lines += [f"- {e}" for e in a.events]

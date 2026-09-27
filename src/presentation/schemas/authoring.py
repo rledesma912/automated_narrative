@@ -44,6 +44,7 @@ class WorkshopAction(BaseModel):
 class ActForm(BaseModel):
     """Un acto de la escaleta editado por el autor."""
 
+    bridge: str = Field("", max_length=300)  # «Cómo llega acá» (Spec-560 A1)
     goal: str = Field("", max_length=300)
     events: list[str] = Field(default_factory=list, max_length=8)
     change_from: str = Field("", max_length=200)

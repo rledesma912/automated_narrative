@@ -187,7 +187,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - `MacroBeat` → `ActText`, `DirectorUseCase` → `GenerateStoryUseCase`, `BeatType` → `ActType`; fuera el alias `Beat`. API (`/beats`), evento `beat_start` y `applies_to_beat` sin cambios (D3).
 - **Verificación:** refactor mecánico; suite en verde; `grep` sin los nombres viejos en `src/`.
 
-### S3 — A1 + A3: puente entre actos y continuidad
+### S3 — A1 + A3: puente entre actos y continuidad · ✅ 2026-09-27 (snapshot regenerado a propósito: `como_llega` en el Planificador, «Cómo llega» en el Verificador, puente y final anterior en la Voz de los actos 2–5)
 - Esquema: `act_outline.bridge` («Cómo llega acá»: tiempo que pasó y cómo se llega).
 - Planificador: devuelve `como_llega` para los actos 2–5.
 - Escaleta: campo «Cómo llega acá» arriba de los hechos (actos 2–5), editable.
@@ -247,11 +247,11 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [x] **T2.2** `DirectorUseCase` → `GenerateStoryUseCase` (archivo, contenedor DI, routers, CLI, tests). — *Verify:* suite.
 
 ### S3 — A1 + A3: puente y continuidad
-- [ ] **T3.1** Esquema `act_outline.bridge`; `ActOutline.bridge`; `ActForm`; export/import YAML. — *Files:* `connection.py`, `models.py`, `story_repository.py`, schemas, exporter/loader.
-- [ ] **T3.2** Planificador: `como_llega` (actos 2–5) en el esquema de salida y el prompt.
-- [ ] **T3.3** Voz: «CÓMO SE LLEGA A ESTE ACTO» + «ASÍ TERMINÓ EL ACTO ANTERIOR» (últimas 2–3 oraciones), en la generación completa y al regenerar. — *Verify:* pytest de las secciones; snapshot regenerado a propósito.
-- [ ] **T3.4** Verificador: regla `sin_puente` (actos 2–5) y chequeo de continuidad en el prompt. — *Verify:* pytest.
-- [ ] **T3.5** Escaleta: campo «Cómo llega acá» (actos 2–5). — *Verify:* E2E (se guarda y vuelve).
+- [x] **T3.1** Esquema `act_outline.bridge`; `ActOutline.bridge`; `ActForm`; export/import YAML. — *Files:* `connection.py`, `models.py`, `story_repository.py`, schemas, exporter/loader.
+- [x] **T3.2** Planificador: `como_llega` (actos 2–5) en el esquema de salida y el prompt.
+- [x] **T3.3** Voz: «CÓMO SE LLEGA A ESTE ACTO» + «ASÍ TERMINÓ EL ACTO ANTERIOR» (últimas 2–3 oraciones), en la generación completa y al regenerar. — *Verify:* pytest de las secciones; snapshot regenerado a propósito.
+- [x] **T3.4** Verificador: regla `sin_puente` (actos 2–5) y chequeo de continuidad en el prompt. — *Verify:* pytest.
+- [x] **T3.5** Escaleta: campo «Cómo llega acá» (actos 2–5). — *Verify:* E2E (se guarda y vuelve).
 
 ### S4 — A4: lo que todavía no se cuenta
 - [ ] **T4.1** Esquema `act_outline.reveal_act`; Planificador `se_revela_en`; regla del Verificador (guardado sin acto posterior que lo revele). — *Verify:* pytest.

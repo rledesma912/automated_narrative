@@ -67,9 +67,10 @@ class GenerateStoryUseCase:
         if on_plan_ready is not None:
             on_plan_ready(len(acts), 0.0)
         journal = initial_journal
+        previous_text = ""
         for act in acts:
             macro_beat = ActText(number=act.number)
-            system_prompt, user_prompt = narrator.voice_prompts(story, act, journal)
+            system_prompt, user_prompt = narrator.voice_prompts(story, act, journal, previous_text)
 
             if on_stage:
                 on_stage(JobStage.VOZ, act.number)
@@ -84,6 +85,7 @@ class GenerateStoryUseCase:
             if on_step_start:
                 on_step_start(f"📓  Memoria del acto {act.number}/{len(acts)}...")
             journal = await narrator.remember(story, act, macro_beat.generated_act, journal)
+            previous_text = macro_beat.generated_act
             yield macro_beat, journal, llm_elapsed
 
     async def _plan(

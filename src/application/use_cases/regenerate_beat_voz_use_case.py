@@ -57,7 +57,11 @@ class RegenerateBeatVozUseCase:
             previous = await self.story_repo.get_journal(story_id, beat_number - 1)
 
         narrator = OutlineNarrator(self.llm, self.prompt_builder)
-        system_prompt, user_prompt = narrator.voice_prompts(story, act, previous)
+        # Spec-560 A1: el final del acto anterior, para seguir desde ahí.
+        before = next((b for b in story.beats if b.number == beat_number - 1), None)
+        system_prompt, user_prompt = narrator.voice_prompts(
+            story, act, previous, before.generated_act if before else ""
+        )
         logger.debug(f"[REGEN-VOZ] beat={beat_number} story={story_id} narrative={narrative_id}")
         beat, _elapsed = await self.voz.narrate_with_prompts(beat, system_prompt, user_prompt)
         await self.beat_repo.update(beat, story_id)

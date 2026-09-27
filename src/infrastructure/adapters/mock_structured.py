@@ -46,6 +46,7 @@ _ANSWERS = ("Primera opción", "Segunda opción", "Tercera opción", "Cuarta")
 def _act(n: int) -> dict:
     return {
         "numero": n,
+        "como_llega": "" if n == 1 else f"Esa misma noche, después del acto {n - 1}, sigue",
         "objetivo": f"Objetivo del acto {n}",
         "hechos": [f"Hecho {n}.1 de ejemplo", f"Hecho {n}.2 de ejemplo"],
         "cambio_de": f"Estado al empezar el acto {n}",

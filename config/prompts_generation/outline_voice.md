@@ -1,6 +1,6 @@
 ACTO {numero} DE 5 · {nombre} · intensidad {intensidad}
 QUÉ TIENE QUE LOGRAR ESTE ACTO: {funcion}
-{meta}
+{meta}{puente}{final_anterior}
 EVENTOS DE ESTE ACTO (contalos en primera persona, como {narrador}, en este orden, sin cambiar qué pasó):
 {hechos}
 
