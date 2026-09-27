@@ -71,18 +71,18 @@ O en terminales separadas:
 
 ```bash
 # Terminal 1 — Core API (FastAPI)
-make api              # → http://localhost:8020
+make api              # → http://localhost:8040
 
 # Terminal 2 — Frontend (Express + EJS + HTMX)
-make ui               # → http://localhost:3010
+make ui               # → http://localhost:3040
 ```
 
 | Componente | URL | Descripción |
 |---|---|---|
-| Frontend | http://localhost:3010 | Wizard, Streaming Room, Galería de relatos |
-| Core API | http://localhost:8020 | REST + SSE |
-| API Docs | http://localhost:8020/docs | Swagger UI |
-| Health | http://localhost:8020/api/v1/health | Diagnóstico SQLite + LLM activo |
+| Frontend | http://localhost:3040 | Wizard, Streaming Room, Galería de relatos |
+| Core API | http://localhost:8040 | REST + SSE |
+| API Docs | http://localhost:8040/docs | Swagger UI |
+| Health | http://localhost:8040/api/v1/health | Diagnóstico SQLite + LLM activo |
 
 > Estos puertos son del entorno de **desarrollo** (Spec-325). Producción corre en Docker
 > en `:3000` (frontend) / `:8010` (API), con la DB `data/prod/stories.db`, y se actualiza
@@ -161,7 +161,7 @@ make export   ARG=<id># exporta a Markdown
 ```
 
 Variables:
-- `API_HOST` — host:puerto del Core API (dev: `0.0.0.0:8020`).
+- `API_HOST` — host:puerto del Core API (dev: `0.0.0.0:8040`).
 
 ---
 

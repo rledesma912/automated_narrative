@@ -15,8 +15,8 @@ else
 fi
 
 # Puertos configurados (sobrescriben lo del .env si es necesario para el script)
-BACKEND_PORT=8020
-FRONTEND_PORT=3010
+BACKEND_PORT=8040
+FRONTEND_PORT=3040
 
 echo "---"
 echo "Backend: http://localhost:$BACKEND_PORT"

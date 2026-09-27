@@ -269,27 +269,27 @@ Cada tarea cierra con su verificación. Al final de cada slice: lint + pytest + 
 
 ### S2 — Contenedores de dev
 
-- [ ] **T2.1 — Imágenes de dev**
+- [x] **T2.1 — Imágenes de dev**
   - Acceptance: `Dockerfile.dev` y `frontend/Dockerfile.dev` construyen con dependencias de dev; la API arranca uvicorn `--reload` en 8040 vigilando `src/` y `config/` (`*.yaml`); la UI corre `npm run dev`.
   - Verify: `docker build -f Dockerfile.dev .` y `docker build -f frontend/Dockerfile.dev frontend` sin errores.
   - Files: `Dockerfile.dev`, `frontend/Dockerfile.dev`, `.dockerignore` si hace falta.
-- [ ] **T2.2 — Compose de dev**
+- [x] **T2.2 — Compose de dev**
   - Acceptance: `docker-compose.dev.yml` con `name: narrative-dev`, servicios `api` (`narrative-api-dev`, 8040) y `ui` (`narrative-ui-dev`, 3040), montajes de §2.2, `.git` en solo lectura, `user: ${DEV_UID}:${DEV_GID}`, `HOME=/tmp`, `ENV=dev`, `CORE_API_URL=http://api:8040`, `OLLAMA_HOST`, `restart: unless-stopped`; `api` con healthcheck y `ui` que depende de él.
   - Verify: `docker compose -f docker-compose.dev.yml config` válido; `docker compose ls` muestra `narrative-dev` separado del proyecto de prod.
   - Files: `docker-compose.dev.yml`.
-- [ ] **T2.3 — Script y atajos**
+- [x] **T2.3 — Script y atajos**
   - Acceptance: `scripts/bash/dev_env.sh up|down|rebuild|status|logs|db`; `status` muestra rama, commit, estado de los contenedores, `/health` de la API y respuesta de la UI, y sale ≠ 0 si algo falla; `db` baja la API, recrea la base con `init_db()` en el contenedor, verifica catálogos > 0 y `story` = 0, y la levanta; `make dev-up|dev-down|dev-rebuild|dev-status|dev-logs|dev-db`, y `make db` como alias de `dev-db`.
   - Verify: `make dev-up && make dev-status`; `make dev-db` (imprime los conteos); `ls -l data/dev` a nombre del usuario.
   - Files: `scripts/bash/dev_env.sh`, `Makefile`.
-- [ ] **T2.4 — Puertos de dev 8040/3040 en todo el repo**
+- [x] **T2.4 — Puertos de dev 8040/3040 en todo el repo**
   - Acceptance: ningún `8020`/`3010` de dev queda en `.env`, `frontend/.env`, `Makefile`, `scripts/bash/run_dev.sh`, `pyproject.toml`, `config/.env.sample`, README, `docs/frontend_architecture_map.md` ni en los comentarios de tests (los E2E siguen en 8021/3021).
   - Verify: `grep -rn "8020\|3010"` fuera de `specs/` sin resultados de dev.
   - Files: los listados (cambios de una línea).
-- [ ] **T2.5 — Recarga en vivo**
+- [x] **T2.5 — Recarga en vivo**
   - Acceptance: con dev levantado, un cambio en un `.ejs`, un `.ts` del server, un `.py` y un `.yaml` de `config/` se ve en :3040/:8040 sin comandos; `docker restart narrative-ui-dev` recupera sola.
   - Verify: prueba manual con un cambio temporal en cada tipo, que se revierte al terminar.
   - Files: ninguno (verificación).
-- **Checkpoint S2:** suite completa en verde; `make deploy-check` pasa; contenedores de prod sin cambios (`docker ps`, misma imagen y uptime); el usuario puede entrar a `http://localhost:3040`.
+- **Checkpoint S2:** suite completa en verde; `make deploy-check` pasa; contenedores de prod sin cambios (`docker ps`, misma imagen y uptime); el usuario puede entrar a `http://localhost:3040`. ✅ 2026-09-27: recarga verificada con `.ejs` (y clase Tailwind nueva), `.ts`, `.py` y `.yaml`; `docker restart` recupera; `make dev-db` → genre 8, subgenre 50, entity_nature 10, genre_entity_nature 39, story 0 (la DB anterior, con 3 historias importadas, quedó en `data/dev/backups/stories-20260927-pre-spec540.db`); `deploy-check` OK y prod sin reinicios; ruff OK, pytest 666, Vitest 215, Playwright 31.
 
 ### S3 — Proxy y dominios (se confirma antes de empezar)
 

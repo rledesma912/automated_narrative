@@ -16,8 +16,8 @@ Flujo obligatorio: **SPECIFY → PLAN → TASKS → IMPLEMENT**.
 
 ```bash
 make install     # uv sync + npm install
-make api         # uvicorn dev (8020)
-make ui          # frontend Express (3010)
+make api         # uvicorn dev (8040)
+make ui          # frontend Express (3040)
 make dev         # api + ui en paralelo
 make db          # crea data/dev/stories.db
 make test        # pytest -v --cov=src
@@ -160,7 +160,7 @@ Templates Markdown en `config/prompts_generation/`, cargados por `TemplateLoader
 
 ```
 ENV=dev
-API_HOST=0.0.0.0:8020
+API_HOST=0.0.0.0:8040
 ANTHROPIC_API_KEY=...                              # solo si perfil usa Anthropic
 DATABASE_URL=sqlite+aiosqlite:///data/dev/stories.db
 PROMPTS_DIR=./config/prompts_generation
@@ -168,7 +168,7 @@ BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 # LLM_PROFILE=ollama-gemma3-12b                    # opcional: pisa active_profile
 ```
 
-`frontend/.env` independiente (dev): `PORT=3010`, `CORE_API_URL=http://localhost:8020`.
+`frontend/.env` independiente (dev): `PORT=3040`, `CORE_API_URL=http://localhost:8040`.
 
 ## Database
 
