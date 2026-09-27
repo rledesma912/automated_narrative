@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — deuda técnica del dominio
-**Estado:** SPECIFY — decisiones D1–D4 pendientes
+**Estado:** SPECIFY — D1–D4 decididas (2026-09-27): todas según la recomendación; pendiente PLAN
 **Rama:** `feat/analisis-asistente-ui-logica` (la implementación, en rama propia)
 **Extiende:** Spec-530 (escaleta y pipeline), Spec-190 (modelo relacional).
 
@@ -68,6 +68,8 @@ Que el dominio diga lo que el sistema hace: **la escaleta es la entrada de cada 
 ---
 
 ## 3. DECISIONES
+
+**✅ 2026-09-27: el usuario aprueba las cuatro recomendaciones** — D1 mismo pase que la Spec-560 A1; D2 (a) la sinopsis por acto va a la escaleta como primer hecho; D3 (a) renombrar solo por dentro; D4 (a) los duplicados de `story` van en una spec aparte.
 
 - **D1 — ¿Cuándo?** Recomendación: **en el mismo pase a prod que la Spec-560 A1** (las dos cambian el esquema: una sola exportación/importación).
 - **D2 — La sinopsis por acto de los YAML viejos.** (a) **va a la escaleta como primer hecho** del acto (recomendada: la historia importada arranca con escaleta y el Planificador no tiene que inventarla); (b) se descarta (el Planificador arma la escaleta desde la sinopsis general).
