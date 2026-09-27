@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mantenimiento / infraestructura local
-**Estado:** SPECIFY — decisiones D1–D5 tomadas, pendiente OK para pasar a PLAN
+**Estado:** PLAN — SPECIFY aprobado (2026-09-27); plan pendiente de OK
 **Extiende:** Spec-325 (separación dev/prod en host único), Spec-520 (prod solo cambia con `make deploy`) y Spec-531 (tema y favicon).
 
 ---
@@ -114,7 +114,7 @@ El dominio no alcanza: la pestaña y la página tienen que decir de qué ambient
 | Pie de la barra lateral | `v0.3.0 — Slice 3` | **`DEV · <rama> · <commit>`** |
 | Favicon | vela (`favicon.svg`) | la misma vela con los colores del tema de dev (`favicon-dev.svg`) |
 
-La rama y el commit se leen de `.git/` (montado en solo lectura) al arrancar, y nodemon reinicia la UI con cada cambio.
+La rama y el commit se leen de `.git/` (montado en solo lectura) en cada request: siempre muestran lo último.
 
 **Tema de dev: «Latte», basado en Catppuccin Latte**
 
@@ -188,3 +188,55 @@ Regla para Claude, que se agrega a `CLAUDE.md` y a la memoria:
 8. `make deploy` y `make deploy-check` siguen funcionando igual y no ven los contenedores de dev.
 10. Las dos paletas pasan `palette-contrast` (AA ≥ 4,5:1).
 11. `make test`, `npm test` y Playwright siguen en verde (los E2E usan sus propios puertos, 8021/3021).
+
+---
+
+## 6. PLAN
+
+Cuatro slices, en orden de riesgo creciente para prod: primero lo que solo toca el repo y se prueba con tests, al final lo que toca el proxy compartido. Cada slice cierra con un checkpoint verificable.
+
+### S1 — Diferenciación visual (solo frontend, sin infraestructura)
+
+- **Ambiente:** `frontend/src/utils/environment.ts` lee `process.env.ENV` (`dev` | `prod`; **sin valor = prod**, así prod y los E2E no cambian) y la rama y el commit leyendo `.git/HEAD` y los refs (incluido `packed-refs`), sin necesitar el binario de `git` en el contenedor. Si no hay `.git` legible, muestra «DEV · sin git». Se publica en `app.locals.environment`.
+- **Layout:** `data-env` en `<html>`; `[DEV]` en `<title>`; en dev, favicon `favicon-dev.svg` y `theme-color` de Latte.
+- **Barra lateral:** etiqueta DEV junto a la marca y pie `DEV · <rama> · <commit>`; en prod, igual que hoy.
+- **Tema:** bloque `:root[data-env="dev"]` en `theme.css` con la paleta Latte completa (incluidos los `-bg`, `-border` y `overlay`).
+- **Tests:** `palette-contrast` recorre las dos paletas; unit de `environment.ts` (ENV ausente/dev/prod, HEAD con rama, HEAD suelto, `packed-refs`, sin `.git`); vista del layout y de la barra en los dos ambientes.
+- **Checkpoint:** Vitest + Playwright en verde; capturas de los dos temas (`CAPTURAS=540`, corriendo la UI con `ENV=dev`).
+
+### S2 — Contenedores de dev
+
+- `Dockerfile.dev` (raíz): Python 3.12 + `uv sync --frozen` con dependencias de dev; `CMD` uvicorn `--reload` en 8040 vigilando `src/` y `config/`.
+- `frontend/Dockerfile.dev`: Node 22 + `npm ci` con devDependencies; `CMD npm run dev`.
+- `docker-compose.dev.yml` (`name: narrative-dev`): servicios `api` y `ui`, puertos 8040/3040, montajes de §2.2, `.git` en solo lectura, `user: ${DEV_UID}:${DEV_GID}`, `HOME=/tmp`, `ENV=dev`, `CORE_API_URL=http://api:8040`, `OLLAMA_HOST=http://host.docker.internal:11434`, `restart: unless-stopped`.
+- `scripts/bash/dev_env.sh` (`up | down | rebuild | status | logs | db`) y los atajos `make dev-*`. `db`: baja la API, recrea la base con `init_db()` dentro del contenedor, **verifica** catálogos > 0 y `story` = 0, y la vuelve a levantar. `make db` queda como alias.
+- Puertos de dev en todos lados (8020→8040, 3010→3040): `.env`, `frontend/.env`, `Makefile`, `scripts/bash/run_dev.sh`, `pyproject.toml` (`base_url`), `config/.env.sample`, README, `docs/frontend_architecture_map.md` y los comentarios de los tests que los nombran.
+- **Checkpoint:** `make dev-up` → `make dev-status` en verde; `curl` a :8040/health y :3040 con el tema Latte; editar un `.ejs` y un `.py` y ver el cambio sin comandos; `docker restart narrative-ui-dev` recupera; `make dev-db` verifica; `make deploy-check` sigue pasando y `docker ps` de prod sin cambios; `make test` + Vitest + Playwright en verde.
+
+### S3 — Proxy y dominios (fuera del repo; se confirma con el usuario antes de tocar)
+
+- Backup de `/mnt/LLM/apps/reverse_proxy/nginx_config/default.conf` con fecha.
+- Los dos bloques actuales de `storymaker.test` pasan a `storymaker.prd` (siguen apuntando a :3000; el de `:80` conserva `default_server`, así la familia sigue entrando por la IP).
+- Bloques nuevos `storymaker.test` (`:80` y `:443`) → `host.docker.internal:3040`, con la misma preparación para SSE, sin `default_server`.
+- Certificado de `storymaker.prd` con `generate_certs.sh` (solo crea los que faltan).
+- `nginx -t`; si pasa, `nginx -s reload` (recarga sin cortar conexiones).
+- El usuario agrega `storymaker.prd` a `/etc/hosts`.
+- **Checkpoint:** `curl -k --resolve` a los dos dominios (dev con `data-env="dev"`, prod sin él y con el commit desplegado); `http://192.168.0.65` sigue en prod; SSE de dev por el proxy (`/api/v1/events` recibe `snapshot` y heartbeat). El usuario valida en su navegador.
+
+### S4 — Documentación y dinámica de trabajo
+
+- `CLAUDE.md`: dominios, puertos, `make dev-*`, tema por ambiente y la regla de cierre de checkpoint (§2.5).
+- Memoria: la regla de checkpoint con dev actualizado; el mapa de dominios.
+- Notas en las specs vigentes que nombran `storymaker.test` como prod (Spec-520, Spec-531); esta spec pasa a DONE.
+- **Checkpoint:** tests en verde; el usuario reinicia la máquina (cuando le quede cómodo) y confirma el criterio 3.
+
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| Un error en `default.conf` tira el proxy de **todos** los proyectos. | Backup previo, `nginx -t` antes de recargar y `reload` (no `restart`): si la validación falla, nginx sigue con la configuración anterior. |
+| Marcadores o costumbre: `storymaker.test` deja de ser prod. | Lo avisamos al cerrar S3; la familia no se ve afectada (entra por IP). |
+| Watchers dentro del contenedor que no detectan cambios. | En Linux, inotify atraviesa los bind mounts; se verifica en el checkpoint de S2 editando un `.ejs`, un `.ts` y un `.py`. |
+| Una recarga de uvicorn interrumpe un job de dev. | Esperado y documentado (§2.2); solo afecta a dev. |
+| Archivos de `data/dev/` a nombre de root. | `user: ${DEV_UID}:${DEV_GID}`; se verifica con `ls -l` en S2. |
+| El commit de la marca queda viejo tras un `git commit` sin cambios en `src/`. | Se lee en cada request, no solo al arrancar: leer dos archivos chicos de `.git/` es despreciable. |
