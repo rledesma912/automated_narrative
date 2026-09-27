@@ -52,6 +52,7 @@ class ActForm(BaseModel):
     scenario: str = Field("", max_length=120)
     on_stage: list[str] = Field(default_factory=list, max_length=12)
     held_back: str = Field("", max_length=300)
+    reveal_act: int = Field(0, ge=0, le=5)  # en qué acto se revela (Spec-560 A4)
     seeds: list[str] = Field(default_factory=list)
     payoffs: list[str] = Field(default_factory=list)
     decisions: list[str] = Field(default_factory=list)

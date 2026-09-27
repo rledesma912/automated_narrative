@@ -260,6 +260,7 @@
         .filter((el) => el.checked)
         .map((el) => el.value),
       held_back: value(form, "held_back"),
+      reveal_act: Number(value(form, "reveal_act") || 0),
       rules: texts(form, "rules"),
       seeds: keep.seeds || [],
       payoffs: keep.payoffs || [],

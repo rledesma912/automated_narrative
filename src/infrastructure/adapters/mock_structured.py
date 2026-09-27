@@ -54,6 +54,7 @@ def _act(n: int) -> dict:
         "escenario": "Escenario de ejemplo",
         "en_escena": [],
         "se_guarda": "" if n == 5 else f"Algo que se revela después del acto {n}",
+        "se_revela_en": 0 if n == 5 else n + 1,
         "siembra": [],
         "retoma": [],
         "decisiones": [],

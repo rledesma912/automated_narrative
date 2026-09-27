@@ -19,6 +19,7 @@ def _acto(n, **kw):
         "escenario": "La ruta",
         "en_escena": ["José"],
         "se_guarda": "",
+        "se_revela_en": 0,
         "siembra": [],
         "retoma": [],
         "decisiones": [],
@@ -266,3 +267,25 @@ def test_regla_sin_puente_en_los_actos_2_a_5(story):
     warnings = rule_warnings(story, outline)
     assert [w.key for w in warnings.get(3, [])] == ["sin_puente"]
     assert 1 not in warnings and 2 not in warnings  # el acto 1 no necesita puente
+
+
+# ── Spec-560 A4: lo que todavía no se cuenta y dónde se revela ──────────────
+
+
+async def test_el_planificador_trae_el_acto_que_revela_solo_si_es_posterior(story):
+    actos = [
+        _acto(n, se_guarda="Quién es ella", se_revela_en=r)
+        for n, r in ((1, 4), (2, 1), (3, 0), (4, 5), (5, 0))
+    ]
+    acts, _ = await OutlinePlanner(ScriptedLLM({"actos": actos})).plan(story)
+    assert [a.reveal_act for a in acts] == [4, 0, 0, 5, 0]
+
+
+def test_regla_lo_guardado_sin_acto_que_lo_revele(story):
+    outline = [
+        ActOutline(number=1, events=["x"], held_back="Quién es ella", reveal_act=3),
+        ActOutline(number=2, bridge="sigue", events=["x"], held_back="El accidente"),
+    ]
+    warnings = rule_warnings(story, outline)
+    assert 1 not in warnings
+    assert [w.key for w in warnings[2]] == ["sin_revelacion"]

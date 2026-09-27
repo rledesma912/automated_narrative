@@ -151,6 +151,13 @@ def rule_warnings(
                     f"elenco:{key}",
                     f"«{name}» está en escena y no en el elenco: ¿lo sumamos como personaje?",
                 )
+        if act.held_back.strip() and not act.number < act.reveal_act <= 5:
+            add(
+                act.number,
+                "sin_revelacion",
+                "Lo que todavía no se cuenta acá no tiene un acto posterior que lo revele: "
+                "elegí en qué acto se revela.",
+            )
         later = [a for a in outline if a.number > act.number]
         loose = [
             s
@@ -188,7 +195,8 @@ def _act_text(a: ActOutline, protagonist: str = "") -> str:
         lines.append(f"Quiere: {a.goal}")
     lines += [f"- {e}" for e in a.events]
     if a.held_back:
-        lines.append(f"Se guarda para después: {a.held_back}")
+        reveal = f" (se revela en el acto {a.reveal_act})" if a.reveal_act else ""
+        lines.append(f"Todavía no se cuenta: {a.held_back}{reveal}")
     if a.decisions:
         names = [
             c.for_story(protagonist).nombre

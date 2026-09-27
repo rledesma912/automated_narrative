@@ -252,3 +252,24 @@ test("el puente entre actos se ve en la escaleta y se guarda", async ({ page }) 
   await page.reload();
   await expect(page.locator('form[data-number="2"] [name="bridge"]')).toHaveValue("Dos días después, de vuelta en la terminal.");
 });
+
+// Spec-560 A4: «Lo que todavía no se cuenta» y en qué acto se revela.
+test("lo que todavía no se cuenta tiene su acto de revelación", async ({ page }) => {
+  const sid = await crearDesdeNuevo(page, "E2E revela");
+  for (const kind of ["consult", "plan_outline"]) {
+    const job = (await (await page.request.post(`/api/v1/stories/${sid}/jobs`, { data: { kind } })).json()).job_id;
+    await expect
+      .poll(async () => (await (await page.request.get(`/api/v1/jobs/${job}`)).json()).status, { timeout: 20000 })
+      .toBe("done");
+  }
+  await page.goto(`/asistente/${sid}/escaleta`);
+  const acto1 = page.locator('form[data-number="1"]');
+  await expect(acto1.getByText("Lo que todavía no se cuenta")).toBeVisible();
+  await expect(acto1.locator('[name="reveal_act"]')).toHaveValue("2"); // lo propuso el Planificador
+  await expect(page.locator('form[data-number="5"] [name="reveal_act"]')).toHaveCount(0);
+
+  await acto1.locator('[name="reveal_act"]').selectOption("4");
+  await guardadoListo(page);
+  await page.reload();
+  await expect(page.locator('form[data-number="1"] [name="reveal_act"]')).toHaveValue("4");
+});

@@ -32,6 +32,7 @@ class ActoPlan(BaseModel):
     escenario: str
     en_escena: list[str]
     se_guarda: str
+    se_revela_en: int  # Spec-560 A4: acto que revela lo guardado (0 si no se guarda nada)
     siembra: list[str]
     retoma: list[str]
     decisiones: list[str]
@@ -136,6 +137,7 @@ def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
         scenario=_scenario_name(a.escenario),
         on_stage=list(dict.fromkeys(_scenario_name(n) for n in _clean(a.en_escena))),
         held_back=a.se_guarda.strip(),
+        reveal_act=a.se_revela_en if a.se_guarda.strip() and a.numero < a.se_revela_en <= 5 else 0,
         seeds=_clean(a.siembra),
         payoffs=_clean(a.retoma),
         decisions=[d for d in _clean(a.decisiones) if d in valid_decisions],

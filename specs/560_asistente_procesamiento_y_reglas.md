@@ -195,7 +195,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - Verificador: regla «sin puente» (actos 2–5) y chequeo de la IA de continuidad (lugar o momento que no se explica desde el acto anterior).
 - **Verificación:** snapshot regenerado a propósito (Voz, Planificador, Verificador); pytest de las secciones nuevas; E2E del campo en la Escaleta.
 
-### S4 — A4: «Lo que todavía no se cuenta»
+### S4 — A4: «Lo que todavía no se cuenta» · ✅ 2026-09-27 (regla `sin_revelacion`; el Verificador ve «Todavía no se cuenta… (se revela en el acto N)»)
 - Esquema: `act_outline.reveal_act` (en qué acto se revela; 0 = ninguno).
 - Planificador: devuelve `se_revela_en`; regla del Verificador si algo guardado no se revela en un acto posterior.
 - Escaleta: rótulo «Lo que todavía no se cuenta», pista («La Voz no lo revela en este acto; se tiene que revelar en uno posterior») y «Se revela en el Acto N» (elegible).
@@ -254,8 +254,8 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [x] **T3.5** Escaleta: campo «Cómo llega acá» (actos 2–5). — *Verify:* E2E (se guarda y vuelve).
 
 ### S4 — A4: lo que todavía no se cuenta
-- [ ] **T4.1** Esquema `act_outline.reveal_act`; Planificador `se_revela_en`; regla del Verificador (guardado sin acto posterior que lo revele). — *Verify:* pytest.
-- [ ] **T4.2** Escaleta: rótulo, pista y «Se revela en el Acto N» (selector). — *Verify:* E2E.
+- [x] **T4.1** Esquema `act_outline.reveal_act`; Planificador `se_revela_en`; regla del Verificador (guardado sin acto posterior que lo revele). — *Verify:* pytest.
+- [x] **T4.2** Escaleta: rótulo, pista y «Se revela en el Acto N» (selector). — *Verify:* E2E.
 
 ### S5 — A2 + A6: regenerar sin repetir y cerrar el circuito
 - [ ] **T5.1** Prompt de regeneración con lo marcado por `repetition_check` en ese acto. — *Verify:* pytest del prompt.

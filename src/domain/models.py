@@ -279,7 +279,8 @@ class ActOutline(BaseModel):
     change_to: str = ""
     scenario: str = ""
     on_stage: list[str] = Field(default_factory=list)
-    held_back: str = ""  # «se guarda para después»
+    held_back: str = ""  # «lo que todavía no se cuenta» (Spec-560 A4)
+    reveal_act: int = Field(0, ge=0, le=5)  # en qué acto se revela; 0 = sin definir
     seeds: list[str] = Field(default_factory=list)
     payoffs: list[str] = Field(default_factory=list)
     decisions: list[str] = Field(default_factory=list)

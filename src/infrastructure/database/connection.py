@@ -258,6 +258,7 @@ async def init_db() -> None:
             draft INTEGER NOT NULL DEFAULT 0,
             synopsis TEXT DEFAULT '',
             bridge TEXT DEFAULT '',
+            reveal_act INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE (story_id, number)
         )

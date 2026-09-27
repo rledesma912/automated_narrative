@@ -21,6 +21,7 @@ Para cada acto devolvé:
 - "escenario": dónde ocurre.
 - "en_escena": los nombres de las PERSONAS que aparecen en el acto (incluido quien narra). La amenaza (fantasma, ser, fuerza) no va acá.
 - "se_guarda": qué información se reserva para un acto posterior ("" en el acto 5).
+- "se_revela_en": el número del acto posterior donde se revela lo que se guarda (0 si no se guarda nada).
 - "siembra": como máximo 2 detalles importantes que se plantan acá y que SÍ se retoman en un acto posterior (puede ser vacío; no pongas detalles de ambiente).
 - "retoma": detalles sembrados antes que acá se retoman (puede ser vacío).
 - "decisiones": los ids de las decisiones del autor que este acto usa.
