@@ -90,6 +90,21 @@
     @apply shadow-lg shadow-forge-accent/20;
   }
 
+  /* ── Barra del asistente (Spec-530) ─────────────────────────────────── */
+
+  /* Arriba de todo, a lo ancho de <main>: guardado automático + acciones del
+     paso. Mismo truco que la banda de generación (-top-12 / -mx-12 / -mt-12). */
+  .asistente-barra {
+    @apply sticky -top-12 z-20 -mx-12 -mt-12 mb-8 px-12 py-3
+           flex flex-wrap items-center justify-between gap-4
+           border-b border-forge-border bg-forge-surface shadow-sm shadow-forge-text/10;
+  }
+
+  /* Con la banda de generación visible, la barra va debajo (sin el -mt-12). */
+  .generation-banner:not(.hidden) ~ [data-asistente] .asistente-barra {
+    @apply mt-0;
+  }
+
   /* ── Banda de generación (Spec-460) ───────────────────────────────────── */
 
   /* <main> tiene p-12: un sticky top-0 se pegaría al borde del padding (48px más

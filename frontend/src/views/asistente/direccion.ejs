@@ -17,7 +17,21 @@
     ['progresiva', 'Se va mostrando'], ['explicita', 'Se muestra entera'],
   ];
 %>
-<div class="max-w-3xl" data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>">
+<div data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>">
+  <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
+  <div class="asistente-barra">
+    <%- include('_guardado', { inicial: state ? null : 'Se guarda solo cuando escribas el título' }) %>
+    <button type="button" class="btn-forge-sm"
+            data-analizar="consult"
+            data-titulo="Interpretando la historia…"
+            data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte."
+            data-destino="taller"
+            <%= state ? '' : 'disabled' %>>
+      <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
+    </button>
+  </div>
+
+  <div class="max-w-3xl">
   <%- include('_cabecera') %>
 
   <header class="mb-10">
@@ -170,18 +184,8 @@
       </select>
     </details>
 
-    <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
-      <%- include('_guardado', { inicial: state ? null : 'Se guarda solo cuando escribas el título' }) %>
-      <button type="button" class="btn-forge-sm"
-              data-analizar="consult"
-              data-titulo="Interpretando la historia…"
-              data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte."
-              data-destino="taller"
-              <%= state ? '' : 'disabled' %>>
-        <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
-      </button>
-    </div>
   </form>
+  </div>
 </div>
 
 <%- include('_analizando') %>

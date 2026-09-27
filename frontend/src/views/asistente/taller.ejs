@@ -16,7 +16,30 @@
   const est = locals.estimateLabels || {};
   const analizado = w.items.length > 0;
 %>
-<div class="max-w-3xl" data-asistente="taller" data-story-id="<%= state.story_id %>">
+<div data-asistente="taller" data-story-id="<%= state.story_id %>">
+  <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
+  <div class="asistente-barra">
+    <div class="flex items-center gap-5">
+      <a href="/asistente/<%= state.story_id %>/direccion" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Dirección</a>
+      <%- include('_guardado') %>
+    </div>
+    <% if (analizado) { %>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="btn-forge-outline-sm" data-analizar="consult" data-titulo="Interpretando tus respuestas…"
+                data-detalle="La IA vuelve a leer la historia con lo que respondiste y pregunta solo lo que siga faltando.">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Analizar de nuevo<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
+        </button>
+        <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando la escaleta…"
+                data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa."
+                data-destino="escaleta"
+                <%- state.outline.acts.length ? 'data-confirmar="Ya hay una escaleta: armarla de nuevo reemplaza la actual (y lo que editaste). ¿Seguir?"' : '' %>>
+          <i data-lucide="list-ordered" class="w-4 h-4"></i> <%= state.outline.acts.length ? 'Rearmar la escaleta' : 'Armar la escaleta' %><% if (est.plan_outline) { %> <span class="normal-case tracking-normal">· <%= est.plan_outline %></span><% } %>
+        </button>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="max-w-3xl">
   <%- include('_cabecera') %>
 
   <header class="mb-8">
@@ -123,25 +146,6 @@
     <% } %>
   <% } %>
 
-  <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
-    <div class="flex items-center gap-5">
-      <a href="/asistente/<%= state.story_id %>/direccion" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Dirección</a>
-      <%- include('_guardado') %>
-    </div>
-    <% if (analizado) { %>
-      <div class="flex flex-wrap items-center gap-3">
-        <button type="button" class="btn-forge-outline-sm" data-analizar="consult" data-titulo="Interpretando tus respuestas…"
-                data-detalle="La IA vuelve a leer la historia con lo que respondiste y pregunta solo lo que siga faltando.">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Analizar de nuevo<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
-        </button>
-        <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando la escaleta…"
-                data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa."
-                data-destino="escaleta"
-                <%- state.outline.acts.length ? 'data-confirmar="Ya hay una escaleta: armarla de nuevo reemplaza la actual (y lo que editaste). ¿Seguir?"' : '' %>>
-          <i data-lucide="list-ordered" class="w-4 h-4"></i> <%= state.outline.acts.length ? 'Rearmar la escaleta' : 'Armar la escaleta' %><% if (est.plan_outline) { %> <span class="normal-case tracking-normal">· <%= est.plan_outline %></span><% } %>
-        </button>
-      </div>
-    <% } %>
   </div>
 </div>
 
