@@ -325,9 +325,9 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-st
 - [x] **T1.3** «Ver relato» en ficha y galería. — *Verify:* tests de vista (galería ya lo verifica). — *Files:* `historia.ejs`, `gallery.ejs`.
 
 ### S2 — Base visual en Taller y Escaleta (H9 base, H2) · checkpoint visual
-- [ ] **T2.1** Clases en `globals.css`: botones revisados, `.chip-forge*`, `.nota-forge*`, `.pista-forge`, `.opcion-forge` (radio visible; seleccionada = acento + `on-accent`). — *Verify:* `palette-contrast` suma los pares nuevos (dos paletas). — *Files:* `globals.css`, `palette-contrast.test.ts`.
-- [ ] **T2.2** Taller con las clases (semáforo y estado = chips, «Quedan N» = nota, pistas, opciones, botones secundarios). — *Verify:* E2E del asistente. — *Files:* `taller.ejs`.
-- [ ] **T2.3** Escaleta con las clases (avisos = nota, «a revisar»/decisiones = chips, escenario y «en escena» = opciones). — *Verify:* E2E del asistente. — *Files:* `escaleta.ejs`.
+- [x] **T2.1** Clases en `globals.css`: botones revisados, `.chip-forge*`, `.nota-forge*`, `.pista-forge`, `.opcion-forge` (radio visible; seleccionada = acento + `on-accent`). — *Verify:* `palette-contrast` suma los pares nuevos (dos paletas). — *Files:* `globals.css`, `palette-contrast.test.ts`.
+- [x] **T2.2** Taller con las clases (semáforo y estado = chips, «Quedan N» = nota, pistas, opciones, botones secundarios). — *Verify:* E2E del asistente. — *Files:* `taller.ejs`.
+- [x] **T2.3** Escaleta con las clases (avisos = nota, «a revisar»/decisiones = chips, escenario y «en escena» = opciones). — *Verify:* E2E del asistente. — *Files:* `escaleta.ejs`.
 - [ ] **T2.4** Capturas Papel y Latte de Taller y Escaleta → **el usuario valida antes de S3**.
 
 ### S3 — Gramática en el resto (H9, H2)

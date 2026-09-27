@@ -37,7 +37,7 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await page.getByRole("button", { name: /Analizar mi historia/ }).click();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/taller$`));
   await expect(page.locator("[data-fin]")).toContainText("preguntas abiertas");
-  await expect(page.locator('[data-pregunta="final"]')).toContainText("a propósito");
+  await expect(page.locator('[data-pregunta="final"]')).toContainText(/a propósito/i);
 
   // Responder una pregunta y delegar otra.
   const meta = page.locator('[data-pregunta="meta"]');
@@ -71,7 +71,7 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
     "José frena el micro de golpe.",
   );
 
-  await page.locator('form[data-number="1"]').getByRole("button", { name: "+ personaje" }).click();
+  await page.locator('form[data-number="1"]').getByRole("button", { name: "Personaje" }).click();
   await page.locator('form[data-number="1"] [data-p-nombre]').fill("El sereno");
   await page.locator('form[data-number="1"] [data-p-relacion]').fill("Lo conozco de vista");
   await page.locator('form[data-number="1"]').getByRole("button", { name: "Sumar al elenco" }).click();
