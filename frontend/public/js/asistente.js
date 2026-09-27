@@ -223,7 +223,6 @@
       effect: value(form, "effect"),
       effect_other: value(form, "effect_other"),
       ending: value(form, "ending"),
-      ending_intentional: value(form, "ending_intentional") === true,
       telling: value(form, "telling"),
       protagonist_name: value(form, "protagonist_name"),
       protagonist_role: value(form, "protagonist_role"),

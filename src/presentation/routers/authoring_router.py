@@ -58,7 +58,7 @@ async def get_options() -> dict:
     return {
         "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
-        "criteria": [c.__dict__ for c in catalog.direction_criteria()],
+        "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
     }
 
 
@@ -352,7 +352,9 @@ async def _state(story: Story) -> dict:
             "items": [
                 {**w.model_dump(mode="json"), "nombre": c.nombre, "por_que": c.por_que}
                 for w, c in (
-                    (by_id[c.id], c) for c in catalog.direction_criteria() if c.id in by_id
+                    (by_id[c.id], c.for_story(context.protagonist(story)))
+                    for c in catalog.direction_criteria()
+                    if c.id in by_id
                 )
             ],
         },

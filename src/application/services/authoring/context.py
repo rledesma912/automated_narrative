@@ -71,7 +71,7 @@ def decisions(story: Story) -> list[tuple[str, str, str]]:
             and item.answer
             and item.status in (CriterionStatus.CUMPLE, CriterionStatus.INTENCIONAL)
         ):
-            out.append((c.id, c.nombre, item.answer))
+            out.append((c.id, c.for_story(protagonist(story)).nombre, item.answer))
     return out
 
 

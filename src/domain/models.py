@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import UUID4, BaseModel, Field, field_validator
+from pydantic import UUID4, BaseModel, Field, field_validator, model_validator
 
 from src.utils.timezone import now_argentina
 
@@ -201,8 +201,15 @@ class Direction(BaseModel):
     effect: str = ""  # pavor | susto | melancolia | revelacion | otro
     effect_other: str = ""  # texto libre cuando effect == "otro"
     ending: str = ""
+    # Spec-550 H1: escribir el final es decidirlo. Se deriva de `ending` (el valor que
+    # llegue se ignora): con texto, el final es del autor y la IA no lo cambia.
     ending_intentional: bool = False
     telling: str = ""  # «¿Cómo lo cuenta?»: caso | confesion | cronica | literario
+
+    @model_validator(mode="after")
+    def _ending_fixed_when_written(self) -> "Direction":
+        self.ending_intentional = bool(self.ending.strip())
+        return self
 
 
 class WorkshopLevel(str, Enum):

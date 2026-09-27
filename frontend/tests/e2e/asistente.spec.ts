@@ -29,7 +29,6 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   const sid = await crearDesdeNuevo(page, "E2E asistente");
   await page.getByText("Pavor creciente").click();
   await page.getByLabel("¿Cómo termina?").fill("Le deja flores y descansa en paz.");
-  await page.getByText("Es así a propósito: no lo cambies").click();
   await page.getByLabel("Protagonista").fill("José");
   await guardadoListo(page);
 

@@ -62,7 +62,7 @@
       </div>
       <ul class="flex flex-wrap gap-2 mb-5">
         <% w.items.forEach(i => { const s = SEMAFORO[i.status]; %>
-          <li class="<%= s.chip %> chip-forge--md" title="<%= s.label %>"><%= i.nombre %></li>
+          <li class="<%= s.chip %> chip-forge--md" title="<%= s.label %>: <%= i.por_que %>"><%= i.nombre %></li>
         <% }) %>
       </ul>
       <p class="nota-forge nota-forge--info" data-fin="<%= w.finish.kind %>"><i data-lucide="info" class="nota-forge__icono"></i><span><%= w.finish.text %></span></p>
@@ -117,7 +117,8 @@
             <div class="flex items-start gap-4">
               <div class="flex-1">
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
-                <p><%= p.answer || (p.status === 'cumple' ? 'La historia ya lo resuelve.' : 'Sin pregunta por ahora.') %></p>
+                <p><%= p.answer || (p.status === 'cumple' ? 'La historia ya lo resuelve.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
+                <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.por_que %></p>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
             </div>

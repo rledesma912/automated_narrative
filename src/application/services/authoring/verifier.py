@@ -94,7 +94,7 @@ class OutlineVerifier:
             historia=context.story_block(story),
             decisiones=context.decisions_block(story),
             elenco=", ".join(cast_names(story)) or "(solo quien narra)",
-            escaleta="\n\n".join(_act_text(a) for a in outline),
+            escaleta="\n\n".join(_act_text(a, context.protagonist(story)) for a in outline),
         )
 
 
@@ -144,7 +144,7 @@ def _mentions(a: str, b: str) -> bool:
     return na in nb or nb in na or workshop_rules.similar(a, b)
 
 
-def _act_text(a: ActOutline) -> str:
+def _act_text(a: ActOutline, protagonist: str = "") -> str:
     lines = [f"ACTO {a.number}" + (f" — {a.scenario}" if a.scenario else "")]
     if a.goal:
         lines.append(f"Quiere: {a.goal}")
@@ -152,7 +152,11 @@ def _act_text(a: ActOutline) -> str:
     if a.held_back:
         lines.append(f"Se guarda para después: {a.held_back}")
     if a.decisions:
-        names = [c.nombre for c in catalog.direction_criteria() if c.id in a.decisions]
+        names = [
+            c.for_story(protagonist).nombre
+            for c in catalog.direction_criteria()
+            if c.id in a.decisions
+        ]
         lines.append("Dice que usa: " + ", ".join(names))
     return "\n".join(lines)
 

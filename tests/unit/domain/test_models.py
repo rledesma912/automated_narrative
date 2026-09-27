@@ -251,3 +251,20 @@ class TestStoryAggregate:
 
     def test_get_last_beat_none_sin_beats(self):
         assert self._story().get_last_beat() is None
+
+
+# Spec-550 H1: escribir el final es decidirlo.
+class TestDirectionFinal:
+    def test_con_final_escrito_queda_fijo(self):
+        from src.domain.models import Direction
+
+        assert Direction(ending="Le deja flores.").ending_intentional is True
+        assert (
+            Direction(ending="Le deja flores.", ending_intentional=False).ending_intentional is True
+        )
+
+    def test_sin_final_lo_propone_la_ia(self):
+        from src.domain.models import Direction
+
+        assert Direction(ending="  ", ending_intentional=True).ending_intentional is False
+        assert Direction().ending_intentional is False

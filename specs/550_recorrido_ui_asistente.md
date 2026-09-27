@@ -296,7 +296,7 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 - Test que no quede `window.confirm`/`alert`/`prompt` en el frontend.
 - **Verificación:** Vitest de `ForgeConfirm` (aceptar, cancelar, `Esc`, foco); E2E: rearmar la escaleta y regenerar un acto con el diálogo (cancelar no hace nada; confirmar sigue el flujo); el aviso queda transparente a los ~2 s y un error queda visible.
 
-### S6 — Taller y final (H7, H1)
+### S6 — Taller y final (H7, H1) · ✅ 2026-09-27 (el snapshot de prompts no cambia: cubre solo Voz y memoria; los nombres nuevos también llegan a los prompts del asistente como «[meta] Qué busca José»)
 - `workshop_criteria.yaml`: nombres y «para qué sirve» nuevos con `{protagonista}`; la vista lo reemplaza y lo muestra en preguntas abiertas, «Ya resuelto» y chips; texto nuevo para «a propósito» sin respuesta.
 - `authoring_consultant_system.md`: la pregunta nombra al protagonista. Snapshot de prompts regenerado a propósito.
 - H1: `Direction` deriva `ending_intentional` de que haya texto en `ending` (vale para las historias guardadas y los YAML); la Dirección pierde la casilla y la pista explica el efecto.
@@ -357,10 +357,10 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-st
 - [x] **T5.3** `data-confirmar` y `htmx:confirm` usan `ForgeConfirm`; test que prohíbe `window.confirm`/`alert`/`prompt` en el frontend. — *Verify:* E2E rearmar escaleta y regenerar acto (cancelar / confirmar). — *Files:* `asistente.js`, `confirm-dialog.js`, test nuevo, E2E.
 
 ### S6 — Taller y final (H7, H1)
-- [ ] **T6.1** `workshop_criteria.yaml` con nombres y «para qué sirve» nuevos (`{protagonista}`); el catálogo los expone con el reemplazo. — *Verify:* pytest del reemplazo (con y sin protagonista). — *Files:* `workshop_criteria.yaml`, `catalog.py`, router/estado del asistente, test.
-- [ ] **T6.2** Taller: «para qué sirve» en preguntas abiertas, «Ya resuelto» y `title` de chips; texto nuevo para «a propósito» sin respuesta. — *Verify:* E2E del Taller. — *Files:* `taller.ejs`.
-- [ ] **T6.3** Consultor: la pregunta nombra al protagonista; snapshot regenerado a propósito. — *Files:* `authoring_consultant_system.md`, snapshot.
-- [ ] **T6.4** H1: `Direction` deriva `ending_intentional` de que haya texto en `ending`; la Dirección pierde la casilla; pista nueva. — *Verify:* pytest de la derivación; E2E de la Dirección. — *Files:* `models.py`, `direccion.ejs`, `asistente.js`, tests.
+- [x] **T6.1** `workshop_criteria.yaml` con nombres y «para qué sirve» nuevos (`{protagonista}`); el catálogo los expone con el reemplazo. — *Verify:* pytest del reemplazo (con y sin protagonista). — *Files:* `workshop_criteria.yaml`, `catalog.py`, router/estado del asistente, test.
+- [x] **T6.2** Taller: «para qué sirve» en preguntas abiertas, «Ya resuelto» y `title` de chips; texto nuevo para «a propósito» sin respuesta. — *Verify:* E2E del Taller. — *Files:* `taller.ejs`.
+- [x] **T6.3** Consultor: la pregunta nombra al protagonista; snapshot regenerado a propósito. — *Files:* `authoring_consultant_system.md`, snapshot.
+- [x] **T6.4** H1: `Direction` deriva `ending_intentional` de que haya texto en `ending`; la Dirección pierde la casilla; pista nueva. — *Verify:* pytest de la derivación; E2E de la Dirección. — *Files:* `models.py`, `direccion.ejs`, `asistente.js`, tests.
 
 ### S7 — Avisos ignorados (H10)
 - [ ] **T7.1** Dominio `Warning {text, key, source, dismissed}` en `ActOutline.warnings`; repos y schemas. — *Files:* `models.py`, `story_repository.py`, schemas.

@@ -98,13 +98,9 @@
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1"><label for="a-ending">¿Cómo termina?</label></h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Si ya lo tenés decidido, marcalo: el asistente no te va a proponer otro final.</p>
+        Si lo escribís, la IA lo respeta tal cual y cierra el último acto así. Si lo dejás vacío, lo propone ella.</p>
       <textarea id="a-ending" name="ending" rows="2" maxlength="600"
-                class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3 focus:outline-none focus:border-forge-accent"><%= d.ending %></textarea>
-      <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-        <input type="checkbox" name="ending_intentional" class="accent-forge-accent w-4 h-4" <%= d.ending_intentional ? 'checked' : '' %>>
-        Es así a propósito: no lo cambies
-      </label>
+                class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent"><%= d.ending %></textarea>
     </section>
 
     <section class="bg-forge-surface border border-forge-border p-6">

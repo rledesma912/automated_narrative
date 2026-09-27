@@ -14,7 +14,19 @@ class Criterion:
     id: str
     nombre: str  # lo que ve el usuario
     pregunta: str  # la pregunta operativa que recibe el Consultor
-    por_que: str  # «por qué importa», para la UI
+    por_que: str  # «para qué sirve», para la UI
+
+    def for_story(self, protagonist: str) -> "Criterion":
+        """Spec-550 H7: `{protagonista}` → el nombre del protagonista (o «el protagonista»)."""
+        name = protagonist.strip() or "el protagonista"
+
+        def fill(text: str) -> str:
+            out = text.replace("{protagonista}", name)
+            return out.replace(" a el protagonista", " al protagonista").replace(
+                " de el protagonista", " del protagonista"
+            )
+
+        return Criterion(self.id, fill(self.nombre), self.pregunta, fill(self.por_que))
 
 
 @dataclass(frozen=True)

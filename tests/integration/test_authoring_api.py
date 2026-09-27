@@ -64,7 +64,7 @@ async def _run_job(client, story_id: str, kind: str) -> dict:
 async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
     assert [e["id"] for e in data["effects"]][:2] == ["pavor", "susto"]
-    assert data["criteria"][0]["nombre"] == "Qué quiere"
+    assert data["criteria"][0]["nombre"] == "Qué busca el protagonista"
 
 
 async def test_crear_desde_la_direccion(client):
@@ -107,7 +107,7 @@ async def test_taller_con_la_ia(client):
     assert items["final"]["status"] == "intencional"  # no se evalúa
     assert items["meta"]["question"] == "¿Pregunta de ejemplo sobre meta?"
     assert len(items["meta"]["options"]) == 3
-    assert items["meta"]["nombre"] == "Qué quiere" and items["meta"]["por_que"]
+    assert items["meta"]["nombre"] == "Qué busca José" and items["meta"]["por_que"]
     assert state["workshop"]["round"] == 1
     assert state["workshop"]["finish"]["kind"] == "abierto"
 
