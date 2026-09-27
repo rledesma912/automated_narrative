@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — mejoras de UI
-**Estado:** TASKS — SPECIFY y PLAN aprobados (2026-09-27); tareas pendientes de OK
+**Estado:** DONE (2026-09-27) — S1–S7 implementados en `feat/spec-550-ui`; pendiente el pase a prod cuando el usuario lo pida (sin migración)
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente), Spec-531 (tema), Spec-540 (tema de dev).
 
@@ -362,11 +362,11 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-st
 - [x] **T6.3** Consultor: la pregunta nombra al protagonista; snapshot regenerado a propósito. — *Files:* `authoring_consultant_system.md`, snapshot.
 - [x] **T6.4** H1: `Direction` deriva `ending_intentional` de que haya texto en `ending`; la Dirección pierde la casilla; pista nueva. — *Verify:* pytest de la derivación; E2E de la Dirección. — *Files:* `models.py`, `direccion.ejs`, `asistente.js`, tests.
 
-### S7 — Avisos ignorados (H10)
-- [ ] **T7.1** Dominio `Warning {text, key, source, dismissed}` en `ActOutline.warnings`; repos y schemas. — *Files:* `models.py`, `story_repository.py`, schemas.
-- [ ] **T7.2** `rule_warnings` con claves estables; aviso de varias siembras sin las descartadas; Verificador recibe los descartados y filtra; máximo cuenta visibles; snapshot regenerado. — *Verify:* pytest. — *Files:* `verifier.py`, `authoring_verifier.md`, tests, snapshot.
-- [ ] **T7.3** API: ignorar por clave, «volver a mostrar»; rearmar limpia. — *Verify:* pytest del router. — *Files:* `authoring_router.py`, tests.
-- [ ] **T7.4** Escaleta: «N ignorados» → lista atenuada con «Volver a mostrar». — *Verify:* E2E ignorar → revisar (mock) → no vuelve → volver a mostrar. — *Files:* `escaleta.ejs`, `asistente.js`, E2E.
+### S7 — Avisos ignorados (H10) · ✅ 2026-09-27 (el snapshot de prompts suma la sección «AVISOS QUE EL AUTOR YA DESCARTÓ» del Verificador; un texto suelto se sigue leyendo como aviso de la IA, sin costo)
+- [x] **T7.1** Dominio `Warning {text, key, source, dismissed}` en `ActOutline.warnings`; repos y schemas. — *Files:* `models.py`, `story_repository.py`, schemas.
+- [x] **T7.2** `rule_warnings` con claves estables; aviso de varias siembras sin las descartadas; Verificador recibe los descartados y filtra; máximo cuenta visibles; snapshot regenerado. — *Verify:* pytest. — *Files:* `verifier.py`, `authoring_verifier.md`, tests, snapshot.
+- [x] **T7.3** API: ignorar por clave, «volver a mostrar»; rearmar limpia. — *Verify:* pytest del router. — *Files:* `authoring_router.py`, tests.
+- [x] **T7.4** Escaleta: «N ignorados» → lista atenuada con «Volver a mostrar». — *Verify:* E2E ignorar → revisar (mock) → no vuelve → volver a mostrar. — *Files:* `escaleta.ejs`, `asistente.js`, E2E.
 
 ### Cierre
-- [ ] **T8.1** `CLAUDE.md` (gramática visual, menú, barra, confirmaciones, avisos, final); spec a DONE; PR a `development`.
+- [x] **T8.1** `CLAUDE.md` (gramática visual, menú, barra, confirmaciones, avisos, final); spec a DONE; PR a `development`.

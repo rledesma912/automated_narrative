@@ -43,7 +43,8 @@ export interface Act {
   seeds: string[];
   payoffs: string[];
   decisions: string[];
-  warnings: string[];
+  /** Spec-550 H10: aviso de la revisión, con clave de tema y si el autor lo ignoró. */
+  warnings: { text: string; key: string; source: "regla" | "ia"; dismissed: boolean }[];
   rules: string[];
   needs_review: boolean;
 }

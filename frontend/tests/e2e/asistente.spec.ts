@@ -64,7 +64,7 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   const acto2 = page.locator('form[data-number="2"]');
   await expect(acto2).toContainText("El encuentro del acto 2 repite el del acto 1.");
   await acto2.getByRole("button", { name: "Ignorar" }).click();
-  await expect(page.locator('form[data-number="2"]')).not.toContainText("repite el del acto 1");
+  await expect(page.locator('form[data-number="2"] .nota-forge--warning').filter({ hasText: "repite el del acto 1" })).toHaveCount(0);
 
   const acto1 = page.locator('form[data-number="1"]');
   await acto1.getByRole("button", { name: /Agregar hecho/ }).click();
@@ -201,4 +201,34 @@ test("rearmar la escaleta pide confirmación con el diálogo propio", async ({ p
   await rearmar.click();
   await dialogo.getByRole("button", { name: "Rearmar la escaleta" }).click();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/escaleta$`), { timeout: 20000 });
+});
+
+// Spec-550 H10: un aviso ignorado no vuelve al revisar con la IA; se puede volver a mostrar.
+test("los avisos ignorados no vuelven al revisar y se pueden volver a mostrar", async ({ page }) => {
+  const sid = await crearDesdeNuevo(page, "E2E avisos");
+  for (const kind of ["consult", "plan_outline"]) {
+    const job = (await (await page.request.post(`/api/v1/stories/${sid}/jobs`, { data: { kind } })).json()).job_id;
+    await expect
+      .poll(async () => (await (await page.request.get(`/api/v1/jobs/${job}`)).json()).status, { timeout: 20000 })
+      .toBe("done");
+  }
+  await page.goto(`/asistente/${sid}/escaleta`);
+  const acto2 = page.locator('form[data-number="2"]');
+  const aviso = acto2.locator(".nota-forge--warning").filter({ hasText: "repite el del acto 1" });
+  await expect(aviso).toBeVisible();
+
+  await aviso.getByRole("button", { name: "Ignorar" }).click();
+  await expect(aviso).toHaveCount(0);
+  await expect(acto2.locator("[data-ignorados] summary")).toHaveText("1 aviso ignorado");
+
+  // Revisar con la IA (el mock vuelve a dar el mismo aviso): sigue ignorado.
+  await page.getByRole("button", { name: /Revisar con la IA/ }).click();
+  await expect(modal(page)).toBeHidden({ timeout: 20000 });
+  await page.reload();
+  await expect(page.locator('form[data-number="2"] .nota-forge--warning').filter({ hasText: "repite el del acto 1" })).toHaveCount(0);
+
+  const ignorados = page.locator('form[data-number="2"] [data-ignorados]');
+  await ignorados.locator("summary").click();
+  await ignorados.getByRole("button", { name: "Volver a mostrar" }).click();
+  await expect(page.locator('form[data-number="2"] .nota-forge--warning').filter({ hasText: "repite el del acto 1" })).toBeVisible();
 });

@@ -1,9 +1,11 @@
 """Domain entities."""
 
+import re
+import unicodedata
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import UUID4, BaseModel, Field, field_validator, model_validator
 
@@ -246,6 +248,36 @@ class WorkshopItem(BaseModel):
     asked: list[str] = Field(default_factory=list)
 
 
+class OutlineWarning(BaseModel):
+    """Un aviso de la revisión de la escaleta (Spec-550 H10).
+
+    `key` identifica el tema del aviso para que un «Ignorar» sobreviva a revisar de
+    nuevo: en los de regla es estable («siembra:el ramo», «elenco:el sereno»; un
+    aviso que junta varias siembras las une con «|»); en los de la IA, «ia:» + el
+    texto normalizado.
+    """
+
+    text: str
+    key: str = ""
+    source: Literal["regla", "ia"] = "ia"
+    dismissed: bool = False
+
+    def keys(self) -> set[str]:
+        return {k for k in self.key.split("|") if k}
+
+    @classmethod
+    def from_ai(cls, text: str) -> "OutlineWarning":
+        text = " ".join(text.split())
+        return cls(text=text, key=f"ia:{normalize_key(text)}", source="ia")
+
+
+def normalize_key(text: str) -> str:
+    """Minúsculas, sin tildes ni signos, espacios simples: «¿El ramo?» → «el ramo»."""
+    plain = unicodedata.normalize("NFKD", text.lower())
+    plain = "".join(ch for ch in plain if not unicodedata.combining(ch))
+    return " ".join(re.sub(r"[^\w\s]", " ", plain).split())
+
+
 class ActOutline(BaseModel):
     """Un acto de la escaleta (Spec-530 §3.2): lo edita el usuario y lo propone la IA.
 
@@ -265,8 +297,20 @@ class ActOutline(BaseModel):
     seeds: list[str] = Field(default_factory=list)
     payoffs: list[str] = Field(default_factory=list)
     decisions: list[str] = Field(default_factory=list)
-    warnings: list[str] = Field(default_factory=list)
+    warnings: list[OutlineWarning] = Field(default_factory=list)
     needs_review: bool = False
+
+    @field_validator("warnings", mode="before")
+    @classmethod
+    def _plain_texts(cls, value):
+        # Un texto suelto es un aviso de la IA (también lo que guardaba la Spec-530).
+        return [OutlineWarning.from_ai(w) if isinstance(w, str) else w for w in value or []]
+
+    def visible_warnings(self) -> list[OutlineWarning]:
+        return [w for w in self.warnings if not w.dismissed]
+
+    def dismissed_keys(self) -> set[str]:
+        return {k for w in self.warnings if w.dismissed for k in w.keys()}
 
 
 class Story(BaseModel):

@@ -8,7 +8,10 @@
   const acts = state.outline.acts;
   const decisions = state.outline.decisions;
   const integradas = decisions.filter(d => d.integrada).length;
-  const avisos = acts.reduce((n, a) => n + a.warnings.length, 0);
+  /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. */
+  const visibles = (a) => a.warnings.filter(w => !w.dismissed);
+  const ignorados = (a) => a.warnings.filter(w => w.dismissed);
+  const avisos = acts.reduce((n, a) => n + visibles(a).length, 0);
   const narrador = state.direction.narrator || state.direction.protagonist_name;
   const NOMBRES = { 1: 'Exposición', 2: 'Acción ascendente', 3: 'Clímax', 4: 'Acción descendente', 5: 'Desenlace' };
   const INTENSIDAD = { 1: 'baja', 2: 'media', 3: 'alta', 4: 'media-alta', 5: 'baja' };
@@ -87,18 +90,33 @@
               <span class="text-xs uppercase tracking-widest text-forge-muted">intensidad <%= INTENSIDAD[a.number] %></span>
             </header>
 
-            <% if (a.warnings.length) { %>
+            <% if (visibles(a).length) { %>
               <%/* Spec-550 H9: cada aviso es una nota; sus acciones, links. */%>
               <div class="mx-6 mt-4 space-y-2">
-                <% a.warnings.forEach(w => { const fuera = w.match(PERSONAJE_FUERA); %>
-                  <div class="nota-forge nota-forge--warning">
+                <% visibles(a).forEach(w => { const fuera = w.text.match(PERSONAJE_FUERA); %>
+                  <div class="nota-forge nota-forge--warning" data-aviso-clave="<%= w.key %>">
                     <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
-                    <p class="flex-1"><%= w %></p>
-                    <% if (fuera) { %><button type="button" class="nota-forge__accion" data-sumar-personaje="<%= fuera[1] %>" data-aviso="<%= w %>">Sumar al elenco</button><% } %>
-                    <button type="button" class="nota-forge__accion" data-ignorar="<%= w %>">Ignorar</button>
+                    <p class="flex-1"><%= w.text %></p>
+                    <% if (fuera) { %><button type="button" class="nota-forge__accion" data-sumar-personaje="<%= fuera[1] %>" data-aviso="<%= w.key %>">Sumar al elenco</button><% } %>
+                    <button type="button" class="nota-forge__accion" data-ignorar="<%= w.key %>">Ignorar</button>
                   </div>
                 <% }) %>
               </div>
+            <% } %>
+            <% if (ignorados(a).length) { %>
+              <%/* Spec-550 H10: lo ignorado no vuelve al revisar; se puede volver a mostrar. */%>
+              <details class="mx-6 mt-3 text-sm" data-ignorados>
+                <summary class="nota-forge__accion inline-block cursor-pointer text-forge-muted"><%= ignorados(a).length %> <%= ignorados(a).length === 1 ? 'aviso ignorado' : 'avisos ignorados' %></summary>
+                <ul class="mt-2 space-y-2">
+                  <% ignorados(a).forEach(w => { %>
+                    <li class="flex items-start gap-3 text-forge-muted">
+                      <i data-lucide="eye-off" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                      <p class="flex-1"><%= w.text %></p>
+                      <button type="button" class="nota-forge__accion" data-restaurar="<%= w.key %>">Volver a mostrar</button>
+                    </li>
+                  <% }) %>
+                </ul>
+              </details>
             <% } %>
 
             <div class="grid lg:grid-cols-[1fr_18rem] gap-6 p-6">

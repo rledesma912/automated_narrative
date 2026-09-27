@@ -163,7 +163,10 @@ async def test_escaleta_y_revision(client):
 
     acts = state["outline"]["acts"]
     assert [a["number"] for a in acts] == [1, 2, 3, 4, 5]
-    assert acts[1]["warnings"] == ["El encuentro del acto 2 repite el del acto 1."]
+    assert [w["text"] for w in acts[1]["warnings"]] == [
+        "El encuentro del acto 2 repite el del acto 1."
+    ]
+    assert acts[1]["warnings"][0]["source"] == "ia" and not acts[1]["warnings"][0]["dismissed"]
     assert "Escenario de ejemplo" in state["scenarios"]
     state = await _run_job(client, sid, "verify_outline")
     assert state["outline"]["acts"][1]["warnings"]
@@ -244,9 +247,37 @@ async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
 
     warning = state["outline"]["acts"][1]["warnings"][0]
     state = (
-        await client.post(f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"text": warning})
+        await client.post(
+            f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": warning["key"]}
+        )
     ).json()
-    assert state["outline"]["acts"][1]["warnings"] == []
+    assert [w["dismissed"] for w in state["outline"]["acts"][1]["warnings"]] == [True]
+
+    # Spec-550 H10: revisar de nuevo no lo trae de vuelta (el mock repite el mismo aviso).
+    state = await _run_job(client, sid, "verify_outline")
+    visibles = [w for w in state["outline"]["acts"][1]["warnings"] if not w["dismissed"]]
+    assert warning["text"] not in [w["text"] for w in visibles]
+
+    # «Volver a mostrar».
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/outline/2/warnings/restore", json={"key": warning["key"]}
+        )
+    ).json()
+    assert any(
+        w["key"] == warning["key"] and not w["dismissed"]
+        for w in state["outline"]["acts"][1]["warnings"]
+    )
+    assert (
+        await client.post(f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": "x"})
+    ).status_code == 404
+
+    # Rearmar la escaleta olvida lo ignorado (actos nuevos).
+    await client.post(
+        f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": warning["key"]}
+    )
+    state = await _run_job(client, sid, "plan_outline")
+    assert not any(w["dismissed"] for a in state["outline"]["acts"] for w in a["warnings"])
 
 
 async def test_la_amenaza_desde_la_direccion(client):

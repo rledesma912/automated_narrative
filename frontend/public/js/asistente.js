@@ -577,12 +577,16 @@
       const n = form.dataset.number;
       return run(async () => {
         await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "sin_nombre" });
-        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { text: t.dataset.aviso });
+        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.aviso });
       });
     }
     if (t.matches("[data-ignorar]") && form) {
       const n = form.dataset.number;
-      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { text: t.dataset.ignorar }));
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.ignorar }));
+    }
+    if (t.matches("[data-restaurar]") && form) {
+      const n = form.dataset.number;
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }));
     }
     if (t.matches("[data-generar]")) {
       e.preventDefault();

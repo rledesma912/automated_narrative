@@ -183,13 +183,27 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
 
 @router.post("/stories/{story_id}/outline/{number}/warnings/dismiss")
 async def dismiss_warning(story_id: str, number: int, body: WarningDismiss) -> dict:
-    """«Ignorar» un aviso de la revisión."""
+    """«Ignorar» un aviso: queda guardado como ignorado y no vuelve al revisar (H10)."""
+    return await _set_dismissed(story_id, number, body.key, True)
+
+
+@router.post("/stories/{story_id}/outline/{number}/warnings/restore")
+async def restore_warning(story_id: str, number: int, body: WarningDismiss) -> dict:
+    """«Volver a mostrar» un aviso ignorado."""
+    return await _set_dismissed(story_id, number, body.key, False)
+
+
+async def _set_dismissed(story_id: str, number: int, key: str, dismissed: bool) -> dict:
     story = await _editable(story_id)
     act = next((a for a in story.outline if a.number == number), None)
     if act is None:
         raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
-    remaining = [w for w in act.warnings if w != body.text]
-    await SQLStoryRepository().save_act(story.id, act.model_copy(update={"warnings": remaining}))
+    if not any(w.key == key for w in act.warnings):
+        raise HTTPException(status_code=404, detail="Aviso inexistente")
+    warnings = [
+        w.model_copy(update={"dismissed": dismissed}) if w.key == key else w for w in act.warnings
+    ]
+    await SQLStoryRepository().save_act(story.id, act.model_copy(update={"warnings": warnings}))
     return await _state(await _story(story_id))
 
 
