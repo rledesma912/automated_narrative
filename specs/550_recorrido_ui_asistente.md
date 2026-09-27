@@ -96,6 +96,24 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 
 **Cambio:** «**Ver relato**» en la ficha y en la galería (mismo texto en los dos lugares). La página de destino no cambia.
 
+### H6 — El aviso de guardado: parpadear y desaparecer · **decidido**
+
+**Lo que ve el usuario:** el aviso de la barra de arriba queda fijo («✓ Guardado hace un momento» / «Todo guardado»). Quiere que, al guardar, **parpadee unos instantes y después desaparezca**.
+
+**Hoy:** `status()` de `asistente.js` reescribe `[data-guardado]` con tres estados: guardando (loader), ok («Guardado hace un momento») y error; el texto queda hasta el próximo cambio. Al cargar la página dice «Todo guardado» (o, en `/nuevo`, «Se guarda solo cuando escribas el título»).
+
+**Cambio:**
+- **Guardando…**: visible mientras dura el guardado, sin parpadeo.
+- **Guardado**: aparece, **parpadea ~1,5 s** (2–3 pulsos de opacidad) y **se desvanece** (~0,5 s). Si llega otro guardado mientras tanto, la animación vuelve a empezar.
+- **Error**: **no desaparece** (y no parpadea): queda hasta que un guardado salga bien. Perder un error de guardado sería peor que el ruido.
+- **Al cargar:** sin aviso («Todo guardado» sobra: no pasó nada todavía). En `/nuevo` se mantiene «Se guarda solo cuando escribas el título» hasta el primer guardado, porque explica por qué no se guarda.
+- **Sin saltos:** el aviso reserva su lugar (se oculta con opacidad, no con `display: none`), así los botones de la barra no se mueven.
+- **Movimiento reducido:** con `prefers-reduced-motion`, sin parpadeo: aparece y se desvanece.
+- **Accesibilidad:** sigue `aria-live="polite"`: el lector de pantalla anuncia «Guardado» aunque después se oculte.
+- Animación con clases de `globals.css` (keyframes), sin colores nuevos.
+
+**Tests:** los E2E que esperan «Guardado hace un momento» siguen valiendo (el texto queda en el DOM, oculto con opacidad); se agrega uno que verifica que tras unos segundos el aviso queda transparente y otro que un error queda visible.
+
 ---
 
 ## 2. DECISIONES
@@ -105,6 +123,7 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 - **D3 (H3):** ancho abierto 13rem, colapsado a íconos, estado recordado por navegador.
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
 - **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
+- **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
 
 ---
 
@@ -114,4 +133,5 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 2. **H3:** el menú abierto mide 13rem; colapsado muestra solo íconos con nombre accesible; el estado sobrevive a recargar y a navegar (sin parpadeo); el pie de actividad arranca donde termina el menú, abierto o colapsado; nada del contenido queda tapado.
 3. **H4:** una historia con relato muestra «Regenerar» y no «Generar Relato»; sin relato, «Generar relato»; fallida, «Reintentar»; `POST /historia/:id/generar-relato` ya no existe (404).
 4. **H5:** ficha y galería dicen «Ver relato».
-5. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+5. **H6:** al guardar, el aviso parpadea y a los ~2 s queda transparente sin mover la barra; un error de guardado queda visible; con movimiento reducido no parpadea.
+6. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
