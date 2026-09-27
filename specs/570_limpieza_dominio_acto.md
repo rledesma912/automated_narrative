@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — deuda técnica del dominio
-**Estado:** PLAN — D1–D4 decididas (2026-09-27); el plan está en la Spec-560 §4 (slices S1–S2), pendiente de OK
+**Estado:** IMPLEMENT — D1–D4 decididas; plan y tareas en la Spec-560 §4–§5 (slices S1–S2)
 **Rama:** `feat/analisis-asistente-ui-logica` (la implementación, en rama propia)
 **Extiende:** Spec-530 (escaleta y pipeline), Spec-190 (modelo relacional).
 

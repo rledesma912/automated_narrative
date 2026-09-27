@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — calidad del pipeline del asistente
-**Estado:** PLAN — SPECIFY cerrado (A1–A5, 2026-09-27); plan conjunto con la Spec-570, pendiente de OK
+**Estado:** IMPLEMENT — SPECIFY, PLAN y TASKS aprobados (2026-09-27); plan y tareas conjuntos con la Spec-570
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente, escaleta y pipeline del relato). La UI del asistente va en Spec-550.
 
@@ -206,3 +206,46 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 | La Voz repite las últimas oraciones del acto anterior. | Indicación explícita y el control de repetición lo marca; se mide en S7. |
 | El refactor de nombres (S2) toca muchos archivos. | Slice propio, mecánico, sin cambios de comportamiento; suite completa. |
 | Tres cambios de esquema en la rama. | Una sola recreación de DB por slice en dev; en prod, una sola al final. |
+
+---
+
+## 5. TASKS (junto con la Spec-570)
+
+Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió el esquema, `make dev-db ARGS=--yes`; `make dev-status`; al usuario, qué mirar en `storymaker.test`. **Mientras corre una medición no se tocan prompts** (se leen del disco en cada generación).
+
+### S0 — Línea base
+- [ ] **T0.1** `evaluate_voice.py --label base-560 --variants con --runs 2 --out scripts/research/560/base` (gemma3:12b, en segundo plano). — *Verify:* `report.json` y los relatos en la carpeta.
+- [ ] **T0.2** `evaluate_voice.py --effect <id>`: fija el efecto de la historia en la DB temporal. — *Verify:* corrida `--mock` con `--effect susto` deja `direction.effect = susto`. — *Files:* `scripts/evaluate_voice.py`.
+
+### S1 — Spec-570: `macro_beat` solo salida
+- [ ] **T1.1** Esquema y modelo: fuera `summary`, `synopsis_beat`, `type`, `active_scenario_id`, `active_scenario_description`. — *Files:* `connection.py`, `models.py`, `beat_repository.py`, `story_repository.py`.
+- [ ] **T1.2** Lectores: `director_use_case` (no escribe esas columnas), `streaming_service` (`beat_start` con el tipo desde el número), `beat_router` (`summary` desde `act_outline.events`), `yaml_exporter` (sin `synopsis_beat`). — *Verify:* snapshot sin cambios; E2E de la sala.
+- [ ] **T1.3** `import-yaml`: sinopsis por acto → escaleta (primer hecho). — *Verify:* pytest del import de `input_stories/` (escaleta con 5 actos y su sinopsis). — *Files:* `create_story.py`, tests.
+
+### S2 — Spec-570: nombres
+- [ ] **T2.1** `MacroBeat` → `ActText`, `BeatType` → `ActType`, fuera el alias `Beat`. — *Verify:* `grep` en `src/` sin los nombres viejos; suite.
+- [ ] **T2.2** `DirectorUseCase` → `GenerateStoryUseCase` (archivo, contenedor DI, routers, CLI, tests). — *Verify:* suite.
+
+### S3 — A1 + A3: puente y continuidad
+- [ ] **T3.1** Esquema `act_outline.bridge`; `ActOutline.bridge`; `ActForm`; export/import YAML. — *Files:* `connection.py`, `models.py`, `story_repository.py`, schemas, exporter/loader.
+- [ ] **T3.2** Planificador: `como_llega` (actos 2–5) en el esquema de salida y el prompt.
+- [ ] **T3.3** Voz: «CÓMO SE LLEGA A ESTE ACTO» + «ASÍ TERMINÓ EL ACTO ANTERIOR» (últimas 2–3 oraciones), en la generación completa y al regenerar. — *Verify:* pytest de las secciones; snapshot regenerado a propósito.
+- [ ] **T3.4** Verificador: regla `sin_puente` (actos 2–5) y chequeo de continuidad en el prompt. — *Verify:* pytest.
+- [ ] **T3.5** Escaleta: campo «Cómo llega acá» (actos 2–5). — *Verify:* E2E (se guarda y vuelve).
+
+### S4 — A4: lo que todavía no se cuenta
+- [ ] **T4.1** Esquema `act_outline.reveal_act`; Planificador `se_revela_en`; regla del Verificador (guardado sin acto posterior que lo revele). — *Verify:* pytest.
+- [ ] **T4.2** Escaleta: rótulo, pista y «Se revela en el Acto N» (selector). — *Verify:* E2E.
+
+### S5 — A2: regenerar sin repetir
+- [ ] **T5.1** Prompt de regeneración con lo marcado por `repetition_check` en ese acto. — *Verify:* pytest del prompt.
+- [ ] **T5.2** Memoria del acto actualizada al regenerar (etapa `journal` en el job). — *Verify:* pytest del use case.
+- [ ] **T5.3** Esquema `macro_beat.stale`: se marca en los actos > N, se limpia al regenerarlos o al generar todo; aviso en el panel del relato. — *Verify:* pytest + E2E del aviso.
+
+### S6 — A5: el efecto pesa
+- [ ] **T6.1** `authoring_options.yaml`: `planificador` por efecto; `catalog.Option`. — *Verify:* pytest.
+- [ ] **T6.2** Planificador «CÓMO TIENE QUE PEGAR» y aviso del Verificador si un acto no cumple la receta. — *Verify:* pytest; snapshot regenerado.
+
+### S7 — Medición, documentación y pase
+- [ ] **T7.1** `evaluate_voice.py` después de S3–S6 contra la base; A5: «pavor» y «susto», 2 corridas cada uno, para la lectura a ciegas del usuario. Resultados en esta spec.
+- [ ] **T7.2** `CLAUDE.md`; specs 560 y 570 a DONE; PR a `development`.
