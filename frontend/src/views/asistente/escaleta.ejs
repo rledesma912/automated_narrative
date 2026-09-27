@@ -20,10 +20,7 @@
 <div data-asistente="escaleta" data-story-id="<%= state.story_id %>">
   <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
   <div class="asistente-barra">
-    <div class="flex items-center gap-5">
-      <a href="/asistente/<%= state.story_id %>/taller" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Taller</a>
-      <%- include('_guardado') %>
-    </div>
+    <%- include('_cabecera') %>
     <% if (acts.length) { %>
       <div class="flex flex-wrap items-center gap-3">
         <button type="button" class="btn-forge-outline-sm" data-analizar="verify_outline" data-titulo="Revisando la escaleta…"
@@ -38,7 +35,6 @@
   </div>
 
   <div class="max-w-5xl">
-  <%- include('_cabecera') %>
 
   <header class="mb-8 max-w-3xl">
     <h2 class="font-serif text-3xl text-forge-accent mb-2">Escaleta</h2>
@@ -207,6 +203,7 @@
   </div>
 </div>
 
+<%- include('_guardado') %>
 <%- include('_analizando') %>
 <script type="application/json" id="asistente-datos"><%- JSON.stringify({ state }).replace(/</g, '\\u003c') %></script>
 <script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

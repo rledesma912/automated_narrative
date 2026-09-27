@@ -8,6 +8,11 @@ test.describe.configure({ mode: "serial" });
 test.skip(!!process.env.BASE_URL, "Crea historias: solo contra el arnés con DB descartable");
 
 const guardado = (page: Page) => page.locator("[data-guardado]").first();
+/** Espera a que termine el último guardado y haya salido bien (Spec-550 H6). */
+async function guardadoListo(page: Page) {
+  await expect(guardado(page)).not.toHaveAttribute("data-pendiente", "1");
+  await expect(guardado(page)).toContainText("Guardado");
+}
 const modal = (page: Page) => page.locator("#asistente-analizando");
 
 async function crearDesdeNuevo(page: Page, titulo: string, premisa = "José ve a una mujer muerta en el espejo del micro.") {
@@ -16,7 +21,7 @@ async function crearDesdeNuevo(page: Page, titulo: string, premisa = "José ve a
   await page.getByLabel("Título").fill(titulo);
   if (premisa) await page.getByLabel("¿De qué trata?").fill(premisa);
   await expect(page).toHaveURL(/\/asistente\/[0-9a-f-]{36}\/direccion$/);
-  await expect(guardado(page)).toContainText("Guardado hace un momento");
+  await guardadoListo(page);
   return page.url().split("/")[4];
 }
 
@@ -26,7 +31,7 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await page.getByLabel("¿Cómo termina?").fill("Le deja flores y descansa en paz.");
   await page.getByText("Es así a propósito: no lo cambies").click();
   await page.getByLabel("Protagonista").fill("José");
-  await expect(guardado(page)).toContainText("Guardado hace un momento");
+  await guardadoListo(page);
 
   // Lo guardado sobrevive a recargar.
   await page.reload();
@@ -65,7 +70,7 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   const acto1 = page.locator('form[data-number="1"]');
   await acto1.getByRole("button", { name: /Agregar hecho/ }).click();
   await acto1.locator('textarea[name="events"]').last().fill("José frena el micro de golpe.");
-  await expect(guardado(page)).toContainText("Guardado hace un momento");
+  await guardadoListo(page);
   await page.reload();
   await expect(page.locator('form[data-number="1"] textarea[name="events"]').last()).toHaveValue(
     "José frena el micro de golpe.",
@@ -112,7 +117,7 @@ test("género → estilo y la amenaza dependen del catálogo y se guardan", asyn
   await expect(naturaleza).toBeEnabled();
   await naturaleza.selectOption("espiritu");
   await page.getByLabel("Qué quiere").fill("Que José se detenga.");
-  await expect(guardado(page)).toContainText("Guardado hace un momento");
+  await guardadoListo(page);
 
   await page.reload();
   await expect(page.getByLabel("Tipo de horror")).toHaveValue("paranormal");
@@ -142,14 +147,59 @@ test("navegar con Tab por las tarjetas no desplaza la página fuera de la vista"
   }
 });
 
-// La barra del asistente (guardado + acciones) queda fija arriba al scrollear.
-test("la barra con el guardado y «Analizar» queda fija arriba al scrollear", async ({ page }) => {
+// Spec-550 H11: la barra fija lleva los pasos y las acciones; sigue arriba al scrollear.
+test("la barra con los pasos y «Analizar» queda fija arriba al scrollear", async ({ page }) => {
   await crearDesdeNuevo(page, "E2E barra");
   const barra = page.locator(".asistente-barra");
-  await expect(barra.locator("[data-guardado]")).toContainText("Guardado hace un momento");
+  await expect(barra.getByRole("navigation", { name: "Pasos del asistente" })).toBeVisible();
   await expect(barra.getByRole("button", { name: /Analizar mi historia/ })).toBeEnabled();
 
   await page.locator("main").evaluate((m) => m.scrollTo(0, m.scrollHeight));
   await expect.poll(() => barra.evaluate((b) => Math.round(b.getBoundingClientRect().top))).toBe(0);
   await expect(barra.getByRole("button", { name: /Analizar mi historia/ })).toBeInViewport();
+  await expect(barra.locator(".pasos-forge")).toBeInViewport();
+});
+
+// Spec-550 H6: el guardado se avisa con una notificación que se va sola; un error queda.
+test("la notificación de guardado aparece y se va; un error queda hasta cerrarlo", async ({ page }) => {
+  await crearDesdeNuevo(page, "E2E notificación");
+  const aviso = page.locator("[data-guardado]");
+  await page.getByLabel("Protagonista").fill("José");
+  await expect(aviso).toHaveAttribute("data-estado", "ok");
+  await expect(aviso).toBeVisible();
+  await expect(aviso).toHaveAttribute("data-estado", "oculto", { timeout: 4000 });
+
+  await page.route("**/api/v1/authoring/stories/*/direction", (r) => r.fulfill({ status: 500, body: '{"detail":"falla de prueba"}' }));
+  await page.getByLabel("Protagonista").fill("José Pérez");
+  await expect(aviso).toHaveAttribute("data-estado", "error");
+  await page.waitForTimeout(2500);
+  await expect(aviso).toHaveAttribute("data-estado", "error");
+  await aviso.getByRole("button", { name: "Cerrar el aviso" }).click();
+  await expect(aviso).toHaveAttribute("data-estado", "oculto");
+});
+
+// Spec-550 H8: rearmar la escaleta se confirma con el diálogo del tema.
+test("rearmar la escaleta pide confirmación con el diálogo propio", async ({ page }) => {
+  const sid = await crearDesdeNuevo(page, "E2E rearmar");
+  for (const kind of ["consult", "plan_outline"]) {
+    const job = (await (await page.request.post(`/api/v1/stories/${sid}/jobs`, { data: { kind } })).json()).job_id;
+    await expect
+      .poll(async () => (await (await page.request.get(`/api/v1/jobs/${job}`)).json()).status, { timeout: 20000 })
+      .toBe("done");
+  }
+  await page.goto(`/asistente/${sid}/taller`);
+  const dialogo = page.locator("#forge-confirm");
+  const rearmar = page.getByRole("button", { name: /Rearmar la escaleta/ }).first();
+
+  await rearmar.click();
+  await expect(dialogo).toBeVisible();
+  await expect(dialogo).toContainText("¿Rearmar la escaleta?");
+  await dialogo.getByRole("button", { name: "Cancelar" }).click();
+  await expect(dialogo).toBeHidden();
+  await expect(modal(page)).toBeHidden();
+  await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/taller$`));
+
+  await rearmar.click();
+  await dialogo.getByRole("button", { name: "Rearmar la escaleta" }).click();
+  await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/escaleta$`), { timeout: 20000 });
 });

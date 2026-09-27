@@ -172,6 +172,13 @@
   }
   .peer:disabled ~ .opcion-forge__caja { @apply cursor-default; }
 
+  /* ── Confirmación con el tema (Spec-550 H8) ──────────────────────────── */
+  .confirm-forge {
+    @apply max-w-md w-[calc(100%-2rem)] rounded-md border border-forge-border bg-forge-surface text-forge-text p-8 shadow-2xl;
+  }
+  .confirm-forge::backdrop { background: var(--forge-overlay); }
+  .confirm-forge__icono { @apply p-3 rounded-full bg-forge-warning-bg text-forge-warning shrink-0; }
+
   /* ── Barra del asistente (Spec-530) ─────────────────────────────────── */
 
   /* Arriba de todo, a lo ancho de <main>: guardado automático + acciones del
@@ -180,6 +187,36 @@
     @apply sticky -top-12 z-20 -mx-12 -mt-12 mb-8 px-12 py-3
            flex flex-wrap items-center justify-between gap-4
            border-b border-forge-border bg-forge-surface shadow-sm shadow-forge-text/10;
+  }
+
+  /* Pasos del asistente en la barra (Spec-550 H11): navegación, ni chip ni botón. */
+  .pasos-forge { @apply flex items-center gap-1 text-sm; }
+  .pasos-forge__paso { @apply inline-flex items-center gap-2 px-2 py-1 rounded-md; }
+  .pasos-forge__paso--actual { @apply bg-forge-accent text-forge-on-accent font-semibold; }
+  .pasos-forge__paso--link { @apply text-forge-accent hover:underline underline-offset-4; }
+  .pasos-forge__paso--no { @apply text-forge-muted opacity-60 cursor-default; }
+  .pasos-forge__numero {
+    @apply w-5 h-5 inline-flex items-center justify-center rounded-full text-xs font-bold border border-current;
+  }
+  .pasos-forge__paso--actual .pasos-forge__numero { @apply bg-forge-on-accent text-forge-accent border-forge-on-accent; }
+  .pasos-forge__linea { @apply w-4 h-px bg-forge-border; }
+
+  /* Notificación de guardado (Spec-550 H6): flota abajo a la derecha, sobre el pie. */
+  .guardado-forge {
+    @apply fixed right-6 bottom-14 z-50 flex items-center gap-2 rounded-md border px-4 py-2 text-sm shadow-lg;
+    @apply bg-forge-surface border-forge-border text-forge-text;
+    transition: opacity 400ms ease, transform 400ms ease;
+  }
+  .guardado-forge[data-estado="oculto"] { @apply opacity-0 translate-y-2 pointer-events-none; }
+  .guardado-forge[data-estado="ok"] { @apply border-forge-success-border; }
+  .guardado-forge[data-estado="ok"] .guardado-forge__icono { @apply text-forge-success; }
+  .guardado-forge[data-estado="error"] { @apply border-forge-error-border bg-forge-error-bg; }
+  .guardado-forge[data-estado="error"] .guardado-forge__icono { @apply text-forge-error; }
+  .guardado-forge__icono { @apply inline-flex; }
+  .guardado-forge__cerrar { @apply hidden ml-2 text-forge-muted hover:text-forge-text; }
+  .guardado-forge[data-estado="error"] .guardado-forge__cerrar { @apply inline-flex; }
+  @media (prefers-reduced-motion: reduce) {
+    .guardado-forge { transition: none; }
   }
 
   /* Con la banda de generación visible, la barra va debajo (sin el -mt-12). */

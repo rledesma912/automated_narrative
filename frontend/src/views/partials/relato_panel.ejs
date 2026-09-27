@@ -93,7 +93,9 @@ function extractActNumber(title) {
             hx-post="/historia/<%= story.id %>/relatos/<%= relato.id %>/actos/<%= actNumber %>/regenerar"
             hx-target="#relato-panel-<%= relato.id %>"
             hx-swap="outerHTML"
-            hx-confirm="¿Regenerar este acto?<%= regenEstimate ? ` Tarda ${regenEstimate}.` : '' %> Se reemplazará el texto actual."
+            hx-confirm="<%= regenEstimate ? `Tarda ${regenEstimate}. ` : '' %>Se reemplaza el texto actual del acto <%= actNumber %>."
+            data-confirmar-titulo="¿Regenerar el acto <%= actNumber %>?"
+            data-confirmar-label="Regenerar el acto"
           >
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar
           </button>

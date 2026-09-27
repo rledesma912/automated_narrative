@@ -1,0 +1,14 @@
+<%/* Spec-550 H8: confirmación con el tema. La maneja /js/confirm-dialog.js. */%>
+<dialog id="forge-confirm" class="confirm-forge" aria-labelledby="forge-confirm-titulo" aria-describedby="forge-confirm-mensaje">
+  <div class="flex items-start gap-4 mb-6">
+    <span class="confirm-forge__icono"><i data-lucide="alert-triangle" class="w-6 h-6"></i></span>
+    <div>
+      <h3 id="forge-confirm-titulo" class="font-serif text-xl mb-1" data-confirm-titulo></h3>
+      <p id="forge-confirm-mensaje" class="text-forge-muted" data-confirm-mensaje></p>
+    </div>
+  </div>
+  <div class="flex flex-wrap justify-end gap-3">
+    <button type="button" class="btn-forge-outline-sm" data-confirm-cancelar>Cancelar</button>
+    <button type="button" class="btn-forge-sm" data-confirm-aceptar>Confirmar</button>
+  </div>
+</dialog>
