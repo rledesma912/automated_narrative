@@ -73,14 +73,14 @@ El autor arma la historia en el **asistente**: Dirección → Taller (preguntas 
 | Rol | Componente | Cuándo | Responsabilidad |
 |---|---|---|---|
 | Consultor | `WorkshopConsultant` | 1 por ronda del taller (job `consult`) | Evalúa los criterios de `config/workshop_criteria.yaml` y hace preguntas con opciones; lo respondido e «intencional» vuelve en la ronda siguiente |
-| Planificador | `OutlinePlanner` | job `plan_outline`, o al generar sin escaleta | Arma la escaleta: objetivo, hechos, cambio, escenario, en escena, lo que se guarda, siembras/cobros, decisiones |
-| Verificador | `OutlineVerifier` | después de planificar (job `verify_outline`) | Ubica las decisiones del autor, fuerza el final intencional en el acto 5, avisos por acto (máx. 3) |
-| Voz | `OutlineNarrator.voice_prompts` + `VozUseCase.narrate_with_prompts` | 1 por acto | Prosa del acto desde la escaleta |
+| Planificador | `OutlinePlanner` | job `plan_outline`, o al generar sin escaleta | Arma la escaleta: «cómo llega acá» (actos 2–5), objetivo, hechos, cambio, escenario, en escena, lo que todavía no se cuenta y en qué acto se revela, siembras/cobros, decisiones. Recibe la receta del efecto (Spec-560 A5), la sinopsis por acto de los YAML viejos como guía (Spec-570 D2) y, al rearmar, los avisos visibles de la escaleta anterior (A6) |
+| Verificador | `OutlineVerifier` | después de planificar (job `verify_outline`) | Ubica las decisiones del autor, fuerza el final intencional en el acto 5, avisos por acto (máx. 3 visibles): reglas (`sin_hechos`, `sin_cambio`, `sin_puente`, `sin_revelacion`, elenco, siembras) y de la IA (hechos repetidos o adelantados, secretos sin revelar, continuidad entre actos, receta del efecto). Respeta los ignorados (Spec-550 H10) |
+| Voz | `OutlineNarrator.voice_prompts` + `VozUseCase.narrate_with_prompts` | 1 por acto | Prosa del acto desde la escaleta. Abre con el puente y sigue desde las últimas oraciones del acto anterior (Spec-560 A1) |
 | Memoria | `OutlineNarrator.remember` | 1 por acto | Hechos acumulados («Acto N: …»), estado y `used_motifs` (hasta 30, llegan a la Voz como «ya usado, no repetir») |
 
-Generar un relato: **10 llamadas** con escaleta; 12 si la historia no la tiene (entró por `import-yaml`): primero se arma y se guarda.
+Generar un relato: **10 llamadas** con escaleta; 12 si la historia no la tiene o solo tiene borradores (entró por `import-yaml`): primero se arma y se guarda. Regenerar un acto: **2 llamadas** (Voz + Memoria del acto, Spec-560 A2); los actos siguientes quedan marcados como escritos con la versión anterior (`macro_beat.stale`, aviso en el panel).
 
-La Voz recibe: quién narra y cómo lo cuenta (`direction.telling` → `config/authoring_options.yaml`), la guía de oficio, el acto (objetivo, hechos, cambio, lo que no se revela), el escenario, las reglas del acto (`rule.applies_to_beat`), la amenaza según la exposición del acto, solo los personajes en escena (con su parentesco), la memoria y lo ya usado. Extensión proporcional a los hechos del acto.
+La Voz recibe: quién narra y cómo lo cuenta (`direction.telling` → `config/authoring_options.yaml`), la guía de oficio, el acto (objetivo, hechos, cambio, lo que no se revela), el escenario, las reglas del acto (`rule.applies_to_beat`), la amenaza según la exposición del acto, solo los personajes en escena (con su parentesco), la memoria y lo ya usado; además (Spec-560) «CÓMO SE LLEGA A ESTE ACTO», «ASÍ TERMINÓ EL ACTO ANTERIOR» (últimas 3 oraciones) y, si ya hubo un relato o se regenera, «EN LA VERSIÓN ANTERIOR DE ESTE ACTO PASÓ ESTO» (lo que marcó el control de repetición: `repetition_check.last_version_findings`). Extensión proporcional a los hechos del acto.
 
 ### Entidades — la amenaza (Spec-450)
 
@@ -197,13 +197,13 @@ SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.
 - `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, narrator_config (JSON: `storyteller_id`, `storyteller_name`, `voice {person, tense}`), direction (JSON: premisa, efecto, final, final intencional, cómo lo cuenta), status, created_at — FK `genero` → `genre` y FK compuesta `(genero, subgenero)` → `subgenre`; par inválido → 422 (`ensure_valid_genre`). `Story.atmosfera` = «género (subgénero)».
 - `character`: id, story_id, name, role, kind (`persona`|`sin_nombre`|`grupo`), relation (qué es para quien narra), order_index
 - `rule`: id, story_id, content, applies_to_beat (NULL = global)
-- `macro_beat`: id, story_id, number, summary, synopsis_beat, generated_act, status, active_scenario_id, active_scenario_description, system_prompt, user_prompt, type — la salida de cada acto
+- `macro_beat`: id, story_id, number, generated_act, status, stale, system_prompt, user_prompt, created_at — **solo la salida** de cada acto (Spec-570; entidad `ActText`)
 - `scenario`: id, story_id, order_index, name, description
 - `narrative_journal`: id, story_id, beat_number, last_events, physical_emotional_state, used_motifs (JSON)
 - `generated_narrative`: id, story_template_id, title, content, status
 - `entity`: id, story_id, order_index (0 = principal), name, nature_id, description, manifestations, limits, reveal_level — máx. 3 por historia; se reescribe con los datos de entrada
 - `story_workshop`: story_id, level (`direccion`|`escaleta`), criterion, status (`cumple`|`parcial`|`falta`|`intencional`), question, options (JSON), answer, round, asked (JSON) — único por (story_id, level, criterion)
-- `act_outline`: la escaleta, entrada de cada acto (separada de `macro_beat`, que es la salida): story_id, number 1–5, goal, events, change_from/to, scenario y on_stage (por nombre), held_back, seeds, payoffs, decisions, warnings (JSON de `{text, key, source, dismissed}`, Spec-550 H10), needs_review
+- `act_outline`: la escaleta, entrada de cada acto (separada de `macro_beat`, que es la salida): story_id, number 1–5, goal, events, change_from/to, scenario y on_stage (por nombre), held_back («lo que todavía no se cuenta») y reveal_act, seeds, payoffs, decisions, warnings (JSON de `{text, key, source, dismissed}`, Spec-550 H10), needs_review, bridge («cómo llega acá», Spec-560 A1), draft y synopsis (sinopsis por acto de un YAML viejo, Spec-570 D2)
 - `generation_job`: id, story_id, kind (`full_generation`|`regenerate_voz`|`consult`|`plan_outline`|`verify_outline`), status, stage, beat, total_beats, params (JSON), error, narrative_id, created_at, started_at, finished_at — índice único parcial: 1 job activo por historia
 
 Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`, `SQLGenreRepository`.
