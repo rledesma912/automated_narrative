@@ -141,3 +141,15 @@ test("navegar con Tab por las tarjetas no desplaza la página fuera de la vista"
     expect(await fueraDeLugar()).toEqual({ html: 0, body: 0, sidebar: 0 });
   }
 });
+
+// La barra del asistente (guardado + acciones) queda fija arriba al scrollear.
+test("la barra con el guardado y «Analizar» queda fija arriba al scrollear", async ({ page }) => {
+  await crearDesdeNuevo(page, "E2E barra");
+  const barra = page.locator(".asistente-barra");
+  await expect(barra.locator("[data-guardado]")).toContainText("Guardado hace un momento");
+  await expect(barra.getByRole("button", { name: /Analizar mi historia/ })).toBeEnabled();
+
+  await page.locator("main").evaluate((m) => m.scrollTo(0, m.scrollHeight));
+  await expect.poll(() => barra.evaluate((b) => Math.round(b.getBoundingClientRect().top))).toBe(0);
+  await expect(barra.getByRole("button", { name: /Analizar mi historia/ })).toBeInViewport();
+});
