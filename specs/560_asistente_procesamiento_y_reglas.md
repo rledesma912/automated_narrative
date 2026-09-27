@@ -131,6 +131,24 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 
 **Costo:** 0 llamadas extra; el prompt del Planificador y el del Verificador, algunas líneas más.
 
+### A6 — Lo detectado no vuelve cuando se rehace · **decidido**
+
+**Pregunta del usuario:** los problemas que se detectan, ¿el proceso apunta a resolverlos, o falta un flujo que los use cuando se vuelve al taller o se vuelve a generar?
+
+**Hoy:**
+
+| Qué se detecta | Dónde se ve | ¿Lo recibe la IA cuando se rehace? |
+|---|---|---|
+| Criterios del Taller | Taller | Sí: el Consultor recibe respuestas y pendientes en la ronda siguiente |
+| Avisos del Verificador | Escaleta | Solo al revisar de nuevo (y respeta lo ignorado, Spec-550 H10). **«Rearmar la escaleta» no los recibe** |
+| Frases repetidas, clichés, nombres inventados | Panel del relato | **«Regenerar relato» no recibe nada**; regenerar un acto, recién con A2 |
+| Motivos ya usados | interno | Sí, pero solo dentro de una misma generación |
+
+**Cambio (cerrar el circuito; nada automático, solo cuando el autor da la orden):**
+1. **Rearmar la escaleta:** el Planificador recibe los avisos **visibles** (no los ignorados) de la escaleta actual como «problemas a resolver en esta versión».
+2. **Regenerar el relato completo:** cada acto recibe lo que el control de repetición marcó en ese acto en la última versión (mismo mecanismo que A2).
+3. Sin llamadas extra; algunas líneas más en los prompts del Planificador y de la Voz. Va en S5, junto con A2.
+
 ---
 
 ## 2. DECISIONES
@@ -140,6 +158,7 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 - **A3:** ✅ decidido (2026-09-27) — se suma solo el chequeo de **continuidad** (regla: actos 2–5 sin «Cómo llega acá»; IA: el acto arranca en un lugar o momento que no se explica desde el anterior). El de **función del acto** queda afuera por ahora.
 - **A4:** ✅ decidido (2026-09-27) — mantener y aclarar: «Lo que todavía no se cuenta» + pista + «Se revela en el Acto N» (o aviso si ninguno lo revela).
 - **A5:** ✅ decidido (2026-09-27) — que el efecto tenga peso: receta por efecto para el Planificador, control en el Verificador, medición con dos efectos; si no se distinguen, el campo se saca.
+- **A6:** ✅ decidido (2026-09-27) — cerrar el circuito: «Rearmar la escaleta» recibe los avisos visibles; «Regenerar relato» recibe lo que el control marcó en cada acto de la última versión. Va en S5.
 
 ---
 
@@ -182,11 +201,12 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - Escaleta: rótulo «Lo que todavía no se cuenta», pista («La Voz no lo revela en este acto; se tiene que revelar en uno posterior») y «Se revela en el Acto N» (elegible).
 - **Verificación:** pytest de la regla; E2E del rótulo y del selector.
 
-### S5 — A2: regenerar un acto sin repetir
+### S5 — A2 + A6: regenerar sin repetir y cerrar el circuito
 - Voz al regenerar: sección con lo que marcó el control de repetición en ese acto (frases repetidas con su acto de origen, clichés, nombres inventados).
 - Después de regenerar, la Memoria del acto se actualiza (+1 llamada; el job pasa por la etapa `journal`).
 - Esquema: `macro_beat.stale` (se escribió con la memoria de una versión anterior): al regenerar el acto N se marca en los actos > N y se limpia al regenerarlos o al generar todo; el panel del relato lo avisa en esos actos.
-- **Verificación:** pytest del prompt de regeneración y de la marca; E2E del aviso en el panel.
+- A6: el Planificador recibe los avisos visibles al rearmar; la generación completa recibe, por acto, lo marcado en la última versión.
+- **Verificación:** pytest del prompt de regeneración y de la marca; E2E del aviso en el panel; pytest de los prompts de A6.
 
 ### S6 — A5: el efecto pesa
 - `authoring_options.yaml`: receta `planificador` por efecto; «otro» usa el texto del autor.
@@ -237,9 +257,10 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [ ] **T4.1** Esquema `act_outline.reveal_act`; Planificador `se_revela_en`; regla del Verificador (guardado sin acto posterior que lo revele). — *Verify:* pytest.
 - [ ] **T4.2** Escaleta: rótulo, pista y «Se revela en el Acto N» (selector). — *Verify:* E2E.
 
-### S5 — A2: regenerar sin repetir
+### S5 — A2 + A6: regenerar sin repetir y cerrar el circuito
 - [ ] **T5.1** Prompt de regeneración con lo marcado por `repetition_check` en ese acto. — *Verify:* pytest del prompt.
 - [ ] **T5.2** Memoria del acto actualizada al regenerar (etapa `journal` en el job). — *Verify:* pytest del use case.
+- [ ] **T5.4** A6: Planificador recibe los avisos visibles al rearmar; la generación completa recibe lo marcado por acto en la última versión. — *Verify:* pytest de los dos prompts; snapshot regenerado.
 - [ ] **T5.3** Esquema `macro_beat.stale`: se marca en los actos > N, se limpia al regenerarlos o al generar todo; aviso en el panel del relato. — *Verify:* pytest + E2E del aviso.
 
 ### S6 — A5: el efecto pesa
