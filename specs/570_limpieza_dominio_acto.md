@@ -11,9 +11,9 @@
 ## ASSUMPTIONS
 
 1. Después de la Spec-530 un acto tiene **entrada** (la escaleta, `act_outline`) y **salida** (la prosa, `macro_beat`). La separación es correcta —rearmar la escaleta no debe borrar la prosa, y regenerar la prosa no toca la escaleta—; lo que sobra es lo que `macro_beat` todavía guarda de cuando era también la entrada.
-2. Sin migraciones: cambio de esquema = `init_db()` + DB de dev nueva; en prod, `export-yaml --all` → DB nueva → `import-yaml` (CLAUDE.md). **Se hace en el mismo pase que la columna nueva de la Spec-560 A1**, para migrar prod una sola vez.
+2. Sin migraciones: cambio de esquema = `init_db()` + DB nueva, en dev y en prod. **Datos (2026-09-27):** etapa de desarrollo: las historias de prod son descartables. No se valida ni se migra lo que hay en prod; ante un cambio de esquema o de semántica, se recrea la DB. **Se hace en el mismo pase que la columna nueva de la Spec-560 A1.**
 3. Regresión cero en lo que ve el usuario y en los prompts: el snapshot `tests/fixtures/snapshots/pipeline_prompts.json` no cambia.
-4. Los YAML viejos se siguen importando (`input_stories/`, exports de prod).
+4. Los YAML de `input_stories/` (fixtures de los tests y del evaluador) se siguen importando.
 
 ---
 
@@ -71,7 +71,7 @@ Que el dominio diga lo que el sistema hace: **la escaleta es la entrada de cada 
 
 **✅ 2026-09-27: el usuario aprueba las cuatro recomendaciones** — D1 mismo pase que la Spec-560 A1; D2 (a) la sinopsis por acto va a la escaleta como primer hecho; D3 (a) renombrar solo por dentro; D4 (a) los duplicados de `story` van en una spec aparte.
 
-- **D1 — ¿Cuándo?** Recomendación: **en el mismo pase a prod que la Spec-560 A1** (las dos cambian el esquema: una sola exportación/importación).
+- **D1 — ¿Cuándo?** Recomendación: **en el mismo pase a prod que la Spec-560 A1** (las dos cambian el esquema: se recrea la DB una sola vez).
 - **D2 — La sinopsis por acto de los YAML viejos.** (a) **va a la escaleta como primer hecho** del acto (recomendada: la historia importada arranca con escaleta y el Planificador no tiene que inventarla); (b) se descarta (el Planificador arma la escaleta desde la sinopsis general).
 - **D3 — Renombrar.** (a) **Solo por dentro** (recomendada): `MacroBeat` → `ActText`, `DirectorUseCase` → `GenerateStoryUseCase`, `BeatType` → `ActType`, fuera el alias `Beat`; se mantienen los caminos de la API (`/beats`), el evento `beat_start` y `applies_to_beat` para no tocar el frontend ni los YAML. (b) También la API y los eventos (`/acts`, `act_start`): más prolijo, más superficie (frontend, E2E, YAML). (c) No renombrar.
 - **D4 — Duplicados de `story` (1.3).** (a) **Fuera de esta spec** (recomendada: tocan la ficha, el export y el asistente; conviene una spec aparte); (b) incluirlos.
@@ -82,7 +82,7 @@ Que el dominio diga lo que el sistema hace: **la escaleta es la entrada de cada 
 
 1. `macro_beat` tiene solo las columnas de salida; `init_db()` y los repos, sin las columnas que salen.
 2. El snapshot de prompts no cambia; la prosa del mock E2E, igual.
-3. `export-yaml` → `import-yaml` de los 3 YAML de `input_stories/` y de los exports de prod: misma escaleta, dirección, taller y personajes.
+3. `export-yaml` → `import-yaml` de los 3 YAML de `input_stories/`: misma escaleta, dirección, taller y personajes.
 4. La sala en modo lectura muestra los hechos de cada acto (desde la escaleta).
 5. Sin referencias a `DirectorUseCase`, `MacroBeat` ni al alias `Beat` en `src/` (si D3 = a o b).
 6. Suite completa en verde; dev actualizado (Spec-540 §2.5).

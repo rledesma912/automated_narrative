@@ -10,6 +10,8 @@
 
 ## ASSUMPTIONS
 
+**Datos (2026-09-27):** etapa de desarrollo: las historias de prod son descartables. No se valida ni se migra lo que hay en prod; ante un cambio de esquema o de semántica, se recrea la DB.
+
 1. El usuario recorre la UI en dev (`storymaker.test`, tema «Latte») y anota lo que quiere cambiar; cada hallazgo entra acá con su decisión (o como pendiente).
 2. Los cambios de tema se hacen con los tokens `--forge-*` de `theme.css` y valen para **los dos temas** (confirmado): donde el usuario ve violeta (Latte, dev), en prod se ve el acento de «Papel» (rojo óxido). Ver D2.
 3. Nada de colores fijos en vistas (tests `no-hardcoded-colors` y `palette-contrast`, ambas paletas AA ≥ 4,5:1).
@@ -249,7 +251,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 6. **H7:** en el Taller, cada criterio dice de quién habla (nombre del protagonista) y para qué sirve, en las preguntas abiertas, en «Ya resuelto» y en los chips; las preguntas nuevas de la IA nombran al protagonista.
 7. **H8:** rearmar la escaleta y regenerar un acto piden confirmación con el diálogo del tema (Papel y Latte); «Cancelar» y `Esc` no hacen nada; confirmar sigue el flujo de hoy; no queda `window.confirm`/`alert`/`prompt` en el frontend.
 8. **H9:** en todas las pantallas del inventario, los botones, chips y notas usan las clases compartidas; ningún chip ni nota tiene hover ni es `<button>`; los botones secundarios usan el acento; capturas antes/después en los dos temas.
-9. **H10:** un aviso ignorado no reaparece tras «Revisar con la IA» (ni de regla ni de la IA); «N ignorados → Volver a mostrar» lo restaura; rearmar la escaleta los limpia; las escaletas guardadas con el formato viejo se siguen leyendo.
+9. **H10:** un aviso ignorado no reaparece tras «Revisar con la IA» (ni de regla ni de la IA); «N ignorados → Volver a mostrar» lo restaura; rearmar la escaleta los limpia; 
 10. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
 
 ---
@@ -292,12 +294,12 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 - **Verificación:** unit de la derivación (final con texto → fijo; vacío → libre) y de los textos con protagonista; E2E del Taller con los nombres nuevos; `import-yaml` de `input_stories/` sin cambios de comportamiento salvo el final fijo.
 
 ### S7 — Avisos ignorados que no vuelven (H10)
-- Dominio: aviso = `{text, key, source, dismissed}`; lectura compatible de la lista vieja de textos.
+- Dominio: aviso = `{text, key, source, dismissed}` (sin compatibilidad con la lista vieja: datos descartables).
 - `rule_warnings` con clave estable por tema (siembra, elenco…); un aviso que junta siembras se arma sin las descartadas.
 - Verificador: recibe los descartados del acto («no los repitas ni los reformules») y filtra coincidencias; el máximo por acto cuenta solo visibles. Snapshot regenerado a propósito.
 - API: «ignorar» marca `dismissed` (por clave); nuevo «volver a mostrar». Rearmar la escaleta los limpia.
 - Escaleta: link «N ignorados» → lista atenuada con «Volver a mostrar».
-- **Verificación:** pytest (regla descartada no vuelve; IA descartada llega al prompt y se filtra; volver a mostrar; rearmar limpia; lista vieja); E2E ignorar → revisar con la IA (mock) → no vuelve → volver a mostrar.
+- **Verificación:** pytest (regla descartada no vuelve; IA descartada llega al prompt y se filtra; volver a mostrar; rearmar limpia); E2E ignorar → revisar con la IA (mock) → no vuelve → volver a mostrar.
 
 ### Cierre
 - `CLAUDE.md` (gramática visual, barra, confirmaciones, avisos), spec a DONE, PR a `development`.
@@ -308,6 +310,5 @@ Siete slices, de lo más acotado a lo más amplio. Ninguno cambia el esquema de 
 | Riesgo | Mitigación |
 |---|---|
 | S2/S3 cambian el aspecto de todo: puede no gustar. | Checkpoint visual en S2 sobre dos pantallas antes de convertir el resto. |
-| H1 fija finales que hoy están escritos sin la casilla. | Verificado en prod (solo lectura, 2026-09-27): ninguna de las 3 historias tiene final escrito, así que ninguna cambia. En dev se avisa. |
-| H10 cambia el formato de `warnings`. | Lectura compatible de la lista vieja + test; sin cambio de esquema. |
+| H10 cambia el formato de `warnings`. | Sin compatibilidad con el formato viejo (datos descartables): se recrean las DB. |
 | Tests E2E atados a textos o clases viejas. | Se actualizan en el mismo slice; nada de `skip`. |

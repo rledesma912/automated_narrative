@@ -21,7 +21,7 @@ Todas las propuestas de esta spec se juzgan contra este principio.
 1. Los hallazgos salen de la primera generación con esta versión («La presencia del colectivo», en dev, con `gemma3:12b`).
 2. El pipeline es el de Spec-530: Planificador → Verificador → por acto, Voz (`outline_voice*.md`) + Memoria (`outline_journal*.md`). La Voz no ve la prosa de los otros actos: solo la escaleta del acto y la memoria acumulada.
 3. Cada cambio de prompt se mide con `scripts/evaluate_voice.py` antes y después, y cambia el snapshot de prompts a propósito (`SNAPSHOT_UPDATE=1`).
-4. Cambios de esquema de la DB: sin migraciones; en prod, `export-yaml` → DB nueva → `import-yaml` (CLAUDE.md). Se prefieren soluciones que no cambien el esquema.
+4. Cambios de esquema de la DB: sin migraciones; se recrea la DB (dev y prod). **Datos (2026-09-27):** etapa de desarrollo: las historias de prod son descartables. No se valida ni se migra lo que hay en prod; ante un cambio de esquema o de semántica, se recrea la DB.
 
 ---
 
@@ -112,7 +112,7 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 
 ## 2. DECISIONES
 
-- **A1:** ✅ decidido (2026-09-27) — **campo nuevo** «Cómo llega acá» en los actos 2–5 (columna nueva en `act_outline`; en prod, export/import de las historias) y **sí** se le pasan a la Voz las últimas 2–3 oraciones del acto anterior (con la indicación de no repetirlas).
+- **A1:** ✅ decidido (2026-09-27) — **campo nuevo** «Cómo llega acá» en los actos 2–5 (columna nueva en `act_outline`; se recrean las DB) y **sí** se le pasan a la Voz las últimas 2–3 oraciones del acto anterior (con la indicación de no repetirlas).
 - **A2:** ✅ decidido (2026-09-27) — las tres: pasarle a la Voz lo que marcó el control de repetición, actualizar la memoria del acto regenerado (+1 llamada) y avisar que los actos siguientes se escribieron con la versión vieja.
 - **A3:** ✅ decidido (2026-09-27) — se suma solo el chequeo de **continuidad** (regla: actos 2–5 sin «Cómo llega acá»; IA: el acto arranca en un lugar o momento que no se explica desde el anterior). El de **función del acto** queda afuera por ahora.
 - **A4:** ✅ decidido (2026-09-27) — mantener y aclarar: «Lo que todavía no se cuenta» + pista + «Se revela en el Acto N» (o aviso si ninguno lo revela).
