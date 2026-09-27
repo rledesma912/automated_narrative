@@ -38,7 +38,8 @@
   /* Velo detrás de los modales: tinta traslúcida */
   --forge-overlay: rgb(43 38 32 / 0.55);
 
-  --sidebar-width: 16rem;
+  --sidebar-width: 13rem;            /* Spec-550 H3 (antes 16rem) */
+  --sidebar-width-collapsed: 3.5rem; /* colapsado: solo íconos */
 }
 
 /* ════════════════════════════════════════════════════════════════════════════

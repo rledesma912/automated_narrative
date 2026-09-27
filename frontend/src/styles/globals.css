@@ -248,6 +248,14 @@
     @apply px-2 py-0.5 bg-forge-bg border border-forge-border text-forge-accent text-[10px] font-bold uppercase tracking-widest rounded;
   }
 
+  /* ── Menú lateral colapsable (Spec-550 H3) ─────────────────────────────
+     <html data-sidebar="collapsed"> lo aplica un script en <head> (sin
+     parpadeo) y /js/sidebar.js lo alterna. Todo lee --sidebar-width. */
+  html[data-sidebar="collapsed"] { --sidebar-width: var(--sidebar-width-collapsed); }
+  html[data-sidebar="collapsed"] .sidebar-expandido { @apply hidden; }
+  .sidebar-colapsado { @apply hidden; }
+  html[data-sidebar="collapsed"] .sidebar-colapsado { @apply block; }
+
   .nav-link-forge {
     @apply flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 border-l-2;
   }

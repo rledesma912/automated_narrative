@@ -346,9 +346,9 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde, `make dev-st
 - [x] **T3.4** Test de vistas: chips y notas no son `<button>` ni llevan `hover:`; sin estilos de estado armados a mano fuera de las clases. — *Files:* test nuevo.
 - [x] **T3.5** Capturas antes/después en los dos temas.
 
-### S4 — Menú lateral (H3)
-- [ ] **T4.1** `--sidebar-width: 13rem` + `--sidebar-width-collapsed`; menú y pie leen el token (pie: `left-[var(--sidebar-width)]`). — *Files:* `theme.css`, `sidebar.ejs`, `footer.ejs`.
-- [ ] **T4.2** Botón colapsar (tira de íconos con `aria-label`/`title`, marca en inicial, DEV en un punto); estado en `localStorage` (try/catch) aplicado desde `<head>`. — *Verify:* E2E colapsar → recargar → navegar → sigue colapsado; el pie arranca donde termina el menú. — *Files:* `sidebar.ejs`, `layout.ejs`, `public/js/sidebar.js`, `globals.css`, E2E nuevo.
+### S4 — Menú lateral (H3) · ✅ 2026-09-27
+- [x] **T4.1** `--sidebar-width: 13rem` + `--sidebar-width-collapsed`; menú y pie leen el token (pie: `left-[var(--sidebar-width)]`). — *Files:* `theme.css`, `sidebar.ejs`, `footer.ejs`.
+- [x] **T4.2** Botón colapsar (tira de íconos con `aria-label`/`title`, marca en inicial, DEV en un punto); estado en `localStorage` (try/catch) aplicado desde `<head>`. — *Verify:* E2E colapsar → recargar → navegar → sigue colapsado; el pie arranca donde termina el menú. — *Files:* `sidebar.ejs`, `layout.ejs`, `public/js/sidebar.js`, `globals.css`, E2E nuevo.
 
 ### S5 — Barra del asistente (H11, H6, H8)
 - [ ] **T5.0** Pasos en la barra fija con estilo de navegación; fuera «← paso anterior»; en angosto, solo números. — *Verify:* E2E: los pasos siguen a la vista al scrollear y navegan. — *Files:* `_cabecera.ejs`, `direccion.ejs`, `taller.ejs`, `escaleta.ejs`, `globals.css`.
