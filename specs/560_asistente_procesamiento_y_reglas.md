@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — calidad del pipeline del asistente
-**Estado:** SPECIFY — A1–A4 decididos (2026-09-27); abierta a nuevos temas
+**Estado:** SPECIFY — A1–A5 decididos (2026-09-27); abierta a nuevos temas
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente, escaleta y pipeline del relato). La UI del asistente va en Spec-550.
 
@@ -108,6 +108,29 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 - **Mostrar dónde se revela:** «Se revela en el Acto N» (o un aviso si ninguno lo revela), para que se vea el recorrido.
 - Diferenciarlo en pantalla de «siembra» (un detalle que se muestra ahora y cobra sentido después) y «retoma».
 
+### A5 — «¿Qué querés que sienta quien lo escuche?» casi no pesa · **decidido: que tenga peso**
+
+**Pregunta del usuario:** ¿qué tan útil es el campo del efecto?
+
+**Hoy:** el efecto llega **solo como una etiqueta** («Efecto que busca el autor: Pavor creciente») a los prompts del Consultor, del Planificador y del Verificador (`context.story_block`). El Consultor lo usa para que sus opciones sean coherentes y el criterio «El final» se evalúa contra él. **La Voz no lo recibe**, y el ritmo de cada acto lo fija la curva de intensidad de los 5 actos (`llm_beats_definition.yaml`), la misma para todos los efectos. Nunca se midió su efecto: dos historias iguales con efectos distintos probablemente salen muy parecidas.
+
+**Cambio (según la máxima: el efecto se resuelve en la escaleta, no en la Voz):**
+1. **Cada efecto tiene una receta para el Planificador**, en `config/authoring_options.yaml` (campo nuevo `planificador` por efecto), que llega al prompt como una sección «CÓMO TIENE QUE PEGAR»:
+
+   | Efecto | Receta para la escaleta |
+   |---|---|
+   | Pavor creciente | La amenaza se acerca de a poco: cada acto, un paso más cerca y más concreta que en el anterior. El Acto 1 solo insinúa; nada se muestra entero antes del Acto 3. |
+   | Susto | Al menos dos irrupciones bruscas (Actos 2 y 3), cada una precedida por un momento de calma. Hechos cortos y concretos; el golpe llega sin aviso. |
+   | Melancolía inquietante | El miedo nace de una pérdida o una culpa; la amenaza tiene algo humano o triste. El final deja una pena que no se cierra (si el autor decidió el final, manda el suyo). |
+   | Horror que se revela | Lo que se guarda en los Actos 1–3 apunta a una verdad que se revela en el Acto 4 y cambia el sentido de lo anterior. Las siembras se cobran en esa revelación. |
+   | Otro | El texto que escribió el autor, como objetivo a cumplir. |
+
+2. **El Verificador controla la receta** dentro de la misma revisión (sin llamada extra): un aviso por acto si la escaleta no la cumple («para “Susto” falta una irrupción brusca en el Acto 2»). Se ignora como cualquier aviso (Spec-550 H10).
+3. **La Voz no cambia:** recibe la escaleta que ya tiene el efecto adentro.
+4. **Medición (condición para quedarse):** la misma historia con dos efectos distintos (p. ej. «Pavor creciente» y «Susto»), 2 corridas cada uno, con `evaluate_voice.py`. Se comparan las escaletas (¿cumplen su receta?) y el usuario lee los relatos sin saber cuál es cuál. **Si no se distinguen, el campo se saca** de la Dirección.
+
+**Costo:** 0 llamadas extra; el prompt del Planificador y el del Verificador, algunas líneas más.
+
 ---
 
 ## 2. DECISIONES
@@ -116,6 +139,7 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 - **A2:** ✅ decidido (2026-09-27) — las tres: pasarle a la Voz lo que marcó el control de repetición, actualizar la memoria del acto regenerado (+1 llamada) y avisar que los actos siguientes se escribieron con la versión vieja.
 - **A3:** ✅ decidido (2026-09-27) — se suma solo el chequeo de **continuidad** (regla: actos 2–5 sin «Cómo llega acá»; IA: el acto arranca en un lugar o momento que no se explica desde el anterior). El de **función del acto** queda afuera por ahora.
 - **A4:** ✅ decidido (2026-09-27) — mantener y aclarar: «Lo que todavía no se cuenta» + pista + «Se revela en el Acto N» (o aviso si ninguno lo revela).
+- **A5:** ✅ decidido (2026-09-27) — que el efecto tenga peso: receta por efecto para el Planificador, control en el Verificador, medición con dos efectos; si no se distinguen, el campo se saca.
 
 ---
 
