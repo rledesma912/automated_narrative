@@ -25,7 +25,7 @@ Juntar en un solo lugar las mejoras de UI que surgen del recorrido del usuario, 
 
 ## 1. HALLAZGOS
 
-### H1 — «¿Cómo termina?» parece repetir «¿De qué trata?» · **pendiente** (el usuario lo deja para después)
+### H1 — «¿Cómo termina?» parece repetir «¿De qué trata?» · **decidido: opción 2**
 
 **Lo que ve el usuario:** si la sinopsis ya cuenta el final, ¿para qué otro campo?
 
@@ -226,7 +226,7 @@ Las **tarjetas de opción** (radios) quedan como su propia cuarta forma: tarjeta
 
 ## 2. DECISIONES
 
-- **D1 (H1):** pendiente; el usuario lo retoma después. Recomendación: opción 2.
+- **D1 (H1):** ✅ decidido (2026-09-27) — **escribirlo = decidirlo**: se quita la casilla «Es así a propósito»; con texto, el final queda fijo (`ending_intentional` se deriva de que haya texto); vacío, lo propone la IA. Las historias que hoy tienen final escrito sin la casilla pasan a tenerlo fijo (se avisa en el pase).
 - **D2 (H2):** «fondo violeta con letras blancas» = **fondo del acento del tema + `on-accent`**: violeta en dev (Latte) y rojo óxido en prod (Papel). Confirmado por el usuario (2026-09-27): todos los cambios de UI de esta spec aplican a los dos temas, cada uno con sus colores.
 - **D3 (H3):** ancho abierto 13rem, colapsado a íconos, estado recordado por navegador.
 - **D4 (H4):** en la ficha, un solo botón de generación según el estado; «Generar Relato» (duplicaba la última variante sin IA) se quita del frontend; el endpoint del Core queda para los E2E.
