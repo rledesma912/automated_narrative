@@ -149,6 +149,26 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 3. **«A propósito» sin respuesta** dice «Lo dejaste así a propósito: la IA no lo va a preguntar.» en vez de «Sin pregunta por ahora.».
 4. **Consultor:** una regla más en `authoring_consultant_system.md`: la pregunta nombra al protagonista por su nombre. Cambia el snapshot de prompts (`SNAPSHOT_UPDATE=1`, a propósito).
 
+### H8 — Confirmaciones con el diálogo nativo del navegador · **decidido**
+
+**Lo que ve el usuario:** al rearmar la escaleta aparece el `confirm()` del navegador («storymaker.test dice…»), fuera del tema. Lo quiere como componente de la UI, con el tema.
+
+**Hoy hay dos confirmaciones nativas:**
+- **Rearmar la escaleta** (Taller): `data-confirmar` → `window.confirm()` en `asistente.js:422`.
+- **Regenerar un acto** (panel del relato): `hx-confirm` en `relato_panel.ejs:96`; HTMX usa `window.confirm()` por defecto.
+
+Ya existe un modal con el tema, pero solo para borrar historias (`partials/modal_confirm.ejs`, servido por HTMX).
+
+**Cambio:**
+- **Un componente de confirmación** con el tema: partial en el layout + `public/js/confirm-dialog.js` (`window.ForgeConfirm.ask({ title, message, confirmLabel, tone }) → Promise<boolean>`, UMD testeable en Vitest como `eta.js`).
+  - Sobre `<dialog>` nativo con `showModal()`: foco atrapado, `Esc` cancela, velo `--forge-overlay`, `aria-labelledby`/`aria-describedby`.
+  - Tarjeta como el modal de borrar: ícono, título, mensaje, «Cancelar» y el botón de la acción («Rearmar la escaleta», «Regenerar el acto»). Tono `warning` para acciones que reemplazan contenido.
+  - El foco arranca en «Cancelar» (lo seguro); al cerrar vuelve al botón que lo abrió.
+- **Rearmar la escaleta:** `data-confirmar` usa `ForgeConfirm.ask`.
+- **Regenerar un acto:** se intercepta `htmx:confirm` (`preventDefault` + `ask` + `issueRequest(true)`), así cualquier `hx-confirm` futuro usa el componente sin tocarlo.
+- Nada de `window.confirm`/`alert`/`prompt` en el frontend: un test lo verifica (como `no-hardcoded-colors`).
+- El modal de borrar historia queda como está (ya tiene el tema); unificarlo es opcional.
+
 ---
 
 ## 2. DECISIONES
@@ -160,6 +180,7 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 - **D5 (H5):** «Ver relato» en singular, igual en ficha y galería.
 - **D6 (H6):** el aviso «Guardado» parpadea ~1,5 s y se desvanece; «Guardando…» visible mientras dura; los errores quedan fijos; al cargar, sin aviso (salvo la ayuda de `/nuevo`).
 - **D7 (H7):** criterios del taller con sujeto (el nombre del protagonista) y «para qué sirve» en lenguaje llano visible en todos lados; textos de la tabla a validar por el usuario.
+- **D8 (H8):** confirmaciones con un componente propio (`<dialog>` con el tema) para «Rearmar la escaleta» y todo `hx-confirm` (regenerar acto); sin diálogos nativos del navegador.
 
 ---
 
@@ -171,4 +192,5 @@ Como «Generar Relato» solo aparece cuando ya hay relato, la regla del usuario 
 4. **H5:** ficha y galería dicen «Ver relato».
 5. **H6:** al guardar, el aviso parpadea y a los ~2 s queda transparente sin mover la barra; un error de guardado queda visible; con movimiento reducido no parpadea.
 6. **H7:** en el Taller, cada criterio dice de quién habla (nombre del protagonista) y para qué sirve, en las preguntas abiertas, en «Ya resuelto» y en los chips; las preguntas nuevas de la IA nombran al protagonista.
-7. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
+7. **H8:** rearmar la escaleta y regenerar un acto piden confirmación con el diálogo del tema (Papel y Latte); «Cancelar» y `Esc` no hacen nada; confirmar sigue el flujo de hoy; no queda `window.confirm`/`alert`/`prompt` en el frontend.
+8. Suite completa en verde y dev (`storymaker.test`) reflejando cada cambio (Spec-540 §2.5).
