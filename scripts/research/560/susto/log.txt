@@ -1,0 +1,7 @@
+  susto con #1: cliches=2, parentescos_mal=1, narrador_3ra_persona=0, frases_repetidas=3, palabras=2244
+  susto con #2: cliches=3, parentescos_mal=0, narrador_3ra_persona=0, frases_repetidas=7, palabras=2249
+
+susto — perfil ollama-gemma3-12b, Voz T=0.6
+| Variante | Clichés | Parentescos mal | Narradora 3ra persona | Frases repetidas | Palabras |
+|---|---|---|---|---|---|
+| con | 2.5 | 0.5 | 0.0 | 5.0 | 2246.5 |

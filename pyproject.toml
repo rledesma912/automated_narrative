@@ -34,7 +34,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.playwright]
-base_url = "http://localhost:3010"
+base_url = "http://localhost:3040"
 browser = "chromium"
 headed = false
 

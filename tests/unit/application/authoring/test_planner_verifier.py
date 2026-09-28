@@ -4,13 +4,14 @@ from src.application.services.authoring import workshop_rules as wr
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier, rule_warnings
 from src.domain.exceptions import LLMStructuredOutputError
-from src.domain.models import ActOutline, Entity
+from src.domain.models import ActOutline, Entity, OutlineWarning
 from tests.unit.application.authoring.conftest import ScriptedLLM
 
 
 def _acto(n, **kw):
     base = {
         "numero": n,
+        "como_llega": "" if n == 1 else "Esa noche sigue",
         "objetivo": f"quiere {n}",
         "hechos": [f"hecho {n}"],
         "cambio_de": "a",
@@ -18,6 +19,7 @@ def _acto(n, **kw):
         "escenario": "La ruta",
         "en_escena": ["José"],
         "se_guarda": "",
+        "se_revela_en": 0,
         "siembra": [],
         "retoma": [],
         "decisiones": [],
@@ -43,7 +45,7 @@ async def test_planifica_cinco_actos(story):
     assert acts[0].decisions == ["meta"]  # las inventadas se descartan
     assert acts[0].goal == "quiere 1" and acts[0].events == ["hecho 1"]
     prompt = llm.calls[0]["prompt"]
-    assert "[meta] Qué quiere: Llegar a casa" in prompt
+    assert "[meta] Qué busca José: Llegar a casa" in prompt
     assert (
         "5. Desenlace (intensidad baja): cerrar la historia con el final que decidió el autor"
         in prompt
@@ -78,12 +80,13 @@ def test_reglas_sin_llm(story):
         ActOutline(number=2, events=[], payoffs=[]),
     ]
     warnings = rule_warnings(story, outline)
-    text = " ".join(warnings[1])
+    text = " ".join(w.text for w in warnings[1])
     assert "termina igual que empieza" in text
     assert "«El sereno» está en escena" in text
     assert "La mujer" not in text  # la amenaza no es elenco
     assert "«El ramo» se siembra" in text
-    assert "no tiene hechos" in " ".join(warnings[2])
+    assert "no tiene hechos" in " ".join(w.text for w in warnings[2])
+    assert {w.key for w in warnings[1]} >= {"sin_cambio", "elenco:el sereno", "siembra:el ramo"}
 
 
 async def test_verificador_saca_decisiones_que_faltan_y_limita_avisos(story):
@@ -91,6 +94,7 @@ async def test_verificador_saca_decisiones_que_faltan_y_limita_avisos(story):
     outline = [
         ActOutline(
             number=n,
+            bridge="Esa noche sigue",
             events=["x"],
             change_from="a",
             change_to="b",
@@ -111,7 +115,7 @@ async def test_verificador_saca_decisiones_que_faltan_y_limita_avisos(story):
     assert v.missing_decisions == ["meta"]  # el final intencional va siempre al último acto
     assert v.outline[0].decisions == []
     assert v.outline[4].decisions == ["final"]
-    assert v.outline[1].warnings == ["aviso 0", "aviso 1"]
+    assert [w.text for w in v.outline[1].warnings] == ["aviso 0", "aviso 1"]
 
 
 async def test_el_final_intencional_va_al_ultimo_acto(story):
@@ -127,6 +131,7 @@ async def test_el_verificador_no_saca_el_final_intencional(story):
     outline = [
         ActOutline(
             number=n,
+            bridge="Esa noche sigue",
             events=["x"],
             change_from="a",
             change_to="b",
@@ -146,8 +151,10 @@ def test_hilos_sueltos_en_un_solo_aviso(story):
     ]
     (warning,) = rule_warnings(story, outline)[1]
     assert (
-        warning == "«La música», «El vestido» se siembran acá y ningún acto posterior los retoma."
+        warning.text
+        == "«La música», «El vestido» se siembran acá y ningún acto posterior los retoma."
     )
+    assert warning.key == "siembra:la musica|siembra:el vestido"
 
 
 async def test_como_maximo_tres_avisos_por_acto(story):
@@ -159,7 +166,7 @@ async def test_como_maximo_tres_avisos_por_acto(story):
     llm = ScriptedLLM({"decisiones": [], "avisos": [{"acto": 1, "aviso": "del LLM"}]})
     v = await OutlineVerifier(llm).verify(story, outline)
     assert len(v.outline[0].warnings) == 3
-    assert "del LLM" not in v.outline[0].warnings  # primero las reglas
+    assert "del LLM" not in [w.text for w in v.outline[0].warnings]  # primero las reglas
 
 
 async def test_escenarios_sin_agregados_y_secreto_en_el_acto_4(story):
@@ -195,3 +202,155 @@ async def test_la_revision_ubica_decisiones_que_el_planificador_no_etiqueto(stor
     assert v.outline[2].decisions == ["meta"]
     assert v.outline[4].decisions == ["final"]
     assert v.missing_decisions == []
+
+
+# ── Spec-550 H10: lo ignorado no vuelve ─────────────────────────────────────
+
+
+def test_una_siembra_ignorada_no_vuelve_y_el_aviso_se_arma_sin_ella(story):
+    outline = [
+        ActOutline(
+            number=1,
+            events=["x"],
+            seeds=["La música", "El vestido"],
+            warnings=[
+                OutlineWarning(
+                    text="«La música» …", key="siembra:la musica", source="regla", dismissed=True
+                )
+            ],
+        ),
+        ActOutline(number=2, events=["y"]),
+    ]
+    (warning,) = rule_warnings(story, outline, {1: outline[0].dismissed_keys()})[1]
+    assert warning.text == "«El vestido» se siembra acá y ningún acto posterior lo retoma."
+
+
+async def test_un_aviso_de_la_ia_ignorado_llega_al_prompt_y_se_filtra(story):
+    ignorado = OutlineWarning.from_ai("El micro aparece de golpe en el acto 2.")
+    outline = [
+        ActOutline(
+            number=n,
+            bridge="Esa noche sigue",
+            events=["x"],
+            change_from="a",
+            change_to="b",
+            warnings=[ignorado.model_copy(update={"dismissed": True})] if n == 2 else [],
+        )
+        for n in range(1, 6)
+    ]
+    llm = ScriptedLLM(
+        {
+            "decisiones": [],
+            "avisos": [{"acto": 2, "aviso": "El micro aparece de golpe en el acto 2"}],
+        }
+    )
+    v = await OutlineVerifier(llm).verify(story, outline)
+
+    assert "El micro aparece de golpe en el acto 2." in llm.calls[0]["prompt"]
+    assert [w.dismissed for w in v.outline[1].warnings] == [True]  # no se duplicó
+
+
+# ── Spec-560 A1 + A3: puente entre actos y continuidad ──────────────────────
+
+
+async def test_el_planificador_trae_como_llega_salvo_en_el_acto_1(story):
+    llm = ScriptedLLM({"actos": [_acto(n, como_llega=f"puente {n}") for n in range(1, 6)]})
+    acts, _ = await OutlinePlanner(llm).plan(story)
+    assert [a.bridge for a in acts] == ["", "puente 2", "puente 3", "puente 4", "puente 5"]
+
+
+def test_regla_sin_puente_en_los_actos_2_a_5(story):
+    outline = [
+        ActOutline(number=n, events=["x"], bridge="" if n in (1, 3) else "sigue")
+        for n in range(1, 4)
+    ]
+    warnings = rule_warnings(story, outline)
+    assert [w.key for w in warnings.get(3, [])] == ["sin_puente"]
+    assert 1 not in warnings and 2 not in warnings  # el acto 1 no necesita puente
+
+
+# ── Spec-560 A4: lo que todavía no se cuenta y dónde se revela ──────────────
+
+
+async def test_el_planificador_trae_el_acto_que_revela_solo_si_es_posterior(story):
+    actos = [
+        _acto(n, se_guarda="Quién es ella", se_revela_en=r)
+        for n, r in ((1, 4), (2, 1), (3, 0), (4, 5), (5, 0))
+    ]
+    acts, _ = await OutlinePlanner(ScriptedLLM({"actos": actos})).plan(story)
+    assert [a.reveal_act for a in acts] == [4, 0, 0, 5, 0]
+
+
+def test_regla_lo_guardado_sin_acto_que_lo_revele(story):
+    outline = [
+        ActOutline(number=1, events=["x"], held_back="Quién es ella", reveal_act=3),
+        ActOutline(number=2, bridge="sigue", events=["x"], held_back="El accidente"),
+    ]
+    warnings = rule_warnings(story, outline)
+    assert 1 not in warnings
+    assert [w.key for w in warnings[2]] == ["sin_revelacion"]
+
+
+# ── Spec-560 A6: al rearmar, el Planificador recibe los avisos visibles ─────
+
+
+async def test_al_rearmar_recibe_los_avisos_visibles_y_no_los_ignorados(story):
+    story = story.model_copy(
+        update={
+            "outline": [
+                ActOutline(
+                    number=2,
+                    events=["x"],
+                    warnings=[
+                        OutlineWarning.from_ai("El encuentro repite el del acto 1."),
+                        OutlineWarning.from_ai("Aviso ignorado.").model_copy(
+                            update={"dismissed": True}
+                        ),
+                    ],
+                )
+            ]
+        }
+    )
+    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
+    await OutlinePlanner(llm).plan(story)
+    prompt = llm.calls[0]["prompt"]
+    assert "PROBLEMAS QUE MARCÓ LA REVISIÓN" in prompt
+    assert "- Acto 2: El encuentro repite el del acto 1." in prompt
+    assert "Aviso ignorado." not in prompt
+
+
+# ── Spec-560 A5: el efecto pesa en la escaleta ──────────────────────────────
+
+
+def _with_effect(story, effect, other=""):
+    direction = story.direction.model_copy(update={"effect": effect, "effect_other": other})
+    return story.model_copy(update={"direction": direction})
+
+
+async def test_el_planificador_recibe_la_receta_del_efecto(story):
+    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
+    await OutlinePlanner(llm).plan(_with_effect(story, "susto"))
+    prompt = llm.calls[0]["prompt"]
+    assert "CÓMO TIENE QUE PEGAR (el efecto que busca el autor: Susto)" in prompt
+    assert "dos irrupciones bruscas" in prompt
+
+
+async def test_otro_usa_el_texto_del_autor(story):
+    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
+    await OutlinePlanner(llm).plan(_with_effect(story, "otro", "Que dé asco más que miedo"))
+    assert "Que dé asco más que miedo" in llm.calls[0]["prompt"]
+
+
+async def test_el_verificador_controla_la_receta(story):
+    outline = [ActOutline(number=n, bridge="sigue", events=["x"]) for n in range(1, 6)]
+    llm = ScriptedLLM({"decisiones": [], "avisos": []})
+    await OutlineVerifier(llm).verify(_with_effect(story, "revelacion"), outline)
+    prompt = llm.calls[0]["prompt"]
+    assert "EFECTO QUE BUSCA EL AUTOR: Horror que se revela" in prompt
+    assert "se revela en el acto 4" in prompt
+
+
+def test_sin_efecto_no_hay_receta(story):
+    from src.application.services.authoring import context
+
+    assert context.effect_block(_with_effect(story, "")) == ""

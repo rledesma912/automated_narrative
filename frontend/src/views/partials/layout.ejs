@@ -1,15 +1,24 @@
+<% const environment = locals.environment || { isDev: false }; -%>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"<%- environment.isDev ? ' data-env="dev"' : '' %>>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NarrativeForge — <%= title %></title>
+  <%/* Spec-550 H3: el menú colapsado se aplica antes de pintar (sin parpadeo). */%>
+  <script>try { if (localStorage.getItem("forge:sidebar") === "collapsed") document.documentElement.dataset.sidebar = "collapsed"; } catch (e) {}</script>
+  <title><%= environment.isDev ? '[DEV] ' : '' %>NarrativeForge — <%= title %></title>
 
-  <%/* Spec-531: favicon (vela) + color de la barra del navegador en móviles. */%>
+  <%/* Spec-531: favicon (vela) + color de la barra del navegador en móviles.
+       Spec-540: en dev, la vela y el color del tema «Latte». */%>
+  <% if (environment.isDev) { %>
+  <link rel="icon" href="/favicon-dev.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#eff1f5">
+  <% } else { %>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#f7f3ec">
+  <% } %>
 
   <!-- CSS compilado (Tailwind CLI compilado con PostCSS) — Offline first -->
   <link rel="stylesheet" href="/styles.css?v=<%= locals.assetVersion || '' %>">
@@ -21,6 +30,8 @@
   <script src="/js/eta.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/generation-banner.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/footer.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/sidebar.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/confirm-dialog.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/generation-guard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 
   <style>
@@ -40,6 +51,7 @@
   </main>
 
   <%- include('footer') %>
+  <%- include('confirm_dialog') %>
 
   <% if (typeof flashMsg !== 'undefined' && flashMsg) { %>
   <div id="toast-notification"

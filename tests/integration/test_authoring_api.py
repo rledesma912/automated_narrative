@@ -64,7 +64,7 @@ async def _run_job(client, story_id: str, kind: str) -> dict:
 async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
     assert [e["id"] for e in data["effects"]][:2] == ["pavor", "susto"]
-    assert data["criteria"][0]["nombre"] == "Qué quiere"
+    assert data["criteria"][0]["nombre"] == "Qué busca el protagonista"
 
 
 async def test_crear_desde_la_direccion(client):
@@ -107,7 +107,7 @@ async def test_taller_con_la_ia(client):
     assert items["final"]["status"] == "intencional"  # no se evalúa
     assert items["meta"]["question"] == "¿Pregunta de ejemplo sobre meta?"
     assert len(items["meta"]["options"]) == 3
-    assert items["meta"]["nombre"] == "Qué quiere" and items["meta"]["por_que"]
+    assert items["meta"]["nombre"] == "Qué busca José" and items["meta"]["por_que"]
     assert state["workshop"]["round"] == 1
     assert state["workshop"]["finish"]["kind"] == "abierto"
 
@@ -163,7 +163,10 @@ async def test_escaleta_y_revision(client):
 
     acts = state["outline"]["acts"]
     assert [a["number"] for a in acts] == [1, 2, 3, 4, 5]
-    assert acts[1]["warnings"] == ["El encuentro del acto 2 repite el del acto 1."]
+    assert [w["text"] for w in acts[1]["warnings"]] == [
+        "El encuentro del acto 2 repite el del acto 1."
+    ]
+    assert acts[1]["warnings"][0]["source"] == "ia" and not acts[1]["warnings"][0]["dismissed"]
     assert "Escenario de ejemplo" in state["scenarios"]
     state = await _run_job(client, sid, "verify_outline")
     assert state["outline"]["acts"][1]["warnings"]
@@ -244,9 +247,37 @@ async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
 
     warning = state["outline"]["acts"][1]["warnings"][0]
     state = (
-        await client.post(f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"text": warning})
+        await client.post(
+            f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": warning["key"]}
+        )
     ).json()
-    assert state["outline"]["acts"][1]["warnings"] == []
+    assert [w["dismissed"] for w in state["outline"]["acts"][1]["warnings"]] == [True]
+
+    # Spec-550 H10: revisar de nuevo no lo trae de vuelta (el mock repite el mismo aviso).
+    state = await _run_job(client, sid, "verify_outline")
+    visibles = [w for w in state["outline"]["acts"][1]["warnings"] if not w["dismissed"]]
+    assert warning["text"] not in [w["text"] for w in visibles]
+
+    # «Volver a mostrar».
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/outline/2/warnings/restore", json={"key": warning["key"]}
+        )
+    ).json()
+    assert any(
+        w["key"] == warning["key"] and not w["dismissed"]
+        for w in state["outline"]["acts"][1]["warnings"]
+    )
+    assert (
+        await client.post(f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": "x"})
+    ).status_code == 404
+
+    # Rearmar la escaleta olvida lo ignorado (actos nuevos).
+    await client.post(
+        f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": warning["key"]}
+    )
+    state = await _run_job(client, sid, "plan_outline")
+    assert not any(w["dismissed"] for a in state["outline"]["acts"] for w in a["warnings"])
 
 
 async def test_la_amenaza_desde_la_direccion(client):
@@ -302,7 +333,9 @@ async def test_generar_con_escaleta_usa_la_escaleta(client, monkeypatch):
     journal = await SQLStoryRepository().get_journal(uuid.UUID(sid))
     assert journal.used_motifs == ["un motivo de ejemplo"]
     assert journal.last_events.startswith("Acto 1: Pasó lo del acto.")
-    assert "Hecho 3.1 de ejemplo" in story.beats[2].summary
+    assert (
+        "Hecho 3.1 de ejemplo" in story.outline[2].events[0]
+    )  # Spec-570: la entrada vive en la escaleta
 
 
 async def test_control_de_repeticion_del_relato(client):

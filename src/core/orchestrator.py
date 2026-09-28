@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from src.application.dto import StoryCreateDTO
 from src.application.services import PromptBuilder
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
-from src.application.use_cases import CreateStoryUseCase, DirectorUseCase
+from src.application.use_cases import CreateStoryUseCase, GenerateStoryUseCase
 from src.cli.logger import logger
 from src.cli.progress import SilentReporter
 from src.domain.interfaces import GenreRepository, LLMProvider
@@ -139,7 +139,7 @@ class StoryRunner:
         story = await create_story.execute(dto)
         logger.info(f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}")
 
-        director = DirectorUseCase(
+        director = GenerateStoryUseCase(
             self.llm,
             self.prompt_builder,
             normalizer=self.normalizer,
@@ -184,7 +184,7 @@ class StoryRunner:
         """Regenera entera una historia ya existente (arma la escaleta si le falta)."""
         logger.info(f"[ORQUESTADOR] Regenerando: {story.title}")
         await self.story_repo.clear_story_artifacts(story.id)
-        director = DirectorUseCase(
+        director = GenerateStoryUseCase(
             self.llm,
             self.prompt_builder,
             normalizer=self.normalizer,

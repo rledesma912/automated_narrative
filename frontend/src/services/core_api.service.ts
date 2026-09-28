@@ -64,18 +64,6 @@ export interface GeneratedNarrative {
   created_at: string;
 }
 
-export async function generateNarrative(
-  storyTemplateId: string,
-  title: string,
-): Promise<GeneratedNarrative> {
-  const response = await axios.post(
-    `${CORE_API_URL}/api/v1/story-templates/${storyTemplateId}/generate-narrative?title=${encodeURIComponent(title)}`,
-    {},
-    { timeout: 30000 },
-  );
-  return response.data;
-}
-
 export async function listNarratives(storyTemplateId: string): Promise<GeneratedNarrative[]> {
   const response = await axios.get(
     `${CORE_API_URL}/api/v1/story-templates/${storyTemplateId}/narratives`,

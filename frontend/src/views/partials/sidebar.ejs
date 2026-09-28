@@ -2,7 +2,9 @@
 /*
  * Variables de entrada:
  *   activePage:  string — 'home' | 'generate' | 'gallery' | 'debug' | 'components'
+ *   environment: (opcional) Spec-540 — { isDev, branch, commit }; sin él, prod.
  */
+const environment = locals.environment || { isDev: false };
 const navItems = [
   { page: 'home',       href: '/',           icon: 'home',         label: 'Inicio'      },
   { page: 'generate',   href: '/nuevo',      icon: 'pen-line',     label: 'Nuevo relato'     },
@@ -10,11 +12,19 @@ const navItems = [
   { page: 'debug',      href: '/debug',      icon: 'terminal',     label: 'API conn' },
   ];
 %>
-<aside class="w-[var(--sidebar-width)] flex-shrink-0 flex flex-col border-r border-forge-border bg-forge-surface">
+<aside class="w-[var(--sidebar-width)] flex-shrink-0 flex flex-col border-r border-forge-border bg-forge-surface overflow-hidden transition-[width] duration-200">
 
   <div class="px-5 py-6 border-b border-forge-border">
-    <span class="text-forge-accent font-serif text-lg tracking-widest uppercase">Narrative</span>
-    <span class="block text-forge-muted text-xs tracking-widest">Forge</span>
+    <div class="sidebar-expandido">
+      <span class="text-forge-accent font-serif text-lg tracking-widest uppercase">Narrative</span>
+      <span class="flex items-center gap-2 text-forge-muted text-xs tracking-widest">Forge
+        <% if (environment.isDev) { %><span class="px-1.5 py-0.5 rounded bg-forge-accent text-forge-on-accent font-bold tracking-wider" data-env-badge>DEV</span><% } %>
+      </span>
+    </div>
+    <%/* Spec-550 H3: colapsado, la marca es una inicial y DEV un punto. */%>
+    <div class="sidebar-colapsado relative text-forge-accent font-serif text-lg text-center" title="NarrativeForge<%= environment.isDev ? ' · DEV' : '' %>">
+      N<% if (environment.isDev) { %><span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-forge-accent"></span><% } %>
+    </div>
   </div>
 
   <nav class="flex-1 py-4">
@@ -23,9 +33,9 @@ const navItems = [
         const isActive = activePage === item.page;
         const stateCls = isActive ? 'nav-link-forge-active' : 'nav-link-forge-idle';
       %>
-      <a href="<%= item.href %>" class="nav-link-forge <%= stateCls %>">
+      <a href="<%= item.href %>" class="nav-link-forge <%= stateCls %>" title="<%= item.label %>" aria-label="<%= item.label %>">
         <i data-lucide="<%= item.icon %>" class="w-4 h-4 flex-shrink-0"></i>
-        <%= item.label %>
+        <span class="sidebar-expandido whitespace-nowrap"><%= item.label %></span>
         <% if (item.page === 'generate') { %>
           <%/* Spec-460: punto pulsante mientras hay generaciones en curso */%>
           <span data-forge-jobs-dot title="Hay una generación en curso"
@@ -35,7 +45,19 @@ const navItems = [
     <% }); %>
   </nav>
 
-  <div class="px-5 py-3 text-xs text-forge-muted">
-    v0.3.0 — Slice 3
+  <button type="button" class="nav-link-forge nav-link-forge-idle w-full" data-sidebar-toggle
+          aria-expanded="true" aria-label="Ocultar el menú" title="Ocultar el menú">
+    <i data-lucide="panel-left-close" class="w-4 h-4 flex-shrink-0 sidebar-expandido"></i>
+    <i data-lucide="panel-left-open" class="w-4 h-4 flex-shrink-0 sidebar-colapsado"></i>
+    <span class="sidebar-expandido whitespace-nowrap">Ocultar menú</span>
+  </button>
+
+  <div class="sidebar-expandido px-5 py-3 text-xs text-forge-muted" data-env-version>
+    <% if (environment.isDev) { %>
+      <%/* Spec-540: qué se está mirando en dev. */%>
+      <span class="font-bold text-forge-accent">DEV</span> · <%= environment.branch || 'sin git' %><% if (environment.commit) { %> · <code><%= environment.commit %></code><% } %>
+    <% } else { %>
+      v0.3.0 — Slice 3
+    <% } %>
   </div>
 </aside>

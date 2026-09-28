@@ -1,6 +1,7 @@
 # Spec-530 §4: criterios del taller del asistente de autoría.
 #
-# Fuente única: la UI muestra `nombre` y `por_que`; el Consultor recibe solo
+# Fuente única: la UI muestra `nombre` y `por_que` (Spec-550 H7: `{protagonista}`
+# se reemplaza por el nombre del protagonista); el Consultor recibe solo
 # `pregunta` (la pregunta operativa). La teoría de la que sale cada criterio
 # (`origen`) es documentación: nunca va al prompt (Spec-530 §1.2).
 #
@@ -8,31 +9,31 @@
 
 direccion:
   - id: meta
-    nombre: Qué quiere
+    nombre: Qué busca {protagonista}
     pregunta: ¿Qué quiere el protagonista en esta historia, algo concreto que la amenaza pueda frustrar?
-    por_que: Una meta concreta le da a la amenaza algo que frustrar.
+    por_que: "Lo que {protagonista} quiere conseguir en esta historia: llegar a destino, cobrar el viaje, proteger a alguien. El miedo crece cuando la amenaza se interpone en eso."
     origen: Swain / McKee
 
   - id: en_juego
-    nombre: Qué está en juego
+    nombre: Qué arriesga {protagonista}
     pregunta: ¿Qué pierde el protagonista si la amenaza sigue (trabajo, vida, cordura, alguien querido)?
-    por_que: Si el protagonista no puede perder nada, el lector no teme por él; solo mira.
+    por_que: "Lo que {protagonista} pierde si la amenaza gana: el trabajo, la cordura, a alguien querido. Si no arriesga nada, quien escucha no teme por él."
     origen: McKee
 
   - id: vulnerabilidad
-    nombre: Qué lo expone
+    nombre: Qué expone a {protagonista}
     pregunta: ¿Qué hace o cree el protagonista que lo deja expuesto a la amenaza?
-    por_que: Si le pasa por algo que hizo o que cree, el miedo pesa más que si le pasa por azar.
+    por_que: "Algo que {protagonista} hace o cree que lo deja a merced de la amenaza. Si le pasa por algo suyo, el miedo pesa más que si le pasa por azar."
     origen: Hamartia (Aristóteles)
 
   - id: historia_secreta
     nombre: La historia secreta
     pregunta: ¿Hay algo oculto que explique por qué la amenaza lo busca a él (un vínculo, una culpa, un secreto)?
-    por_que: Un cuento cuenta dos historias; la que se ve y la que explica por qué le pasa a él.
+    por_que: "Lo que no se ve al principio y explica por qué le pasa a {protagonista}: un vínculo, una culpa, un secreto."
     origen: Piglia, «Tesis sobre el cuento»
 
   - id: final
     nombre: El final
     pregunta: ¿El final deja una marca coherente con el efecto que busca el autor?
-    por_que: El final es la marca que queda en quien escucha.
+    por_que: "Si el final deja en quien escucha la marca que buscás (el efecto de la Dirección)."
     origen: Poe (unidad de efecto) / residuo

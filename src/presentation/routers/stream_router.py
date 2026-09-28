@@ -13,6 +13,7 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
+from src.presentation.routers.beat_router import outline_summaries
 from src.presentation.routers.job_router import parse_last_event_id, stream_job_events
 
 logger = logging.getLogger(__name__)
@@ -147,6 +148,7 @@ async def get_story_full(story_id: str):
         raise HTTPException(status_code=404, detail=f"Historia no encontrada: {story_id}")
 
     beats = await beat_repo.get_by_story(story.id)
+    summaries = outline_summaries(story)
 
     return {
         "story": {
@@ -162,10 +164,9 @@ async def get_story_full(story_id: str):
         "beats": [
             {
                 "number": b.number,
-                "summary": b.summary,
+                "summary": summaries.get(b.number, ""),
                 "content": b.generated_act,
                 "status": b.status,
-                "beat_type": b.beat_type.value if b.beat_type else None,
             }
             for b in beats
         ],

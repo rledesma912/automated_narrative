@@ -67,6 +67,15 @@ test.describe("Capturas del tema", () => {
       await page.setViewportSize({ width: 1440, height: alto });
       await capturar(page, `asistente-${paso}`, `/asistente/${sid}/${paso}`);
     }
+    // Spec-550 H2: una opción elegida (acento lleno) y el foco con teclado sobre otra.
+    await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.goto(`/asistente/${sid}/taller`);
+    await page.locator(".opcion-forge").first().click();
+    await page.locator(".opcion-forge input").nth(1).focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(DESTINO, "asistente-taller-elegida.png") });
     await page.setViewportSize({ width: 1440, height: 900 });
     await capturar(page, "asistente-analizando", `/asistente/${sid}/taller`);
     await page.getByRole("button", { name: /Analizar de nuevo/ }).click();

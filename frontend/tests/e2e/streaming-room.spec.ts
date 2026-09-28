@@ -44,7 +44,7 @@ test("regenerar desde la ficha: confirmación, avance por etapas y fin", async (
   await expect(page.locator("#status-line")).toHaveText("Historia generada con éxito", {
     timeout: 30_000,
   });
-  await expect(page.locator("#badge-text")).toHaveText("COMPLETO");
+  await expect(page.locator("#badge-text")).toHaveText("Completo");
   expect(posts()).toBe(1);
   // Spec-510: al terminar, cuánto tardó; el restante ya no se muestra.
   await expect(page.locator("[data-done-duration]")).toHaveText(/^Lista en \d+ s$/);
@@ -96,7 +96,7 @@ test("cancelar detiene el job en el servidor", async ({ page }) => {
 
   await page.getByRole("button", { name: "Cancelar generación" }).click();
 
-  await expect(page.locator("#badge-text")).toHaveText("CANCELADA");
+  await expect(page.locator("#badge-text")).toHaveText("Cancelada");
   await expect(page.locator("#error-msg")).toContainText("cancelada");
   const cancelled = await (await page.request.get(`/api/v1/jobs/${job!.job_id}`)).json();
   expect(cancelled.status).toBe("failed");

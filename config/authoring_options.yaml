@@ -1,20 +1,26 @@
 # Spec-530: opciones de la vista Dirección (fuente única para la UI y los prompts).
 # `voz` (en «como_lo_cuenta») es la única instrucción de estilo que recibe la Voz:
 # reemplaza al perfil del narrador del wizard, que no movía la prosa (§1.4).
+# `planificador` (en «efectos», Spec-560 A5) es la receta con la que el efecto pesa en
+# la escaleta: la recibe el Planificador y la controla el Verificador (no la Voz).
 
 efectos:
   - id: pavor
     label: Pavor creciente
     ayuda: La inquietud sube acto a acto hasta el clímax.
+    planificador: "La amenaza se acerca de a poco: en cada acto está un paso más cerca y es más concreta que en el anterior. El acto 1 solo insinúa; nada se muestra entero antes del acto 3."
   - id: susto
     label: Susto
     ayuda: "Golpes de sorpresa: el miedo llega de repente."
+    planificador: "Al menos dos irrupciones bruscas de la amenaza (en los actos 2 y 3), cada una después de un momento de calma. Hechos cortos y concretos: el golpe llega sin aviso."
   - id: melancolia
     label: Melancolía inquietante
     ayuda: "Más pena que miedo: algo queda doliendo."
+    planificador: "El miedo nace de una pérdida o de una culpa; la amenaza tiene algo humano o triste. El final deja una pena que no se cierra (si el autor decidió el final, manda el suyo)."
   - id: revelacion
     label: Horror que se revela
     ayuda: Lo peor se entiende recién al final.
+    planificador: "Lo que se guarda en los actos 1 a 3 apunta a una verdad que se revela en el acto 4 y cambia el sentido de todo lo anterior. Las siembras se cobran en esa revelación."
   - id: otro
     label: Otro
     ayuda: Contalo con tus palabras.

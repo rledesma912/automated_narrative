@@ -1,6 +1,6 @@
 """Tests para CLIContainer."""
 
-from src.application.use_cases import CreateStoryUseCase, DirectorUseCase, VozUseCase
+from src.application.use_cases import CreateStoryUseCase, GenerateStoryUseCase, VozUseCase
 from src.infrastructure.adapters import MockLLMAdapter
 from src.infrastructure.container import CLIContainer
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
@@ -50,10 +50,10 @@ class TestCLIContainer:
         runner = container.story_runner(tmp_path)
         assert isinstance(runner, StoryRunner)
 
-    def test_director_use_case_tipo(self):
+    def test_generate_story_use_case_tipo(self):
         container = CLIContainer(use_mock=True)
-        use_case = container.director_use_case()
-        assert isinstance(use_case, DirectorUseCase)
+        use_case = container.generate_story_use_case()
+        assert isinstance(use_case, GenerateStoryUseCase)
 
     def test_create_story_use_case_tipo(self):
         container = CLIContainer()

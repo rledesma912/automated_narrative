@@ -1,0 +1,16 @@
+# Spec-540: imagen de la API de DEV. A diferencia de `Dockerfile` (prod), trae las
+# dependencias de dev y NO copia el código: `docker-compose.dev.yml` monta src/ y
+# config/ del directorio de trabajo, y uvicorn recarga con cada cambio.
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen
+
+EXPOSE 8040
+
+CMD [".venv/bin/python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8040", \
+     "--reload", "--reload-dir", "src", "--reload-dir", "config", "--reload-include", "*.yaml"]

@@ -36,6 +36,6 @@ test("regenerar un acto pide confirmación con la estimación", async ({ page })
   if ((await panel.count()) === 0) test.skip(true, "La historia no tiene relatos");
   await expect(panel.locator("[data-regenerar-acto]").first()).toHaveAttribute(
     "hx-confirm",
-    /^¿Regenerar este acto\? Tarda ≈ \d+ min\. Se reemplazará el texto actual\.$/,
+    /^Tarda ≈ \d+ min\. Se reemplaza el texto actual del acto \d\.$/,
   );
 });

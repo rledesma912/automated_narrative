@@ -17,8 +17,21 @@
     ['progresiva', 'Se va mostrando'], ['explicita', 'Se muestra entera'],
   ];
 %>
-<div class="max-w-3xl" data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>">
-  <%- include('_cabecera') %>
+<div data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>">
+  <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
+  <div class="asistente-barra">
+    <%- include('_cabecera') %>
+    <button type="button" class="btn-forge-sm"
+            data-analizar="consult"
+            data-titulo="Interpretando la historia…"
+            data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte."
+            data-destino="taller"
+            <%= state ? '' : 'disabled' %>>
+      <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
+    </button>
+  </div>
+
+  <div class="max-w-3xl">
 
   <header class="mb-10">
     <h2 class="font-serif text-3xl text-forge-accent mb-2">¿Qué historia querés contar?</h2>
@@ -33,6 +46,7 @@
       <input id="a-title" name="title" type="text" required maxlength="120" value="<%= d.title %>"
              placeholder="Por ejemplo: la pena del colectivo"
              class="w-full bg-forge-bg border border-forge-border px-3 py-2 mb-4 focus:outline-none focus:border-forge-accent">
+      <% if (!state) { %><p class="pista-forge -mt-2 mb-4" data-pista-titulo><i data-lucide="info"></i>Se guarda solo cuando escribas el título.</p><% } %>
       <div class="grid sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm text-forge-muted mb-1" for="a-genero">Tipo de horror</label>
@@ -53,7 +67,7 @@
 
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1"><label for="a-premise">¿De qué trata?</label></h3>
-      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
         Contalo como se lo contarías a alguien en dos o tres frases. No hace falta ordenarlo en actos: eso lo hacemos después.</p>
       <textarea id="a-premise" name="premise" rows="4" maxlength="6000"
                 class="w-full [field-sizing:content] min-h-[6rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= d.premise %></textarea>
@@ -61,16 +75,17 @@
 
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1">¿Qué querés que sienta quien lo escuche?</h3>
-      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
         Es la brújula del asistente: las preguntas y la escaleta van a apuntar a este efecto.</p>
       <div class="grid sm:grid-cols-2 gap-3">
         <% options.effects.forEach(e => { %>
-          <label class="cursor-pointer">
+          <label class="opcion-forge h-full">
             <input type="radio" name="effect" value="<%= e.id %>" class="peer sr-only" <%= e.id === d.effect ? 'checked' : '' %>>
-            <span class="block h-full border border-forge-border bg-forge-bg p-4 transition-colors
-                         peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
-              <span class="block font-semibold"><%= e.label %></span>
-              <span class="block text-sm text-forge-muted"><%= e.detail %></span>
+            <span class="opcion-forge__caja h-full">
+              <span>
+                <span class="block font-semibold"><%= e.label %></span>
+                <span class="block text-sm text-forge-muted"><%= e.detail %></span>
+              </span>
             </span>
           </label>
         <% }) %>
@@ -82,14 +97,10 @@
 
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1"><label for="a-ending">¿Cómo termina?</label></h3>
-      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
-        Si ya lo tenés decidido, marcalo: el asistente no te va a proponer otro final.</p>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
+        Si lo escribís, la IA lo respeta tal cual y cierra el último acto así. Si lo dejás vacío, lo propone ella.</p>
       <textarea id="a-ending" name="ending" rows="2" maxlength="600"
-                class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3 focus:outline-none focus:border-forge-accent"><%= d.ending %></textarea>
-      <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-        <input type="checkbox" name="ending_intentional" class="accent-forge-accent w-4 h-4" <%= d.ending_intentional ? 'checked' : '' %>>
-        Es así a propósito: no lo cambies
-      </label>
+                class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent"><%= d.ending %></textarea>
     </section>
 
     <section class="bg-forge-surface border border-forge-border p-6">
@@ -117,16 +128,17 @@
 
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1">¿Cómo lo cuenta?</h3>
-      <p class="text-sm text-forge-muted mb-4 flex gap-2"><i data-lucide="lightbulb" class="w-4 h-4 shrink-0 mt-0.5"></i>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
         Elegí cómo suena la voz. Cada opción tiene un ejemplo de cómo arrancaría.</p>
       <div class="space-y-3">
         <% options.tellings.forEach(c => { %>
-          <label class="cursor-pointer block">
+          <label class="opcion-forge">
             <input type="radio" name="telling" value="<%= c.id %>" class="peer sr-only" <%= c.id === d.telling ? 'checked' : '' %>>
-            <span class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 border border-forge-border bg-forge-bg p-4 transition-colors
-                         peer-checked:border-forge-accent peer-checked:bg-forge-accent/5 peer-focus-visible:ring-2 peer-focus-visible:ring-forge-accent">
-              <span class="font-semibold sm:w-56 shrink-0"><%= c.label %></span>
-              <span class="prose-forge italic text-forge-muted"><%= c.detail %></span>
+            <span class="opcion-forge__caja">
+              <span class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span class="font-semibold sm:w-56 shrink-0"><%= c.label %></span>
+                <span class="prose-forge italic text-forge-muted"><%= c.detail %></span>
+              </span>
             </span>
           </label>
         <% }) %>
@@ -170,20 +182,11 @@
       </select>
     </details>
 
-    <div class="sticky bottom-0 flex flex-wrap items-center justify-between gap-4 border-t border-forge-border bg-forge-bg shadow-[0_-8px_16px_-12px] shadow-forge-text/30 py-4">
-      <%- include('_guardado', { inicial: state ? null : 'Se guarda solo cuando escribas el título' }) %>
-      <button type="button" class="btn-forge-sm"
-              data-analizar="consult"
-              data-titulo="Interpretando la historia…"
-              data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte."
-              data-destino="taller"
-              <%= state ? '' : 'disabled' %>>
-        <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
-      </button>
-    </div>
   </form>
+  </div>
 </div>
 
+<%- include('_guardado') %>
 <%- include('_analizando') %>
 <script type="application/json" id="asistente-datos"><%- JSON.stringify({ state, genres }).replace(/</g, '\\u003c') %></script>
 <script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

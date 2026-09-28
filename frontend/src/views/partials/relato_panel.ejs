@@ -37,13 +37,13 @@ function extractActNumber(title) {
 >
   <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
     <h3 class="heading-forge-lg !text-xl !mb-0"><%= displayTitle %></h3>
-    <div class="flex items-center gap-6">
+    <div class="flex items-center gap-3">
       <%/* Spec-490: .md para el TTS; sin hx-boost (htmx convertiría la descarga en un swap). Se deshabilita mientras se regenera un acto. */%>
       <a
         <% if (regen) { %>aria-disabled="true"<% } else { %>href="/api/v1/generated-narratives/<%= relato.id %>/export.md" download<% } %>
         data-descargar-relato="<%= relato.id %>"
         hx-boost="false"
-        class="btn-forge-outline !border-none !px-0 bg-transparent <%= regen ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' %>"
+        class="btn-forge-outline-sm <%= regen ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' %>"
       >
         <i data-lucide="download" class="w-4 h-4"></i>
         Descargar .md
@@ -51,7 +51,7 @@ function extractActNumber(title) {
       <button
         type="button"
         onclick="copyRelatoContent('<%= relato.id %>', this)"
-        class="btn-forge-outline !border-none !px-0 bg-transparent cursor-pointer"
+        class="btn-forge-outline-sm cursor-pointer"
       >
         <i data-lucide="copy" class="w-4 h-4"></i>
         Copiar Relato
@@ -70,8 +70,8 @@ function extractActNumber(title) {
     </div>
   <% } %>
   <% if (errorMsg) { %>
-    <div role="alert" class="flex items-start gap-3 mb-6 px-4 py-3 border border-forge-error-border text-sm text-forge-error">
-      <i data-lucide="x-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+    <div role="alert" class="nota-forge nota-forge--error mb-6">
+      <i data-lucide="x-circle" class="nota-forge__icono"></i>
       <span data-panel-error><%= errorMsg %></span>
     </div>
   <% } %>
@@ -93,22 +93,33 @@ function extractActNumber(title) {
             hx-post="/historia/<%= story.id %>/relatos/<%= relato.id %>/actos/<%= actNumber %>/regenerar"
             hx-target="#relato-panel-<%= relato.id %>"
             hx-swap="outerHTML"
-            hx-confirm="¿Regenerar este acto?<%= regenEstimate ? ` Tarda ${regenEstimate}.` : '' %> Se reemplazará el texto actual."
+            hx-confirm="<%= regenEstimate ? `Tarda ${regenEstimate}. ` : '' %>Se reemplaza el texto actual del acto <%= actNumber %>."
+            data-confirmar-titulo="¿Regenerar el acto <%= actNumber %>?"
+            data-confirmar-label="Regenerar el acto"
           >
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar
           </button>
         <% } %>
       </div>
+      <% if (isActive && (story.stale_acts || []).includes(Number(actNumber))) { %>
+        <%/* Spec-560 A2: se regeneró un acto de antes; este siguió con la versión anterior. */%>
+        <p class="nota-forge nota-forge--info mb-4" data-acto-desactualizado>
+          <i data-lucide="history" class="nota-forge__icono"></i>
+          <span>Este acto se escribió antes de que regeneraras un acto anterior: puede no seguir los cambios. Si querés que los siga, regeneralo.</span>
+        </p>
+      <% } %>
       <% const rep = relato.repetition && relato.repetition.acts.find((a) => a.number === Number(actNumber)); %>
       <% const names = (rep && rep.invented_names) || []; %>
       <% if (rep && (rep.repeated.length || rep.cliches.length || names.length)) { %>
         <%/* Spec-530 §8.3: control de repetición (no se copia ni va al .md). */%>
-        <details class="mb-4 text-sm border border-forge-warning-border bg-forge-warning-bg text-forge-warning px-3 py-2" data-repeticion>
-          <summary class="cursor-pointer">
-            <i data-lucide="repeat" class="w-3.5 h-3.5 inline"></i>
-            <%= [rep.repeated.length ? `Repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : ''].filter(Boolean).join(' · ') %>
+        <%/* Spec-550 H9: nota; lo que se toca es el link «Ver detalle», no la caja. */%>
+        <details class="mb-4 nota-forge nota-forge--warning block group" data-repeticion>
+          <summary class="list-none flex items-start gap-3">
+            <i data-lucide="repeat" class="nota-forge__icono"></i>
+            <span class="flex-1"><%= [rep.repeated.length ? `Repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : ''].filter(Boolean).join(' · ') %></span>
+            <span class="nota-forge__accion cursor-pointer"><span class="group-open:hidden">Ver detalle</span><span class="hidden group-open:inline">Ocultar</span></span>
           </summary>
-          <ul class="mt-2 space-y-1">
+          <ul class="mt-2 ml-7 space-y-1 list-disc pl-4">
             <% rep.repeated.forEach((r) => { %><li>Repite <%= r %></li><% }) %>
             <% rep.cliches.forEach((c) => { %><li>Cliché: «<%= c %>»</li><% }) %>
             <% if (names.length) { %><li>Nombres que no están en la historia: <%= names.join(', ') %> (si no los querés, regenerá el acto)</li><% } %>

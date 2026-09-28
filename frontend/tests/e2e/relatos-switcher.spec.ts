@@ -14,7 +14,7 @@ test.describe('Relatos Selector (Bug Spec-316)', () => {
   
   test('debe cambiar de relato al hacer clic en las pestañas', async ({ page }) => {
     // Usamos una URL de prueba o mockeamos la respuesta si fuera necesario.
-    // Para este caso, asumimos que el servidor está corriendo en el puerto 3010
+    // Para este caso, asumimos que el servidor está corriendo en el puerto 3040
     // (según el test de integración previo).
     
     // NOTA: Como Playwright necesita un servidor real, y estamos en medio de un refactor,

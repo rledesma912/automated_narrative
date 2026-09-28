@@ -10,11 +10,9 @@ from src.domain.interfaces import GenreRepository, StoryRepository
 from src.domain.models import (
     MAX_ENTITIES,
     ActOutline,
-    BeatType,
     CharacterKind,
     Direction,
     Entity,
-    MacroBeat,
     RevealLevel,
     Scenario,
     Story,
@@ -92,25 +90,16 @@ class CreateStoryUseCase:
                 for r in dto.typed_rules
             ]
 
-        # Pre-crear los 5 MacroBeat desde los actos del YAML (Spec-190 T7.1)
-        if dto.actos:
-            beats = []
-            for act in dto.actos:
-                number = act.get("number", 1)
-                beat_type_str = act.get("type", "")
-                try:
-                    beat_type = BeatType(beat_type_str) if beat_type_str else None
-                except ValueError:
-                    beat_type = None
-                beats.append(
-                    MacroBeat(
-                        number=number,
-                        summary=f"Acto {number}: {beat_type_str}",
-                        beat_type=beat_type,
-                        synopsis_beat=act.get("synopsis", ""),
-                    )
+        # Spec-570 D2: sin escaleta, la sinopsis por acto de los YAML viejos entra como
+        # borrador; el Planificador la usa de guía y la reemplaza al armar la escaleta.
+        if dto.actos and not story.outline:
+            story.outline = [
+                ActOutline(
+                    number=act.get("number", 1), events=[synopsis], synopsis=synopsis, draft=True
                 )
-            story.beats = beats
+                for act in dto.actos
+                if (synopsis := " ".join(str(act.get("synopsis", "")).split()))
+            ]
 
         return await self.story_repository.save(story)
 

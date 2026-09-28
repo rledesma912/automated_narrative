@@ -1,10 +1,10 @@
-.PHONY: api ui dev-all install test lint format clean help db db-clean list status export generate init export-yaml deploy deploy-check
+.PHONY: api ui dev-all dev-up dev-down dev-rebuild dev-status dev-logs dev-db install test lint format clean help db db-clean list status export generate init export-yaml deploy deploy-check
 
 # ── Variables y Configuración ─────────────────────────────────────────────────
 
-API_HOST      ?= 127.0.0.1:8020
+API_HOST      ?= 127.0.0.1:8040
 FRONTEND_DIR   = frontend
-PORT          ?= 3010
+PORT          ?= 3040
 DATABASE_URL   ?= sqlite+aiosqlite:///data/dev/stories.db
 
 # Nota (Spec-325 §3.1): el entorno de desarrollo se configura vía `.env`
@@ -17,7 +17,14 @@ API_IP   = $(shell echo $(API_HOST) | cut -d: -f1)
 help:
 	@echo "NarrativeForge Commands (Ambiente de DESARROLLO):"
 	@echo ""
-	@echo "  Desarrollo (Puertos: API $(API_PORT), UI $(PORT))"
+	@echo "  Dev siempre levantado (Spec-540: contenedores narrative-dev, storymaker.test)"
+	@echo "    make dev-up       Levanta dev (API :8040, UI :3040) y lo verifica"
+	@echo "    make dev-status   Rama, commit, contenedores y salud de dev"
+	@echo "    make dev-logs     Últimas líneas de api y ui de dev"
+	@echo "    make dev-rebuild  Reconstruye las imágenes de dev (dependencias nuevas)"
+	@echo "    make dev-down     Baja dev"
+	@echo ""
+	@echo "  Dev a mano en la terminal (mismos puertos: antes make dev-down)"
 	@echo "    make api          Levanta el Core API con hot-reload"
 	@echo "    make ui           Levanta el Frontend con hot-reload"
 	@echo "    make dev          Levanta ambos componentes en paralelo"
@@ -28,7 +35,8 @@ help:
 	@echo "    make lint         Ejecuta Ruff (linter + format)"
 	@echo ""
 	@echo "  Base de datos (DESARROLLO)"
-	@echo "    make db           Inicializa SQLite de desarrollo"
+	@echo "    make dev-db       Recrea la DB de dev vacía con los catálogos y la verifica"
+	@echo "                      (si tiene historias, pide ARGS=--yes; make db = alias)"
 	@echo "    make db-clean     Limpia todos los registros de desarrollo"
 	@echo ""
 	@echo "  Producción (Spec-520: prod cambia solo con make deploy desde main)"
@@ -43,6 +51,26 @@ help:
 	@echo ""
 	@echo "  Variables"
 	@echo "    API_HOST   Host:puerto del Core API (default: 0.0.0.0:8010)"
+
+# ── Dev siempre levantado (Spec-540) ──────────────────────────────────────────
+
+dev-up:
+	@scripts/bash/dev_env.sh up
+
+dev-down:
+	@scripts/bash/dev_env.sh down
+
+dev-rebuild:
+	@scripts/bash/dev_env.sh rebuild
+
+dev-status:
+	@scripts/bash/dev_env.sh status
+
+dev-logs:
+	@scripts/bash/dev_env.sh logs
+
+dev-db:
+	@scripts/bash/dev_env.sh db $(ARGS)
 
 # ── Producción (Spec-520) ─────────────────────────────────────────────────────
 
@@ -91,15 +119,7 @@ clean:
 
 # ── Base de datos ─────────────────────────────────────────────────────────────
 
-db:
-	@chmod +x scripts/bash/init_db.sh
-	@# Recrear el esquema desde cero: init_db() usa CREATE TABLE IF NOT EXISTS
-	@# y no aplica cambios de esquema sobre una DB existente. Se elimina la DB
-	@# (y sus archivos -wal/-shm) antes de regenerarla.
-	@mkdir -p data/dev
-	@rm -f data/dev/stories.db data/dev/stories.db-wal data/dev/stories.db-shm
-	@touch data/dev/stories.db
-	@./scripts/bash/init_db.sh
+db: dev-db
 
 db-clean:
 	@chmod +x scripts/bash/db_clean.sh && ./scripts/bash/db_clean.sh

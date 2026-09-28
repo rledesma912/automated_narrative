@@ -99,15 +99,47 @@
 
   // ── Indicador de guardado ─────────────────────────────────────────────────
 
-  function status(kind, text) {
-    $$("[data-guardado]").forEach((el) => {
-      el.classList.remove("text-forge-muted", "text-forge-success", "text-forge-error");
-      el.classList.add(kind === "ok" ? "text-forge-success" : kind === "error" ? "text-forge-error" : "text-forge-muted");
-      const icon = kind === "ok" ? "check" : kind === "error" ? "alert-circle" : "loader";
-      el.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> `;
-      el.append(document.createTextNode(text));
-    });
+  // Spec-550 H6: notificación flotante. «Guardado» ~2 s y se va; «Guardando…» solo
+  // si tarda más de 1 s; un error queda hasta que un guardado sale bien o se cierra.
+  const TOAST_MS = 2000;
+  const SLOW_MS = 1000;
+  let toastTimer = null;
+  let slowTimer = null;
+
+  function showToast(kind, text) {
+    const el = $("[data-guardado]");
+    if (!el) return;
+    const icon = kind === "ok" ? "check" : kind === "error" ? "alert-circle" : "loader";
+    $("[data-guardado-icono]", el).innerHTML = `<i data-lucide="${icon}" class="w-4 h-4${kind === "saving" ? " animate-spin" : ""}"></i>`;
+    $("[data-guardado-texto]", el).textContent = text;
+    el.setAttribute("role", kind === "error" ? "alert" : "status");
+    el.dataset.estado = kind;
     icons();
+  }
+
+  function hideToast() {
+    const el = $("[data-guardado]");
+    if (el) el.dataset.estado = "oculto";
+  }
+
+  /** kind: pending (tecleando) | saving | ok | error | hint (no se muestra). */
+  function status(kind, text) {
+    clearTimeout(toastTimer);
+    clearTimeout(slowTimer);
+    const toast = $("[data-guardado]");
+    const current = toast && toast.dataset.estado;
+    // Marca «hay un guardado en curso» (no se ve; la usan los E2E para esperar).
+    if (toast) toast.dataset.pendiente = kind === "pending" || kind === "saving" ? "1" : "";
+    if (kind === "saving") {
+      slowTimer = setTimeout(() => showToast("saving", text), SLOW_MS);
+    } else if (kind === "ok") {
+      showToast("ok", text);
+      toastTimer = setTimeout(hideToast, TOAST_MS);
+    } else if (kind === "error") {
+      showToast("error", text);
+    } else if (kind === "hint" && current !== "error") {
+      hideToast();
+    }
   }
 
   // ── Guardado automático ───────────────────────────────────────────────────
@@ -119,7 +151,7 @@
     clearTimeout(entry.timer);
     entry.timer = setTimeout(() => runSave(form), DEBOUNCE_MS);
     pending.set(form, entry);
-    status("saving", "Sin guardar…");
+    status("pending", "Sin guardar…");
   }
 
   function runSave(form) {
@@ -142,7 +174,7 @@
       status("saving", "Guardando…");
       if (kind === "direction") await saveDirection(form);
       else if (kind === "act") await api("PUT", `/authoring/stories/${page.storyId}/outline/${form.dataset.number}`, actPayload(form));
-      status("ok", "Guardado hace un momento");
+      status("ok", "Guardado");
     } catch (err) {
       if (err.status === 409) {
         status("error", "No se guardó: la IA está trabajando");
@@ -157,7 +189,7 @@
   async function saveDirection(form) {
     const payload = directionPayload(form);
     if (!payload.title) {
-      status("saving", "Se guarda solo cuando escribas el título");
+      status("hint", "Se guarda solo cuando escribas el título");
       return;
     }
     if (page.storyId) {
@@ -169,6 +201,8 @@
     page.root.dataset.storyId = state.story_id;
     history.replaceState(null, "", `/asistente/${state.story_id}/direccion`);
     $$("[data-analizar]").forEach((b) => (b.disabled = false));
+    const pista = $("[data-pista-titulo]");
+    if (pista) pista.remove();
   }
 
   function value(form, name) {
@@ -189,7 +223,6 @@
       effect: value(form, "effect"),
       effect_other: value(form, "effect_other"),
       ending: value(form, "ending"),
-      ending_intentional: value(form, "ending_intentional") === true,
       telling: value(form, "telling"),
       protagonist_name: value(form, "protagonist_name"),
       protagonist_role: value(form, "protagonist_role"),
@@ -217,6 +250,7 @@
     const keep = JSON.parse(form.elements.namedItem("keep").value || "{}");
     const newScenario = value(form, "scenario_new");
     return {
+      bridge: value(form, "bridge") || "",
       goal: value(form, "goal"),
       events: texts(form, "events"),
       change_from: value(form, "change_from"),
@@ -226,6 +260,7 @@
         .filter((el) => el.checked)
         .map((el) => el.value),
       held_back: value(form, "held_back"),
+      reveal_act: Number(value(form, "reveal_act") || 0),
       rules: texts(form, "rules"),
       seeds: keep.seeds || [],
       payoffs: keep.payoffs || [],
@@ -419,7 +454,14 @@
 
   async function analyze(btn) {
     if (!page.storyId) return;
-    if (btn.dataset.confirmar && !window.confirm(btn.dataset.confirmar)) return;
+    if (btn.dataset.confirmar) {
+      const ok = await window.ForgeConfirm.ask({
+        title: btn.dataset.confirmarTitulo,
+        message: btn.dataset.confirmar,
+        confirmLabel: btn.dataset.confirmarLabel,
+      });
+      if (!ok) return;
+    }
     try {
       await flushAll();
     } catch {
@@ -494,6 +536,7 @@
     if (!t) return;
     const form = t.closest("form[data-autosave]");
 
+    if (t.closest("[data-guardado-cerrar]")) return hideToast();
     if (t.matches("[data-analizar]")) return analyze(t);
     if (t.matches("[data-taller]")) return tallerAction(t);
     if (t.matches("[data-cambiar]")) {
@@ -536,12 +579,16 @@
       const n = form.dataset.number;
       return run(async () => {
         await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "sin_nombre" });
-        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { text: t.dataset.aviso });
+        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.aviso });
       });
     }
     if (t.matches("[data-ignorar]") && form) {
       const n = form.dataset.number;
-      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { text: t.dataset.ignorar }));
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.ignorar }));
+    }
+    if (t.matches("[data-restaurar]") && form) {
+      const n = form.dataset.number;
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }));
     }
     if (t.matches("[data-generar]")) {
       e.preventDefault();

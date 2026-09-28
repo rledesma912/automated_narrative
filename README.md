@@ -71,18 +71,18 @@ O en terminales separadas:
 
 ```bash
 # Terminal 1 — Core API (FastAPI)
-make api              # → http://localhost:8020
+make api              # → http://localhost:8040
 
 # Terminal 2 — Frontend (Express + EJS + HTMX)
-make ui               # → http://localhost:3010
+make ui               # → http://localhost:3040
 ```
 
 | Componente | URL | Descripción |
 |---|---|---|
-| Frontend | http://localhost:3010 | Wizard, Streaming Room, Galería de relatos |
-| Core API | http://localhost:8020 | REST + SSE |
-| API Docs | http://localhost:8020/docs | Swagger UI |
-| Health | http://localhost:8020/api/v1/health | Diagnóstico SQLite + LLM activo |
+| Frontend | http://localhost:3040 | Wizard, Streaming Room, Galería de relatos |
+| Core API | http://localhost:8040 | REST + SSE |
+| API Docs | http://localhost:8040/docs | Swagger UI |
+| Health | http://localhost:8040/api/v1/health | Diagnóstico SQLite + LLM activo |
 
 > Estos puertos son del entorno de **desarrollo** (Spec-325). Producción corre en Docker
 > en `:3000` (frontend) / `:8010` (API), con la DB `data/prod/stories.db`, y se actualiza
@@ -130,7 +130,7 @@ Tras una corrida exitosa (`generate` o el flujo SSE), se popula automáticamente
 ### Configuración
 
 - **Perfiles LLM:** `config/llm_core_definitions.yaml` — perfiles autocontenidos (provider + 4 roles + filtros). Activar uno con `active_profile:` o con la env `LLM_PROFILE=<nombre>`.
-  - Perfiles incluidos: `ollama-llama31`, `ollama-mistral`, `ollama-qwen25-14b`, `ollama-mistral-nemo`, `ollama-qwen3-8b`, `ollama-hybrid-voz-qwen3`, `ollama-gemma3-12b`, `anthropic-sonnet`, `gemini-cli`.
+  - Perfiles incluidos: `ollama-gemma3-12b` (local, activo) y `anthropic-sonnet5` (todos los roles en Claude Sonnet 5, para comparar). Un rol puede ir a otro proveedor con `provider`.
 - **Pilares aristotélicos:** `config/llm_narrative_definition.yaml`.
 - **Estructura de beats:** `config/llm_beats_definition.yaml`.
 - **Prompts:** `config/prompts_generation/*.md` (Spec-170).
@@ -161,7 +161,7 @@ make export   ARG=<id># exporta a Markdown
 ```
 
 Variables:
-- `API_HOST` — host:puerto del Core API (dev: `0.0.0.0:8020`).
+- `API_HOST` — host:puerto del Core API (dev: `0.0.0.0:8040`).
 
 ---
 

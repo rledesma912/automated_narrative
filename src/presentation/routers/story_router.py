@@ -335,4 +335,5 @@ async def get_story(
         narrator_config=story.narrator_config,
         storyteller_config=YamlStoryExporter().authoring_config(story),
         personajes_full=story.personajes_full,
+        stale_acts=[b.number for b in story.beats if b.stale],
     )

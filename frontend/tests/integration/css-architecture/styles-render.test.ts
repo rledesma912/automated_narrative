@@ -40,7 +40,7 @@ describe('CSS Architecture — Layout Rendering', () => {
       res.render('partials/layout', layoutLocals);
     });
 
-    // Puerto 0 → el SO asigna uno libre (no choca con `make ui` en 3010).
+    // Puerto 0 → el SO asigna uno libre (no choca con `make ui` en 3040).
     await new Promise<void>((resolve) => {
       server = app.listen(0, '127.0.0.1', resolve);
     });

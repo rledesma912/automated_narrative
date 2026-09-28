@@ -3,6 +3,7 @@
 **Fecha:** 2026-09-25
 **Tipo:** SDD (Spec-Driven Development)
 **Estado:** DONE (2026-09-25) — falta la revisión visual del usuario y el pase a prod cuando lo pida
+**Nota (2026-09-27, Spec-540):** «Papel» queda como el tema de prod; dev usa «Latte» (`:root[data-env="dev"]`), y prod pasó a `storymaker.prd`.
 **Relación:** independiente de la Spec-530; conviene hacerla antes, porque las vistas nuevas del asistente se diseñan directamente sobre este tema.
 
 ---

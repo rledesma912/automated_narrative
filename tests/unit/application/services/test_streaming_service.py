@@ -6,23 +6,20 @@ import pytest
 
 from src.application.services.streaming_service import stream_story
 from src.domain.models import (
+    ActText,
     BeatStatus,
-    BeatType,
     GeneratedNarrative,
-    MacroBeat,
     Story,
     StoryStatus,
 )
 from src.domain.streaming import StreamEventType
 
 
-def _make_beat(n: int) -> MacroBeat:
-    return MacroBeat(
+def _make_beat(n: int) -> ActText:
+    return ActText(
         number=n,
-        summary=f"sum {n}",
         generated_act=f"prosa {n}",
         status=BeatStatus.COMPLETED,
-        beat_type=BeatType.EXPOSICION,
     )
 
 

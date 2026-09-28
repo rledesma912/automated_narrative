@@ -58,7 +58,7 @@ async def get_options() -> dict:
     return {
         "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
-        "criteria": [c.__dict__ for c in catalog.direction_criteria()],
+        "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
     }
 
 
@@ -164,7 +164,13 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
     story = await _editable(story_id)
     previous = next((a for a in story.outline if a.number == number), None)
     fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
-    act = ActOutline(number=number, **fields, warnings=previous.warnings if previous else [])
+    act = ActOutline(
+        number=number,
+        **fields,
+        warnings=previous.warnings if previous else [],
+        draft=previous.draft if previous else False,  # un borrador importado sigue siéndolo
+        synopsis=previous.synopsis if previous else "",
+    )
     repo = SQLStoryRepository()
     await repo.save_act(story.id, act)
     # Las reglas del acto viven en `rule` con `applies_to_beat` (Spec-190 §4.4).
@@ -183,13 +189,27 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
 
 @router.post("/stories/{story_id}/outline/{number}/warnings/dismiss")
 async def dismiss_warning(story_id: str, number: int, body: WarningDismiss) -> dict:
-    """«Ignorar» un aviso de la revisión."""
+    """«Ignorar» un aviso: queda guardado como ignorado y no vuelve al revisar (H10)."""
+    return await _set_dismissed(story_id, number, body.key, True)
+
+
+@router.post("/stories/{story_id}/outline/{number}/warnings/restore")
+async def restore_warning(story_id: str, number: int, body: WarningDismiss) -> dict:
+    """«Volver a mostrar» un aviso ignorado."""
+    return await _set_dismissed(story_id, number, body.key, False)
+
+
+async def _set_dismissed(story_id: str, number: int, key: str, dismissed: bool) -> dict:
     story = await _editable(story_id)
     act = next((a for a in story.outline if a.number == number), None)
     if act is None:
         raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
-    remaining = [w for w in act.warnings if w != body.text]
-    await SQLStoryRepository().save_act(story.id, act.model_copy(update={"warnings": remaining}))
+    if not any(w.key == key for w in act.warnings):
+        raise HTTPException(status_code=404, detail="Aviso inexistente")
+    warnings = [
+        w.model_copy(update={"dismissed": dismissed}) if w.key == key else w for w in act.warnings
+    ]
+    await SQLStoryRepository().save_act(story.id, act.model_copy(update={"warnings": warnings}))
     return await _state(await _story(story_id))
 
 
@@ -352,7 +372,9 @@ async def _state(story: Story) -> dict:
             "items": [
                 {**w.model_dump(mode="json"), "nombre": c.nombre, "por_que": c.por_que}
                 for w, c in (
-                    (by_id[c.id], c) for c in catalog.direction_criteria() if c.id in by_id
+                    (by_id[c.id], c.for_story(context.protagonist(story)))
+                    for c in catalog.direction_criteria()
+                    if c.id in by_id
                 )
             ],
         },

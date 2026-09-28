@@ -1,4 +1,4 @@
-"""DirectorUseCase - orquestador de la generación de un relato (Spec-530 S7).
+"""GenerateStoryUseCase - orquestador de la generación de un relato (Spec-530 S7).
 
 Un solo camino: el relato sale de la escaleta. Si la historia no la tiene (p. ej.
 entró por `import-yaml`), primero se arma (Planificador + Verificador) y se guarda;
@@ -9,18 +9,18 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Callable
 
-from src.application.services import PromptBuilder
+from src.application.services import PromptBuilder, repetition_check
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.voz_use_case import VozUseCase
 from src.domain.interfaces import LLMProvider
 from src.domain.jobs import JobStage
-from src.domain.models import BeatType, MacroBeat, NarrativeJournal, Story
+from src.domain.models import ActText, NarrativeJournal, Story
 from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
 
 
-class DirectorUseCase:
+class GenerateStoryUseCase:
     def __init__(
         self,
         llm: LLMProvider,
@@ -48,7 +48,7 @@ class DirectorUseCase:
         on_plan_ready: Callable[[int, float], None] | None = None,
         on_step_start: Callable[[str], None] | None = None,
         on_stage: Callable[[JobStage, int | None], None] | None = None,
-    ) -> AsyncIterator[tuple[MacroBeat, NarrativeJournal, float]]:
+    ) -> AsyncIterator[tuple[ActText, NarrativeJournal, float]]:
         """Arma la escaleta si falta y narra acto por acto.
 
         Yields (acto narrado, memoria actualizada, segundos de la Voz) por acto.
@@ -56,7 +56,10 @@ class DirectorUseCase:
         # Import local: los servicios del asistente importan el paquete `application`.
         from src.application.services.authoring.outline_narrator import OutlineNarrator
 
-        if len(story.outline) != self.prompt_builder.num_beats:
+        # Sin escaleta completa, o solo con borradores importados (Spec-570 D2): se arma.
+        if len(story.outline) != self.prompt_builder.num_beats or all(
+            a.draft for a in story.outline
+        ):
             await self._plan(story, on_stage, on_step_start)
 
         narrator = OutlineNarrator(self.llm, self.prompt_builder)
@@ -64,22 +67,14 @@ class DirectorUseCase:
         if on_plan_ready is not None:
             on_plan_ready(len(acts), 0.0)
         journal = initial_journal
-        # La sinopsis del acto que escribió el autor se conserva (la lee el export YAML).
-        synopsis = {b.number: b.synopsis_beat for b in story.beats if b.synopsis_beat}
+        previous_text = ""
+        # Spec-560 A6: si ya hubo un relato, cada acto recibe lo que el control le marcó.
+        findings = repetition_check.last_version_findings(story)
         for act in acts:
-            info = self.prompt_builder.get_beat_info(act.number)
-            bullets = "\n".join(f"- {e}" for e in act.events)
-            macro_beat = MacroBeat(
-                number=act.number,
-                summary=bullets,
-                synopsis_beat=synopsis.get(act.number, bullets),
-                active_scenario_description=act.scenario,
+            macro_beat = ActText(number=act.number)
+            system_prompt, user_prompt = narrator.voice_prompts(
+                story, act, journal, previous_text, findings.get(act.number)
             )
-            try:
-                macro_beat.beat_type = BeatType(info.get("name", ""))
-            except ValueError:
-                pass
-            system_prompt, user_prompt = narrator.voice_prompts(story, act, journal)
 
             if on_stage:
                 on_stage(JobStage.VOZ, act.number)
@@ -94,6 +89,7 @@ class DirectorUseCase:
             if on_step_start:
                 on_step_start(f"📓  Memoria del acto {act.number}/{len(acts)}...")
             journal = await narrator.remember(story, act, macro_beat.generated_act, journal)
+            previous_text = macro_beat.generated_act
             yield macro_beat, journal, llm_elapsed
 
     async def _plan(

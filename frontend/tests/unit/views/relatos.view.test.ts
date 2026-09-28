@@ -140,3 +140,19 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
     expect(html).not.toContain("data-repeticion");
   });
 });
+
+// Spec-560 A2: el panel avisa qué actos se escribieron con la versión anterior.
+describe("actos desactualizados", () => {
+  it("avisa en el panel activo solo en los actos marcados", async () => {
+    const html = await ejs.renderFile(path.join(process.cwd(), "src/views/partials/relato_panel.ejs"), {
+      story: { id: "s-1", stale_acts: [3] },
+      relato: { id: "r-1", content: "## Acto 2\n\nDos.\n\n## Acto 3\n\nTres." },
+      displayTitle: "Primera versión",
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+    expect((html.match(/data-acto-desactualizado/g) || []).length).toBe(1);
+    expect(html.indexOf("data-acto-desactualizado")).toBeGreaterThan(html.indexOf("Acto 3"));
+  });
+});
