@@ -1,0 +1,62 @@
+{
+  "perfil": "ollama-gemma3-12b",
+  "corridas": [
+    {
+      "historia": "pena",
+      "variante": "asistente",
+      "corrida": 1,
+      "segundos_taller": 15,
+      "segundos_escaleta": 68,
+      "taller": {
+        "meta": "falta",
+        "inquietud": "parcial",
+        "en_juego": "falta",
+        "vulnerabilidad": "falta",
+        "transgresion": "falta",
+        "historia_secreta": "falta",
+        "descubrimiento": "falta",
+        "reaccion": "falta",
+        "final": "intencional"
+      },
+      "decisiones_integradas": "7/9",
+      "avisos_escaleta": 11
+    },
+    {
+      "historia": "monte",
+      "variante": "asistente",
+      "corrida": 1,
+      "segundos_taller": 25,
+      "segundos_escaleta": 72,
+      "taller": {
+        "meta": "falta",
+        "inquietud": "parcial",
+        "en_juego": "falta",
+        "vulnerabilidad": "falta",
+        "transgresion": "cumple",
+        "historia_secreta": "falta",
+        "descubrimiento": "falta",
+        "reaccion": "falta",
+        "final": "falta"
+      },
+      "decisiones_integradas": "7/8",
+      "avisos_escaleta": 8
+    }
+  ],
+  "metricas": [
+    "segundos_taller",
+    "segundos_escaleta",
+    "avisos_escaleta"
+  ],
+  "promedios": {
+    "pena/asistente": {
+      "segundos_taller": 15,
+      "segundos_escaleta": 68,
+      "avisos_escaleta": 11
+    },
+    "monte/asistente": {
+      "segundos_taller": 25,
+      "segundos_escaleta": 72,
+      "avisos_escaleta": 8
+    }
+  }
+}

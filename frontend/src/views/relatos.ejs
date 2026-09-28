@@ -13,12 +13,12 @@
     <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a Galería
   </a>
   <h2 class="font-serif text-3xl text-forge-accent mb-2">Relatos de <%= story.title || 'Sin título' %></h2>
-  <p class="text-forge-muted text-sm uppercase tracking-widest mb-12">Explora las diferentes versiones generadas para esta historia.</p>
+  <p class="text-forge-muted text-sm uppercase tracking-widest mb-12">Cada vez que la IA escribe esta historia queda una versión. Acá están todas.</p>
 
   <% if (!relatos || relatos.length === 0) { %>
     <div class="card-forge !p-12 text-center text-forge-muted">
       <i data-lucide="notebook" class="w-12 h-12 mx-auto mb-4 text-forge-accent"></i>
-      <p class="text-forge-body">No hay relatos generados aún para esta historia.</p>
+      <p class="text-forge-body">Todavía no hay relatos de esta historia.</p>
     </div>
   <% } else { %>
     <div class="border-b border-forge-border mb-6">

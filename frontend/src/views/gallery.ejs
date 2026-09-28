@@ -13,13 +13,13 @@ function renderStatusLabel(s) {
 }
 %>
 <div class="max-w-4xl mx-auto">
-  <h2 class="heading-forge-lg mb-2">Galería</h2>
-  <p class="text-forge-muted-caps mb-12">Historias guardadas y generadas</p>
+  <h2 class="heading-forge-lg mb-2">Mis historias</h2>
+  <p class="text-forge-muted-caps mb-12">Las que empezaste y las que ya tienen relato</p>
 
   <% if (!stories || stories.length === 0) { %>
     <div class="card-forge !p-12 text-center text-forge-muted">
       <i data-lucide="library" class="w-12 h-12 mx-auto mb-4 text-forge-accent"></i>
-      <p class="text-forge-body">Todavía no hay historias. <a href="/generar" class="text-forge-accent hover:opacity-70">Crear una</a></p>
+      <p class="text-forge-body">Todavía no hay historias. <a href="/nuevo" class="text-forge-accent hover:opacity-70">Contá la primera</a></p>
     </div>
   <% } else { %>
     <%/* Spec-460: se recarga solo (generation-guard.js) cuando un job empieza o termina. */%>

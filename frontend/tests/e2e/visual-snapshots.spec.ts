@@ -78,7 +78,7 @@ test.describe("Capturas del tema", () => {
     await page.screenshot({ path: path.join(DESTINO, "asistente-taller-elegida.png") });
     await page.setViewportSize({ width: 1440, height: 900 });
     await capturar(page, "asistente-analizando", `/asistente/${sid}/taller`);
-    await page.getByRole("button", { name: /Analizar de nuevo/ }).click();
+    await page.getByRole("button", { name: /Preguntame de nuevo/ }).click();
     await page.locator("#asistente-analizando").waitFor();
     await page.screenshot({ path: path.join(DESTINO, "asistente-analizando.png") });
   });

@@ -13,11 +13,11 @@
   const ignorados = (a) => a.warnings.filter(w => w.dismissed);
   const avisos = acts.reduce((n, a) => n + visibles(a).length, 0);
   const narrador = state.direction.narrator || state.direction.protagonist_name;
-  const NOMBRES = { 1: 'Exposición', 2: 'Acción ascendente', 3: 'Clímax', 4: 'Acción descendente', 5: 'Desenlace' };
+  const NOMBRES = { 1: 'Cómo empieza', 2: 'Se complica', 3: 'El peor momento', 4: 'Qué hace después', 5: 'Cómo termina' };
   const INTENSIDAD = { 1: 'baja', 2: 'media', 3: 'alta', 4: 'media-alta', 5: 'baja' };
   const TIPOS = { persona: 'Con nombre', sin_nombre: 'Sin nombre', grupo: 'Grupo' };
   const est = locals.estimateLabels || {};
-  const PERSONAJE_FUERA = /^«(.+?)» está en escena y no en el elenco/;
+  const PERSONAJE_FUERA = /^«(.+?)» aparece en este acto pero no está entre los personajes/;
   const field = 'bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent';
 %>
 <div data-asistente="escaleta" data-story-id="<%= state.story_id %>">
@@ -26,12 +26,12 @@
     <%- include('_cabecera') %>
     <% if (acts.length) { %>
       <div class="flex flex-wrap items-center gap-3">
-        <button type="button" class="btn-forge-outline-sm" data-analizar="verify_outline" data-titulo="Revisando la escaleta…"
-                data-detalle="La IA busca decisiones que faltan, hechos repetidos o fuera de lugar y secretos que nunca se revelan.">
-          <i data-lucide="search-check" class="w-4 h-4"></i> Revisar con la IA<% if (est.verify_outline) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.verify_outline %></span><% } %>
+        <button type="button" class="btn-forge-outline-sm" data-analizar="verify_outline" data-titulo="Revisando los actos…"
+                data-detalle="La IA busca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren.">
+          <i data-lucide="search-check" class="w-4 h-4"></i> Que la IA lo revise<% if (est.verify_outline) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.verify_outline %></span><% } %>
         </button>
         <a href="/generar/stream/<%= state.story_id %>" class="btn-forge-sm" data-generar>
-          <i data-lucide="feather" class="w-4 h-4"></i> Generar relato<% if (est.full_generation) { %> <span class="normal-case tracking-normal">· <%= est.full_generation %></span><% } %>
+          <i data-lucide="feather" class="w-4 h-4"></i> Escribir el relato<% if (est.full_generation) { %> <span class="normal-case tracking-normal">· <%= est.full_generation %></span><% } %>
         </a>
       </div>
     <% } %>
@@ -40,39 +40,39 @@
   <div class="max-w-5xl">
 
   <header class="mb-8 max-w-3xl">
-    <h2 class="font-serif text-3xl text-forge-accent mb-2">Escaleta</h2>
-    <p class="text-forge-muted">Los cinco actos de tu historia antes de escribirla. Cambiá lo que quieras: el relato se genera a partir de esto.</p>
+    <h2 class="font-serif text-3xl text-forge-accent mb-2">Los actos</h2>
+    <p class="text-forge-muted">Los cinco actos de tu historia antes de escribirla. Cambiá lo que quieras: el relato sale de acá.</p>
   </header>
 
   <% if (!acts.length) { %>
     <section class="bg-forge-surface border border-forge-border p-10 text-center mb-8 max-w-3xl">
       <i data-lucide="list-ordered" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
-      <p class="font-serif text-xl mb-2">Todavía no hay escaleta</p>
-      <p class="text-forge-muted mb-6">La IA reparte tu historia en cinco actos con lo que decidiste en el taller, y después la revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
-      <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando la escaleta…"
-              data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa.">
-        <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar la escaleta
+      <p class="font-serif text-xl mb-2">Todavía no armaste los actos</p>
+      <p class="text-forge-muted mb-6">La IA reparte tu historia en cinco actos con lo que respondiste en las preguntas, y después los revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
+      <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
+              data-detalle="La IA reparte tu historia en cinco actos con lo que respondiste y después los revisa.">
+        <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar los actos
       </button>
     </section>
   <% } else { %>
     <section class="grid md:grid-cols-2 gap-4 mb-10">
       <div class="bg-forge-surface border border-forge-border p-5">
-        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que decidiste en el taller · <%= integradas %>/<%= decisions.length %> en la escaleta</h3>
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que respondiste · <%= integradas %> de <%= decisions.length %> en los actos</h3>
         <% if (!decisions.length) { %>
-          <p class="text-sm text-forge-muted">No hay decisiones del taller todavía.</p>
+          <p class="text-sm text-forge-muted">Todavía no respondiste preguntas.</p>
         <% } %>
         <%/* Spec-550 H9: cada decisión es un chip (integrada / no aparece). */%>
         <ul class="flex flex-wrap gap-2">
           <% decisions.forEach(d => { %>
             <li class="chip-forge chip-forge--md <%= d.integrada ? 'chip-forge--cumple' : 'chip-forge--falta' %>"
-                title="<%= d.integrada ? 'Aparece en la escaleta' : 'No aparece en ningún acto' %>"><%= d.nombre %><% if (!d.integrada) { %> · no aparece<% } %></li>
+                title="<%= d.integrada ? 'Está en algún acto' : 'No aparece en ningún acto' %>"><%= d.nombre %><% if (!d.integrada) { %> · no aparece<% } %></li>
           <% }) %>
         </ul>
       </div>
       <div class="bg-forge-surface border border-forge-border p-5">
-        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Revisión de la IA</h3>
-        <p class="text-sm mb-2"><span class="chip-forge <%= avisos ? 'chip-forge--parcial' : 'chip-forge--cumple' %>"><%= avisos ? `${avisos} ${avisos === 1 ? 'aviso' : 'avisos'}` : 'Sin avisos' %></span><%= avisos ? ' en las tarjetas de los actos.' : '' %></p>
-        <p class="pista-forge">Busca decisiones que faltan, hechos repetidos o fuera de lugar, y secretos que nunca se revelan. Los avisos son sugerencias: vos decidís.</p>
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que vio la IA</h3>
+        <p class="text-sm mb-2"><span class="chip-forge <%= avisos ? 'chip-forge--parcial' : 'chip-forge--cumple' %>"><%= avisos ? `${avisos} ${avisos === 1 ? 'aviso' : 'avisos'}` : 'Nada para marcar' %></span><%= avisos ? ' en las tarjetas de los actos.' : '' %></p>
+        <p class="pista-forge">Te marca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren. Son sugerencias: vos decidís.</p>
       </div>
     </section>
 
@@ -87,7 +87,7 @@
           <form class="bg-forge-surface border border-forge-border" data-autosave="act" data-number="<%= a.number %>" onsubmit="return false" novalidate>
             <header class="flex flex-wrap items-baseline justify-between gap-2 px-6 pt-5 pb-3 border-b border-forge-border">
               <h3 class="font-serif text-2xl">Acto <%= a.number %> · <%= NOMBRES[a.number] %></h3>
-              <span class="text-xs uppercase tracking-widest text-forge-muted">intensidad <%= INTENSIDAD[a.number] %></span>
+              <span class="text-xs uppercase tracking-widest text-forge-muted">tensión <%= INTENSIDAD[a.number] %></span>
             </header>
 
             <% if (visibles(a).length) { %>
@@ -97,7 +97,7 @@
                   <div class="nota-forge nota-forge--warning" data-aviso-clave="<%= w.key %>">
                     <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
                     <p class="flex-1"><%= w.text %></p>
-                    <% if (fuera) { %><button type="button" class="nota-forge__accion" data-sumar-personaje="<%= fuera[1] %>" data-aviso="<%= w.key %>">Sumar al elenco</button><% } %>
+                    <% if (fuera) { %><button type="button" class="nota-forge__accion" data-sumar-personaje="<%= fuera[1] %>" data-aviso="<%= w.key %>">Sumarlo a los personajes</button><% } %>
                     <button type="button" class="nota-forge__accion" data-ignorar="<%= w.key %>">Ignorar</button>
                   </div>
                 <% }) %>
@@ -180,19 +180,19 @@
 
                 <% if (a.seeds.length || a.payoffs.length) { %>
                   <div>
-                    <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Hilos</p>
-                    <% a.seeds.forEach(s => { %><p class="flex items-center gap-2 mb-1"><i data-lucide="sprout" class="w-4 h-4 text-forge-success shrink-0"></i>Siembra: <%= s %></p><% }) %>
-                    <% a.payoffs.forEach(c => { %><p class="flex items-center gap-2 mb-1"><i data-lucide="link" class="w-4 h-4 text-forge-info shrink-0"></i>Retoma: <%= c %></p><% }) %>
+                    <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Detalles que vuelven</p>
+                    <% a.seeds.forEach(s => { %><p class="flex items-center gap-2 mb-1"><i data-lucide="sprout" class="w-4 h-4 text-forge-success shrink-0"></i>Aparece acá: <%= s %></p><% }) %>
+                    <% a.payoffs.forEach(c => { %><p class="flex items-center gap-2 mb-1"><i data-lucide="link" class="w-4 h-4 text-forge-info shrink-0"></i>Vuelve de antes: <%= c %></p><% }) %>
                   </div>
                 <% } %>
 
                 <div>
                   <%/* Spec-560 A4: lo que el acto sabe pero todavía no cuenta, y dónde se revela. */%>
-                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="held-<%= a.number %>">Lo que todavía no se cuenta</label>
-                  <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>La Voz no lo revela en este acto; se tiene que revelar en uno posterior.</p>
+                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="held-<%= a.number %>">Lo que todavía es secreto</label>
+                  <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>En este acto no se cuenta; se descubre más adelante.</p>
                   <textarea id="held-<%= a.number %>" name="held_back" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %>"><%= a.held_back %></textarea>
                   <% if (a.number < 5) { %>
-                    <label class="flex items-center gap-2 mt-2 text-xs text-forge-muted" for="reveal-<%= a.number %>">Se revela en
+                    <label class="flex items-center gap-2 mt-2 text-xs text-forge-muted" for="reveal-<%= a.number %>">Se descubre en
                       <select id="reveal-<%= a.number %>" name="reveal_act" class="bg-forge-bg border border-forge-border px-2 py-1">
                         <option value="0" <%= a.reveal_act ? '' : 'selected' %>>—</option>
                         <% for (let n = a.number + 1; n <= 5; n++) { %><option value="<%= n %>" <%= a.reveal_act === n ? 'selected' : '' %>>el Acto <%= n %></option><% } %>
@@ -202,15 +202,15 @@
                 </div>
 
                 <fieldset>
-                  <legend class="text-xs uppercase tracking-widest text-forge-muted mb-1">En escena</legend>
-                  <p class="pista-forge text-xs mb-2">Solo ellos llegan a la voz en este acto.</p>
+                  <legend class="text-xs uppercase tracking-widest text-forge-muted mb-1">Quiénes están</legend>
+                  <p class="pista-forge text-xs mb-2">En este acto aparecen solo ellos.</p>
                   <div class="flex flex-wrap gap-2">
                     <% state.characters.forEach(c => { const narra = c.name === narrador; const on = narra || a.on_stage.includes(c.name); %>
                       <label class="opcion-forge opcion-forge--compacta opcion-forge--check">
                         <input type="checkbox" name="on_stage" value="<%= c.name %>" class="peer sr-only" <%= on ? 'checked' : '' %> <%= narra ? 'disabled' : '' %>>
                         <span class="opcion-forge__caja" title="<%= c.relation || TIPOS[c.kind] %>">
                           <% if (c.kind === 'grupo') { %><i data-lucide="users" class="w-3 h-3"></i><% } %>
-                          <%= c.name %><% if (narra) { %> <span class="text-[10px] uppercase tracking-widest">· narra</span><% } %>
+                          <%= c.name %><% if (narra) { %> <span class="text-[10px] uppercase tracking-widest">· lo cuenta</span><% } %>
                         </span>
                       </label>
                     <% }) %>
@@ -222,7 +222,7 @@
                     <select data-p-tipo class="w-full bg-forge-surface border border-forge-border px-2 py-1">
                       <% Object.entries(TIPOS).forEach(([id, label]) => { %><option value="<%= id %>" <%= id === 'sin_nombre' ? 'selected' : '' %>><%= label %></option><% }) %>
                     </select>
-                    <button type="button" class="btn-forge-outline-sm w-full" data-personaje-guardar>Sumar al elenco</button>
+                    <button type="button" class="btn-forge-outline-sm w-full" data-personaje-guardar>Sumar personaje</button>
                   </div>
                 </fieldset>
               </aside>

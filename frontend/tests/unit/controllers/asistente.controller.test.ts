@@ -67,8 +67,8 @@ describe("asistente.controller (Spec-530 S4)", () => {
     (getAuthoringState as ReturnType<typeof vi.fn>).mockResolvedValue(STATE);
     for (const [paso, texto] of [
       ["direccion", 'value="La pena"'],
-      ["taller", "Todavía no analizaste la historia"],
-      ["escaleta", "Todavía no hay escaleta"],
+      ["taller", "Todavía no hay preguntas"],
+      ["escaleta", "Todavía no armaste los actos"],
     ]) {
       const r = res();
       await asistentePage(req({ storyId: "s-1", paso }), r as unknown as Response);

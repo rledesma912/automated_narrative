@@ -1,0 +1,292 @@
+{
+ "acts": [
+  {
+   "number": 1,
+   "bridge": "",
+   "goal": "José quiere terminar su turno sin incidentes, como cualquier otra noche.",
+   "events": [
+    "José escucha a sus compañeros hablar sobre los sucesos paranormales que ocurren en el micro, pero él los descarta como cuentos.",
+    "José se prepara para su turno nocturno, sintiéndose un poco nervioso por las historias que escuchó.",
+    "José se sube al micro en la estación principal del pueblo y revisa los niveles de aceite y agua.",
+    "José se despide de los pocos empleados que quedan en la terminal y se pone en marcha."
+   ],
+   "change_from": "José se siente escéptico y confiado.",
+   "change_to": "José se siente inquieto y con una leve sensación de temor.",
+   "scenario": "Estación principal del pueblo",
+   "on_stage": [
+    "José",
+    "Compañeros de trabajo"
+   ],
+   "held_back": "La razón por la cual la mujer aparece justo a José.",
+   "reveal_act": 3,
+   "seeds": [
+    "La insistencia de los compañeros en que el micro está embrujado.",
+    "La rutina de José de trabajar en turnos nocturnos."
+   ],
+   "payoffs": [],
+   "decisions": [
+    "meta",
+    "inquietud"
+   ],
+   "warnings": [
+    {
+     "text": "«Compañeros de trabajo» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+     "key": "elenco:companeros de trabajo",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "«La rutina de José de trabajar en turnos nocturnos.» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?",
+     "key": "siembra:la rutina de jose de trabajar en turnos nocturnos",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "En el acto 1 José descarta los sucesos paranormales, pero en el 2 ya los está experimentando: ¿mostrá antes una pista de que no son solo cuentos?",
+     "key": "ia:en el acto 1 jose descarta los sucesos paranormales pero en el 2 ya los esta experimentando mostra antes una pista de que no son solo cuentos",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "El conductor cuenta como trabaja largas horas y distancias entre estaciones y cuenta que en el micro desafortunadamente falleció una mujer en circunstancias poco claras. Cuenta que José es una persona que trabaja en turnos nocturnos y que muchas veces compañeros le contaron hechos paranormales pero que a él nunca le había tocado hasta el momento nada semejante.",
+   "rules": []
+  },
+  {
+   "number": 2,
+   "bridge": "José está a mitad de su turno, recorriendo una ruta casi vacía.",
+   "goal": "José intenta ignorar la sensación de que lo observan y se concentra en la ruta.",
+   "events": [
+    "José se detiene a revisar el motor del micro, siguiendo el protocolo de seguridad.",
+    "Mientras revisa el motor, José ve por el espejo retrovisor una figura femenina de pelo atado en un asiento, pero al girar, la figura desaparece.",
+    "José vuelve a ver a la mujer en el espejo, esta vez en otro asiento, y nuevamente desaparece al girar.",
+    "José se siente cada vez más incómodo y trata de convencerse de que es su imaginación.",
+    "José, intentando calmarse, vuelve a mirar al espejo y ve a la mujer a centímetros de su rostro."
+   ],
+   "change_from": "José se siente tranquilo y concentrado.",
+   "change_to": "José se siente asustado y confundido.",
+   "scenario": "Interior del micro",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "La razón por la cual la mujer aparece justo a José.",
+   "reveal_act": 3,
+   "seeds": [
+    "La rutina de José de revisar el motor del micro.",
+    "La insistencia de la mujer en aparecer en el espejo."
+   ],
+   "payoffs": [
+    "La insistencia de los compañeros en que el micro está embrujado."
+   ],
+   "decisions": [
+    "transgresion"
+   ],
+   "warnings": [
+    {
+     "text": "«La insistencia de la mujer en aparecer en el espejo.» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?",
+     "key": "siembra:la insistencia de la mujer en aparecer en el espejo",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "El acto 2 repite la aparición de la mujer en distintos asientos, como en el 1: ¿qué novedad tiene esta vez?",
+     "key": "ia:el acto 2 repite la aparicion de la mujer en distintos asientos como en el 1 que novedad tiene esta vez",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "En una noche muy oscura en la terminal de un pueblo queda sólo y no hay pasajeros para la vuelta. Él sube al micro y por el espejo retrovisor ve en varias ocasiones una mujer de pelo atado en distintos asientos pero cuando gira la persona o entidad desaparece. El momento más tenso es cuando ve en el espejo al espiritu solo a centimetros de él y siente que le tocan el hombro.",
+   "rules": []
+  },
+  {
+   "number": 3,
+   "bridge": "José está a punto de perder el control del micro.",
+   "goal": "José intenta mantener el control del micro y evitar un accidente.",
+   "events": [
+    "La figura de la mujer se acerca aún más a José, tocándole el hombro.",
+    "José se sobresalta y pierde el control del micro, descarrilando de la ruta.",
+    "José lucha por recuperar el control del micro, logrando evitar un accidente grave.",
+    "José se detiene en un lugar desconocido, sintiéndose aturdido y aterrorizado.",
+    "José ve una placa con un pedestal donde hay una foto de la mujer que ha estado viendo en el espejo."
+   ],
+   "change_from": "José se siente asustado pero en control.",
+   "change_to": "José está aterrorizado y desorientado.",
+   "scenario": "Ruta secundaria",
+   "on_stage": [
+    "José",
+    "La mujer"
+   ],
+   "held_back": "La razón por la cual la mujer aparece justo a José.",
+   "reveal_act": 0,
+   "seeds": [
+    "El pedestal con la foto de la mujer.",
+    "El lugar donde descarrilla el micro."
+   ],
+   "payoffs": [
+    "La rutina de José de revisar el motor del micro."
+   ],
+   "decisions": [
+    "historia_secreta"
+   ],
+   "warnings": [
+    {
+     "text": "«La mujer» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+     "key": "elenco:la mujer",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "El secreto de este acto no se descubre en ningún acto posterior: elegí en cuál se descubre.",
+     "key": "sin_revelacion",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "«El lugar donde descarrilla el micro.» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?",
+     "key": "siembra:el lugar donde descarrilla el micro",
+     "source": "regla",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "La entidad lo toca una segunda vez pero en el rostro haciendo que José se asuste y y pierda el control del micro por lo que descarrila de la ruta pero finalmente puede puede controlar el vehículo sin sufrir un accidente grave.",
+   "rules": []
+  },
+  {
+   "number": 4,
+   "bridge": "José está parado junto al micro, observando el pedestal con la foto de la mujer.",
+   "goal": "José intenta comprender lo que acaba de suceder y asume la responsabilidad del accidente.",
+   "events": [
+    "José se da cuenta de que el lugar donde descarriló el micro es el mismo donde murió la mujer cuya foto está en el pedestal.",
+    "José se siente culpable por el accidente y cree que es su responsabilidad.",
+    "José reflexiona sobre los eventos de la noche, tratando de encontrar una explicación lógica.",
+    "José se siente abrumado por el miedo y la confusión, preguntándose qué más le espera.",
+    "José se da cuenta de que la mujer de la foto es idéntica a la que ha estado viendo en el espejo."
+   ],
+   "change_from": "José está aterrorizado y confundido.",
+   "change_to": "José está asustado y sintiéndose culpable.",
+   "scenario": "Lugar del accidente",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "",
+   "reveal_act": 0,
+   "seeds": [],
+   "payoffs": [
+    "El pedestal con la foto de la mujer."
+   ],
+   "decisions": [
+    "descubrimiento",
+    "reaccion"
+   ],
+   "warnings": [
+    {
+     "text": "El acto 4 dice que José reflexiona sobre los eventos, pero no se cuenta qué piensa: ¿qué conclusiones saca?",
+     "key": "ia:el acto 4 dice que jose reflexiona sobre los eventos pero no se cuenta que piensa que conclusiones saca",
+     "source": "ia",
+     "dismissed": false
+    },
+    {
+     "text": "El acto 4 dice que han pasado varios días desde el accidente, pero el 5 lo contradice: ¿qué pasa con el tiempo?",
+     "key": "ia:el acto 4 dice que han pasado varios dias desde el accidente pero el 5 lo contradice que pasa con el tiempo",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "José asustado baja del micro horrorizado por descarrilar y se da cuenta que donde sucede el acto es el lugar donde la mujer murió ya que hay un pedestal en su nombre con una foto que es identica a la mujer que veia a traves del espejo retrovisor del micro.",
+   "rules": []
+  },
+  {
+   "number": 5,
+   "bridge": "Han pasado varios días desde el accidente.",
+   "goal": "José busca la paz interior y honrar la memoria de la mujer fallecida.",
+   "events": [
+    "José regresa al lugar del accidente y detiene el micro.",
+    "José baja del micro y coloca unas flores en el pedestal con la foto de la mujer.",
+    "José se siente aliviado al realizar este gesto, sintiendo que de alguna manera ha hecho lo correcto.",
+    "José se sube al micro y continúa su ruta, sin volver a ver a la mujer en el espejo.",
+    "José imagina que al presentar respeto al espíritu de la mujer, su alma ha encontrado la paz."
+   ],
+   "change_from": "José está asustado y sintiéndose culpable.",
+   "change_to": "José está en paz y sintiéndose aliviado.",
+   "scenario": "Lugar del accidente",
+   "on_stage": [
+    "José"
+   ],
+   "held_back": "",
+   "reveal_act": 0,
+   "seeds": [],
+   "payoffs": [
+    "La insistencia de los compañeros en que el micro está embrujado."
+   ],
+   "decisions": [
+    "final"
+   ],
+   "warnings": [
+    {
+     "text": "El acto 5 dice que José imagina que la mujer encontró la paz, pero no se cuenta cómo se siente él: ¿qué piensa al dejar las flores?",
+     "key": "ia:el acto 5 dice que jose imagina que la mujer encontro la paz pero no se cuenta como se siente el que piensa al dejar las flores",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "José vuelve a pasar a los días por el lugar, detiene el micro y baja para dejar unas flores en el improvisado pedestal. A partir de allí no vuelve a ver a la entidad e imagina que de alguna manera presentar respetos al espiritu de la mujer hizo que su alma se vaya en paz o al menos no se le presente más.",
+   "rules": []
+  }
+ ],
+ "decisions": [
+  {
+   "id": "meta",
+   "nombre": "Qué quiere José",
+   "integrada": true
+  },
+  {
+   "id": "inquietud",
+   "nombre": "Algo raro desde el principio",
+   "integrada": true
+  },
+  {
+   "id": "en_juego",
+   "nombre": "Qué puede perder José",
+   "integrada": false
+  },
+  {
+   "id": "vulnerabilidad",
+   "nombre": "En qué se equivoca José",
+   "integrada": false
+  },
+  {
+   "id": "transgresion",
+   "nombre": "Lo que José no tendría que haber hecho",
+   "integrada": true
+  },
+  {
+   "id": "historia_secreta",
+   "nombre": "Lo que esconde la historia",
+   "integrada": true
+  },
+  {
+   "id": "descubrimiento",
+   "nombre": "Lo que descubre José",
+   "integrada": true
+  },
+  {
+   "id": "reaccion",
+   "nombre": "Qué hace José después",
+   "integrada": true
+  },
+  {
+   "id": "final",
+   "nombre": "Cómo termina",
+   "integrada": true
+  }
+ ]
+}

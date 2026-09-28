@@ -1,39 +1,73 @@
-# Spec-530 §4: criterios del taller del asistente de autoría.
+# Spec-530 §4 / Spec-580: criterios del taller del asistente de autoría.
 #
 # Fuente única: la UI muestra `nombre` y `por_que` (Spec-550 H7: `{protagonista}`
 # se reemplaza por el nombre del protagonista); el Consultor recibe solo
 # `pregunta` (la pregunta operativa). La teoría de la que sale cada criterio
-# (`origen`) es documentación: nunca va al prompt (Spec-530 §1.2).
+# (`origen`) es documentación: nunca va al prompt ni a la UI (Spec-530 §1.2).
 #
-# El orden es el orden en que se muestran y se evalúan.
+# Spec-580: `nombre` y `por_que` en el tono del sitio (coloquial, sobre el
+# personaje, sin términos de oficio). `acto` (opcional) dice en qué acto va la
+# respuesta: el Planificador lo ve como «(va en el acto N)».
+#
+# El orden es el orden en que se muestran y se evalúan: sigue a los actos.
 
 direccion:
   - id: meta
-    nombre: Qué busca {protagonista}
+    nombre: Qué quiere {protagonista}
     pregunta: ¿Qué quiere el protagonista en esta historia, algo concreto que la amenaza pueda frustrar?
-    por_que: "Lo que {protagonista} quiere conseguir en esta historia: llegar a destino, cobrar el viaje, proteger a alguien. El miedo crece cuando la amenaza se interpone en eso."
+    por_que: "Llegar a casa, cobrar el viaje, cuidar a alguien. El miedo crece cuando algo se mete en el medio de lo que {protagonista} quiere."
+    acto: 1
     origen: Swain / McKee
 
+  - id: inquietud
+    nombre: Algo raro desde el principio
+    pregunta: ¿Hay desde el comienzo un detalle raro o una advertencia que el protagonista no toma en serio?
+    por_que: "Un ruido, un comentario, algo fuera de lugar. Al principio nadie le da importancia, pero quien escucha ya se queda con la duda."
+    acto: 1
+    origen: Freytag (exposición) / inquietud sutil del acto 1
+
   - id: en_juego
-    nombre: Qué arriesga {protagonista}
+    nombre: Qué puede perder {protagonista}
     pregunta: ¿Qué pierde el protagonista si la amenaza sigue (trabajo, vida, cordura, alguien querido)?
-    por_que: "Lo que {protagonista} pierde si la amenaza gana: el trabajo, la cordura, a alguien querido. Si no arriesga nada, quien escucha no teme por él."
+    por_que: "El trabajo, la cabeza, a alguien querido. Si {protagonista} no tiene nada que perder, no hay por qué temer por él."
     origen: McKee
 
   - id: vulnerabilidad
-    nombre: Qué expone a {protagonista}
+    nombre: En qué se equivoca {protagonista}
     pregunta: ¿Qué hace o cree el protagonista que lo deja expuesto a la amenaza?
-    por_que: "Algo que {protagonista} hace o cree que lo deja a merced de la amenaza. Si le pasa por algo suyo, el miedo pesa más que si le pasa por azar."
+    por_que: "Algo que {protagonista} hace o cree y que lo deja a merced de lo que acecha. Si le pasa por algo suyo, da más miedo que si le pasa por mala suerte."
     origen: Hamartia (Aristóteles)
 
+  - id: transgresion
+    nombre: Lo que {protagonista} no tendría que haber hecho
+    pregunta: ¿Qué hace el protagonista (entrar, tocar, seguir, contestar, quedarse) que despierta a la amenaza y lo mete de lleno en el problema?
+    por_que: "En los cuentos de miedo casi siempre alguien abre la puerta que no tenía que abrir. ¿Cuál es la de {protagonista}?"
+    acto: 2
+    origen: Aristóteles (nudo) / Freytag (incidente incitador) / transgresión del acto 2
+
   - id: historia_secreta
-    nombre: La historia secreta
+    nombre: Lo que esconde la historia
     pregunta: ¿Hay algo oculto que explique por qué la amenaza lo busca a él (un vínculo, una culpa, un secreto)?
-    por_que: "Lo que no se ve al principio y explica por qué le pasa a {protagonista}: un vínculo, una culpa, un secreto."
+    por_que: "Lo que no se ve al principio y explica por qué le pasa justo a {protagonista}: un vínculo, una culpa, algo que pasó antes."
     origen: Piglia, «Tesis sobre el cuento»
 
+  - id: descubrimiento
+    nombre: Lo que descubre {protagonista}
+    pregunta: ¿Qué ve, encuentra o se entera el protagonista que le hace entender de golpe qué está pasando?
+    por_que: "Una foto, un nombre, un objeto: el momento en que {protagonista} entiende todo. Es el golpe más fuerte del cuento."
+    acto: 3
+    origen: Anagnórisis (Aristóteles) / clímax del acto 3
+
+  - id: reaccion
+    nombre: Qué hace {protagonista} después
+    pregunta: "¿Qué hace el protagonista después de entender lo que pasa: huye, enfrenta, niega, pide ayuda?"
+    por_que: "Ya sabe lo que pasa. ¿Sale corriendo, lo enfrenta, hace como si nada? Lo que haga {protagonista} dice quién es."
+    acto: 4
+    origen: Peripecia / caída (Freytag)
+
   - id: final
-    nombre: El final
+    nombre: Cómo termina
     pregunta: ¿El final deja una marca coherente con el efecto que busca el autor?
-    por_que: "Si el final deja en quien escucha la marca que buscás (el efecto de la Dirección)."
+    por_que: "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
+    acto: 5
     origen: Poe (unidad de efecto) / residuo

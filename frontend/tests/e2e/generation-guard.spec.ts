@@ -48,7 +48,7 @@ test("doble click en «Generar» de la galería envía un solo pedido", async ({
 
   await expect(page).toHaveURL(new RegExp(`/generar/stream/${savedStoryId}$`));
   expect(posts()).toBe(1);
-  await expect(page.locator("#status-line")).toHaveText("Historia generada con éxito", {
+  await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
 });

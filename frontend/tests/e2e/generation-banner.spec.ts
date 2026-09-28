@@ -100,7 +100,7 @@ test("«Ver progreso» lleva a la sala del job en curso", async ({ page }) => {
     await page.evaluate(() => (window as unknown as { ACTIVE_JOB_ID: string }).ACTIVE_JOB_ID),
   ).toBe(jobId);
   await expect(banner(page)).toBeHidden(); // en la sala no se muestra
-  await expect(page.locator("#status-line")).toHaveText("Historia generada con éxito", {
+  await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
 });

@@ -4,7 +4,17 @@ from src.application.services.authoring import workshop_rules as wr
 from src.domain.models import CriterionStatus as S
 from src.domain.models import Direction, WorkshopItem
 
-CRITERIA = ["meta", "en_juego", "vulnerabilidad", "historia_secreta", "final"]
+CRITERIA = [
+    "meta",
+    "inquietud",
+    "en_juego",
+    "vulnerabilidad",
+    "transgresion",
+    "historia_secreta",
+    "descubrimiento",
+    "reaccion",
+    "final",
+]
 
 
 def _items(**overrides) -> list[WorkshopItem]:
@@ -33,7 +43,8 @@ def test_ronda_con_pregunta_nueva_y_cumple():
         ],
         1,
     )
-    meta, en_juego = items[0], items[1]
+    by = {i.criterion: i for i in items}
+    meta, en_juego = by["meta"], by["en_juego"]
     assert (meta.status, meta.question, meta.options) == (
         S.FALTA,
         "¿Qué quiere José?",

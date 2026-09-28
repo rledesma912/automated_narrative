@@ -1,7 +1,7 @@
 /**
  * Pie global (Spec-460 S5): sin polling.
  *
- * - Punto "Core API": verde mientras llegan señales del canal global (snapshot,
+ * - Punto de estado de la IA («La IA está lista» / «La IA no responde»): verde mientras llegan señales del canal global (snapshot,
  *   eventos o heartbeat cada 15 s), rojo si se corta. Lo emite /js/event-bus.js
  *   como `forge:core-status`; en la sala lo emite la propia sala.
  * - "Actividad": último evento de jobs recibido.
@@ -19,11 +19,11 @@
   let lastEvent = null;
 
   const STAGE_LABELS = {
-    planificador: "armando la escaleta",
-    verificador: "revisando la escaleta",
-    voz: "narrando",
-    journal: "actualizando la memoria",
-    consolidando: "consolidando el relato",
+    planificador: "armando los actos",
+    verificador: "revisando los actos",
+    voz: "escribiendo",
+    journal: "repasando lo que pasó",
+    consolidando: "juntando el relato",
   };
 
   function describe(kind, job) {
@@ -44,6 +44,10 @@
           : alive
             ? "w-2 h-2 rounded-full bg-forge-success"
             : "w-2 h-2 rounded-full bg-forge-error animate-pulse";
+    }
+    const status = document.getElementById("core-status-text");
+    if (status) {
+      status.textContent = alive === null ? "Conectando…" : alive ? "La IA está lista" : "La IA no responde";
     }
     const el = document.getElementById("footer-last-event");
     if (el && lastEvent) {

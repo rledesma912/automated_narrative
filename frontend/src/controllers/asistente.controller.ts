@@ -4,7 +4,7 @@ import { getGenreCatalog } from "../services/catalog.service";
 import { getAuthoringOptions, getAuthoringState } from "../services/authoring.service";
 
 /**
- * Spec-530 S4: vistas del asistente de autoría (Dirección, Taller, Escaleta).
+ * Spec-530 S4: vistas del asistente de autoría (Tu idea, Preguntas, Los actos; Spec-580).
  * Se renderizan con el estado del Core; guardar y pedirle cosas a la IA lo hace
  * el navegador (public/js/asistente.js) contra /api.
  */
@@ -12,9 +12,9 @@ const PASOS = ["direccion", "taller", "escaleta"] as const;
 type Paso = (typeof PASOS)[number];
 
 const TITULOS: Record<Paso, string> = {
-  direccion: "Dirección",
-  taller: "Taller",
-  escaleta: "Escaleta",
+  direccion: "Tu idea",
+  taller: "Preguntas",
+  escaleta: "Los actos",
 };
 
 export async function nuevoPage(_req: Request, res: Response): Promise<void> {

@@ -27,7 +27,16 @@ async def test_primera_ronda_evalua_todo_menos_el_final_intencional(story):
 
     schema = llm.calls[0]["response_schema"]
     enum = schema["$defs"]["EvaluacionCriterio"]["properties"]["criterio"]["enum"]
-    assert enum == ["meta", "en_juego", "vulnerabilidad", "historia_secreta"]
+    assert enum == [
+        "meta",
+        "inquietud",
+        "en_juego",
+        "vulnerabilidad",
+        "transgresion",
+        "historia_secreta",
+        "descubrimiento",
+        "reaccion",
+    ]
     items = {w.criterion: w for w in r.items}
     assert items["meta"].question == "¿Qué quiere José?" and items["meta"].round == 1
     assert items["en_juego"].status == S.CUMPLE
@@ -54,7 +63,10 @@ async def test_la_segunda_ronda_recibe_pregunta_y_respuesta_y_lo_pendiente(story
     r = await WorkshopConsultant(llm).analyze(story)
 
     prompt = llm.calls[0]["prompt"]
-    assert "[meta] Qué busca José. Pregunta: «¿Qué quiere?» → Respuesta: Llegar a casa" in prompt
+    assert (
+        "[meta] Qué quiere José (va en el acto 1). Pregunta: «¿Qué quiere?» → Respuesta: Llegar a casa"
+        in prompt
+    )
     assert "- [en_juego] «¿Qué pierde?»" in prompt
     enum = llm.calls[0]["response_schema"]["$defs"]["EvaluacionCriterio"]["properties"]["criterio"][
         "enum"
