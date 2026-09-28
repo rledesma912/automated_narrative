@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-28
 **Tipo:** SDD (Spec-Driven Development) — experiencia del asistente
-**Estado:** SPECIFY — decisiones tomadas (2026-09-28, §6); pendiente el OK para implementar
+**Estado:** IN PROGRESS — S2 y S3 hechos y en prod (2026-09-28); en pausa hasta la prueba con usuarias (§6 D8)
 **Rama:** `feat/spec-580-estructura-taller`
 **Extiende:** Spec-530 §4 (criterios del taller), Spec-550 (recorrido de la UI) y Spec-560 A3 (retoma la parte «función del acto», pero antes de la escaleta y no en el Verificador).
 
@@ -231,6 +231,8 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - **D5 — Nombres de los pasos:** ✅ «Tu idea → Preguntas → Los actos».
 - **D6 — `/debug`:** ✅ sale del menú lateral; se llega con un enlace discreto en el pie (junto al estado del Core).
 - **D7 — Inicio compacto (pedido del usuario):** ✅ hoy tiene fuentes muy grandes y no entra en la pantalla (hay que hacer scroll). La bienvenida nueva entra entera en una pantalla de escritorio (1366×768 y 1920×1080, con el menú abierto): tamaños de letra y márgenes más chicos, sin los bloques explicativos del wizard viejo. Lo verifica un E2E (el alto del contenido no pasa el de la ventana).
+
+- **D8 — Cambio de enfoque (2026-09-28):** antes de S0, se despliega lo hecho (S2–S3 + T0.1) a prod y la esposa y la hija crean una historia **sin ayuda** y cuentan su experiencia (T5.2 adelantado). Lo que cuenten decide cómo siguen S1 y S4. Sus historias (exportadas con `export-yaml`) son las sinopsis de D4 para S0.
 
 ---
 
