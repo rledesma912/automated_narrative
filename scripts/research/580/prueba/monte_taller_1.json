@@ -1,0 +1,160 @@
+{
+ "round": 1,
+ "max_rounds": 5,
+ "finish": {
+  "kind": "abierto",
+  "text": "Te quedan 8 preguntas. Podés responder, pedirle a la IA que te pregunte de nuevo o pasar a los actos cuando quieras.",
+  "open_questions": 8
+ },
+ "items": [
+  {
+   "level": "direccion",
+   "criterion": "meta",
+   "status": "falta",
+   "question": "¿Qué quiere Irene para su familia en esta visita, algo más que pasar un buen rato?",
+   "options": [
+    "Que Ricardo se conecte con sus raíces.",
+    "Que los niños conozcan a sus abuelos.",
+    "Que María les cuente más historias."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Qué quiere Irene",
+   "por_que": "Llegar a casa, cobrar el viaje, cuidar a alguien. El miedo crece cuando algo se mete en el medio de lo que Irene quiere."
+  },
+  {
+   "level": "direccion",
+   "criterion": "inquietud",
+   "status": "parcial",
+   "question": "¿Qué hace María al despedirlos que da una sensación de que sabe algo que ellos no?",
+   "options": [
+    "Les da una mirada fija y triste.",
+    "Les entrega un amuleto de madera.",
+    "Les susurra una advertencia al oído."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Algo raro desde el principio",
+   "por_que": "Un ruido, un comentario, algo fuera de lugar. Al principio nadie le da importancia, pero quien escucha ya se queda con la duda."
+  },
+  {
+   "level": "direccion",
+   "criterion": "en_juego",
+   "status": "falta",
+   "question": "¿Qué pasaría con los niños si la amenaza los alcanza?",
+   "options": [
+    "Se perderían en el monte.",
+    "Serían llevados por María.",
+    "Se enfermarían gravemente."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Qué puede perder Irene",
+   "por_que": "El trabajo, la cabeza, a alguien querido. Si Irene no tiene nada que perder, no hay por qué temer por él."
+  },
+  {
+   "level": "direccion",
+   "criterion": "vulnerabilidad",
+   "status": "falta",
+   "question": "¿Qué cree Ricardo que lo hace invulnerable a las advertencias de María?",
+   "options": [
+    "Su conocimiento de la ciencia.",
+    "Su fuerza física.",
+    "Su relación con su padre."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "En qué se equivoca Irene",
+   "por_que": "Algo que Irene hace o cree y que lo deja a merced de lo que acecha. Si le pasa por algo suyo, da más miedo que si le pasa por mala suerte."
+  },
+  {
+   "level": "direccion",
+   "criterion": "transgresion",
+   "status": "cumple",
+   "question": "",
+   "options": [],
+   "answer": "",
+   "round": 1,
+   "question_round": 0,
+   "asked": [],
+   "nombre": "Lo que Irene no tendría que haber hecho",
+   "por_que": "En los cuentos de miedo casi siempre alguien abre la puerta que no tenía que abrir. ¿Cuál es la de Irene?"
+  },
+  {
+   "level": "direccion",
+   "criterion": "historia_secreta",
+   "status": "falta",
+   "question": "¿Qué vínculo oculto tiene María con el monte de los espinillos?",
+   "options": [
+    "Es la guardiana de un antiguo secreto.",
+    "Fue abandonada allí de niña.",
+    "Está maldita por una antigua ofrenda."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Lo que esconde la historia",
+   "por_que": "Lo que no se ve al principio y explica por qué le pasa justo a Irene: un vínculo, una culpa, algo que pasó antes."
+  },
+  {
+   "level": "direccion",
+   "criterion": "descubrimiento",
+   "status": "falta",
+   "question": "¿Qué detalle, más allá de la rama de espinillo, hace que Irene sepa que algo terrible pasó?",
+   "options": [
+    "El silencio absoluto de la casa.",
+    "La mirada perdida de Ricardo.",
+    "El olor a humedad y muerte."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Lo que descubre Irene",
+   "por_que": "Una foto, un nombre, un objeto: el momento en que Irene entiende todo. Es el golpe más fuerte del cuento."
+  },
+  {
+   "level": "direccion",
+   "criterion": "reaccion",
+   "status": "falta",
+   "question": "¿Qué hace Irene después de ver la rama de espinillo que le da la certeza de que algo terrible pasó?",
+   "options": [
+    "Intenta convencer a Ricardo de irse.",
+    "Busca una explicación lógica.",
+    "Se prepara para lo peor."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Qué hace Irene después",
+   "por_que": "Ya sabe lo que pasa. ¿Sale corriendo, lo enfrenta, hace como si nada? Lo que haga Irene dice quién es."
+  },
+  {
+   "level": "direccion",
+   "criterion": "final",
+   "status": "falta",
+   "question": "¿Qué sensación final querés que quede en la mente de quien escucha el cuento?",
+   "options": [
+    "Que el peligro siempre está presente.",
+    "Que la superstición es una carga.",
+    "Que el pasado nunca se olvida."
+   ],
+   "answer": "",
+   "round": 1,
+   "question_round": 1,
+   "asked": [],
+   "nombre": "Cómo termina",
+   "por_que": "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
+  }
+ ]
+}
