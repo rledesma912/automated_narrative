@@ -17,7 +17,7 @@ const modal = (page: Page) => page.locator("#asistente-analizando");
 
 async function crearDesdeNuevo(page: Page, titulo: string, premisa = "José ve a una mujer muerta en el espejo del micro.") {
   await page.goto("/nuevo");
-  await expect(page.getByRole("button", { name: /Analizar mi historia/ })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Que la IA me pregunte/ })).toBeDisabled();
   await page.getByLabel("Título").fill(titulo);
   if (premisa) await page.getByLabel("¿De qué trata?").fill(premisa);
   await expect(page).toHaveURL(/\/asistente\/[0-9a-f-]{36}\/direccion$/);
@@ -38,9 +38,9 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await expect(page.getByRole("radio", { name: /Pavor creciente/ })).toBeChecked();
 
   // La IA solo con el comando explícito, con el modal.
-  await page.getByRole("button", { name: /Analizar mi historia/ }).click();
+  await page.getByRole("button", { name: /Que la IA me pregunte/ }).click();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/taller$`));
-  await expect(page.locator("[data-fin]")).toContainText("preguntas abiertas");
+  await expect(page.locator("[data-fin]")).toContainText(/Te quedan? \d+ preguntas?/);
   await expect(page.locator('[data-pregunta="final"]')).toContainText(/a propósito/i);
 
   // Responder una pregunta y delegar otra.
@@ -57,9 +57,9 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await expect(page.locator('li[data-pregunta="en_juego"]')).toContainText("Primera opción (en_juego)");
 
   // Escaleta.
-  await page.getByRole("button", { name: /Armar la escaleta/ }).click();
+  await page.getByRole("button", { name: /Armar los actos/ }).click();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/escaleta$`));
-  await expect(page.getByRole("heading", { name: "Acto 5 · Desenlace" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Acto 5 · Cómo termina" })).toBeVisible();
 
   const acto2 = page.locator('form[data-number="2"]');
   await expect(acto2).toContainText("El encuentro del acto 2 repite el del acto 1.");
@@ -78,16 +78,16 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await page.locator('form[data-number="1"]').getByRole("button", { name: "Personaje" }).click();
   await page.locator('form[data-number="1"] [data-p-nombre]').fill("El sereno");
   await page.locator('form[data-number="1"] [data-p-relacion]').fill("Lo conozco de vista");
-  await page.locator('form[data-number="1"]').getByRole("button", { name: "Sumar al elenco" }).click();
+  await page.locator('form[data-number="1"]').getByRole("button", { name: "Sumar personaje" }).click();
   await expect(page.locator('form[data-number="1"]').getByRole("checkbox", { name: /El sereno/ })).toBeChecked();
   await expect(page.locator('form[data-number="2"]').getByRole("checkbox", { name: /El sereno/ })).not.toBeChecked();
 
-  await expect(page.getByRole("link", { name: /Generar relato/ })).toHaveAttribute("href", `/generar/stream/${sid}`);
+  await expect(page.getByRole("link", { name: /Escribir el relato/ })).toHaveAttribute("href", `/generar/stream/${sid}`);
 });
 
 test("si la IA no puede empezar, el modal lo dice y se cierra", async ({ page }) => {
   await crearDesdeNuevo(page, "E2E sin premisa", "");
-  await page.getByRole("button", { name: /Analizar mi historia/ }).click();
+  await page.getByRole("button", { name: /Que la IA me pregunte/ }).click();
 
   await expect(modal(page)).toBeVisible();
   await expect(modal(page)).toContainText("Falta contar de qué trata la historia");
@@ -151,11 +151,11 @@ test("la barra con los pasos y «Analizar» queda fija arriba al scrollear", asy
   await crearDesdeNuevo(page, "E2E barra");
   const barra = page.locator(".asistente-barra");
   await expect(barra.getByRole("navigation", { name: "Pasos del asistente" })).toBeVisible();
-  await expect(barra.getByRole("button", { name: /Analizar mi historia/ })).toBeEnabled();
+  await expect(barra.getByRole("button", { name: /Que la IA me pregunte/ })).toBeEnabled();
 
   await page.locator("main").evaluate((m) => m.scrollTo(0, m.scrollHeight));
   await expect.poll(() => barra.evaluate((b) => Math.round(b.getBoundingClientRect().top))).toBe(0);
-  await expect(barra.getByRole("button", { name: /Analizar mi historia/ })).toBeInViewport();
+  await expect(barra.getByRole("button", { name: /Que la IA me pregunte/ })).toBeInViewport();
   await expect(barra.locator(".pasos-forge")).toBeInViewport();
 });
 
@@ -188,18 +188,18 @@ test("rearmar la escaleta pide confirmación con el diálogo propio", async ({ p
   }
   await page.goto(`/asistente/${sid}/taller`);
   const dialogo = page.locator("#forge-confirm");
-  const rearmar = page.getByRole("button", { name: /Rearmar la escaleta/ }).first();
+  const rearmar = page.getByRole("button", { name: /Armar los actos de nuevo/ }).first();
 
   await rearmar.click();
   await expect(dialogo).toBeVisible();
-  await expect(dialogo).toContainText("¿Rearmar la escaleta?");
+  await expect(dialogo).toContainText("¿Armar los actos de nuevo?");
   await dialogo.getByRole("button", { name: "Cancelar" }).click();
   await expect(dialogo).toBeHidden();
   await expect(modal(page)).toBeHidden();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/taller$`));
 
   await rearmar.click();
-  await dialogo.getByRole("button", { name: "Rearmar la escaleta" }).click();
+  await dialogo.getByRole("button", { name: "Armar de nuevo" }).click();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/escaleta$`), { timeout: 20000 });
 });
 
@@ -222,7 +222,7 @@ test("los avisos ignorados no vuelven al revisar y se pueden volver a mostrar", 
   await expect(acto2.locator("[data-ignorados] summary")).toHaveText("1 aviso ignorado");
 
   // Revisar con la IA (el mock vuelve a dar el mismo aviso): sigue ignorado.
-  await page.getByRole("button", { name: /Revisar con la IA/ }).click();
+  await page.getByRole("button", { name: /Que la IA lo revise/ }).click();
   await expect(modal(page)).toBeHidden({ timeout: 20000 });
   await page.reload();
   await expect(page.locator('form[data-number="2"] .nota-forge--warning').filter({ hasText: "repite el del acto 1" })).toHaveCount(0);
@@ -264,7 +264,7 @@ test("lo que todavía no se cuenta tiene su acto de revelación", async ({ page 
   }
   await page.goto(`/asistente/${sid}/escaleta`);
   const acto1 = page.locator('form[data-number="1"]');
-  await expect(acto1.getByText("Lo que todavía no se cuenta")).toBeVisible();
+  await expect(acto1.getByText("Lo que todavía es secreto")).toBeVisible();
   await expect(acto1.locator('[name="reveal_act"]')).toHaveValue("2"); // lo propuso el Planificador
   await expect(page.locator('form[data-number="5"] [name="reveal_act"]')).toHaveCount(0);
 

@@ -136,33 +136,33 @@ def finish(items: list[WorkshopItem], round_: int | None = None) -> Finish:
     if not pending:
         return Finish(
             "cumple",
-            "Todos los criterios cumplen o están decididos a propósito. Podés armar la escaleta.",
+            "Tu historia ya tiene todo lo que hace falta. Ya podés armar los actos.",
             0,
         )
     if round_ >= MAX_ROUNDS and n == 0:
         return Finish(
             "tope",
-            f"Llegaste al máximo de {MAX_ROUNDS} rondas. "
-            "Podés responder lo pendiente o armar la escaleta.",
+            f"Ya van {MAX_ROUNDS} vueltas de preguntas, que es el máximo. "
+            "Podés responder lo que quedó o armar los actos.",
             0,
         )
     if n == 0:
-        return Finish("sin_preguntas", "La IA no tiene más preguntas. Podés armar la escaleta.", 0)
+        return Finish("sin_preguntas", "La IA no tiene más preguntas. Ya podés armar los actos.", 0)
     if new_questions == 0:
         plural = "queda 1 pregunta" if n == 1 else f"quedan {n} preguntas"
         return Finish(
             "no_suma",
             f"La IA no encontró preguntas nuevas: {plural} sin responder de antes. "
-            "Respondé lo que quieras o armá la escaleta.",
+            "Respondé lo que quieras o armá los actos.",
             n,
         )
-    plural = "pregunta abierta" if n == 1 else "preguntas abiertas"
+    plural = "pregunta" if n == 1 else "preguntas"
     text = (
-        f"Queda{'' if n == 1 else 'n'} {n} {plural}. Podés responder, analizar de nuevo "
-        "o pasar a la escaleta cuando quieras."
+        f"Te queda{'' if n == 1 else 'n'} {n} {plural}. Podés responder, pedirle a la IA "
+        "que te pregunte de nuevo o pasar a los actos cuando quieras."
     )
     if round_ >= MAX_ROUNDS:
-        text += f" (Es la última ronda: el máximo es {MAX_ROUNDS}.)"
+        text += f" (Es la última vuelta de preguntas: el máximo es {MAX_ROUNDS}.)"
         return Finish("tope", text, n)
     return Finish("abierto", text, n)
 

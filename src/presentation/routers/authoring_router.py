@@ -356,7 +356,7 @@ async def _state(story: Story) -> dict:
     else:
         finish = {
             "kind": "sin_analizar",
-            "text": "Todavía no analizaste la historia: apretá «Analizar mi historia».",
+            "text": "Todavía no hay preguntas: apretá «Que la IA me pregunte».",
             "open_questions": 0,
         }
     used = {d for a in story.outline for d in a.decisions}

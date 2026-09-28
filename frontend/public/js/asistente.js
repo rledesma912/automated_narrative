@@ -24,14 +24,14 @@
   const DEBOUNCE_MS = 700;
   const POLL_MS = 3000;
   const AUTHORING = {
-    consult: { titulo: "Interpretando la historia…", detalle: "La IA está leyendo tu historia para ver qué le falta." },
-    plan_outline: { titulo: "Armando la escaleta…", detalle: "La IA reparte la historia en cinco actos y después la revisa." },
-    verify_outline: { titulo: "Revisando la escaleta…", detalle: "La IA busca decisiones que faltan, repeticiones y secretos sin revelar." },
+    consult: { titulo: "Leyendo tu historia…", detalle: "La IA lee tu idea para ver qué le falta." },
+    plan_outline: { titulo: "Armando los actos…", detalle: "La IA reparte tu historia en cinco actos y después los revisa." },
+    verify_outline: { titulo: "Revisando los actos…", detalle: "La IA busca respuestas tuyas que quedaron afuera, repeticiones y secretos que nunca se descubren." },
   };
   const STAGE_TEXT = {
-    consultor: "Interpretando la historia…",
-    planificador: "Armando la escaleta…",
-    verificador: "Revisando la escaleta…",
+    consultor: "Leyendo tu historia…",
+    planificador: "Armando los actos…",
+    verificador: "Revisando los actos…",
   };
 
   let page = null; // { root, storyId, data }

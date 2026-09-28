@@ -82,10 +82,10 @@ def test_reglas_sin_llm(story):
     warnings = rule_warnings(story, outline)
     text = " ".join(w.text for w in warnings[1])
     assert "termina igual que empieza" in text
-    assert "«El sereno» está en escena" in text
+    assert "«El sereno» aparece en este acto" in text
     assert "La mujer" not in text  # la amenaza no es elenco
-    assert "«El ramo» se siembra" in text
-    assert "no tiene hechos" in " ".join(w.text for w in warnings[2])
+    assert "«El ramo» aparece acá" in text
+    assert "no pasa nada todavía" in " ".join(w.text for w in warnings[2])
     assert {w.key for w in warnings[1]} >= {"sin_cambio", "elenco:el sereno", "siembra:el ramo"}
 
 
@@ -152,7 +152,7 @@ def test_hilos_sueltos_en_un_solo_aviso(story):
     (warning,) = rule_warnings(story, outline)[1]
     assert (
         warning.text
-        == "«La música», «El vestido» se siembran acá y ningún acto posterior los retoma."
+        == "«La música», «El vestido» aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?"
     )
     assert warning.key == "siembra:la musica|siembra:el vestido"
 
@@ -222,7 +222,10 @@ def test_una_siembra_ignorada_no_vuelve_y_el_aviso_se_arma_sin_ella(story):
         ActOutline(number=2, events=["y"]),
     ]
     (warning,) = rule_warnings(story, outline, {1: outline[0].dismissed_keys()})[1]
-    assert warning.text == "«El vestido» se siembra acá y ningún acto posterior lo retoma."
+    assert (
+        warning.text
+        == "«El vestido» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?"
+    )
 
 
 async def test_un_aviso_de_la_ia_ignorado_llega_al_prompt_y_se_filtra(story):
