@@ -1,0 +1,45 @@
+{
+  "label": "susto",
+  "perfil": "ollama-gemma3-12b",
+  "voz_temperature": 0.6,
+  "relatos": [
+    {
+      "variante": "con",
+      "corrida": 1,
+      "palabras": 2244,
+      "cliches": 2,
+      "cliches_detalle": {
+        "un escalofrío me recorrió": 1,
+        "me heló la sangre": 1
+      },
+      "parentescos_mal": 1,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 3
+    },
+    {
+      "variante": "con",
+      "corrida": 2,
+      "palabras": 2249,
+      "cliches": 3,
+      "cliches_detalle": {
+        "como si algo nos estuviera observando": 1,
+        "me revolvió el estómago": 1,
+        "algo no estaba bien": 1
+      },
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 7
+    }
+  ],
+  "promedios": {
+    "con": {
+      "cliches": 2.5,
+      "parentescos_mal": 0.5,
+      "narrador_3ra_persona": 0.0,
+      "frases_repetidas": 5.0,
+      "palabras": 2246.5
+    }
+  }
+}

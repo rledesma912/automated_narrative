@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — calidad del pipeline del asistente
-**Estado:** IMPLEMENT — SPECIFY, PLAN y TASKS aprobados (2026-09-27); plan y tareas conjuntos con la Spec-570
+**Estado:** DONE (2026-09-27) — S0–S7 en `feat/spec-560-570` (junto con la Spec-570); resultados en §3.1; pendiente el pase a prod cuando el usuario lo pida (DB nueva)
 **Rama:** `feat/analisis-asistente-ui-logica`
 **Extiende:** Spec-530 (asistente, escaleta y pipeline del relato). La UI del asistente va en Spec-550.
 
@@ -167,6 +167,23 @@ Los avisos se ignoran como los demás (Spec-550 H10).
 - «La presencia del colectivo» y las historias de referencia de `evaluate_voice.py`, antes y después: frases repetidas entre actos (4-gramas), clichés, nombres inventados y —nuevo— **aperturas sin puente** (actos 2–5 cuya primera oración no se conecta con el cierre del anterior; revisión manual sobre una muestra).
 - Regenerar el Acto 3 de un relato con repeticiones marcadas: la versión nueva no repite las frases señaladas.
 
+### 3.1 Resultados (S7, 2026-09-27)
+
+gemma3:12b, «El monte prohibido» con entidades, promedio de 2 relatos por variante (`scripts/research/560/{base,despues,pavor,susto}/`):
+
+| Variante | Clichés | Parentescos mal | Narradora en 3.ª | Frases repetidas | Palabras |
+|---|---|---|---|---|---|
+| base (S0) | 1,0 | 0,5 | 0 | 3,5 | 2 187 |
+| después (S3–S6, sin efecto) | 1,0 | 0,5 | 0 | 3,0 | 2 258 |
+| pavor | 0,5 | 1,5 | 0,5 | 3,0 | 2 195 |
+| susto | 2,5 | 0,5 | 0 | 5,0 | 2 247 |
+
+Las métricas cambian poco (dentro del ruido de 2 corridas); los prompts más largos **no empeoran** a gemma3.
+
+- **Aperturas (A1 + A3), revisión manual de las 8 transiciones por variante:** en la base, 4 saltos que rompen la continuidad (un acto 2 que abre con la fiesta «ya en curso»; una oración que el acto anterior no contó; amanecer al final del acto 4 y «en la noche» al abrir el 5; la tensión que vuelve a cero entre el 2 y el 3). En «después», las 8 continúan desde el cierre anterior (el acto 2 resuelve el salto de tiempo: «La fiesta estuvo buena… el tiempo se nos fue»). **El puente se queda.** Queda un caso de adelanto: un acto 3 que cierra con el hecho central del 4, que después lo repite (la Voz se adelanta en la prosa; el Verificador no lo ve porque mira la escaleta). Se anota, no se corrige.
+- **Efecto (A5), lectura a ciegas** (4 relatos mezclados al azar, clave codificada; leyó Claude porque el usuario lo delegó): **4 de 4 acertados.** Susto: la amenaza irrumpe ya en el acto 2 (una silueta entrevista tras la calma) y hay golpes extra; pavor: indicios en el acto 2 y la amenaza recién en el 3. La diferencia es fina —los 4 comparten el esqueleto que fija la historia— y 4/4 al azar es 1 en 6. **Decisión del usuario: el campo se queda**; se vuelve a mirar en la prueba con el LLM frontier.
+- **Regenerar sin repetir (A2):** cubierto por los tests de S5 (prompt con lo marcado); sin medición con LLM real.
+
 ---
 
 ## 4. PLAN (junto con la Spec-570)
@@ -213,7 +230,7 @@ Las dos specs cambian el esquema: van en **una rama** (`feat/spec-560-570`) y en
 - Planificador: sección «CÓMO TIENE QUE PEGAR»; Verificador: aviso si un acto no cumple la receta.
 - **Verificación:** snapshot regenerado; pytest de la receta por efecto.
 
-### S7 — Medición, documentación y pase
+### S7 — Medición, documentación y pase · ✅ 2026-09-27 (resultados en §3.1)
 - `evaluate_voice.py` después de S3–S6 contra la línea base de S0; A5: la misma historia con «Pavor creciente» y «Susto», 2 corridas cada uno → el usuario lee sin saber cuál es cuál. Resultados en esta spec; **si A5 no se distingue, se saca el campo** (decisión del usuario).
 - `CLAUDE.md` (pipeline, esquema, escaleta); specs 560 y 570 a DONE; PR a `development`.
 - Pase a prod cuando el usuario lo pida: `make deploy` + DB de prod nueva (se avisa que arranca vacía).
@@ -268,5 +285,5 @@ Cierre de cada slice: ruff + pytest + Vitest + Playwright en verde; si cambió e
 - [x] **T6.2** Planificador «CÓMO TIENE QUE PEGAR» y aviso del Verificador si un acto no cumple la receta. — *Verify:* pytest; snapshot regenerado.
 
 ### S7 — Medición, documentación y pase
-- [ ] **T7.1** `evaluate_voice.py` después de S3–S6 contra la base; A5: «pavor» y «susto», 2 corridas cada uno, para la lectura a ciegas del usuario. Resultados en esta spec.
-- [ ] **T7.2** `CLAUDE.md`; specs 560 y 570 a DONE; PR a `development`.
+- [x] **T7.1** `evaluate_voice.py` después de S3–S6 contra la base; A5: «pavor» y «susto», 2 corridas cada uno, para la lectura a ciegas del usuario. Resultados en esta spec.
+- [x] **T7.2** `CLAUDE.md`; specs 560 y 570 a DONE; PR a `development`.
