@@ -31,11 +31,11 @@
     '<path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path></svg>';
 
   const STAGE_LABELS = {
-    planificador: "Armando la escaleta",
-    verificador: "Revisando la escaleta",
-    voz: "Narrando",
-    journal: "Actualizando memoria",
-    consolidando: "Consolidando",
+    planificador: "Armando los actos",
+    verificador: "Revisando los actos",
+    voz: "Escribiendo",
+    journal: "Repasando lo que pasó",
+    consolidando: "Juntando el relato",
   };
 
   function triggers(storyId) {

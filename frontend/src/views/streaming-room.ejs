@@ -16,7 +16,7 @@
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
 <%
   const READ_STATUS = {
-    completed: { text: 'Completada', cls: 'text-forge-success', icon: 'check-circle' },
+    completed: { text: 'Lista', cls: 'text-forge-success', icon: 'check-circle' },
     failed:    { text: 'Error',      cls: 'text-forge-error',   icon: 'alert-triangle' },
     draft:     { text: 'Borrador',   cls: 'text-forge-warning', icon: 'file' },
   };
@@ -28,7 +28,7 @@
   <div class="flex items-center justify-between mb-10">
     <div>
       <h2 class="font-serif text-3xl text-forge-accent"><%= story ? story.title : 'Historia' %></h2>
-      <p class="text-forge-muted text-sm uppercase tracking-widest mt-2">Sala de Generación — Avance</p>
+      <p class="text-forge-muted text-sm uppercase tracking-widest mt-2">El relato, acto por acto</p>
     </div>
     <div class="flex items-center gap-2 px-4 py-2 border border-forge-border text-sm font-bold <%= rs.cls %>">
       <i data-lucide="<%= rs.icon %>" class="w-4 h-4"></i>
@@ -47,7 +47,7 @@
                 <i data-lucide="check" class="w-4 h-4 text-forge-bg"></i>
               </div>
               <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-forge-accent">Beat <%= b.beat_number || b.number %></span>
+                <span class="text-xs font-bold uppercase tracking-widest text-forge-accent">Acto <%= b.beat_number || b.number %></span>
                 <% if (b.summary) { %>
                   <p class="text-xs text-forge-muted mt-0.5"><%= b.summary %></p>
                 <% } %>
@@ -61,7 +61,7 @@
   <% } else { %>
     <div class="border border-forge-border bg-forge-surface p-12 text-center text-forge-muted mb-10">
       <i data-lucide="file-x" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
-      <p class="text-sm">No hay beats generados para esta historia.</p>
+      <p class="text-sm">Todavía no hay actos escritos.</p>
     </div>
   <% } %>
 
@@ -69,7 +69,7 @@
   <div class="flex items-center gap-4 flex-wrap pt-6 border-t border-forge-border">
     <a href="/galeria"
        class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i> Galería
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Mis historias
     </a>
     <% if (story) { %>
       <a href="/historia/<%= storyId %>" class="btn-forge-outline">
@@ -103,9 +103,9 @@
   <%/* ── Header ────────────────────────────────────────── */%>
   <div class="flex items-center justify-between mb-12">
     <div>
-      <h2 class="font-serif text-3xl text-forge-accent">Sala de Generación</h2>
+      <h2 class="font-serif text-3xl text-forge-accent">Escribiendo tu relato</h2>
       <p class="text-forge-muted text-sm uppercase tracking-widest mt-2" id="status-line">
-        Conectando...
+        Conectando…
       </p>
       <%/* Spec-510: tiempo restante (lo completa /js/streaming-room.js con /js/eta.js). */%>
       <p class="text-forge-muted text-xs mt-1" id="eta-line" aria-live="polite"></p>
@@ -120,11 +120,11 @@
   <div class="flex items-start justify-between mb-16 px-4" id="beat-dots">
     <% 
       const phases = [
-        { id: 1, label: 'Análisis' },
-        { id: 2, label: 'Exposición' },
-        { id: 3, label: 'Acción' },
-        { id: 4, label: 'Clímax' },
-        { id: 5, label: 'Resolución' }
+        { id: 1, label: 'Cómo empieza' },
+        { id: 2, label: 'Se complica' },
+        { id: 3, label: 'El peor momento' },
+        { id: 4, label: 'Qué hace después' },
+        { id: 5, label: 'Cómo termina' }
       ];
     %>
     <% phases.forEach(p => { %>
@@ -147,32 +147,32 @@
   <div id="start-panel" class="<%= activeJobId ? 'hidden ' : '' %>flex flex-col items-center justify-center py-24 gap-8">
     <div class="text-center max-w-2xl">
       <% if (regenerateMode) { %>
-        <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para regenerar?</p>
+        <p class="text-forge-text text-2xl font-serif mb-6">¿La escribimos de nuevo?</p>
         <%/* Spec-510: cuánto tarda y que no hace falta quedarse mirando. */%>
         <p class="text-sm text-forge-muted mb-8" data-start-estimate>
-          <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: sigue generándose.
+          <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: la IA sigue escribiendo.
         </p>
         <div class="nota-forge nota-forge--warning mb-8 text-left">
           <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
           <p class="leading-relaxed">
-            Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
+            El relato que tenés ahora se reemplaza por uno nuevo, acto por acto.
           </p>
         </div>
         <button type="button" onclick="initiateRegeneration()" class="btn-forge-lg group"
-                data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Iniciando regeneración...">
+                data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Arrancando…">
           <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
-          Iniciar regeneración
+          Escribirla de nuevo
         </button>
       <% } else { %>
-        <p class="text-forge-text text-2xl font-serif mb-6">¿Listo para despertar al narrador?</p>
+        <p class="text-forge-text text-2xl font-serif mb-6">¿Empezamos a escribir?</p>
         <%/* Spec-510: cuánto tarda y que no hace falta quedarse mirando. */%>
         <p class="text-sm text-forge-muted mb-8" data-start-estimate>
-          <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: sigue generándose.
+          <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: la IA sigue escribiendo.
         </p>
         <button type="button" onclick="initiateGeneration()" class="btn-forge-lg group"
-                data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Iniciando generación...">
+                data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Arrancando…">
           <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
-          Iniciar generación
+          Escribir el relato
         </button>
       <% } %>
     </div>
@@ -193,15 +193,15 @@
       <i id="sparkles-icon" data-lucide="sparkles" class="absolute inset-0 m-auto w-8 h-8 text-forge-accent"></i>
     </div>
     <div class="text-center">
-      <p class="text-forge-text text-lg font-serif mb-2">Despertando al Narrador...</p>
+      <p class="text-forge-text text-lg font-serif mb-2">Escribiendo tu relato…</p>
       <p id="processing-text" class="text-forge-muted text-xs uppercase tracking-widest">
-        El LLM está procesando tu historia
+        La IA está escribiendo, acto por acto
       </p>
     </div>
     <%/* Spec-460: cancelar detiene el job en el servidor */%>
     <button id="cancel-btn" type="button" onclick="cancelGeneration()"
             class="flex items-center gap-2 text-xs uppercase tracking-widest text-forge-muted hover:text-forge-error transition-colors">
-      <i data-lucide="square" class="w-3 h-3"></i> Cancelar generación
+      <i data-lucide="square" class="w-3 h-3"></i> Cancelar
     </button>
   </div>
 

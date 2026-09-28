@@ -26,7 +26,7 @@ test("la confirmación de la sala dice cuánto tarda y que se puede cerrar la pe
 }) => {
   await page.goto(`/generar/stream/${STORY_ID}?regenerate=1`);
   await expect(page.locator("#start-panel [data-start-estimate]").first()).toHaveText(
-    /Tarda ≈ \d+ min\. Podés cerrar la pestaña: sigue generándose\./,
+    /Tarda ≈ \d+ min\. Podés cerrar la pestaña: la IA sigue escribiendo\./,
   );
 });
 

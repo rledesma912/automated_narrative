@@ -23,11 +23,11 @@
     <%- include('_cabecera') %>
     <button type="button" class="btn-forge-sm"
             data-analizar="consult"
-            data-titulo="Interpretando la historia…"
-            data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte."
+            data-titulo="Leyendo tu historia…"
+            data-detalle="La IA lee tu idea para ver qué le falta y qué preguntarte."
             data-destino="taller"
             <%= state ? '' : 'disabled' %>>
-      <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
+      <i data-lucide="sparkles" class="w-4 h-4"></i> Que la IA me pregunte<% if (est) { %> <span class="normal-case tracking-normal">· <%= est %></span><% } %>
     </button>
   </div>
 
@@ -35,7 +35,7 @@
 
   <header class="mb-10">
     <h2 class="font-serif text-3xl text-forge-accent mb-2">¿Qué historia querés contar?</h2>
-    <p class="text-forge-muted">Con esto alcanza para empezar. Después el asistente te va a hacer preguntas para llenar los huecos.</p>
+    <p class="text-forge-muted">Con esto alcanza para empezar. Después la IA te hace algunas preguntas para completar lo que falte.</p>
   </header>
 
   <form class="space-y-6" data-autosave="direction" onsubmit="return false" novalidate>
@@ -76,7 +76,7 @@
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1">¿Qué querés que sienta quien lo escuche?</h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Es la brújula del asistente: las preguntas y la escaleta van a apuntar a este efecto.</p>
+        Todo lo que sigue apunta a esto: las preguntas y los actos.</p>
       <div class="grid sm:grid-cols-2 gap-3">
         <% options.effects.forEach(e => { %>
           <label class="opcion-forge h-full">

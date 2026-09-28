@@ -20,11 +20,11 @@ test("el menú se colapsa, lo recuerda y el pie lo acompaña", async ({ page }) 
   await expect.poll(() => ancho(page)).toBe(56);
   await expect.poll(() => pie(page)).toBe(56);
   await expect(boton).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByRole("link", { name: "Galería de historias" })).toBeVisible();
+  await expect(page.locator("aside").getByRole("link", { name: "Mis historias" })).toBeVisible();
 
   await page.reload();
   expect(await ancho(page)).toBe(56);
-  await page.getByRole("link", { name: "Galería de historias" }).click();
+  await page.locator("aside").getByRole("link", { name: "Mis historias" }).click();
   await expect(page).toHaveURL(/\/galeria$/);
   expect(await ancho(page)).toBe(56);
   await expect(page.locator("[data-sidebar-toggle]")).toHaveAttribute("aria-expanded", "false");

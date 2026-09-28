@@ -73,13 +73,13 @@ describe("sala: confirmación", () => {
   it.each([true, false])("dice cuánto tarda y que se puede cerrar la pestaña (regenerar: %s)", async (mode) => {
     const html = await room(mode, LABELS);
     expect(html.replace(/\s+/g, " ")).toContain(
-      "Tarda ≈ 4 min. Podés cerrar la pestaña: sigue generándose.",
+      "Tarda ≈ 4 min. Podés cerrar la pestaña: la IA sigue escribiendo.",
     );
   });
 
   it("sin estimación, igual avisa que se puede cerrar la pestaña", async () => {
     const text = (await room(false, null)).replace(/\s+/g, " ");
-    expect(text).toContain("Podés cerrar la pestaña: sigue generándose.");
+    expect(text).toContain("Podés cerrar la pestaña: la IA sigue escribiendo.");
     expect(text).not.toContain("Tarda");
   });
 });

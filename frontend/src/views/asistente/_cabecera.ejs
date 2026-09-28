@@ -5,10 +5,10 @@
 <%
   const sid = state ? state.story_id : null;
   const pasos = [
-    { id: 'direccion', label: 'Dirección', href: sid ? `/asistente/${sid}/direccion` : '/nuevo' },
-    { id: 'taller',    label: 'Taller',    href: sid ? `/asistente/${sid}/taller` : null },
-    { id: 'escaleta',  label: 'Escaleta',  href: sid ? `/asistente/${sid}/escaleta` : null },
-    { id: 'relato',    label: 'Relato',    href: sid && state.status === 'completed' ? `/historia/${sid}/relatos` : null },
+    { id: 'direccion', label: 'Tu idea', href: sid ? `/asistente/${sid}/direccion` : '/nuevo' },
+    { id: 'taller',    label: 'Preguntas', href: sid ? `/asistente/${sid}/taller` : null },
+    { id: 'escaleta',  label: 'Los actos', href: sid ? `/asistente/${sid}/escaleta` : null },
+    { id: 'relato',    label: 'El relato', href: sid && state.status === 'completed' ? `/historia/${sid}/relatos` : null },
   ];
   const idx = pasos.findIndex(p => p.id === pasoActual);
 %>

@@ -17,11 +17,11 @@
 
   // Peso de cada etapa dentro de un acto (Spec-460 S5).
   const STAGES = {
-    planificador: { label: "Armando la escaleta", weight: 0 },
-    verificador: { label: "Revisando la escaleta", weight: 0 },
-    voz: { label: "Narrando", weight: 0.1 },
-    journal: { label: "Actualizando la memoria", weight: 0.85 },
-    consolidando: { label: "Consolidando el relato", weight: 1 },
+    planificador: { label: "Armando los actos", weight: 0 },
+    verificador: { label: "Revisando los actos", weight: 0 },
+    voz: { label: "Escribiendo", weight: 0.1 },
+    journal: { label: "Repasando lo que pasó", weight: 0.85 },
+    consolidando: { label: "Juntando el relato", weight: 1 },
   };
 
   // Por debajo de este avance, el ritmo real todavía no dice nada.

@@ -7,7 +7,7 @@
   const w = state.workshop;
   /* Spec-550 H9: el estado de cada criterio es un chip (no se toca). */
   const SEMAFORO = {
-    cumple:      { label: 'Cumple',      chip: 'chip-forge chip-forge--cumple' },
+    cumple:      { label: 'Listo',       chip: 'chip-forge chip-forge--cumple' },
     parcial:     { label: 'A medias',    chip: 'chip-forge chip-forge--parcial' },
     falta:       { label: 'Falta',       chip: 'chip-forge chip-forge--falta' },
     intencional: { label: 'A propósito', chip: 'chip-forge' },
@@ -23,15 +23,15 @@
     <%- include('_cabecera') %>
     <% if (analizado) { %>
       <div class="flex flex-wrap items-center gap-3">
-        <button type="button" class="btn-forge-outline-sm" data-analizar="consult" data-titulo="Interpretando tus respuestas…"
-                data-detalle="La IA vuelve a leer la historia con lo que respondiste y pregunta solo lo que siga faltando.">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Analizar de nuevo<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
+        <button type="button" class="btn-forge-outline-sm" data-analizar="consult" data-titulo="Leyendo tus respuestas…"
+                data-detalle="La IA vuelve a leer tu historia con lo que respondiste y pregunta solo lo que siga faltando.">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Preguntame de nuevo<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
         </button>
-        <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando la escaleta…"
-                data-detalle="La IA reparte la historia en cinco actos con tus decisiones y después la revisa."
+        <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
+                data-detalle="La IA reparte tu historia en cinco actos con lo que respondiste y después los revisa."
                 data-destino="escaleta"
-                <%- state.outline.acts.length ? 'data-confirmar="Ya hay una escaleta: armarla de nuevo reemplaza la actual (y lo que editaste)." data-confirmar-titulo="¿Rearmar la escaleta?" data-confirmar-label="Rearmar la escaleta"' : '' %>>
-          <i data-lucide="list-ordered" class="w-4 h-4"></i> <%= state.outline.acts.length ? 'Rearmar la escaleta' : 'Armar la escaleta' %><% if (est.plan_outline) { %> <span class="normal-case tracking-normal">· <%= est.plan_outline %></span><% } %>
+                <%- state.outline.acts.length ? 'data-confirmar="Ya armaste los actos: armarlos de nuevo reemplaza los que tenés, con lo que les cambiaste." data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo"' : '' %>>
+          <i data-lucide="list-ordered" class="w-4 h-4"></i> <%= state.outline.acts.length ? 'Armar los actos de nuevo' : 'Armar los actos' %><% if (est.plan_outline) { %> <span class="normal-case tracking-normal">· <%= est.plan_outline %></span><% } %>
         </button>
       </div>
     <% } %>
@@ -40,26 +40,23 @@
   <div class="max-w-3xl">
 
   <header class="mb-8">
-    <h2 class="font-serif text-3xl text-forge-accent mb-2">Taller</h2>
-    <p class="text-forge-muted">El asistente lee tu historia y te pregunta solo lo que le falta para que tenga tensión. Respondé lo que quieras; nada es obligatorio.</p>
+    <h2 class="font-serif text-3xl text-forge-accent mb-2">Preguntas</h2>
+    <p class="text-forge-muted">La IA lee tu historia y te pregunta solo lo que le falta para que dé miedo de verdad. Respondé lo que quieras: nada es obligatorio.</p>
   </header>
 
   <% if (!analizado) { %>
     <section class="bg-forge-surface border border-forge-border p-10 text-center mb-8">
       <i data-lucide="sparkles" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
-      <p class="font-serif text-xl mb-2">Todavía no analizaste la historia</p>
+      <p class="font-serif text-xl mb-2">Todavía no hay preguntas</p>
       <p class="text-forge-muted mb-6">La IA la lee y te pregunta lo que le falta. Tarda <%= est.consult || 'unos segundos' %>.</p>
-      <button type="button" class="btn-forge-sm" data-analizar="consult" data-titulo="Interpretando la historia…"
-              data-detalle="La IA está leyendo tu historia para ver qué le falta y qué preguntarte.">
-        <i data-lucide="sparkles" class="w-4 h-4"></i> Analizar mi historia
+      <button type="button" class="btn-forge-sm" data-analizar="consult" data-titulo="Leyendo tu historia…"
+              data-detalle="La IA lee tu idea para ver qué le falta y qué preguntarte.">
+        <i data-lucide="sparkles" class="w-4 h-4"></i> Que la IA me pregunte
       </button>
     </section>
   <% } else { %>
     <section class="bg-forge-surface border border-forge-border p-6 mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xs uppercase tracking-widest text-forge-muted">Estado de la historia</h3>
-        <span class="text-xs text-forge-muted">Ronda <%= w.round %> de <%= w.max_rounds %></span>
-      </div>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-4">Cómo viene tu historia</h3>
       <ul class="flex flex-wrap gap-2 mb-5">
         <% w.items.forEach(i => { const s = SEMAFORO[i.status]; %>
           <li class="<%= s.chip %> chip-forge--md" title="<%= s.label %>: <%= i.por_que %>"><%= i.nombre %></li>
@@ -69,7 +66,7 @@
     </section>
 
     <% if (abiertas.length) { %>
-      <h3 class="font-serif text-xl mb-4">Preguntas abiertas</h3>
+      <h3 class="font-serif text-xl mb-4">Te falta contarme</h3>
       <div class="space-y-6 mb-12">
         <% abiertas.forEach(p => { const s = SEMAFORO[p.status]; %>
           <article class="bg-forge-surface border border-forge-border p-6" data-pregunta="<%= p.criterion %>">
@@ -97,7 +94,7 @@
             <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
             <div class="flex flex-wrap items-center gap-3">
               <button type="button" class="btn-forge-sm" data-taller="answer">Guardar respuesta</button>
-              <button type="button" class="btn-forge-outline-sm" data-taller="decide" title="Elige la primera opción: la que la IA propone como más fuerte. Es instantáneo.">
+              <button type="button" class="btn-forge-outline-sm" data-taller="decide" title="La IA elige por vos la opción que le parece más fuerte.">
                 <i data-lucide="sparkles" class="w-4 h-4"></i> Decidí vos
               </button>
               <button type="button" class="btn-forge-outline-sm" data-taller="intentional" title="Queda como está y no se vuelve a preguntar">
@@ -110,14 +107,14 @@
     <% } %>
 
     <% if (resueltas.length) { %>
-      <h3 class="font-serif text-xl mb-4">Ya resuelto</h3>
+      <h3 class="font-serif text-xl mb-4">Ya lo tenés</h3>
       <ul class="space-y-3 mb-12">
         <% resueltas.forEach(p => { const s = SEMAFORO[p.status]; %>
           <li class="bg-forge-surface border border-forge-border px-5 py-4" data-pregunta="<%= p.criterion %>">
             <div class="flex items-start gap-4">
               <div class="flex-1">
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
-                <p><%= p.answer || (p.status === 'cumple' ? 'La historia ya lo resuelve.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
+                <p><%= p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
                 <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.por_que %></p>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
@@ -127,7 +124,7 @@
               <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
               <div class="flex flex-wrap gap-3">
                 <button type="button" class="btn-forge-sm" data-taller="answer">Guardar</button>
-                <button type="button" class="btn-forge-outline-sm" data-taller="reopen" title="Vuelve a evaluarse en el próximo análisis">Que la IA lo vuelva a preguntar</button>
+                <button type="button" class="btn-forge-outline-sm" data-taller="reopen" title="La IA lo vuelve a mirar la próxima vez que te pregunte">Que la IA lo vuelva a preguntar</button>
               </div>
             </div>
           </li>

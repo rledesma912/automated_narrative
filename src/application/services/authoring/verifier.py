@@ -126,15 +126,16 @@ def rule_warnings(
 
     cast = {workshop_rules.normalize(n) for n in cast_names(story)}
     threats = {workshop_rules.normalize(e.name) for e in story.entities if e.name}
+    prota = context.protagonist(story) or "el protagonista"
     for act in outline:
         if not act.events:
-            add(act.number, "sin_hechos", "El acto no tiene hechos: ¿qué pasa acá?")
+            add(act.number, "sin_hechos", "En este acto no pasa nada todavía: ¿qué pasa acá?")
         if act.number > 1 and not act.bridge.strip():
             add(
                 act.number,
                 "sin_puente",
-                "No dice cómo se llega acá desde el acto anterior (cuánto tiempo pasó, qué pasó "
-                "en el medio): completá «Cómo llega acá».",
+                "No dice cómo se llega acá desde el acto anterior: completá «Cómo llega acá» "
+                "(cuánto tiempo pasó y qué pasó en el medio).",
             )
         if act.change_from and workshop_rules.normalize(
             act.change_from
@@ -142,7 +143,7 @@ def rule_warnings(
             add(
                 act.number,
                 "sin_cambio",
-                "El acto termina igual que empieza: ¿qué cambia para el protagonista?",
+                f"El acto termina igual que empieza: ¿qué le cambia a {prota}?",
             )
         for name in act.on_stage:
             key = workshop_rules.normalize(name.split("(")[0])
@@ -150,14 +151,14 @@ def rule_warnings(
                 add(
                     act.number,
                     f"elenco:{key}",
-                    f"«{name}» está en escena y no en el elenco: ¿lo sumamos como personaje?",
+                    f"«{name}» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
                 )
         if act.held_back.strip() and not act.number < act.reveal_act <= 5:
             add(
                 act.number,
                 "sin_revelacion",
-                "Lo que todavía no se cuenta acá no tiene un acto posterior que lo revele: "
-                "elegí en qué acto se revela.",
+                "El secreto de este acto no se descubre en ningún acto posterior: "
+                "elegí en cuál se descubre.",
             )
         later = [a for a in outline if a.number > act.number]
         loose = [
@@ -168,10 +169,18 @@ def rule_warnings(
         ]
         key = "|".join(f"siembra:{normalize_key(s)}" for s in loose)
         if len(loose) == 1:
-            add(act.number, key, f"«{loose[0]}» se siembra acá y ningún acto posterior lo retoma.")
+            add(
+                act.number,
+                key,
+                f"«{loose[0]}» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?",
+            )
         elif loose:
             names = ", ".join(f"«{s}»" for s in loose)
-            add(act.number, key, f"{names} se siembran acá y ningún acto posterior los retoma.")
+            add(
+                act.number,
+                key,
+                f"{names} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?",
+            )
     return out
 
 

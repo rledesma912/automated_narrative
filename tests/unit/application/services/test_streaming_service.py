@@ -181,7 +181,7 @@ async def test_stream_emite_status_con_etapa_estructurada():
         ("consolidando", None),
     ]
     assert all(d["total_beats"] == 2 for d in statuses)
-    assert statuses[2]["msg"] == "Narrando acto 1 de 2..."
+    assert statuses[2]["msg"] == "Escribiendo el acto 1 de 2..."
     assert statuses[2]["step"] == "voz"  # campo legado que usa la sala
     # beat_start abre cada beat (antes de sus etapas) y beat_done lo cierra.
     beat_1 = [

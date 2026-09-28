@@ -11,6 +11,10 @@ activo. Guarda cada relato y un `metrics.json`, e imprime una tabla.
 
     uv run python scripts/evaluate_workshop.py --runs 2 --out <dir>
     uv run python scripts/evaluate_workshop.py --runs 1 --stories pena --mock   # probar el arnés
+    uv run python scripts/evaluate_workshop.py --hasta-escaleta --out <dir>     # sin prosa (Spec-580)
+
+Con `--hasta-escaleta` corre solo el camino del asistente y corta después de revisar la
+escaleta: guarda la escaleta y el taller (preguntas y opciones) de cada corrida.
 """
 
 import argparse
@@ -52,6 +56,7 @@ STORIES = {
         "direction": Direction(effect="pavor", telling="confesion"),
     },
 }
+ESCALETA_METRICS = ("segundos_taller", "segundos_escaleta", "avisos_escaleta")
 METRICS = (
     "segundos",
     "palabras",
@@ -132,7 +137,9 @@ async def _run_base(client, key: str, data: dict, i: int, out: Path) -> dict:
     return {"segundos": round(secs), **_measure(text, data, _known_text(story))}
 
 
-async def _run_asistente(client, key: str, data: dict, i: int, out: Path) -> dict:
+async def _run_asistente(
+    client, key: str, data: dict, i: int, out: Path, hasta_escaleta: bool = False
+) -> dict:
     repo = SQLStoryRepository()
     sid = await _create(client, data, f"{data['title']} (asistente #{i})")
     direction = STORIES[key]["direction"].model_copy(update={"premise": data["sinopsis"]})
@@ -142,6 +149,9 @@ async def _run_asistente(client, key: str, data: dict, i: int, out: Path) -> dic
     state = (await client.get(f"/api/v1/authoring/stories/{sid}")).json()
     detected = {w["criterion"]: w["status"] for w in state["workshop"]["items"]}
     questions = [w["criterion"] for w in state["workshop"]["items"] if w["question"]]
+    (out / f"{key}_taller_{i}.json").write_text(
+        json.dumps(state["workshop"], ensure_ascii=False, indent=1), encoding="utf-8"
+    )
     for criterion in questions:  # el «autor» delega todo: reproducible
         await client.patch(
             f"/api/v1/authoring/stories/{sid}/workshop/{criterion}", json={"action": "decide"}
@@ -155,19 +165,21 @@ async def _run_asistente(client, key: str, data: dict, i: int, out: Path) -> dic
         json.dumps(state["outline"], ensure_ascii=False, indent=1), encoding="utf-8"
     )
 
-    job, t_gen = await _wait_job(client, sid, None)
-    text = await _relato(client, job)
-    (out / f"{key}_asistente_{i}.md").write_text(text, encoding="utf-8")
-    story = await repo.get_by_id(uuid.UUID(sid))
-    return {
-        "segundos": round(t_gen),
+    escaleta = {
         "segundos_taller": round(t_consult),
         "segundos_escaleta": round(t_plan),
         "taller": detected,
         "decisiones_integradas": f"{sum(d['integrada'] for d in decisions)}/{len(decisions)}",
         "avisos_escaleta": warnings,
-        **_measure(text, data, _known_text(story)),
     }
+    if hasta_escaleta:
+        return escaleta
+
+    job, t_gen = await _wait_job(client, sid, None)
+    text = await _relato(client, job)
+    (out / f"{key}_asistente_{i}.md").write_text(text, encoding="utf-8")
+    story = await repo.get_by_id(uuid.UUID(sid))
+    return {"segundos": round(t_gen), **escaleta, **_measure(text, data, _known_text(story))}
 
 
 async def run(
@@ -176,6 +188,7 @@ async def run(
     out: Path,
     mock: bool,
     variants: tuple[str, ...] = ("base", "asistente"),
+    hasta_escaleta: bool = False,
 ) -> dict:
     from src.main import app
 
@@ -185,6 +198,9 @@ async def run(
         from src.infrastructure.adapters import MockLLMAdapter
 
         LLMFactory.get_provider = staticmethod(lambda *_a, **_k: MockLLMAdapter())
+    if hasta_escaleta:
+        variants = ("asistente",)
+    metrics = ESCALETA_METRICS if hasta_escaleta else METRICS
     report: dict = {"perfil": settings.active_profile_name, "corridas": []}
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -200,14 +216,18 @@ async def run(
                         for variant, fn in (("base", _run_base), ("asistente", _run_asistente)):
                             if variant not in variants:
                                 continue
-                            m = await fn(client, key, data, i, out)
+                            if variant == "asistente":
+                                m = await fn(client, key, data, i, out, hasta_escaleta)
+                            else:
+                                m = await fn(client, key, data, i, out)
                             report["corridas"].append(
                                 {"historia": key, "variante": variant, "corrida": i, **m}
                             )
-                            print(f"  {key} {variant} #{i}: " + _row(m), flush=True)
+                            print(f"  {key} {variant} #{i}: " + _row(m, metrics), flush=True)
     finally:
         settings.database_url, LLMFactory.get_provider = saved
 
+    report["metricas"] = list(metrics)
     report["promedios"] = {
         f"{k}/{v}": {
             m: round(
@@ -216,7 +236,7 @@ async def run(
                 ),
                 1,
             )
-            for m in METRICS
+            for m in metrics
         }
         for k in stories
         for v in variants
@@ -227,7 +247,11 @@ async def run(
     return report
 
 
-def _row(m: dict) -> str:
+def _row(m: dict, metrics: tuple[str, ...] = METRICS) -> str:
+    if metrics is ESCALETA_METRICS:
+        return f"taller {m['taller']} | decisiones {m['decisiones_integradas']} | " + ", ".join(
+            f"{k}={m[k]}" for k in metrics
+        )
     extra = ""
     if "decisiones_integradas" in m:
         extra = (
@@ -239,9 +263,10 @@ def _row(m: dict) -> str:
 
 def print_table(report: dict) -> None:
     print(f"\nPerfil: {report['perfil']}  (promedios)")
-    print(f"{'historia/variante':22}" + "".join(f"{m[:14]:>16}" for m in METRICS))
+    metrics = report.get("metricas", METRICS)
+    print(f"{'historia/variante':22}" + "".join(f"{m[:14]:>16}" for m in metrics))
     for key, row in report["promedios"].items():
-        print(f"{key:22}" + "".join(f"{row[m]:>16}" for m in METRICS))
+        print(f"{key:22}" + "".join(f"{row[m]:>16}" for m in metrics))
 
 
 def main() -> None:
@@ -253,10 +278,18 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--mock", action="store_true", help="LLM simulado (probar el arnés)")
     parser.add_argument("--variants", default="base,asistente")
+    parser.add_argument(
+        "--hasta-escaleta",
+        action="store_true",
+        help="solo el asistente, sin prosa: guarda taller y escaleta (Spec-580)",
+    )
     args = parser.parse_args()
     stories = [s for s in args.stories.split(",") if s in STORIES]
     variants = tuple(v for v in args.variants.split(",") if v in ("base", "asistente"))
-    print_table(asyncio.run(run(stories, args.runs, args.out, args.mock, variants)))
+    report = asyncio.run(
+        run(stories, args.runs, args.out, args.mock, variants, args.hasta_escaleta)
+    )
+    print_table(report)
 
 
 if __name__ == "__main__":
