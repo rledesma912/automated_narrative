@@ -66,7 +66,7 @@ describe("relatos view", () => {
       relatos: [],
     });
 
-    expect(html).toContain("No hay relatos generados aún para esta historia.");
+    expect(html).toContain("Todavía no hay relatos de esta historia.");
     expect(html).not.toContain("data-relato-tab=");
   });
 

@@ -43,7 +43,7 @@ const personajes = story.personajes_full || [];
 
     <% if (atm.genre || story.atmosfera) { %>
     <div class="border border-forge-border bg-forge-surface p-5">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">ATMÓSFERA</h3>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">Tipo de horror</h3>
       <p class="text-sm text-forge-text">
         <%= atm.genre || story.atmosfera %>
         <% if (atm.subgenre) { %><span class="text-forge-muted"> (<%= atm.subgenre %>)</span><% } %>
@@ -53,14 +53,14 @@ const personajes = story.personajes_full || [];
 
     <% if (story.relator) { %>
     <div class="border border-forge-border bg-forge-surface p-5">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">NARRADOR</h3>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">Quién lo cuenta</h3>
       <p class="text-sm text-forge-text"><%= story.relator %></p>
     </div>
     <% } %>
 
     <% if (personajes.length > 0) { %>
     <div class="border border-forge-border bg-forge-surface p-5">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">PERSONAJES</h3>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">Personajes</h3>
       <ul class="space-y-2">
         <% personajes.forEach(function(p) { %>
           <li class="text-sm text-forge-text">
@@ -74,7 +74,7 @@ const personajes = story.personajes_full || [];
 
     <% if (scenarios.length > 0) { %>
     <div class="border border-forge-border bg-forge-surface p-5">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">ESCENARIOS</h3>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">Lugares</h3>
       <ul class="space-y-1">
         <% scenarios.forEach(function(s) { %>
           <li class="text-sm text-forge-text">
@@ -88,7 +88,7 @@ const personajes = story.personajes_full || [];
 
     <% if (rules.length > 0) { %>
     <div class="border border-forge-border bg-forge-surface p-5">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">REGLAS DEL MUNDO</h3>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">Reglas de la historia</h3>
       <ul class="space-y-1">
         <% rules.forEach(function(r) { %>
           <li class="text-sm text-forge-text">
@@ -102,7 +102,7 @@ const personajes = story.personajes_full || [];
 
     <% if (story.sinopsis) { %>
     <div class="border border-forge-border bg-forge-surface p-5">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">TRAMA</h3>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted font-bold mb-3">De qué trata</h3>
       <p class="text-sm text-forge-text whitespace-pre-wrap leading-relaxed"><%= story.sinopsis %></p>
     </div>
     <% } %>

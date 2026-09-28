@@ -194,7 +194,7 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - Los avisos de las reglas del Verificador.
 - Test del glosario sobre las vistas del asistente; E2E actualizados.
 
-### S3 — El resto del sitio en el tono nuevo
+### S3 — El resto del sitio en el tono nuevo · ✅ 2026-09-28 (inicio compacto con los 4 pasos y un consejo; «Mis historias»; pie «La IA está lista / no responde» + enlace a `/debug`; sala «Escribiendo tu relato»; mensajes de etapa del Core y de los scripts: «Escribiendo el acto N», «Repasando lo que pasó», «Juntando el relato»; `sin-jerga` sobre todas las vistas salvo `/debug` y sobre `public/js`)
 - Inicio: bienvenida nueva y compacta, entra entera en la pantalla (D7). Menú sin `/debug`; enlace a `/debug` en el pie (D6). Pie, banner de generación, galería, ficha, relatos, panel del relato (control de repetición y aviso de acto desactualizado) y sala.
 - Test del glosario sobre todas las vistas salvo `/debug`.
 
@@ -257,10 +257,10 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - [x] **T2.3** Test del glosario (vistas del asistente) y E2E actualizados. — *Verify:* Vitest + Playwright.
 
 ### S3 — El resto del sitio
-- [ ] **T3.1** Inicio compacto (D7). — *Verify:* E2E a 1366×768 y 1920×1080: sin scroll vertical. — *Files:* `frontend/src/views/home.ejs`.
-- [ ] **T3.2** Menú sin «API conn» y enlace a `/debug` en el pie (D6). — *Verify:* E2E del menú y del pie. — *Files:* `partials/sidebar.ejs`, `partials/footer.ejs`.
-- [ ] **T3.3** Pie, banner, galería, ficha, relatos, panel del relato y sala con la guía y el glosario. — *Files:* `frontend/src/views/*.ejs`, `partials/*.ejs`.
-- [ ] **T3.4** Test del glosario sobre todas las vistas salvo `/debug`; E2E actualizados. — *Verify:* Vitest + Playwright.
+- [x] **T3.1** Inicio compacto (D7). — *Verify:* E2E a 1366×768 y 1920×1080: sin scroll vertical. — *Files:* `frontend/src/views/home.ejs`.
+- [x] **T3.2** Menú sin «API conn» y enlace a `/debug` en el pie (D6). — *Verify:* E2E del menú y del pie. — *Files:* `partials/sidebar.ejs`, `partials/footer.ejs`.
+- [x] **T3.3** Pie, banner, galería, ficha, relatos, panel del relato y sala con la guía y el glosario. — *Files:* `frontend/src/views/*.ejs`, `partials/*.ejs`.
+- [x] **T3.4** Test del glosario sobre todas las vistas salvo `/debug`; E2E actualizados. — *Verify:* Vitest + Playwright.
 
 ### S4 — Lo que escribe la IA
 - [ ] **T4.1** Guía de tono en los prompts de sistema del Consultor y del Verificador. — *Verify:* snapshot regenerado a propósito; la Voz y la Memoria sin cambios.

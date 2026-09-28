@@ -10,8 +10,12 @@ import { describe, expect, it } from "vitest";
  * URLs y los comentarios pueden seguir diciendo «escaleta» o «taller».
  */
 const ROOT = path.resolve(__dirname, "../../..");
-const VIEWS = ["src/views/asistente"];
-const SCRIPTS = ["public/js/asistente.js"];
+const VIEWS = ["src/views"];
+const FUERA = ["src/views/debug.ejs"]; // herramienta del usuario (D6)
+const SCRIPTS = fs
+  .readdirSync(path.join(ROOT, "public/js"))
+  .filter((f) => f.endsWith(".js"))
+  .map((f) => `public/js/${f}`);
 
 const JERGA: RegExp[] = [
   /\bescaletas?\b/i,
@@ -29,6 +33,8 @@ const JERGA: RegExp[] = [
   /\bDirecci[oó]n\b/,
   /\bVoz\b/,
   /\bAnalizar\b/i,
+  /\bjournal\b/i,
+  /\bCore\b/,
 ];
 
 const ATTRS = /\b(?:title|placeholder|aria-label|data-titulo|data-detalle|data-confirmar(?:-titulo|-label)?)="([^"]*)"/g;
@@ -37,6 +43,7 @@ const STRINGS = /(["'`])((?:(?!\1)[^\\\n]|\\.)*)\1/g;
 function files(dir: string): string[] {
   return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((e) => {
     const rel = path.join(dir, e.name);
+    if (FUERA.includes(rel)) return [];
     return e.isDirectory() ? files(rel) : e.name.endsWith(".ejs") ? [rel] : [];
   });
 }
@@ -59,29 +66,38 @@ function codeTexts(code: string): string[] {
   return [...sinComentarios.matchAll(STRINGS)]
     .map((m) => m[2])
     .filter((s) => / /.test(s.replace(/\$\{[^}]*\}/g, "")) || /^[A-ZÁÉÍÓÚ¿¡]/.test(s))
-    .filter((s) => !/^[\w-]+(?: [\w-]+)*$/.test(s) || /^[A-ZÁÉÍÓÚ¿¡]/.test(s))
+    .filter((s) => !esClases(s))
     .filter((s) => !s.startsWith("/") && !/[<>]/.test(s));
 }
 
+/** «flex items-center w-4»: lista de clases CSS, no texto. */
+function esClases(s: string): boolean {
+  const tokens = s.trim().split(/\s+/);
+  return tokens.every((t) => /^[a-z0-9:/[\].\-_!%#()=]+$/.test(t)) && tokens.some((t) => /[-:/[]/.test(t));
+}
+
 function jerga(texts: string[], file: string): string[] {
-  return texts.flatMap((t) => JERGA.filter((re) => re.test(t)).map((re) => `${file}: «${t}» (${re.source})`));
+  return texts.flatMap((t) => {
+    const leido = t.replace(/\$\{[^}]*\}/g, " "); // lo interpolado no se lee tal cual
+    return JERGA.filter((re) => re.test(leido)).map((re) => `${file}: «${t}» (${re.source})`);
+  });
 }
 
 describe("el sitio habla sin jerga (Spec-580)", () => {
-  it("las vistas del asistente no usan términos de oficio", () => {
+  it("las vistas no usan términos de oficio (salvo /debug)", () => {
     const bad = VIEWS.flatMap(files).flatMap((f) => jerga(visibleTexts(fs.readFileSync(path.join(ROOT, f), "utf-8")), f));
     expect(bad).toEqual([]);
   });
 
-  it("los mensajes del JS del asistente tampoco", () => {
+  it("los mensajes de los scripts del navegador tampoco", () => {
     const bad = SCRIPTS.flatMap((f) => jerga(codeTexts(fs.readFileSync(path.join(ROOT, f), "utf-8")), f));
     expect(bad).toEqual([]);
   });
 
   it("detecta la jerga en texto, atributos y bloques EJS, pero no en ids ni URLs", () => {
     const ejs = `<%/* Escaleta: comentario */%><a href="/asistente/1/escaleta" data-destino="escaleta" title="Revisar la escaleta">Taller</a>
-      <% const N = { 1: 'Clímax' }; %><span><%= x ? 'Ronda 2' : '' %></span>`;
+      <% const N = { 1: 'Clímax', c: 'flex items-center' }; %><span><%= x ? 'Ronda 2' : 'armando la escaleta' %></span>`;
     const found = jerga(visibleTexts(ejs), "x");
-    expect(found.map((s) => s.split("«")[1].split("»")[0]).sort()).toEqual(["Clímax", "Revisar la escaleta", "Ronda 2", "Taller"]);
+    expect(found.map((s) => s.split("«")[1].split("»")[0]).sort()).toEqual(["Clímax", "Revisar la escaleta", "Ronda 2", "Taller", "armando la escaleta"]);
   });
 });

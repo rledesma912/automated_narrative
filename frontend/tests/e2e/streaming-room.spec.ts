@@ -39,9 +39,9 @@ test("regenerar desde la ficha: confirmación, avance por etapas y fin", async (
   await page.getByRole("button", { name: "Regenerar" }).click();
 
   await expect(page).toHaveURL(/regenerate=1/);
-  await page.getByRole("button", { name: "Iniciar regeneración" }).click();
+  await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
 
-  await expect(page.locator("#status-line")).toHaveText("Historia generada con éxito", {
+  await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
   await expect(page.locator("#badge-text")).toHaveText("Completo");
@@ -52,19 +52,19 @@ test("regenerar desde la ficha: confirmación, avance por etapas y fin", async (
 
   const lines = await logLines(page);
   const idx = (text: string) => lines.findIndex((l) => l.includes(text));
-  expect(idx("Narrando acto 1 de 5")).toBeGreaterThan(-1);
+  expect(idx("Escribiendo el acto 1 de 5")).toBeGreaterThan(-1);
   // Cada acto: sus etapas y después "completado" (antes "Narrando Beat N" llegaba tarde).
-  expect(idx("Narrando acto 1 de 5")).toBeLessThan(idx("Beat 1 completado"));
-  expect(idx("Actualizando la memoria del acto 1")).toBeLessThan(idx("Beat 1 completado"));
-  expect(idx("Consolidando el relato")).toBeGreaterThan(idx("Beat 5 completado"));
+  expect(idx("Escribiendo el acto 1 de 5")).toBeLessThan(idx("Acto 1 escrito"));
+  expect(idx("Repasando lo que pasó en el acto 1")).toBeLessThan(idx("Acto 1 escrito"));
+  expect(idx("Juntando el relato")).toBeGreaterThan(idx("Acto 5 escrito"));
   expect(lines.some((l) => l.includes("Narrando Beat"))).toBe(false);
 });
 
 test("recargar a mitad de camino se ata al mismo job sin lanzar otro", async ({ page }) => {
   const posts = countJobPosts(page);
   await page.goto(`/generar/stream/${STORY_ID}?regenerate=1`);
-  await page.getByRole("button", { name: "Iniciar regeneración" }).click();
-  await expect(page.locator("#log-container")).toContainText("Narrando acto 2 de 5", {
+  await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
+  await expect(page.locator("#log-container")).toContainText("Escribiendo el acto 2 de 5", {
     timeout: 15_000,
   });
   const before = await activeJob(page);
@@ -79,7 +79,7 @@ test("recargar a mitad de camino se ata al mismo job sin lanzar otro", async ({ 
   expect(await page.evaluate(() => (window as unknown as { ACTIVE_JOB_ID: string }).ACTIVE_JOB_ID)).toBe(
     before!.job_id,
   );
-  await expect(page.locator("#status-line")).toHaveText("Historia generada con éxito", {
+  await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
   expect(posts()).toBe(1);
@@ -87,17 +87,17 @@ test("recargar a mitad de camino se ata al mismo job sin lanzar otro", async ({ 
 
 test("cancelar detiene el job en el servidor", async ({ page }) => {
   await page.goto(`/generar/stream/${STORY_ID}?regenerate=1`);
-  await page.getByRole("button", { name: "Iniciar regeneración" }).click();
-  await expect(page.locator("#log-container")).toContainText("Narrando acto 1 de 5", {
+  await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
+  await expect(page.locator("#log-container")).toContainText("Escribiendo el acto 1 de 5", {
     timeout: 15_000,
   });
   const job = await activeJob(page);
   expect(job).not.toBeNull();
 
-  await page.getByRole("button", { name: "Cancelar generación" }).click();
+  await page.locator("#cancel-btn").click();
 
   await expect(page.locator("#badge-text")).toHaveText("Cancelada");
-  await expect(page.locator("#error-msg")).toContainText("cancelada");
+  await expect(page.locator("#error-msg")).toContainText("Cancelaste");
   const cancelled = await (await page.request.get(`/api/v1/jobs/${job!.job_id}`)).json();
   expect(cancelled.status).toBe("failed");
   expect(cancelled.error).toBe("cancelada por el usuario");
@@ -118,7 +118,7 @@ test("generar desde la ficha lanza el job en el servidor y la sala se ata", asyn
 
   await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}$`));
   await expect(page.locator("#start-panel")).toBeHidden();
-  await expect(page.locator("#status-line")).toHaveText("Historia generada con éxito", {
+  await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
   expect(posts()).toBe(0);

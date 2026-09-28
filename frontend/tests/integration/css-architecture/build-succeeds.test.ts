@@ -56,8 +56,9 @@ describe('CSS Architecture — Build Process', () => {
   it('Spec-531: las clases forge admiten opacidad (color-mix)', () => {
     const cssContent = fs.readFileSync(outputCssPath, 'utf-8');
 
-    expect(cssContent).toContain('.bg-forge-accent\\/10');
-    expect(cssContent).toMatch(/color-mix\(in srgb, var\(--forge-accent\) calc\(0\.1 \* 100%\), transparent\)/);
+    // Spec-580: el inicio nuevo ya no usa bg-forge-accent/10; border-/20 sigue en el modal de la IA.
+    expect(cssContent).toContain('.border-forge-accent\\/20');
+    expect(cssContent).toMatch(/color-mix\(in srgb, var\(--forge-accent\) calc\(0\.2 \* 100%\), transparent\)/);
   });
 
   it('public/styles.css es válido sin errores de sintaxis', () => {

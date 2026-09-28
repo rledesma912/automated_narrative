@@ -23,13 +23,13 @@ _SENTINEL = object()
 
 # Mensaje legible por etapa (Spec-460). `{beat}`/`{total}` se completan si aplica.
 _STAGE_MESSAGES = {
-    JobStage.VOZ: "Narrando acto {beat} de {total}...",
-    JobStage.JOURNAL: "Actualizando la memoria del acto {beat}...",
-    JobStage.CONSOLIDANDO: "Consolidando el relato...",
+    JobStage.VOZ: "Escribiendo el acto {beat} de {total}...",
+    JobStage.JOURNAL: "Repasando lo que pasó en el acto {beat}...",
+    JobStage.CONSOLIDANDO: "Juntando el relato...",
     # Spec-530: asistente de autoría (los mismos textos del modal).
-    JobStage.CONSULTOR: "Interpretando la historia…",
-    JobStage.PLANIFICADOR: "Armando la escaleta…",
-    JobStage.VERIFICADOR: "Revisando la escaleta…",
+    JobStage.CONSULTOR: "Leyendo tu historia…",
+    JobStage.PLANIFICADOR: "Armando los actos…",
+    JobStage.VERIFICADOR: "Revisando los actos…",
 }
 
 

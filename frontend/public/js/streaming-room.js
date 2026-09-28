@@ -161,7 +161,7 @@
     let displayMsg = msg;
     if (msg && (msg.includes("All connection attempts failed") || msg.includes("connection"))) {
       displayMsg =
-        "El servicio de IA (Ollama) no está disponible. Asegurate de tener Ollama corriendo en tu máquina.";
+        "La IA no responde. Probá de nuevo en un rato.";
     }
 
     const errorMsg = document.getElementById("error-msg");
@@ -179,7 +179,7 @@
     stopEta();
     showDuration(currentJobId);
     setBadge("Completo", "cumple");
-    setStatus("Historia generada con éxito");
+    setStatus("Tu relato está listo");
     hideSpinner();
 
     const panel = document.getElementById("done-panel");
@@ -278,7 +278,7 @@
     setBadge("Cancelada", "");
 
     const errorMsg = document.getElementById("error-msg");
-    if (errorMsg) errorMsg.textContent = "La generación fue cancelada antes de completarse.";
+    if (errorMsg) errorMsg.textContent = "Cancelaste el relato antes de que terminara.";
 
     const errorActions = document.querySelector("#error-panel .flex.gap-4");
     if (errorActions) {
@@ -287,7 +287,7 @@
           Ver historia
         </a>
         <a href="/galeria" class="px-6 py-3 border border-forge-border text-forge-muted text-sm uppercase tracking-widest hover:text-forge-text transition-colors">
-          Galería
+          Mis historias
         </a>
       `;
     }
@@ -341,7 +341,7 @@
       }
       showError(`No se pudo iniciar la generación: ${body.detail || resp.status}`);
     } catch {
-      showError("Error de red al iniciar la generación. Verificá la conexión con el servidor.");
+      showError("No se pudo arrancar: no hay conexión. Probá de nuevo.");
     }
   }
 
@@ -366,7 +366,7 @@
     cancelling = false;
     activateAnimations();
     setBadge("Conectando", "");
-    setStatus("Conectando con el sistema...");
+    setStatus("Conectando…");
 
     es = new EventSource(jobEventsUrl(jobId));
     startEta(jobId);
@@ -408,7 +408,7 @@
           clearLoadingDot(logs[logs.length - 1]);
         }
 
-        appendLog(`✅ Beat ${d.number} completado`);
+        appendLog(`✅ Acto ${d.number} escrito`);
       } catch {
         /* ignorar */
       }
@@ -427,7 +427,7 @@
       try {
         const d = JSON.parse(e.data);
         showDone();
-        appendLog(`🏁 Historia completa — ${d.total_beats ?? beatCount} beats generados`);
+        appendLog(`🏁 Relato listo — ${d.total_beats ?? beatCount} actos escritos`);
       } catch {
         showDone();
       }
@@ -437,7 +437,7 @@
       if (cancelling) return; // el panel de cancelación ya está a la vista
       try {
         const d = JSON.parse(e.data);
-        showError(d.msg ?? "Error desconocido en el pipeline");
+        showError(d.msg ?? "Algo falló mientras se escribía. Probá de nuevo.");
       } catch {
         showError("Error de conexión con el servidor");
       }
