@@ -9,24 +9,54 @@ def _by_id(protagonist: str) -> dict[str, catalog.Criterion]:
 
 def test_nombres_con_el_protagonista():
     c = _by_id("José")
-    assert c["meta"].nombre == "Qué busca José"
-    assert c["en_juego"].nombre == "Qué arriesga José"
-    assert c["vulnerabilidad"].nombre == "Qué expone a José"
-    assert c["historia_secreta"].nombre == "La historia secreta"
-    assert c["final"].nombre == "El final"
+    assert c["meta"].nombre == "Qué quiere José"
+    assert c["en_juego"].nombre == "Qué puede perder José"
+    assert c["vulnerabilidad"].nombre == "En qué se equivoca José"
+    assert c["transgresion"].nombre == "Lo que José no tendría que haber hecho"
+    assert c["historia_secreta"].nombre == "Lo que esconde la historia"
+    assert c["descubrimiento"].nombre == "Lo que descubre José"
+    assert c["reaccion"].nombre == "Qué hace José después"
+    assert c["final"].nombre == "Cómo termina"
+
+
+def test_siguen_el_orden_de_los_actos():
+    """Spec-580: el orden sigue a los actos; los que tienen acto no retroceden."""
+    criteria = catalog.direction_criteria()
+    assert [c.id for c in criteria] == [
+        "meta",
+        "inquietud",
+        "en_juego",
+        "vulnerabilidad",
+        "transgresion",
+        "historia_secreta",
+        "descubrimiento",
+        "reaccion",
+        "final",
+    ]
+    actos = [c.acto for c in criteria if c.acto]
+    assert actos == sorted(actos) and actos[-1] == 5
+    assert {c.id: c.acto for c in criteria}["descubrimiento"] == 3
+
+
+def test_sin_jerga_en_lo_que_se_ve():
+    """Spec-580 §2.2: nombre y «para qué sirve» sin términos de oficio."""
+    jerga = ("escaleta", "taller", "clímax", "anagnórisis", "peripecia", "nudo", "criterio")
+    for c in _by_id("José").values():
+        texto = (c.nombre + " " + c.por_que).lower()
+        assert not [j for j in jerga if j in texto], c.id
 
 
 def test_para_que_sirve_en_lenguaje_llano():
     c = _by_id("José")
-    assert c["meta"].por_que.startswith("Lo que José quiere conseguir en esta historia")
+    assert c["meta"].por_que.endswith("de lo que José quiere.")
     assert "José" in c["en_juego"].por_que
     assert "{" not in "".join(x.por_que + x.nombre for x in c.values())
 
 
 def test_sin_protagonista_dice_el_protagonista():
     c = _by_id("")
-    assert c["meta"].nombre == "Qué busca el protagonista"
-    assert c["vulnerabilidad"].nombre == "Qué expone al protagonista"
+    assert c["meta"].nombre == "Qué quiere el protagonista"
+    assert c["vulnerabilidad"].nombre == "En qué se equivoca el protagonista"
     assert (
         "a el " not in c["vulnerabilidad"].por_que and "de el " not in c["historia_secreta"].por_que
     )

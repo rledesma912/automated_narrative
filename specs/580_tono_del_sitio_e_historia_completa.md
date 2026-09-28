@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-28
 **Tipo:** SDD (Spec-Driven Development) — experiencia del asistente
-**Estado:** IN PROGRESS — S2 y S3 hechos y en prod (2026-09-28); en pausa hasta la prueba con usuarias (§6 D8)
+**Estado:** IN PROGRESS — S1–S4 hechos (2026-09-28); pase a prod para la prueba con usuarias (D9); S0 y S5 quedan reemplazados por esa prueba
 **Rama:** `feat/spec-580-estructura-taller`
 **Extiende:** Spec-530 §4 (criterios del taller), Spec-550 (recorrido de la UI) y Spec-560 A3 (retoma la parte «función del acto», pero antes de la escaleta y no en el Verificador).
 
@@ -184,7 +184,7 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - `evaluate_workshop.py --hasta-escaleta` y las 2 sinopsis incompletas.
 - Corrida base (gemma3:12b, 2 × 4, en segundo plano) → grilla en §7. Decisión con el usuario según el umbral.
 
-### S1 — Las preguntas del taller
+### S1 — Las preguntas del taller · ✅ 2026-09-28 (9 criterios; `nombre` en forma corta para los chips: «Qué quiere José», «Lo que José no tendría que haber hecho», «Lo que descubre José»…)
 - `workshop_criteria.yaml`: las 5 reescritas y las nuevas (según S0 y D1), en el orden de §3.2.
 - Si D2: `Criterion.acto` y «(va en el acto N)» en `context.decisions_block`.
 - Snapshot regenerado a propósito (Consultor y Planificador; la Voz sin cambios).
@@ -198,7 +198,7 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - Inicio: bienvenida nueva y compacta, entra entera en la pantalla (D7). Menú sin `/debug`; enlace a `/debug` en el pie (D6). Pie, banner de generación, galería, ficha, relatos, panel del relato (control de repetición y aviso de acto desactualizado) y sala.
 - Test del glosario sobre todas las vistas salvo `/debug`.
 
-### S4 — Lo que escribe la IA
+### S4 — Lo que escribe la IA · ✅ 2026-09-28 (snapshot: solo cambia el sistema del Verificador; el Consultor no está en el snapshot; Voz y Memoria iguales)
 - Guía de tono en `authoring_consultant_system.md` y `authoring_verifier_system.md`, con ejemplos.
 - Snapshot regenerado a propósito (Consultor y Verificador).
 
@@ -233,12 +233,21 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - **D7 — Inicio compacto (pedido del usuario):** ✅ hoy tiene fuentes muy grandes y no entra en la pantalla (hay que hacer scroll). La bienvenida nueva entra entera en una pantalla de escritorio (1366×768 y 1920×1080, con el menú abierto): tamaños de letra y márgenes más chicos, sin los bloques explicativos del wizard viejo. Lo verifica un E2E (el alto del contenido no pasa el de la ventana).
 
 - **D8 — Cambio de enfoque (2026-09-28):** antes de S0, se despliega lo hecho (S2–S3 + T0.1) a prod y la esposa y la hija crean una historia **sin ayuda** y cuentan su experiencia (T5.2 adelantado). Lo que cuenten decide cómo siguen S1 y S4. Sus historias (exportadas con `export-yaml`) son las sinopsis de D4 para S0.
+- **D9 — Terminar antes de la prueba (2026-09-28, pedido del usuario):** «que cambie el tono»: la prueba con ellas va con todo terminado (S1 y S4 incluidos). El umbral de S0 (D3) ya no condiciona: las preguntas nuevas entran. S0 se reemplaza por la prueba con usuarias; sus historias quedan para medir después si hace falta.
 
 ---
 
 ## 7. RESULTADOS
 
-*(se completa en S0 y S5)*
+**Prueba de humo (2026-09-28, gemma3:12b, `--hasta-escaleta`, 1 corrida, `scripts/research/580/prueba/`):**
+
+| Historia | Ronda del taller | Escaleta | JSON válido | Criterios nuevos |
+|---|---|---|---|---|
+| pena (sinopsis completa) | 15–45 s | 68 s | sí | `transgresion` y `descubrimiento` salen «cumple» (subir al micro vacío; la foto del pedestal) |
+| monte | 17–25 s | 72 s | sí | pregunta por los cuatro: «¿Qué hace Irene después de ver la rama en la manta de Soledad?» (Reza más fuerte / Investiga el monte / Despierta a Ricardo) |
+
+- Las preguntas del Consultor salen concretas y en voseo; tras sumar «hablale de vos», el final pregunta «¿Qué sensación final querés que quede en la mente de quien escucha el cuento?».
+- Avisos del Verificador: con la primera guía decían «sembrá pistas», «el lector», «tensión» y opinaban de estilo («demasiado vaga», «extendé la escena»). Con la guía reforzada (sin estilo, «mostrá antes una pista», «quien escucha») hablan de hechos («¿qué novedad tiene esta vez?», «¿qué pasa con el tiempo?»); todavía se escapa alguno («el lector», «sembrar»): límite del modelo local, se anota.
 
 ---
 
@@ -250,8 +259,8 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - [ ] **T0.3** Corrida base (gemma3:12b, 2 × 4) → `scripts/research/580/base/`; grilla en §7. — *Verify:* 8 escaletas y la grilla.
 
 ### S1 — Las preguntas del taller
-- [ ] **T1.1** `workshop_criteria.yaml`: reescritas + nuevas, en orden. — *Verify:* pytest del catálogo (`{protagonista}`, orden, ids).
-- [ ] **T1.2** (D2) `Criterion.acto` y «(va en el acto N)» en `decisions_block`. — *Verify:* pytest; snapshot regenerado a propósito, la Voz igual. — *Files:* `catalog.py`, `context.py`, `pipeline_prompts.json`.
+- [x] **T1.1** `workshop_criteria.yaml`: reescritas + nuevas, en orden. — *Verify:* pytest del catálogo (`{protagonista}`, orden, ids).
+- [x] **T1.2** (D2) `Criterion.acto` y «(va en el acto N)» en `decisions_block`. — *Verify:* pytest; snapshot regenerado a propósito, la Voz igual. — *Files:* `catalog.py`, `context.py`, `pipeline_prompts.json`.
 
 ### S2 — El asistente
 - [x] **T2.1** Vistas del asistente, `asistente.js` y modales con la guía y el glosario. — *Files:* `frontend/src/views/asistente/*.ejs`, `public/js/asistente.js`.
@@ -265,7 +274,7 @@ La corrida base (T0.3) va antes de S1 y S4, para que las preguntas nuevas y el t
 - [x] **T3.4** Test del glosario sobre todas las vistas salvo `/debug`; E2E actualizados. — *Verify:* Vitest + Playwright.
 
 ### S4 — Lo que escribe la IA
-- [ ] **T4.1** Guía de tono en los prompts de sistema del Consultor y del Verificador. — *Verify:* snapshot regenerado a propósito; la Voz y la Memoria sin cambios.
+- [x] **T4.1** Guía de tono en los prompts de sistema del Consultor y del Verificador. — *Verify:* snapshot regenerado a propósito; la Voz y la Memoria sin cambios.
 
 ### S5 — Medición después y prueba con ellas
 - [ ] **T5.1** Misma corrida que T0.3 → `scripts/research/580/despues/`; grilla, control de `pena`, JSON válido, tiempo y tono en §7.

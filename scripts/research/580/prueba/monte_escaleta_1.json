@@ -1,0 +1,286 @@
+{
+ "acts": [
+  {
+   "number": 1,
+   "bridge": "",
+   "goal": "Que Irene observe a su familia y a María para entender mejor sus vínculos.",
+   "events": [
+    "Irene, Ricardo, Mariano y Soledad llegan a la casa de María en taxi al amanecer.",
+    "Mariano juega en el patio mientras Irene y Ricardo ayudan a María a preparar el desayuno: café de olla y pan casero.",
+    "María les cuenta historias de su vida y leyendas locales, como la de la luz mala y el lobizón.",
+    "Ricardo desestima las historias como folklore, prometiendo no cruzar el monte de los espinillos por respeto a su madre.",
+    "María les da una mirada fija y triste al despedirlos, sin decir nada más."
+   ],
+   "change_from": "Calma y normalidad en una casa de campo.",
+   "change_to": "Una atmósfera de inquietud sutil, con una despedida cargada de significado.",
+   "scenario": "Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "El significado de la mirada de María y el porqué del temor al monte de los espinillos.",
+   "reveal_act": 3,
+   "seeds": [
+    "La mirada fija de María",
+    "La advertencia sobre el monte de los espinillos"
+   ],
+   "payoffs": [],
+   "decisions": [
+    "meta",
+    "inquietud"
+   ],
+   "warnings": [],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "Irene y su familia llegan al amanecer a la casa de María en un taxi. Desayunan café de olla y pan casero mientras Mariano juega en el patio de tierra. La mañana transcurre en una calma total, sin contratiempos, dedicada a preparar los trajes y alistar a los niños para concurrir a la fiesta de un amigo de la infancia de Ricardo en una estancia de campo a la que irá la familia en sulki. Durante las charlas de la abuela y toda la familia, María les cuenta historias de su vida y también de leyendas y mitos de campo como la luz mala o el lobizón. Antes de partir al mediodía, mientras suben al sulki, María comenta les advierte que no vuelvan por el monte de los espinillos si se les hace tarde, recordandoles sobre su creencia en lo paranormal. Ricardo prepara el caballo al sulki y desestima los cuentos como folklore, prometiendo no cruzar el monte por respeto a su madre. María se queda en su casa mientras la familia parte hacia la fiesta.",
+   "rules": []
+  },
+  {
+   "number": 2,
+   "bridge": "Unas horas después, la familia se dirige a la fiesta en sulki, atravesando un camino rural.",
+   "goal": "Que Ricardo demuestre su escepticismo y desafíe la advertencia de María.",
+   "events": [
+    "La familia llega a la fiesta en un sulki, disfrutando de la alegría y la charla con los amigos de Ricardo.",
+    "Una tormenta eléctrica se desata, pero la familia decide regresar a casa de María.",
+    "Ricardo, para evitar un camino largo y barroso, decide atravesar el monte de los espinillos.",
+    "Irene le advierte sobre la promesa hecha a María, pero discuten.",
+    "El caballo comienza a empacarse al acercarse a la entrada del monte, pero Ricardo lo azota para seguir adelante."
+   ],
+   "change_from": "Alegría y despreocupación en una fiesta.",
+   "change_to": "Tensión y conflicto al desafiar una advertencia y adentrarse en un lugar peligroso.",
+   "scenario": "Estancia de la fiesta, Monte de los Espinillos",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad"
+   ],
+   "held_back": "La razón por la que Ricardo ignora la advertencia de María.",
+   "reveal_act": 4,
+   "seeds": [
+    "La decisión de Ricardo de atravesar el monte",
+    "El comportamiento del caballo al acercarse al monte"
+   ],
+   "payoffs": [],
+   "decisions": [
+    "vulnerabilidad"
+   ],
+   "warnings": [
+    {
+     "text": "«La decisión de Ricardo de atravesar el monte» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?",
+     "key": "siembra:la decision de ricardo de atravesar el monte",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "Ricardo desestima las historias como folklore en el acto 1, pero en el 2 lo hace de nuevo: ¿podés mostrar antes una pista de que su escepticismo esconde algo más?",
+     "key": "ia:ricardo desestima las historias como folklore en el acto 1 pero en el 2 lo hace de nuevo podes mostrar antes una pista de que su escepticismo esconde algo mas",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "La fiesta es alegre, con momentos de diversión y mucha charla entre los dueños de la estancia de campo, amigos y la familia de Irene, la pasan tan bien que se les pasa la hora y les llega el atardecer. Cuando se disponen a salir se desata una tormenta eléctrica con rayos y truenos. La familia inicia de todas formas el regreso a la casa de María en el sulki bajo la lluvia. unicamente resguardados por bolsas y un pequeño techo improvisado en el sulki. Ricardo, para evitar un el camino largo y barroso, decide atravesar el Monte de los Espinillos, ignorando la promesa hecha a María. Irene que es más supersticiosa le advierte de la desición y discuten porque siente que el aire en el monte es más denso y frío de lo normal. Avanzan por un camino solo iluminado por los rayos y llegan a la entrada del monte de los espinillos tupido y oscuro. El caballo comienza a empacarse y o querer caminar, el sulki avanza muy lento y Ricardo le grita al caballo para apurarlo.",
+   "rules": []
+  },
+  {
+   "number": 3,
+   "bridge": "El sulki avanza lentamente por un camino oscuro y peligroso dentro del monte.",
+   "goal": "Que la familia se enfrente a una manifestación física de la amenaza.",
+   "events": [
+    "El caballo se clava en seco, encabritado por el terror.",
+    "Frente al sulki, aparece la figura de María, vestida con la misma ropa de la mañana.",
+    "María se mueve con rigidez inhumana, con ojos que reflejan los rayos con un brillo mineral.",
+    "Ricardo intenta avanzar, pero el sulki parece atrapado en raíces que no estaban allí.",
+    "Irene abraza a sus hijos y comienza a rezar, pidiendo a Ricardo que se una a ella."
+   ],
+   "change_from": "Tensión y temor al adentrarse en el monte.",
+   "change_to": "Terror absoluto al confrontar una presencia imposible.",
+   "scenario": "Monte de los Espinillos",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "El origen de la aparición de María y el secreto del monte.",
+   "reveal_act": 5,
+   "seeds": [
+    "La figura de María",
+    "Las raíces que atrapan el sulki"
+   ],
+   "payoffs": [
+    "La mirada fija de María"
+   ],
+   "decisions": [
+    "en_juego"
+   ],
+   "warnings": [
+    {
+     "text": "«La figura de María», «Las raíces que atrapan el sulki» aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?",
+     "key": "siembra:la figura de maria|siembra:las raices que atrapan el sulki",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "La aparición de María en el acto 3 se parece a la mirada de María en el acto 1: ¿qué más revela esta vez?",
+     "key": "ia:la aparicion de maria en el acto 3 se parece a la mirada de maria en el acto 1 que mas revela esta vez",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "Dentro del monte, el caballo se clava en seco, encabritado por un terror animal. Frente al sulki, bloqueando el paso, surge la figura de María. No es una visión: viste la misma ropa con la que la dejaron hace una hora en la casa. María se mueve con una rigidez inhumana, sus ojos no parpadean y reflejan los rayos con un brillo mineral. La presencia es física y absoluta, un imposible geográfico que congela la sangre de la familia. Ricardo, en un grito de puro terror intenta avanzar pero el sulki parece atrapado en raíces que no estaban allí. Las sombras se cierran sobre el vehículo de madera entonces Irene abraza a sus hijos y comienza a rezar en voz alta y les pide a Mariano su hijo y a Ricardo su marido que comiencen a rezar en voz alta. Rezan todos y el sulki comienza a andar nuevamente. La figura siniestra de María desaparece ante sus ojos.",
+   "rules": []
+  },
+  {
+   "number": 4,
+   "bridge": "Después de la desaparición de María, la familia intenta escapar del monte.",
+   "goal": "Que Irene se dé cuenta de que algo terrible ha pasado y que debe actuar.",
+   "events": [
+    "Ricardo azota las riendas para huir, pero el camino parece deformarse.",
+    "Los mismos grupos de espinillos retorcidos y el aroma a ozono y tierra muerta reaparecen.",
+    "Un silbido agudo, como un lamento humano, empieza a vibrar en las maderas del sulki.",
+    "Irene intenta convencer a Ricardo de irse, pero él está catatónico.",
+    "Logran romper el cerco de ramas tras un rezo desesperado y llegan a la casa de María."
+   ],
+   "change_from": "Alivio temporal tras la desaparición de María.",
+   "change_to": "Desesperación y terror al descubrir que el peligro los persigue.",
+   "scenario": "Monte de los Espinillos, Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad"
+   ],
+   "held_back": "El motivo del silencio de Ricardo y la verdadera naturaleza de la amenaza.",
+   "reveal_act": 5,
+   "seeds": [
+    "El silbido agudo",
+    "El camino que se repite"
+   ],
+   "payoffs": [
+    "El comportamiento del caballo al acercarse al monte"
+   ],
+   "decisions": [
+    "reaccion"
+   ],
+   "warnings": [
+    {
+     "text": "«El silbido agudo», «El camino que se repite» aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?",
+     "key": "siembra:el silbido agudo|siembra:el camino que se repite",
+     "source": "regla",
+     "dismissed": false
+    },
+    {
+     "text": "El camino deformado en el acto 4 parece repetir la descripción del monte en el acto 2: ¿podés agregar un detalle nuevo para que el lector sienta que es algo peor?",
+     "key": "ia:el camino deformado en el acto 4 parece repetir la descripcion del monte en el acto 2 podes agregar un detalle nuevo para que el lector sienta que es algo peor",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "Ricardo azota las riendas con una desesperación ciega, golpeando al caballo para huir del lugar donde desapareció la figura de María. Sin embargo, el camino parece deformarse: los mismos grupos de espinillos retorcidos y el mismo aroma a ozono y tierra muerta aparecen una y otra vez bajo los rayos, como si el monte se hubiera ensanchado para no dejarlos salir. Un silbido agudo, que ya no parece viento sino un lamento humano, empieza a vibrar en las maderas del sulki, subiendo por los pies de Irene y Mariano, haciéndoles castañear los dientes. Logran romper el cerco de ramas tras un rezo desesperado y, al salir a campo abierto, la tormenta cesa con una brusquedad antinatural. El camino se ilumina con una luz de amanecer cenicienta, fría y sin sombras, que baña el paisaje de un color enfermo. Llegan a la casa de María empapados y temblando; María los recibe en el umbral, en silencio, con una vela encendida y sin reproches. Ricardo guarda el caballo en el corral con movimientos mecánicos y lentos, evitando mirar hacia el monte, sumido en un silencio catatónico que Irene no se atreve a romper.",
+   "rules": []
+  },
+  {
+   "number": 5,
+   "bridge": "La familia llega a la casa de María, empapados y temblando, después de una huida desesperada.",
+   "goal": "Dejar una sensación de peligro latente y de que el horror puede volver.",
+   "events": [
+    "María los recibe en el umbral, en silencio, con una vela encendida.",
+    "Ricardo guarda el caballo en el corral con movimientos mecánicos, evitando mirar hacia el monte.",
+    "Irene acuesta a los niños y nota una rama de espinillo fresca y negra enganchada en la manta de la bebé Soledad.",
+    "Al asomarse a la ventana, Irene ve que no hay rastros de la tormenta en el patio.",
+    "Irene sabe que lo sobrenatural puede ser real y que el peligro siempre está presente."
+   ],
+   "change_from": "Alivio aparente al llegar a la casa de María.",
+   "change_to": "Una sensación de terror latente y de que el peligro persiste.",
+   "scenario": "Casa de María",
+   "on_stage": [
+    "Irene",
+    "Ricardo",
+    "Mariano",
+    "Soledad",
+    "María"
+   ],
+   "held_back": "",
+   "reveal_act": 0,
+   "seeds": [],
+   "payoffs": [
+    "La advertencia sobre el monte de los espinillos"
+   ],
+   "decisions": [
+    "final",
+    "descubrimiento"
+   ],
+   "warnings": [
+    {
+     "text": "El efecto de pavor creciente no se cumple en el acto 4: Irene intenta convencer a Ricardo de irse, pero no hay una consecuencia tangible de su negativa.",
+     "key": "ia:el efecto de pavor creciente no se cumple en el acto 4 irene intenta convencer a ricardo de irse pero no hay una consecuencia tangible de su negativa",
+     "source": "ia",
+     "dismissed": false
+    },
+    {
+     "text": "La rama de espinillo en la manta de Soledad aparece de golpe en el acto 5: ¿podés sembrar una pista en el acto 3 o 4 para que no sea tan abrupto?",
+     "key": "ia:la rama de espinillo en la manta de soledad aparece de golpe en el acto 5 podes sembrar una pista en el acto 3 o 4 para que no sea tan abrupto",
+     "source": "ia",
+     "dismissed": false
+    }
+   ],
+   "needs_review": false,
+   "draft": false,
+   "synopsis": "Esa noche, ya dentro de la casa, mientras Irene acuesta a los niños, nota algo extraño: en el dobladillo de la manta de la bebé Soledad, hay enganchada una rama de espinillo fresca y negra, a pesar de que la cuna estaba cerrada. Al asomarse a la ventana, Irene ve que no hay rastros de la tormenta en el patio y en sus pensamientos sabe que lo sobrenatural puede ser real.",
+   "rules": []
+  }
+ ],
+ "decisions": [
+  {
+   "id": "meta",
+   "nombre": "Qué quiere Irene",
+   "integrada": true
+  },
+  {
+   "id": "inquietud",
+   "nombre": "Algo raro desde el principio",
+   "integrada": true
+  },
+  {
+   "id": "en_juego",
+   "nombre": "Qué puede perder Irene",
+   "integrada": true
+  },
+  {
+   "id": "vulnerabilidad",
+   "nombre": "En qué se equivoca Irene",
+   "integrada": true
+  },
+  {
+   "id": "historia_secreta",
+   "nombre": "Lo que esconde la historia",
+   "integrada": false
+  },
+  {
+   "id": "descubrimiento",
+   "nombre": "Lo que descubre Irene",
+   "integrada": true
+  },
+  {
+   "id": "reaccion",
+   "nombre": "Qué hace Irene después",
+   "integrada": true
+  },
+  {
+   "id": "final",
+   "nombre": "Cómo termina",
+   "integrada": true
+  }
+ ]
+}

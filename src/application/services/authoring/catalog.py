@@ -15,6 +15,7 @@ class Criterion:
     nombre: str  # lo que ve el usuario
     pregunta: str  # la pregunta operativa que recibe el Consultor
     por_que: str  # «para qué sirve», para la UI
+    acto: int = 0  # Spec-580: en qué acto va la respuesta (0 = no tiene uno fijo)
 
     def for_story(self, protagonist: str) -> "Criterion":
         """Spec-550 H7: `{protagonista}` → el nombre del protagonista (o «el protagonista»)."""
@@ -26,7 +27,7 @@ class Criterion:
                 " de el protagonista", " del protagonista"
             )
 
-        return Criterion(self.id, fill(self.nombre), self.pregunta, fill(self.por_que))
+        return Criterion(self.id, fill(self.nombre), self.pregunta, fill(self.por_que), self.acto)
 
 
 @dataclass(frozen=True)
@@ -42,7 +43,8 @@ class Option:
 def direction_criteria() -> tuple[Criterion, ...]:
     data = yaml.safe_load((_CONFIG / "workshop_criteria.yaml").read_text(encoding="utf-8"))
     return tuple(
-        Criterion(c["id"], c["nombre"], c["pregunta"], c["por_que"]) for c in data["direccion"]
+        Criterion(c["id"], c["nombre"], c["pregunta"], c["por_que"], c.get("acto", 0))
+        for c in data["direccion"]
     )
 
 

@@ -82,6 +82,8 @@ def decisions_block(story: Story) -> str:
     rows = []
     for cid, nombre, texto in decisions(story):
         item = by_id[cid]
+        c = catalog.criterion(cid)
+        nombre += f" (va en el acto {c.acto})" if c and c.acto else ""  # Spec-580 D2
         if item.status == CriterionStatus.INTENCIONAL:
             rows.append(f"- [{cid}] {nombre}: {texto} (DECIDIDO POR EL AUTOR: no se discute)")
         elif item.asked:

@@ -45,7 +45,7 @@ async def test_planifica_cinco_actos(story):
     assert acts[0].decisions == ["meta"]  # las inventadas se descartan
     assert acts[0].goal == "quiere 1" and acts[0].events == ["hecho 1"]
     prompt = llm.calls[0]["prompt"]
-    assert "[meta] Qué busca José: Llegar a casa" in prompt
+    assert "[meta] Qué quiere José (va en el acto 1): Llegar a casa" in prompt
     assert (
         "5. Desenlace (intensidad baja): cerrar la historia con el final que decidió el autor"
         in prompt
