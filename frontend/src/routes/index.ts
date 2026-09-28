@@ -3,7 +3,7 @@ import { homePage } from "../controllers/home.controller";
 import { galleryPage } from "../controllers/gallery.controller";
 import { debugPage } from "../controllers/debug.controller";
 import { streamingRoomPage } from "../controllers/stream.controller";
-import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal, generateNarrativeHandler } from "../controllers/historia.controller";
+import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal } from "../controllers/historia.controller";
 import { relatosPage, regenerarActoAction, relatoPanelFragment } from "../controllers/relatos.controller";
 import { loadEstimates } from "../middleware/estimates.middleware";
 import { nuevoPage, asistentePage } from "../controllers/asistente.controller";
@@ -32,7 +32,6 @@ router.get("/generar/stream/:storyId",      loadEstimates, streamingRoomPage);
 // Historia (ver detalle + generar desde borrador + eliminar)
 router.get("/historia/:storyId",            loadEstimates, historiaPage);
 router.post("/historia/:storyId/generar",   generarDesdeHistoria);
-router.post("/historia/:storyId/generar-relato", generateNarrativeHandler);
 router.delete("/internal/historia/:storyId",          deleteStoryHandler);
 
 // Modales de confirmación (HTMX)

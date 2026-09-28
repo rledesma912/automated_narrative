@@ -12,21 +12,23 @@
   ];
   const idx = pasos.findIndex(p => p.id === pasoActual);
 %>
-<ol class="flex flex-wrap items-center gap-2 mb-10 text-sm" aria-label="Pasos del asistente">
+<%/* Spec-550 H11: los pasos viven en la barra fija. Estilo de navegación: ni
+     chip ni botón. En pantallas angostas quedan solo los números. */%>
+<nav aria-label="Pasos del asistente">
+<ol class="pasos-forge">
   <% pasos.forEach((p, i) => { %>
-    <li class="flex items-center gap-2">
-      <% const cls = i === idx ? 'border-forge-accent bg-forge-accent text-forge-on-accent'
-                   : p.href ? 'border-forge-accent/40 text-forge-accent hover:bg-forge-accent/5'
-                   : 'border-forge-border text-forge-muted opacity-60'; %>
+    <li class="flex items-center gap-1">
+      <% const estado = i === idx ? 'pasos-forge__paso--actual' : p.href ? 'pasos-forge__paso--link' : 'pasos-forge__paso--no'; %>
       <% if (p.href && i !== idx) { %>
-        <a href="<%= p.href %>" class="flex items-center gap-2 px-3 py-1.5 rounded-full border <%= cls %>">
+        <a href="<%= p.href %>" class="pasos-forge__paso <%= estado %>" title="<%= p.label %>">
       <% } else { %>
-        <span class="flex items-center gap-2 px-3 py-1.5 rounded-full border <%= cls %>" <%- i === idx ? 'aria-current="step"' : '' %>>
+        <span class="pasos-forge__paso <%= estado %>" title="<%= p.label %>" <%- i === idx ? 'aria-current="step"' : '' %>>
       <% } %>
-        <span class="w-5 h-5 inline-flex items-center justify-center rounded-full text-xs font-bold <%= i === idx ? 'bg-forge-on-accent text-forge-accent' : 'bg-forge-bg' %>"><%= i + 1 %></span>
-        <%= p.label %>
+        <span class="pasos-forge__numero"><%= i + 1 %></span>
+        <span class="hidden md:inline"><%= p.label %></span>
       <%- p.href && i !== idx ? '</a>' : '</span>' %>
-      <% if (i < pasos.length - 1) { %><span class="w-6 h-px bg-forge-border"></span><% } %>
+      <% if (i < pasos.length - 1) { %><span class="pasos-forge__linea" aria-hidden="true"></span><% } %>
     </li>
   <% }) %>
 </ol>
+</nav>

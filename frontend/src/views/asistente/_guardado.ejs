@@ -1,4 +1,12 @@
-<%/* Spec-530 (decisión 10): estado del guardado automático. Lo actualiza asistente.js. */%>
-<span class="text-sm inline-flex items-center gap-2 text-forge-muted" data-guardado aria-live="polite">
-  <% if (locals.inicial) { %><%= inicial %><% } else { %><i data-lucide="check" class="w-4 h-4"></i> Todo guardado<% } %>
-</span>
+<%/*
+  Spec-550 H6: el guardado automático se avisa con una notificación flotante que
+  se va sola (~2 s). Un error queda hasta que un guardado sale bien o se cierra.
+  La maneja asistente.js (status()).
+*/%>
+<div class="guardado-forge" data-guardado data-estado="oculto" role="status" aria-live="polite">
+  <span class="guardado-forge__icono" data-guardado-icono></span>
+  <span data-guardado-texto></span>
+  <button type="button" class="guardado-forge__cerrar" data-guardado-cerrar aria-label="Cerrar el aviso">
+    <i data-lucide="x" class="w-4 h-4"></i>
+  </button>
+</div>

@@ -7,11 +7,12 @@
  *     storyteller_config, personajes_full
  *   }
  */
+/* Spec-550 H9: el estado es un chip. */
 const STATUS_LABEL = {
-  draft:      { text: 'Borrador',    cls: 'text-forge-warning' },
-  processing: { text: 'Generando',   cls: 'text-forge-info' },
-  failed:     { text: 'Error',       cls: 'text-forge-error' },
-  completed:  { text: 'Completada',  cls: 'text-forge-success' },
+  draft:      { text: 'Borrador',    cls: 'chip-forge--parcial' },
+  processing: { text: 'Generando',   cls: 'chip-forge--info' },
+  failed:     { text: 'Error',       cls: 'chip-forge--falta' },
+  completed:  { text: 'Completada',  cls: 'chip-forge--cumple' },
 };
 const sl = STATUS_LABEL[story.status] || STATUS_LABEL['draft'];
 
@@ -31,7 +32,7 @@ const personajes = story.personajes_full || [];
         <%= new Date(story.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' }) %>
       </p>
     </div>
-    <span class="text-[10px] font-bold uppercase tracking-widest shrink-0 <%= sl.cls %>">
+    <span class="chip-forge shrink-0 <%= sl.cls %>">
       <%= sl.text %>
     </span>
   </div>
@@ -116,7 +117,8 @@ const personajes = story.personajes_full || [];
     </a>
 
     <%
-  const btnLabel = story.status === 'failed' ? 'Reintentar' : story.status === 'completed' ? 'Regenerar' : 'Generar historia';
+  /* Spec-550 H4: un solo botón de generación, según el estado. */
+  const btnLabel = story.status === 'failed' ? 'Reintentar' : 'Generar relato';
 %>
 
     <% if (story.status === 'processing') { %>
@@ -141,18 +143,9 @@ const personajes = story.personajes_full || [];
           </button>
           <%- include('partials/estimate', { kind: 'full_generation' }) %>
         </form>
-        <%/* Variante outline-accent única; YAGNI sobre crear .btn-forge-outline-accent. */%>
-        <form method="POST" action="/historia/<%= story.id %>/generar-relato">
-          <button type="submit" data-generation-trigger data-busy-label="Generando relato..."
-                  class="flex items-center gap-2 px-5 py-2 border border-forge-accent text-forge-accent text-sm
-                         tracking-widest uppercase hover:opacity-80 transition-opacity">
-            <i data-lucide="book-text" class="w-4 h-4"></i>
-            Generar Relato
-          </button>
-        </form>
         <a href="/historia/<%= story.id %>/relatos" class="btn-forge-outline">
           <i data-lucide="library" class="w-4 h-4"></i>
-          Ver Relatos
+          Ver relato
         </a>
       <% } else { %>
         <form method="POST" action="/historia/<%= story.id %>/generar" class="inline-flex items-center gap-2">

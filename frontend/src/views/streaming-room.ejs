@@ -110,10 +110,9 @@
       <%/* Spec-510: tiempo restante (lo completa /js/streaming-room.js con /js/eta.js). */%>
       <p class="text-forge-muted text-xs mt-1" id="eta-line" aria-live="polite"></p>
       </div>
-      <div id="connection-badge"
-         class="px-5 py-2 text-sm font-bold rounded border border-forge-border text-forge-muted flex items-center gap-3">
+      <div id="connection-badge" class="chip-forge chip-forge--md">
       <span id="spinner-icon" class="hidden"><i data-lucide="loader" class="w-4 h-4 animate-spin"></i></span>
-      <span id="badge-text">INICIANDO</span>
+      <span id="badge-text">Iniciando</span>
       </div>
   </div>
 
@@ -153,9 +152,9 @@
         <p class="text-sm text-forge-muted mb-8" data-start-estimate>
           <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: sigue generándose.
         </p>
-        <div class="flex items-start gap-3 mb-8 p-4 border border-forge-warning-border bg-forge-warning-bg text-left">
-          <i data-lucide="alert-triangle" class="w-5 h-5 text-forge-warning shrink-0 mt-0.5"></i>
-          <p class="text-forge-warning text-sm leading-relaxed">
+        <div class="nota-forge nota-forge--warning mb-8 text-left">
+          <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+          <p class="leading-relaxed">
             Al iniciar se perderá la generación actual de esta historia: todos los beats, el journal y el archivo Markdown exportado serán reemplazados.
           </p>
         </div>

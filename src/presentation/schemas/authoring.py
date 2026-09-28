@@ -66,4 +66,6 @@ class CharacterForm(BaseModel):
 
 
 class WarningDismiss(BaseModel):
-    text: str = Field(..., min_length=1)
+    """Spec-550 H10: el aviso se identifica por su clave (tema), no por el texto."""
+
+    key: str = Field(..., min_length=1)

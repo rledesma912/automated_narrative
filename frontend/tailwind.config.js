@@ -31,6 +31,7 @@ module.exports = {
             "warning", "warning-bg", "warning-border",
             "success", "success-bg", "success-border",
             "info", "info-bg", "info-border",
+            "neutral-bg",
           ].map((name) => [
             name,
             `color-mix(in srgb, var(--forge-${name}) calc(<alpha-value> * 100%), transparent)`,

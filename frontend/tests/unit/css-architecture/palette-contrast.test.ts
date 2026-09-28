@@ -43,6 +43,11 @@ const PAIRS: Array<[string, string]> = [
   ["warning", "warning-bg"],
   ["success", "success-bg"],
   ["info", "info-bg"],
+  // Spec-550 H9: chips neutros y texto de las notas sobre su fondo.
+  ["muted", "neutral-bg"],
+  ["text", "info-bg"],
+  ["text", "warning-bg"],
+  ["text", "error-bg"],
 ];
 
 describe.each(PALETTES)("contraste de la paleta %s", (_name, selector) => {

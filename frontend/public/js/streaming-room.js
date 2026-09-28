@@ -40,16 +40,17 @@
 
   /* ── UI helpers ────────────────────────────────────────────────────────── */
 
-  function setBadge(text, color) {
+  /* Spec-550 H9: el estado de la conexión es un chip (tono: cumple | falta | info | ""). */
+  function setBadge(text, tone) {
     const badge = document.getElementById("connection-badge");
     const textSpan = document.getElementById("badge-text");
     const spinner = document.getElementById("spinner-icon");
     if (!badge || !textSpan || !spinner) return;
 
     textSpan.textContent = text;
-    badge.className = `px-5 py-2 text-sm font-bold rounded border ${color} flex items-center gap-3`;
+    badge.className = `chip-forge chip-forge--md${tone ? ` chip-forge--${tone}` : ""}`;
 
-    if (text === "GENERANDO") {
+    if (text === "Generando") {
       spinner.classList.remove("hidden");
     } else {
       spinner.classList.add("hidden");
@@ -154,7 +155,7 @@
 
   function showError(msg) {
     stopEta();
-    setBadge("ERROR", "border-forge-error-border text-forge-error");
+    setBadge("Error", "falta");
     hideSpinner();
 
     let displayMsg = msg;
@@ -177,7 +178,7 @@
   function showDone() {
     stopEta();
     showDuration(currentJobId);
-    setBadge("COMPLETO", "border-forge-success-border text-forge-success");
+    setBadge("Completo", "cumple");
     setStatus("Historia generada con éxito");
     hideSpinner();
 
@@ -274,7 +275,7 @@
     if (logContainer) logContainer.classList.add("hidden");
     const errorPanel = document.getElementById("error-panel");
     if (errorPanel) errorPanel.classList.remove("hidden");
-    setBadge("CANCELADA", "border-forge-border text-forge-muted");
+    setBadge("Cancelada", "");
 
     const errorMsg = document.getElementById("error-msg");
     if (errorMsg) errorMsg.textContent = "La generación fue cancelada antes de completarse.";
@@ -326,7 +327,7 @@
   // una generación en curso para la historia: nos atamos a esa.
   async function startJob() {
     showStarting();
-    setBadge("INICIANDO", "border-forge-border text-forge-muted");
+    setBadge("Iniciando", "");
     try {
       const resp = await fetch(`/api/v1/stories/${STORY_ID}/jobs`, {
         method: "POST",
@@ -364,7 +365,7 @@
     currentJobId = jobId;
     cancelling = false;
     activateAnimations();
-    setBadge("CONECTANDO", "border-forge-border text-forge-muted");
+    setBadge("Conectando", "");
     setStatus("Conectando con el sistema...");
 
     es = new EventSource(jobEventsUrl(jobId));
@@ -377,7 +378,7 @@
         setStatus(d.msg);
         appendLog(`🔍 ${d.msg}`);
         trackStage(d);
-        if (d.stage) setBadge("GENERANDO", "border-forge-accent text-forge-accent");
+        if (d.stage) setBadge("Generando", "info");
       } catch {
         /* payload mal formado — ignorar */
       }
@@ -389,7 +390,7 @@
       revealLogs();
       try {
         const d = JSON.parse(e.data);
-        setBadge("GENERANDO", "border-forge-accent text-forge-accent");
+        setBadge("Generando", "info");
         markDot(d.number, "active");
       } catch {
         /* ignorar */

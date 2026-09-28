@@ -22,7 +22,7 @@ describe("gallery view", () => {
     expect(html).toContain('hx-target="#modal-slot"');
     expect(html).toContain("Eliminar");
     expect(html).toContain('id="modal-slot"');
-    expect(html).toContain("Ver Relato");
+    expect(html).toContain("Ver relato");
   });
 
   it.each(["draft", "processing", "completed", "failed"])(

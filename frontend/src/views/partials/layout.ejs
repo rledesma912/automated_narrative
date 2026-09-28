@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <%/* Spec-550 H3: el menú colapsado se aplica antes de pintar (sin parpadeo). */%>
+  <script>try { if (localStorage.getItem("forge:sidebar") === "collapsed") document.documentElement.dataset.sidebar = "collapsed"; } catch (e) {}</script>
   <title><%= environment.isDev ? '[DEV] ' : '' %>NarrativeForge — <%= title %></title>
 
   <%/* Spec-531: favicon (vela) + color de la barra del navegador en móviles.
@@ -28,6 +30,8 @@
   <script src="/js/eta.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/generation-banner.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/footer.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/sidebar.js?v=<%= locals.assetVersion || '' %>" defer></script>
+  <script src="/js/confirm-dialog.js?v=<%= locals.assetVersion || '' %>" defer></script>
   <script src="/js/generation-guard.js?v=<%= locals.assetVersion || '' %>" defer></script>
 
   <style>
@@ -47,6 +51,7 @@
   </main>
 
   <%- include('footer') %>
+  <%- include('confirm_dialog') %>
 
   <% if (typeof flashMsg !== 'undefined' && flashMsg) { %>
   <div id="toast-notification"

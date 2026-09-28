@@ -9,6 +9,9 @@ ELENCO: {elenco}
 LA ESCALETA:
 {escaleta}
 
+AVISOS QUE EL AUTOR YA DESCARTÓ (no los repitas ni los reformules):
+{descartados}
+
 Revisá tres cosas:
 1. "decisiones": para CADA decisión del autor, su id y el número del acto en cuyos HECHOS aparece (0 si no aparece en ningún hecho, aunque el acto diga que la usa).
 2. "avisos", uno por problema, con el número de acto donde conviene arreglarlo:

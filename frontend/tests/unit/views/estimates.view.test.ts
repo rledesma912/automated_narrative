@@ -98,13 +98,13 @@ describe("relatos: regenerar un acto", () => {
 
   it("la confirmación dice cuánto tarda", async () => {
     expect(await panel(LABELS)).toContain(
-      'hx-confirm="¿Regenerar este acto? Tarda ≈ 1 min. Se reemplazará el texto actual."',
+      'hx-confirm="Tarda ≈ 1 min. Se reemplaza el texto actual del acto 1."',
     );
   });
 
   it("sin estimación, la confirmación de siempre", async () => {
     expect(await panel(null)).toContain(
-      'hx-confirm="¿Regenerar este acto? Se reemplazará el texto actual."',
+      'hx-confirm="Se reemplaza el texto actual del acto 1."',
     );
   });
 });

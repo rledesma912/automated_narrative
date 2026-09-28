@@ -563,7 +563,7 @@ class SQLStoryRepository:
             await self._upsert_act(conn, story_id, act)
 
     async def _upsert_act(self, conn, story_id: str, act: ActOutline) -> None:
-        def js(value: list[str]) -> str:
+        def js(value: list) -> str:
             return json.dumps(value, ensure_ascii=False)
 
         await conn.execute(
@@ -590,7 +590,7 @@ class SQLStoryRepository:
                 js(act.seeds),
                 js(act.payoffs),
                 js(act.decisions),
-                js(act.warnings),
+                js([w.model_dump() for w in act.warnings]),
                 int(act.needs_review),
             ),
         )

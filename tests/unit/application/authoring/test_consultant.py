@@ -54,7 +54,7 @@ async def test_la_segunda_ronda_recibe_pregunta_y_respuesta_y_lo_pendiente(story
     r = await WorkshopConsultant(llm).analyze(story)
 
     prompt = llm.calls[0]["prompt"]
-    assert "[meta] Qué quiere. Pregunta: «¿Qué quiere?» → Respuesta: Llegar a casa" in prompt
+    assert "[meta] Qué busca José. Pregunta: «¿Qué quiere?» → Respuesta: Llegar a casa" in prompt
     assert "- [en_juego] «¿Qué pierde?»" in prompt
     enum = llm.calls[0]["response_schema"]["$defs"]["EvaluacionCriterio"]["properties"]["criterio"][
         "enum"

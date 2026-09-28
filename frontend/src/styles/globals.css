@@ -21,8 +21,10 @@
   /* ── Botones ────────────────────────────────────────────────────────────── */
   
   /* Botón primario de acción (estilo "Skull" / Acción principal) */
+  /* Spec-550 H9: un botón HACE algo. Todos con esquinas redondeadas y el acento
+     (lleno si es la acción principal; borde y texto de acento si es secundaria). */
   .btn-forge {
-    @apply inline-flex items-center justify-center gap-3 px-10 py-4;
+    @apply inline-flex items-center justify-center gap-3 px-10 py-4 rounded-md;
     @apply bg-forge-accent text-forge-on-accent font-serif text-lg tracking-[0.3em] uppercase;
     @apply hover:bg-forge-accent/90 hover:scale-105 transition-all duration-300;
     @apply shadow-lg shadow-forge-accent/25 active:scale-95;
@@ -31,15 +33,15 @@
 
   /* Botón secundario / Outline para acciones de lista o auxiliares */
   .btn-forge-outline {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
-    @apply border border-forge-border text-forge-muted text-sm uppercase tracking-widest;
-    @apply hover:border-forge-accent hover:text-forge-text transition-all;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md;
+    @apply border border-forge-accent text-forge-accent text-sm uppercase tracking-widest;
+    @apply hover:bg-forge-accent/10 transition-all;
     @apply active:scale-95;
   }
 
   /* Botón primario grande (heroes, acciones principales) */
   .btn-forge-lg {
-    @apply inline-flex items-center justify-center gap-3 px-12 py-5;
+    @apply inline-flex items-center justify-center gap-3 px-12 py-5 rounded-md;
     @apply bg-forge-accent text-forge-on-accent font-serif text-lg tracking-[0.4em] uppercase;
     @apply hover:bg-forge-accent/90 hover:scale-105 transition-all duration-300;
     @apply shadow-lg shadow-forge-accent/30 active:scale-95;
@@ -48,7 +50,7 @@
 
   /* Botón primario pequeño (inline actions) */
   .btn-forge-sm {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3;
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md;
     @apply bg-forge-accent text-forge-on-accent font-serif text-sm uppercase tracking-widest;
     @apply hover:bg-forge-accent/90 hover:scale-105 transition-all duration-300;
     @apply shadow-md shadow-forge-accent/25 active:scale-95;
@@ -57,15 +59,20 @@
 
   /* Botón secundario pequeño */
   .btn-forge-outline-sm {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
-    @apply border border-forge-border text-forge-muted text-xs uppercase tracking-widest;
-    @apply hover:border-forge-accent hover:text-forge-text transition-all;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md;
+    @apply border border-forge-accent text-forge-accent text-xs uppercase tracking-widest;
+    @apply hover:bg-forge-accent/10 transition-all;
     @apply active:scale-95;
+  }
+
+  /* Secundario destructivo (Eliminar): borde y texto de error. */
+  .btn-forge-outline-danger-sm {
+    @apply btn-forge-outline-sm border-forge-error text-forge-error hover:bg-forge-error/10;
   }
 
   /* Botón de peligro / destructivo */
   .btn-forge-danger {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md;
     @apply bg-forge-error text-forge-on-accent text-sm uppercase tracking-widest;
     @apply hover:bg-forge-error hover:opacity-90 hover:scale-105 transition-all duration-300;
     @apply shadow-md shadow-forge-error/30 active:scale-95;
@@ -90,6 +97,88 @@
     @apply shadow-lg shadow-forge-accent/20;
   }
 
+
+  /* ── Gramática visual (Spec-550 H9): chip, nota, pista, opción ────────── */
+
+  /* CHIP: dice un estado o una categoría. Píldora sin borde; no se toca. */
+  .chip-forge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 cursor-default;
+    @apply text-xs font-medium normal-case tracking-normal whitespace-nowrap;
+    @apply bg-forge-neutral-bg text-forge-muted;
+  }
+  .chip-forge::before {
+    content: "";
+    @apply w-1.5 h-1.5 rounded-full bg-current shrink-0;
+  }
+  .chip-forge--md      { @apply text-sm px-3 py-1; }
+  .chip-forge--cumple  { @apply bg-forge-success-bg text-forge-success; }
+  .chip-forge--parcial { @apply bg-forge-warning-bg text-forge-warning; }
+  .chip-forge--falta   { @apply bg-forge-error-bg text-forge-error; }
+  .chip-forge--info    { @apply bg-forge-info-bg text-forge-info; }
+
+  /* NOTA: explica o avisa. Sin caja: barra de color a la izquierda. Sus acciones
+     son links subrayados (`.nota-forge__accion`), nunca la nota entera. */
+  .nota-forge {
+    @apply flex items-start gap-3 border-l-4 px-4 py-3 text-sm text-forge-text;
+  }
+  .nota-forge__icono { @apply w-4 h-4 shrink-0 mt-0.5; }
+  .nota-forge__accion {
+    @apply shrink-0 underline underline-offset-2 text-forge-text hover:opacity-70;
+  }
+  .nota-forge--info    { @apply border-forge-info bg-forge-info-bg; }
+  .nota-forge--warning { @apply border-forge-warning bg-forge-warning-bg; }
+  .nota-forge--error   { @apply border-forge-error bg-forge-error-bg; }
+  .nota-forge--info .nota-forge__icono    { @apply text-forge-info; }
+  .nota-forge--warning .nota-forge__icono { @apply text-forge-warning; }
+  .nota-forge--error .nota-forge__icono   { @apply text-forge-error; }
+
+  /* PISTA: la ayuda de un campo. Solo texto gris con su ícono. */
+  .pista-forge { @apply flex gap-2 text-sm text-forge-muted; }
+  .pista-forge > svg, .pista-forge > i { @apply w-4 h-4 shrink-0 mt-0.5; }
+
+  /* OPCIÓN: se elige. <label class="opcion-forge"><input class="peer sr-only">
+     <span class="opcion-forge__caja">…</span></label>. Marca de radio (o de
+     casilla con --check) visible; elegida = acento lleno y todo el texto en
+     on-accent (H2). El label es relative: el input sr-only no escapa (fix del Tab). */
+  .opcion-forge { @apply relative block cursor-pointer; }
+  .opcion-forge--compacta { @apply inline-block; }
+  .opcion-forge__caja {
+    @apply flex items-start gap-3 rounded-md border border-forge-border bg-forge-bg px-4 py-3;
+    @apply transition-colors hover:border-forge-accent;
+  }
+  .opcion-forge__caja::before {
+    content: "";
+    @apply w-4 h-4 mt-1 shrink-0 rounded-full border-2 border-forge-muted;
+  }
+  .opcion-forge--check .opcion-forge__caja::before { @apply rounded-sm; }
+  .opcion-forge--compacta .opcion-forge__caja { @apply items-center gap-2 px-2.5 py-1 text-sm; }
+  .opcion-forge--compacta .opcion-forge__caja::before { @apply w-3 h-3 mt-0; }
+  .opcion-forge--mia .opcion-forge__caja { @apply border-dashed text-forge-muted; }
+
+  .peer:checked ~ .opcion-forge__caja {
+    @apply bg-forge-accent border-forge-accent text-forge-on-accent;
+  }
+  .peer:checked ~ .opcion-forge__caja * { @apply text-forge-on-accent; }
+  .peer:checked ~ .opcion-forge__caja::before {
+    @apply border-forge-on-accent;
+    background: radial-gradient(var(--forge-on-accent) 45%, transparent 50%);
+  }
+  .opcion-forge--check .peer:checked ~ .opcion-forge__caja::before {
+    @apply bg-forge-on-accent;
+    background-image: none;
+  }
+  .peer:focus-visible ~ .opcion-forge__caja {
+    @apply ring-2 ring-forge-accent ring-offset-2 ring-offset-forge-surface;
+  }
+  .peer:disabled ~ .opcion-forge__caja { @apply cursor-default; }
+
+  /* ── Confirmación con el tema (Spec-550 H8) ──────────────────────────── */
+  .confirm-forge {
+    @apply max-w-md w-[calc(100%-2rem)] rounded-md border border-forge-border bg-forge-surface text-forge-text p-8 shadow-2xl;
+  }
+  .confirm-forge::backdrop { background: var(--forge-overlay); }
+  .confirm-forge__icono { @apply p-3 rounded-full bg-forge-warning-bg text-forge-warning shrink-0; }
+
   /* ── Barra del asistente (Spec-530) ─────────────────────────────────── */
 
   /* Arriba de todo, a lo ancho de <main>: guardado automático + acciones del
@@ -98,6 +187,36 @@
     @apply sticky -top-12 z-20 -mx-12 -mt-12 mb-8 px-12 py-3
            flex flex-wrap items-center justify-between gap-4
            border-b border-forge-border bg-forge-surface shadow-sm shadow-forge-text/10;
+  }
+
+  /* Pasos del asistente en la barra (Spec-550 H11): navegación, ni chip ni botón. */
+  .pasos-forge { @apply flex items-center gap-1 text-sm; }
+  .pasos-forge__paso { @apply inline-flex items-center gap-2 px-2 py-1 rounded-md; }
+  .pasos-forge__paso--actual { @apply bg-forge-accent text-forge-on-accent font-semibold; }
+  .pasos-forge__paso--link { @apply text-forge-accent hover:underline underline-offset-4; }
+  .pasos-forge__paso--no { @apply text-forge-muted opacity-60 cursor-default; }
+  .pasos-forge__numero {
+    @apply w-5 h-5 inline-flex items-center justify-center rounded-full text-xs font-bold border border-current;
+  }
+  .pasos-forge__paso--actual .pasos-forge__numero { @apply bg-forge-on-accent text-forge-accent border-forge-on-accent; }
+  .pasos-forge__linea { @apply w-4 h-px bg-forge-border; }
+
+  /* Notificación de guardado (Spec-550 H6): flota abajo a la derecha, sobre el pie. */
+  .guardado-forge {
+    @apply fixed right-6 bottom-14 z-50 flex items-center gap-2 rounded-md border px-4 py-2 text-sm shadow-lg;
+    @apply bg-forge-surface border-forge-border text-forge-text;
+    transition: opacity 400ms ease, transform 400ms ease;
+  }
+  .guardado-forge[data-estado="oculto"] { @apply opacity-0 translate-y-2 pointer-events-none; }
+  .guardado-forge[data-estado="ok"] { @apply border-forge-success-border; }
+  .guardado-forge[data-estado="ok"] .guardado-forge__icono { @apply text-forge-success; }
+  .guardado-forge[data-estado="error"] { @apply border-forge-error-border bg-forge-error-bg; }
+  .guardado-forge[data-estado="error"] .guardado-forge__icono { @apply text-forge-error; }
+  .guardado-forge__icono { @apply inline-flex; }
+  .guardado-forge__cerrar { @apply hidden ml-2 text-forge-muted hover:text-forge-text; }
+  .guardado-forge[data-estado="error"] .guardado-forge__cerrar { @apply inline-flex; }
+  @media (prefers-reduced-motion: reduce) {
+    .guardado-forge { transition: none; }
   }
 
   /* Con la banda de generación visible, la barra va debajo (sin el -mt-12). */
@@ -165,6 +284,14 @@
   .badge-forge {
     @apply px-2 py-0.5 bg-forge-bg border border-forge-border text-forge-accent text-[10px] font-bold uppercase tracking-widest rounded;
   }
+
+  /* ── Menú lateral colapsable (Spec-550 H3) ─────────────────────────────
+     <html data-sidebar="collapsed"> lo aplica un script en <head> (sin
+     parpadeo) y /js/sidebar.js lo alterna. Todo lee --sidebar-width. */
+  html[data-sidebar="collapsed"] { --sidebar-width: var(--sidebar-width-collapsed); }
+  html[data-sidebar="collapsed"] .sidebar-expandido { @apply hidden; }
+  .sidebar-colapsado { @apply hidden; }
+  html[data-sidebar="collapsed"] .sidebar-colapsado { @apply block; }
 
   .nav-link-forge {
     @apply flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 border-l-2;
