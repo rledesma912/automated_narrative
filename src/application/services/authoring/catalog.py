@@ -35,6 +35,7 @@ class Option:
     label: str
     detail: str = ""  # `ayuda` o `ejemplo`
     voice: str = ""  # instrucción de estilo para la Voz («cómo lo cuenta»)
+    planner: str = ""  # receta del efecto para la escaleta (Spec-560 A5)
 
 
 @lru_cache
@@ -55,7 +56,10 @@ def _options() -> dict:
 
 
 def effects() -> tuple[Option, ...]:
-    return tuple(Option(e["id"], e["label"], e.get("ayuda", "")) for e in _options()["efectos"])
+    return tuple(
+        Option(e["id"], e["label"], e.get("ayuda", ""), planner=e.get("planificador", ""))
+        for e in _options()["efectos"]
+    )
 
 
 def tellings() -> tuple[Option, ...]:

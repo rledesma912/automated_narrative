@@ -77,6 +77,15 @@ class TestDbConnection:
             "created_at",
         }
         assert required.issubset(columns), f"Missing: {required - columns}"
+        # Spec-570: macro_beat es solo la salida del acto; la entrada vive en act_outline.
+        gone = {
+            "summary",
+            "synopsis_beat",
+            "type",
+            "active_scenario_id",
+            "active_scenario_description",
+        }
+        assert not gone & columns, f"Sobran: {gone & columns}"
 
     @pytest.mark.asyncio
     async def test_macro_beat_table_has_correct_columns(self, temp_db_path, setup_db):
@@ -92,11 +101,8 @@ class TestDbConnection:
             "id",
             "story_id",
             "number",
-            "summary",
-            "synopsis_beat",
             "generated_act",
             "status",
-            "active_scenario_id",
             "system_prompt",
             "user_prompt",
             "created_at",

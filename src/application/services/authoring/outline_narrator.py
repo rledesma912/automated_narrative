@@ -72,8 +72,14 @@ class OutlineNarrator:
     # ── Voz ──────────────────────────────────────────────────────────────────
 
     def voice_prompts(
-        self, story: Story, act: ActOutline, memory: NarrativeJournal | None
+        self,
+        story: Story,
+        act: ActOutline,
+        memory: NarrativeJournal | None,
+        previous_text: str = "",
+        avoid=None,
     ) -> tuple[str, str]:
+        """`avoid`: lo que el control marcó en la versión anterior de este acto (A2/A6)."""
         narrator = context.narrator(story)
         scene = self._scene_story(story, act, narrator)
         extras = self.prompt_builder._voice_extras(scene)
@@ -89,6 +95,9 @@ class OutlineNarrator:
         low, high = word_range(act)
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
+            puente=_bridge(act),
+            evitar=_avoid(avoid),
+            final_anterior=_ending_of(previous_text),
             nombre=_ACT_NAMES.get(info.get("name", ""), info.get("name", "")),
             intensidad=info.get("intensity", ""),
             funcion=self._function(story, act, info),
@@ -225,6 +234,45 @@ class OutlineNarrator:
                 previous.used_motifs if previous else [], memoria.motivos_usados
             ),
         )
+
+
+def _avoid(rep) -> str:
+    """Spec-560 A2/A6: lo que la versión anterior de este acto repitió o inventó."""
+    if rep is None:
+        return ""
+    lines = [f"- Repetiste {r}" for r in rep.repeated]
+    lines += [f"- Cliché: «{c}»" for c in rep.cliches]
+    if rep.invented_names:
+        lines.append(
+            "- Nombres que no están en la historia (no inventes nombres): "
+            + ", ".join(rep.invented_names)
+        )
+    if not lines:
+        return ""
+    return (
+        "EN LA VERSIÓN ANTERIOR DE ESTE ACTO PASÓ ESTO — NO LO VUELVAS A HACER:\n"
+        + "\n".join(lines)
+        + "\n\n"
+    )
+
+
+def _bridge(act: ActOutline) -> str:
+    """Spec-560 A1: cómo se llega al acto (tiempo y camino), para abrirlo sin saltos."""
+    if act.number == 1 or not act.bridge.strip():
+        return ""
+    return (
+        "CÓMO SE LLEGA A ESTE ACTO (abrí el acto contándolo en pocas líneas, antes de los "
+        f"eventos): {act.bridge.strip()}\n"
+    )
+
+
+def _ending_of(previous_text: str, sentences: int = 3) -> str:
+    """Spec-560 A1: las últimas oraciones del acto anterior, textuales, para seguir desde ahí."""
+    parts = re.split(r"(?<=[.!?…»])\s+", " ".join(previous_text.split()))
+    tail = " ".join(p for p in parts[-sentences:] if p).strip()
+    if not tail:
+        return ""
+    return f"ASÍ TERMINÓ EL ACTO ANTERIOR (seguí desde acá; no lo repitas):\n«{tail}»\n"
 
 
 def _section(title: str, items: list[str]) -> str:

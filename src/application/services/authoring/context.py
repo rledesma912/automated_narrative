@@ -105,3 +105,25 @@ def pending_block(story: Story) -> str:
 
 def _direction_items(story: Story) -> list[WorkshopItem]:
     return [w for w in story.workshop if w.level == WorkshopLevel.DIRECCION]
+
+
+def effect_recipe(story: Story) -> tuple[str, str]:
+    """Spec-560 A5: (nombre del efecto, receta para la escaleta). «Otro» usa el texto del autor."""
+    d = story.direction
+    if not d or not d.effect:
+        return "", ""
+    if d.effect == "otro":
+        return (d.effect_other, d.effect_other) if d.effect_other.strip() else ("", "")
+    option = next((o for o in catalog.effects() if o.id == d.effect), None)
+    return (option.label, option.planner) if option and option.planner else ("", "")
+
+
+def effect_block(story: Story, verifier: bool = False) -> str:
+    name, recipe = effect_recipe(story)
+    if not recipe:
+        return ""
+    if verifier:
+        return (
+            f"EFECTO QUE BUSCA EL AUTOR: {name}. La escaleta tiene que cumplir esto: {recipe}\n\n"
+        )
+    return f"CÓMO TIENE QUE PEGAR (el efecto que busca el autor: {name}):\n{recipe}\n\n"

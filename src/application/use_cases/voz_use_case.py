@@ -6,7 +6,7 @@ from src.application.services.debug_collector import DebugCollector, NullDebugCo
 from src.application.services.narrator_retry_generator import NarratorRetryGenerator
 from src.config import settings
 from src.domain.interfaces import LLMProvider
-from src.domain.models import BeatStatus, MacroBeat
+from src.domain.models import ActText, BeatStatus
 from src.infrastructure.normalizers import ResponseNormalizer
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,8 @@ class VozUseCase:
         self.retry_generator = retry_generator or NarratorRetryGenerator(llm)
 
     async def narrate_with_prompts(
-        self, macro_beat: MacroBeat, system_prompt: str, prompt: str
-    ) -> tuple[MacroBeat, float]:
+        self, macro_beat: ActText, system_prompt: str, prompt: str
+    ) -> tuple[ActText, float]:
         """Narra un acto con prompts ya armados."""
         role_cfg = settings.role_config("voz")
         model = role_cfg.get("model", "mistral:latest")

@@ -232,3 +232,44 @@ test("los avisos ignorados no vuelven al revisar y se pueden volver a mostrar", 
   await ignorados.getByRole("button", { name: "Volver a mostrar" }).click();
   await expect(page.locator('form[data-number="2"] .nota-forge--warning').filter({ hasText: "repite el del acto 1" })).toBeVisible();
 });
+
+// Spec-560 A1: «Cómo llega acá» viene del Planificador (actos 2–5), se edita y se guarda.
+test("el puente entre actos se ve en la escaleta y se guarda", async ({ page }) => {
+  const sid = await crearDesdeNuevo(page, "E2E puente");
+  for (const kind of ["consult", "plan_outline"]) {
+    const job = (await (await page.request.post(`/api/v1/stories/${sid}/jobs`, { data: { kind } })).json()).job_id;
+    await expect
+      .poll(async () => (await (await page.request.get(`/api/v1/jobs/${job}`)).json()).status, { timeout: 20000 })
+      .toBe("done");
+  }
+  await page.goto(`/asistente/${sid}/escaleta`);
+  await expect(page.locator('form[data-number="1"] [name="bridge"]')).toHaveCount(0);
+  const puente = page.locator('form[data-number="2"] [name="bridge"]');
+  await expect(puente).toHaveValue(/después del acto 1/);
+
+  await puente.fill("Dos días después, de vuelta en la terminal.");
+  await guardadoListo(page);
+  await page.reload();
+  await expect(page.locator('form[data-number="2"] [name="bridge"]')).toHaveValue("Dos días después, de vuelta en la terminal.");
+});
+
+// Spec-560 A4: «Lo que todavía no se cuenta» y en qué acto se revela.
+test("lo que todavía no se cuenta tiene su acto de revelación", async ({ page }) => {
+  const sid = await crearDesdeNuevo(page, "E2E revela");
+  for (const kind of ["consult", "plan_outline"]) {
+    const job = (await (await page.request.post(`/api/v1/stories/${sid}/jobs`, { data: { kind } })).json()).job_id;
+    await expect
+      .poll(async () => (await (await page.request.get(`/api/v1/jobs/${job}`)).json()).status, { timeout: 20000 })
+      .toBe("done");
+  }
+  await page.goto(`/asistente/${sid}/escaleta`);
+  const acto1 = page.locator('form[data-number="1"]');
+  await expect(acto1.getByText("Lo que todavía no se cuenta")).toBeVisible();
+  await expect(acto1.locator('[name="reveal_act"]')).toHaveValue("2"); // lo propuso el Planificador
+  await expect(page.locator('form[data-number="5"] [name="reveal_act"]')).toHaveCount(0);
+
+  await acto1.locator('[name="reveal_act"]').selectOption("4");
+  await guardadoListo(page);
+  await page.reload();
+  await expect(page.locator('form[data-number="1"] [name="reveal_act"]')).toHaveValue("4");
+});

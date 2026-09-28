@@ -101,6 +101,13 @@ function extractActNumber(title) {
           </button>
         <% } %>
       </div>
+      <% if (isActive && (story.stale_acts || []).includes(Number(actNumber))) { %>
+        <%/* Spec-560 A2: se regeneró un acto de antes; este siguió con la versión anterior. */%>
+        <p class="nota-forge nota-forge--info mb-4" data-acto-desactualizado>
+          <i data-lucide="history" class="nota-forge__icono"></i>
+          <span>Este acto se escribió antes de que regeneraras un acto anterior: puede no seguir los cambios. Si querés que los siga, regeneralo.</span>
+        </p>
+      <% } %>
       <% const rep = relato.repetition && relato.repetition.acts.find((a) => a.number === Number(actNumber)); %>
       <% const names = (rep && rep.invented_names) || []; %>
       <% if (rep && (rep.repeated.length || rep.cliches.length || names.length)) { %>

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-27
 **Tipo:** SDD (Spec-Driven Development) — deuda técnica del dominio
-**Estado:** PLAN — D1–D4 decididas (2026-09-27); el plan está en la Spec-560 §4 (slices S1–S2), pendiente de OK
+**Estado:** DONE (2026-09-27) — S1–S2 en `feat/spec-560-570` (plan y tareas en la Spec-560 §4–§5); pendiente el pase a prod junto con la 560
 **Rama:** `feat/analisis-asistente-ui-logica` (la implementación, en rama propia)
 **Extiende:** Spec-530 (escaleta y pipeline), Spec-190 (modelo relacional).
 
@@ -70,6 +70,8 @@ Que el dominio diga lo que el sistema hace: **la escaleta es la entrada de cada 
 ## 3. DECISIONES
 
 **✅ 2026-09-27: el usuario aprueba las cuatro recomendaciones** — D1 mismo pase que la Spec-560 A1; D2 (a) la sinopsis por acto va a la escaleta como primer hecho; D3 (a) renombrar solo por dentro; D4 (a) los duplicados de `story` van en una spec aparte.
+
+**D2 revisada (2026-09-27, en la implementación):** la opción (a) tal como estaba escrita tenía un error: con 5 actos en la escaleta el pipeline no llama al Planificador, y la Voz escribiría actos de un solo hecho (sin objetivo, escenario ni elenco). **Decisión del usuario:** la sinopsis por acto se guarda en la escaleta como **borrador** (`act_outline.draft`) y el **Planificador la recibe como guía** («lo que el autor escribió para cada acto») al armar la escaleta. Una escaleta hecha solo de borradores se planifica igual que una vacía. Cambia el prompt del Planificador (snapshot, a propósito).
 
 - **D1 — ¿Cuándo?** Recomendación: **en el mismo pase a prod que la Spec-560 A1** (las dos cambian el esquema: se recrea la DB una sola vez).
 - **D2 — La sinopsis por acto de los YAML viejos.** (a) **va a la escaleta como primer hecho** del acto (recomendada: la historia importada arranca con escaleta y el Planificador no tiene que inventarla); (b) se descarta (el Planificador arma la escaleta desde la sinopsis general).

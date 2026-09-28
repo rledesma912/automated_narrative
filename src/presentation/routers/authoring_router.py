@@ -164,7 +164,13 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
     story = await _editable(story_id)
     previous = next((a for a in story.outline if a.number == number), None)
     fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
-    act = ActOutline(number=number, **fields, warnings=previous.warnings if previous else [])
+    act = ActOutline(
+        number=number,
+        **fields,
+        warnings=previous.warnings if previous else [],
+        draft=previous.draft if previous else False,  # un borrador importado sigue siéndolo
+        synopsis=previous.synopsis if previous else "",
+    )
     repo = SQLStoryRepository()
     await repo.save_act(story.id, act)
     # Las reglas del acto viven en `rule` con `applies_to_beat` (Spec-190 §4.4).

@@ -250,6 +250,7 @@
     const keep = JSON.parse(form.elements.namedItem("keep").value || "{}");
     const newScenario = value(form, "scenario_new");
     return {
+      bridge: value(form, "bridge") || "",
       goal: value(form, "goal"),
       events: texts(form, "events"),
       change_from: value(form, "change_from"),
@@ -259,6 +260,7 @@
         .filter((el) => el.checked)
         .map((el) => el.value),
       held_back: value(form, "held_back"),
+      reveal_act: Number(value(form, "reveal_act") || 0),
       rules: texts(form, "rules"),
       seeds: keep.seeds || [],
       payoffs: keep.payoffs || [],

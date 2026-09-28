@@ -1,0 +1,7 @@
+  despues-560 con #1: cliches=1, parentescos_mal=0, narrador_3ra_persona=0, frases_repetidas=3, palabras=2183
+  despues-560 con #2: cliches=1, parentescos_mal=1, narrador_3ra_persona=0, frases_repetidas=3, palabras=2333
+
+despues-560 — perfil ollama-gemma3-12b, Voz T=0.6
+| Variante | Clichés | Parentescos mal | Narradora 3ra persona | Frases repetidas | Palabras |
+|---|---|---|---|---|---|
+| con | 1.0 | 0.5 | 0.0 | 3.0 | 2258.0 |

@@ -10,8 +10,8 @@ from src.application.services import PromptBuilder
 from src.application.services.job_manager import JobRunner
 from src.application.services.observability_service import observability
 from src.application.services.streaming_service import stage_event, stream_story
-from src.application.use_cases.director_use_case import DirectorUseCase
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
+from src.application.use_cases.generate_story_use_case import GenerateStoryUseCase
 from src.application.use_cases.regenerate_beat_voz_use_case import RegenerateBeatVozUseCase
 from src.domain.jobs import Job, JobKind, JobStage
 from src.domain.models import Story
@@ -27,7 +27,7 @@ def full_generation_runner(story: Story) -> JobRunner:
 
     def _run():
         story_repo = SQLStoryRepository()
-        director = DirectorUseCase(
+        director = GenerateStoryUseCase(
             llm=LLMFactory.get_provider(),
             prompt_builder=PromptBuilder(),
             normalizer=ResponseNormalizer(),

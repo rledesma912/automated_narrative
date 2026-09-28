@@ -297,3 +297,18 @@ async def test_yaml_viejo_se_exporta_sin_claves_nuevas(monkeypatch, tmp_path, na
     assert not {"direction", "workshop", "outline"} & doc.keys()
     assert all({"kind", "relation"}.isdisjoint(p) for p in doc["personajes_full"])
     assert all("applies_to_beat" not in r for r in doc["storyteller_config"]["rules"])
+
+
+async def test_yaml_viejo_entra_con_la_sinopsis_por_acto_como_borrador(monkeypatch, tmp_path):
+    """Spec-570 D2: la sinopsis por acto va a la escaleta como borrador (guía del Planificador)."""
+    monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'db.db'}")
+    await init_db()
+    assert (
+        await commands._import_yaml_async([INPUT_STORIES / "el_monte_prohibido.yaml"], False) == 0
+    )
+    (summary,) = await SQLStoryRepository().list_all()
+    story = await SQLStoryRepository().get_by_id(summary.id)
+
+    assert [a.number for a in story.outline] == [1, 2, 3, 4, 5]
+    assert all(a.draft and a.synopsis and a.events == [a.synopsis] for a in story.outline)
+    assert not story.beats  # macro_beat es solo la salida: nada hasta generar

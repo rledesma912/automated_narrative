@@ -8,9 +8,7 @@ import pytest
 from src.application.use_cases.get_story import GetStoryByIdUseCase
 from src.application.use_cases.list_beats import ListBeatsUseCase
 from src.application.use_cases.list_stories import ListStoriesUseCase
-from src.application.use_cases.update_beat import UpdateBeatUseCase
-from src.domain.exceptions import StoryNotFoundError
-from src.domain.models import Beat, Story
+from src.domain.models import ActText, Story
 
 
 def _story(title: str = "T") -> Story:
@@ -19,8 +17,8 @@ def _story(title: str = "T") -> Story:
     )
 
 
-def _beat(number: int = 1, summary: str = "evento") -> Beat:
-    return Beat(number=number, summary=summary, status="pending")
+def _beat(number: int = 1, summary: str = "evento") -> ActText:
+    return ActText(number=number, generated_act=summary, status="pending")
 
 
 class TestListStoriesUseCase:
@@ -77,37 +75,6 @@ class TestListBeatsUseCase:
         repo.get_by_story = AsyncMock(return_value=[])
         result = await ListBeatsUseCase(repo).execute(uuid.uuid4())
         assert result == []
-
-
-class TestUpdateBeatUseCase:
-    @pytest.mark.asyncio
-    async def test_execute_actualiza_summary(self):
-        beat = _beat(1, "original")
-        repo = MagicMock()
-        repo.get_by_number = AsyncMock(return_value=beat)
-        repo.update = AsyncMock()
-        sid = uuid.uuid4()
-        result = await UpdateBeatUseCase(repo).execute(sid, 1, "nuevo summary")
-        assert result.summary == "nuevo summary"
-        repo.update.assert_called_once_with(beat, sid)
-
-    @pytest.mark.asyncio
-    async def test_execute_lanza_error_si_beat_no_existe(self):
-        repo = MagicMock()
-        repo.get_by_number = AsyncMock(return_value=None)
-        with pytest.raises(StoryNotFoundError):
-            await UpdateBeatUseCase(repo).execute(uuid.uuid4(), 99, "x")
-
-    @pytest.mark.asyncio
-    async def test_execute_no_llama_update_si_beat_no_existe(self):
-        repo = MagicMock()
-        repo.get_by_number = AsyncMock(return_value=None)
-        repo.update = AsyncMock()
-        try:
-            await UpdateBeatUseCase(repo).execute(uuid.uuid4(), 99, "x")
-        except StoryNotFoundError:
-            pass
-        repo.update.assert_not_called()
 
 
 class TestCreateStoryUseCaseErrorPaths:

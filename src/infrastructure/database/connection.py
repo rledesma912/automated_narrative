@@ -170,15 +170,11 @@ async def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             story_id TEXT NOT NULL,
             number INTEGER NOT NULL,
-            summary TEXT NOT NULL,
-            synopsis_beat TEXT,
             generated_act TEXT DEFAULT '',
             status TEXT DEFAULT 'pending',
-            active_scenario_id TEXT,
-            active_scenario_description TEXT,
+            stale INTEGER NOT NULL DEFAULT 0,
             system_prompt TEXT,
             user_prompt TEXT,
-            type TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, number)
@@ -260,6 +256,10 @@ async def init_db() -> None:
             decisions TEXT DEFAULT '[]',
             warnings TEXT DEFAULT '[]',
             needs_review INTEGER NOT NULL DEFAULT 0,
+            draft INTEGER NOT NULL DEFAULT 0,
+            synopsis TEXT DEFAULT '',
+            bridge TEXT DEFAULT '',
+            reveal_act INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE (story_id, number)
         )

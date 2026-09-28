@@ -133,12 +133,21 @@ def narrator_of(story: dict) -> str:
     return next((p["name"] for p in cast if p.get("id") == pid), cast[0]["name"] if cast else "")
 
 
-async def _generate(client: httpx.AsyncClient, story: dict) -> str:
+async def _generate(client: httpx.AsyncClient, story: dict, effect: str | None = None) -> str:
     from src.presentation.runtime import job_manager
 
     resp = await client.post("/api/v1/stories?action=save", json=story)
     resp.raise_for_status()
-    job = (await client.post(f"/api/v1/stories/{resp.json()['id']}/jobs", json={})).json()
+    sid = resp.json()["id"]
+    if effect:
+        # Spec-560 A5: la misma historia con otro efecto (lo lee el Planificador).
+        form = (await client.get(f"/api/v1/authoring/stories/{sid}")).json()["direction"]
+        form["effect"] = effect
+        put = await client.put(f"/api/v1/authoring/stories/{sid}/direction", json=form)
+        put.raise_for_status()
+        if put.json()["direction"]["effect"] != effect:
+            raise RuntimeError(f"No se pudo fijar el efecto {effect!r}")
+    job = (await client.post(f"/api/v1/stories/{sid}/jobs", json={})).json()
     await job_manager.wait(uuid.UUID(job["job_id"]))
     done = (await client.get(f"/api/v1/jobs/{job['job_id']}")).json()
     if done["status"] != "done":
@@ -156,6 +165,7 @@ async def run(
     mock: bool = False,
     profile: str | None = None,
     yes: bool = False,
+    effect: str | None = None,
 ) -> dict:
     """Genera y mide. Restaura al final todo lo que parchea (DB, LLM, temperatura, perfil)."""
     from src.main import app
@@ -225,7 +235,7 @@ async def run(
                         story = load_story(variant)
                         story["title"] = f"{story['title']} ({label} {variant} #{i})"
                         meter_box.clear()
-                        text = await _generate(client, story)
+                        text = await _generate(client, story, effect)
                         (out / f"{variant}_{i}.txt").write_text(text, encoding="utf-8")
                         metrics = evaluate(
                             text, narrator_of(story), story.get("personajes_full") or []
@@ -290,6 +300,9 @@ def main() -> None:
     parser.add_argument("--mock", action="store_true")
     parser.add_argument("--profile", default=None, help="Perfil a evaluar (solo en este proceso)")
     parser.add_argument(
+        "--effect", default=None, help="Efecto de la historia (Spec-560 A5): pavor, susto…"
+    )
+    parser.add_argument(
         "--yes", action="store_true", help="Confirma el gasto con proveedores pagos"
     )
     args = parser.parse_args()
@@ -303,6 +316,7 @@ def main() -> None:
             args.mock,
             args.profile,
             args.yes,
+            args.effect,
         )
     )
     if not report.get("abortado"):

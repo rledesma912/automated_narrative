@@ -1,0 +1,42 @@
+{
+  "label": "despues-560",
+  "perfil": "ollama-gemma3-12b",
+  "voz_temperature": 0.6,
+  "relatos": [
+    {
+      "variante": "con",
+      "corrida": 1,
+      "palabras": 2183,
+      "cliches": 1,
+      "cliches_detalle": {
+        "como si algo nos estuviera observando": 1
+      },
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 3
+    },
+    {
+      "variante": "con",
+      "corrida": 2,
+      "palabras": 2333,
+      "cliches": 1,
+      "cliches_detalle": {
+        "el corazón me latía con fuerza": 1
+      },
+      "parentescos_mal": 1,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 3
+    }
+  ],
+  "promedios": {
+    "con": {
+      "cliches": 1.0,
+      "parentescos_mal": 0.5,
+      "narrador_3ra_persona": 0.0,
+      "frases_repetidas": 3.0,
+      "palabras": 2258.0
+    }
+  }
+}

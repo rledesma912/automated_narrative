@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from src.domain.models import Beat, EntityNature, Genre, Story
+from src.domain.models import ActText, EntityNature, Genre, Story
 
 
 @dataclass
@@ -114,18 +114,18 @@ class GenreRepository(Protocol):
 class BeatRepository(Protocol):
     """Protocol for Beat repositories."""
 
-    async def save(self, beat: Beat) -> Beat:
+    async def save(self, beat: ActText) -> ActText:
         """Save a beat."""
         ...
 
-    async def get_by_story(self, story_id: UUID) -> list[Beat]:
+    async def get_by_story(self, story_id: UUID) -> list[ActText]:
         """Get all beats for a story."""
         ...
 
-    async def get_by_number(self, story_id: UUID, number: int) -> Beat | None:
+    async def get_by_number(self, story_id: UUID, number: int) -> ActText | None:
         """Get beat by number."""
         ...
 
-    async def update(self, beat: Beat) -> Beat:
+    async def update(self, beat: ActText) -> ActText:
         """Update a beat."""
         ...

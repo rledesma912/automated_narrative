@@ -1,9 +1,9 @@
-"""DirectorUseCase (Spec-530 S7): un solo camino, el relato sale de la escaleta."""
+"""GenerateStoryUseCase (Spec-530 S7): un solo camino, el relato sale de la escaleta."""
 
 from unittest.mock import AsyncMock
 
 from src.application.services.prompt_builder import PromptBuilder
-from src.application.use_cases.director_use_case import DirectorUseCase
+from src.application.use_cases.generate_story_use_case import GenerateStoryUseCase
 from src.domain.jobs import JobStage
 from src.domain.models import ActOutline, Story
 from src.infrastructure.adapters import MockLLMAdapter
@@ -16,6 +16,7 @@ class RecordingMock(MockLLMAdapter):
 
     async def generate(self, prompt, *, role=None, **kwargs):
         self.roles.append(role)
+        self.prompts = getattr(self, "prompts", []) + [(role, prompt)]
         return await super().generate(prompt, role=role, **kwargs)
 
 
@@ -33,7 +34,7 @@ def _story(outline: bool) -> Story:
     )
 
 
-async def _run(director: DirectorUseCase, story: Story) -> tuple[list, list]:
+async def _run(director: GenerateStoryUseCase, story: Story) -> tuple[list, list]:
     stages: list = []
     beats = [
         b
@@ -46,11 +47,10 @@ async def _run(director: DirectorUseCase, story: Story) -> tuple[list, list]:
 
 async def test_con_escaleta_solo_voz_y_memoria():
     llm = RecordingMock()
-    beats, stages = await _run(DirectorUseCase(llm, PromptBuilder()), _story(outline=True))
+    beats, stages = await _run(GenerateStoryUseCase(llm, PromptBuilder()), _story(outline=True))
 
     assert [b.number for b in beats] == [1, 2, 3, 4, 5]
     assert llm.roles == ["voz", "journal"] * 5
-    assert beats[0].summary == "- Hecho 1"
     assert stages[:2] == [(JobStage.VOZ, 1), (JobStage.JOURNAL, 1)]
 
 
@@ -59,10 +59,28 @@ async def test_sin_escaleta_primero_la_arma_y_la_guarda():
     repo = AsyncMock()
     story = _story(outline=False)
 
-    beats, stages = await _run(DirectorUseCase(llm, PromptBuilder(), story_repo=repo), story)
+    beats, stages = await _run(GenerateStoryUseCase(llm, PromptBuilder(), story_repo=repo), story)
 
     assert llm.roles[:2] == ["planificador", "verificador"]
     assert llm.roles[2:] == ["voz", "journal"] * 5
     assert stages[:2] == [(JobStage.PLANIFICADOR, None), (JobStage.VERIFICADOR, None)]
     assert len(story.outline) == 5 and len(beats) == 5
     repo.save_outline.assert_awaited_once_with(story.id, story.outline)
+
+
+async def test_al_regenerar_todo_cada_acto_recibe_lo_marcado_en_la_version_anterior():
+    """Spec-560 A6: la prosa anterior (en memoria) vuelve como «no lo vuelvas a hacer»."""
+    from src.domain.models import ActText
+
+    llm = RecordingMock()
+    story = _story(outline=True)
+    repetida = "Ana miró el reloj detenido de la estación vacía"
+    story.beats = [
+        ActText(number=1, generated_act=repetida + "."),
+        ActText(number=2, generated_act="Luego. " + repetida + " de nuevo."),
+    ]
+    await _run(GenerateStoryUseCase(llm, PromptBuilder()), story)
+
+    voz = [p for r, p in llm.prompts if r == "voz"]
+    assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" not in voz[0]
+    assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" in voz[1] and "(del acto 1)" in voz[1]

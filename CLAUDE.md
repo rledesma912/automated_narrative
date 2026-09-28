@@ -47,7 +47,7 @@ make deploy        # pase a prod (Spec-520): solo desde main limpio y al día, s
 Clean Architecture con cuatro capas + cli + core:
 
 ```
-domain/          → Entities (Story, Direction, WorkshopItem, ActOutline, MacroBeat…),
+domain/          → Entities (Story, Direction, WorkshopItem, ActOutline (entrada del acto), ActText (salida: su prosa)…),
                    Interfaces (LLMProvider), DTOs streaming, exceptions
 application/     → Use Cases (Director, Voz, RegenerateBeatVoz…) + Services
                    (authoring/: Consultor, Planificador, Verificador, OutlineNarrator;
@@ -73,14 +73,14 @@ El autor arma la historia en el **asistente**: Dirección → Taller (preguntas 
 | Rol | Componente | Cuándo | Responsabilidad |
 |---|---|---|---|
 | Consultor | `WorkshopConsultant` | 1 por ronda del taller (job `consult`) | Evalúa los criterios de `config/workshop_criteria.yaml` y hace preguntas con opciones; lo respondido e «intencional» vuelve en la ronda siguiente |
-| Planificador | `OutlinePlanner` | job `plan_outline`, o al generar sin escaleta | Arma la escaleta: objetivo, hechos, cambio, escenario, en escena, lo que se guarda, siembras/cobros, decisiones |
-| Verificador | `OutlineVerifier` | después de planificar (job `verify_outline`) | Ubica las decisiones del autor, fuerza el final intencional en el acto 5, avisos por acto (máx. 3) |
-| Voz | `OutlineNarrator.voice_prompts` + `VozUseCase.narrate_with_prompts` | 1 por acto | Prosa del acto desde la escaleta |
+| Planificador | `OutlinePlanner` | job `plan_outline`, o al generar sin escaleta | Arma la escaleta: «cómo llega acá» (actos 2–5), objetivo, hechos, cambio, escenario, en escena, lo que todavía no se cuenta y en qué acto se revela, siembras/cobros, decisiones. Recibe la receta del efecto (Spec-560 A5), la sinopsis por acto de los YAML viejos como guía (Spec-570 D2) y, al rearmar, los avisos visibles de la escaleta anterior (A6) |
+| Verificador | `OutlineVerifier` | después de planificar (job `verify_outline`) | Ubica las decisiones del autor, fuerza el final intencional en el acto 5, avisos por acto (máx. 3 visibles): reglas (`sin_hechos`, `sin_cambio`, `sin_puente`, `sin_revelacion`, elenco, siembras) y de la IA (hechos repetidos o adelantados, secretos sin revelar, continuidad entre actos, receta del efecto). Respeta los ignorados (Spec-550 H10) |
+| Voz | `OutlineNarrator.voice_prompts` + `VozUseCase.narrate_with_prompts` | 1 por acto | Prosa del acto desde la escaleta. Abre con el puente y sigue desde las últimas oraciones del acto anterior (Spec-560 A1) |
 | Memoria | `OutlineNarrator.remember` | 1 por acto | Hechos acumulados («Acto N: …»), estado y `used_motifs` (hasta 30, llegan a la Voz como «ya usado, no repetir») |
 
-Generar un relato: **10 llamadas** con escaleta; 12 si la historia no la tiene (entró por `import-yaml`): primero se arma y se guarda.
+Generar un relato: **10 llamadas** con escaleta; 12 si la historia no la tiene o solo tiene borradores (entró por `import-yaml`): primero se arma y se guarda. Regenerar un acto: **2 llamadas** (Voz + Memoria del acto, Spec-560 A2); los actos siguientes quedan marcados como escritos con la versión anterior (`macro_beat.stale`, aviso en el panel).
 
-La Voz recibe: quién narra y cómo lo cuenta (`direction.telling` → `config/authoring_options.yaml`), la guía de oficio, el acto (objetivo, hechos, cambio, lo que no se revela), el escenario, las reglas del acto (`rule.applies_to_beat`), la amenaza según la exposición del acto, solo los personajes en escena (con su parentesco), la memoria y lo ya usado. Extensión proporcional a los hechos del acto.
+La Voz recibe: quién narra y cómo lo cuenta (`direction.telling` → `config/authoring_options.yaml`), la guía de oficio, el acto (objetivo, hechos, cambio, lo que no se revela), el escenario, las reglas del acto (`rule.applies_to_beat`), la amenaza según la exposición del acto, solo los personajes en escena (con su parentesco), la memoria y lo ya usado; además (Spec-560) «CÓMO SE LLEGA A ESTE ACTO», «ASÍ TERMINÓ EL ACTO ANTERIOR» (últimas 3 oraciones) y, si ya hubo un relato o se regenera, «EN LA VERSIÓN ANTERIOR DE ESTE ACTO PASÓ ESTO» (lo que marcó el control de repetición: `repetition_check.last_version_findings`). Extensión proporcional a los hechos del acto.
 
 ### Entidades — la amenaza (Spec-450)
 
@@ -99,11 +99,11 @@ Asistente (/nuevo → /asistente/{id}/direccion|taller|escaleta)
   PUT direction · PATCH workshop/{criterio} · PUT outline/{n}   (autoguardado)
   jobs consult | plan_outline | verify_outline                   (comandos explícitos)
        ↓
-  POST /stories/{id}/jobs (full_generation) → DirectorUseCase.execute_full():
+  POST /stories/{id}/jobs (full_generation) → GenerateStoryUseCase.execute_full():
     [0] sin escaleta completa → Planificador + Verificador → story_repo.save_outline()
     Para cada acto 1..5:
       OutlineNarrator.voice_prompts()   → prompts (sin LLM)
-      VozUseCase.narrate_with_prompts() → MacroBeat.generated_act (1 LLM)
+      VozUseCase.narrate_with_prompts() → ActText.generated_act (1 LLM)
       OutlineNarrator.remember()        → narrative_journal (1 LLM)
        ↓
   consolidación → GenerateNarrativesUseCase.consolidate_and_save()
@@ -131,7 +131,7 @@ Provider activo: definido en perfil del YAML. Override: `LLM_PROVIDER` env o `--
 - Perfiles autocontenidos bajo `profiles:` (cada uno trae provider, bloque adapter y sus roles: `consultor`/`planificador`/`verificador`, `voz`, `journal`; `director` es la base de los tres primeros cuando el perfil no los declara).
 - Activación: `active_profile:` en YAML o `LLM_PROFILE=<nombre>` (env tiene precedencia). Resolver en `src/config.py`.
 - Convención model-por-rol: el `model` que se envía al LLM vive en `profiles.<perfil>.roles.<rol>.model`.
-- Perfil híbrido `ollama-gemma3-12b-voz-sonnet5` (Spec-480): la Voz en `claude-sonnet-5`, el resto en `gemma3:12b`. **No activo**; cuesta ~US$ 0,08 por relato (~US$ 0,13 con `thinking: adaptive`). Evaluarlo con `scripts/evaluate_voice.py --profile ollama-gemma3-12b-voz-sonnet5 --yes` (sin `--yes` solo muestra el costo estimado y no genera).
+- **Dos perfiles (2026-09-27):** `ollama-gemma3-12b` (activo, todos los roles locales) y `anthropic-sonnet5` (todos los roles en Claude Sonnet 5, **no activo**: para comparar con un LLM frontier al final del ajuste para el modelo local). Mezclar proveedores por rol sigue siendo posible con `provider` en el rol (`RoleRoutingAdapter`). Evaluar con costo: `scripts/evaluate_voice.py --profile anthropic-sonnet5 --yes` (sin `--yes` solo estima).
 - **Duración estimada (Spec-510):** `profiles.<perfil>.estimated_seconds: {full_generation, regenerate_voz, consult, plan_outline, verify_outline}` es el valor inicial; con historial manda la mediana de los últimos 5 jobs `done` del mismo tipo y perfil (`JobDurationEstimator`, descarta < 5 s = corridas con el mock). Sin el bloque: 240 / 60 s (`DEFAULT_ESTIMATED_SECONDS`).
 - Filtros (`response_filters`, Spec-080): `thinking_tags`, `strip_line_patterns`, `preserve_paragraph_breaks`, `model_overrides` por substring de modelo. Aplicados por `ResponseNormalizer` antes de persistir.
 
@@ -197,13 +197,13 @@ SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.
 - `story`: id, title, protagonista, relator, sinopsis, genero, subgenero, narrator_config (JSON: `storyteller_id`, `storyteller_name`, `voice {person, tense}`), direction (JSON: premisa, efecto, final, final intencional, cómo lo cuenta), status, created_at — FK `genero` → `genre` y FK compuesta `(genero, subgenero)` → `subgenre`; par inválido → 422 (`ensure_valid_genre`). `Story.atmosfera` = «género (subgénero)».
 - `character`: id, story_id, name, role, kind (`persona`|`sin_nombre`|`grupo`), relation (qué es para quien narra), order_index
 - `rule`: id, story_id, content, applies_to_beat (NULL = global)
-- `macro_beat`: id, story_id, number, summary, synopsis_beat, generated_act, status, active_scenario_id, active_scenario_description, system_prompt, user_prompt, type — la salida de cada acto
+- `macro_beat`: id, story_id, number, generated_act, status, stale, system_prompt, user_prompt, created_at — **solo la salida** de cada acto (Spec-570; entidad `ActText`)
 - `scenario`: id, story_id, order_index, name, description
 - `narrative_journal`: id, story_id, beat_number, last_events, physical_emotional_state, used_motifs (JSON)
 - `generated_narrative`: id, story_template_id, title, content, status
 - `entity`: id, story_id, order_index (0 = principal), name, nature_id, description, manifestations, limits, reveal_level — máx. 3 por historia; se reescribe con los datos de entrada
 - `story_workshop`: story_id, level (`direccion`|`escaleta`), criterion, status (`cumple`|`parcial`|`falta`|`intencional`), question, options (JSON), answer, round, asked (JSON) — único por (story_id, level, criterion)
-- `act_outline`: la escaleta, entrada de cada acto (separada de `macro_beat`, que es la salida): story_id, number 1–5, goal, events, change_from/to, scenario y on_stage (por nombre), held_back, seeds, payoffs, decisions, warnings (JSON de `{text, key, source, dismissed}`, Spec-550 H10), needs_review
+- `act_outline`: la escaleta, entrada de cada acto (separada de `macro_beat`, que es la salida): story_id, number 1–5, goal, events, change_from/to, scenario y on_stage (por nombre), held_back («lo que todavía no se cuenta») y reveal_act, seeds, payoffs, decisions, warnings (JSON de `{text, key, source, dismissed}`, Spec-550 H10), needs_review, bridge («cómo llega acá», Spec-560 A1), draft y synopsis (sinopsis por acto de un YAML viejo, Spec-570 D2)
 - `generation_job`: id, story_id, kind (`full_generation`|`regenerate_voz`|`consult`|`plan_outline`|`verify_outline`), status, stage, beat, total_beats, params (JSON), error, narrative_id, created_at, started_at, finished_at — índice único parcial: 1 job activo por historia
 
 Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`, `SQLGenreRepository`.
@@ -226,7 +226,7 @@ uv run python -m src import-yaml <archivos...> [--descartar-subgenero-invalido]
 - `story_router` — CRUD `/stories` (`PATCH /stories/{id}` edita también generadas; 409 con job activo; 422 si el par género/subgénero no existe o las entidades son inválidas: más de 3, campo largo o naturaleza de otro género), PATCH `status` y `file-path`. `GET /stories/{id}` trae `storyteller_config` (vista de la ficha) y `authoring`.
 - `catalog_router` (Spec-440, Spec-450) — `GET /catalog/genres` (géneros con sus subgéneros y sus `entity_natures`, ordenados).
 - `authoring_router` (Spec-530) — `/authoring/options`, `POST /authoring/stories`, `GET /authoring/stories/{id}` (estado de Dirección/Taller/Escaleta), `PUT …/direction`, `PATCH …/workshop/{criterio}` (`answer`|`decide`|`intentional`|`reopen`), `PUT …/outline/{n}`, `POST …/outline/{n}/warnings/dismiss`, `POST …/characters`; 409 (con `X-Job-Id`) si hay un job activo. La IA corre como jobs `consult` | `plan_outline` | `verify_outline` (`POST /stories/{id}/jobs`).
-- `beat_router` — `GET/PUT /stories/{id}/beats[/{n}]`.
+- `beat_router` — `GET /stories/{id}/beats` (texto de cada acto; el `PUT` salió con la Spec-570).
 - `job_router` (Spec-460) — `POST /stories/{id}/jobs` (`full_generation` | `regenerate_voz` {beat, narrative_id} | `consult` | `plan_outline` | `verify_outline`; 202/409/422), `GET /stories/{id}/jobs/active`, `GET /jobs/{id}`, `GET /jobs/estimates` (Spec-510), `POST /jobs/{id}/cancel`, `GET /jobs/{id}/events` (SSE de detalle).
 - `events_router` (Spec-460) — `GET /events` (SSE global: `snapshot` + `job_*` + heartbeat).
 - `narrative_router` (Spec-300) — `/story-templates/{id}/narratives`, `/generated-narratives/{id}` (GET/DELETE/text), `/generated-narratives/{id}/export.md` (Spec-490: descarga para el TTS), `/generated-narratives/{id}/repetition` (Spec-530: control de repetición).
@@ -234,4 +234,4 @@ uv run python -m src import-yaml <archivos...> [--descartar-subgenero-invalido]
 
 ## Specs
 
-Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `530_asistente_autoria_y_escaleta.md` (asistente, escaleta y pipeline actual; reemplaza al de la 180 y al wizard de la 220/440), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `520_deploy_desde_imagen.md` (pase a producción), `531_tema_claro_y_favicon.md` (tema y favicon), `540_entorno_dev_siempre_publicado.md` (dev en contenedores detrás de `storymaker.test`, tema de dev), `550_recorrido_ui_asistente.md` (gramática visual, menú, barra, confirmaciones, taller, avisos ignorados), `560_asistente_procesamiento_y_reglas.md` y `570_limpieza_dominio_acto.md` (decididas, sin implementar).
+Las specs autoritativas están en `specs/`. Lectura obligatoria al abordar una feature: el SessionStart hook lista los archivos disponibles. Nombres clave: `010_marco_sdd.md` (convenciones), `530_asistente_autoria_y_escaleta.md` (asistente, escaleta y pipeline actual; reemplaza al de la 180 y al wizard de la 220/440), `210_arquitectura_web_y_streaming.md` (SSE), `460_jobs_asincronos_y_bus_sse.md` (jobs + bus de eventos), `440_wizard_compacto_generos_anidados.md` (catálogo de géneros), `450_entidad_narrativa.md` (entidades / la amenaza), `490_exportar_relato_para_tts.md` (export .md para `audiogen`), `510_tiempo_estimado_generacion.md` (tiempo estimado de los jobs), `520_deploy_desde_imagen.md` (pase a producción), `531_tema_claro_y_favicon.md` (tema y favicon), `540_entorno_dev_siempre_publicado.md` (dev en contenedores detrás de `storymaker.test`, tema de dev), `550_recorrido_ui_asistente.md` (gramática visual, menú, barra, confirmaciones, taller, avisos ignorados), `560_asistente_procesamiento_y_reglas.md` (puente entre actos, lo que no se cuenta, regenerar sin repetir, receta del efecto; resultados de la medición en §3.1) y `570_limpieza_dominio_acto.md` (`macro_beat` solo salida, `ActText`).

@@ -1,0 +1,43 @@
+{
+  "label": "base-560",
+  "perfil": "ollama-gemma3-12b",
+  "voz_temperature": 0.6,
+  "relatos": [
+    {
+      "variante": "con",
+      "corrida": 1,
+      "palabras": 2159,
+      "cliches": 2,
+      "cliches_detalle": {
+        "un escalofrío me recorrió": 1,
+        "me revolvió el estómago": 1
+      },
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 0
+    },
+    {
+      "variante": "con",
+      "corrida": 2,
+      "palabras": 2215,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 1,
+      "parentescos_en_dialogo": {
+        "abuela": 1
+      },
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 7
+    }
+  ],
+  "promedios": {
+    "con": {
+      "cliches": 1.0,
+      "parentescos_mal": 0.5,
+      "narrador_3ra_persona": 0.0,
+      "frases_repetidas": 3.5,
+      "palabras": 2187.0
+    }
+  }
+}

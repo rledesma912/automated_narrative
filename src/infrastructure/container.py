@@ -16,7 +16,7 @@ from src.infrastructure.database.repositories import (
 from src.infrastructure.factories import LLMFactory
 
 if TYPE_CHECKING:
-    from src.application.use_cases import CreateStoryUseCase, DirectorUseCase, VozUseCase
+    from src.application.use_cases import CreateStoryUseCase, GenerateStoryUseCase, VozUseCase
     from src.cli.progress import ProgressReporter
     from src.core.orchestrator import StoryRunner
 
@@ -88,10 +88,10 @@ class CLIContainer:
 
         return CreateStoryUseCase(self.story_repo, SQLGenreRepository())
 
-    def director_use_case(self) -> DirectorUseCase:
-        from src.application.use_cases import DirectorUseCase
+    def generate_story_use_case(self) -> GenerateStoryUseCase:
+        from src.application.use_cases import GenerateStoryUseCase
 
-        return DirectorUseCase(self.llm, self.prompt_builder)
+        return GenerateStoryUseCase(self.llm, self.prompt_builder)
 
     def voz_use_case(self) -> VozUseCase:
         from src.application.use_cases import VozUseCase

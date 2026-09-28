@@ -65,6 +65,8 @@ test("regenerar un acto responde al instante y el panel se actualiza solo", asyn
   await expect(after.locator('[data-regenerar-acto="1"]')).toBeEnabled();
   const now = await after.locator("[id^='relato-content-']").innerText();
   expect(now).not.toBe(before);
+  // Spec-560 A2: los actos siguientes avisan que se escribieron con la versión anterior.
+  await expect(after.locator("[data-acto-desactualizado]").first()).toBeVisible();
 });
 
 test("mientras se regenera, el panel lo indica y bloquea los botones", async ({ page }) => {

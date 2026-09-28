@@ -6,7 +6,7 @@ import tempfile
 import pytest
 
 from src.config import settings
-from src.domain.models import BeatStatus, MacroBeat, Story, StoryStatus
+from src.domain.models import ActText, BeatStatus, Story, StoryStatus
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
 
@@ -130,7 +130,7 @@ class TestSqlStoryRepository:
     async def test_get_by_id_carga_generated_act_y_escenario_de_los_beats(
         self, repo, setup_db, temp_db_path
     ):
-        """Regresión Spec-430: _load_beats() omitía generated_act/active_scenario_id."""
+        """Regresión Spec-430: _load_beats() omitía generated_act."""
         story = Story(
             title="Story con beats narrados",
             protagonista="P",
@@ -141,12 +141,10 @@ class TestSqlStoryRepository:
         await repo.save(story)
 
         beat_repo = SQLBeatRepository()
-        beat = MacroBeat(
+        beat = ActText(
             number=1,
-            summary="evento del beat 1",
             generated_act="Prosa ya narrada del beat 1.",
             status=BeatStatus.COMPLETED,
-            active_scenario_id="La casa vieja",
         )
         await beat_repo.save(beat, story.id)
 
@@ -154,5 +152,4 @@ class TestSqlStoryRepository:
 
         assert len(result.beats) == 1
         assert result.beats[0].generated_act == "Prosa ya narrada del beat 1."
-        assert result.beats[0].active_scenario_id == "La casa vieja"
         assert result.beats[0].has_content()

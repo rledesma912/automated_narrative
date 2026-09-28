@@ -10,14 +10,14 @@ from src.domain.interfaces import (
     StoryRepository,
 )
 from src.domain.models import (
-    Beat,
+    ActText,
     NarrativeJournal,
     Story,
     StoryStatus,
 )
 
 __all__ = [
-    "Beat",
+    "ActText",
     "BeatRepository",
     "LLMProvider",
     "NarrativeError",

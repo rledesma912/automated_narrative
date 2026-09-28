@@ -101,6 +101,7 @@ class OutlineVerifier:
             decisiones=context.decisions_block(story),
             elenco=", ".join(cast_names(story)) or "(solo quien narra)",
             escaleta="\n\n".join(_act_text(a, context.protagonist(story)) for a in outline),
+            efecto=context.effect_block(story, verifier=True),
             descartados="\n".join(
                 f"- Acto {a.number}: {w.text}" for a in outline for w in a.warnings if w.dismissed
             )
@@ -128,6 +129,13 @@ def rule_warnings(
     for act in outline:
         if not act.events:
             add(act.number, "sin_hechos", "El acto no tiene hechos: ¿qué pasa acá?")
+        if act.number > 1 and not act.bridge.strip():
+            add(
+                act.number,
+                "sin_puente",
+                "No dice cómo se llega acá desde el acto anterior (cuánto tiempo pasó, qué pasó "
+                "en el medio): completá «Cómo llega acá».",
+            )
         if act.change_from and workshop_rules.normalize(
             act.change_from
         ) == workshop_rules.normalize(act.change_to):
@@ -144,6 +152,13 @@ def rule_warnings(
                     f"elenco:{key}",
                     f"«{name}» está en escena y no en el elenco: ¿lo sumamos como personaje?",
                 )
+        if act.held_back.strip() and not act.number < act.reveal_act <= 5:
+            add(
+                act.number,
+                "sin_revelacion",
+                "Lo que todavía no se cuenta acá no tiene un acto posterior que lo revele: "
+                "elegí en qué acto se revela.",
+            )
         later = [a for a in outline if a.number > act.number]
         loose = [
             s
@@ -175,11 +190,14 @@ def _mentions(a: str, b: str) -> bool:
 
 def _act_text(a: ActOutline, protagonist: str = "") -> str:
     lines = [f"ACTO {a.number}" + (f" — {a.scenario}" if a.scenario else "")]
+    if a.bridge:
+        lines.append(f"Cómo llega: {a.bridge}")
     if a.goal:
         lines.append(f"Quiere: {a.goal}")
     lines += [f"- {e}" for e in a.events]
     if a.held_back:
-        lines.append(f"Se guarda para después: {a.held_back}")
+        reveal = f" (se revela en el acto {a.reveal_act})" if a.reveal_act else ""
+        lines.append(f"Todavía no se cuenta: {a.held_back}{reveal}")
     if a.decisions:
         names = [
             c.for_story(protagonist).nombre

@@ -43,6 +43,8 @@ export interface Act {
   seeds: string[];
   payoffs: string[];
   decisions: string[];
+  bridge: string; // Spec-560 A1: «Cómo llega acá»
+  reveal_act: number; // Spec-560 A4: en qué acto se revela lo que todavía no se cuenta
   /** Spec-550 H10: aviso de la revisión, con clave de tema y si el autor lo ignoró. */
   warnings: { text: string; key: string; source: "regla" | "ia"; dismissed: boolean }[];
   rules: string[];

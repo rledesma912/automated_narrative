@@ -121,6 +121,12 @@
 
             <div class="grid lg:grid-cols-[1fr_18rem] gap-6 p-6">
               <div>
+                <% if (a.number > 1) { %>
+                  <%/* Spec-560 A1: el puente entre actos. */%>
+                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="bridge-<%= a.number %>">Cómo llega acá</label>
+                  <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>Cuánto tiempo pasó desde el acto anterior y qué pasó en el medio. El acto arranca contándolo.</p>
+                  <textarea id="bridge-<%= a.number %>" name="bridge" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %> mb-5"><%= a.bridge %></textarea>
+                <% } %>
                 <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="goal-<%= a.number %>">Qué quiere <%= state.direction.protagonist_name || 'el protagonista' %></label>
                 <textarea id="goal-<%= a.number %>" name="goal" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %> mb-5"><%= a.goal %></textarea>
 
@@ -181,8 +187,18 @@
                 <% } %>
 
                 <div>
-                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-2" for="held-<%= a.number %>">Se guarda para después</label>
+                  <%/* Spec-560 A4: lo que el acto sabe pero todavía no cuenta, y dónde se revela. */%>
+                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="held-<%= a.number %>">Lo que todavía no se cuenta</label>
+                  <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>La Voz no lo revela en este acto; se tiene que revelar en uno posterior.</p>
                   <textarea id="held-<%= a.number %>" name="held_back" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %>"><%= a.held_back %></textarea>
+                  <% if (a.number < 5) { %>
+                    <label class="flex items-center gap-2 mt-2 text-xs text-forge-muted" for="reveal-<%= a.number %>">Se revela en
+                      <select id="reveal-<%= a.number %>" name="reveal_act" class="bg-forge-bg border border-forge-border px-2 py-1">
+                        <option value="0" <%= a.reveal_act ? '' : 'selected' %>>—</option>
+                        <% for (let n = a.number + 1; n <= 5; n++) { %><option value="<%= n %>" <%= a.reveal_act === n ? 'selected' : '' %>>el Acto <%= n %></option><% } %>
+                      </select>
+                    </label>
+                  <% } %>
                 </div>
 
                 <fieldset>

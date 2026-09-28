@@ -4,14 +4,14 @@ from src.application.dto import StoryCreateDTO
 from src.application.services import PromptBuilder
 from src.application.use_cases import (
     CreateStoryUseCase,
-    DirectorUseCase,
+    GenerateStoryUseCase,
     VozUseCase,
 )
 
 __all__ = [
     "StoryCreateDTO",
     "CreateStoryUseCase",
-    "DirectorUseCase",
+    "GenerateStoryUseCase",
     "VozUseCase",
     "PromptBuilder",
 ]
