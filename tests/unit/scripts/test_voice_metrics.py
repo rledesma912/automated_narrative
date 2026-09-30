@@ -2,6 +2,8 @@
 
 from scripts.voice_metrics import (
     cliches,
+    cut_by_act,
+    evaluate,
     narrator_outside_dialogue,
     repeated_4grams,
     split_acts,
@@ -73,3 +75,19 @@ def test_frases_repetidas_en_tres_actos():
 
 def test_split_acts():
     assert split_acts("## Acto 1\n\nUno.\n\n## Acto 2\n\nDos.") == ["Uno.", "Dos."]
+
+
+# ── Spec-590 T0.4: oraciones cortadas y diálogo ─────────────────────────────
+
+
+def test_oraciones_cortadas_y_dialogo_por_acto():
+    text = (
+        "## Acto 1\n\nUn sonido. Leve. Me quedé quieto y contuve la respiración un rato largo.\n\n"
+        "## Acto 2\n\n“¿Viste cuántos eran?” me preguntó el hombre del almacén aquella noche."
+    )
+    uno, dos = cut_by_act(split_acts(text))
+    assert (uno["oraciones"], uno["cortadas"], uno["cortadas_pct"], uno["dialogo"]) == (3, 2, 67, 0)
+    assert (dos["cortadas"], dos["dialogo"]) == (0, 1)
+    m = evaluate(text, "Irene", CAST)
+    assert (m["oraciones_cortadas"], m["oraciones_cortadas_pct"], m["dialogo"]) == (2, 50, 1)
+    assert len(m["por_acto"]) == 2

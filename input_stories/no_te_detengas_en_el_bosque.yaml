@@ -1,0 +1,343 @@
+title: NO TE DETENGAS EN EL BOSQUE
+personajes_full:
+- id: P1
+  name: Leonardo
+  role: Trailero turno nocturno
+protagonista: 'Leonardo: Trailero turno nocturno'
+relator: 'Primera persona en pasado. Narrador: Leonardo.'
+atmosfera: folk_horror (rural)
+escenarios: ''
+sinopsis: |-
+  Un camionero que viaja de madrugada por una ruta rodeada de bosque sufre una avería justo en una zona donde su empresa tiene una regla clara: nunca detenerse allí. Al bajar del camión, empieza a ver numerosas siluetas humanas entre los árboles, todas iguales, con ojos brillantes y extrañas astas de ciervo. Son hostiles y comienzan a acercarse lentamente, obligándolo a escapar por la carretera. El camionero, que además no está en buen estado físico, corre desesperadamente hacia un pequeño pueblo que acaba de dejar atrás.
+reglas: []
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: Leonardo
+  voice:
+    person: primera
+    tense: pasado
+  atmosphere:
+    genre: folk_horror
+    subgenre: rural
+  scenarios: []
+  rules: []
+  entities:
+  - name: Los oscuros
+    nature: culto
+    description: Perseguir al protagonista y llevarlo al bosque para comerlo
+    manifestations: ''
+    limits: volar
+    reveal_level: progresiva
+  actos:
+    act_1:
+      type: exposicion
+      text: ''
+    act_2:
+      type: accion_ascendente
+      text: ''
+    act_3:
+      type: climax
+      text: ''
+    act_4:
+      type: accion_descendente
+      text: ''
+    act_5:
+      type: desenlace
+      text: ''
+direction:
+  premise: 'Un camionero que viaja de madrugada por una ruta rodeada de bosque sufre una avería justo
+    en una zona donde su empresa tiene una regla clara: nunca detenerse allí. Al bajar del camión, empieza
+    a ver numerosas siluetas humanas entre los árboles, todas iguales, con ojos brillantes y extrañas
+    astas de ciervo. Son hostiles y comienzan a acercarse lentamente, obligándolo a escapar por la carretera.
+    El camionero, que además no está en buen estado físico, corre desesperadamente hacia un pequeño pueblo
+    que acaba de dejar atrás.'
+  effect: pavor
+  effect_other: ''
+  ending: 'El camionero logra llegar al almacén del pueblo y cuenta lo ocurrido. El hombre que atiende
+    parece conocer la zona y le pregunta: “¿Viste cuántos eran?”. El camionero responde que eran muchos.
+    Entonces le pregunta: “¿Y todos tenían astas?”. Cuando el camionero asiente, el hombre responde: “Entonces
+    todavía no salieron del bosque”. Poco después llega el rescate, recuperan el camión y la historia
+    queda sin explicación. El camionero continúa trabajando, pero desde entonces jamás se detiene en ese
+    tramo.'
+  ending_intentional: true
+  telling: confesion
+workshop:
+- level: direccion
+  criterion: meta
+  status: cumple
+  question: ''
+  options: []
+  answer: Entregar un cargamento urgente
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué necesita Leonardo para terminar su trabajo esa noche, que las criaturas le impiden conseguir?
+- level: direccion
+  criterion: inquietud
+  status: cumple
+  question: ''
+  options: []
+  answer: Que evite una zona específica
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué le dice el jefe de la empresa a Leonardo antes de que empiece el turno?
+- level: direccion
+  criterion: en_juego
+  status: cumple
+  question: ''
+  options: []
+  answer: Pierde su empleo
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué le pasa a Leonardo si no puede volver a trabajar?
+- level: direccion
+  criterion: vulnerabilidad
+  status: cumple
+  question: ''
+  options: []
+  answer: Problemas de respiración
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué problema físico tiene Leonardo que dificulta su huida?
+- level: direccion
+  criterion: transgresion
+  status: cumple
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked: []
+- level: direccion
+  criterion: historia_secreta
+  status: cumple
+  question: ''
+  options: []
+  answer: No hay conexión. Lo maldito es la zona.
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué conexión tiene Leonardo con el bosque, que lo hace un objetivo para las criaturas?
+- level: direccion
+  criterion: descubrimiento
+  status: cumple
+  question: ''
+  options: []
+  answer: Los cuernos en la cabeza y los ojos muy brillantes. El cuerpo es con forma humana.
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué detalle de las criaturas hace que Leonardo se dé cuenta de que no son humanos?
+- level: direccion
+  criterion: reaccion
+  status: cumple
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked: []
+- level: direccion
+  criterion: final
+  status: intencional
+  question: ''
+  options: []
+  answer: 'El camionero logra llegar al almacén del pueblo y cuenta lo ocurrido. El hombre que atiende
+    parece conocer la zona y le pregunta: “¿Viste cuántos eran?”. El camionero responde que eran muchos.
+    Entonces le pregunta: “¿Y todos tenían astas?”. Cuando el camionero asiente, el hombre responde: “Entonces
+    todavía no salieron del bosque”. Poco después llega el rescate, recuperan el camión y la historia
+    queda sin explicación. El camionero continúa trabajando, pero desde entonces jamás se detiene en ese
+    tramo.'
+  round: 1
+  question_round: 0
+  asked: []
+outline:
+- number: 1
+  bridge: ''
+  goal: Entregar el cargamento a tiempo.
+  events:
+  - Leonardo revisa el GPS y confirma que está entrando en el tramo del Bosque del Silencio.
+  - El motor del camión empieza a toser y pierde potencia. Leonardo intenta acelerar, pero no responde.
+  - El camión se detiene por completo en medio del bosque, en un lugar oscuro y aislado.
+  - Leonardo intenta arrancar el camión, pero es inútil. La radio no funciona.
+  change_from: Leonardo está cumpliendo su trabajo, sintiéndose presionado por la urgencia del cargamento.
+  change_to: Leonardo está varado en un lugar peligroso, con un camión averiado y sin comunicación.
+  scenario: Ruta del Bosque del Silencio
+  on_stage:
+  - Leonardo
+  held_back: La razón por la que el jefe le advirtió a Leonardo sobre el Bosque del Silencio.
+  reveal_act: 2
+  seeds:
+  - La insistencia del jefe en evitar el Bosque del Silencio.
+  - La oscuridad y el aislamiento del lugar donde se avería el camión.
+  payoffs: []
+  decisions:
+  - meta
+  - inquietud
+  warnings:
+  - text: '«La oscuridad y el aislamiento del lugar donde se avería el camión.» aparece acá y no vuelve
+      en ningún acto posterior: ¿lo retomamos?'
+    key: siembra:la oscuridad y el aislamiento del lugar donde se averia el camion
+    source: regla
+    dismissed: false
+  - text: El acto 1 no muestra la razón por la que el jefe le advirtió a Leonardo sobre el Bosque del
+      Silencio, como se indica; tenés que sembrar esa pista antes.
+    key: ia:el acto 1 no muestra la razon por la que el jefe le advirtio a leonardo sobre el bosque del
+      silencio como se indica tenes que sembrar esa pista antes
+    source: ia
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 2
+  bridge: Leonardo pasa un par de horas intentando arreglar el camión, sin éxito. La noche avanza y la
+    tensión aumenta.
+  goal: Intentar arreglar el camión o buscar ayuda.
+  events:
+  - Leonardo intenta usar el celular para pedir ayuda, pero no hay señal.
+  - Leonardo baja del camión para inspeccionar el motor, sintiéndose frustrado y preocupado.
+  - Mientras camina alrededor del camión, Leonardo ve movimientos entre los árboles. Al principio, piensa
+    que es su imaginación.
+  - Leonardo se da cuenta de que hay numerosas siluetas humanas entre los árboles, todas iguales, con
+    ojos brillantes.
+  - Las siluetas empiezan a acercarse lentamente al camión, y Leonardo siente un miedo irracional. Se
+    empiezan a escuchar ruidos como de susurros, como si se hablaran entre sí, pero Leonardo no entiende
+    ni una palabra.
+  - Leonardo tiene tanto miedo que se sube al camión y se refugia ahí, pero rápidamente lo rodean.
+  - Una entidad le rompe una ventana y pedazos de vidrio se le meten en el oído a Leonardo. Leonardo sale
+    por la otra puerta, con esfuerzo, y decide salir corriendo de ahí, antes de que entren.
+  change_from: Leonardo intenta solucionar el problema mecánico, sintiéndose frustrado.
+  change_to: Leonardo huye despavorido de unas figuras amenazantes en el bosque.
+  scenario: Ruta del Bosque del Silencio
+  on_stage:
+  - Leonardo
+  held_back: La naturaleza exacta de las siluetas y por qué se acercan a Leonardo.
+  reveal_act: 3
+  seeds:
+  - La uniformidad de las siluetas.
+  - Los ojos brillantes de las figuras.
+  payoffs:
+  - La insistencia del jefe en evitar el Bosque del Silencio.
+  decisions:
+  - inquietud
+  - vulnerabilidad
+  warnings:
+  - text: Leonardo se refugia en el camión, pero las criaturas lo rodean; ¿cómo logran romper la ventana
+      sin que Leonardo pueda hacer nada?
+    key: ia:leonardo se refugia en el camion pero las criaturas lo rodean como logran romper la ventana
+      sin que leonardo pueda hacer nada
+    source: ia
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 3
+  bridge: A Leonardo no le queda otra opción más que correr por la carretera, con las siluetas persiguiéndolo
+    muy cerca. No corren, pero siempre están cerca.
+  goal: Alejarse de las siluetas y encontrar un lugar seguro.
+  events:
+  - Leonardo recuerda que, en el camión, había pasado un pueblo hacía poco y decide dirigirse hacia allí,
+    esperando encontrar ayuda.
+  - Al acercarse al pueblo, Leonardo observa que las siluetas están cada vez más cerca, a pesar de que
+    nunca las ve corriendo.
+  - Leonardo se detiene en la entrada del pueblo, exhausto y con problemas para respirar. Las siluetas
+    están en el bosque, pero no parecen cruzar hacia el pueblo.
+  - 'Leonardo se da cuenta de que las siluetas no son del todo humanas: tienen cuernos en la cabeza y
+    los ojos son muy brillantes. El cuerpo es con forma humana.'
+  - Leonardo corre desesperadamente hacia el almacén del pueblo. Nota que ya no lo persiguen.
+  change_from: Leonardo intenta escapar de las siluetas, sintiéndose cada vez más desesperado.
+  change_to: Leonardo llega al almacén del pueblo, exhausto y aterrorizado, consciente de la amenaza sobrenatural.
+  scenario: Entrada del Pueblo
+  on_stage:
+  - Leonardo
+  held_back: El origen de las criaturas y su conexión con el bosque.
+  reveal_act: 5
+  seeds: []
+  payoffs:
+  - La uniformidad de las siluetas.
+  - Los ojos brillantes de las figuras.
+  decisions:
+  - descubrimiento
+  warnings:
+  - text: Leonardo corre hacia el pueblo, pero las criaturas no lo persiguen; tenés que mostrar cómo se
+      alejan o por qué no lo siguen.
+    key: ia:leonardo corre hacia el pueblo pero las criaturas no lo persiguen tenes que mostrar como se
+      alejan o por que no lo siguen
+    source: ia
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 4
+  bridge: Leonardo entra al almacén, jadeando y con el rostro pálido. El hombre que atiende lo mira con
+    curiosidad.
+  goal: Contar lo sucedido y buscar ayuda.
+  events:
+  - Leonardo le cuenta al hombre del almacén lo que ha visto y vivido en el bosque.
+  - El hombre escucha atentamente, sin mostrar sorpresa ni incredulidad.
+  - Leonardo siente que su respiración se agrava, y se apoya en la barra del almacén para no caer.
+  - 'El hombre le pregunta: “¿Viste cuántos eran?”'
+  - Leonardo responde que eran muchos.
+  - 'El hombre le pregunta: “¿Y todos tenían astas?”.'
+  - Leonardo dice que no está seguro, pero cree que sí.
+  - 'El hombre responde: “Entonces no tenemos de qué preocuparnos”.'
+  change_from: Leonardo está exhausto y aterrorizado, buscando refugio y ayuda.
+  change_to: Leonardo está en un estado de shock, escuchando las palabras inquietantes del hombre del
+    almacén.
+  scenario: Almacén del Pueblo
+  on_stage:
+  - Leonardo
+  held_back: La razón por la que el hombre del almacén parece conocer la situación.
+  reveal_act: 5
+  seeds: []
+  payoffs: []
+  decisions:
+  - en_juego
+  warnings:
+  - text: El hombre del almacén parece conocer la situación, pero no se explica por qué; sembrá una pista
+      en actos anteriores.
+    key: ia:el hombre del almacen parece conocer la situacion pero no se explica por que sembra una pista
+      en actos anteriores
+    source: ia
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 5
+  bridge: Unos minutos después, llegan los equipos de rescate para recuperar el camión. Leonardo observa
+    la escena con una mezcla de alivio y temor.
+  goal: Ver cómo se recupera el camión y volver a la normalidad, aunque nada será igual.
+  events:
+  - Los equipos de rescate recuperan el camión, sin hacer preguntas ni mostrar interés en la historia
+    de Leonardo.
+  - Leonardo observa el bosque desde la distancia, sintiendo una profunda sensación de inquietud y miedo.
+  - Leonardo continúa trabajando como camionero, pero jamás se detiene en el tramo del Bosque del Silencio
+    y siempre que tiene que pasar por ahí, lo hace rápido.
+  - 'Leonardo recuerda las palabras del hombre del almacén: “Entonces todavía no salieron del bosque”.
+    Y se pregunta qué quiso decir aquella vez.'
+  change_from: Leonardo está aliviado de haber escapado de la amenaza, pero aún siente temor.
+  change_to: Leonardo regresa a su rutina, pero marcado por la experiencia y con la certeza de que algo
+    siniestro acecha en el bosque.
+  scenario: Ruta del Bosque del Silencio
+  on_stage:
+  - Leonardo
+  held_back: ''
+  reveal_act: 0
+  seeds: []
+  payoffs:
+  - La insistencia del jefe en evitar el Bosque del Silencio.
+  decisions:
+  - final
+  warnings:
+  - text: El final deja muchas preguntas sin responder, pero el efecto buscado es pavor creciente; tenés
+      que aumentar la sensación de amenaza latente.
+    key: ia:el final deja muchas preguntas sin responder pero el efecto buscado es pavor creciente tenes
+      que aumentar la sensacion de amenaza latente
+    source: ia
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''

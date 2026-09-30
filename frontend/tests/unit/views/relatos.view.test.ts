@@ -135,6 +135,33 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
     expect(copyParts(html).join(" ")).not.toContain("Repite");
   });
 
+  // Spec-590 F: oraciones cortadas (solo si pasan a ser el estilo del acto) y diálogo.
+  it("avisa oraciones cortadas y diálogo", async () => {
+    const html = await ejs.renderFile(panelPath, {
+      story: { id: "s-1" },
+      relato: {
+        id: "r-1",
+        content: CONTENT,
+        repetition: {
+          acts: [
+            { number: 1, repeated: [], cliches: [], cut_sentences: ["Solo."], cut_count: 1, cut_pct: 5, too_cut: false, dialogue: 0 },
+            { number: 2, repeated: [], cliches: [], cut_sentences: ["Un sonido.", "Más cerca."], cut_count: 12, cut_pct: 40, too_cut: true, dialogue: 2 },
+          ],
+        },
+      },
+      displayTitle: "Primera versión",
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+
+    expect(html.match(/data-repeticion/g)).toHaveLength(1); // el acto 1 no avisa por un fragmento
+    expect(html).toContain("12 oraciones cortadas · tiene diálogo");
+    expect(html).toContain("Oraciones cortadas: 12 de este acto (40 %), por ejemplo «Un sonido.», «Más cerca.»");
+    expect(html).toContain("Diálogo: 2 frases con raya o entre comillas");
+    expect(copyParts(html).join(" ")).not.toContain("oraciones cortadas");
+  });
+
   it("sin control de repetición (Core caído) el panel se ve como antes", async () => {
     const html = await renderPanel();
     expect(html).not.toContain("data-repeticion");

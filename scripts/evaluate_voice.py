@@ -10,6 +10,9 @@ prod), guarda cada relato y un `metrics.json`, e imprime una tabla.
 
 `--voz-temperature` cambia la temperatura de la Voz solo dentro de este proceso.
 `--mock` usa el LLM simulado (para probar el arnés sin Ollama).
+`--input <yaml>` evalúa otra historia (Spec-590 S0), p. ej. una exportada con `export-yaml`:
+se importa con su dirección y su escaleta (no se vuelve a planificar), en una sola variante
+(`relato`), así las corridas comparan solo la Voz y la Memoria.
 `--profile <perfil>` evalúa otro perfil (solo dentro de este proceso), p. ej. el híbrido
 con la Voz en Claude (Spec-480). Si el perfil usa un proveedor pago, muestra el costo
 estimado y **no genera** salvo que se pase `--yes`; con `--yes` reporta el costo real
@@ -62,7 +65,15 @@ ENTITIES = [
     },
 ]
 
-METRICS = ("cliches", "parentescos_mal", "narrador_3ra_persona", "frases_repetidas", "palabras")
+METRICS = (
+    "cliches",
+    "parentescos_mal",
+    "narrador_3ra_persona",
+    "frases_repetidas",
+    "palabras",
+    "oraciones_cortadas_pct",
+    "dialogo",
+)
 
 # US$ por millón de tokens (entrada, salida) de los proveedores pagos.
 PRICES = {
@@ -116,8 +127,11 @@ def estimated_cost_per_story() -> float:
     return round(total, 4)
 
 
-def load_story(variant: str) -> dict:
-    story = yaml.safe_load(STORY_FILE.read_text(encoding="utf-8"))
+INPUT_VARIANT = "relato"
+
+
+def load_story(variant: str, input_path: Path | None = None) -> dict:
+    story = yaml.safe_load((input_path or STORY_FILE).read_text(encoding="utf-8"))
     if variant == "con":
         story = copy.deepcopy(story)
         story["storyteller_config"]["entities"] = ENTITIES
@@ -133,12 +147,35 @@ def narrator_of(story: dict) -> str:
     return next((p["name"] for p in cast if p.get("id") == pid), cast[0]["name"] if cast else "")
 
 
-async def _generate(client: httpx.AsyncClient, story: dict, effect: str | None = None) -> str:
+async def _create_from_yaml(input_path: Path, title: str) -> str:
+    """Importa el YAML como `import-yaml`: con dirección, taller y escaleta."""
+    from src.application.use_cases.create_story import CreateStoryUseCase
+    from src.infrastructure.database.repositories import (
+        SQLGenreRepository,
+        SQLStoryRepository,
+    )
+    from src.infrastructure.loaders import YamlStoryLoader
+
+    dto = YamlStoryLoader().load_from_file(input_path.resolve())
+    dto.title = title
+    story = await CreateStoryUseCase(SQLStoryRepository(), SQLGenreRepository()).execute(dto)
+    return str(story.id)
+
+
+async def _generate(
+    client: httpx.AsyncClient,
+    story: dict,
+    effect: str | None = None,
+    input_path: Path | None = None,
+) -> str:
     from src.presentation.runtime import job_manager
 
-    resp = await client.post("/api/v1/stories?action=save", json=story)
-    resp.raise_for_status()
-    sid = resp.json()["id"]
+    if input_path:
+        sid = await _create_from_yaml(input_path, story["title"])
+    else:
+        resp = await client.post("/api/v1/stories?action=save", json=story)
+        resp.raise_for_status()
+        sid = resp.json()["id"]
     if effect:
         # Spec-560 A5: la misma historia con otro efecto (lo lee el Planificador).
         form = (await client.get(f"/api/v1/authoring/stories/{sid}")).json()["direction"]
@@ -166,10 +203,13 @@ async def run(
     profile: str | None = None,
     yes: bool = False,
     effect: str | None = None,
+    input_path: Path | None = None,
 ) -> dict:
     """Genera y mide. Restaura al final todo lo que parchea (DB, LLM, temperatura, perfil)."""
     from src.main import app
 
+    if input_path:
+        variants = [INPUT_VARIANT]
     out = out / label
     out.mkdir(parents=True, exist_ok=True)
     settings_cls = type(settings)
@@ -219,6 +259,7 @@ async def run(
     report: dict = {
         "label": label,
         "perfil": settings.active_profile_name,
+        "historia": (input_path or STORY_FILE).name,
         "voz_temperature": settings.role_config("voz").get("temperature"),
         "relatos": [],
     }
@@ -232,10 +273,10 @@ async def run(
             ) as client:
                 for variant in variants:
                     for i in range(1, runs + 1):
-                        story = load_story(variant)
+                        story = load_story(variant, input_path)
                         story["title"] = f"{story['title']} ({label} {variant} #{i})"
                         meter_box.clear()
-                        text = await _generate(client, story, effect)
+                        text = await _generate(client, story, effect, input_path)
                         (out / f"{variant}_{i}.txt").write_text(text, encoding="utf-8")
                         metrics = evaluate(
                             text, narrator_of(story), story.get("personajes_full") or []
@@ -280,13 +321,15 @@ def print_table(report: dict) -> None:
             f"(US$ {report['costo_por_relato_usd']} por relato)"
         )
     print(
-        "| Variante | Clichés | Parentescos mal | Narradora 3ra persona | Frases repetidas | Palabras |"
+        "| Variante | Clichés | Parentescos mal | Narradora 3ra persona | Frases repetidas "
+        "| Palabras | Oraciones cortadas (%) | Diálogo |"
     )
-    print("|---|---|---|---|---|---|")
+    print("|---|---|---|---|---|---|---|---|")
     for v, m in report["promedios"].items():
         print(
             f"| {v} | {m['cliches']} | {m['parentescos_mal']} | {m['narrador_3ra_persona']} "
-            f"| {m['frases_repetidas']} | {m['palabras']} |"
+            f"| {m['frases_repetidas']} | {m['palabras']} | {m['oraciones_cortadas_pct']} "
+            f"| {m['dialogo']} |"
         )
 
 
@@ -303,6 +346,9 @@ def main() -> None:
         "--effect", default=None, help="Efecto de la historia (Spec-560 A5): pavor, susto…"
     )
     parser.add_argument(
+        "--input", type=Path, default=None, help="YAML de otra historia (con su escaleta)"
+    )
+    parser.add_argument(
         "--yes", action="store_true", help="Confirma el gasto con proveedores pagos"
     )
     args = parser.parse_args()
@@ -317,6 +363,7 @@ def main() -> None:
             args.profile,
             args.yes,
             args.effect,
+            args.input,
         )
     )
     if not report.get("abortado"):

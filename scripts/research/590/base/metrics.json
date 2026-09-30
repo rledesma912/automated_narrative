@@ -1,0 +1,123 @@
+{
+  "label": "base",
+  "perfil": "ollama-gemma3-12b",
+  "historia": "no_te_detengas_en_el_bosque.yaml",
+  "voz_temperature": 0.6,
+  "relatos": [
+    {
+      "variante": "relato",
+      "corrida": 1,
+      "palabras": 2009,
+      "cliches": 2,
+      "cliches_detalle": {
+        "me heló la sangre": 2
+      },
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 2,
+      "oraciones_cortadas": 151,
+      "oraciones_cortadas_pct": 51,
+      "dialogo": 12,
+      "por_acto": [
+        {
+          "palabras": 400,
+          "oraciones": 50,
+          "cortadas": 28,
+          "cortadas_pct": 56,
+          "dialogo": 1
+        },
+        {
+          "palabras": 448,
+          "oraciones": 72,
+          "cortadas": 41,
+          "cortadas_pct": 57,
+          "dialogo": 0
+        },
+        {
+          "palabras": 457,
+          "oraciones": 78,
+          "cortadas": 40,
+          "cortadas_pct": 51,
+          "dialogo": 0
+        },
+        {
+          "palabras": 475,
+          "oraciones": 63,
+          "cortadas": 22,
+          "cortadas_pct": 35,
+          "dialogo": 6
+        },
+        {
+          "palabras": 214,
+          "oraciones": 32,
+          "cortadas": 20,
+          "cortadas_pct": 62,
+          "dialogo": 5
+        }
+      ]
+    },
+    {
+      "variante": "relato",
+      "corrida": 2,
+      "palabras": 1968,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 1,
+      "frases_repetidas": 1,
+      "oraciones_cortadas": 156,
+      "oraciones_cortadas_pct": 55,
+      "dialogo": 15,
+      "por_acto": [
+        {
+          "palabras": 434,
+          "oraciones": 61,
+          "cortadas": 29,
+          "cortadas_pct": 48,
+          "dialogo": 2
+        },
+        {
+          "palabras": 435,
+          "oraciones": 75,
+          "cortadas": 50,
+          "cortadas_pct": 67,
+          "dialogo": 0
+        },
+        {
+          "palabras": 418,
+          "oraciones": 61,
+          "cortadas": 31,
+          "cortadas_pct": 51,
+          "dialogo": 0
+        },
+        {
+          "palabras": 399,
+          "oraciones": 52,
+          "cortadas": 26,
+          "cortadas_pct": 50,
+          "dialogo": 9
+        },
+        {
+          "palabras": 267,
+          "oraciones": 37,
+          "cortadas": 20,
+          "cortadas_pct": 54,
+          "dialogo": 4
+        }
+      ]
+    }
+  ],
+  "promedios": {
+    "relato": {
+      "cliches": 1.0,
+      "parentescos_mal": 0.0,
+      "narrador_3ra_persona": 0.5,
+      "frases_repetidas": 1.5,
+      "palabras": 1988.5,
+      "oraciones_cortadas_pct": 53.0,
+      "dialogo": 13.5
+    }
+  }
+}

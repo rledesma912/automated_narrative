@@ -19,6 +19,8 @@ def mock_structured(role: str | None, schema: dict) -> dict:
         return {
             "hechos": "Pasó lo del acto.",
             "estado": "Sigue en la ruta.",
+            "cuerpo": "Un raspón en la mano izquierda.",
+            "asi_es": ["toma mate amargo"],
             "motivos_usados": ["un motivo de ejemplo"],
         }
     return _from_schema(schema, schema)

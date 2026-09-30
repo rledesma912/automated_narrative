@@ -1,4 +1,9 @@
-from src.application.services.repetition_check import check
+from src.application.services.repetition_check import (
+    check,
+    cut_sentences,
+    dialogue_lines,
+    has_finite_verb,
+)
 
 CLICHES = ["me heló la sangre", "un silencio sepulcral"]
 
@@ -61,3 +66,84 @@ def test_nombres_compuestos_juntos():
 def test_rezos_no_son_nombres_inventados():
     r = check(["Recé un Padrenuestro y le pedí a Dios, al Señor, a la Virgen."], [], known="Irene")
     assert r[0].invented_names == []
+
+
+# ── Spec-590 F: oraciones cortadas y diálogo (contrato del anexo de la prueba) ──
+
+
+def test_detecta_las_oraciones_que_marcaron_las_usuarias():
+    for sentence in (
+        "El sonido de mis pies golpeando la tierra.",
+        "El sabor metálico de la sangre en mi boca.",
+        "Un sonido.",
+        "Más cerca.",
+        "Solo.",
+    ):
+        assert cut_sentences(sentence) == [sentence]
+
+
+def test_no_detecta_sus_reescrituras():
+    rewrite = (
+        "Solo escuchaba el sonido de mis pies golpeando la tierra. "
+        "Pude sentir el sabor metálico de la sangre en mi boca. "
+        "Después escuché un sonido, leve, casi imperceptible. "
+        "Sonó de forma similar a un chasquido, o una ramita partiéndose al ser pisada. "
+        "Me quedé quieto y contuve la respiración, pero entonces, el sonido se repitió."
+    )
+    assert cut_sentences(rewrite) == []
+
+
+def test_verbo_conjugado():
+    assert has_finite_verb("Como si estuvieran hablando entre ellos.")
+    assert has_finite_verb("Ya no me duele la cabeza.")  # presente después de «me»
+    assert not has_finite_verb("La puerta de la casa vieja.")  # «la» es artículo
+    assert not has_finite_verb("Un día más, con la policía cerca.")  # terminan como verbo
+
+
+def test_puntos_suspensivos_cortan_la_oracion():
+    # Las tres son cortas: «ahora estaba varado» tiene verbo pero 3 palabras.
+    assert cut_sentences("Pero ahora… ahora estaba varado. Solo.") == [
+        "Pero ahora…",
+        "ahora estaba varado.",
+        "Solo.",
+    ]
+
+
+def test_el_dialogo_no_cuenta_como_oracion_cortada():
+    assert cut_sentences("“Muchos,” respondí con la voz quebrada por el cansancio.") == []
+
+
+def test_dialogo_directo():
+    text = (
+        "“¿Viste cuántos eran?” preguntó, finalmente.\n"
+        "— Muchos, le dije.\n"
+        "Me preguntó si había visto cuántos eran. Leí «Bosque» en el cartel."
+    )
+    assert dialogue_lines(text) == ["— Muchos, le dije.", "“¿Viste cuántos eran?”"]
+
+
+def test_check_cuenta_oraciones_cortadas_y_dialogo_por_acto():
+    acts = [
+        "Me quedé quieto y contuve la respiración hasta que el ruido se fue.",
+        "Un sonido. Leve. Más cerca. Me quedé quieto y contuve la respiración.\n"
+        "“¿Viste cuántos eran?” me preguntó el hombre del almacén.",
+    ]
+    uno, dos = check(acts, CLICHES)
+    assert (uno.cut_count, uno.cut_pct, uno.too_cut, uno.dialogue) == (0, 0, False, 0)
+    assert not uno.has_findings()
+    assert dos.cut_sentences == ["Un sonido.", "Leve.", "Más cerca."]
+    assert (dos.cut_count, dos.cut_pct, dos.too_cut, dos.dialogue) == (3, 60, True, 1)
+    assert dos.has_findings()
+
+
+def test_un_fragmento_suelto_no_es_aviso():
+    act = (
+        "Después escuché un sonido, leve, casi imperceptible. "
+        "Me quedé quieto y contuve la respiración, pero el sonido se repitió. "
+        "Sonó como una ramita que se partía bajo el peso de alguien. "
+        "Esta vez más cerca de mí."
+    )
+    (rep,) = check([act], CLICHES)
+    assert (rep.cut_count, rep.cut_pct, rep.too_cut) == (1, 25, True)
+    (rep,) = check([act + " Entonces entendí que no estaba solo en el camino."], CLICHES)
+    assert (rep.cut_count, rep.cut_pct, rep.too_cut) == (1, 20, False)

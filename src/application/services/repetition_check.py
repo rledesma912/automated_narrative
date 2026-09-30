@@ -24,6 +24,22 @@ class ActRepetition:
     invented_names: list[str] = field(
         default_factory=list
     )  # nombres propios que la historia no tiene
+    # Spec-590 F: oraciones cortadas (hasta 3 ejemplos, el total y el % de la narración)
+    # y fragmentos de diálogo directo.
+    cut_sentences: list[str] = field(default_factory=list)
+    cut_count: int = 0
+    cut_pct: int = 0
+    dialogue: int = 0
+
+    @property
+    def too_cut(self) -> bool:
+        """Un fragmento suelto está bien; se avisa cuando pasa a ser el estilo del acto."""
+        return self.cut_pct >= CUT_PCT_WARNING
+
+    def has_findings(self) -> bool:
+        return bool(
+            self.repeated or self.cliches or self.invented_names or self.too_cut or self.dialogue
+        )
 
 
 def _tokens(text: str) -> tuple[list[str], list[str]]:
@@ -64,6 +80,82 @@ def invented_names(text: str, known: str) -> list[str]:
     return found
 
 
+# ── Oraciones cortadas y diálogo (Spec-590 F) ───────────────────────────────
+# Heurística sin dependencias: una oración tiene verbo conjugado si alguna palabra
+# termina en una desinencia finita o es un verbo irregular común. Gerundios e
+# infinitivos no cuentan. Es un aviso: se aceptan falsos positivos.
+
+_SHORT = 5  # menos palabras que esto = oración cortada, aunque tenga verbo
+_MAX_EXAMPLES = 3
+CUT_PCT_WARNING = 25  # % de oraciones cortadas desde el que se avisa
+
+_IRREGULAR = set(
+    "es son era eran fue fueron fui hay había habían hubo he ha han has "
+    "está están estaba estaban estoy estuve estuvo vi vio veo ve veía dijo dije digo dice "
+    "pude pudo puedo puede podía quise quiso quiero quería tuve tuvo tengo tiene tenía "
+    "hice hizo hago hace iba iban voy va van sé sabía sabe supe supo soy sos "
+    "vino vine dio di doy da oí oyó oía siento siente sentí sintió pienso piensa "
+    "debo debe debía cayó caí traje trajo seguí siguió pidió pedí murió durmió "
+    "fuera fueran".split()
+)
+# Terminan como un verbo y no lo son.
+_NOT_VERB = set(
+    "aquí allí así ahí sí mí ti qué fe café bebé mamá papá allá acá sofá más jamás atrás "
+    "día días tía tías vía policía compañía energía alegría".split()
+)
+_FINITE = re.compile(
+    r"(?:[éóí]|aste|iste|aron|ieron|yeron|amos|emos|imos|aba|abas|aban|ábamos"
+    r"|ía|ías|ían|íamos|á|án|ás|iera|ieras|ieran|iese|iesen|aran)$"
+)
+# Antes de un presente («me duele», «no sabe»): pronombres átonos, sujeto y «no».
+_BEFORE_PRESENT = set("me te se le les nos yo no él ella ellos ellas vos".split())
+_PRESENT = re.compile(r"(?:[oae]|as|es|an|en)$")
+
+_SENTENCE_END = re.compile(r"(?<=[.!?…])[»”\"]?\s+|\n+")
+_DIALOGUE_LINE = re.compile(r"^\s*[—–-]", re.M)
+_QUOTE = re.compile(r"“[^”]+”|\"[^\"]+\"|«[^»]+»")
+
+
+def split_sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENTENCE_END.split(text) if re.search(r"\w", s)]
+
+
+def has_finite_verb(sentence: str) -> bool:
+    words = re.findall(r"\w+", sentence.lower())
+    for i, w in enumerate(words):
+        if w in _NOT_VERB:
+            continue
+        if w in _IRREGULAR or _FINITE.search(w):
+            return True
+        if i and words[i - 1] in _BEFORE_PRESENT and _PRESENT.search(w):
+            return True
+    return False
+
+
+def narration_sentences(text: str) -> list[str]:
+    """Las oraciones de la narración: sin líneas de diálogo ni frases entre comillas."""
+    return split_sentences(_QUOTE.sub(" ", _DIALOGUE_LINE.sub("", text)))
+
+
+def cut_sentences(text: str) -> list[str]:
+    """Oraciones sin verbo conjugado o de menos de 5 palabras (sin contar el diálogo)."""
+    return [
+        s
+        for s in narration_sentences(text)
+        if len(re.findall(r"\w+", s)) < _SHORT or not has_finite_verb(s)
+    ]
+
+
+def dialogue_lines(text: str) -> list[str]:
+    """Diálogo directo: líneas con raya o guion, y frases entre comillas (las «» con
+    menos de 3 palabras suelen ser una palabra citada, no alguien hablando)."""
+    lines = [ln.strip() for ln in text.splitlines() if _DIALOGUE_LINE.match(ln)]
+    quotes = [
+        q for q in _QUOTE.findall(text) if not q.startswith("«") or len(re.findall(r"\w+", q)) >= 3
+    ]
+    return lines + quotes
+
+
 def check(
     acts: list[str], cliches: list[str] | None = None, known: str | None = None
 ) -> list[ActRepetition]:
@@ -99,6 +191,11 @@ def check(
         rep.cliches = list(found.values())
         if known is not None:
             rep.invented_names = invented_names(acts[n], known)
+        cut, total = cut_sentences(acts[n]), len(narration_sentences(acts[n]))
+        rep.cut_sentences = cut[:_MAX_EXAMPLES]
+        rep.cut_count = len(cut)
+        rep.cut_pct = round(100 * len(cut) / total) if total else 0
+        rep.dialogue = len(dialogue_lines(acts[n]))
         result.append(rep)
     return result
 
@@ -156,8 +253,4 @@ def last_version_findings(story) -> dict[int, ActRepetition]:
     if not beats:
         return {}
     reps = check([b.generated_act for b in beats], known=known_text(story))
-    return {
-        b.number: r
-        for b, r in zip(beats, reps, strict=True)
-        if r.repeated or r.cliches or r.invented_names
-    }
+    return {b.number: r for b, r in zip(beats, reps, strict=True) if r.has_findings()}

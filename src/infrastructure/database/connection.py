@@ -200,6 +200,8 @@ async def init_db() -> None:
             last_events TEXT DEFAULT '',
             physical_emotional_state TEXT DEFAULT '',
             used_motifs TEXT DEFAULT '[]',
+            body_state TEXT DEFAULT '',
+            narrator_traits TEXT DEFAULT '[]',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
             UNIQUE(story_id, beat_number)
