@@ -247,6 +247,14 @@ def _avoid(rep) -> str:
             "- Nombres que no están en la historia (no inventes nombres): "
             + ", ".join(rep.invented_names)
         )
+    if rep.too_cut:
+        ejemplos = ", ".join(f"«{s}»" for s in rep.cut_sentences)
+        lines.append(
+            f"- Tenía {rep.cut_count} oraciones cortadas (por ejemplo: {ejemplos}): "
+            "escribí oraciones completas, con verbo"
+        )
+    if rep.dialogue:
+        lines.append("- Tenía diálogo: contá lo que dicen, sin rayas ni comillas")
     if not lines:
         return ""
     return (

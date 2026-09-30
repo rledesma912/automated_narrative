@@ -24,6 +24,22 @@ class ActRepetition:
     invented_names: list[str] = field(
         default_factory=list
     )  # nombres propios que la historia no tiene
+    # Spec-590 F: oraciones cortadas (hasta 3 ejemplos, el total y el % de la narración)
+    # y fragmentos de diálogo directo.
+    cut_sentences: list[str] = field(default_factory=list)
+    cut_count: int = 0
+    cut_pct: int = 0
+    dialogue: int = 0
+
+    @property
+    def too_cut(self) -> bool:
+        """Un fragmento suelto está bien; se avisa cuando pasa a ser el estilo del acto."""
+        return self.cut_pct >= CUT_PCT_WARNING
+
+    def has_findings(self) -> bool:
+        return bool(
+            self.repeated or self.cliches or self.invented_names or self.too_cut or self.dialogue
+        )
 
 
 def _tokens(text: str) -> tuple[list[str], list[str]]:
@@ -71,6 +87,7 @@ def invented_names(text: str, known: str) -> list[str]:
 
 _SHORT = 5  # menos palabras que esto = oración cortada, aunque tenga verbo
 _MAX_EXAMPLES = 3
+CUT_PCT_WARNING = 25  # % de oraciones cortadas desde el que se avisa
 
 _IRREGULAR = set(
     "es son era eran fue fueron fui hay había habían hubo he ha han has "
@@ -174,6 +191,11 @@ def check(
         rep.cliches = list(found.values())
         if known is not None:
             rep.invented_names = invented_names(acts[n], known)
+        cut, total = cut_sentences(acts[n]), len(narration_sentences(acts[n]))
+        rep.cut_sentences = cut[:_MAX_EXAMPLES]
+        rep.cut_count = len(cut)
+        rep.cut_pct = round(100 * len(cut) / total) if total else 0
+        rep.dialogue = len(dialogue_lines(acts[n]))
         result.append(rep)
     return result
 
@@ -231,8 +253,4 @@ def last_version_findings(story) -> dict[int, ActRepetition]:
     if not beats:
         return {}
     reps = check([b.generated_act for b in beats], known=known_text(story))
-    return {
-        b.number: r
-        for b, r in zip(beats, reps, strict=True)
-        if r.repeated or r.cliches or r.invented_names
-    }
+    return {b.number: r for b, r in zip(beats, reps, strict=True) if r.has_findings()}

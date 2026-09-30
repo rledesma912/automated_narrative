@@ -1,8 +1,10 @@
 from src.application.services.authoring.outline_narrator import (
     OutlineNarrator,
+    _avoid,
     merge_motifs,
     word_range,
 )
+from src.application.services.repetition_check import ActRepetition
 from src.domain.models import ActOutline, NarrativeJournal, TypedRule
 from tests.unit.application.authoring.conftest import ScriptedLLM
 
@@ -160,3 +162,20 @@ def test_el_acto_1_no_tiene_puente_ni_final_anterior(story):
     act = ActOutline(number=1, events=["Algo pasa"], bridge="no se usa en el acto 1")
     _, user = OutlineNarrator(ScriptedLLM()).voice_prompts(story, act, None, "")
     assert "CÓMO SE LLEGA" not in user and "ASÍ TERMINÓ" not in user
+
+
+# ── Spec-590 T1.4: al regenerar, la Voz sabe si el acto estaba cortado o con diálogo ──
+
+
+def test_avoid_avisa_oraciones_cortadas_y_dialogo():
+    rep = ActRepetition(
+        number=2, cut_sentences=["Un sonido.", "Más cerca."], cut_count=12, cut_pct=40, dialogue=2
+    )
+    text = _avoid(rep)
+    assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" in text
+    assert "Tenía 12 oraciones cortadas (por ejemplo: «Un sonido.», «Más cerca.»)" in text
+    assert "Tenía diálogo: contá lo que dicen, sin rayas ni comillas" in text
+
+
+def test_avoid_no_avisa_un_fragmento_suelto():
+    assert _avoid(ActRepetition(number=2, cut_sentences=["Solo."], cut_count=1, cut_pct=5)) == ""

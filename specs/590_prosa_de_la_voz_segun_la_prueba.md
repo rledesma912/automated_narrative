@@ -130,7 +130,7 @@ Presupuesto: +~1 200 tokens de escaleta en el acto 5 y +~300 del resto. El promp
 
 En `repetition_check.py` (y reusado por `voice_metrics.py`), dos hallazgos nuevos por acto en `ActRepetition`:
 
-- **`cut_sentences`** — «oraciones cortadas»: oraciones sin verbo conjugado o de menos de 5 palabras. Heurística sin dependencias nuevas: terminaciones verbales del español (pretérito, imperfecto, presente, condicional, futuro) + una lista corta de irregulares (`era`, `fue`, `hay`, `vi`, `dijo`, `estaba`…); gerundios e infinitivos no cuentan como verbo conjugado. Se muestran hasta 3 ejemplos y el total.
+- **`cut_sentences`** — «oraciones cortadas»: oraciones sin verbo conjugado o de menos de 5 palabras. Se **avisa** cuando llegan al 25 % de las oraciones del acto (`too_cut`): un fragmento suelto usado a propósito no es aviso. Heurística sin dependencias nuevas: terminaciones verbales del español (pretérito, imperfecto, presente, condicional, futuro) + una lista corta de irregulares (`era`, `fue`, `hay`, `vi`, `dijo`, `estaba`…); gerundios e infinitivos no cuentan como verbo conjugado. Se muestran hasta 3 ejemplos y el total.
 - **`dialogue`** — líneas de diálogo directo (raya o guion inicial, o texto entre comillas de más de 3 palabras).
 
 Contrato de la heurística (test): las 5 oraciones del anexo que ellas marcaron («El sonido de mis pies golpeando la tierra.», «El sabor metálico de la sangre en mi boca.», «Un sonido.», «Más cerca.», «Solo.») **se detectan**; sus reescrituras («Solo escuchaba el sonido de mis pies golpeando la tierra.», «Pude sentir el sabor metálico de la sangre en mi boca.», el párrafo del chasquido) **no**, salvo su cierre «Esta vez más cerca de mí.», que no tiene verbo: un fragmento suelto usado a propósito está bien; lo que molesta es la proporción. Por eso el criterio de éxito se mide en **% de oraciones cortadas**, no en cero.
@@ -243,12 +243,12 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T0.4 `scripts/voice_metrics.py`: `cut_sentences` (total y por acto), `dialogue_lines` y palabras por acto en `evaluate()`, importando de `repetition_check`. Test en `test_voice_metrics.py`.
 - [x] T0.5 Correr `evaluate_voice.py --input input_stories/no_te_detengas_en_el_bosque.yaml --label base --runs 2 --out scripts/research/590` (→ `scripts/research/590/base/`) con gemma3:12b. Anotar en §7: oraciones cortadas por acto, diálogo, palabras, frases repetidas, clichés, y la lectura de la herida del oído.
 
-### S1 — F: mostrar oraciones cortadas y diálogo
-- [ ] T1.1 `ActRepetition` + `check()`: `cut_sentences` (hasta 3), `cut_count`, `dialogue`. Test.
-- [ ] T1.2 `GET /generated-narratives/{id}/repetition` los devuelve (test del router en `tests/integration/`).
-- [ ] T1.3 `story.service.ts` (tipo) y `relato_panel.ejs`: en el resumen del acto, «N oraciones cortadas» y «diálogo: N líneas»; en el detalle, los ejemplos («Oración cortada: «Más cerca.»»). Tono coloquial; `sin-jerga`, `gramatica-visual` y `no-hardcoded-colors` en verde. Test de vista en `relatos.view.test.ts`.
-- [ ] T1.4 `_avoid()` (regenerar un acto): «- Tenía N oraciones cortadas (por ejemplo: «…»): escribí oraciones completas» y «- Tenía diálogo: contá lo que dicen, sin rayas ni comillas». Test en `test_outline_narrator.py`. El snapshot no cambia (sin versión anterior no aparece).
-- [ ] T1.5 Validar en dev: un relato existente de `storymaker.test` muestra los contadores nuevos en su panel.
+### S1 — F: mostrar oraciones cortadas y diálogo · ✅ 2026-09-30
+- [x] T1.1 `ActRepetition` + `check()`: `cut_sentences` (hasta 3), `cut_count`, `cut_pct`, `too_cut` (desde el 25 %: un fragmento suelto no es aviso) y `dialogue`; `has_findings()` lo usa también `last_version_findings`. Test.
+- [x] T1.2 `GET /generated-narratives/{id}/repetition` los devuelve (test del router en `tests/integration/`).
+- [x] T1.3 `story.service.ts` (tipo) y `relato_panel.ejs`: en el resumen del acto, «N oraciones cortadas» y «diálogo: N líneas»; en el detalle, los ejemplos («Oración cortada: «Más cerca.»»). Tono coloquial; `sin-jerga`, `gramatica-visual` y `no-hardcoded-colors` en verde. Test de vista en `relatos.view.test.ts`.
+- [x] T1.4 `_avoid()` (regenerar un acto): «- Tenía N oraciones cortadas (por ejemplo: «…»): escribí oraciones completas» y «- Tenía diálogo: contá lo que dicen, sin rayas ni comillas». Test en `test_outline_narrator.py`. El snapshot no cambia (sin versión anterior no aparece).
+- [x] T1.5 Validar en dev: un relato existente de `storymaker.test` muestra los contadores nuevos en su panel.
 
 ### S2 — A + B + D: la forma de escribir
 - [ ] T2.1 `voice_craft.md` reescrito (A): narración oral con oraciones completas y conectores; ritmo por largo de párrafo; cierre concreto en oración completa; se mantienen sugerir, clichés, primera persona y léxico; ejemplo antes/después del anexo; «tu nombre no aparece en lo que narrás».

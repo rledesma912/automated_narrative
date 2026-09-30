@@ -353,9 +353,23 @@ async def test_control_de_repeticion_del_relato(client):
 
     data = (await client.get(f"/api/v1/generated-narratives/{narrative.id}/repetition")).json()
 
-    assert data["acts"][0] == {"number": 1, "repeated": [], "cliches": [], "invented_names": []}
+    assert data["acts"][0] == {
+        "number": 1,
+        "repeated": [],
+        "cliches": [],
+        "invented_names": [],
+        "cut_sentences": [],
+        "cut_count": 0,
+        "cut_pct": 0,
+        "too_cut": False,
+        "dialogue": 0,
+    }
     assert data["acts"][1]["repeated"] == ["«el olor dulce y putrefacto» (del acto 1)"]
     assert data["acts"][1]["cliches"] == ["me heló la sangre"]  # una vez, aunque haya variantes
+    # Spec-590 F: «Otra vez el olor dulce y putrefacto.» no tiene verbo (1 de 2 oraciones).
+    assert data["acts"][1]["cut_sentences"] == ["Otra vez el olor dulce y putrefacto."]
+    assert (data["acts"][1]["cut_pct"], data["acts"][1]["too_cut"]) == (50, True)
+    assert data["acts"][1]["dialogue"] == 0
 
 
 async def test_una_historia_con_sinopsis_larga_se_lee_y_se_guarda(client):

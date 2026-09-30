@@ -136,7 +136,10 @@ async def get_narrative_repetition(
     narrative_id: str,
     use_case: GenerateNarrativesUseCase = Depends(_narrative_use_case),
 ):
-    """Spec-530 §8.3: frases que cada acto repite de uno anterior y clichés (sin LLM)."""
+    """Spec-530 §8.3: frases que cada acto repite de uno anterior y clichés (sin LLM).
+
+    Spec-590 F: también oraciones cortadas (`too_cut` desde el 25 %) y diálogo directo.
+    """
     try:
         nid = UUID(narrative_id)
     except ValueError:
@@ -155,6 +158,11 @@ async def get_narrative_repetition(
                 "repeated": r.repeated,
                 "cliches": r.cliches,
                 "invented_names": r.invented_names,
+                "cut_sentences": r.cut_sentences,
+                "cut_count": r.cut_count,
+                "cut_pct": r.cut_pct,
+                "too_cut": r.too_cut,
+                "dialogue": r.dialogue,
             }
             for r in repetition_check.check(acts, known=known)
         ]
