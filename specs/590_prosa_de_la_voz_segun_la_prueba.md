@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD (Spec-Driven Development) — calidad de la prosa (Voz y Memoria)
-**Estado:** TASKS — spec aprobada 2026-09-30; plan y tareas a revisar por el usuario
+**Estado:** CERRADA 2026-09-30 — S0–S3 implementados; S4 reducido a documentación y PR por la [Spec-600](600_rumbo_voz_frontier_y_cierre.md) (D4: la Voz pasa a Claude y la medición «después» se hace allí, local contra híbrido)
 **Rama:** `feat/spec-590-prosa` (desde `development`)
 **Evidencia:** [`590_anexo_prueba_usuarias.md`](590_anexo_prueba_usuarias.md) — correcciones de las beta testers sobre «NO TE DETENGAS EN EL BOSQUE».
 **Extiende:** Spec-470 (oficio de la Voz), Spec-530 §8 (pipeline: Voz, Memoria, control de repetición) y Spec-560 A1/A2 (puente, final del acto anterior, regenerar sin repetir).
@@ -256,9 +256,9 @@ Dos relatos en `storymaker.test` con la historia del bosque (gemma3:12b): el pri
 - **Diálogo:** se concentra en el acto 4 (12 y 6 fragmentos), donde la escaleta trae las preguntas del almacenero entre comillas; en el segundo relato sale como diálogo con raya. Queda para S4.
 - **Hecho inventado al cierre:** el acto 4 termina con «Alguien golpeó la puerta del almacén.» y el acto 5 cierra copiando esa misma oración.
 
-### S4 — Después
+### S4 — Después · no se mide acá
 
-_(pendiente)_
+La [Spec-600](600_rumbo_voz_frontier_y_cierre.md) decidió (D1, D4) llevar la Voz a Claude Sonnet 5.5 y dejar de ajustar el 12b. La medición «después» se hace una sola vez en su S1, con la misma historia y las mismas métricas, y compara la base local (§7, S0 y S3) contra el perfil híbrido. El diálogo del acto 4 (preguntas entre comillas de la escaleta) queda sin ajuste: se vuelve a mirar con la Voz en Claude.
 
 ---
 
@@ -266,7 +266,7 @@ _(pendiente)_
 
 Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx playwright test` en verde (output filtrado), `make dev-status` en verde y la URL de `storymaker.test` con qué mirar. Commit por slice en `feat/spec-590-prosa`.
 
-### S0 — Línea base
+### S0 — Línea base · ✅ 2026-09-30
 - [x] T0.1 Copiar `data/prod/stories.db` al scratchpad y, contra la copia (`DATABASE_URL=…`), `export-yaml 8385f6ea-…` → `input_stories/no_te_detengas_en_el_bosque.yaml` (dirección, taller y escaleta). Nunca apuntar el CLI a la DB de prod directamente.
 - [x] T0.2 `scripts/evaluate_voice.py`: `--input <yaml>` (default: «El monte prohibido»); con `--input` las entidades salen del YAML y no se usan las variantes `sin,con` fijas del monte. La escaleta del YAML se respeta (no se re-planifica). Test en `tests/unit/scripts/test_evaluate_voice.py`.
 - [x] T0.3 Heurística de F en `repetition_check.py` (`split_sentences`, `has_finite_verb`, `cut_sentences`, `dialogue_lines`) con el **contrato del anexo** en `tests/unit/application/test_repetition_check.py`: detecta «El sonido de mis pies golpeando la tierra.», «El sabor metálico de la sangre en mi boca.», «Un sonido.», «Más cerca.», «Solo.»; no detecta sus reescrituras (salvo «Esta vez más cerca de mí.», ver §2.F). Diálogo: detecta `“¿Viste cuántos eran?” preguntó` y una línea con raya; no detecta «me preguntó si había visto cuántos eran».
@@ -290,7 +290,7 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T2.7 `SNAPSHOT_UPDATE=1` y revisar el diff: solo cambian los prompts de la Voz. Commit con el diff explicado.
 - [x] T2.8 Validar en dev: generar un relato en `storymaker.test` (gemma, ~4–5 min) y mirar el panel: menos oraciones cortadas, sin diálogo.
 
-### S3 — C + E + lo que le llega a la Voz
+### S3 — C + E + lo que le llega a la Voz · ✅ 2026-09-30
 - [x] T3.1 Esquema: `NarrativeJournal.body_state` / `narrator_traits`; columnas en `init_db()`; `save_journal` / `get_journal` en `story_repository.py`; `is_empty()` las considera. Tests: `test_models.py`, `test_db_connection.py`, repo. `make dev-db` (con `ARGS=--yes` si hace falta).
 - [x] T3.2 Memoria: `Memoria.cuerpo` y `Memoria.asi_es`; `outline_journal.md` pide los dos campos y recibe la memoria anterior completa; `outline_journal_system.md` sin cambios de fondo; `mock_structured.py` responde los campos nuevos. Test: el cuerpo del acto anterior llega al prompt de la Memoria; los rasgos se acumulan sin duplicados (tope 12).
 - [x] T3.3 Voz: `_already_happened()` desde la escaleta (con caída a `last_events`); sección «CÓMO ESTÁ {NARRADOR} AHORA (no lo contradigas)» con `body_state` + `estado`; «ASÍ ES {NARRADOR} (mantenelo; podés sumar)» cuando hay rasgos; se va la línea «Estado:». Tests en `test_outline_narrator.py` (incluye el caso del vidrio en el oído: el cuerpo del acto 2 aparece en el prompt del acto 3).
@@ -301,10 +301,10 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T3.8 `SNAPSHOT_UPDATE=1` y revisar el diff: Voz y Memoria; asistente igual. Medir el prompt más largo del snapshot (acto 5) contra el presupuesto de §2 (≤ ~3 300 tokens).
 - [x] T3.9 Validar en dev: `make dev-db`, importar la historia de prueba (`import-yaml`), generar y leer continuidad y rasgos.
 
-### S4 — Medición, prueba con ellas y documentación
-- [ ] T4.1 `evaluate_voice.py … --label despues-590 --runs 2 --out scripts/research/590/despues` (gemma). Comparar con la base contra los criterios de éxito; lectura: herida, rasgos y contradicciones, adelantos de la premisa, ejemplo copiado. Resultados en §7.
-- [ ] T4.2 Si algún riesgo se dio (§5, Riesgos): ajuste dentro del slice y nueva corrida.
-- [ ] T4.3 (Opcional, con OK) Sonnet: `--profile anthropic-sonnet5` sin `--yes` para estimar; con OK, 1 corrida. Resultados en §7.
-- [ ] T4.4 `estimated_seconds` (`full_generation`, `regenerate_voz`) con lo medido.
-- [ ] T4.5 `CLAUDE.md`: qué recibe la Voz (premisa, lo que ya pasó desde la escaleta, cómo está, así es, último párrafo, sin diálogo), la Memoria (`cuerpo`, `asi_es`) y el control de repetición (oraciones cortadas, diálogo); tabla `narrative_journal`.
-- [ ] T4.6 PR a `development`. Prueba con ellas en `storymaker.test` (relato nuevo, mismas cuatro correcciones del anexo). Pase a prod solo cuando el usuario lo pida (export/import por el cambio de esquema).
+### S4 — Documentación y PR (medición en la Spec-600) · ✅ 2026-09-30
+- [→] T4.1 (pasa a Spec-600 S1) `evaluate_voice.py … --label despues-590 --runs 2 --out scripts/research/590/despues` (gemma). Comparar con la base contra los criterios de éxito; lectura: herida, rasgos y contradicciones, adelantos de la premisa, ejemplo copiado. Resultados en §7.
+- [→] T4.2 (pasa a Spec-600 S1/S2) Si algún riesgo se dio (§5, Riesgos): ajuste dentro del slice y nueva corrida.
+- [→] T4.3 (pasa a Spec-600 S1) (Opcional, con OK) Sonnet: `--profile anthropic-sonnet5` sin `--yes` para estimar; con OK, 1 corrida. Resultados en §7.
+- [x] T4.4 `estimated_seconds` (`full_generation`, `regenerate_voz`) con lo medido: `full_generation` 210 → 285 (268 y 302 s en dev); `regenerate_voz` sin corridas medidas, queda igual.
+- [x] T4.5 `CLAUDE.md`: qué recibe la Voz (premisa, lo que ya pasó desde la escaleta, cómo está, así es, último párrafo, sin diálogo), la Memoria (`cuerpo`, `asi_es`) y el control de repetición (oraciones cortadas, diálogo); tabla `narrative_journal`.
+- [x] T4.6 PR a `development`. La prueba con ellas y el pase a prod quedan en la Spec-600 S3 (con la Voz en Claude; DB nueva por el cambio de esquema, datos descartables).
