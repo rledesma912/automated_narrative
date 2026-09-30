@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, decisión de arquitectura y alcance de cierre
-**Estado:** TASKS (D1–D5 decididas y plan aprobado el 2026-09-30); S0 en curso
-**Rama:** S0 en `feat/spec-590-prosa`; desde S1, `feat/spec-600-voz-frontier` (desde `development`, después de mergear la 590)
+**Estado:** IMPLEMENT — S0 ✅ (PR #46); S1 en curso
+**Rama:** S0 en `feat/spec-590-prosa` (PR #46, mergeado); S1 en `feat/spec-600-voz-frontier`
 **Extiende:** Spec-480 (proveedor por rol), Spec-590 (prosa según la prueba con usuarias)
 
 ---
@@ -151,13 +151,33 @@ Cuatro slices, en este orden. S0 cierra lo abierto sin gastar. S1 hace el cambio
 | D2 | ¿Qué modelo para la Voz? | ✅ **Sonnet 5.5** (usuario, 2026-09-30). S1 compara con Opus 5.5 en **1** relato (≈ US$ 0,40) solo si Sonnet no convence. |
 | D3 | Si la API falla, ¿caer al modelo local o fallar? | ✅ **Fallar con mensaje claro** (usuario, 2026-09-30). Un relato mezclado (actos en Claude y actos en gemma) se nota y confunde; se reintenta regenerando el acto. |
 | D4 | ¿Cerramos la 590 sin el ajuste del diálogo? | ✅ **Sí** (usuario, 2026-09-30; §4). |
+| D6 | ¿Cómo piensa la Voz en Sonnet 5.5? | ✅ **Adaptativo con effort `low`** (2026-09-30): lo que recomienda la doc de la API para generar contenido; `between_tools` (sin pensar) queda como alternativa. La guía de la API confirmó que Sonnet 5.5 rechaza `disabled` y los parámetros de sampling. El fallback del servidor ante un rechazo no se usa: solo reintenta las categorías `cyber` y `frontier_llm`, que no aplican a un relato. |
 | D5 | Crédito en la API: hoy no hay. ¿Cargás crédito (US$ 5–10 alcanzan para medir y varios meses de uso)? | ✅ Crédito cargado y clave nueva en `.env` (alcance: espacio de trabajo predeterminado, vence 2026-10-30), validada con `GET /v1/models` (2026-09-30). |
 
 ---
 
 ## 7. RESULTADOS
 
-_(pendiente)_
+### S1 — La Voz en Sonnet 5.5 · 2026-09-30
+
+Dos relatos de «No te detengas en el bosque» con `hibrido-sonnet55` (Voz en `claude-sonnet-5-5`, adaptativo `low`; Memoria en gemma3:12b), la escaleta del YAML y la extensión nueva (D11, ~2 000 palabras). Evidencia en `scripts/research/600/hibrido/`.
+
+| | Palabras | Oraciones cortadas | Diálogo | Frases repetidas | Clichés |
+|---|---|---|---|---|---|
+| gemma, base (590 S0) | 1 989 | 53 % | 13,5 | — | — |
+| gemma, 590 S3 (primera oración) | 3 190 | 15 % | 10 | 5 | 3 |
+| **Sonnet 5.5 (2 relatos)** | **2 191 / 2 207** | **3 % / 4 %** | **0 / 0** | **0 / 0** | **0 / 0** |
+
+- **Costo real: US$ 0,17 los dos (US$ 0,09 por relato)**, por debajo de la estimación (US$ 0,13).
+- **Diálogo:** las preguntas del almacenero (entre comillas en la escaleta) salen contadas: «me preguntó si había visto cuántos eran». El problema que la 590 dejó abierto se resolvió sin tocar nada.
+- **Continuidad del cuerpo:** la herida del oído vuelve en los actos 3 y 4 en los dos relatos («el zumbido del oído izquierdo», «la oreja goteándome sobre el hombro»).
+- **Rasgos:** el termo, las galletitas, la vergüenza de llegar tarde y el silbar al manejar aparecen y vuelven; sin contradicciones.
+- **Adelantos:** ninguno; las astas recién en el acto 3.
+- **Cierre inventado del acto 4** (visto en la 590 S3): no aparece. El acto 5 recuerda «todavía no salieron del bosque», que viene de la escaleta.
+- **Detalles:** dos erratas en el relato 1 («un banquina», «banquinal») y dos frases raras en el 2 («las zapatillas ajenas, por así decirlo», «me inventan excusas en la cara»). Se corrigen al editar.
+- **Extensión:** ~2 200 palabras ≈ 17 min a 130 palabras por minuto, en el borde alto del objetivo de la Spec-610 (15 min). Se ajusta con el primer episodio grabado, cuando se sepa el ritmo real de lectura.
+
+**Conclusión:** supera los criterios de éxito de la 590 (cortadas ≤ 26 %, diálogo 0, frases repetidas y clichés sin subir) en todos los puntos. S2 (aliviar el prompt) **no hace falta** según los números; lo decide la lectura del usuario (T1.7).
 
 ---
 
@@ -170,15 +190,16 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T0.2 `estimated_seconds.full_generation` de `ollama-gemma3-12b` 210 → 285 (medido en dev: 268 y 302 s). `regenerate_voz` queda: no hay corridas medidas.
 - [x] T0.3 `CLAUDE.md`: qué recibe la Voz (premisa en su primera oración, lo que ya pasó desde la escaleta, cómo está, así es, último párrafo, sin diálogo), la Memoria (`cuerpo`, `asi_es`), el control de repetición (oraciones cortadas, diálogo) y la tabla `narrative_journal`. Mención de la Spec-590 y la 600 en «Specs».
 - [x] T0.4 Esta spec se commitea con la 590 (es la que decide su cierre).
-- [ ] T0.5 Tests en verde, `make dev-status`, commit, push y PR a `development`. El usuario mergea.
+- [x] T0.5 Tests en verde, `make dev-status`, commit, push y PR a `development`. El usuario mergea.
 
 ### S1 — La Voz en Sonnet 5.5 (rama `feat/spec-600-voz-frontier`, desde `development`)
-- [ ] T1.1 Confirmar en la doc de la API (skill `claude-api`) el modo sin pensar de Sonnet 5.5 y los errores (402/401/429/529).
-- [ ] T1.2 `AnthropicAdapter`: `thinking: between_tools`; docstring al día. Test.
-- [ ] T1.3 `LLMUnavailableError` + mensajes coloquiales por causa en el adapter. Tests del adapter y del job (`failed` con el texto).
-- [ ] T1.4 Perfil `hibrido-sonnet55` en `llm_core_definitions.yaml`; `anthropic-sonnet5` pasa a `claude-sonnet-5-5` con `between_tools`. Test del resolver (el rol `voz` va a Anthropic, el resto a Ollama). `LLM_PROFILE=hibrido-sonnet55` en `.env` de dev; `/config/active-profile` y `/health` en verde.
-- [ ] T1.5 Una llamada chica real (1 acto, `regenerate_voz` en dev) para confirmar el request antes de medir.
-- [ ] T1.6 Medición (§5): estimar sin `--yes`, OK del usuario, 2 corridas. Resultados en §7: palabras, cortadas, diálogo, repetidas, clichés, costo real (tokens) y tiempo; lectura de la herida, rasgos, adelantos y el cierre inventado del acto 4.
+- [x] T1.1 Confirmar en la doc de la API (skill `claude-api`) el modo sin pensar de Sonnet 5.5 y los errores (402/401/429/529).
+- [x] T1.2 `AnthropicAdapter`: `thinking: between_tools`; docstring al día. Test.
+- [x] T1.3 `LLMUnavailableError` + mensajes coloquiales por causa en el adapter (402 o 400 «credit balance» → crédito; 401/403 → clave; 429/529/5xx → saturada; red → sin conexión). Tests del adapter y del job (`failed` con el texto, sin llamadas de la Voz al modelo local).
+- [x] T1.4 Perfil `hibrido-sonnet55` en `llm_core_definitions.yaml`; `anthropic-sonnet5` pasa a `anthropic-sonnet55` (`claude-sonnet-5-5`, `between_tools`; la Voz adaptativa `low`). Test del resolver (el rol `voz` va a Anthropic, el resto a Ollama). `LLM_PROFILE=hibrido-sonnet55` en `.env` de dev; `/config/active-profile` y `/health` en verde.
+- [x] T1.5 Una llamada chica real para confirmar el request antes de medir: HTTP 200, 65/132 tokens, US$ 0,0015, 2,9 s (2026-09-30).
+- [x] T1.5b (Spec-610 D11) Extensión para un episodio de ~15 min: `word_range` 100 palabras por evento, 250–500 por acto, desenlace 180–300 (~2 000 palabras); «un párrafo por evento». Se mide ya con Sonnet para no medir dos veces.
+- [x] T1.6 Medición (§5): estimar sin `--yes`, OK del usuario, 2 corridas. Resultados en §7: palabras, cortadas, diálogo, repetidas, clichés, costo real (tokens) y tiempo; lectura de la herida, rasgos, adelantos y el cierre inventado del acto 4.
 - [ ] T1.7 El usuario lee un relato en `storymaker.test` y decide si hace falta S2.
 
 ### S2 — (solo si S1 lo pide) Prompt de la Voz para el frontier
