@@ -71,7 +71,12 @@ def test_prompt_de_la_voz_con_escaleta(story):
     assert "NO REVELES TODAVÍA: Quién es ella" in user
     assert "Acto 1: José termina el turno.\nEstado: Cansado" in user
     assert "- olor a flores\n- «¿Todo bien, José?»" in user
-    assert "EXTENSIÓN: entre 200 y 280 palabras." in user
+    assert "contá cada evento en uno o dos párrafos" in user
+    assert "en total, entre 350 y 400 palabras." in user
+    # Spec-590 B y C: sin diálogo directo; rasgos y gestos chicos inventados por la Voz.
+    assert "Nunca escribas diálogo: ni rayas ni comillas" in system
+    assert "Si hay diálogo" not in system
+    assert "tus gustos, tus manías y alguna inseguridad tuya" in system
     assert "RESONANCIA" not in user and "FIDELIDAD" not in user
 
 
@@ -87,10 +92,11 @@ def test_el_acto_5_cierra_con_el_final_del_autor(story):
 
 
 def test_extension_proporcional():
-    assert word_range(ActOutline(number=1, events=["a"])) == (200, 250)
-    assert word_range(ActOutline(number=3, events=["a"] * 4)) == (410, 500)
-    assert word_range(ActOutline(number=2, events=["a"] * 9)) == (460, 550)
-    assert word_range(ActOutline(number=5, events=["a"] * 6)) == (150, 280)
+    # Spec-590 D: 170 palabras por evento, entre 400 y 900; el desenlace, 250–450.
+    assert word_range(ActOutline(number=1, events=["a"])) == (350, 400)
+    assert word_range(ActOutline(number=3, events=["a"] * 4)) == (590, 740)
+    assert word_range(ActOutline(number=2, events=["a"] * 9)) == (750, 900)
+    assert word_range(ActOutline(number=5, events=["a"] * 6)) == (250, 450)
 
 
 def test_motivos_sin_repetir():

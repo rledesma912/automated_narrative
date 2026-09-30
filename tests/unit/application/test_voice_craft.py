@@ -59,6 +59,16 @@ def test_extras_de_la_voz_guia_clichés_y_parentescos(pb):
     assert "{" not in "".join(extras.values())  # ningún placeholder sin completar
 
 
+def test_la_guia_pide_oraciones_completas(pb):
+    """Spec-590 A: nada de «frases cortas»; el ritmo va por el largo de los párrafos."""
+    guia = pb._voice_extras(_story(storyteller_name="Irene"))["guia_oficio"]
+    assert "oraciones completas, cada una con su verbo" in guia
+    assert "el largo de los párrafos" in guia
+    assert "frases cortas" not in guia
+    assert "Tu nombre no aparece en lo que narrás" in guia
+    assert "ASÍ NO Y ASÍ SÍ" in guia
+
+
 def test_sin_narrador_la_guia_habla_del_narrador(pb):
     extras = pb._voice_extras(_story())
     assert "Contalos siempre desde vos, el narrador" in extras["guia_oficio"]

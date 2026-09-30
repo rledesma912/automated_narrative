@@ -20,9 +20,11 @@ from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, NarrativeJournal, Story
 
 NUM_ACTS = 5
-WORDS_PER_EVENT = 110
-MIN_WORDS, MAX_WORDS = 250, 550
-LAST_ACT_WORDS = (150, 280)  # desenlace: brevedad emocional
+# Spec-590 D: más material (quienes editan prefieren cortar a inventar).
+WORDS_PER_EVENT = 170
+MIN_WORDS, MAX_WORDS = 400, 900
+RANGE_WIDTH = 150
+LAST_ACT_WORDS = (250, 450)  # desenlace: más corto que el resto
 MAX_MOTIFS = 30
 _ACT_NAMES = {
     "exposicion": "Exposición",
@@ -44,7 +46,7 @@ def word_range(act: ActOutline) -> tuple[int, int]:
     if act.number == NUM_ACTS:
         return LAST_ACT_WORDS
     top = max(MIN_WORDS, min(MAX_WORDS, WORDS_PER_EVENT * max(1, len(act.events)) + 60))
-    return max(MIN_WORDS - 50, top - 90), top
+    return max(MIN_WORDS - 50, top - RANGE_WIDTH), top
 
 
 def merge_motifs(previous: list[str], new: list[str]) -> list[str]:
@@ -223,7 +225,7 @@ class OutlineNarrator:
             prompt=prompt,
             system_prompt=self.templates.load("outline_journal_system.md"),
             output=Memoria,
-            min_predict=700,
+            min_predict=900,
         )
         past = previous.last_events if previous and previous.last_events else ""
         events = f"{past}\nActo {act.number}: {memoria.hechos.strip()}".strip()

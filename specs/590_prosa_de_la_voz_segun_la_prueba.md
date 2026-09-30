@@ -89,7 +89,7 @@ Los límites son nuestros (`word_range`, `num_predict`). Lo que sí tiene el 12b
 ### A — Oraciones completas (oficio y forma de contar)
 
 - **`voice_craft.md` reescrito como narración oral:** oraciones completas con verbo conjugado; conectores que enlazan lo que pasa; quien narra dice **por qué** hace lo que hace. El ritmo se marca con el **largo de los párrafos** (más cortos cuando sube la tensión), no cortando las oraciones. Se van: «frases cortas y concretas» y «terminá en una imagen» (queda: cerrar el acto con algo concreto que inquiete, contado en una oración completa). Se mantienen: sugerir antes de nombrar el miedo, clichés prohibidos, primera persona, léxico rioplatense.
-- **Un ejemplo corto** de antes/después en el propio `voice_craft.md`, tomado del anexo («Un sonido. Leve…» → «Después escuché un sonido, leve…»). Un ejemplo pesa más que una regla en el 12b; se vigila en S4 que no lo copie textual.
+- **Un ejemplo corto** de antes/después en el propio `voice_craft.md`, con la forma del del anexo pero de otra escena (una puerta abierta y un olor a quemado): el del chasquido es de la historia de prueba y contaminaría la medición. Un ejemplo pesa más que una regla en el 12b; se vigila en S4 que no lo copie textual.
 - **«Confesión»** (`authoring_options.yaml`): sin «frases que se detienen». Queda el tono bajo, íntimo, de quien carga algo. Se revisan las otras tres formas de contar para que ninguna pida fragmentar (hoy «caso» pide «alternar cortas y largas»: se deja, sin «cortas» como fragmento).
 - **Una sola instrucción por tema:** el estilo solo en `voice_craft.md`; `outline_voice_system.md` no repite ni contradice.
 
@@ -226,6 +226,20 @@ Cinco slices, en este orden: primero se mide (S0) y se construye el instrumento 
 - **Continuidad de la herida:** en estas dos corridas no saltó de lugar (#1 la retoma como «el golpe en la oreja» y «una mota de vidrio»; #2, como «un zumbido en el oído»). El error del anexo es **intermitente**; se sigue leyendo en S4.
 - **Objetivo de S4** (criterios de éxito): oraciones cortadas ≤ 26 %, diálogo 0, palabras ≥ 2 980, frases repetidas y clichés sin subir.
 
+### S2 — Control intermedio (1 relato en dev, sin la Memoria nueva) · 2026-09-30
+
+Relato `90a9ae38-…` generado en `storymaker.test` con la historia del bosque (gemma3:12b, 288 s).
+
+| | Palabras | Oraciones cortadas | Diálogo | Frases repetidas | Clichés |
+|---|---|---|---|---|---|
+| `base` promedio | 1 989 | 53 % | 13,5 | 1,5 | 1,0 |
+| S2 (1 relato) | **3 268** | **17 %** | **3** | **0** | 2 |
+
+- Por acto: 718 / 686 / 538 / 879 / 432 palabras; cortadas 14 / 27 / 18 / 5 / 24 %.
+- **Diálogo que queda:** las frases que la escaleta y el final traen entre comillas («Entonces no tenemos de qué preocuparnos», «Entonces todavía no salieron del bosque») y un «¿Está todo bien?» del acto 5. El resto del acto 4 pasó a indirecto («Me preguntó si había visto cuántos eran»).
+- **Personalidad sin datos cargados:** café frío de la térmica, «me pongo nervioso si llego tarde… es una manía», fuma para pensar, se muerde el labio cuando está nervioso, piensa en «mi vieja». El cigarrillo aparece en los actos 1, 2 y 3 (coherente, sin la Memoria nueva).
+- **Para S3/S4:** la herida del oído no se retoma después del acto 2; el acto 4 cierra en presente («Ahora estoy aquí…») y suma un hecho que no está en la escaleta (la radio se apaga); 2 clichés («me heló la sangre», «como una mortaja»).
+
 ### S4 — Después
 
 _(pendiente)_
@@ -250,15 +264,15 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T1.4 `_avoid()` (regenerar un acto): «- Tenía N oraciones cortadas (por ejemplo: «…»): escribí oraciones completas» y «- Tenía diálogo: contá lo que dicen, sin rayas ni comillas». Test en `test_outline_narrator.py`. El snapshot no cambia (sin versión anterior no aparece).
 - [x] T1.5 Validar en dev: un relato existente de `storymaker.test` muestra los contadores nuevos en su panel.
 
-### S2 — A + B + D: la forma de escribir
-- [ ] T2.1 `voice_craft.md` reescrito (A): narración oral con oraciones completas y conectores; ritmo por largo de párrafo; cierre concreto en oración completa; se mantienen sugerir, clichés, primera persona y léxico; ejemplo antes/después del anexo; «tu nombre no aparece en lo que narrás».
-- [ ] T2.2 `outline_voice_system.md`: regla de diálogo indirecto (B) en lugar de «Si hay diálogo…»; permiso de rasgos y gestos chicos (C) en lugar de «no inventes hechos nuevos»; nada de estilo acá (vive en `voice_craft.md`).
-- [ ] T2.3 `authoring_options.yaml`: «confesión» sin «frases que se detienen»; «caso» sin «cortas» como fragmento. `test_authoring_options` (o el que cubra el catálogo) en verde.
-- [ ] T2.4 `outline_voice.md`: «Contá cada evento en uno o dos párrafos; el momento más fuerte, en más.» antes de EXTENSIÓN.
-- [ ] T2.5 `word_range`: 170 / 400 / 900 y desenlace 250–450; tests de `word_range` actualizados.
-- [ ] T2.6 `llm_core_definitions.yaml`: `voz.num_predict` 1000 → 1800 (gemma) y 2000 → 2500 (Sonnet); `remember()` `min_predict` 700 → 900.
-- [ ] T2.7 `SNAPSHOT_UPDATE=1` y revisar el diff: solo cambian los prompts de la Voz. Commit con el diff explicado.
-- [ ] T2.8 Validar en dev: generar un relato en `storymaker.test` (gemma, ~4–5 min) y mirar el panel: menos oraciones cortadas, sin diálogo.
+### S2 — A + B + D: la forma de escribir · ✅ 2026-09-30
+- [x] T2.1 `voice_craft.md` reescrito (A): narración oral con oraciones completas y conectores; ritmo por largo de párrafo; cierre concreto en oración completa; se mantienen sugerir, clichés, primera persona y léxico; ejemplo antes/después **nuevo** con la misma forma que el del anexo (una puerta abierta: el del chasquido es de la historia de prueba y contaminaría la medición); «tu nombre no aparece en lo que narrás».
+- [x] T2.2 `outline_voice_system.md`: regla de diálogo indirecto (B) en lugar de «Si hay diálogo…»; permiso de rasgos y gestos chicos (C) en lugar de «no inventes hechos nuevos»; nada de estilo acá (vive en `voice_craft.md`).
+- [x] T2.3 `authoring_options.yaml`: «confesión» sin «frases que se detienen»; «caso» sin «cortas» como fragmento. `test_authoring_options` (o el que cubra el catálogo) en verde.
+- [x] T2.4 `outline_voice.md`: «Contá cada evento en uno o dos párrafos; el momento más fuerte, en más.» antes de EXTENSIÓN.
+- [x] T2.5 `word_range`: 170 / 400 / 900 y desenlace 250–450; tests de `word_range` actualizados.
+- [x] T2.6 `llm_core_definitions.yaml`: `voz.num_predict` 1000 → 1800 (gemma) y 2000 → 2500 (Sonnet); `remember()` `min_predict` 700 → 900.
+- [x] T2.7 `SNAPSHOT_UPDATE=1` y revisar el diff: solo cambian los prompts de la Voz. Commit con el diff explicado.
+- [x] T2.8 Validar en dev: generar un relato en `storymaker.test` (gemma, ~4–5 min) y mirar el panel: menos oraciones cortadas, sin diálogo.
 
 ### S3 — C + E + lo que le llega a la Voz
 - [ ] T3.1 Esquema: `NarrativeJournal.body_state` / `narrator_traits`; columnas en `init_db()`; `save_journal` / `get_journal` en `story_repository.py`; `is_empty()` las considera. Tests: `test_models.py`, `test_db_connection.py`, repo. `make dev-db` (con `ARGS=--yes` si hace falta).

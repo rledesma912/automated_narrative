@@ -39,7 +39,7 @@ profiles:
         model: gemma3:12b
         temperature: 0.6
         num_ctx: 8192
-        num_predict: 1000
+        num_predict: 1800  # Spec-590 D: hasta 900 palabras (~1,6 tokens por palabra)
         stop: []
       journal:
         model: gemma3:12b
@@ -84,7 +84,7 @@ profiles:
         thinking: disabled
       voz:
         model: claude-sonnet-5
-        num_predict: 2000
+        num_predict: 2500  # Spec-590 D: actos de hasta 900 palabras, con margen
         thinking: disabled   # adaptive: planifica cada acto (~60% más caro)
       journal:
         model: claude-sonnet-5
