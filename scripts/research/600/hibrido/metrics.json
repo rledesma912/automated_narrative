@@ -1,0 +1,137 @@
+{
+  "label": "hibrido",
+  "perfil": "hibrido-sonnet55",
+  "historia": "no_te_detengas_en_el_bosque.yaml",
+  "voz_temperature": null,
+  "relatos": [
+    {
+      "variante": "relato",
+      "corrida": 1,
+      "palabras": 2191,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 0,
+      "oraciones_cortadas": 3,
+      "oraciones_cortadas_pct": 3,
+      "dialogo": 0,
+      "por_acto": [
+        {
+          "palabras": 477,
+          "oraciones": 23,
+          "cortadas": 1,
+          "cortadas_pct": 4,
+          "dialogo": 0
+        },
+        {
+          "palabras": 495,
+          "oraciones": 22,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0
+        },
+        {
+          "palabras": 452,
+          "oraciones": 18,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0
+        },
+        {
+          "palabras": 473,
+          "oraciones": 24,
+          "cortadas": 2,
+          "cortadas_pct": 8,
+          "dialogo": 0
+        },
+        {
+          "palabras": 279,
+          "oraciones": 12,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0
+        }
+      ],
+      "costo_usd": 0.0875,
+      "tokens": {
+        "voz": [
+          19637,
+          4823
+        ]
+      }
+    },
+    {
+      "variante": "relato",
+      "corrida": 2,
+      "palabras": 2207,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 0,
+      "oraciones_cortadas": 4,
+      "oraciones_cortadas_pct": 4,
+      "dialogo": 0,
+      "por_acto": [
+        {
+          "palabras": 447,
+          "oraciones": 20,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0
+        },
+        {
+          "palabras": 581,
+          "oraciones": 22,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0
+        },
+        {
+          "palabras": 427,
+          "oraciones": 18,
+          "cortadas": 2,
+          "cortadas_pct": 11,
+          "dialogo": 0
+        },
+        {
+          "palabras": 460,
+          "oraciones": 22,
+          "cortadas": 2,
+          "cortadas_pct": 9,
+          "dialogo": 0
+        },
+        {
+          "palabras": 277,
+          "oraciones": 11,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0
+        }
+      ],
+      "costo_usd": 0.0872,
+      "tokens": {
+        "voz": [
+          19595,
+          4803
+        ]
+      }
+    }
+  ],
+  "promedios": {
+    "relato": {
+      "cliches": 0.0,
+      "parentescos_mal": 0.0,
+      "narrador_3ra_persona": 0.0,
+      "frases_repetidas": 0.0,
+      "palabras": 2199.0,
+      "oraciones_cortadas_pct": 3.5,
+      "dialogo": 0.0
+    }
+  },
+  "costo_total_usd": 0.1747,
+  "costo_por_relato_usd": 0.09
+}

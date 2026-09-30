@@ -55,6 +55,18 @@ class LLMRefusalError(LLMResponseError):
         self.category = category
 
 
+class LLMUnavailableError(NarrativeError):
+    """La API del proveedor no atendió el pedido: sin crédito, clave, saturada o sin red.
+
+    Spec-600 D3: el trabajo falla con un mensaje que entiende quien usa el sitio (llega
+    tal cual a `job.error`); no se cae al modelo local ni se reintenta solo.
+    """
+
+    def __init__(self, cause: str, message: str, detail: str | None = None):
+        super().__init__(message, details={"cause": cause, "detail": detail})
+        self.cause = cause
+
+
 class DatabaseError(NarrativeError):
     """Error de base de datos durante persistencia."""
 

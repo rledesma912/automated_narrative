@@ -1,4 +1,4 @@
-"""Anthropic API adapter (Spec-480: al día con Claude Sonnet 5 / Opus 5)."""
+"""Anthropic API adapter (Spec-480; Spec-600: Claude Sonnet 5.5 en la Voz)."""
 
 import logging
 import time
@@ -6,7 +6,7 @@ import time
 import anthropic
 
 from src.config import settings
-from src.domain.exceptions import LLMRefusalError, LLMResponseError
+from src.domain.exceptions import LLMRefusalError, LLMResponseError, LLMUnavailableError
 from src.domain.interfaces import LLMResponse
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,28 @@ _NO_SAMPLING_PREFIXES = (
 # Con pensamiento, el razonamiento sale del mismo max_tokens: piso para no truncar el texto.
 _THINKING_MIN_MAX_TOKENS = 16000
 _DEFAULT_MAX_TOKENS = 4096
+# Modos de `thinking` que se mandan tal cual. `disabled` lo rechaza Sonnet 5.5 (400): ahí
+# lo más bajo es `between_tools` (sin pensamiento extendido, effort `high` o menos).
+_THINKING_MODES = ("adaptive", "disabled", "between_tools")
+_NO_THINKING = ("disabled", "between_tools")
+
+# Spec-600 D3: lo que ve quien generaba el relato cuando la API no atiende.
+_UNAVAILABLE = {
+    "credito": (
+        "La IA que escribe el relato se quedó sin crédito. "
+        "Avisá a quien administra el sitio y probá de nuevo cuando lo cargue."
+    ),
+    "clave": (
+        "La IA que escribe el relato no acepta la clave (venció o no es válida). "
+        "Avisá a quien administra el sitio."
+    ),
+    "saturada": "La IA que escribe el relato está saturada. Probá de nuevo en unos minutos.",
+    "sin_conexion": (
+        "No se pudo hablar con la IA que escribe el relato (sin conexión). "
+        "Revisá internet y probá de nuevo."
+    ),
+    "error": "La IA que escribe el relato respondió con un error. Probá de nuevo más tarde.",
+}
 
 
 # Restricciones de JSON Schema que los structured outputs de Anthropic no aceptan.
@@ -55,12 +77,31 @@ def anthropic_json_schema(schema: dict) -> dict:
     return out
 
 
+def _status_cause(e: anthropic.APIStatusError) -> str:
+    """Causa de un error HTTP de la API, para el mensaje de `LLMUnavailableError`."""
+    text = str(e).lower()
+    if e.status_code == 402 or getattr(e, "type", None) == "billing_error" or "credit" in text:
+        # Sin saldo: 402 `billing_error`, o 400 «credit balance is too low».
+        return "credito"
+    if e.status_code in (401, 403):
+        return "clave"
+    if e.status_code in (429, 529) or e.status_code >= 500:
+        return "saturada"
+    return "error"
+
+
+def _unavailable(cause: str, e: Exception) -> LLMUnavailableError:
+    logger.error(f"[ANTHROPIC] {cause}: {e}")
+    return LLMUnavailableError(cause, _UNAVAILABLE[cause], detail=str(e))
+
+
 class AnthropicAdapter:
     """Adapter para la API de Anthropic.
 
     Config por rol (perfil): `model`, `num_predict` (→ max_tokens), `temperature` (solo
-    modelos con sampling), `thinking` (`adaptive` | `disabled`; sin valor no se manda y el
-    modelo usa su default — en Sonnet 5 / Opus 5 eso es pensar) y `effort`.
+    modelos con sampling), `thinking` (`adaptive` | `disabled` | `between_tools`; sin valor
+    no se manda y el modelo usa su default — en Sonnet 5 / 5.5 y Opus 5 eso es pensar) y
+    `effort`. Sonnet 5.5 rechaza `disabled`: su modo sin pensar es `between_tools`.
     """
 
     def __init__(
@@ -95,7 +136,7 @@ class AnthropicAdapter:
         thinking = role_cfg.get("thinking")
 
         max_tokens = int(num_predict or role_cfg.get("num_predict") or _DEFAULT_MAX_TOKENS)
-        if thinking != "disabled":
+        if thinking not in _NO_THINKING:
             # Adaptativo explícito, o el default de los modelos que piensan por defecto.
             max_tokens = max(max_tokens, _THINKING_MIN_MAX_TOKENS)
 
@@ -106,7 +147,7 @@ class AnthropicAdapter:
         }
         if system_prompt:
             request["system"] = system_prompt
-        if thinking in ("adaptive", "disabled"):
+        if thinking in _THINKING_MODES:
             request["thinking"] = {"type": thinking}
         output_config: dict = {}
         if role_cfg.get("effort"):
@@ -148,16 +189,10 @@ class AnthropicAdapter:
         t0 = time.perf_counter()
         try:
             response = await self._client.messages.create(**request)
-        except anthropic.AuthenticationError as e:
-            raise RuntimeError(f"[ANTHROPIC] API key inválida: {e}") from e
-        except anthropic.RateLimitError as e:
-            raise RuntimeError(f"[ANTHROPIC] Rate limit alcanzado: {e}") from e
-        except anthropic.BadRequestError as e:
-            raise RuntimeError(f"[ANTHROPIC] Request inválido: {e}") from e
         except anthropic.APIStatusError as e:
-            raise RuntimeError(f"[ANTHROPIC] Error {e.status_code} de la API: {e}") from e
-        except anthropic.APIConnectionError as e:
-            raise RuntimeError(f"[ANTHROPIC] Sin conexión con la API: {e}") from e
+            raise _unavailable(_status_cause(e), e) from e
+        except anthropic.APIConnectionError as e:  # incluye el timeout
+            raise _unavailable("sin_conexion", e) from e
         elapsed = time.perf_counter() - t0
 
         usage = response.usage
