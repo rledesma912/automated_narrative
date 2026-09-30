@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, decisión de arquitectura y alcance de cierre
-**Estado:** IMPLEMENT — S0 ✅ (PR #46); S1 ✅ (lectura del usuario: le gustaron los dos relatos); S2 no hace falta; S3 (deploy) en curso
+**Estado:** IMPLEMENT — S0 ✅ (PR #46); S1 ✅ (el usuario aprobó los relatos); S2 no hace falta; S3: en prod desde 2026-09-30 (`4e99538`), falta la prueba con las usuarias
 **Rama:** S0 en `feat/spec-590-prosa` (PR #46, mergeado); S1 en `feat/spec-600-voz-frontier`
 **Extiende:** Spec-480 (proveedor por rol), Spec-590 (prosa según la prueba con usuarias)
 
@@ -208,10 +208,10 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [ ] T2.3 1 corrida con OK; resultados en §7.
 
 ### S3 — Producción y cierre
-- [ ] T3.1 `.env.prod` con `ANTHROPIC_API_KEY` y `LLM_PROFILE=hibrido-sonnet55` (o `active_profile` en el YAML).
-- [ ] T3.2 PR `development` → `main`, `make deploy-check`, `make deploy`. La 590 cambió el esquema: DB nueva (datos descartables).
-- [ ] T3.3 Verificar `/config/active-profile` (voz en Anthropic) y `/health` en prod; generar un relato.
-- [ ] T3.4 `CLAUDE.md` (perfiles, costo, vencimiento de la clave) y memoria.
+- [x] T3.1 `.env.prod` con `ANTHROPIC_API_KEY` (la misma clave que dev, decisión del usuario; **vence 2026-10-30**) y `LLM_PROFILE=hibrido-sonnet55`.
+- [x] T3.2 PR #48 (→ `development`) y #49 (→ `main`), `make deploy-check`, `make deploy` → `4e99538` (2026-09-30). Base nueva por el esquema de la 590: export de la única historia con el código de prod (`dbc7775`, sobre una copia), base vieja apartada en `data/prod/pre_600/`, `init_db` + `import-yaml` (vuelve como borrador con sus 5 actos). Backup del deploy: `data/prod/backup_2026-09-30/`.
+- [x] T3.3 `/config/active-profile` = `hibrido-sonnet55` (voz → anthropic `claude-sonnet-5-5`, el resto → ollama gemma3:12b), `/health` healthy con la clave presente, UI 200. El primer relato en prod lo generan las usuarias (T3.5).
+- [x] T3.4 `CLAUDE.md` (perfiles, costo, vencimiento de la clave) y memoria.
 - [ ] T3.5 Prueba con las usuarias; el proyecto queda cerrado.
 
 ---
