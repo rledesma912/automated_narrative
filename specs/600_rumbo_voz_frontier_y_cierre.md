@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, decisión de arquitectura y alcance de cierre
-**Estado:** IMPLEMENT — S0 ✅ (PR #46); S1 en curso
+**Estado:** IMPLEMENT — S0 ✅ (PR #46); S1 ✅ (lectura del usuario: le gustaron los dos relatos); S2 no hace falta; S3 (deploy) en curso
 **Rama:** S0 en `feat/spec-590-prosa` (PR #46, mergeado); S1 en `feat/spec-600-voz-frontier`
 **Extiende:** Spec-480 (proveedor por rol), Spec-590 (prosa según la prueba con usuarias)
 
@@ -200,10 +200,10 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T1.5 Una llamada chica real para confirmar el request antes de medir: HTTP 200, 65/132 tokens, US$ 0,0015, 2,9 s (2026-09-30).
 - [x] T1.5b (Spec-610 D11) Extensión para un episodio de ~15 min: `word_range` 100 palabras por evento, 250–500 por acto, desenlace 180–300 (~2 000 palabras); «un párrafo por evento». Se mide ya con Sonnet para no medir dos veces.
 - [x] T1.6 Medición (§5): estimar sin `--yes`, OK del usuario, 2 corridas. Resultados en §7: palabras, cortadas, diálogo, repetidas, clichés, costo real (tokens) y tiempo; lectura de la herida, rasgos, adelantos y el cierre inventado del acto 4.
-- [ ] T1.7 El usuario lee un relato en `storymaker.test` y decide si hace falta S2.
+- [x] T1.7 El usuario leyó los dos relatos y le gustaron (2026-09-30): S2 no hace falta.
 
 ### S2 — (solo si S1 lo pide) Prompt de la Voz para el frontier
-- [ ] T2.1 Definir con el usuario qué se aliviana, a partir de la lectura de S1.
+- [—] T2.1 (no hace falta, T1.7) Definir con el usuario qué se aliviana, a partir de la lectura de S1.
 - [ ] T2.2 Plantillas por perfil sin romper el camino local; snapshot nuevo solo para el híbrido.
 - [ ] T2.3 1 corrida con OK; resultados en §7.
 
