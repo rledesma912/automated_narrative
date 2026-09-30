@@ -6,6 +6,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.application.services.repetition_check import (  # noqa: E402
+    cut_sentences,
+    dialogue_lines,
+    narration_sentences,
+)
 from src.application.services.voice_cliches import load_cliches  # noqa: E402
 
 # Parentescos con sus sinónimos: "mi mamá" vale lo mismo que "mi madre".
@@ -117,10 +122,30 @@ def repeated_4grams(acts: list[str], min_acts: int = 3) -> list[str]:
     return sorted(g for g in everything if sum(g in ga for ga in per_act) >= min_acts)
 
 
+def cut_by_act(acts: list[str]) -> list[dict]:
+    """Spec-590 F: oraciones cortadas, diálogo y palabras de cada acto."""
+    rows = []
+    for act in acts:
+        cut, total = cut_sentences(act), len(narration_sentences(act))
+        rows.append(
+            {
+                "palabras": len(act.split()),
+                "oraciones": total,
+                "cortadas": len(cut),
+                "cortadas_pct": round(100 * len(cut) / total) if total else 0,
+                "dialogo": len(dialogue_lines(act)),
+            }
+        )
+    return rows
+
+
 def evaluate(text: str, narrator: str, cast: list[dict]) -> dict:
     """Todas las métricas de un relato consolidado."""
     kin = wrong_kinship(text, narrator, cast)
     found = cliches(text)
+    acts = cut_by_act(split_acts(text))
+    sentences = sum(a["oraciones"] for a in acts)
+    cut = sum(a["cortadas"] for a in acts)
     return {
         "palabras": len(text.split()),
         "cliches": sum(found.values()),
@@ -129,4 +154,8 @@ def evaluate(text: str, narrator: str, cast: list[dict]) -> dict:
         "parentescos_en_dialogo": kin["dialogo"],
         "narrador_3ra_persona": narrator_outside_dialogue(text, narrator),
         "frases_repetidas": len(repeated_4grams(split_acts(text))),
+        "oraciones_cortadas": cut,
+        "oraciones_cortadas_pct": round(100 * cut / sentences) if sentences else 0,
+        "dialogo": sum(a["dialogo"] for a in acts),
+        "por_acto": acts,
     }
