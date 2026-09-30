@@ -82,6 +82,12 @@ class TestNarrativeJournal:
 
         assert journal.last_events == "Event occurred"
 
+    def test_cuerpo_y_rasgos_cuentan_como_datos(self):
+        """Spec-590: una memoria con solo el cuerpo o los rasgos no está vacía."""
+        assert NarrativeJournal().is_empty()
+        assert not NarrativeJournal(body_state="Un corte en la mano").is_empty()
+        assert not NarrativeJournal(narrator_traits=["toma mate"]).is_empty()
+
 
 class TestMacroBeatBehavior:
     def test_is_narrated_true_cuando_content_y_completed(self):

@@ -1,6 +1,7 @@
 """Spec-470 T0.3: el arnés de evaluación corre de punta a punta con el LLM simulado."""
 
 import json
+from pathlib import Path
 
 from scripts.evaluate_voice import ENTITIES, load_story, narrator_of, run
 from src.config import settings
@@ -28,6 +29,25 @@ async def test_corre_con_mock_y_restaura_lo_que_parchea(tmp_path):
     # Todo lo parcheado vuelve a su lugar.
     assert (settings.database_url, LLMFactory.get_provider) == (db, provider)
     assert settings.role_config("voz").get("temperature") == voz_before
+
+
+async def test_input_importa_la_historia_con_su_escaleta(tmp_path, monkeypatch):
+    """Spec-590 T0.2: con --input la historia entra con su escaleta y no se re-planifica."""
+    from src.application.services.authoring.planner import OutlinePlanner
+
+    async def no_planificar(*_a, **_k):
+        raise AssertionError("con escaleta completa no se planifica")
+
+    monkeypatch.setattr(OutlinePlanner, "plan", no_planificar)
+    bosque = Path("input_stories/no_te_detengas_en_el_bosque.yaml")
+
+    report = await run("bosque", ["sin", "con"], 1, tmp_path, mock=True, input_path=bosque)
+
+    assert [(r["variante"], r["corrida"]) for r in report["relatos"]] == [("relato", 1)]
+    assert report["historia"] == bosque.name
+    assert narrator_of(load_story("relato", bosque)) == "Leonardo"
+    assert "oraciones_cortadas_pct" in report["promedios"]["relato"]
+    assert (tmp_path / "bosque" / "relato_1.txt").exists()
 
 
 # ── Spec-480 T2.4: perfil híbrido, costo y confirmación ─────────────────────

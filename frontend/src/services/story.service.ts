@@ -20,6 +20,12 @@ export interface ActRepetition {
   repeated: string[];
   cliches: string[];
   invented_names?: string[];
+  /** Spec-590 F: oraciones cortadas (hasta 3 ejemplos, total y %) y diálogo directo. */
+  cut_sentences?: string[];
+  cut_count?: number;
+  cut_pct?: number;
+  too_cut?: boolean;
+  dialogue?: number;
 }
 
 export interface Relato {

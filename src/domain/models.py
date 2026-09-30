@@ -150,10 +150,21 @@ class NarrativeJournal(BaseModel):
     physical_emotional_state: str = ""
     # Spec-530 §8.2: imágenes, frases y comparaciones ya usadas (acumuladas por acto).
     used_motifs: list[str] = []
+    # Spec-590 E: cómo quedó el cuerpo de quien narra (heridas con el lugar exacto,
+    # cansancio, lo que lleva encima), para que el acto siguiente no lo contradiga.
+    body_state: str = ""
+    # Spec-590 C: gustos, manías, miedos y opiniones que la Voz inventó (acumulados).
+    narrator_traits: list[str] = []
 
     def is_empty(self) -> bool:
         """True si no tiene ningún campo con datos."""
-        return not (self.last_events or self.physical_emotional_state or self.used_motifs)
+        return not (
+            self.last_events
+            or self.physical_emotional_state
+            or self.used_motifs
+            or self.body_state
+            or self.narrator_traits
+        )
 
 
 class GeneratedNarrative(BaseModel):
