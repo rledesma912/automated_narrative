@@ -1,10 +1,13 @@
 """Narrar un acto a partir de la escaleta (Spec-530 S5, §8).
 
 La Voz recibe: quién narra y «cómo lo cuenta» (una línea, en vez del perfil del
-narrador), la guía de oficio, los hechos del acto, solo los personajes en escena,
-el escenario, las reglas del acto, la amenaza según la exposición del acto
-(Spec-450), lo que ya pasó (acumulado) y lo ya usado, para no repetirlo.
-La memoria (Journal) sale con esquema JSON: hechos, estado y motivos usados.
+narrador), la guía de oficio, la premisa (Spec-590), los hechos del acto, solo los
+personajes en escena, el escenario, las reglas del acto, la amenaza según la
+exposición del acto (Spec-450), lo que ya pasó (los eventos de la escaleta de los
+actos anteriores, Spec-590 E), cómo está y cómo es quien narra (de la memoria) y lo
+ya usado, para no repetirlo.
+La memoria (Journal) sale con esquema JSON: hechos, estado, cuerpo, rasgos de quien
+narra y motivos usados.
 """
 
 import re
@@ -26,6 +29,8 @@ MIN_WORDS, MAX_WORDS = 400, 900
 RANGE_WIDTH = 150
 LAST_ACT_WORDS = (250, 450)  # desenlace: más corto que el resto
 MAX_MOTIFS = 30
+MAX_TRAITS = 12  # Spec-590 C: rasgos de quien narra que se sostienen entre actos
+ENDING_WORDS = 120  # Spec-590: tope del último párrafo del acto anterior
 _ACT_NAMES = {
     "exposicion": "Exposición",
     "accion_ascendente": "Acción ascendente",
@@ -38,6 +43,8 @@ _ACT_NAMES = {
 class Memoria(BaseModel):
     hechos: str
     estado: str
+    cuerpo: str
+    asi_es: list[str]
     motivos_usados: list[str]
 
 
@@ -49,7 +56,7 @@ def word_range(act: ActOutline) -> tuple[int, int]:
     return max(MIN_WORDS - 50, top - RANGE_WIDTH), top
 
 
-def merge_motifs(previous: list[str], new: list[str]) -> list[str]:
+def merge_motifs(previous: list[str], new: list[str], limit: int = MAX_MOTIFS) -> list[str]:
     seen, out = set(), []
     for m in [*previous, *new]:
         m = " ".join(str(m).split())
@@ -57,7 +64,7 @@ def merge_motifs(previous: list[str], new: list[str]) -> list[str]:
         if m and key not in seen:
             seen.add(key)
             out.append(m)
-    return out[-MAX_MOTIFS:]
+    return out[-limit:]
 
 
 class OutlineNarrator:
@@ -97,6 +104,7 @@ class OutlineNarrator:
         low, high = word_range(act)
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
+            historia=_premise(story, narrator),
             puente=_bridge(act),
             evitar=_avoid(avoid),
             final_anterior=_ending_of(previous_text),
@@ -114,19 +122,14 @@ class OutlineNarrator:
             cambio=f"AL TERMINAR EL ACTO: {act.change_to}\n" if act.change_to else "",
             no_revelar=f"NO REVELES TODAVÍA: {act.held_back}\n" if act.held_back else "",
             amenaza=self._threat(story, act),
-            ya_paso=(
-                memory.last_events
-                if memory and memory.last_events
-                else "(es el comienzo del relato)"
-            )
-            + (
-                f"\nEstado: {memory.physical_emotional_state}"
-                if memory and memory.physical_emotional_state
-                else ""
+            ya_paso=_already_happened(story, act, memory),
+            como_esta=_how_is(memory, narrator),
+            asi_es=_section(
+                f"ASÍ ES {_upper(narrator)} (mantenelo; podés sumar)",
+                memory.narrator_traits if memory else [],
             ),
-            ya_usado="\n".join(f"- {m}" for m in memory.used_motifs)
-            if memory and memory.used_motifs
-            else "(nada todavía)",
+            ya_usado="\n".join(f"- {m}" for m in self._motifs_for(story, act, memory))
+            or "(nada todavía)",
             min_palabras=low,
             max_palabras=high,
         )
@@ -138,6 +141,27 @@ class OutlineNarrator:
             # El final del autor manda sobre la función genérica del acto (Spec-530 S2).
             return f"cerrar la historia con el final que decidió el autor: {d.ending}"
         return info.get("intent", "")
+
+    @staticmethod
+    def _motifs_for(story: Story, act: ActOutline, memory: NarrativeJournal | None) -> list[str]:
+        """Spec-590: «ya usado» sin lo que este acto tiene que mostrar.
+
+        Un motivo cuyas palabras están todas en los EVENTOS del acto o en la ficha de la
+        amenaza («ojos brillantes», «susurros») no se prohíbe: es lo que se pide contar.
+        """
+        if not memory:
+            return []
+        texts = [
+            *act.events,
+            *(f"{e.name} {e.description} {e.manifestations}" for e in story.entities),
+        ]
+        allowed = {w for w in workshop_rules.normalize(" ".join(texts)).split() if len(w) > 3}
+
+        def required(motif: str) -> bool:
+            words = [w for w in workshop_rules.normalize(motif).split() if len(w) > 3]
+            return bool(words) and all(w in allowed for w in words)
+
+        return [m for m in memory.used_motifs if not required(m)]
 
     def _scenario(self, story: Story, act: ActOutline) -> str:
         known = next((s for s in story.scenarios if s.name == act.scenario), None)
@@ -218,6 +242,10 @@ class OutlineNarrator:
                 if previous and previous.last_events
                 else "(nada: es el primer acto)"
             ),
+            cuerpo=(previous.body_state if previous and previous.body_state else "(sin datos)"),
+            asi_es="\n".join(f"- {t}" for t in previous.narrator_traits)
+            if previous and previous.narrator_traits
+            else "(nada todavía)",
         )
         memoria, _ = await generate_structured(
             self.llm,
@@ -234,6 +262,10 @@ class OutlineNarrator:
             physical_emotional_state=memoria.estado.strip(),
             used_motifs=merge_motifs(
                 previous.used_motifs if previous else [], memoria.motivos_usados
+            ),
+            body_state=memoria.cuerpo.strip(),
+            narrator_traits=merge_motifs(
+                previous.narrator_traits if previous else [], memoria.asi_es, MAX_TRAITS
             ),
         )
 
@@ -276,13 +308,63 @@ def _bridge(act: ActOutline) -> str:
     )
 
 
-def _ending_of(previous_text: str, sentences: int = 3) -> str:
-    """Spec-560 A1: las últimas oraciones del acto anterior, textuales, para seguir desde ahí."""
-    parts = re.split(r"(?<=[.!?…»])\s+", " ".join(previous_text.split()))
-    tail = " ".join(p for p in parts[-sentences:] if p).strip()
+def _ending_of(previous_text: str) -> str:
+    """Spec-560 A1 / Spec-590: el último párrafo del acto anterior, textual, para seguir
+    desde ahí (hasta 120 palabras: si es más largo, sus últimas oraciones)."""
+    paragraphs = [p for p in re.split(r"\n\s*\n", previous_text.strip()) if p.strip()]
+    if not paragraphs:
+        return ""
+    parts = re.split(r"(?<=[.!?…»])\s+", " ".join(paragraphs[-1].split()))
+    tail: list[str] = []
+    for sentence in reversed(parts):
+        if tail and len(" ".join([sentence, *tail]).split()) > ENDING_WORDS:
+            break
+        tail.insert(0, sentence)
+    tail = " ".join(tail).strip()
     if not tail:
         return ""
     return f"ASÍ TERMINÓ EL ACTO ANTERIOR (seguí desde acá; no lo repitas):\n«{tail}»\n"
+
+
+_SENTENCE_END = re.compile(r"(?<=[.!?…])\s+(?=[¿¡«\"“(]?[A-ZÁÉÍÓÚÑ])")
+
+
+def _premise(story: Story, narrator: str) -> str:
+    """Spec-590: la idea de quien escribe, para que la Voz conozca a quien narra y su mundo.
+    Solo la primera oración: el resto de la premisa adelantaba hechos de actos posteriores."""
+    d = story.direction
+    premise = " ".join(((d.premise if d and d.premise else "") or story.sinopsis or "").split())
+    premise = _SENTENCE_END.split(premise, maxsplit=1)[0]
+    if not premise:
+        return ""
+    return (
+        f"LA HISTORIA, PARA QUE CONOZCAS A {_upper(narrator)} Y SU MUNDO (no cuentes nada de "
+        f"acá que no esté en los EVENTOS de este acto): {premise}\n"
+    )
+
+
+def _already_happened(story: Story, act: ActOutline, memory: NarrativeJournal | None) -> str:
+    """Spec-590 E: los EVENTOS de la escaleta de los actos anteriores (confirmados por
+    quien escribe), no el resumen de la memoria. Sin escaleta, cae a la memoria."""
+    previous = [a for a in sorted(story.outline, key=lambda a: a.number) if a.number < act.number]
+    lines = [f"Acto {a.number}: {' '.join(a.events)}" for a in previous if a.events]
+    if lines:
+        return "\n".join(lines)
+    if memory and memory.last_events:
+        return memory.last_events
+    return "(es el comienzo del relato)"
+
+
+def _how_is(memory: NarrativeJournal | None, narrator: str) -> str:
+    """Spec-590 E: dónde y cómo quedó quien narra, y su cuerpo (heridas con el lugar)."""
+    parts = (
+        [p.strip() for p in (memory.physical_emotional_state, memory.body_state) if p.strip()]
+        if memory
+        else []
+    )
+    if not parts:
+        return ""
+    return f"CÓMO ESTÁ {_upper(narrator)} AHORA (no lo contradigas): {' '.join(parts)}\n"
 
 
 def _section(title: str, items: list[str]) -> str:

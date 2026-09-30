@@ -381,14 +381,17 @@ class SQLStoryRepository:
         async with connection() as conn:
             await conn.execute(
                 """INSERT OR REPLACE INTO narrative_journal
-                (story_id, beat_number, last_events, physical_emotional_state, used_motifs)
-                VALUES (?, ?, ?, ?, ?)""",
+                (story_id, beat_number, last_events, physical_emotional_state, used_motifs,
+                 body_state, narrator_traits)
+                VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(story_id),
                     beat_number,
                     journal.last_events,
                     journal.physical_emotional_state,
                     json.dumps(journal.used_motifs, ensure_ascii=False),
+                    journal.body_state,
+                    json.dumps(journal.narrator_traits, ensure_ascii=False),
                 ),
             )
             await conn.commit()
@@ -423,6 +426,8 @@ class SQLStoryRepository:
             last_events=row["last_events"],
             physical_emotional_state=row["physical_emotional_state"],
             used_motifs=json.loads(row["used_motifs"] or "[]"),
+            body_state=row["body_state"] or "",
+            narrator_traits=json.loads(row["narrator_traits"] or "[]"),
         )
 
     async def clear_story_artifacts(self, story_id) -> None:

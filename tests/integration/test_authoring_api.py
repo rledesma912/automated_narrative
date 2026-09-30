@@ -332,6 +332,9 @@ async def test_generar_con_escaleta_usa_la_escaleta(client, monkeypatch):
     assert story.outline and len(story.outline) == 5  # la escaleta sobrevive a generar
     journal = await SQLStoryRepository().get_journal(uuid.UUID(sid))
     assert journal.used_motifs == ["un motivo de ejemplo"]
+    # Spec-590: el cuerpo y los rasgos de quien narra se guardan y se leen de la DB.
+    assert journal.body_state == "Un raspón en la mano izquierda."
+    assert journal.narrator_traits == ["toma mate amargo"]
     assert journal.last_events.startswith("Acto 1: Pasó lo del acto.")
     assert (
         "Hecho 3.1 de ejemplo" in story.outline[2].events[0]

@@ -104,7 +104,9 @@ async def test_acto_1_sin_memoria_previa(use_case, deps):
 async def test_acto_mayor_a_1_usa_la_memoria_del_acto_anterior(use_case, deps):
     deps["story_repo"].get_by_id.return_value = _make_story([_make_beat(1), _make_beat(2)])
     deps["story_repo"].get_journal.return_value = NarrativeJournal(
-        last_events="Acto 1: Ana llega.", used_motifs=["el reloj detenido"]
+        last_events="Acto 1: Ana llega.",
+        used_motifs=["el reloj detenido"],
+        body_state="Le sangra el oído izquierdo.",
     )
     deps["voz_use_case"].narrate_with_prompts.return_value = (_make_beat(2, "nueva"), 1.0)
 
@@ -112,7 +114,9 @@ async def test_acto_mayor_a_1_usa_la_memoria_del_acto_anterior(use_case, deps):
 
     deps["story_repo"].get_journal.assert_awaited_once_with(_STORY_ID, 1)
     _, _, user = deps["voz_use_case"].narrate_with_prompts.await_args.args
-    assert "Acto 1: Ana llega." in user and "- el reloj detenido" in user
+    # Spec-590 E: lo que ya pasó, desde la escaleta; el cuerpo, de la memoria del acto 1.
+    assert "Acto 1: Hecho del acto 1" in user and "- el reloj detenido" in user
+    assert "CÓMO ESTÁ ANA AHORA (no lo contradigas): Le sangra el oído izquierdo." in user
     # Spec-560 A2: la memoria del acto regenerado se actualiza (antes no se tocaba).
     assert deps["story_repo"].save_journal.await_args.args[2] == 2
 

@@ -240,6 +240,22 @@ Relato `90a9ae38-…` generado en `storymaker.test` con la historia del bosque (
 - **Personalidad sin datos cargados:** café frío de la térmica, «me pongo nervioso si llego tarde… es una manía», fuma para pensar, se muerde el labio cuando está nervioso, piensa en «mi vieja». El cigarrillo aparece en los actos 1, 2 y 3 (coherente, sin la Memoria nueva).
 - **Para S3/S4:** la herida del oído no se retoma después del acto 2; el acto 4 cierra en presente («Ahora estoy aquí…») y suma un hecho que no está en la escaleta (la radio se apaga); 2 clichés («me heló la sangre», «como una mortaja»).
 
+### S3 — Control en dev (memoria nueva) · 2026-09-30
+
+Dos relatos en `storymaker.test` con la historia del bosque (gemma3:12b): el primero con la premisa completa (301 s) y el segundo con solo su primera oración (267 s).
+
+| | Palabras | Oraciones cortadas | Diálogo | Frases repetidas | Clichés |
+|---|---|---|---|---|---|
+| S2 (1 relato) | 3 268 | 17 % | 3 | 0 | 2 |
+| S3, premisa completa | 3 306 | 13 % | 15 | 2 | 3 |
+| S3, primera oración | 3 190 | 15 % | 10 | 5 | 3 |
+
+- **La premisa completa adelantaba hechos:** con ella, en los actos 1 y 2 ya había «astas» y «ojos brillantes» (las astas son del acto 3). Se aplicó la mitigación de §9: pasa **solo la primera oración**. Con eso el acto 1 cierra con «una silueta… oscura y difusa», las astas aparecen recién en el acto 3.
+- **Herida del oído:** con la premisa completa la Voz se salteó el hecho (7.º de 7 del acto 2). Con la primera oración lo cuenta y la retoma en el acto 3 («me doliera la oreja por los cristales», «el corte de la oreja»); en los actos 4 y 5 no vuelve.
+- **Rasgos:** se sostienen (ciática, termo, radio, rezarle a la Virgen en el primero; cigarrillo, «mi viejo» y los paseos por el campo en el segundo). En el segundo hay una contradicción: la radio «siempre prendida» (acto 1) y «apagada, como siempre» (acto 2). El recuerdo del viejo aparece en los 5 actos y «un tango viejo que sonaba como de otro mundo» se repite en los actos 4 y 5.
+- **Diálogo:** se concentra en el acto 4 (12 y 6 fragmentos), donde la escaleta trae las preguntas del almacenero entre comillas; en el segundo relato sale como diálogo con raya. Queda para S4.
+- **Hecho inventado al cierre:** el acto 4 termina con «Alguien golpeó la puerta del almacén.» y el acto 5 cierra copiando esa misma oración.
+
 ### S4 — Después
 
 _(pendiente)_
@@ -275,15 +291,15 @@ Cada slice cierra con: `make lint`, `make test`, `cd frontend && npm test`, `npx
 - [x] T2.8 Validar en dev: generar un relato en `storymaker.test` (gemma, ~4–5 min) y mirar el panel: menos oraciones cortadas, sin diálogo.
 
 ### S3 — C + E + lo que le llega a la Voz
-- [ ] T3.1 Esquema: `NarrativeJournal.body_state` / `narrator_traits`; columnas en `init_db()`; `save_journal` / `get_journal` en `story_repository.py`; `is_empty()` las considera. Tests: `test_models.py`, `test_db_connection.py`, repo. `make dev-db` (con `ARGS=--yes` si hace falta).
-- [ ] T3.2 Memoria: `Memoria.cuerpo` y `Memoria.asi_es`; `outline_journal.md` pide los dos campos y recibe la memoria anterior completa; `outline_journal_system.md` sin cambios de fondo; `mock_structured.py` responde los campos nuevos. Test: el cuerpo del acto anterior llega al prompt de la Memoria; los rasgos se acumulan sin duplicados (tope 12).
-- [ ] T3.3 Voz: `_already_happened()` desde la escaleta (con caída a `last_events`); sección «CÓMO ESTÁ {NARRADOR} AHORA (no lo contradigas)» con `body_state` + `estado`; «ASÍ ES {NARRADOR} (mantenelo; podés sumar)» cuando hay rasgos; se va la línea «Estado:». Tests en `test_outline_narrator.py` (incluye el caso del vidrio en el oído: el cuerpo del acto 2 aparece en el prompt del acto 3).
-- [ ] T3.4 Premisa: «LA HISTORIA, PARA QUE CONOZCAS A {NARRADOR} Y SU MUNDO (…)» desde `direction.premise` o `sinopsis`; sin premisa, no hay sección. Test.
-- [ ] T3.5 `_motifs_for()`: «ya usado» sin los motivos que están en los eventos del acto o en la ficha de la amenaza. Test con «ojos brillantes» y «susurros».
-- [ ] T3.6 `_ending_of()`: último párrafo, tope 120 palabras. Test.
-- [ ] T3.7 Regenerar un acto: test en `test_regenerate_beat_voz_use_case.py` que verifique «lo que ya pasó» desde la escaleta y el cuerpo de la memoria del acto anterior.
-- [ ] T3.8 `SNAPSHOT_UPDATE=1` y revisar el diff: Voz y Memoria; asistente igual. Medir el prompt más largo del snapshot (acto 5) contra el presupuesto de §2 (≤ ~3 300 tokens).
-- [ ] T3.9 Validar en dev: `make dev-db`, importar la historia de prueba (`import-yaml`), generar y leer continuidad y rasgos.
+- [x] T3.1 Esquema: `NarrativeJournal.body_state` / `narrator_traits`; columnas en `init_db()`; `save_journal` / `get_journal` en `story_repository.py`; `is_empty()` las considera. Tests: `test_models.py`, `test_db_connection.py`, repo. `make dev-db` (con `ARGS=--yes` si hace falta).
+- [x] T3.2 Memoria: `Memoria.cuerpo` y `Memoria.asi_es`; `outline_journal.md` pide los dos campos y recibe la memoria anterior completa; `outline_journal_system.md` sin cambios de fondo; `mock_structured.py` responde los campos nuevos. Test: el cuerpo del acto anterior llega al prompt de la Memoria; los rasgos se acumulan sin duplicados (tope 12).
+- [x] T3.3 Voz: `_already_happened()` desde la escaleta (con caída a `last_events`); sección «CÓMO ESTÁ {NARRADOR} AHORA (no lo contradigas)» con `body_state` + `estado`; «ASÍ ES {NARRADOR} (mantenelo; podés sumar)» cuando hay rasgos; se va la línea «Estado:». Tests en `test_outline_narrator.py` (incluye el caso del vidrio en el oído: el cuerpo del acto 2 aparece en el prompt del acto 3).
+- [x] T3.4 Premisa: «LA HISTORIA, PARA QUE CONOZCAS A {NARRADOR} Y SU MUNDO (…)» desde `direction.premise` o `sinopsis`; sin premisa, no hay sección. Test. **Solo la primera oración** (la premisa completa adelantaba hechos, §7).
+- [x] T3.5 `_motifs_for()`: «ya usado» sin los motivos que están en los eventos del acto o en la ficha de la amenaza. Test con «ojos brillantes» y «susurros».
+- [x] T3.6 `_ending_of()`: último párrafo, tope 120 palabras. Test.
+- [x] T3.7 Regenerar un acto: test en `test_regenerate_beat_voz_use_case.py` que verifique «lo que ya pasó» desde la escaleta y el cuerpo de la memoria del acto anterior.
+- [x] T3.8 `SNAPSHOT_UPDATE=1` y revisar el diff: Voz y Memoria; asistente igual. Medir el prompt más largo del snapshot (acto 5) contra el presupuesto de §2 (≤ ~3 300 tokens).
+- [x] T3.9 Validar en dev: `make dev-db`, importar la historia de prueba (`import-yaml`), generar y leer continuidad y rasgos.
 
 ### S4 — Medición, prueba con ellas y documentación
 - [ ] T4.1 `evaluate_voice.py … --label despues-590 --runs 2 --out scripts/research/590/despues` (gemma). Comparar con la base contra los criterios de éxito; lectura: herida, rasgos y contradicciones, adelantos de la premisa, ejemplo copiado. Resultados en §7.

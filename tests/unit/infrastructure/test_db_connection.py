@@ -125,6 +125,8 @@ class TestDbConnection:
             "last_events",
             "used_motifs",
             "physical_emotional_state",
+            "body_state",  # Spec-590 E
+            "narrator_traits",  # Spec-590 C
         }
         assert required.issubset(columns), f"Missing: {required - columns}"
 
