@@ -77,6 +77,8 @@ METRICS = (
 
 # US$ por millón de tokens (entrada, salida) de los proveedores pagos.
 PRICES = {
+    "claude-sonnet-5-5": (2.0, 10.0),
+    "claude-opus-5-5": (4.0, 20.0),
     "claude-sonnet-5": (2.0, 10.0),
     "claude-opus-5": (5.0, 25.0),
     "claude-haiku-4-5": (1.0, 5.0),
@@ -122,7 +124,8 @@ def estimated_cost_per_story() -> float:
     for role in paid_roles():
         cfg = settings.role_config(role)
         price_in, price_out = PRICES.get(cfg.get("model", ""), (0, 0))
-        output = _EST_OUTPUT + (0 if cfg.get("thinking") == "disabled" else _EST_THINKING)
+        thinks = cfg.get("thinking") not in ("disabled", "between_tools")
+        output = _EST_OUTPUT + (_EST_THINKING if thinks else 0)
         total += (_EST_INPUT * price_in + output * price_out) / 1_000_000
     return round(total, 4)
 

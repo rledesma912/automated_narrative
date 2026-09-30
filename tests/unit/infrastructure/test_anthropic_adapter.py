@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anthropic
 import pytest
 
-from src.domain.exceptions import LLMRefusalError, LLMResponseError
+from src.domain.exceptions import LLMRefusalError, LLMResponseError, LLMUnavailableError
 from src.domain.interfaces import LLMResponse
 from src.infrastructure.adapters.anthropic_adapter import AnthropicAdapter
 from tests.support.fake_anthropic import FakeAnthropic, message
@@ -96,6 +96,24 @@ async def test_sin_pensamiento_se_manda_disabled_explicito(role_config):
     assert "output_config" not in request
 
 
+async def test_sonnet55_sin_pensar_es_between_tools(role_config):
+    """Spec-600: Sonnet 5.5 rechaza `disabled`; lo más bajo es `between_tools`, sin piso."""
+    role_config["voz"] = {
+        "model": "claude-sonnet-5-5",
+        "num_predict": 2500,
+        "thinking": "between_tools",
+        "effort": "high",
+    }
+    adapter, client = _adapter()
+    await adapter.generate("contexto", role="voz", temperature=0.6)
+
+    request = client.messages.calls[0]
+    assert request["thinking"] == {"type": "between_tools"}
+    assert request["max_tokens"] == 2500
+    assert request["output_config"] == {"effort": "high"}
+    assert "temperature" not in request
+
+
 async def test_sin_thinking_configurado_no_se_manda_pero_se_reserva_lugar(role_config):
     role_config["voz"] = {"model": "claude-sonnet-5", "num_predict": 1500}
     adapter, client = _adapter()
@@ -143,20 +161,47 @@ async def test_acto_truncado_es_error():
         await adapter.generate("prompt")
 
 
+def _status_error(error, status: int, text: str = "x", body: dict | None = None):
+    response = MagicMock(status_code=status)
+    return error(message=text, response=response, body=body or {})
+
+
 @pytest.mark.parametrize(
-    ("error", "match"),
+    ("error", "status", "text", "cause", "match"),
     [
-        (anthropic.AuthenticationError, "API key inválida"),
-        (anthropic.RateLimitError, "Rate limit"),
-        (anthropic.InternalServerError, "Error 500"),
+        (anthropic.APIStatusError, 402, "billing", "credito", "sin crédito"),
+        (
+            anthropic.BadRequestError,
+            400,
+            "Your credit balance is too low to access the Anthropic API",
+            "credito",
+            "sin crédito",
+        ),
+        (anthropic.AuthenticationError, 401, "x", "clave", "no acepta la clave"),
+        (anthropic.PermissionDeniedError, 403, "x", "clave", "no acepta la clave"),
+        (anthropic.RateLimitError, 429, "x", "saturada", "saturada"),
+        (anthropic.InternalServerError, 529, "overloaded", "saturada", "saturada"),
+        (anthropic.InternalServerError, 500, "x", "saturada", "saturada"),
+        (anthropic.BadRequestError, 400, "campo inválido", "error", "respondió con un error"),
     ],
 )
-async def test_errores_de_la_api(error, match):
+async def test_errores_de_la_api_son_un_mensaje_claro(error, status, text, cause, match):
+    """Spec-600 D3: el job falla con un texto que entiende quien generaba el relato."""
     adapter, client = _adapter()
-    response = MagicMock(status_code=500 if error is anthropic.InternalServerError else 400)
-    client.messages.create = AsyncMock(side_effect=error(message="x", response=response, body={}))
-    with pytest.raises(RuntimeError, match=match):
+    client.messages.create = AsyncMock(side_effect=_status_error(error, status, text))
+    with pytest.raises(LLMUnavailableError, match=match) as exc:
         await adapter.generate("prompt")
+    assert exc.value.cause == cause
+    assert "[ANTHROPIC]" not in str(exc.value)  # nada técnico en lo que se ve
+
+
+async def test_sin_conexion_es_un_mensaje_claro():
+    adapter, client = _adapter()
+    request = MagicMock()
+    client.messages.create = AsyncMock(side_effect=anthropic.APIConnectionError(request=request))
+    with pytest.raises(LLMUnavailableError, match="sin conexión") as exc:
+        await adapter.generate("prompt")
+    assert exc.value.cause == "sin_conexion"
 
 
 async def test_close_sin_cliente_http_no_falla():

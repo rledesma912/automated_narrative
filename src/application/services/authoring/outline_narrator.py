@@ -23,11 +23,12 @@ from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, NarrativeJournal, Story
 
 NUM_ACTS = 5
-# Spec-590 D: más material (quienes editan prefieren cortar a inventar).
-WORDS_PER_EVENT = 170
-MIN_WORDS, MAX_WORDS = 400, 900
-RANGE_WIDTH = 150
-LAST_ACT_WORDS = (250, 450)  # desenlace: más corto que el resto
+# Spec-610 D11 (en la Spec-600 S1): un episodio de ~15 min leído en voz alta, ≈ 1 950
+# palabras a 130 por minuto. Antes (Spec-590 D) 170 / 400–900 / 250–450 daban ~3 200.
+WORDS_PER_EVENT = 100
+MIN_WORDS, MAX_WORDS = 250, 500
+RANGE_WIDTH = 100
+LAST_ACT_WORDS = (180, 300)  # desenlace: más corto que el resto
 MAX_MOTIFS = 30
 MAX_TRAITS = 12  # Spec-590 C: rasgos de quien narra que se sostienen entre actos
 ENDING_WORDS = 120  # Spec-590: tope del último párrafo del acto anterior

@@ -5,7 +5,8 @@ version: "1.1"
 # Override: variable de entorno LLM_PROFILE pisa este valor.
 # Precedencia: env LLM_PROFILE → active_profile (YAML).
 #
-# Dos perfiles (2026-09-27): el local (gemma3:12b, activo) y uno genérico con Claude.
+# Tres perfiles: el local (gemma3:12b, activo en el YAML), el híbrido (Spec-600: la Voz en
+# Claude Sonnet 5.5 y el resto local; activo en dev con LLM_PROFILE) y uno todo en Claude.
 #
 # Para cambiar de modelo basta con editar esta línea o exportar LLM_PROFILE.
 # Cada perfil trae su provider y sus roles (director = base de consultor, planificador
@@ -69,40 +70,90 @@ profiles:
         num_predict: 1200
         stop: []
 
-  # Perfil genérico con Claude: todos los roles en Claude Sonnet 5 (Spec-480, 2026-09-27).
-  # NO está activo: es para comparar con un LLM frontier cuando termine el ajuste para el
-  # modelo local. Cada rol puede ir a otro proveedor con `provider` (RoleRoutingAdapter).
-  # Sonnet 5 no acepta temperature (el adapter la omite) y piensa si se omite `thinking`.
-  anthropic-sonnet5:
-    provider: anthropic
-    anthropic: { model: claude-sonnet-5 }
-    # Spec-510: sin medir; mismos valores que gemma3 hasta tener historial.
-    estimated_seconds: { full_generation: 210, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15 }
+  # Spec-600: la Voz en Claude Sonnet 5.5 y el resto en gemma3:12b (ruteo por rol,
+  # Spec-480). Los roles locales son los de `ollama-gemma3-12b`, tal cual.
+  # La Voz piensa poco (adaptativo, effort `low`: lo que recomienda la doc para generar
+  # contenido); sin pensar del todo sería `thinking: between_tools` (Sonnet 5.5 rechaza
+  # `disabled`). Sonnet 5.5 no acepta temperature (el adapter la omite).
+  hibrido-sonnet55:
+    provider: ollama
+    ollama: { host: "http://localhost:11434" }
+    anthropic: { model: claude-sonnet-5-5 }
+    # Spec-510: valores iniciales sin medir (la Voz en Claude tarda menos; la Memoria
+    # sigue local). Con historial manda la mediana.
+    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 20, plan_outline: 60, verify_outline: 15 }
     roles:
       director:
-        model: claude-sonnet-5
-        num_predict: 2000
-        thinking: disabled
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 700
+        stop: []
       voz:
-        model: claude-sonnet-5
-        num_predict: 2500  # Spec-590 D: actos de hasta 900 palabras, con margen
-        thinking: disabled   # adaptive: planifica cada acto (~60% más caro)
+        provider: anthropic
+        model: claude-sonnet-5-5
+        num_predict: 2500
+        thinking: adaptive
+        effort: low
       journal:
-        model: claude-sonnet-5
-        num_predict: 1000
-        thinking: disabled
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 4096
+        num_predict: 256
+        stop: []
       consultor:
-        model: claude-sonnet-5
-        num_predict: 3000
-        thinking: disabled
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 8192
+        num_predict: 1500
+        stop: []
       planificador:
-        model: claude-sonnet-5
-        num_predict: 4000
-        thinking: disabled
+        model: gemma3:12b
+        temperature: 0.4
+        num_ctx: 8192
+        num_predict: 2500
+        stop: []
       verificador:
-        model: claude-sonnet-5
+        model: gemma3:12b
+        temperature: 0.2
+        num_ctx: 8192
+        num_predict: 1200
+        stop: []
+
+  # Todo en Claude Sonnet 5.5 (Spec-480; Spec-600). NO está activo: sirve para comparar y
+  # como palanca si hiciera falta mover otro rol (p. ej. el Planificador).
+  # Sin pensar = `between_tools` (Sonnet 5.5 rechaza `disabled`).
+  anthropic-sonnet55:
+    provider: anthropic
+    anthropic: { model: claude-sonnet-5-5 }
+    # Spec-510: sin medir; manda el historial.
+    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15 }
+    roles:
+      director:
+        model: claude-sonnet-5-5
         num_predict: 2000
-        thinking: disabled
+        thinking: between_tools
+      voz:
+        model: claude-sonnet-5-5
+        num_predict: 2500
+        thinking: adaptive
+        effort: low
+      journal:
+        model: claude-sonnet-5-5
+        num_predict: 1000
+        thinking: between_tools
+      consultor:
+        model: claude-sonnet-5-5
+        num_predict: 3000
+        thinking: between_tools
+      planificador:
+        model: claude-sonnet-5-5
+        num_predict: 4000
+        thinking: between_tools
+      verificador:
+        model: claude-sonnet-5-5
+        num_predict: 2000
+        thinking: between_tools
 
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
 

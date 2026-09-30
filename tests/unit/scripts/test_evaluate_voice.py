@@ -81,7 +81,7 @@ async def test_proveedor_pago_sin_yes_no_genera_y_estima_el_costo(tmp_path, monk
     report = await run("hibrido", ["sin", "con"], 1, tmp_path, profile=HYBRID)
 
     assert report["abortado"] is True
-    assert report["costo_estimado_usd"] == 0.16  # 2 relatos × ~US$ 0,08 (Sonnet 5, sin pensar)
+    assert report["costo_estimado_usd"] == 0.26  # 2 relatos × ~US$ 0,13 (Sonnet 5.5, pensando poco)
     assert fake.messages.calls == []
     out = capsys.readouterr().out
     assert "--yes" in out and "['voz']" in out
