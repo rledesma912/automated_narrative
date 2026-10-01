@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, deuda técnica (refactor sin cambio de comportamiento)
-**Estado:** IMPLEMENT — S0 ✅, S1 ✅, S2 ✅, S3 ✅ (2026-10-01)
+**Estado:** IMPLEMENT — S0–S4 ✅ (2026-10-01); falta el merge del PR a `development`
 **Rama:** `refactor/spec-620-prompts-en-markdown` (desde `development`, `3753205`). Va antes de la 610 (Spec-610 D12).
 **Origen:** observación del usuario (2026-09-30): «los prompts están hardcodeados en vez de vivir en un markdown que se inyecta».
 
@@ -160,8 +160,8 @@ Cada slice cierra con `make lint`, `make test`, `cd frontend && npm test`, `npx 
 - [x] T3.5 (sumado al implementar) **El catálogo pasa a `src/messages.py`**, junto a `src/config.py`: lo necesitan la infraestructura (el adapter de Anthropic) y `main.py`, y desde la capa de aplicación eso invertía las dependencias. Los motivos de fallo de los trabajos salen del **dominio** (`domain/jobs.py` ya no tiene texto): los resuelve `job_manager` y `main.py` le pasa el texto a `SQLJobRepository.recover_interrupted(error)`. También se mudan las validaciones de `create_story.py` (`validacion.*`, con las etiquetas de los campos de la amenaza) y los valores de una historia nueva del asistente (`historia_nueva.relator` y `.sinopsis`: el relator llega a la Voz). Un test fija que los textos mudados no cambiaron. `PENDIENTES` vacía.
 
 ### S4 — Cierre
-- [ ] T4.1 `PENDIENTES` vacía y el guardián sin lista temporal.
-- [ ] T4.2 `config/prompts_generation/fragments/README.md` (orden de armado por rol).
-- [ ] T4.3 CLAUDE.md («Prompt System»: plantillas + fragmentos, `core_messages.yaml`, la regla y el guardián) y regla en `010_marco_sdd.md`.
-- [ ] T4.4 PR a `development`. Sin pase a prod obligatorio (no cambia nada visible); va con la 610.
+- [x] T4.1 `PENDIENTES` vacía y el guardián sin lista temporal.
+- [x] T4.2 `config/prompts_generation/fragments/README.md` (orden de armado por rol).
+- [x] T4.3 CLAUDE.md («Prompt System»: plantillas + fragmentos, `core_messages.yaml`, la regla y el guardián) y regla en `010_marco_sdd.md`.
+- [x] T4.4 PR a `development`. Sin pase a prod obligatorio (no cambia nada visible); va con la 610.
 

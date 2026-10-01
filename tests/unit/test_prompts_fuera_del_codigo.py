@@ -4,10 +4,10 @@ Lo que lee un LLM vive en `config/prompts_generation/` (plantillas y `fragments/
 llega a la pantalla, en `config/core_messages.yaml`. Este test recorre el código con `ast` y
 falla si aparece un literal de texto (más de 18 caracteres, con espacios) que no sea
 docstring, argumento de un log ni una expresión regular, y que no esté en `PERMITIDOS`
-(texto técnico, con su motivo) ni en `PENDIENTES` (lo que el refactor todavía no mudó).
+(texto técnico, con su motivo).
 
-`PENDIENTES` solo se achica: si una entrada ya no aparece en el código, el test falla para
-que se la saque de la lista. Al terminar la Spec-620 queda vacía.
+El largo mínimo es una heurística para el test: la regla es para todo texto que lee un
+LLM o una persona, también los cortos («(no se indica)», «sin rol»).
 """
 
 import ast
@@ -177,9 +177,6 @@ ARCHIVOS_PERMITIDOS = {
     "src/infrastructure/adapters/mock_structured.py": "respuestas del mock (tests, --mock)",
 }
 
-# (archivo, comienzo del texto): lo que falta mudar, por slice de la Spec-620.
-PENDIENTES: set[tuple[str, str]] = set()
-
 
 def _texts(path: Path) -> list[str]:
     """Literales de texto del archivo, sin docstrings, logs ni regex (`{…}` = interpolación)."""
@@ -227,18 +224,11 @@ def findings() -> set[tuple[str, str]]:
 
 
 def test_no_hay_textos_de_prompt_ni_mensajes_en_el_codigo():
-    unexpected = sorted(findings() - set(PERMITIDOS) - PENDIENTES)
+    unexpected = sorted(findings() - set(PERMITIDOS))
     assert not unexpected, (
         "Texto de prompt o mensaje en Python: va en config/prompts_generation/fragments/ "
         "(LLM) o en config/core_messages.yaml (pantalla). Si es técnico, sumalo a "
         "PERMITIDOS con su motivo.\n" + "\n".join(f"  {f}: {t!r}" for f, t in unexpected)
-    )
-
-
-def test_pendientes_solo_se_achica():
-    done = sorted(PENDIENTES - findings())
-    assert not done, "Ya no están en el código: sacalos de PENDIENTES.\n" + "\n".join(
-        f"  {f}: {t!r}" for f, t in done
     )
 
 
