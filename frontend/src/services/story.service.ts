@@ -37,18 +37,21 @@ export interface Relato {
   created_at: string;
   /** Spec-530 §8.3: frases repetidas entre actos y clichés (null si el Core no respondió). */
   repetition?: { acts: ActRepetition[] } | null;
+  /** Spec-610: si la variante ya tiene su paquete para el video. */
+  hasVideoScript?: boolean;
 }
 
 async function withRepetition(relato: Relato): Promise<Relato> {
-  try {
-    const resp = await axios.get<{ acts: ActRepetition[] }>(
-      `${CORE_API_URL}/api/v1/generated-narratives/${relato.id}/repetition`,
-      { timeout: 3000 },
-    );
-    return { ...relato, repetition: resp.data };
-  } catch {
-    return { ...relato, repetition: null };
-  }
+  const [repetition, script] = await Promise.all([
+    axios
+      .get<{ acts: ActRepetition[] }>(`${CORE_API_URL}/api/v1/generated-narratives/${relato.id}/repetition`, {
+        timeout: 3000,
+      })
+      .then((r) => r.data)
+      .catch(() => null),
+    getVideoScript(relato.id),
+  ]);
+  return { ...relato, repetition, hasVideoScript: script !== null };
 }
 
 export const getStoryById = async (storyId: string): Promise<Story | null> => {
@@ -102,3 +105,73 @@ export const startActoRegeneration = async (
     detail: typeof detail === "string" ? detail : null,
   };
 };
+
+/** Spec-610: ritmo de lectura y largo del episodio (`config/video/lectura.yaml`). */
+export interface ReadingSettings {
+  palabras_por_minuto: number;
+  episodio_minutos: { desde: number; hasta: number };
+}
+
+const DEFAULT_READING: ReadingSettings = { palabras_por_minuto: 150, episodio_minutos: { desde: 12, hasta: 17 } };
+
+export const getReadingSettings = async (): Promise<ReadingSettings> => {
+  try {
+    const resp = await axios.get<ReadingSettings>(`${CORE_API_URL}/api/v1/video/lectura`, { timeout: 3000 });
+    return resp.data;
+  } catch {
+    return DEFAULT_READING;
+  }
+};
+
+/** Spec-610: el paquete para el video de una variante (null si todavía no se armó). */
+export interface VideoScript {
+  id: string;
+  narrative_id: string;
+  narra: "mujer" | "hombre" | "no_se_sabe";
+  lector: string | null;
+  bloques: Array<{
+    acto: number;
+    desde: number;
+    hasta: number;
+    indicacion: string;
+    pausa: "ninguna" | "corta" | "larga";
+    marcas: Array<{ desde_palabra: number; hasta_palabra: number; texto: string }>;
+  }>;
+  momentos: Array<{
+    acto: number;
+    desde: number;
+    hasta: number;
+    fuerte: boolean;
+    tipo: "imagen" | "animacion" | "video";
+    que_se_ve: string;
+    lugar: string;
+    prompt_imagen: string;
+    prompt_movimiento: string;
+    transicion: string;
+    sonido: string;
+  }>;
+  calabaza: { intro: string; outro: string };
+  parrafos_por_acto: Record<string, number>;
+  updated_at: string;
+  /** Frente al relato actual (Spec-610 T3.1). */
+  estado: { estado: "al_dia" | "cambio_el_texto" | "cambiaron_parrafos"; actos: number[] };
+  marcas_perdidas: Array<{ bloque: number; texto: string }>;
+  estilo_imagen: string;
+  transiciones: string[];
+  lectores: string[];
+  cierre_fijo: string;
+  tipos: Record<string, { nombre: string; se_genera_con: string }>;
+}
+
+export async function getVideoScript(narrativeId: string): Promise<VideoScript | null> {
+  try {
+    const resp = await axios.get<VideoScript>(
+      `${CORE_API_URL}/api/v1/generated-narratives/${narrativeId}/video-script`,
+      { timeout: 3000 },
+    );
+    return resp.data;
+  } catch {
+    return null;
+  }
+}
+

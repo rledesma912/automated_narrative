@@ -61,8 +61,11 @@ def test_perfiles_el_local_activo_el_hibrido_y_uno_de_claude():
     assert resolved["roles"]["voz"]["model"] == "claude-sonnet-5-5"
 
 
-def test_el_hibrido_solo_manda_la_voz_a_claude():
-    """Spec-600: los roles locales del híbrido son los de gemma, tal cual."""
+def test_el_hibrido_solo_manda_la_voz_y_el_guion_a_claude():
+    """Spec-600: los roles locales del híbrido son los de gemma, tal cual.
+
+    Spec-610 (D3): el paquete para el video (`guion`) también va a Claude.
+    """
     hybrid = CORE["profiles"][HYBRID]
     local = CORE["profiles"]["ollama-gemma3-12b"]
     assert hybrid["provider"] == "ollama"
@@ -73,8 +76,9 @@ def test_el_hibrido_solo_manda_la_voz_a_claude():
         "thinking": "adaptive",
         "effort": "low",
     }
+    assert hybrid["roles"]["guion"]["provider"] == "anthropic"
     for role, cfg in hybrid["roles"].items():
-        if role != "voz":
+        if role not in ("voz", "guion"):
             assert cfg == local["roles"][role], role
 
 

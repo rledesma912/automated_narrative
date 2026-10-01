@@ -114,8 +114,16 @@ class TokenMeter:
         return round(total, 4)
 
 
+# Spec-610: `guion` arma el paquete para el video, no participa de generar un relato.
+_FUERA_DEL_RELATO = {"guion"}
+
+
 def paid_roles() -> list[str]:
-    return [r for r in LLM_ROLES if settings.role_provider(r) in PAID_PROVIDERS]
+    return [
+        r
+        for r in LLM_ROLES
+        if r not in _FUERA_DEL_RELATO and settings.role_provider(r) in PAID_PROVIDERS
+    ]
 
 
 def estimated_cost_per_story() -> float:

@@ -22,6 +22,8 @@ class JobKind(str, Enum):
     CONSULT = "consult"  # una ronda del taller
     PLAN_OUTLINE = "plan_outline"  # armar la escaleta (y revisarla)
     VERIFY_OUTLINE = "verify_outline"  # revisar la escaleta
+    # Spec-610: el paquete para el video (guion, la calabaza y el mapa).
+    VIDEO_SCRIPT = "video_script"
 
 
 class JobStatus(str, Enum):
@@ -49,6 +51,8 @@ class JobStage(str, Enum):
     CONSULTOR = "consultor"
     PLANIFICADOR = "planificador"
     VERIFICADOR = "verificador"
+    # Spec-610: el paquete para el video.
+    GUIONISTA = "guionista"
 
 
 class Job(BaseModel):

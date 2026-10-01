@@ -132,6 +132,7 @@ PERMITIDOS: dict[tuple[str, str], str] = {
     ): "422 técnico (contrato del API)",
     ("src/presentation/routers/narrative_router.py", "Error al generar narrativa"): "500 técnico",
     ("src/presentation/routers/narrative_router.py", "ID de narrativa inválido"): "422 técnico",
+    ("src/presentation/routers/video_router.py", "ID de narrativa inválido"): "400 técnico",
     ("src/presentation/routers/narrative_router.py", "ID de plantilla inválido"): "422 técnico",
     (
         "src/presentation/routers/narrative_router.py",
@@ -143,6 +144,11 @@ PERMITIDOS: dict[tuple[str, str], str] = {
         'attachment; filename="{…}"',
     ): "encabezado HTTP",
     ("src/presentation/routers/narrative_router.py", "text/markdown; charset=utf-8"): "tipo MIME",
+    (
+        "src/presentation/routers/video_router.py",
+        'attachment; filename="{…}"',
+    ): "header HTTP de descarga",
+    ("src/presentation/routers/video_router.py", "text/plain; charset=utf-8"): "tipo MIME",
     (
         "src/presentation/routers/story_router.py",
         "Historia '{…}' eliminada de DB",
@@ -175,6 +181,9 @@ PERMITIDOS: dict[tuple[str, str], str] = {
 ARCHIVOS_PERMITIDOS = {
     "src/infrastructure/adapters/mock_llm_adapter.py": "respuestas del mock (tests, --mock)",
     "src/infrastructure/adapters/mock_structured.py": "respuestas del mock (tests, --mock)",
+    "src/application/services/video/config.py": (
+        "validación de config/video/ (Spec-610): errores para quien edita el YAML, al arrancar"
+    ),
 }
 
 

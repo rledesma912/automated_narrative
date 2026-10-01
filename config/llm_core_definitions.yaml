@@ -10,7 +10,7 @@ version: "1.1"
 #
 # Para cambiar de modelo basta con editar esta línea o exportar LLM_PROFILE.
 # Cada perfil trae su provider y sus roles (director = base de consultor, planificador
-# y verificador cuando el perfil no los declara; voz; journal).
+# y verificador cuando el perfil no los declara; voz; journal; guion, Spec-610).
 
 active_profile: ollama-gemma3-12b
 
@@ -29,7 +29,7 @@ profiles:
     # Spec-510: valor inicial de la duración estimada (s), medido 2026-09-24
     # (relato completo 206 s, regenerar un acto 22 s). Con historial manda la mediana.
     # Spec-590: actos más largos → relato completo 268 y 302 s en dev (2026-09-30).
-    estimated_seconds: { full_generation: 285, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15 }
+    estimated_seconds: { full_generation: 285, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15, video_script: 180 }
     roles:
       director:
         model: gemma3:12b
@@ -69,6 +69,14 @@ profiles:
         num_ctx: 8192
         num_predict: 1200
         stop: []
+      # Spec-610: el paquete para el video (guion, calabaza, mapa). Todo local solo para
+      # probar sin gastar: el relato entero + la respuesta no entran en 8192 (D3).
+      guion:
+        model: gemma3:12b
+        temperature: 0.5
+        num_ctx: 16384
+        num_predict: 5000
+        stop: []
 
   # Spec-600: la Voz en Claude Sonnet 5.5 y el resto en gemma3:12b (ruteo por rol,
   # Spec-480). Los roles locales son los de `ollama-gemma3-12b`, tal cual.
@@ -81,7 +89,7 @@ profiles:
     anthropic: { model: claude-sonnet-5-5 }
     # Spec-510: valores iniciales sin medir (la Voz en Claude tarda menos; la Memoria
     # sigue local). Con historial manda la mediana.
-    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 20, plan_outline: 60, verify_outline: 15 }
+    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 20, plan_outline: 60, verify_outline: 15, video_script: 60 }
     roles:
       director:
         model: gemma3:12b
@@ -119,6 +127,14 @@ profiles:
         num_ctx: 8192
         num_predict: 1200
         stop: []
+      # Spec-610 (D3): el paquete para el video en Sonnet 5.5, una llamada (~US$ 0,05).
+      # Piensa poco, como la Voz: la intro y el outro de la calabaza son escritura.
+      guion:
+        provider: anthropic
+        model: claude-sonnet-5-5
+        num_predict: 6000
+        thinking: adaptive
+        effort: low
 
   # Todo en Claude Sonnet 5.5 (Spec-480; Spec-600). NO está activo: sirve para comparar y
   # como palanca si hiciera falta mover otro rol (p. ej. el Planificador).
@@ -127,7 +143,7 @@ profiles:
     provider: anthropic
     anthropic: { model: claude-sonnet-5-5 }
     # Spec-510: sin medir; manda el historial.
-    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15 }
+    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15, video_script: 60 }
     roles:
       director:
         model: claude-sonnet-5-5
@@ -154,6 +170,13 @@ profiles:
         model: claude-sonnet-5-5
         num_predict: 2000
         thinking: between_tools
+      # Spec-610 (D3): el paquete para el video en Sonnet 5.5, una llamada (~US$ 0,05).
+      # Piensa poco, como la Voz: la intro y el outro de la calabaza son escritura.
+      guion:
+        model: claude-sonnet-5-5
+        num_predict: 6000
+        thinking: adaptive
+        effort: low
 
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
 
