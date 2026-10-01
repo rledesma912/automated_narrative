@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, feature nueva (después del relato)
-**Estado:** SPECIFY, casi cerrado: D1–D16 decididas; quedan dos detalles de la calabaza (§6, D17–D18)
+**Estado:** SPECIFY cerrado (D1–D18 decididas el 2026-09-30). PLAN después de implementar la Spec-620.
 **Rama:** `feat/spec-610-guion-video` (desde `development`, `3753205`). **Se implementa después de la Spec-620** (D12): los prompts nuevos nacen como fragmentos Markdown.
 **Depende de:** Spec-620 (prompts en Markdown), Spec-600 (la Voz en Claude), Spec-490 (export para el TTS), Spec-460 (jobs)
 
@@ -81,15 +81,17 @@ Un comando en el panel de la variante: **«Armar el guion para el video»**. Una
   3. un «consejo» de supervivencia que da miedo;
   4. una última frase inquietante;
   5. cierra siempre con **«Buenas noches»**.
+
+  El pedido de like y suscripción no lo escribe la IA: es un **cierre fijo** igual en todos los episodios (D18).
 - **Formato para ElevenLabs Multilingual v2 (D15):** sin etiquetas entre corchetes; el tono se marca con la puntuación (puntos suspensivos para las pausas, frases cortas para el remate).
 
 **Outros de ejemplo (del canal, 2026-09-30):**
 
 > «Me gusta pensar que Alejandro tuvo suerte. No por haber escapado de las criaturas, sino porque llegó al único lugar donde alguien sabía qué hacer. El hombre del almacén preguntó si tenían astas. Eso significa que probablemente ya había visto cosas mucho peores. Así que, si alguien les pregunta qué clase de criatura los persigue, sean precisos. Las diferencias pueden importar. Y si esa persona se tranquiliza al escuchar la respuesta… bueno, ustedes también pueden relajarse. Aunque, yo empezaría a buscar un lugar donde esconderme… solo por las dudas. Buenas noches.»
 
-> «Hay que reconocer que el protagonista hizo bien en tapiar la ventana. Si algo lleva noches corriendo alrededor de tu casa, lo último que querés es tener una ventana abierta hacia el patio. Aunque conoz-co a algunos de ustedes: en lugar de tapiarla, estarían pegados al vidrio grabando al bicho para subir-lo a TikTok. Y probablemente discutirían en los comentarios si es un skinwalker o un perro raro. Pero recuerden algo: si una criatura lleva varios días observándolos desde afuera, quizá también esté aprendiendo de ustedes. Y espero que no haya aprendido a abrir ventanas. Buenas noches.»
+> «Hay que reconocer que el protagonista hizo bien en tapiar la ventana. Si algo lleva noches corriendo alrededor de tu casa, lo último que querés es tener una ventana abierta hacia el patio. Aunque conozco a algunos de ustedes: en lugar de tapiarla, estarían pegados al vidrio grabando al bicho para subirlo a TikTok. Y probablemente discutirían en los comentarios si es un skinwalker o un perro raro. Pero recuerden algo: si una criatura lleva varios días observándolos desde afuera, quizá también esté aprendiendo de ustedes. Y espero que no haya aprendido a abrir ventanas. Buenas noches.»
 
-> «La próxima vez que algo sobrenatural intente arrastrarlos debajo de la cama, recuerden: no todas las criaturas quieren matarlos. Algunas solamente quieren llevarlos a otro lugar. Lo cual, admito, no es mucho más tranquilizador. Pero si alguna vez sienten que el piso desaparece debajo de ustedes, busquen ayuda. Una mascota puede ser su mejor aliada. Porque allá afuera, algunas cosas conocen caminos alternativos para atra-parlos… caminos que solo los animales pueden ver. Buenas noches.»
+> «La próxima vez que algo sobrenatural intente arrastrarlos debajo de la cama, recuerden: no todas las criaturas quieren matarlos. Algunas solamente quieren llevarlos a otro lugar. Lo cual, admito, no es mucho más tranquilizador. Pero si alguna vez sienten que el piso desaparece debajo de ustedes, busquen ayuda. Una mascota puede ser su mejor aliada. Porque allá afuera, algunas cosas conocen caminos alternativos para atraparlos… caminos que solo los animales pueden ver. Buenas noches.»
 
 ### 3.4 Lo que va en pantalla (D9, D14, D7)
 
@@ -170,8 +172,8 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 | D14 | ¿Qué va en pantalla? | ✅ (usuario, 2026-09-30) **Escenarios insinuantes, sin personajes ni entidades** («al menos por ahora»), intercalando **al azar** imágenes fijas, animaciones mínimas y algún video. |
 | D15 | ¿Modelo de ElevenLabs? | ✅ (usuario, 2026-09-30) **Multilingual v2 u otro sin etiquetas**: el tono va en la puntuación. |
 | D16 | ¿La intro presenta a quien lee? | ✅ (usuario, 2026-09-30) **No**: solo la historia. Intro nueva, corta, al estilo del guardián de la cripta. |
-| D17 | Los ejemplos de outro cortan algunas palabras con guion («conoz-co», «subir-lo», «atra-parlos»). ¿Es a propósito para ElevenLabs (forzar la pronunciación o una pausa) y el generador tiene que hacerlo? | **Abierta.** |
-| D18 | Los outros de ejemplo no piden like ni suscripción. ¿El pedido («para generar una comunidad más activa») va en el outro generado, o lo dice la calabaza en un cierre fijo aparte? | **Abierta.** |
+| D17 | Los ejemplos de outro cortaban algunas palabras con guion («conoz-co»). ¿Es a propósito para ElevenLabs? | ✅ (usuario, 2026-09-30) **No, era un error de escritura.** Los ejemplos de §3.3 quedan corregidos; el generador escribe las palabras enteras. |
+| D18 | ¿El pedido de like y suscripción va en el outro generado? | ✅ (usuario, 2026-09-30) **No: es un pedido fijo al final de cada episodio**, igual en todos. El outro generado termina en «Buenas noches». Si se carga su texto en `presentador.yaml` (`cierre_fijo`), el .txt lo agrega al final, rotulado aparte; si no, no se incluye. |
 
 ---
 
