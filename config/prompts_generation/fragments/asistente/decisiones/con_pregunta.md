@@ -1,0 +1,1 @@
+- [{id}] {nombre}. Pregunta: «{pregunta}» → Respuesta: {texto}

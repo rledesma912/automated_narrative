@@ -20,6 +20,7 @@ from src.domain.models import (
     TypedRule,
     WorkshopItem,
 )
+from src.messages import message
 
 
 class CreateStoryUseCase:
@@ -119,36 +120,32 @@ async def ensure_valid_genre(
         raise InvalidGenreError(genero, subgenero if valid_genre else "")
 
 
-_ENTITY_FIELD_LABELS = {
-    "name": "«Nombre»",
-    "nature_id": "«Naturaleza»",
-    "description": "«Descripción»",
-    "manifestations": "«Manifestaciones»",
-    "limits": "«Límites»",
-    "reveal_level": "«Nivel de revelación»",
-}
-
-
 def build_authoring(
     dto: StoryCreateDTO,
 ) -> tuple[Direction | None, list[WorkshopItem], list[ActOutline]]:
     """Dirección, taller y escaleta desde el DTO (Spec-530). Raises InvalidAuthoringError."""
-    direction = _validate(Direction, dto.direction, "dirección") if dto.direction else None
+    direction = (
+        _validate(Direction, dto.direction, message("validacion.donde.direccion"))
+        if dto.direction
+        else None
+    )
     workshop = [
-        _validate(WorkshopItem, w, f"taller, elemento {i}") for i, w in enumerate(dto.workshop, 1)
+        _validate(WorkshopItem, w, message("validacion.donde.taller", n=i))
+        for i, w in enumerate(dto.workshop, 1)
     ]
     outline = [
-        _validate(ActOutline, a, f"escaleta, elemento {i}") for i, a in enumerate(dto.outline, 1)
+        _validate(ActOutline, a, message("validacion.donde.escaleta", n=i))
+        for i, a in enumerate(dto.outline, 1)
     ]
     kinds = {k.value for k in CharacterKind}
     for p in dto.personajes_full:
         if p.get("kind") and p["kind"] not in kinds:
             raise InvalidAuthoringError(
-                f"Tipo de personaje inválido para «{p.get('name', '')}»: {p['kind']}"
+                message("validacion.tipo_de_personaje", nombre=p.get("name", ""), tipo=p["kind"])
             )
     numbers = [a.number for a in outline]
     if len(numbers) != len(set(numbers)):
-        raise InvalidAuthoringError("La escaleta repite un número de acto")
+        raise InvalidAuthoringError(message("validacion.acto_repetido"))
     return direction, workshop, outline
 
 
@@ -158,7 +155,9 @@ def _validate(model, raw: dict, where: str):
     except ValidationError as e:
         first = e.errors()[0]
         field = ".".join(str(p) for p in first["loc"])
-        raise InvalidAuthoringError(f"Dato inválido en {where} ({field}): {first['msg']}") from e
+        raise InvalidAuthoringError(
+            message("validacion.dato_invalido", donde=where, campo=field, motivo=first["msg"])
+        ) from e
 
 
 def build_entities(story_id: UUID, raw: list[dict]) -> list[Entity]:
@@ -168,7 +167,7 @@ def build_entities(story_id: UUID, raw: list[dict]) -> list[Entity]:
     """
     if len(raw) > MAX_ENTITIES:
         raise InvalidEntityError(
-            f"Una historia admite hasta {MAX_ENTITIES} entidades (llegaron {len(raw)})"
+            message("validacion.demasiadas_entidades", maximo=MAX_ENTITIES, llegaron=len(raw))
         )
     entities = []
     for i, r in enumerate(raw):
@@ -186,21 +185,27 @@ def build_entities(story_id: UUID, raw: list[dict]) -> list[Entity]:
                 )
             )
         except ValidationError as e:
-            raise InvalidEntityError(f"Entidad {i + 1}: {_entity_error(e)}") from e
+            raise InvalidEntityError(
+                message("validacion.entidad", n=i + 1, error=_entity_error(e))
+            ) from e
     return entities
 
 
 def _entity_error(e: ValidationError) -> str:
     err = e.errors()[0]
-    label = _ENTITY_FIELD_LABELS.get(str(err["loc"][0]), str(err["loc"][0]))
+    field = str(err["loc"][0])
+    try:
+        label = message(f"validacion.campos_entidad.{field}")
+    except KeyError:
+        label = field
     if err["type"] == "string_too_long":
-        return f"{label} supera los {err['ctx']['max_length']} caracteres"
+        return message("validacion.muy_largo", campo=label, maximo=err["ctx"]["max_length"])
     if err["type"] == "string_too_short":
-        return f"falta {label}"
+        return message("validacion.falta", campo=label)
     if err["type"] == "enum":
         levels = ", ".join(level.value for level in RevealLevel)
-        return f"{label} no es válido (opciones: {levels})"
-    return f"{label}: {err['msg']}"
+        return message("validacion.opcion_invalida", campo=label, opciones=levels)
+    return message("validacion.campo", campo=label, motivo=err["msg"])
 
 
 async def ensure_valid_entities(
@@ -217,7 +222,16 @@ async def ensure_valid_entities(
     for e in entities:
         e.nature_label = labels.get(e.nature_id, e.nature_label)
         if not await genre_repository.nature_allowed(genero, e.nature_id):
-            where = f"al género '{genero}'" if genero else "a ninguna del catálogo"
+            where = (
+                message("validacion.al_genero", genero=genero)
+                if genero
+                else message("validacion.a_ningun_genero")
+            )
             raise InvalidEntityError(
-                f"Entidad {e.order_index + 1}: la naturaleza '{e.nature_id}' no corresponde {where}"
+                message(
+                    "validacion.naturaleza",
+                    n=e.order_index + 1,
+                    naturaleza=e.nature_id,
+                    donde=where,
+                )
             )

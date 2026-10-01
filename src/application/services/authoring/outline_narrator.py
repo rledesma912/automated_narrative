@@ -8,6 +8,9 @@ actos anteriores, Spec-590 E), cómo está y cómo es quien narra (de la memoria
 ya usado, para no repetirlo.
 La memoria (Journal) sale con esquema JSON: hechos, estado, cuerpo, rasgos de quien
 narra y motivos usados.
+
+Spec-620: el texto de cada sección vive en `config/prompts_generation/fragments/voz/` y
+`fragments/memoria/`; este módulo decide qué secciones van y con qué datos.
 """
 
 import re
@@ -32,13 +35,6 @@ LAST_ACT_WORDS = (180, 300)  # desenlace: más corto que el resto
 MAX_MOTIFS = 30
 MAX_TRAITS = 12  # Spec-590 C: rasgos de quien narra que se sostienen entre actos
 ENDING_WORDS = 120  # Spec-590: tope del último párrafo del acto anterior
-_ACT_NAMES = {
-    "exposicion": "Exposición",
-    "accion_ascendente": "Acción ascendente",
-    "climax": "Clímax",
-    "accion_descendente": "Acción descendente",
-    "desenlace": "Desenlace",
-}
 
 
 class Memoria(BaseModel):
@@ -105,42 +101,55 @@ class OutlineNarrator:
         low, high = word_range(act)
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
-            historia=_premise(story, narrator),
-            puente=_bridge(act),
-            evitar=_avoid(avoid),
-            final_anterior=_ending_of(previous_text),
-            nombre=_ACT_NAMES.get(info.get("name", ""), info.get("name", "")),
+            historia=self._premise(story, narrator),
+            puente=self._bridge(act),
+            evitar=self._avoid(avoid),
+            final_anterior=self._ending_of(previous_text),
+            nombre=info.get("label") or info.get("name", ""),
             intensidad=info.get("intensity", ""),
             funcion=self._function(story, act, info),
-            meta=f"LO QUE QUIERE {_upper(context.protagonist(story))} EN ESTE ACTO: {act.goal}\n"
+            meta=self._line(
+                "voz/objetivo",
+                protagonista=self._upper(context.protagonist(story)),
+                objetivo=act.goal,
+            )
             if act.goal
             else "",
             narrador=narrator,
             hechos="\n".join(f"- {e}" for e in act.events),
             escenario=self._scenario(story, act),
             en_escena=", ".join(p["name"] for p in scene.personajes_full) or narrator,
-            reglas=_section("REGLAS DE ESTE ACTO", story.active_rules_for_beat(act.number)),
-            cambio=f"AL TERMINAR EL ACTO: {act.change_to}\n" if act.change_to else "",
-            no_revelar=f"NO REVELES TODAVÍA: {act.held_back}\n" if act.held_back else "",
+            reglas=_section(
+                self.templates.fragment("voz/reglas"), story.active_rules_for_beat(act.number)
+            ),
+            cambio=self._line("voz/cambio", cambio=act.change_to) if act.change_to else "",
+            no_revelar=self._line("voz/no_revelar", secreto=act.held_back) if act.held_back else "",
             amenaza=self._threat(story, act),
-            ya_paso=_already_happened(story, act, memory),
-            como_esta=_how_is(memory, narrator),
+            ya_paso=self._already_happened(story, act, memory),
+            como_esta=self._how_is(memory, narrator),
             asi_es=_section(
-                f"ASÍ ES {_upper(narrator)} (mantenelo; podés sumar)",
+                self.templates.fragment("voz/asi_es", narrador=self._upper(narrator)),
                 memory.narrator_traits if memory else [],
             ),
             ya_usado="\n".join(f"- {m}" for m in self._motifs_for(story, act, memory))
-            or "(nada todavía)",
+            or self.templates.fragment("voz/ya_usado_vacio"),
             min_palabras=low,
             max_palabras=high,
         )
         return system, user
 
+    def _line(self, name: str, **data: object) -> str:
+        """Un fragmento que ocupa su propia línea en el prompt."""
+        return self.templates.fragment(name, **data) + "\n"
+
+    def _upper(self, name: str) -> str:
+        return name.upper() if name else self.templates.fragment("voz/protagonista")
+
     def _function(self, story: Story, act: ActOutline, info: dict) -> str:
         d = story.direction
         if act.number == NUM_ACTS and d and d.ending_intentional and d.ending:
             # El final del autor manda sobre la función genérica del acto (Spec-530 S2).
-            return f"cerrar la historia con el final que decidió el autor: {d.ending}"
+            return self.templates.fragment("voz/final_del_autor", final=d.ending)
         return info.get("intent", "")
 
     @staticmethod
@@ -168,7 +177,7 @@ class OutlineNarrator:
         known = next((s for s in story.scenarios if s.name == act.scenario), None)
         if known and known.description:
             return f"{known.name}: {known.description}"
-        return act.scenario or "(no se indica)"
+        return act.scenario or self.templates.fragment("voz/escenario_vacio")
 
     def _threat(self, story: Story, act: ActOutline) -> str:
         if not story.entities:
@@ -181,11 +190,7 @@ class OutlineNarrator:
 
         Con «señales» la Voz no recibe ni el nombre ni la naturaleza: no puede revelarlos.
         """
-        lines = [
-            "AMENAZA EN ESTE ACTO (revelá solo lo que se indica):",
-            "«Cómo se percibe» es un repertorio para todo el relato, no una lista a cumplir: "
-            "usá solo lo que pida «Cómo mostrarla» y lo que encaje con los eventos.",
-        ]
+        lines = [self.templates.fragment("voz/amenaza/titulo")]
         beat_repo = self.prompt_builder._beat_repo
         for e in entities:
             exposure = beat_repo.exposure_for(beat_number, e.reveal_level)
@@ -195,11 +200,12 @@ class OutlineNarrator:
                 head.append(e.name)
             if "nature" in show:
                 head.append(e.nature_label or e.nature_id)
-            lines.append(f"- {' — '.join(head) if head else f'Presencia {e.order_index + 1}'}")
-            for key, label in (
-                ("description", "Qué es"),
-                ("manifestations", "Cómo se percibe"),
-                ("limits", "Límites"),
+            presence = self.templates.fragment("voz/amenaza/presencia", numero=e.order_index + 1)
+            lines.append(f"- {' — '.join(head) if head else presence}")
+            for key, fragment in (
+                ("description", "voz/amenaza/que_es"),
+                ("manifestations", "voz/amenaza/como_se_percibe"),
+                ("limits", "voz/amenaza/limites"),
             ):
                 value = getattr(e, key)
                 if key == "manifestations" and exposure.get("max_manifestations") and act_texts:
@@ -209,9 +215,11 @@ class OutlineNarrator:
                         )
                     )
                 if key in show and value:
-                    lines.append(f"  {label}: {value}")
+                    lines.append(self.templates.fragment(fragment, valor=value))
             if exposure.get("guide"):
-                lines.append(f"  Cómo mostrarla: {exposure['guide']}")
+                lines.append(
+                    self.templates.fragment("voz/amenaza/como_mostrarla", valor=exposure["guide"])
+                )
         return lines
 
     @staticmethod
@@ -241,12 +249,16 @@ class OutlineNarrator:
             memoria=(
                 previous.last_events
                 if previous and previous.last_events
-                else "(nada: es el primer acto)"
+                else self.templates.fragment("memoria/memoria_vacia")
             ),
-            cuerpo=(previous.body_state if previous and previous.body_state else "(sin datos)"),
+            cuerpo=(
+                previous.body_state
+                if previous and previous.body_state
+                else self.templates.fragment("memoria/cuerpo_vacio")
+            ),
             asi_es="\n".join(f"- {t}" for t in previous.narrator_traits)
             if previous and previous.narrator_traits
-            else "(nada todavía)",
+            else self.templates.fragment("memoria/asi_es_vacio"),
         )
         memoria, _ = await generate_structured(
             self.llm,
@@ -257,7 +269,10 @@ class OutlineNarrator:
             min_predict=900,
         )
         past = previous.last_events if previous and previous.last_events else ""
-        events = f"{past}\nActo {act.number}: {memoria.hechos.strip()}".strip()
+        this_act = self.templates.fragment(
+            "memoria/hechos_acto", numero=act.number, hechos=memoria.hechos.strip()
+        )
+        events = f"{past}\n{this_act}".strip()
         return NarrativeJournal(
             last_events=events,
             physical_emotional_state=memoria.estado.strip(),
@@ -270,107 +285,95 @@ class OutlineNarrator:
             ),
         )
 
+    # ── Secciones del prompt de la Voz ───────────────────────────────────────
 
-def _avoid(rep) -> str:
-    """Spec-560 A2/A6: lo que la versión anterior de este acto repitió o inventó."""
-    if rep is None:
-        return ""
-    lines = [f"- Repetiste {r}" for r in rep.repeated]
-    lines += [f"- Cliché: «{c}»" for c in rep.cliches]
-    if rep.invented_names:
-        lines.append(
-            "- Nombres que no están en la historia (no inventes nombres): "
-            + ", ".join(rep.invented_names)
+    def _avoid(self, rep) -> str:
+        """Spec-560 A2/A6: lo que la versión anterior de este acto repitió o inventó."""
+        if rep is None:
+            return ""
+        t = self.templates
+        lines = [t.fragment("voz/evitar/repetida", frase=f, acto=a) for f, a in rep.repeated]
+        lines += [t.fragment("voz/evitar/cliche", cliche=c) for c in rep.cliches]
+        if rep.invented_names:
+            lines.append(t.fragment("voz/evitar/nombres", nombres=", ".join(rep.invented_names)))
+        if rep.too_cut:
+            ejemplos = ", ".join(f"«{s}»" for s in rep.cut_sentences)
+            lines.append(
+                t.fragment("voz/evitar/cortadas", cantidad=rep.cut_count, ejemplos=ejemplos)
+            )
+        if rep.dialogue:
+            lines.append(t.fragment("voz/evitar/dialogo"))
+        if not lines:
+            return ""
+        return t.fragment("voz/evitar/titulo") + "\n" + "\n".join(lines) + "\n\n"
+
+    def _bridge(self, act: ActOutline) -> str:
+        """Spec-560 A1: cómo se llega al acto (tiempo y camino), para abrirlo sin saltos."""
+        if act.number == 1 or not act.bridge.strip():
+            return ""
+        return self._line("voz/puente", puente=act.bridge.strip())
+
+    def _ending_of(self, previous_text: str) -> str:
+        """Spec-560 A1 / Spec-590: el último párrafo del acto anterior, textual, para seguir
+        desde ahí (hasta 120 palabras: si es más largo, sus últimas oraciones)."""
+        paragraphs = [p for p in re.split(r"\n\s*\n", previous_text.strip()) if p.strip()]
+        if not paragraphs:
+            return ""
+        parts = re.split(r"(?<=[.!?…»])\s+", " ".join(paragraphs[-1].split()))
+        tail: list[str] = []
+        for sentence in reversed(parts):
+            if tail and len(" ".join([sentence, *tail]).split()) > ENDING_WORDS:
+                break
+            tail.insert(0, sentence)
+        tail = " ".join(tail).strip()
+        if not tail:
+            return ""
+        return self._line("voz/final_anterior", final=tail)
+
+    def _premise(self, story: Story, narrator: str) -> str:
+        """Spec-590: la idea de quien escribe, para que la Voz conozca a quien narra y su
+        mundo. Solo la primera oración: el resto de la premisa adelantaba hechos de actos
+        posteriores."""
+        d = story.direction
+        premise = " ".join(((d.premise if d and d.premise else "") or story.sinopsis or "").split())
+        premise = _SENTENCE_END.split(premise, maxsplit=1)[0]
+        if not premise:
+            return ""
+        return self._line("voz/historia", narrador=self._upper(narrator), premisa=premise)
+
+    def _already_happened(
+        self, story: Story, act: ActOutline, memory: NarrativeJournal | None
+    ) -> str:
+        """Spec-590 E: los EVENTOS de la escaleta de los actos anteriores (confirmados por
+        quien escribe), no el resumen de la memoria. Sin escaleta, cae a la memoria."""
+        previous = [
+            a for a in sorted(story.outline, key=lambda a: a.number) if a.number < act.number
+        ]
+        lines = [
+            self.templates.fragment("voz/ya_paso_acto", numero=a.number, hechos=" ".join(a.events))
+            for a in previous
+            if a.events
+        ]
+        if lines:
+            return "\n".join(lines)
+        if memory and memory.last_events:
+            return memory.last_events
+        return self.templates.fragment("voz/ya_paso_vacio")
+
+    def _how_is(self, memory: NarrativeJournal | None, narrator: str) -> str:
+        """Spec-590 E: dónde y cómo quedó quien narra, y su cuerpo (heridas con el lugar)."""
+        parts = (
+            [p.strip() for p in (memory.physical_emotional_state, memory.body_state) if p.strip()]
+            if memory
+            else []
         )
-    if rep.too_cut:
-        ejemplos = ", ".join(f"«{s}»" for s in rep.cut_sentences)
-        lines.append(
-            f"- Tenía {rep.cut_count} oraciones cortadas (por ejemplo: {ejemplos}): "
-            "escribí oraciones completas, con verbo"
-        )
-    if rep.dialogue:
-        lines.append("- Tenía diálogo: contá lo que dicen, sin rayas ni comillas")
-    if not lines:
-        return ""
-    return (
-        "EN LA VERSIÓN ANTERIOR DE ESTE ACTO PASÓ ESTO — NO LO VUELVAS A HACER:\n"
-        + "\n".join(lines)
-        + "\n\n"
-    )
-
-
-def _bridge(act: ActOutline) -> str:
-    """Spec-560 A1: cómo se llega al acto (tiempo y camino), para abrirlo sin saltos."""
-    if act.number == 1 or not act.bridge.strip():
-        return ""
-    return (
-        "CÓMO SE LLEGA A ESTE ACTO (abrí el acto contándolo en pocas líneas, antes de los "
-        f"eventos): {act.bridge.strip()}\n"
-    )
-
-
-def _ending_of(previous_text: str) -> str:
-    """Spec-560 A1 / Spec-590: el último párrafo del acto anterior, textual, para seguir
-    desde ahí (hasta 120 palabras: si es más largo, sus últimas oraciones)."""
-    paragraphs = [p for p in re.split(r"\n\s*\n", previous_text.strip()) if p.strip()]
-    if not paragraphs:
-        return ""
-    parts = re.split(r"(?<=[.!?…»])\s+", " ".join(paragraphs[-1].split()))
-    tail: list[str] = []
-    for sentence in reversed(parts):
-        if tail and len(" ".join([sentence, *tail]).split()) > ENDING_WORDS:
-            break
-        tail.insert(0, sentence)
-    tail = " ".join(tail).strip()
-    if not tail:
-        return ""
-    return f"ASÍ TERMINÓ EL ACTO ANTERIOR (seguí desde acá; no lo repitas):\n«{tail}»\n"
+        if not parts:
+            return ""
+        return self._line("voz/como_esta", narrador=self._upper(narrator), estado=" ".join(parts))
 
 
 _SENTENCE_END = re.compile(r"(?<=[.!?…])\s+(?=[¿¡«\"“(]?[A-ZÁÉÍÓÚÑ])")
 
 
-def _premise(story: Story, narrator: str) -> str:
-    """Spec-590: la idea de quien escribe, para que la Voz conozca a quien narra y su mundo.
-    Solo la primera oración: el resto de la premisa adelantaba hechos de actos posteriores."""
-    d = story.direction
-    premise = " ".join(((d.premise if d and d.premise else "") or story.sinopsis or "").split())
-    premise = _SENTENCE_END.split(premise, maxsplit=1)[0]
-    if not premise:
-        return ""
-    return (
-        f"LA HISTORIA, PARA QUE CONOZCAS A {_upper(narrator)} Y SU MUNDO (no cuentes nada de "
-        f"acá que no esté en los EVENTOS de este acto): {premise}\n"
-    )
-
-
-def _already_happened(story: Story, act: ActOutline, memory: NarrativeJournal | None) -> str:
-    """Spec-590 E: los EVENTOS de la escaleta de los actos anteriores (confirmados por
-    quien escribe), no el resumen de la memoria. Sin escaleta, cae a la memoria."""
-    previous = [a for a in sorted(story.outline, key=lambda a: a.number) if a.number < act.number]
-    lines = [f"Acto {a.number}: {' '.join(a.events)}" for a in previous if a.events]
-    if lines:
-        return "\n".join(lines)
-    if memory and memory.last_events:
-        return memory.last_events
-    return "(es el comienzo del relato)"
-
-
-def _how_is(memory: NarrativeJournal | None, narrator: str) -> str:
-    """Spec-590 E: dónde y cómo quedó quien narra, y su cuerpo (heridas con el lugar)."""
-    parts = (
-        [p.strip() for p in (memory.physical_emotional_state, memory.body_state) if p.strip()]
-        if memory
-        else []
-    )
-    if not parts:
-        return ""
-    return f"CÓMO ESTÁ {_upper(narrator)} AHORA (no lo contradigas): {' '.join(parts)}\n"
-
-
 def _section(title: str, items: list[str]) -> str:
     return f"{title}:\n" + "\n".join(f"- {i}" for i in items) + "\n" if items else ""
-
-
-def _upper(name: str) -> str:
-    return name.upper() if name else "EL PROTAGONISTA"

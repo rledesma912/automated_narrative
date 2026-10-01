@@ -132,6 +132,7 @@ El desarrollo en **NarrativeForge** debe seguir estos principios irrenunciables:
 - **SOLID & Clean Architecture:** El dominio no depende de la infraestructura. Cada clase tiene una única responsabilidad.
 - **Hispanización Nativa:** Toda interacción con el usuario (logs, errores, mensajes de consola) **DEBE** ser en español. El código fuente (nombres de variables, clases) se mantiene en inglés/spanglish según convención, pero el *output* es 100% español.
 - **Fail Fast & Friendly:** Validar inputs inmediatamente (Pydantic + CLI flags). Los errores deben ser claros y sugerir una solución.
+- **Texto fuera del código (Spec-620):** ningún texto que lee un LLM se escribe en Python: plantillas y fragmentos en `config/prompts_generation/` (`TemplateLoader.load` / `.fragment`). Ningún texto que ve una persona y sale del Core se escribe en Python: `config/core_messages.yaml` (`src.messages.message`). El código decide qué sección va y con qué datos. Lo verifica `tests/unit/test_prompts_fuera_del_codigo.py`; los snapshots de prompts protegen que un cambio de código no cambie lo que recibe el LLM.
 - **Source-Driven Development:** El código debe ser el reflejo exacto de estas specs. Si la spec cambia, el código cambia; si el código descubre una mejora, la spec se actualiza primero.
 - **Uso de Skills:** Activar y seguir los checklists de `.opencode/skills/` (performance, security, testing) en cada hito.
 

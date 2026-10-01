@@ -8,6 +8,7 @@ import anthropic
 from src.config import settings
 from src.domain.exceptions import LLMRefusalError, LLMResponseError, LLMUnavailableError
 from src.domain.interfaces import LLMResponse
+from src.messages import message
 
 logger = logging.getLogger(__name__)
 
@@ -28,23 +29,8 @@ _DEFAULT_MAX_TOKENS = 4096
 _THINKING_MODES = ("adaptive", "disabled", "between_tools")
 _NO_THINKING = ("disabled", "between_tools")
 
-# Spec-600 D3: lo que ve quien generaba el relato cuando la API no atiende.
-_UNAVAILABLE = {
-    "credito": (
-        "La IA que escribe el relato se quedó sin crédito. "
-        "Avisá a quien administra el sitio y probá de nuevo cuando lo cargue."
-    ),
-    "clave": (
-        "La IA que escribe el relato no acepta la clave (venció o no es válida). "
-        "Avisá a quien administra el sitio."
-    ),
-    "saturada": "La IA que escribe el relato está saturada. Probá de nuevo en unos minutos.",
-    "sin_conexion": (
-        "No se pudo hablar con la IA que escribe el relato (sin conexión). "
-        "Revisá internet y probá de nuevo."
-    ),
-    "error": "La IA que escribe el relato respondió con un error. Probá de nuevo más tarde.",
-}
+# Spec-600 D3: lo que ve quien generaba el relato cuando la API no atiende está en
+# config/core_messages.yaml (`llm.<causa>`, Spec-620).
 
 
 # Restricciones de JSON Schema que los structured outputs de Anthropic no aceptan.
@@ -92,7 +78,7 @@ def _status_cause(e: anthropic.APIStatusError) -> str:
 
 def _unavailable(cause: str, e: Exception) -> LLMUnavailableError:
     logger.error(f"[ANTHROPIC] {cause}: {e}")
-    return LLMUnavailableError(cause, _UNAVAILABLE[cause], detail=str(e))
+    return LLMUnavailableError(cause, message(f"llm.{cause}"), detail=str(e))
 
 
 class AnthropicAdapter:

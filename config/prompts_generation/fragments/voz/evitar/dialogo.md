@@ -1,0 +1,1 @@
+- Tenía diálogo: contá lo que dicen, sin rayas ni comillas

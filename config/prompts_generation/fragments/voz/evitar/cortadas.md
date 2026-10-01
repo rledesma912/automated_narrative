@@ -1,0 +1,1 @@
+- Tenía {cantidad} oraciones cortadas (por ejemplo: {ejemplos}): escribí oraciones completas, con verbo

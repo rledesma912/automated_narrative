@@ -17,6 +17,7 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
+from src.messages import message
 from src.presentation.authoring_jobs import AUTHORING_KINDS, submit_authoring
 from src.presentation.generation import submit_full_generation, submit_regenerate_voz
 from src.presentation.runtime import event_bus, job_manager
@@ -50,7 +51,7 @@ def _already_active(job_id: UUID | None) -> JSONResponse:
     return JSONResponse(
         status_code=409,
         content={
-            "detail": "La historia ya tiene una generación en curso",
+            "detail": message("api.generacion_en_curso"),
             "job_id": str(job_id) if job_id else None,
         },
     )
@@ -99,12 +100,10 @@ def _validate_authoring(story, kind: JobKind) -> None:
     """Spec-530: el taller y la escaleta parten de la dirección; revisar, de una escaleta."""
     if kind == JobKind.VERIFY_OUTLINE:
         if not story.outline:
-            raise HTTPException(status_code=422, detail="No hay escaleta para revisar")
+            raise HTTPException(status_code=422, detail=message("api.sin_escaleta_para_revisar"))
         return
     if story.direction is None or not story.direction.premise.strip():
-        raise HTTPException(
-            status_code=422, detail="Falta contar de qué trata la historia (Dirección)"
-        )
+        raise HTTPException(status_code=422, detail=message("api.falta_de_que_trata"))
 
 
 async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:
@@ -113,7 +112,9 @@ async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:
         raise HTTPException(status_code=422, detail="regenerate_voz requiere beat y narrative_id")
     beat = next((b for b in story.beats if b.number == request.beat), None)
     if beat is None or not beat.has_content():
-        raise HTTPException(status_code=422, detail=f"El acto {request.beat} no está narrado")
+        raise HTTPException(
+            status_code=422, detail=message("api.acto_sin_narrar", acto=request.beat)
+        )
     narrative = await SQLGeneratedNarrativeRepository().get_by_id(request.narrative_id)
     if narrative is None or narrative.story_template_id != story.id:
         raise HTTPException(status_code=404, detail="Relato no encontrado para esta historia")

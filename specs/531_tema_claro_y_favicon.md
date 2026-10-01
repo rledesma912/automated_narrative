@@ -49,7 +49,7 @@ Que el sitio tenga **identidad propia en la pestaña del navegador** (favicon) y
 | `--forge-border` | `#e2d9c8` | Bordes suaves. |
 | `--forge-text` | `#2b2620` | Texto: tinta (13,6:1 sobre el fondo). |
 | `--forge-muted` | `#6f6454` | Texto secundario (5,2:1). |
-| `--forge-accent` | `#8a2b1f` | Acento: rojo óxido, guiño al horror sin ser sangre (7,8:1; texto blanco sobre el acento: 8,6:1). |
+| `--forge-accent` | `#785e1c` | Acento: bronce viejo (antes rojo óxido `#8a2b1f`; cambiado por el usuario el 2026-10-01). 5,6:1; texto blanco sobre el acento: 6,2:1. |
 | `--forge-error` / `-bg` / `-border` | `#a3261a` / `#f8e3df` / `#d9958a` | Errores. |
 | Semáforo (Spec-530) | verde `#3f6b3a`, ámbar `#8a5d0f`, rojo = error, gris = muted | Se definen ya para que el asistente los use. |
 
@@ -140,7 +140,7 @@ Primero la red de seguridad: capturas «antes» y tests que fallan con colores f
 2. **Variables nuevas** para lo que hoy está fijo:
    - `--forge-overlay`: tinta al 55 %, para los modales;
    - `--forge-on-accent`: texto sobre el acento (`#ffffff`, 8,6:1);
-   - `--forge-warning` y `--forge-warning-bg`: ámbar, para advertencias y el semáforo;
+   - `--forge-warning` y `--forge-warning-bg`: mostaza (`#665f00` / `#f1eecb`, desde el 2026-10-01; antes ámbar), para advertencias y el semáforo;
    - `--forge-success`: verde del semáforo.
 
    Se exponen en Tailwind como `forge.overlay`, `forge.on-accent`, etc.

@@ -47,22 +47,21 @@ class PromptBuilder:
         narrator = self.narrator_name(story)
         cliches = "\n".join(f"  - «{c}»" for c in load_cliches())
         craft = self._loader.load(VOICE_CRAFT_FILE) or ""
+        fragment = self._loader.fragment
         return {
             "guia_oficio": craft.format(
-                cliches=cliches, narrador=narrator or "el narrador"
+                cliches=cliches, narrador=narrator or fragment("voz/narrador_generico")
             ).strip(),
             "parentescos": self._format_kinship(story, narrator),
             # «Sos Irene…» en vez de «Sos Primera persona en pasado. Narrador: Irene…».
             "presentacion": (
-                f"Sos {narrator} y contás en primera persona los hechos de la historia "
-                f"({story.relator})."
+                fragment("voz/presentacion", narrador=narrator, relator=story.relator)
                 if narrator
-                else f"Sos {story.relator}, narrando en primera persona los hechos de la historia."
+                else fragment("voz/presentacion_sin_nombre", relator=story.relator)
             ),
         }
 
-    @staticmethod
-    def _format_kinship(story: Story, narrator: str) -> str:
+    def _format_kinship(self, story: Story, narrator: str) -> str:
         """«CÓMO LLAMÁS A CADA PERSONAJE»: el rol de cada uno, leído desde quien narra.
 
         Va pegado al elenco en el template: vacío no deja líneas en blanco; con contenido
@@ -71,13 +70,14 @@ class PromptBuilder:
         others = [p for p in story.personajes_full if p.get("name") and p["name"] != narrator]
         if not narrator or not others:
             return ""
-        lines = [
-            "",
-            "",
-            f"CÓMO LLAMÁS A CADA PERSONAJE (sos {narrator}):",
-            "Cuando nombres a alguien por su parentesco, usá la relación que tiene CON VOS según "
-            f"su rol; nunca otra. Si un rol dice «Suegra de {narrator}», es tu suegra: no tu madre "
-            "ni tu abuela.",
+        fragment = self._loader.fragment
+        lines = ["", "", fragment("voz/parentescos", narrador=narrator)]
+        lines += [
+            fragment(
+                "voz/parentesco",
+                nombre=p["name"],
+                rol=p.get("role") or fragment("voz/parentesco_sin_rol"),
+            )
+            for p in others
         ]
-        lines += [f"- {p['name']}: {p.get('role') or 'sin rol'}" for p in others]
         return "\n".join(lines)

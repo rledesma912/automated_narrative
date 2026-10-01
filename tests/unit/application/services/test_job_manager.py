@@ -16,9 +16,6 @@ from src.application.services.job_manager import JobAlreadyActiveError, JobManag
 from src.application.services.streaming_service import stage_event, stream_story
 from src.config import settings
 from src.domain.jobs import (
-    CANCELLED_ERROR,
-    INTERRUPTED_ERROR,
-    NO_RESULT_ERROR,
     JobKind,
     JobStage,
     JobStatus,
@@ -26,6 +23,12 @@ from src.domain.jobs import (
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.database.connection import get_connection, init_db
 from src.infrastructure.database.repositories.job_repository import SQLJobRepository
+from src.messages import message
+
+# Spec-620: los motivos viven en config/core_messages.yaml (`job.*`).
+CANCELLED_ERROR = message("job.cancelada")
+INTERRUPTED_ERROR = message("job.interrumpida")
+NO_RESULT_ERROR = message("job.sin_resultado")
 
 # ── Fakes ─────────────────────────────────────────────────────────────────────
 

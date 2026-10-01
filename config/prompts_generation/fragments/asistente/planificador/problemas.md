@@ -1,0 +1,1 @@
+PROBLEMAS QUE MARCÓ LA REVISIÓN EN LA ESCALETA ANTERIOR (resolvelos en esta versión):

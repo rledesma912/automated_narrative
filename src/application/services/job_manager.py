@@ -26,9 +26,6 @@ from src.application.services.event_bus import GLOBAL_CHANNEL, EventBus, job_cha
 from src.application.services.job_duration_estimator import JobDurationEstimator
 from src.config import settings
 from src.domain.jobs import (
-    CANCELLED_ERROR,
-    INTERRUPTED_ERROR,
-    NO_RESULT_ERROR,
     Job,
     JobKind,
     JobStage,
@@ -36,6 +33,7 @@ from src.domain.jobs import (
 )
 from src.domain.models import Story, StoryStatus
 from src.domain.streaming import StreamEvent, StreamEventType
+from src.messages import message
 from src.utils.timezone import now_argentina
 
 logger = logging.getLogger(__name__)
@@ -57,7 +55,7 @@ class JobAlreadyActiveError(Exception):
     """La historia ya tiene un job `queued`/`running` (→ 409 en la API)."""
 
     def __init__(self, job_id: UUID | None) -> None:
-        super().__init__(f"La historia ya tiene un job activo: {job_id}")
+        super().__init__(message("job.ya_activo", job=job_id))
         self.job_id = job_id
 
 
@@ -140,7 +138,7 @@ class JobManager:
             return {"profile": profile}
         return {"profile": profile, "estimated_seconds": estimate.seconds}
 
-    async def cancel(self, job_id: UUID, reason: str = CANCELLED_ERROR) -> bool:
+    async def cancel(self, job_id: UUID, reason: str | None = None) -> bool:
         """Cancela un job en curso y espera a que quede `failed`.
 
         Returns:
@@ -149,7 +147,7 @@ class JobManager:
         task = self._tasks.get(job_id)
         if task is None or task.done():
             return False
-        self._cancel_reasons[job_id] = reason
+        self._cancel_reasons[job_id] = reason or message("job.cancelada")
         task.cancel()
         await asyncio.wait({task})
         return True
@@ -167,7 +165,7 @@ class JobManager:
     async def shutdown(self) -> None:
         """Cierre del proceso: los jobs vivos quedan `failed` ("interrumpida")."""
         await asyncio.gather(
-            *(self.cancel(job_id, INTERRUPTED_ERROR) for job_id in list(self._tasks))
+            *(self.cancel(job_id, message("job.interrumpida")) for job_id in list(self._tasks))
         )
 
     async def snapshot(self) -> StreamEvent:
@@ -186,7 +184,7 @@ class JobManager:
 
     async def _run(self, job: Job, story: Story, run: JobRunner, regenerate: bool) -> None:
         channel = job_channel(job.id)
-        status, error, narrative_id = JobStatus.FAILED, NO_RESULT_ERROR, None
+        status, error, narrative_id = JobStatus.FAILED, message("job.sin_resultado"), None
         try:
             job.started_at = await self._jobs.mark_running(job.id)
             job.status = JobStatus.RUNNING
@@ -203,12 +201,12 @@ class JobManager:
                     status, error, narrative_id = JobStatus.DONE, None, data.get("narrative_id")
                     finished = True
                 elif event.event == StreamEventType.ERROR:
-                    status, error = JobStatus.FAILED, data.get("msg") or "error en el pipeline"
+                    status, error = JobStatus.FAILED, data.get("msg") or message("job.error")
                     finished = True
             if not finished:
-                self._publish_error(channel, NO_RESULT_ERROR)
+                self._publish_error(channel, message("job.sin_resultado"))
         except asyncio.CancelledError:
-            error = self._cancel_reasons.pop(job.id, CANCELLED_ERROR)
+            error = self._cancel_reasons.pop(job.id, message("job.cancelada"))
             status = JobStatus.FAILED
             self._publish_error(channel, error, cancelled=True)
             # Solo una generación completa deja la historia a medias; cancelar la
