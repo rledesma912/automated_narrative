@@ -123,10 +123,7 @@ export const corregirRelatoPage = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Spec-610: «Para el video», el paquete de una variante (§3.7.2). En S2 muestra los
- * bloques y los momentos en lista; la pantalla completa llega en S3.
- */
+/** Spec-610 §3.7.2: «Para el video», el paquete de una variante (guion, calabaza, mapa). */
 export const videoPage = async (req: Request, res: Response) => {
   const storyId = req.params.storyId as string;
   const narrativeId = req.params.narrativeId as string;
@@ -137,16 +134,17 @@ export const videoPage = async (req: Request, res: Response) => {
     if (!relato) return res.status(404).send("Relato no encontrado.");
     const script = await getVideoScript(narrativeId);
     if (!script) return res.redirect(`/historia/${storyId}/relatos`);
-    const parrafos: Record<number, string[]> = {};
-    splitActs(relato.content).forEach((a) => {
-      parrafos[a.number] = a.text.split(/\n[ \t]*\n+/).map((p) => p.trim()).filter(Boolean);
-    });
+    const actos = splitActs(relato.content).map((a) => ({
+      number: a.number,
+      name: a.name,
+      parrafos: a.text.split(/\n[ \t]*\n+/).map((p) => p.trim()).filter(Boolean),
+    }));
     res.setHeader("Cache-Control", "no-store");
     await renderPage(res, "relatos/video", {
       story,
       relato,
       script,
-      parrafos,
+      actos,
       lectura: await getReadingSettings(),
       title: `Para el video: «${story.title || "Sin título"}»`,
       activePage: "gallery",
@@ -156,4 +154,3 @@ export const videoPage = async (req: Request, res: Response) => {
     res.status(500).send("No se pudo abrir el guion para el video.");
   }
 };
-

@@ -153,6 +153,14 @@ export interface VideoScript {
   calabaza: { intro: string; outro: string };
   parrafos_por_acto: Record<string, number>;
   updated_at: string;
+  /** Frente al relato actual (Spec-610 T3.1). */
+  estado: { estado: "al_dia" | "cambio_el_texto" | "cambiaron_parrafos"; actos: number[] };
+  marcas_perdidas: Array<{ bloque: number; texto: string }>;
+  estilo_imagen: string;
+  transiciones: string[];
+  lectores: string[];
+  cierre_fijo: string;
+  tipos: Record<string, { nombre: string; se_genera_con: string }>;
 }
 
 export async function getVideoScript(narrativeId: string): Promise<VideoScript | null> {

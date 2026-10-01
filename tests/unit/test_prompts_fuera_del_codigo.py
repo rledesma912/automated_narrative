@@ -145,6 +145,11 @@ PERMITIDOS: dict[tuple[str, str], str] = {
     ): "encabezado HTTP",
     ("src/presentation/routers/narrative_router.py", "text/markdown; charset=utf-8"): "tipo MIME",
     (
+        "src/presentation/routers/video_router.py",
+        'attachment; filename="{…}"',
+    ): "header HTTP de descarga",
+    ("src/presentation/routers/video_router.py", "text/plain; charset=utf-8"): "tipo MIME",
+    (
         "src/presentation/routers/story_router.py",
         "Historia '{…}' eliminada de DB",
     ): "respuesta del API (la UI no la muestra)",

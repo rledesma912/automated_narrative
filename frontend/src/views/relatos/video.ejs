@@ -1,57 +1,52 @@
 <%
 /*
- * Spec-610 S2: «Para el video», versión simple (bloques y momentos en lista).
- * La pantalla completa (§3.7.2: pestañas, edición, línea de tiempo) llega en S3.
+ * Spec-610 §3.7.2 (D19, D22): «Para el video». El paquete de una variante en tres
+ * pestañas, una por persona: guion de lectura, la calabaza y el mapa de producción.
+ * Todo se corrige acá y se guarda solo; los archivos se arman al descargar.
  *
- * Variables: story, relato, script (VideoScript), parrafos { acto: [párrafos] }, lectura.
+ * Variables: story, relato, script (con estado), actos [{ number, name, parrafos }],
+ * lectura. El contenido de las pestañas lo dibuja public/js/paquete-video.js.
  */
-const NOMBRES = { 1: 'Cómo empieza', 2: 'Se complica', 3: 'El peor momento', 4: 'Qué hace después', 5: 'Cómo termina' };
-const TIPOS = { imagen: 'Imagen fija', animacion: 'Animación', video: 'Video' };
-const PAUSAS = { ninguna: 'Seguido', corta: 'Pausa corta', larga: 'Pausa larga' };
-const texto = (acto, desde, hasta) => (parrafos[acto] || []).slice(desde - 1, hasta);
+const estimate = locals.estimateLabels ? (locals.estimateLabels.video_script || '') : '';
 %>
-<div class="max-w-5xl mx-auto flex flex-col gap-6" data-video data-narrative-id="<%= relato.id %>">
+<div class="max-w-6xl mx-auto flex flex-col gap-6" data-video data-story-id="<%= story.id %>" data-narrative-id="<%= relato.id %>">
   <div class="flex flex-col gap-2">
     <a href="/historia/<%= story.id %>/relatos" class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2 w-fit">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a los relatos
     </a>
-    <h2 class="heading-forge-lg">Para el video</h2>
-    <p class="pista-forge"><i data-lucide="info"></i><span><%= relato.title || story.title %>. Lo lee <%= script.lector || 'quien elijas' %>.</span></p>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="heading-forge-lg">Para el video</h2>
+      <div class="flex flex-wrap gap-2">
+        <a href="/historia/<%= story.id %>/relatos/<%= relato.id %>/corregir" class="btn-forge-outline-sm"><i data-lucide="pencil" class="w-4 h-4"></i> Corregir el relato</a>
+        <button type="button" class="btn-forge-outline-sm" data-rearmar
+                data-detalle="<%= estimate ? `Tarda ${estimate}. ` : '' %>La IA arma todo de nuevo desde el relato como está ahora. Lo que corregiste acá (cómo se lee, lo remarcado, la calabaza, los prompts) se pierde.">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Armar de nuevo
+        </button>
+      </div>
+    </div>
+    <p class="pista-forge"><i data-lucide="info"></i><span><%= relato.title || story.title %>. Lo que cambies acá se guarda solo; los archivos se arman al descargar.</span></p>
   </div>
 
-  <section class="card-forge !p-5 flex flex-col gap-4">
-    <h3 class="font-serif text-xl text-forge-accent">La calabaza</h3>
-    <div><span class="text-forge-muted-caps !tracking-[0.15em]">Intro</span><p class="prose-forge mt-1"><%= script.calabaza.intro %></p></div>
-    <div><span class="text-forge-muted-caps !tracking-[0.15em]">Outro</span><p class="prose-forge mt-1"><%= script.calabaza.outro %></p></div>
-  </section>
+  <div class="flex flex-col gap-3" data-avisos-paquete></div>
 
-  <section class="card-forge !p-5 flex flex-col gap-4" data-bloques>
-    <h3 class="font-serif text-xl text-forge-accent">Guion de lectura · <%= script.bloques.length %> bloques</h3>
-    <% script.bloques.forEach((b, i) => { %>
-      <article class="border border-forge-border rounded-lg p-4 flex flex-col gap-2" data-bloque="<%= i + 1 %>">
-        <div class="flex flex-wrap justify-between gap-2 text-sm text-forge-muted">
-          <span>Bloque <%= i + 1 %> · acto <%= b.acto %> (<%= NOMBRES[b.acto] || '' %>)</span>
-          <span><%= PAUSAS[b.pausa] %></span>
-        </div>
-        <p class="text-sm italic text-forge-muted">▸ <%= b.indicacion %></p>
-        <% texto(b.acto, b.desde, b.hasta).forEach((p) => { %><p class="prose-forge"><%= p %></p><% }) %>
-        <% if (b.marcas.length) { %><p class="text-sm">Remarcar: <% b.marcas.forEach((m, j) => { %><strong><%= m.texto %></strong><%= j < b.marcas.length - 1 ? ' · ' : '' %><% }) %></p><% } %>
-      </article>
-    <% }) %>
-  </section>
+  <section class="card-forge !p-5 flex flex-wrap gap-x-10 gap-y-4" aria-label="Resumen del episodio" data-resumen></section>
 
-  <section class="card-forge !p-5 flex flex-col gap-4" data-momentos>
-    <h3 class="font-serif text-xl text-forge-accent">Lo que va en pantalla · <%= script.momentos.length %> momentos</h3>
-    <% script.momentos.forEach((m, i) => { %>
-      <article class="border border-forge-border rounded-lg p-4 flex flex-col gap-2" data-momento="<%= i + 1 %>">
-        <div class="flex flex-wrap justify-between gap-2">
-          <strong><%= i + 1 %>. <%= m.que_se_ve %></strong>
-          <span class="chip-forge chip-forge--info"><%= TIPOS[m.tipo] %></span>
-        </div>
-        <p class="text-sm text-forge-muted">Acto <%= m.acto %>, párrafos <%= m.desde %>–<%= m.hasta %> · <%= m.transicion %> · <%= m.sonido %></p>
-        <p class="text-sm font-mono"><%= m.prompt_imagen %></p>
-        <% if (m.tipo !== 'imagen') { %><p class="text-sm font-mono text-forge-muted"><%= m.prompt_movimiento %></p><% } %>
-      </article>
-    <% }) %>
-  </section>
+  <div class="flex flex-wrap gap-1 border-b border-forge-border" role="tablist" aria-label="Para quién" data-pestanas>
+    <button type="button" role="tab" class="pestana-video" data-tab="guion" aria-selected="true">Guion de lectura<small>para quien lee</small></button>
+    <button type="button" role="tab" class="pestana-video" data-tab="calabaza" aria-selected="false">La calabaza<small>intro y outro</small></button>
+    <button type="button" role="tab" class="pestana-video" data-tab="mapa" aria-selected="false">Mapa de producción<small>para quien edita</small></button>
+  </div>
+
+  <section data-panel="guion" role="tabpanel" class="flex flex-col gap-4"></section>
+  <section data-panel="calabaza" role="tabpanel" class="flex flex-col gap-4" hidden></section>
+  <section data-panel="mapa" role="tabpanel" class="flex flex-col gap-4" hidden></section>
+
+  <%- include('../asistente/_guardado') %>
 </div>
+<%- include('../partials/ia_modal') %>
+<script type="application/json" id="video-datos"><%- JSON.stringify({ script, actos, lectura }).replace(/</g, '\\u003c') %></script>
+<script src="/js/tiempos.js?v=<%= locals.assetVersion || '' %>"></script>
+<script src="/js/marcas.js?v=<%= locals.assetVersion || '' %>"></script>
+<script src="/js/guardado.js?v=<%= locals.assetVersion || '' %>"></script>
+<script src="/js/ia-modal.js?v=<%= locals.assetVersion || '' %>"></script>
+<script src="/js/paquete-video.js?v=<%= locals.assetVersion || '' %>"></script>

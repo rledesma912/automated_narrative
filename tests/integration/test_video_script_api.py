@@ -86,3 +86,123 @@ async def test_sin_relato_o_de_otra_historia(client):
     assert sin.status_code == 422
     otro = await client.post(url, json={"kind": "video_script", "narrative_id": str(uuid.uuid4())})
     assert otro.status_code == 404
+
+
+# ── T3.1 / T3.2: estado frente al relato y edición ───────────────────────────
+
+
+async def _armado(client) -> GeneratedNarrative:
+    narrative = await _narrative(client)
+    resp = await client.post(
+        f"/api/v1/stories/{narrative.story_template_id}/jobs",
+        json={"kind": "video_script", "narrative_id": str(narrative.id)},
+    )
+    assert (await _wait_job(client, resp.json()["job_id"]))["status"] == "done"
+    return narrative
+
+
+def _url(narrative, path: str = "") -> str:
+    return f"/api/v1/generated-narratives/{narrative.id}/video-script{path}"
+
+
+async def test_estado_frente_al_relato_corregido(client):
+    narrative = await _armado(client)
+    assert (await client.get(_url(narrative))).json()["estado"] == {"estado": "al_dia", "actos": []}
+
+    await client.put(
+        f"/api/v1/generated-narratives/{narrative.id}/acts/2",
+        json={"text": "Párrafo 1 corregido.\n\nPárrafo 2.\n\nPárrafo 3."},
+    )
+    assert (await client.get(_url(narrative))).json()["estado"]["estado"] == "cambio_el_texto"
+
+    await client.put(
+        f"/api/v1/generated-narratives/{narrative.id}/acts/2", json={"text": "Uno solo."}
+    )
+    body = (await client.get(_url(narrative))).json()
+    assert body["estado"] == {"estado": "cambiaron_parrafos", "actos": [2]}
+    assert body["lectores"] == ["Yael", "Lucas", "Vale"]
+    assert "no people" in body["estilo_imagen"]
+
+
+async def test_editar_un_bloque_con_marcas(client):
+    narrative = await _armado(client)
+
+    resp = await client.put(
+        _url(narrative, "/blocks/1"),
+        json={"indicacion": "Más lento.", "pausa": "larga", "marcas": [[2, 3], [0, 0]]},
+    )
+
+    assert resp.status_code == 200, resp.text
+    block = (await client.get(_url(narrative))).json()["bloques"][0]
+    assert block["indicacion"] == "Más lento."
+    assert block["pausa"] == "larga"
+    assert block["marcas"] == [
+        {"desde_palabra": 0, "hasta_palabra": 0, "texto": "Párrafo"},
+        {"desde_palabra": 2, "hasta_palabra": 3, "texto": "del acto"},
+    ]
+
+
+@pytest.mark.parametrize("marcas", [[[0, 9]], [[1, 0]], [[0, 1], [1, 2]]])
+async def test_marcas_invalidas(client, marcas):
+    narrative = await _armado(client)
+    resp = await client.put(_url(narrative, "/blocks/1"), json={"marcas": marcas})
+    assert resp.status_code == 422
+
+
+async def test_marcas_que_se_pierden_al_corregir(client):
+    narrative = await _armado(client)
+    await client.put(_url(narrative, "/blocks/1"), json={"marcas": [[2, 3]]})  # «del acto»
+    await client.put(
+        f"/api/v1/generated-narratives/{narrative.id}/acts/1",
+        json={"text": "Otro texto.\n\nPárrafo 2 del acto 1.\n\nPárrafo 3 del acto 1."},
+    )
+    body = (await client.get(_url(narrative))).json()
+    assert body["bloques"][0]["marcas"] == []
+    assert body["marcas_perdidas"] == [{"bloque": 1, "texto": "del acto"}]
+
+
+async def test_editar_momento_lector_y_calabaza(client):
+    narrative = await _armado(client)
+
+    m = await client.put(
+        _url(narrative, "/moments/2"),
+        json={"tipo": "video", "prompt_imagen": " A dark road. ", "transicion": "Corte seco"},
+    )
+    lector = await client.put(_url(narrative, "/reader"), json={"lector": "Yael"})
+    calabaza = await client.put(_url(narrative, "/presenter"), json={"intro": "Hola, cripta."})
+
+    assert m.status_code == lector.status_code == calabaza.status_code == 200
+    body = (await client.get(_url(narrative))).json()
+    assert body["momentos"][1]["tipo"] == "video"
+    assert body["momentos"][1]["prompt_imagen"] == "A dark road."
+    assert body["lector"] == "Yael"
+    assert body["calabaza"]["intro"] == "Hola, cripta."
+
+
+async def test_errores_de_edicion(client):
+    narrative = await _armado(client)
+    assert (await client.put(_url(narrative, "/moments/99"), json={})).status_code == 404
+    assert (await client.put(_url(narrative, "/blocks/0"), json={})).status_code == 404
+    mala = await client.put(_url(narrative, "/moments/1"), json={"transicion": "Explosión"})
+    assert mala.status_code == 422
+    nadie = await client.put(_url(narrative, "/reader"), json={"lector": "Juana"})
+    assert nadie.status_code == 422
+    tipo = await client.put(_url(narrative, "/moments/1"), json={"tipo": "dibujo"})
+    assert tipo.status_code == 422
+
+
+async def test_descargar_el_txt_de_la_calabaza(client, monkeypatch):
+    from src.application.services.video.config import video_config
+
+    narrative = await _armado(client)
+    await client.put(_url(narrative, "/presenter"), json={"intro": "Hola.", "outro": "Chau."})
+    monkeypatch.setattr(video_config().presentador, "cierre_fijo", "Dejanos un like.")
+
+    resp = await client.get(_url(narrative, "/calabaza.txt"))
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "text/plain; charset=utf-8"
+    assert resp.headers["content-disposition"] == 'attachment; filename="calabaza-v1.txt"'
+    assert resp.text == (
+        "INTRO\nHola.\n\nOUTRO\nChau.\n\nCIERRE (igual en todos los episodios)\nDejanos un like.\n"
+    )

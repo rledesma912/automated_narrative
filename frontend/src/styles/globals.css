@@ -137,6 +137,29 @@
   .nota-forge--error .nota-forge__icono   { @apply text-forge-error; }
 
   /* PISTA: la ayuda de un campo. Solo texto gris con su ícono. */
+  /* Spec-610 §3.7.2: «Para el video». Pestañas por persona, opciones chicas
+     (quién lee, pausas, tipo de momento), palabras que se remarcan y la línea de
+     tiempo del mapa (cada momento con el color de su tipo y el número en una pastilla). */
+  .pestana-video {
+    @apply grid text-left px-4 py-2 -mb-px border-b-[3px] border-transparent text-forge-muted cursor-pointer;
+  }
+  .pestana-video small { @apply text-xs font-normal; }
+  .pestana-video[aria-selected="true"] { @apply border-forge-accent text-forge-text font-semibold; }
+  .opcion-chica {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-forge-border bg-forge-surface px-3 py-1 text-sm text-forge-text cursor-pointer;
+  }
+  .opcion-chica[aria-pressed="true"] { @apply border-forge-accent bg-forge-accent text-forge-on-accent; }
+  .tipo-punto { @apply inline-block w-2.5 h-2.5 rounded-sm shrink-0; }
+  .palabra-video { @apply rounded cursor-pointer hover:bg-forge-neutral-bg; }
+  .remarcado {
+    @apply font-bold underline decoration-forge-accent decoration-2 underline-offset-4;
+  }
+  .mapa-tramo { @apply relative block h-full min-w-[0.9rem] cursor-pointer opacity-90 hover:opacity-100; }
+  .mapa-tramo[aria-current="true"] { @apply opacity-100 ring-[3px] ring-inset ring-forge-text; }
+  .mapa-tramo__num {
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-forge-surface px-1 text-xs font-bold text-forge-text;
+  }
+
   /* Spec-610: lista de actos de «Corregir el relato» (el elegido, con el acento). */
   .corregir-acto { @apply text-forge-text hover:bg-forge-neutral-bg; }
   .corregir-acto[aria-current="true"] { @apply bg-forge-accent text-forge-on-accent hover:bg-forge-accent; }

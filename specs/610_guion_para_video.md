@@ -498,39 +498,44 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 
 ### S3 — La pantalla «Para el video» (§3.7.2)
 
-- [ ] **T3.1 — Estado frente al relato y marcas que se mueven**
+- [x] **T3.1 — Estado frente al relato y marcas que se mueven**
   - Acepta:
     - el `GET` devuelve `al_dia`, `cambio_el_texto` o `cambiaron_parrafos` (con los actos), comparando `narrative_hash` y `parrafos_por_acto`;
     - las marcas se reubican por su texto dentro del bloque o se descartan con un aviso.
   - Verifica: pytest de los tres estados y de las marcas.
   - Archivos: `services/video/state.py`, `video_router.py`, test.
-- [ ] **T3.2 — Editar el paquete**
+- [x] **T3.2 — Editar el paquete**
   - Acepta:
     - `PUT …/reader`, `PUT …/blocks/{n}` (indicación, pausa, marcas dentro del bloque), `PUT …/moments/{n}` (tipo válido, transición de la lista, textos) y `PUT …/presenter` (intro y outro);
     - 409 si hay un job activo y 422 con un mensaje claro si algo no vale.
   - Verifica: pytest.
   - Archivos: `video_router.py`, schemas, el repo, test.
-- [ ] **T3.3 — `marcas.js`**
+- [x] **T3.3 — `marcas.js`**
   - Acepta: tocar una palabra marca o desmarca solo esa; arrastrar marca o desmarca la frase; se unen las marcas contiguas; reubica las marcas como el Core.
   - Verifica: Vitest, con casos compartidos con pytest.
   - Archivos: `public/js/marcas.js`, test, JSON de casos.
-- [ ] **T3.4 — La pantalla: resumen y guion**
+- [x] **T3.4 — La pantalla: resumen y guion**
   - Acepta:
     - ruta `/historia/:storyId/relatos/:narrativeId/video` con el resumen (lector, duración, tipos) y las pestañas con `#guion`, `#calabaza` y `#mapa`;
     - la pestaña Guion como la maqueta: actos, bloques, «Cómo se lee», remarcar, pausas y frases a la derecha.
   - Verifica: tests de vistas, E2E (remarcar una frase y recargar).
   - Archivos: controlador, `views/relatos/video.ejs`, `public/js/paquete-video.js`, E2E.
-- [ ] **T3.5 — Calabaza y mapa**
+- [x] **T3.5 — Calabaza y mapa**
   - Acepta:
     - la calabaza con la ficha arriba, la intro y el outro en vertical que crecen con el texto, «Copiar para ElevenLabs» y el cierre fijo en gris;
     - el mapa con la línea de tiempo, lo que se lee y la ficha editable con «Copiar»;
     - `GET …/calabaza.txt` y su botón.
   - Verifica: E2E (cambiar un prompt, bajar el .txt).
   - Archivos: `video.ejs` (parciales), `paquete-video.js`, `video_router.py`, E2E.
-- [ ] **T3.6 — Armar de nuevo y avisos**
+- [x] **T3.6 — Armar de nuevo y avisos**
   - Acepta: «Armar de nuevo» pide confirmación con `ForgeConfirm` y dice que se pierde lo corregido; se ven los avisos `cambio_el_texto` y `cambiaron_parrafos`, con los bloques y momentos de ese acto marcados.
   - Verifica: E2E.
   - Archivos: `video.ejs`, `paquete-video.js`, `core_messages.yaml`, E2E.
+
+**Notas de S3 (2026-10-01):**
+- **Bug que apareció y quedó arreglado:** `SQLGeneratedNarrativeRepository.save()` usaba `INSERT OR REPLACE`. En SQLite eso borra la fila, y el borrado en cascada se llevaba el paquete cada vez que se corregía el relato. Ahora es un UPSERT (`ON CONFLICT DO UPDATE`).
+- El `GET` del paquete trae además el estilo de las imágenes (se suma al copiar un prompt), las transiciones, los lectores, el cierre fijo y los tipos con su herramienta.
+- El remarcado se manda como tramos `[desde, hasta]`; el texto de cada marca lo pone el Core con el relato actual.
 
 ### S4 — Los dos PDF (§3.7.3, §3.7.4)
 

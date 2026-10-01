@@ -136,5 +136,14 @@ video:
   relato_de_otra_historia: "Ese relato no es de esta historia"
   falta_el_relato: "Falta decir de qué relato se arma el guion"
   sin_paquete: "Este relato todavía no tiene guion para el video"
+  bloque_inexistente: "El guion no tiene el bloque {numero}"
+  momento_inexistente: "El mapa no tiene el momento {numero}"
+  lector_desconocido: "Esa persona no está en la lista de quienes leen"
+  marca_invalida: "Lo remarcado no coincide con el texto del bloque: recargá la página"
+  transicion_desconocida: "Esa transición no está en la lista"
+  # Rótulos del .txt de la calabaza (cada parte se pega aparte en ElevenLabs).
+  txt_intro: "INTRO"
+  txt_outro: "OUTRO"
+  txt_cierre: "CIERRE (igual en todos los episodios)"
   no_se_pudo_armar: "La IA no pudo armar un guion que cumpla todo ({cantidad} cosas no cumplían). Probá de nuevo."
 
