@@ -7,7 +7,7 @@ acto anterior: lo ya pasado y lo ya usado, para no repetirlo. 1 llamada LLM.
 import logging
 from uuid import UUID
 
-from src.application.services import repetition_check
+from src.application.services import narrative_acts, repetition_check
 from src.application.services.authoring.outline_narrator import OutlineNarrator
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
@@ -57,15 +57,19 @@ class RegenerateBeatVozUseCase:
             previous = await self.story_repo.get_journal(story_id, beat_number - 1)
 
         narrator = OutlineNarrator(self.llm, self.prompt_builder)
+        # Spec-610: la variante que se regenera puede estar corregida en la web; sus
+        # actos mandan sobre los de la última generación.
+        edited = await self._edited_acts(narrative_id, story_id)
         # Spec-560 A1: el final del acto anterior, para seguir desde ahí.
         before = next((b for b in story.beats if b.number == beat_number - 1), None)
+        before_text = edited.get(beat_number - 1) or (before.generated_act if before else "")
         # Spec-560 A2: lo que el control marcó en la versión que se reemplaza.
         findings = repetition_check.last_version_findings(story)
         system_prompt, user_prompt = narrator.voice_prompts(
             story,
             act,
             previous,
-            before.generated_act if before else "",
+            before_text,
             findings.get(beat_number),
         )
         logger.debug(f"[REGEN-VOZ] beat={beat_number} story={story_id} narrative={narrative_id}")
@@ -81,6 +85,19 @@ class RegenerateBeatVozUseCase:
             if later.number > beat_number and later.generated_act and not later.stale:
                 await self.beat_repo.update(later.model_copy(update={"stale": True}), story_id)
 
-        story.beats = [beat if b.number == beat_number else b for b in story.beats]
-        narrative = await self.narrative_use_case.update_content(narrative_id, story)
+        if beat_number in edited:
+            # Spec-610: solo se reemplaza este acto; lo corregido en los demás queda.
+            narrative = await self.narrative_use_case.update_act(
+                narrative_id, beat_number, beat.generated_act
+            )
+        else:
+            story.beats = [beat if b.number == beat_number else b for b in story.beats]
+            narrative = await self.narrative_use_case.update_content(narrative_id, story)
         return beat, narrative
+
+    async def _edited_acts(self, narrative_id: UUID, story_id: UUID) -> dict[int, str]:
+        """Los actos de la variante (corregidos o no); vacío si no es de esta historia."""
+        narrative = await self.narrative_use_case.get_by_id(narrative_id)
+        if not isinstance(narrative, GeneratedNarrative) or narrative.story_template_id != story_id:
+            return {}
+        return narrative_acts.split(narrative.content).acts

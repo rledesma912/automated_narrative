@@ -32,6 +32,8 @@ module.exports = {
             "success", "success-bg", "success-border",
             "info", "info-bg", "info-border",
             "neutral-bg",
+            // Spec-610: tipos de momento del mapa para el video.
+            "tipo-imagen", "tipo-animacion", "tipo-video", "tipo-calabaza",
           ].map((name) => [
             name,
             `color-mix(in srgb, var(--forge-${name}) calc(<alpha-value> * 100%), transparent)`,

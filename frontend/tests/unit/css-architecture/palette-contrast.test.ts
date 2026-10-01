@@ -50,15 +50,25 @@ const PAIRS: Array<[string, string]> = [
   ["text", "error-bg"],
 ];
 
+// Spec-610: los tipos de momento son relleno (la línea de tiempo del mapa), no texto:
+// WCAG 1.4.11 pide ≥ 3:1 contra lo que tienen al lado.
+const GRAPHICS: Array<[string, string]> = ["imagen", "animacion", "video", "calabaza"].flatMap(
+  (tipo) => BACKGROUNDS.map((b): [string, string] => [`tipo-${tipo}`, b]),
+);
+
 describe.each(PALETTES)("contraste de la paleta %s", (_name, selector) => {
   const palette = vars(selector);
 
   it("define todas las variables de color como hexadecimales", () => {
-    const needed = new Set(PAIRS.flat());
+    const needed = new Set([...PAIRS, ...GRAPHICS].flat());
     expect([...needed].filter((name) => !palette[name])).toEqual([]);
   });
 
   it.each(PAIRS)("--forge-%s sobre --forge-%s ≥ 4,5:1", (fg, bg) => {
     expect(contrast(palette[fg], palette[bg])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(GRAPHICS)("--forge-%s sobre --forge-%s ≥ 3:1 (relleno)", (fg, bg) => {
+    expect(contrast(palette[fg], palette[bg])).toBeGreaterThanOrEqual(3);
   });
 });

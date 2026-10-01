@@ -7,10 +7,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
 
-from src.application.services import repetition_check
+from src.application.services import narrative_acts, repetition_check
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
-from src.infrastructure.database.repositories import SQLStoryRepository
+from src.infrastructure.database.repositories import SQLJobRepository, SQLStoryRepository
 from src.messages import message
+from src.presentation.schemas.request import ActTextUpdateRequest
 from src.presentation.schemas.response import GeneratedNarrativeResponse
 
 logger = logging.getLogger(__name__)
@@ -167,6 +168,45 @@ async def get_narrative_repetition(
             }
             for r in repetition_check.check(acts, known=known)
         ]
+    }
+
+
+@router.put("/generated-narratives/{narrative_id}/acts/{number}")
+async def update_narrative_act(
+    narrative_id: str,
+    number: int,
+    request: ActTextUpdateRequest,
+    use_case: GenerateNarrativesUseCase = Depends(_narrative_use_case),
+):
+    """Spec-610 T1.2: corrige el texto de un acto del relato; los demás no se tocan.
+
+    El control de repetición (`GET …/repetition`) se calcula sobre lo corregido.
+    """
+    try:
+        nid = UUID(narrative_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID de narrativa inválido")
+    narrative = await use_case.get_by_id(nid)
+    if not narrative:
+        raise HTTPException(status_code=404, detail="Narrativa no encontrada")
+    if number not in narrative_acts.split(narrative.content).acts:
+        raise HTTPException(status_code=404, detail=message("api.relato_sin_acto", acto=number))
+    if not narrative_acts.normalize(request.text):
+        raise HTTPException(status_code=422, detail=message("api.acto_vacio"))
+    active = await SQLJobRepository().get_active_for_story(narrative.story_template_id)
+    if active is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=message("api.ia_trabajando"),
+            headers={"X-Job-Id": str(active.id)},
+        )
+    saved = await use_case.update_act(nid, number, request.text)
+    text = narrative_acts.split(saved.content).acts[number]
+    return {
+        "number": number,
+        "text": text,
+        "paragraphs": len(narrative_acts.paragraphs(text)),
+        "words": len(text.split()),
     }
 
 

@@ -18,6 +18,8 @@ export interface EstimateLabels {
   consult?: string;
   plan_outline?: string;
   verify_outline?: string;
+  // Spec-610: el guion para el video.
+  video_script?: string;
 }
 
 export function createLoadEstimates(
@@ -38,6 +40,7 @@ export function createLoadEstimates(
         consult: formatShortEstimate(estimates?.consult?.seconds),
         plan_outline: formatShortEstimate(estimates?.plan_outline?.seconds),
         verify_outline: formatShortEstimate(estimates?.verify_outline?.seconds),
+        video_script: formatShortEstimate(estimates?.video_script?.seconds),
       };
       if (labels.full_generation || labels.regenerate_voz) res.locals.estimateLabels = labels;
     } catch {

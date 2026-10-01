@@ -21,6 +21,8 @@ class StoryResponse(BaseModel):
     # Spec-440 §8: vista de autoría completa (atmósfera, escenarios, reglas, actos,
     # narrador) para rehidratar el wizard al editar. Solo en GET /stories/{id}.
     storyteller_config: dict | None = None
+    # Spec-610: la última versión del relato que tiene guion para el video (listado).
+    video_narrative_id: str | None = None
     personajes_full: list | None = None
     # Spec-530: la historia se armó con el asistente (se edita ahí, no en el wizard).
     authoring: bool = False

@@ -1,0 +1,95 @@
+{#- Spec-610 §3.7.3 (D21): el guion de lectura. Portada; cada acto en hoja nueva; un
+    bloque nunca se parte; número y minuto en el margen; texto a 14 pt; margen derecho
+    para anotar; «Hoja N de M» al pie. -#}
+{% set NOMBRES = {1: "Cómo empieza", 2: "Se complica", 3: "El peor momento", 4: "Qué hace después", 5: "Cómo termina"} %}
+{% set PAUSAS = {"corta": ("‖", "Pausa corta: respirá"), "larga": ("‖ ‖", "Pausa larga: contá hasta tres")} %}
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Guion de lectura · {{ titulo }}</title>
+<style>
+{% include "base.css.j2" %}
+@page {
+  size: A4; margin: 20mm 46mm 18mm 20mm;
+  @bottom-left { content: "{{ (titulo ~ (' · lee ' ~ lector if lector else '')) | replace('\\', '') | replace('"', '') | replace('<', '') | safe }}"; font-family: "Atkinson", sans-serif; font-size: 8pt; color: #5f584e; }
+  @bottom-right { content: "Hoja " counter(page) " de " counter(pages); font-family: "Atkinson", sans-serif; font-size: 8pt; color: #5f584e; }
+  /* Margen para anotar a mano (D21): una línea punteada a lo largo de la hoja. */
+  @right-top { content: "notas"; font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase; color: #9d958a; border-left: 0.3mm dashed #bdb5a8; vertical-align: top; padding: 2mm 0 0 3mm; width: 26mm; margin-left: 6mm; }
+  @right-middle { content: ""; border-left: 0.3mm dashed #bdb5a8; width: 26mm; margin-left: 6mm; }
+  @right-bottom { content: ""; border-left: 0.3mm dashed #bdb5a8; width: 26mm; margin-left: 6mm; }
+}
+@page portada { margin-right: 20mm; @right-top { content: none; border: 0; } @right-middle { content: none; border: 0; } @right-bottom { content: none; border: 0; } }
+
+.portada { page: portada; display: flex; flex-direction: column; gap: 9mm; }
+.portada h1 { font-family: "Literata", serif; font-weight: 400; font-size: 34pt; line-height: 1.1; margin-top: 3mm; }
+.portada .lector b { font-family: "Literata", serif; font-size: 24pt; }
+.datos { display: flex; gap: 14mm; }
+.datos b { display: block; font-weight: 400; font-size: 14pt; }
+.indice div { display: flex; gap: 6mm; border-bottom: 0.2mm dotted #bdb5a8; padding: 1.5mm 0; }
+.indice .nombre { flex: 1; }
+.leyenda { border: 0.3mm solid #bdb5a8; border-radius: 2mm; padding: 5mm 6mm; display: flex; flex-direction: column; gap: 3mm; }
+.leyenda .fila { display: flex; gap: 6mm; align-items: baseline; }
+.leyenda .muestra { width: 42mm; flex-shrink: 0; }
+
+.acto { break-before: page; }
+.acto-cab { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 0.5mm solid #1a1714; padding-bottom: 2mm; margin-bottom: 6mm; }
+.acto-cab h2 { font-family: "Literata", serif; font-weight: 400; font-size: 19pt; }
+.bloque { display: flex; gap: 5mm; break-inside: avoid; margin-bottom: 4mm; }
+.margen { width: 12mm; flex-shrink: 0; text-align: right; }
+.margen b { display: block; font-family: "Literata", serif; font-weight: 400; font-size: 18pt; line-height: 1; }
+.margen span { font-size: 8pt; color: #5f584e; }
+.cuerpo { flex: 1; }
+.como { font-style: italic; color: #5f584e; font-size: 10.5pt; margin-bottom: 2.5mm; }
+.como::before { content: "▸ "; font-style: normal; font-family: "DejaVu Sans", sans-serif; }
+.texto p { font-family: "Literata", serif; font-size: 14pt; line-height: 1.75; margin-bottom: 2.5mm; }
+.texto strong { font-weight: 700; text-decoration: underline; text-decoration-thickness: 0.4mm; }
+.pausa { margin: 0 0 5mm 17mm; font-size: 9pt; display: flex; align-items: center; gap: 3mm; }
+.pausa i { font-style: normal; font-weight: 700; font-family: "DejaVu Sans", sans-serif; font-size: 12pt; }
+.pausa::after { content: ""; flex: 1; border-top: 0.3mm dashed #bdb5a8; }
+.fin { text-align: center; color: #5f584e; font-size: 9pt; margin-top: 6mm; }
+</style>
+</head>
+<body>
+<section class="portada">
+  <div>
+    <div class="eti">Guion de lectura</div>
+    <h1>{{ titulo }}</h1>
+  </div>
+  {% if lector %}<div class="lector"><div class="eti">Lo lee</div><b>{{ lector }}</b></div>{% endif %}
+  <div class="datos">
+    <div><span class="eti">Dura</span><b class="num">≈ {{ minutos }} min</b></div>
+    <div><span class="eti">Actos</span><b>{{ actos | length }}</b></div>
+    <div><span class="eti">Bloques</span><b>{{ bloques_total }}</b></div>
+  </div>
+  <div class="indice">
+    {% for a in actos %}<div><span class="num">{{ a.numero }}</span><span class="nombre">{{ NOMBRES.get(a.numero, "Acto " ~ a.numero) }}</span><span class="num">{{ a.desde }}</span></div>{% endfor %}
+  </div>
+  <div class="leyenda">
+    <span class="eti">Cómo leer este guion</span>
+    <div class="fila"><span class="muestra como">Así, en gris</span><span>Cómo se lee el bloque. Leelo antes de empezar.</span></div>
+    <div class="fila"><span class="muestra texto"><strong>Así, remarcado</strong></span><span>Decilo con más fuerza o más despacio.</span></div>
+    <div class="fila"><span class="muestra"><b>‖</b> corta</span><span>Respirá antes de seguir.</span></div>
+    <div class="fila"><span class="muestra"><b>‖ ‖</b> larga</span><span>Contá hasta tres en silencio.</span></div>
+    <div class="fila"><span class="muestra num">3 · 1:07</span><span>Número de bloque y minuto del video. Si te equivocás, volvé a empezar el bloque.</span></div>
+  </div>
+</section>
+
+{% for a in actos %}
+<section class="acto">
+  <header class="acto-cab"><h2>Acto {{ a.numero }} · {{ NOMBRES.get(a.numero, "") }}</h2><span class="num">desde {{ a.desde }}</span></header>
+  {% for b in a.bloques %}
+  <div class="bloque">
+    <div class="margen"><b class="num">{{ b.numero }}</b><span class="num">{{ b.inicio }}</span></div>
+    <div class="cuerpo">
+      {% if b.indicacion %}<p class="como">{{ b.indicacion }}</p>{% endif %}
+      <div class="texto">{% for p in b.parrafos %}<p>{{ p }}</p>{% endfor %}</div>
+    </div>
+  </div>
+  {% if b.pausa in PAUSAS %}<div class="pausa"><i>{{ PAUSAS[b.pausa][0] }}</i>{{ PAUSAS[b.pausa][1] }}</div>{% endif %}
+  {% endfor %}
+  <p class="fin">{% if not loop.last %}Fin del acto {{ a.numero }}. Sigue: {{ NOMBRES.get(loop.nextitem.numero, "") }}{% else %}Fin del relato{% endif %}</p>
+</section>
+{% endfor %}
+</body>
+</html>

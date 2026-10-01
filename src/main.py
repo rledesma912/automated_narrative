@@ -18,6 +18,7 @@ from src.presentation.routers import (
     narrative_router,
     story_router,
     stream_router,
+    video_router,
 )
 from src.presentation.runtime import job_manager
 
@@ -54,6 +55,7 @@ app.include_router(job_router, prefix="/api/v1")
 app.include_router(events_router, prefix="/api/v1")
 app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(authoring_router, prefix="/api/v1")
+app.include_router(video_router, prefix="/api/v1")
 
 
 @app.get("/")

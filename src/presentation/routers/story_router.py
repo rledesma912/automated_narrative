@@ -26,6 +26,7 @@ from src.infrastructure.database.repositories import (
     SQLGenreRepository,
     SQLJobRepository,
     SQLStoryRepository,
+    SQLVideoScriptRepository,
 )
 from src.infrastructure.exporters import YamlStoryExporter
 from src.messages import message
@@ -162,6 +163,7 @@ async def list_stories(
 ):
     """List all stories."""
     stories = await use_case.execute()
+    con_video = await SQLVideoScriptRepository().latest_by_story()  # Spec-610
     return [
         StoryResponse(
             id=str(s.id),
@@ -172,6 +174,7 @@ async def list_stories(
             genero=s.genero,
             subgenero=s.subgenero,
             protagonista=s.protagonista,
+            video_narrative_id=con_video.get(str(s.id)),
         )
         for s in stories
     ]

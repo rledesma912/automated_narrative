@@ -38,6 +38,13 @@
   /* Velo detrás de los modales: tinta traslúcida */
   --forge-overlay: rgb(43 38 32 / 0.55);
 
+  /* Spec-610: tipos de momento del mapa para el video (relleno, no texto: ≥ 3:1).
+     Distintos del acento y de los estados; el número va sobre una pastilla del papel. */
+  --forge-tipo-imagen: #55779c;     /* azul pizarra */
+  --forge-tipo-animacion: #3b7f73;  /* verde agua */
+  --forge-tipo-video: #6b4a7e;      /* ciruela */
+  --forge-tipo-calabaza: #8a8073;   /* gris cálido */
+
   --sidebar-width: 13rem;            /* Spec-550 H3 (antes 16rem) */
   --sidebar-width-collapsed: 3.5rem; /* colapsado: solo íconos */
 }
@@ -79,4 +86,10 @@
 
   /* Velo: el texto de Latte, traslúcido */
   --forge-overlay: rgb(76 79 105 / 0.55);
+
+  /* Spec-610: tipos de momento (blue, teal, peach oscurecido, overlay1). */
+  --forge-tipo-imagen: #1e66f5;
+  --forge-tipo-animacion: #179299;
+  --forge-tipo-video: #c2560a;
+  --forge-tipo-calabaza: #7c7f93;
 }

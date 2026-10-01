@@ -17,9 +17,17 @@ class SQLGeneratedNarrativeRepository:
         """Save a generated narrative."""
         async with connection() as conn:
             await conn.execute(
-                """INSERT OR REPLACE INTO generated_narrative
+                # Spec-610: UPSERT y no `INSERT OR REPLACE`: REPLACE borra la fila y el
+                # borrado en cascada se llevaba el paquete para el video (video_script).
+                """INSERT INTO generated_narrative
                 (id, story_template_id, title, content, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)""",
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    story_template_id = excluded.story_template_id,
+                    title = excluded.title,
+                    content = excluded.content,
+                    status = excluded.status,
+                    created_at = excluded.created_at""",
                 (
                     str(narrative.id),
                     str(narrative.story_template_id),

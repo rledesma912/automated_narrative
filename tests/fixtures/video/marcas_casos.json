@@ -1,0 +1,49 @@
+{
+  "_comentario": "Spec-610 T3.1/T3.3: reubicar las marcas de remarcado cuando se corrigió el relato. Los mismos casos para src/application/services/video/state.py (pytest) y frontend/public/js/marcas.js (Vitest). Cada marca guarda su posición (palabras desde 0 dentro del bloque) y su texto; si en esa posición ya no está, se busca el texto en el bloque; si no aparece, se descarta.",
+  "reubicar": [
+    {
+      "nombre": "sigue en su lugar",
+      "palabras": ["Nunca", "se", "lo", "conté", "a", "nadie."],
+      "marcas": [{ "desde_palabra": 0, "hasta_palabra": 0, "texto": "Nunca" }],
+      "quedan": [{ "desde_palabra": 0, "hasta_palabra": 0, "texto": "Nunca" }],
+      "perdidas": []
+    },
+    {
+      "nombre": "se corrió dos palabras",
+      "palabras": ["Y", "yo", "nunca", "se", "lo", "conté", "a", "nadie."],
+      "marcas": [{ "desde_palabra": 3, "hasta_palabra": 5, "texto": "lo conté a" }],
+      "quedan": [{ "desde_palabra": 4, "hasta_palabra": 6, "texto": "lo conté a" }],
+      "perdidas": []
+    },
+    {
+      "nombre": "mayúsculas y signos no importan",
+      "palabras": ["¡Nunca!", "se", "lo", "dije."],
+      "marcas": [{ "desde_palabra": 2, "hasta_palabra": 2, "texto": "Nunca" }],
+      "quedan": [{ "desde_palabra": 0, "hasta_palabra": 0, "texto": "¡Nunca!" }],
+      "perdidas": []
+    },
+    {
+      "nombre": "ya no está: se pierde",
+      "palabras": ["Se", "lo", "dije", "a", "todos."],
+      "marcas": [
+        { "desde_palabra": 0, "hasta_palabra": 0, "texto": "Nunca" },
+        { "desde_palabra": 4, "hasta_palabra": 4, "texto": "todos." }
+      ],
+      "quedan": [{ "desde_palabra": 4, "hasta_palabra": 4, "texto": "todos." }],
+      "perdidas": ["Nunca"]
+    },
+    {
+      "nombre": "dos marcas iguales no caen en el mismo lugar",
+      "palabras": ["el", "perro", "y", "el", "gato"],
+      "marcas": [
+        { "desde_palabra": 0, "hasta_palabra": 0, "texto": "el" },
+        { "desde_palabra": 9, "hasta_palabra": 9, "texto": "el" }
+      ],
+      "quedan": [
+        { "desde_palabra": 0, "hasta_palabra": 0, "texto": "el" },
+        { "desde_palabra": 3, "hasta_palabra": 3, "texto": "el" }
+      ],
+      "perdidas": []
+    }
+  ]
+}

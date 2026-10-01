@@ -75,6 +75,13 @@ function renderStatusLabel(s) {
                    class="btn-forge-outline-sm">
                   <i data-lucide="book-open" class="w-4 h-4"></i> Ver relato
                 </a>
+                <%/* Spec-610: acceso directo al guion para el video (la última versión que lo tiene). */%>
+                <% if (s.video_narrative_id) { %>
+                  <a href="/historia/<%= s.id %>/relatos/<%= s.video_narrative_id %>/video"
+                     class="btn-forge-outline-sm" data-para-el-video="<%= s.video_narrative_id %>">
+                    <i data-lucide="clapperboard" class="w-4 h-4"></i> Para el video
+                  </a>
+                <% } %>
               <% } else if (s.status === 'failed') { %>
                 <form method="POST" action="/historia/<%= s.id %>/generar" class="inline-flex items-center gap-2">
                   <button type="submit" data-generation-trigger data-story-id="<%= s.id %>" data-busy-label="Iniciando..."

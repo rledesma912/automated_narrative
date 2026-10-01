@@ -15,6 +15,8 @@
 const regen = (typeof regenerating !== 'undefined' && regenerating) ? regenerating : null;
 // Spec-510: «Tarda ≈ N min» en la confirmación (lo deja el middleware loadEstimates).
 const regenEstimate = locals.estimateLabels ? locals.estimateLabels.regenerate_voz : '';
+// Spec-610: cuánto tarda armar el guion para el video.
+const guionEstimate = locals.estimateLabels ? (locals.estimateLabels.video_script || '') : '';
 const errorMsg = (typeof panelError !== 'undefined' && panelError) ? panelError : null;
 const sections = (relato.content || '').split(/^## (.+)$/m);
 const preamble = (sections[0] || '').trim();
@@ -48,6 +50,29 @@ function extractActNumber(title) {
         <i data-lucide="download" class="w-4 h-4"></i>
         Descargar .md
       </a>
+      <%/* Spec-610: corregir el relato en la web (un acto a la vez). */%>
+      <a
+        <% if (regen) { %>aria-disabled="true"<% } else { %>href="/historia/<%= story.id %>/relatos/<%= relato.id %>/corregir"<% } %>
+        data-corregir-relato="<%= relato.id %>"
+        class="btn-forge-outline-sm <%= regen ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' %>"
+      >
+        <i data-lucide="pencil" class="w-4 h-4"></i>
+        Corregir el relato
+      </a>
+      <%/* Spec-610: el paquete para el video (guion, la calabaza y el mapa). */%>
+      <% if (relato.hasVideoScript) { %>
+        <a href="/historia/<%= story.id %>/relatos/<%= relato.id %>/video" class="btn-forge-sm cursor-pointer" data-para-el-video="<%= relato.id %>">
+          <i data-lucide="clapperboard" class="w-4 h-4"></i>
+          Para el video
+        </a>
+      <% } else { %>
+        <button type="button" class="btn-forge-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" <%= regen ? 'disabled' : '' %>
+                data-armar-guion="<%= relato.id %>" data-story-id="<%= story.id %>"
+                data-detalle="<%= guionEstimate ? `Tarda ${guionEstimate}. ` : '' %>La IA reparte el relato en bloques para leer, escribe lo que dice la calabaza y arma lo que va en pantalla. El relato no cambia.">
+          <i data-lucide="clapperboard" class="w-4 h-4"></i>
+          Armar el guion para el video
+        </button>
+      <% } %>
       <button
         type="button"
         onclick="copyRelatoContent('<%= relato.id %>', this)"
@@ -69,6 +94,7 @@ function extractActNumber(title) {
       Regenerando el acto <%= regen.acto %>… el relato se actualiza solo al terminar.
     </div>
   <% } %>
+  <p class="hidden nota-forge nota-forge--error mb-6" role="alert" data-guion-error="<%= relato.id %>"></p>
   <% if (errorMsg) { %>
     <div role="alert" class="nota-forge nota-forge--error mb-6">
       <i data-lucide="x-circle" class="nota-forge__icono"></i>

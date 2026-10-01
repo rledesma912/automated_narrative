@@ -48,10 +48,13 @@ def _make_story(beats: list[ActText], outline: bool = True) -> Story:
 @pytest.fixture
 def deps():
     voz = AsyncMock()
+    narrative_use_case = AsyncMock()
+    # Sin variante conocida: se reconsolida como antes de la Spec-610.
+    narrative_use_case.get_by_id.return_value = None
     return {
         "story_repo": AsyncMock(),
         "beat_repo": AsyncMock(),
-        "narrative_use_case": AsyncMock(),
+        "narrative_use_case": narrative_use_case,
         "voz_use_case": voz,
         # La memoria del acto se actualiza al regenerar (Spec-560 A2): LLM simulado real.
         "llm": MockLLMAdapter(),
@@ -169,3 +172,55 @@ async def test_la_voz_recibe_lo_que_marco_el_control_en_la_version_anterior(use_
     user_prompt = deps["voz_use_case"].narrate_with_prompts.await_args.args[2]
     assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" in user_prompt
     assert "(del acto 1)" in user_prompt
+
+
+# ── Spec-610: la variante corregida en la web ────────────────────────────────
+
+
+def _variante(content: str) -> GeneratedNarrative:
+    return GeneratedNarrative(story_template_id=_STORY_ID, title="v1", content=content)
+
+
+async def test_regenerar_reemplaza_solo_ese_acto_de_la_variante(use_case, deps):
+    narrative_id = uuid.uuid4()
+    beats = [_make_beat(n, f"prosa {n}") for n in range(1, 4)]
+    deps["story_repo"].get_by_id.return_value = _make_story(beats)
+    deps["story_repo"].get_journal.return_value = None
+    deps["narrative_use_case"].get_by_id.return_value = _variante(
+        "## Acto 1\n\nprosa 1 CORREGIDA\n\n## Acto 2\n\nprosa 2\n\n## Acto 3\n\nprosa 3"
+    )
+    deps["voz_use_case"].narrate_with_prompts.return_value = (_make_beat(2, "prosa NUEVA"), 1.0)
+
+    await use_case.execute(_STORY_ID, 2, narrative_id)
+
+    deps["narrative_use_case"].update_act.assert_awaited_once_with(narrative_id, 2, "prosa NUEVA")
+    deps["narrative_use_case"].update_content.assert_not_called()
+
+
+async def test_la_voz_sigue_desde_el_final_corregido_del_acto_anterior(use_case, deps):
+    beats = [_make_beat(1, "Final de la IA."), _make_beat(2)]
+    deps["story_repo"].get_by_id.return_value = _make_story(beats)
+    deps["story_repo"].get_journal.return_value = None
+    deps["narrative_use_case"].get_by_id.return_value = _variante(
+        "## Acto 1\n\nFinal que corrigió la usuaria.\n\n## Acto 2\n\nprosa"
+    )
+    deps["voz_use_case"].narrate_with_prompts.return_value = (_make_beat(2, "nueva"), 1.0)
+
+    await use_case.execute(_STORY_ID, 2, uuid.uuid4())
+
+    user_prompt = deps["voz_use_case"].narrate_with_prompts.await_args.args[2]
+    assert "Final que corrigió la usuaria." in user_prompt
+    assert "Final de la IA." not in user_prompt
+
+
+async def test_una_variante_de_otra_historia_no_se_usa(use_case, deps):
+    deps["story_repo"].get_by_id.return_value = _make_story([_make_beat(1), _make_beat(2)])
+    deps["story_repo"].get_journal.return_value = None
+    otra = GeneratedNarrative(story_template_id=uuid.uuid4(), title="x", content="## Acto 2\n\nx")
+    deps["narrative_use_case"].get_by_id.return_value = otra
+    deps["voz_use_case"].narrate_with_prompts.return_value = (_make_beat(2, "nueva"), 1.0)
+
+    await use_case.execute(_STORY_ID, 2, uuid.uuid4())
+
+    deps["narrative_use_case"].update_act.assert_not_called()
+    deps["narrative_use_case"].update_content.assert_awaited_once()

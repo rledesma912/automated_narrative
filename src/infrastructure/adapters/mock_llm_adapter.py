@@ -27,7 +27,7 @@ class MockLLMAdapter:
         """Generate mock text (o un JSON coherente con el esquema pedido, Spec-530)."""
         self.call_count += 1
         if response_schema is not None:
-            return LLMResponse(text=json.dumps(mock_structured(role, response_schema)))
+            return LLMResponse(text=json.dumps(mock_structured(role, response_schema, prompt)))
         return LLMResponse(
             text=self.fixed_response,
             context=None,

@@ -1,0 +1,15 @@
+# Quién lee cada episodio (Spec-610 D5). Se propone según quién narra la historia (la IA
+# lo deduce de la prosa: `mujer` | `hombre` | `no_se_sabe`) y se puede cambiar a mano.
+
+lectores:
+  - nombre: Yael
+    narra: mujer
+  - nombre: Lucas
+    narra: hombre
+  - nombre: Vale
+    narra: mujer
+
+# Propuesta por quién narra. Sin propuesta (`no_se_sabe`), queda para elegir.
+propuesta:
+  mujer: Yael
+  hombre: Lucas

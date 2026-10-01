@@ -1,0 +1,132 @@
+{#- Spec-610 §3.7.4 (D23): el mapa de producción, para quien edita el video. Índice con
+    la línea de tiempo y casillas; una ficha por momento. Los tipos van en tramas, no en
+    color (impresora en blanco y negro). -#}
+{% set TIPO = {"imagen": "Imagen fija", "animacion": "Animación", "video": "Video"} %}
+{% set seguro = (titulo ~ ' · mapa de producción') | replace('\\', '') | replace('"', '') | replace('<', '') %}
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mapa de producción · {{ titulo }}</title>
+<style>
+{% include "base.css.j2" %}
+@page {
+  size: A4; margin: 16mm 16mm 16mm 16mm;
+  @bottom-left { content: "{{ seguro | safe }}"; font-family: "Atkinson", sans-serif; font-size: 8pt; color: #5f584e; }
+  @bottom-right { content: "Hoja " counter(page) " de " counter(pages); font-family: "Atkinson", sans-serif; font-size: 8pt; color: #5f584e; }
+}
+.t-imagen { background: #fff; }
+.t-animacion { background: repeating-linear-gradient(135deg, #1a1714 0 0.5mm, #fff 0.5mm 1.8mm); }
+.t-video { background: #1a1714; }
+.t-calabaza { background: radial-gradient(circle, #1a1714 0.35mm, #fff 0.4mm) 0 0 / 1.6mm 1.6mm; }
+.icono { display: inline-block; width: 4mm; height: 4mm; border: 0.35mm solid #1a1714; vertical-align: -0.8mm; }
+.casilla { display: inline-block; width: 3.6mm; height: 3.6mm; border: 0.35mm solid #1a1714; border-radius: 0.6mm; vertical-align: -0.8mm; }
+
+.indice-hoja { display: flex; flex-direction: column; gap: 6mm; }
+h1 { font-family: "Literata", serif; font-weight: 400; font-size: 24pt; line-height: 1.1; margin-top: 1mm; }
+.datos { display: flex; gap: 10mm; }
+.datos b { display: block; font-weight: 400; font-size: 13pt; }
+.tira { display: flex; height: 9mm; border: 0.35mm solid #1a1714; }
+.tira span { display: block; height: 100%; border-right: 0.35mm solid #1a1714; position: relative; }
+.tira span:last-child { border-right: 0; }
+.tira em { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-style: normal; font-size: 6.5pt; font-weight: 700; background: #fff; padding: 0 0.6mm; border-radius: 0.5mm; }
+.reglita { position: relative; height: 4mm; font-size: 7pt; color: #5f584e; }
+.reglita span { position: absolute; top: 0.5mm; }
+.leyenda { display: flex; gap: 6mm; font-size: 8.5pt; }
+table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+th { text-align: left; font-size: 7pt; letter-spacing: 0.12em; text-transform: uppercase; color: #5f584e; border-bottom: 0.4mm solid #1a1714; padding: 1.5mm 1mm; }
+td { border-bottom: 0.2mm solid #bdb5a8; padding: 1.4mm 1mm; vertical-align: top; }
+td a { color: inherit; text-decoration: none; }
+td a.hoja::after { content: target-counter(attr(href), page); }
+.uso { background: #f1efea; border-radius: 2mm; padding: 4mm 5mm; display: flex; flex-direction: column; gap: 1.5mm; font-size: 9pt; }
+
+.ficha { border: 0.35mm solid #1a1714; border-radius: 2mm; break-inside: avoid; margin-bottom: 5mm; }
+.ficha.primera { break-before: page; }
+.ficha-cab { display: flex; gap: 4mm; align-items: center; padding: 2.5mm 4mm; border-bottom: 0.25mm solid #bdb5a8; }
+.ficha-num { font-family: "Literata", serif; font-size: 20pt; line-height: 1; min-width: 9mm; }
+.ficha-titulo { flex: 1; }
+.ficha-titulo b { display: block; font-size: 10.5pt; }
+.ficha-titulo span { font-size: 8pt; color: #5f584e; }
+.ficha-tiempo { text-align: right; }
+.ficha-tiempo b { display: block; font-size: 10.5pt; }
+.ficha-tiempo span { font-size: 7.5pt; color: #5f584e; }
+.ficha-cuerpo { padding: 2.5mm 4mm; display: flex; flex-direction: column; gap: 2.5mm; }
+.cues { display: flex; gap: 5mm; font-size: 8.5pt; }
+.cues div { flex: 1; }
+.cues q { font-family: "Literata", serif; font-style: italic; quotes: "«" "»"; }
+.prompts { display: flex; gap: 4mm; }
+.prompt { flex: 1; background: #f1efea; border-radius: 1.5mm; padding: 2mm 3mm; }
+.prompt p { font-family: "Plex Mono", monospace; font-size: 7.6pt; line-height: 1.5; margin-top: 1mm; }
+.ficha-pie { display: flex; flex-wrap: wrap; gap: 2mm 6mm; align-items: center; padding: 2mm 4mm; border-top: 0.25mm solid #bdb5a8; font-size: 8.5pt; }
+.ficha-pie code { font-family: "Plex Mono", monospace; font-size: 7.6pt; }
+.listo { margin-left: auto; display: flex; gap: 3mm; align-items: center; }
+</style>
+</head>
+<body>
+<section class="indice-hoja">
+  <div>
+    <div class="eti">Mapa de producción</div>
+    <h1>{{ titulo }}</h1>
+  </div>
+  <div class="datos">
+    <div><span class="eti">Dura</span><b class="num">≈ {{ duracion }}</b></div>
+    <div><span class="eti">Momentos</span><b>{{ momentos_total }}</b></div>
+    <div><span class="eti">Imágenes</span><b>{{ cuenta.imagen }}</b></div>
+    <div><span class="eti">Animaciones</span><b>{{ cuenta.animacion }}</b></div>
+    <div><span class="eti">Videos</span><b>{{ cuenta.video }}</b></div>
+  </div>
+  <div>
+    <div class="tira">
+      <span class="t-calabaza" style="width: {{ intro.pct }}%"></span>
+      {% for f in fichas %}<span class="t-{{ f.tipo }}" style="width: {{ f.pct }}%"><em>{{ f.numero }}</em></span>{% endfor %}
+      <span class="t-calabaza" style="width: {{ outro.pct }}%"></span>
+    </div>
+    <div class="reglita">{% for m in marcas_minutos %}<span style="left: {{ m.pct }}%">{{ m.texto }}</span>{% endfor %}</div>
+    <div class="leyenda">{% for t, n in TIPO.items() %}<span><span class="icono t-{{ t }}"></span> {{ n }}</span>{% endfor %}<span><span class="icono t-calabaza"></span> La calabaza</span></div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Desde</th><th>Qué se ve</th><th>Tipo</th><th>Hoja</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><b>Intro</b></td><td class="num">{{ intro.desde }}</td><td>La calabaza presenta la historia</td><td><span class="icono t-calabaza"></span></td><td></td><td><span class="casilla"></span></td></tr>
+      {% for f in fichas %}<tr><td><b>{{ f.numero }}</b></td><td class="num">{{ f.desde }}</td><td><a href="#{{ f.ancla }}">{{ f.que_se_ve }}</a></td><td><span class="icono t-{{ f.tipo }}"></span></td><td class="num"><a class="hoja" href="#{{ f.ancla }}"></a></td><td><span class="casilla"></span></td></tr>{% endfor %}
+      <tr><td><b>Outro</b></td><td class="num">{{ outro.desde }}</td><td>La calabaza despide</td><td><span class="icono t-calabaza"></span></td><td></td><td><span class="casilla"></span></td></tr>
+    </tbody>
+  </table>
+  <div class="uso">
+    <span class="eti">Cómo usarlo</span>
+    <span>Generá cada cosa con el nombre de <b>Archivo</b> de su ficha: en la carpeta quedan en el orden del video.</span>
+    <span>Para ubicar cada momento en el audio grabado, buscá la frase de <b>Entra cuando dice</b>. Los minutos son estimados.</span>
+    <span>Tachá la casilla cuando lo tengas. Los prompts copialos desde la web.</span>
+  </div>
+</section>
+
+<article class="ficha primera">
+  <div class="ficha-cab"><span class="icono t-calabaza"></span>
+    <div class="ficha-titulo"><b>Intro · la calabaza presenta la historia</b><span>ElevenLabs con el .txt. En pantalla: la calabaza en 3D.</span></div>
+    <div class="ficha-tiempo"><b class="num">{{ intro.desde }} – {{ intro.hasta }}</b><span class="num">{{ intro.segundos }} s</span></div></div>
+  <div class="ficha-pie"><span><span class="eti">Archivo</span> <code>{{ intro.archivo }}</code></span><span class="listo"><span class="casilla"></span> Audio listo</span></div>
+</article>
+{% for f in fichas %}
+<article class="ficha" id="{{ f.ancla }}">
+  <div class="ficha-cab"><span class="ficha-num num">{{ f.numero }}</span>
+    <div class="ficha-titulo"><b>{{ f.que_se_ve }}</b><span><span class="icono t-{{ f.tipo }}"></span> {{ f.tipo_nombre }} · {{ f.se_genera_con }}</span></div>
+    <div class="ficha-tiempo"><b class="num">{{ f.desde }} – {{ f.hasta }}</b><span class="num">{{ f.segundos }} s · acto {{ f.acto }}</span></div></div>
+  <div class="ficha-cuerpo">
+    <div class="cues"><div><span class="eti">Entra cuando dice</span><br><q>{{ f.entra }}…</q></div><div><span class="eti">Hasta</span><br><q>…{{ f.sale }}</q></div></div>
+    <div class="prompts">
+      <div class="prompt"><span class="eti">Prompt de la imagen</span><p>{{ f.prompt_imagen }}</p></div>
+      {% if f.prompt_movimiento %}<div class="prompt"><span class="eti">Prompt del movimiento</span><p>{{ f.prompt_movimiento }}</p></div>{% endif %}
+    </div>
+  </div>
+  <div class="ficha-pie"><span><span class="eti">Entra con</span> {{ f.transicion }}</span>{% if f.sonido %}<span><span class="eti">Sonido</span> {{ f.sonido }}</span>{% endif %}<span><span class="eti">Archivo</span> <code>{{ f.archivos | join(" / ") }}</code></span>
+    <span class="listo"><span class="casilla"></span> Imagen{% if f.tipo != "imagen" %} <span class="casilla"></span> Movimiento{% endif %}</span></div>
+</article>
+{% endfor %}
+<article class="ficha">
+  <div class="ficha-cab"><span class="icono t-calabaza"></span>
+    <div class="ficha-titulo"><b>Outro · la calabaza despide</b><span>ElevenLabs con el .txt. En pantalla: la calabaza en 3D.</span></div>
+    <div class="ficha-tiempo"><b class="num">{{ outro.desde }} – {{ outro.hasta }}</b><span class="num">{{ outro.segundos }} s</span></div></div>
+  <div class="ficha-pie"><span><span class="eti">Archivo</span> <code>{{ outro.archivo }}</code></span><span class="listo"><span class="casilla"></span> Audio listo</span></div>
+</article>
+</body>
+</html>

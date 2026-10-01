@@ -30,9 +30,16 @@ class StoryCreateRequest(BaseModel):
 class JobCreateRequest(BaseModel):
     """Request para lanzar un job (Spec-460).
 
-    `regenerate_voz` requiere `beat` y `narrative_id` (Spec-430).
+    `regenerate_voz` requiere `beat` y `narrative_id` (Spec-430); `video_script`,
+    `narrative_id` (Spec-610).
     """
 
     kind: JobKind = JobKind.FULL_GENERATION
     beat: int | None = None
     narrative_id: UUID | None = None
+
+
+class ActTextUpdateRequest(BaseModel):
+    """Spec-610 T1.2: el texto corregido de un acto del relato."""
+
+    text: str
