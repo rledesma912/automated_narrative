@@ -15,7 +15,7 @@
   --forge-muted: #6f6454;       /* texto secundario — 5,2:1 */
 
   /* Acento: rojo óxido */
-  --forge-accent: #8a2b1f;      /* 7,8:1 sobre bg */
+  --forge-accent: #785e1c;      /* bronce viejo — 5,6:1 sobre bg; blanco encima 6,2:1 */
   --forge-on-accent: #ffffff;   /* texto sobre el acento — 8,6:1 */
 
   /* Estados (texto fuerte + fondo pálido + borde) */
