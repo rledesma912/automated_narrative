@@ -187,65 +187,6 @@ ARCHIVOS_PERMITIDOS = {
 
 # (archivo, comienzo del texto): lo que falta mudar, por slice de la Spec-620.
 PENDIENTES: set[tuple[str, str]] = {
-    # S2 — el asistente → fragments/asistente
-    (
-        "src/application/services/authoring/context.py",
-        "(DECIDIDO POR EL AUTOR: no se discute ni se cambia)",
-    ),
-    (
-        "src/application/services/authoring/context.py",
-        "(el autor todavía no tomó decisiones en el taller)",
-    ),
-    ("src/application/services/authoring/context.py", "(va en el acto {…})"),
-    (
-        "src/application/services/authoring/context.py",
-        "- [{…}] {…}. Pregunta: «{…}» → Respuesta: {…}",
-    ),
-    (
-        "src/application/services/authoring/context.py",
-        "- [{…}] {…}: {…} (DECIDIDO POR EL AUTOR: no se discute)",
-    ),
-    (
-        "src/application/services/authoring/context.py",
-        "CÓMO TIENE QUE PEGAR (el efecto que busca el autor: {…}): {…",
-    ),
-    ("src/application/services/authoring/context.py", "Cómo lo cuenta: {…}"),
-    ("src/application/services/authoring/context.py", "Cómo termina: {…}{…}"),
-    (
-        "src/application/services/authoring/context.py",
-        "EFECTO QUE BUSCA EL AUTOR: {…}. La escaleta tiene que cumpli",
-    ),
-    ("src/application/services/authoring/context.py", "Efecto que busca el autor: {…}"),
-    (
-        "src/application/services/authoring/context.py",
-        "Estamos ayudando a un autor a preparar un cuento de terror q",
-    ),
-    ("src/application/services/authoring/context.py", "Quién lo cuenta: {…}"),
-    ("src/application/services/authoring/context.py", "Tipo de horror: {…}"),
-    (
-        "src/application/services/authoring/planner.py",
-        "; acá el protagonista descubre o confiesa la historia secret",
-    ),
-    (
-        "src/application/services/authoring/planner.py",
-        "LO QUE EL AUTOR ESCRIBIÓ PARA CADA ACTO (respetalo: es su hi",
-    ),
-    (
-        "src/application/services/authoring/planner.py",
-        "PROBLEMAS QUE MARCÓ LA REVISIÓN EN LA ESCALETA ANTERIOR (res",
-    ),
-    ("src/application/services/authoring/planner.py", "actos sin hechos: {…}"),
-    (
-        "src/application/services/authoring/planner.py",
-        "cerrar la historia con el final que decidió el autor",
-    ),
-    (
-        "src/application/services/authoring/planner.py",
-        "la escaleta tiene que tener los actos 1 a 5 (llegaron {…})",
-    ),
-    ("src/application/services/authoring/planner.py", "{…}. {…} (intensidad {…}): {…}"),
-    ("src/application/services/authoring/verifier.py", "(se revela en el acto {…})"),
-    ("src/application/services/authoring/verifier.py", "Todavía no se cuenta: {…}{…}"),
     # S3 — mensajes para personas → config/core_messages.yaml
     (
         "src/application/services/authoring/verifier.py",

@@ -1,0 +1,1 @@
+De qué trata: {premisa}

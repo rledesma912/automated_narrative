@@ -6,6 +6,7 @@ from pydantic import BaseModel, model_validator
 
 from src.application.services.authoring import context
 from src.application.services.authoring.structured_llm import generate_structured
+from src.application.services.core_messages import message
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
@@ -13,13 +14,6 @@ from src.domain.models import ActOutline, Story
 
 ROLE = "planificador"
 NUM_ACTS = 5
-_ACT_NAMES = {
-    "exposicion": "Exposición",
-    "accion_ascendente": "Acción ascendente",
-    "climax": "Clímax",
-    "accion_descendente": "Acción descendente",
-    "desenlace": "Desenlace",
-}
 
 
 class ActoPlan(BaseModel):
@@ -45,10 +39,10 @@ class Escaleta(BaseModel):
     def _cinco_actos(self) -> "Escaleta":
         numbers = sorted(a.numero for a in self.actos)
         if numbers != list(range(1, NUM_ACTS + 1)):
-            raise ValueError(f"la escaleta tiene que tener los actos 1 a 5 (llegaron {numbers})")
+            raise ValueError(message("job.escaleta_sin_actos", actos=numbers))
         empty = [a.numero for a in self.actos if not [h for h in a.hechos if h.strip()]]
         if empty:
-            raise ValueError(f"actos sin hechos: {empty}")
+            raise ValueError(message("job.escaleta_sin_hechos", actos=empty))
         return self
 
 
@@ -91,31 +85,66 @@ class OutlinePlanner:
         scenarios = "; ".join(
             f"{s.name}: {s.description}" if s.description else s.name for s in story.scenarios
         )
-        return self.templates.load("authoring_planner.md").format(
-            objetivo=context.OBJETIVO,
-            historia=context.story_block(story),
-            decisiones=context.decisions_block(story),
-            borradores=_drafts_block(story),
-            problemas=_problems_block(story),
-            efecto=context.effect_block(story),
-            escenarios=scenarios or "(ninguno todavía)",
+        t = self.templates
+        return t.load("authoring_planner.md").format(
+            objetivo=context.objective(t),
+            historia=context.story_block(story, t),
+            decisiones=context.decisions_block(story, t),
+            borradores=self._drafts_block(story),
+            problemas=self._problems_block(story),
+            efecto=context.effect_block(story, t),
+            escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
         )
 
     def _acts_block(self, story: Story) -> str:
         ending_fixed = bool(story.direction and story.direction.ending_intentional)
         has_secret = any(cid == "historia_secreta" for cid, _, _ in context.decisions(story))
+        t = self.templates.fragment
         lines = []
         for n in range(1, NUM_ACTS + 1):
             info = self.prompt_builder.get_beat_info(n)
-            name = _ACT_NAMES.get(info.get("name", ""), info.get("name", ""))
             intent = info.get("intent", "")
             if n == NUM_ACTS and ending_fixed:
-                intent = "cerrar la historia con el final que decidió el autor"
+                intent = t("asistente/planificador/final_del_autor")
             if n == NUM_ACTS - 1 and has_secret:
-                intent += "; acá el protagonista descubre o confiesa la historia secreta"
-            lines.append(f"{n}. {name} (intensidad {info.get('intensity', '')}): {intent}")
+                intent += t("asistente/planificador/historia_secreta")
+            lines.append(
+                t(
+                    "asistente/planificador/acto",
+                    numero=n,
+                    nombre=info.get("label") or info.get("name", ""),
+                    intensidad=info.get("intensity", ""),
+                    intencion=intent,
+                )
+            )
         return "\n".join(lines)
+
+    def _drafts_block(self, story: Story) -> str:
+        """Spec-570 D2: lo que el autor escribió para cada acto (YAML viejo), como guía."""
+        t = self.templates.fragment
+        lines = [
+            t("asistente/planificador/borrador", numero=a.number, sinopsis=a.synopsis)
+            for a in sorted(story.outline, key=lambda a: a.number)
+            if a.synopsis
+        ]
+        if not lines:
+            return ""
+        return t("asistente/planificador/borradores") + "\n" + "\n".join(lines) + "\n\n"
+
+    def _problems_block(self, story: Story) -> str:
+        """Spec-560 A6: al rearmar, los avisos visibles de la escaleta anterior (no los
+        ignorados)."""
+        t = self.templates.fragment
+        lines = [
+            t("asistente/aviso_de_acto", numero=a.number, aviso=w.text)
+            for a in sorted(story.outline, key=lambda a: a.number)
+            if not a.draft
+            for w in a.visible_warnings()
+        ]
+        if not lines:
+            return ""
+        return t("asistente/planificador/problemas") + "\n" + "\n".join(lines) + "\n\n"
 
 
 def _scenario_name(name: str) -> str:
@@ -143,37 +172,4 @@ def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
         seeds=_clean(a.siembra),
         payoffs=_clean(a.retoma),
         decisions=[d for d in _clean(a.decisiones) if d in valid_decisions],
-    )
-
-
-def _drafts_block(story: Story) -> str:
-    """Spec-570 D2: lo que el autor escribió para cada acto (YAML viejo), como guía."""
-    lines = [
-        f"{a.number}. {a.synopsis}"
-        for a in sorted(story.outline, key=lambda a: a.number)
-        if a.synopsis
-    ]
-    if not lines:
-        return ""
-    return (
-        "LO QUE EL AUTOR ESCRIBIÓ PARA CADA ACTO (respetalo: es su historia; completá lo que falta):\n"
-        + "\n".join(lines)
-        + "\n\n"
-    )
-
-
-def _problems_block(story: Story) -> str:
-    """Spec-560 A6: al rearmar, los avisos visibles de la escaleta anterior (no los ignorados)."""
-    lines = [
-        f"- Acto {a.number}: {w.text}"
-        for a in sorted(story.outline, key=lambda a: a.number)
-        if not a.draft
-        for w in a.visible_warnings()
-    ]
-    if not lines:
-        return ""
-    return (
-        "PROBLEMAS QUE MARCÓ LA REVISIÓN EN LA ESCALETA ANTERIOR (resolvelos en esta versión):\n"
-        + "\n".join(lines)
-        + "\n\n"
     )

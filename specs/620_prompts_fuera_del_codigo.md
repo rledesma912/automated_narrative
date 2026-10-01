@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, deuda técnica (refactor sin cambio de comportamiento)
-**Estado:** IMPLEMENT — S0 ✅, S1 ✅ (2026-10-01)
+**Estado:** IMPLEMENT — S0 ✅, S1 ✅, S2 ✅ (2026-10-01)
 **Rama:** `refactor/spec-620-prompts-en-markdown` (desde `development`, `3753205`). Va antes de la 610 (Spec-610 D12).
 **Origen:** observación del usuario (2026-09-30): «los prompts están hardcodeados en vez de vivir en un markdown que se inyecta».
 
@@ -146,10 +146,11 @@ Cada slice cierra con `make lint`, `make test`, `cd frontend && npm test`, `npx 
 - [x] T1.6 (sumado al implementar) Los nombres de los actos que ve la Voz («Exposición», «Clímax»…) pasan de `_ACT_NAMES` a `label` en `llm_beats_definition.yaml`; los textos cortos que el guardián no detecta (`(no se indica)`, `(nada todavía)`, `EL PROTAGONISTA`, `sin rol`, «Qué es», «Límites»…) también van a fragmentos. `repetition_check.ActRepetition.repeated` pasa a datos `(frase, acto)`: el panel los formatea con `message("repeticion.frase")` y la Voz con `voz/evitar/repetida` (la API devuelve el mismo texto). Las funciones de sección de `outline_narrator.py` pasan a métodos (usan el `TemplateLoader` inyectado, sin globales). 38 fragmentos en `fragments/voz/` y `fragments/memoria/`.
 
 ### S2 — El asistente
-- [ ] T2.1 `context.py`: 13 textos a `fragments/asistente/`.
-- [ ] T2.2 `planner.py`: 5 textos de prompt a fragmentos; los 2 de validación («la escaleta tiene que tener los actos…», «actos sin hechos…») a `core_messages.yaml`.
-- [ ] T2.3 `verifier.py`: «Todavía no se cuenta…» y «(se revela en el acto N)» a fragmentos.
-- [ ] T2.4 Snapshot **idéntico**; `PENDIENTES` −22.
+- [x] T2.1 `context.py`: 13 textos a `fragments/asistente/`.
+- [x] T2.2 `planner.py`: 5 textos de prompt a fragmentos; los 2 de validación («la escaleta tiene que tener los actos…», «actos sin hechos…») a `core_messages.yaml`.
+- [x] T2.3 `verifier.py`: «Todavía no se cuenta…» y «(se revela en el acto N)» a fragmentos.
+- [x] T2.4 Snapshot **idéntico**; `PENDIENTES` −22 (todo S2).
+- [x] T2.5 (sumado al implementar) **El snapshot del pipeline no cubría** el Consultor ni varias secciones del asistente y de la Voz (decisiones con pregunta, receta del efecto, borradores, problemas de la revisión, la amenaza, parentescos, final del autor…). Dos snapshots nuevos con historias que activan todas las secciones (`assistant_prompts.json`, `voice_prompts.json`), **generados con el código anterior** (worktrees de `28d06e1` y `dca5c25`) y verificados con el nuevo: idénticos. Cada uno trae un test que falla si una sección deja de aparecer. `context.py`: las funciones de texto reciben el `TemplateLoader` como parámetro (sin globales); `OBJETIVO` → `context.objective()`. 37 fragmentos en `fragments/asistente/`; los nombres de los actos del Planificador también salen de `label`.
 
 ### S3 — Mensajes para personas
 - [ ] T3.1 `workshop_rules.py` (cierre de ronda, con plurales en dos claves) y avisos por regla de `verifier.py` (las claves estables de los avisos, Spec-550 H10, no cambian).

@@ -96,17 +96,55 @@ class OutlineVerifier:
         return Verification(acts, missing, elapsed)
 
     def _prompt(self, story: Story, outline: list[ActOutline]) -> str:
-        return self.templates.load("authoring_verifier.md").format(
-            historia=context.story_block(story),
-            decisiones=context.decisions_block(story),
-            elenco=", ".join(cast_names(story)) or "(solo quien narra)",
-            escaleta="\n\n".join(_act_text(a, context.protagonist(story)) for a in outline),
-            efecto=context.effect_block(story, verifier=True),
+        t = self.templates
+        protagonist = context.protagonist(story)
+        return t.load("authoring_verifier.md").format(
+            historia=context.story_block(story, t),
+            decisiones=context.decisions_block(story, t),
+            elenco=", ".join(cast_names(story)) or t.fragment("asistente/verificador/elenco_vacio"),
+            escaleta="\n\n".join(self._act_text(a, protagonist) for a in outline),
+            efecto=context.effect_block(story, t, verifier=True),
             descartados="\n".join(
-                f"- Acto {a.number}: {w.text}" for a in outline for w in a.warnings if w.dismissed
+                t.fragment("asistente/aviso_de_acto", numero=a.number, aviso=w.text)
+                for a in outline
+                for w in a.warnings
+                if w.dismissed
             )
-            or "(ninguno)",
+            or t.fragment("asistente/verificador/descartados_vacio"),
         )
+
+    def _act_text(self, a: ActOutline, protagonist: str = "") -> str:
+        """El acto como lo lee la revisión."""
+        t = self.templates.fragment
+        lines = [
+            t(
+                "asistente/verificador/acto/titulo_con_escenario",
+                numero=a.number,
+                escenario=a.scenario,
+            )
+            if a.scenario
+            else t("asistente/verificador/acto/titulo", numero=a.number)
+        ]
+        if a.bridge:
+            lines.append(t("asistente/verificador/acto/como_llega", puente=a.bridge))
+        if a.goal:
+            lines.append(t("asistente/verificador/acto/quiere", objetivo=a.goal))
+        lines += [f"- {e}" for e in a.events]
+        if a.held_back:
+            reveal = (
+                t("asistente/verificador/acto/se_revela", acto=a.reveal_act) if a.reveal_act else ""
+            )
+            lines.append(
+                t("asistente/verificador/acto/no_se_cuenta", secreto=a.held_back, revela=reveal)
+            )
+        if a.decisions:
+            names = [
+                c.for_story(protagonist).nombre
+                for c in catalog.direction_criteria()
+                if c.id in a.decisions
+            ]
+            lines.append(t("asistente/verificador/acto/usa", decisiones=", ".join(names)))
+        return "\n".join(lines)
 
 
 def rule_warnings(
@@ -195,26 +233,6 @@ def cast_names(story: Story) -> list[str]:
 def _mentions(a: str, b: str) -> bool:
     na, nb = workshop_rules.normalize(a), workshop_rules.normalize(b)
     return na in nb or nb in na or workshop_rules.similar(a, b)
-
-
-def _act_text(a: ActOutline, protagonist: str = "") -> str:
-    lines = [f"ACTO {a.number}" + (f" — {a.scenario}" if a.scenario else "")]
-    if a.bridge:
-        lines.append(f"Cómo llega: {a.bridge}")
-    if a.goal:
-        lines.append(f"Quiere: {a.goal}")
-    lines += [f"- {e}" for e in a.events]
-    if a.held_back:
-        reveal = f" (se revela en el acto {a.reveal_act})" if a.reveal_act else ""
-        lines.append(f"Todavía no se cuenta: {a.held_back}{reveal}")
-    if a.decisions:
-        names = [
-            c.for_story(protagonist).nombre
-            for c in catalog.direction_criteria()
-            if c.id in a.decisions
-        ]
-        lines.append("Dice que usa: " + ", ".join(names))
-    return "\n".join(lines)
 
 
 def _dedup(items: list[OutlineWarning]) -> list[OutlineWarning]:

@@ -1,0 +1,1 @@
+Quién lo cuenta: {narrador}

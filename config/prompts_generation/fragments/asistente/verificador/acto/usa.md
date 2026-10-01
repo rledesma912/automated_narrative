@@ -1,0 +1,1 @@
+Dice que usa: {decisiones}

@@ -19,3 +19,9 @@
 repeticion:
   # Panel del relato (Spec-530 §8.3): una frase que ya estaba en un acto anterior.
   frase: "«{frase}» (del acto {acto})"
+
+job:
+  # Spec-530: la escaleta que devolvió el Planificador no sirve (lo valida Pydantic y
+  # se reintenta una vez; si vuelve a fallar, es el error del trabajo).
+  escaleta_sin_actos: "la escaleta tiene que tener los actos 1 a 5 (llegaron {actos})"
+  escaleta_sin_hechos: "actos sin hechos: {actos}"
