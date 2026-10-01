@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from src.application.services.authoring import catalog
 from src.domain.models import CriterionStatus, Direction, WorkshopItem, WorkshopLevel
+from src.messages import message
 
 MAX_ROUNDS = 5
 MAX_OPTIONS = 3
@@ -134,35 +135,17 @@ def finish(items: list[WorkshopItem], round_: int | None = None) -> Finish:
     n = len(questions)
     new_questions = sum(1 for w in questions if w.question_round == round_)
     if not pending:
-        return Finish(
-            "cumple",
-            "Tu historia ya tiene todo lo que hace falta. Ya podés armar los actos.",
-            0,
-        )
+        return Finish("cumple", message("workshop.cumple"), 0)
     if round_ >= MAX_ROUNDS and n == 0:
-        return Finish(
-            "tope",
-            f"Ya van {MAX_ROUNDS} vueltas de preguntas, que es el máximo. "
-            "Podés responder lo que quedó o armar los actos.",
-            0,
-        )
+        return Finish("tope", message("workshop.tope", maximo=MAX_ROUNDS), 0)
     if n == 0:
-        return Finish("sin_preguntas", "La IA no tiene más preguntas. Ya podés armar los actos.", 0)
+        return Finish("sin_preguntas", message("workshop.sin_preguntas"), 0)
     if new_questions == 0:
-        plural = "queda 1 pregunta" if n == 1 else f"quedan {n} preguntas"
-        return Finish(
-            "no_suma",
-            f"La IA no encontró preguntas nuevas: {plural} sin responder de antes. "
-            "Respondé lo que quieras o armá los actos.",
-            n,
-        )
-    plural = "pregunta" if n == 1 else "preguntas"
-    text = (
-        f"Te queda{'' if n == 1 else 'n'} {n} {plural}. Podés responder, pedirle a la IA "
-        "que te pregunte de nuevo o pasar a los actos cuando quieras."
-    )
+        left = message("workshop.queda_una") if n == 1 else message("workshop.quedan", n=n)
+        return Finish("no_suma", message("workshop.no_suma", quedan=left), n)
+    text = message("workshop.abierto_una") if n == 1 else message("workshop.abierto", n=n)
     if round_ >= MAX_ROUNDS:
-        text += f" (Es la última vuelta de preguntas: el máximo es {MAX_ROUNDS}.)"
+        text += message("workshop.ultima_vuelta", maximo=MAX_ROUNDS)
         return Finish("tope", text, n)
     return Finish("abierto", text, n)
 
@@ -184,7 +167,7 @@ def answer(item: WorkshopItem, text: str) -> WorkshopItem:
 def decide_for_me(item: WorkshopItem) -> WorkshopItem:
     """«Decidí vos» (decisión 13): la primera opción, la que la IA propone como más fuerte."""
     if not item.options:
-        raise ValueError(f"El criterio {item.criterion} no tiene opciones para elegir")
+        raise ValueError(message("workshop.sin_opciones", criterio=item.criterion))
     return answer(item, item.options[0])
 
 

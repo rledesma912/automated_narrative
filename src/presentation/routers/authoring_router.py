@@ -35,6 +35,7 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
+from src.messages import message
 from src.presentation.runtime import job_manager
 from src.presentation.schemas.authoring import (
     ActForm,
@@ -45,8 +46,6 @@ from src.presentation.schemas.authoring import (
 )
 
 router = APIRouter(prefix="/authoring", tags=["authoring"])
-
-_PLACEHOLDER_SYNOPSIS = "(todavía sin contar)"
 
 
 # ── Opciones ───────────────────────────────────────────────────────────────
@@ -143,7 +142,7 @@ async def act_on_criterion(story_id: str, criterion: str, body: WorkshopAction) 
 def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
     if body.action == "answer":
         if not body.text.strip():
-            raise ValueError("La respuesta está vacía")
+            raise ValueError(message("api.respuesta_vacia"))
         return workshop_rules.answer(item, body.text)
     if body.action == "decide":
         return workshop_rules.decide_for_me(item)
@@ -253,15 +252,19 @@ async def _editable(story_id: str) -> Story:
     if active is not None:
         raise HTTPException(
             status_code=409,
-            detail="La IA está trabajando en esta historia: esperá a que termine",
+            detail=message("api.ia_trabajando"),
             headers={"X-Job-Id": str(active.id)},
         )
     return story
 
 
 def _unprocessable(e: Exception) -> HTTPException:
-    message = e.message if isinstance(e, InvalidStoryInputError) else f"Datos rechazados: {e}"
-    return HTTPException(status_code=422, detail=message)
+    text = (
+        e.message
+        if isinstance(e, InvalidStoryInputError)
+        else message("api.datos_rechazados", error=e)
+    )
+    return HTTPException(status_code=422, detail=text)
 
 
 def _direction(form: DirectionForm) -> Direction:
@@ -301,8 +304,8 @@ def _story_fields(form: DirectionForm, existing: Story | None) -> dict:
         "genero": form.genero,
         "subgenero": form.subgenero,
         "protagonista": f"{name}: {role}" if role else name,
-        "relator": f"Primera persona en pasado. Narrador: {narrator}.",
-        "sinopsis": form.premise.strip() or _PLACEHOLDER_SYNOPSIS,
+        "relator": message("historia_nueva.relator", narrador=narrator),
+        "sinopsis": form.premise.strip() or message("historia_nueva.sinopsis"),
         "personajes_full": cast,
         "narrator_config": config,
     }
@@ -356,7 +359,7 @@ async def _state(story: Story) -> dict:
     else:
         finish = {
             "kind": "sin_analizar",
-            "text": "Todavía no hay preguntas: apretá «Que la IA me pregunte».",
+            "text": message("workshop.sin_analizar"),
             "open_questions": 0,
         }
     used = {d for a in story.outline for d in a.decisions}

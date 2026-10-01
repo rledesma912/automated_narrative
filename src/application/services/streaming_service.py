@@ -14,6 +14,7 @@ from src.application.use_cases.generate_story_use_case import GenerateStoryUseCa
 from src.domain.jobs import JobStage
 from src.domain.models import Story, StoryStatus
 from src.domain.streaming import StreamEvent, StreamEventType
+from src.messages import message
 
 logger = logging.getLogger(__name__)
 
@@ -21,24 +22,14 @@ HEARTBEAT_INTERVAL = 15  # segundos — no negociable (punto 2 Spec-201)
 
 _SENTINEL = object()
 
-# Mensaje legible por etapa (Spec-460). `{beat}`/`{total}` se completan si aplica.
-_STAGE_MESSAGES = {
-    JobStage.VOZ: "Escribiendo el acto {beat} de {total}...",
-    JobStage.JOURNAL: "Repasando lo que pasó en el acto {beat}...",
-    JobStage.CONSOLIDANDO: "Juntando el relato...",
-    # Spec-530: asistente de autoría (los mismos textos del modal).
-    JobStage.CONSULTOR: "Leyendo tu historia…",
-    JobStage.PLANIFICADOR: "Armando los actos…",
-    JobStage.VERIFICADOR: "Revisando los actos…",
-}
-
 
 def stage_event(stage: JobStage, beat: int | None, total_beats: int) -> StreamEvent:
     """Evento `status` con la etapa estructurada (Spec-460) + `step` legado."""
     return StreamEvent(
         event=StreamEventType.STATUS,
         data={
-            "msg": _STAGE_MESSAGES[stage].format(beat=beat, total=total_beats),
+            # Mensaje legible por etapa (Spec-460): config/core_messages.yaml, `stage.*`.
+            "msg": message(f"stage.{stage.value}", beat=beat, total=total_beats),
             "step": stage.value,
             "stage": stage.value,
             "beat": beat,

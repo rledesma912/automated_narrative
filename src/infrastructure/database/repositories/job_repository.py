@@ -7,7 +7,6 @@ from uuid import UUID
 
 from src.domain.jobs import (
     ACTIVE_JOB_STATUSES,
-    INTERRUPTED_ERROR,
     Job,
     JobKind,
     JobStage,
@@ -119,14 +118,15 @@ class SQLJobRepository:
             order=f"finished_at DESC LIMIT {int(limit)}",
         )
 
-    async def recover_interrupted(self) -> int:
-        """Marca `failed` los jobs que quedaron activos (el proceso murió con ellos)."""
+    async def recover_interrupted(self, error: str) -> int:
+        """Marca `failed` los jobs que quedaron activos (el proceso murió con ellos), con
+        `error` como motivo (el texto lo da quien llama, Spec-620)."""
         conn = await get_connection()
         try:
             cursor = await conn.execute(
                 f"UPDATE generation_job SET status = ?, error = ?, finished_at = ? "
                 f"WHERE {_ACTIVE_SQL}",
-                (JobStatus.FAILED.value, INTERRUPTED_ERROR, now_argentina().isoformat(), *_ACTIVE),
+                (JobStatus.FAILED.value, error, now_argentina().isoformat(), *_ACTIVE),
             )
             count = cursor.rowcount
             await conn.commit()

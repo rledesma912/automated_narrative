@@ -12,15 +12,115 @@
 #   stage       etapa de un trabajo en curso
 #   job         por qué terminó mal un trabajo
 #   api         respuestas 409/422 que se ven en la UI
+#   validacion  datos de la historia que no se pueden guardar (422)
+#   historia_nueva  valores de una historia creada en «Nuevo relato»
 #   repeticion  control de repetición del panel del relato
 #
 # Los textos se mudan en S3 de la Spec-620.
+
+workshop:
+  # Cierre de cada ronda de preguntas (Spec-530 §3.3, Spec-580).
+  cumple: "Tu historia ya tiene todo lo que hace falta. Ya podés armar los actos."
+  tope: "Ya van {maximo} vueltas de preguntas, que es el máximo. Podés responder lo que quedó o armar los actos."
+  sin_preguntas: "La IA no tiene más preguntas. Ya podés armar los actos."
+  no_suma: "La IA no encontró preguntas nuevas: {quedan} sin responder de antes. Respondé lo que quieras o armá los actos."
+  queda_una: "queda 1 pregunta"
+  quedan: "quedan {n} preguntas"
+  abierto_una: "Te queda 1 pregunta. Podés responder, pedirle a la IA que te pregunte de nuevo o pasar a los actos cuando quieras."
+  abierto: "Te quedan {n} preguntas. Podés responder, pedirle a la IA que te pregunte de nuevo o pasar a los actos cuando quieras."
+  ultima_vuelta: " (Es la última vuelta de preguntas: el máximo es {maximo}.)"
+  sin_opciones: "El criterio {criterio} no tiene opciones para elegir"
+  sin_analizar: "Todavía no hay preguntas: apretá «Que la IA me pregunte»."
+
+verifier:
+  # Avisos por regla de la escaleta (Spec-550 H10). La clave del aviso (sin_hechos,
+  # elenco:…, siembra:…) la pone el código y no cambia; esto es solo el texto.
+  protagonista: "el protagonista"
+  sin_hechos: "En este acto no pasa nada todavía: ¿qué pasa acá?"
+  sin_puente: "No dice cómo se llega acá desde el acto anterior: completá «Cómo llega acá» (cuánto tiempo pasó y qué pasó en el medio)."
+  sin_cambio: "El acto termina igual que empieza: ¿qué le cambia a {protagonista}?"
+  elenco: "«{nombre}» aparece en este acto pero no está entre los personajes: ¿lo sumamos?"
+  sin_revelacion: "El secreto de este acto no se descubre en ningún acto posterior: elegí en cuál se descubre."
+  siembra: "«{siembra}» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?"
+  siembras: "{siembras} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?"
+
+api:
+  # Respuestas 409/422 que la UI muestra tal cual (el asistente lee el `detail`).
+  ia_trabajando: "La IA está trabajando en esta historia: esperá a que termine"
+  generacion_en_curso: "La historia ya tiene una generación en curso"
+  generacion_en_curso_al_editar: "Hay una generación en curso; esperá a que termine para editar"
+  sin_generacion_en_curso: "No hay una generación en curso para esta historia"
+  respuesta_vacia: "La respuesta está vacía"
+  datos_rechazados: "Datos rechazados: {error}"
+  datos_rechazados_por_la_base: "Datos rechazados por la base (género/subgénero o naturaleza de entidad): {error}"
+  sin_escaleta_para_revisar: "No hay escaleta para revisar"
+  falta_de_que_trata: "Falta contar de qué trata la historia (Dirección)"
+  acto_sin_narrar: "El acto {acto} no está narrado"
+  acto_sin_narrar_aun: "Acto {acto} no encontrado o no narrado aún"
+  sin_escaleta_para_regenerar: "La historia no tiene escaleta: generala de nuevo para poder regenerar un acto"
+
+historia_nueva:
+  # Valores de una historia creada en «Nuevo relato» (se guardan; el relator llega a
+  # la Voz como «({relator})» en su presentación).
+  relator: "Primera persona en pasado. Narrador: {narrador}."
+  sinopsis: "(todavía sin contar)"
+
+validacion:
+  # Datos de la historia que no se pueden guardar (422; el asistente muestra el texto).
+  dato_invalido: "Dato inválido en {donde} ({campo}): {motivo}"
+  donde:
+    direccion: "dirección"
+    taller: "taller, elemento {n}"
+    escaleta: "escaleta, elemento {n}"
+  tipo_de_personaje: "Tipo de personaje inválido para «{nombre}»: {tipo}"
+  acto_repetido: "La escaleta repite un número de acto"
+  demasiadas_entidades: "Una historia admite hasta {maximo} entidades (llegaron {llegaron})"
+  entidad: "Entidad {n}: {error}"
+  naturaleza: "Entidad {n}: la naturaleza '{naturaleza}' no corresponde {donde}"
+  al_genero: "al género '{genero}'"
+  a_ningun_genero: "a ninguna del catálogo"
+  muy_largo: "{campo} supera los {maximo} caracteres"
+  falta: "falta {campo}"
+  opcion_invalida: "{campo} no es válido (opciones: {opciones})"
+  campo: "{campo}: {motivo}"
+  campos_entidad:
+    name: "«Nombre»"
+    nature_id: "«Naturaleza»"
+    description: "«Descripción»"
+    manifestations: "«Manifestaciones»"
+    limits: "«Límites»"
+    reveal_level: "«Nivel de revelación»"
 
 repeticion:
   # Panel del relato (Spec-530 §8.3): una frase que ya estaba en un acto anterior.
   frase: "«{frase}» (del acto {acto})"
 
+llm:
+  # Spec-600 D3: la IA que escribe el relato no atiende (por causa). El trabajo falla con
+  # este texto; no se reintenta ni se cae al modelo local.
+  credito: "La IA que escribe el relato se quedó sin crédito. Avisá a quien administra el sitio y probá de nuevo cuando lo cargue."
+  clave: "La IA que escribe el relato no acepta la clave (venció o no es válida). Avisá a quien administra el sitio."
+  saturada: "La IA que escribe el relato está saturada. Probá de nuevo en unos minutos."
+  sin_conexion: "No se pudo hablar con la IA que escribe el relato (sin conexión). Revisá internet y probá de nuevo."
+  error: "La IA que escribe el relato respondió con un error. Probá de nuevo más tarde."
+
+stage:
+  # Etapa de un trabajo en curso (Spec-460): banda de generación, sala y modal.
+  # `{beat}` y `{total}` se completan cuando aplica.
+  voz: "Escribiendo el acto {beat} de {total}..."
+  journal: "Repasando lo que pasó en el acto {beat}..."
+  consolidando: "Juntando el relato..."
+  consultor: "Leyendo tu historia…"
+  planificador: "Armando los actos…"
+  verificador: "Revisando los actos…"
+
 job:
+  # Por qué terminó mal un trabajo (job.error), cuando no lo dice el pipeline.
+  cancelada: "cancelada por el usuario"
+  interrumpida: "interrumpida por reinicio"
+  sin_resultado: "el pipeline terminó sin resultado"
+  error: "error en el pipeline"
+  ya_activo: "La historia ya tiene un job activo: {job}"
   # Spec-530: la escaleta que devolvió el Planificador no sirve (lo valida Pydantic y
   # se reintenta una vez; si vuelve a fallar, es el error del trabajo).
   escaleta_sin_actos: "la escaleta tiene que tener los actos 1 a 5 (llegaron {actos})"

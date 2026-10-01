@@ -9,11 +9,11 @@ import pytest
 from src.config import settings
 from src.domain.jobs import Job, JobKind, JobStage, JobStatus
 from src.infrastructure.database.connection import get_connection, init_db
-from src.infrastructure.database.repositories.job_repository import (
-    INTERRUPTED_ERROR,
-    SQLJobRepository,
-)
+from src.infrastructure.database.repositories.job_repository import SQLJobRepository
+from src.messages import message
 from src.utils.timezone import now_argentina
+
+INTERRUPTED_ERROR = message("job.interrumpida")
 
 
 @pytest.fixture
@@ -136,7 +136,7 @@ async def test_recover_interrupted_marca_failed_solo_los_activos(repo: SQLJobRep
     done = await repo.create(_job(story_c))
     await repo.finish(done.id, JobStatus.DONE)
 
-    count = await repo.recover_interrupted()
+    count = await repo.recover_interrupted(INTERRUPTED_ERROR)
 
     assert count == 2
     for job_id in (queued.id, running.id):
@@ -144,7 +144,7 @@ async def test_recover_interrupted_marca_failed_solo_los_activos(repo: SQLJobRep
         assert (job.status, job.error) == (JobStatus.FAILED, INTERRUPTED_ERROR)
         assert job.finished_at is not None
     assert (await repo.get(done.id)).status == JobStatus.DONE
-    assert await repo.recover_interrupted() == 0
+    assert await repo.recover_interrupted(INTERRUPTED_ERROR) == 0
 
 
 async def test_borrar_la_historia_borra_sus_jobs(repo: SQLJobRepository):

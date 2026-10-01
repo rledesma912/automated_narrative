@@ -6,11 +6,11 @@ from pydantic import BaseModel, model_validator
 
 from src.application.services.authoring import context
 from src.application.services.authoring.structured_llm import generate_structured
-from src.application.services.core_messages import message
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, Story
+from src.messages import message
 
 ROLE = "planificador"
 NUM_ACTS = 5

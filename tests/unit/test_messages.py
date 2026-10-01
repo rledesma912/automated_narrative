@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.application.services.core_messages import MessageCatalog
+from src.messages import MessageCatalog
 
 
 @pytest.fixture
@@ -40,3 +40,21 @@ def test_dato_faltante_es_error(catalog):
 
 def test_el_catalogo_real_carga():
     MessageCatalog()  # el YAML de config/ es válido
+
+
+def test_los_textos_mudados_no_cambiaron():
+    """Spec-620 S3: los mensajes salen del YAML con el mismo texto que tenían en el código."""
+    from src.messages import message
+
+    assert message("job.cancelada") == "cancelada por el usuario"
+    assert message("job.interrumpida") == "interrumpida por reinicio"
+    assert message("job.sin_resultado") == "el pipeline terminó sin resultado"
+    assert message("job.error") == "error en el pipeline"
+    assert message("stage.voz", beat=2, total=5) == "Escribiendo el acto 2 de 5..."
+    assert message("workshop.abierto", n=3) == (
+        "Te quedan 3 preguntas. Podés responder, pedirle a la IA que te pregunte de nuevo "
+        "o pasar a los actos cuando quieras."
+    )
+    assert message("workshop.ultima_vuelta", maximo=3) == (
+        " (Es la última vuelta de preguntas: el máximo es 3.)"
+    )

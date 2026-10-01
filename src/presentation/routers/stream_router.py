@@ -13,6 +13,7 @@ from src.infrastructure.database.repositories import (
     SQLJobRepository,
     SQLStoryRepository,
 )
+from src.messages import message
 from src.presentation.routers.beat_router import outline_summaries
 from src.presentation.routers.job_router import parse_last_event_id, stream_job_events
 
@@ -69,7 +70,7 @@ async def stream_generation(story_id: str, last_event_id: str | None = Header(No
         else:
             yield StreamEvent(
                 event=StreamEventType.ERROR,
-                data={"msg": "No hay una generación en curso para esta historia"},
+                data={"msg": message("api.sin_generacion_en_curso")},
             ).to_sse()
 
     return EventSourceResponse(read_only_generator())

@@ -14,6 +14,7 @@ from src.application.services.authoring.structured_llm import generate_structure
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, OutlineWarning, Story, normalize_key
+from src.messages import message
 
 ROLE = "verificador"
 MAX_LLM_WARNINGS_PER_ACT = 2
@@ -164,40 +165,26 @@ def rule_warnings(
 
     cast = {workshop_rules.normalize(n) for n in cast_names(story)}
     threats = {workshop_rules.normalize(e.name) for e in story.entities if e.name}
-    prota = context.protagonist(story) or "el protagonista"
+    prota = context.protagonist(story) or message("verifier.protagonista")
     for act in outline:
         if not act.events:
-            add(act.number, "sin_hechos", "En este acto no pasa nada todavía: ¿qué pasa acá?")
+            add(act.number, "sin_hechos", message("verifier.sin_hechos"))
         if act.number > 1 and not act.bridge.strip():
-            add(
-                act.number,
-                "sin_puente",
-                "No dice cómo se llega acá desde el acto anterior: completá «Cómo llega acá» "
-                "(cuánto tiempo pasó y qué pasó en el medio).",
-            )
+            add(act.number, "sin_puente", message("verifier.sin_puente"))
         if act.change_from and workshop_rules.normalize(
             act.change_from
         ) == workshop_rules.normalize(act.change_to):
-            add(
-                act.number,
-                "sin_cambio",
-                f"El acto termina igual que empieza: ¿qué le cambia a {prota}?",
-            )
+            add(act.number, "sin_cambio", message("verifier.sin_cambio", protagonista=prota))
         for name in act.on_stage:
             key = workshop_rules.normalize(name.split("(")[0])
             if key and key not in cast and key not in threats:
                 add(
                     act.number,
                     f"elenco:{key}",
-                    f"«{name}» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+                    message("verifier.elenco", nombre=name),
                 )
         if act.held_back.strip() and not act.number < act.reveal_act <= 5:
-            add(
-                act.number,
-                "sin_revelacion",
-                "El secreto de este acto no se descubre en ningún acto posterior: "
-                "elegí en cuál se descubre.",
-            )
+            add(act.number, "sin_revelacion", message("verifier.sin_revelacion"))
         later = [a for a in outline if a.number > act.number]
         loose = [
             s
@@ -207,18 +194,10 @@ def rule_warnings(
         ]
         key = "|".join(f"siembra:{normalize_key(s)}" for s in loose)
         if len(loose) == 1:
-            add(
-                act.number,
-                key,
-                f"«{loose[0]}» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?",
-            )
+            add(act.number, key, message("verifier.siembra", siembra=loose[0]))
         elif loose:
             names = ", ".join(f"«{s}»" for s in loose)
-            add(
-                act.number,
-                key,
-                f"{names} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?",
-            )
+            add(act.number, key, message("verifier.siembras", siembras=names))
     return out
 
 

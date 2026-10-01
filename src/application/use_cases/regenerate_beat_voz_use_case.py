@@ -16,6 +16,7 @@ from src.domain.exceptions import StoryNotFoundError
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActText, GeneratedNarrative
 from src.infrastructure.database.repositories import SQLBeatRepository, SQLStoryRepository
+from src.messages import message
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +47,10 @@ class RegenerateBeatVozUseCase:
 
         beat = next((b for b in story.beats if b.number == beat_number), None)
         if not beat or not beat.has_content():
-            raise ValueError(f"Acto {beat_number} no encontrado o no narrado aún")
+            raise ValueError(message("api.acto_sin_narrar_aun", acto=beat_number))
         act = next((a for a in story.outline if a.number == beat_number), None)
         if act is None:
-            raise ValueError(
-                "La historia no tiene escaleta: generala de nuevo para poder regenerar un acto"
-            )
+            raise ValueError(message("api.sin_escaleta_para_regenerar"))
 
         previous = None
         if beat_number > 1:

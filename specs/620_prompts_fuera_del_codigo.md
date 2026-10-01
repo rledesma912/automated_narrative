@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, deuda técnica (refactor sin cambio de comportamiento)
-**Estado:** IMPLEMENT — S0 ✅, S1 ✅, S2 ✅ (2026-10-01)
+**Estado:** IMPLEMENT — S0 ✅, S1 ✅, S2 ✅, S3 ✅ (2026-10-01)
 **Rama:** `refactor/spec-620-prompts-en-markdown` (desde `development`, `3753205`). Va antes de la 610 (Spec-610 D12).
 **Origen:** observación del usuario (2026-09-30): «los prompts están hardcodeados en vez de vivir en un markdown que se inyecta».
 
@@ -94,7 +94,7 @@ Inventario medido el 2026-09-30 con un recorrido `ast` de `src/` (literales con 
 
 | Slice | Qué | Archivos | Verificación |
 |---|---|---|---|
-| S0 | `TemplateLoader.fragment()` y `MessageCatalog` (`core_messages.yaml`); test guardián con la lista de pendientes | `template_loader.py`, `core_messages.py` (nuevo), `test_prompts_fuera_del_codigo.py` | Guardián en verde listando ~45 pendientes |
+| S0 | `TemplateLoader.fragment()` y `MessageCatalog` (`core_messages.yaml`; desde S3 en `src/messages.py`); test guardián con la lista de pendientes | `template_loader.py`, `core_messages.py` (nuevo), `test_prompts_fuera_del_codigo.py` | Guardián en verde listando ~45 pendientes |
 | S1 | La Voz y la Memoria: 19 textos de `outline_narrator.py`, 4 de `prompt_builder.py`, el `_REPHRASE_HINT` de `narrator_retry_generator.py`; se borran `format_compact` / `format_for_beat` de `beat_spec_repository.py` (código muerto: solo los usan sus tests) | `fragments/voz/*.md`, `fragments/memoria/*.md` | **Snapshot idéntico** |
 | S2 | El asistente: 13 de `context.py`, 7 de `planner.py` (los 2 de validación pasan a mensajes) y los 2 de `verifier.py` que van al LLM («Todavía no se cuenta…») | `fragments/asistente/*.md` | **Snapshot idéntico** |
 | S3 | Mensajes: `workshop_rules.py` (7), los avisos por regla de `verifier.py` (7), `_UNAVAILABLE` del adapter (5), etiquetas de etapa de `streaming_service.py` (5), errores de `jobs.py` (3), los 409/422 que se ven en la UI (`job_router`, `authoring_router`, `regenerate_beat_voz_use_case`) | `config/core_messages.yaml` | Tests de vistas, del router y del adapter **sin cambios de texto** |
@@ -153,10 +153,11 @@ Cada slice cierra con `make lint`, `make test`, `cd frontend && npm test`, `npx 
 - [x] T2.5 (sumado al implementar) **El snapshot del pipeline no cubría** el Consultor ni varias secciones del asistente y de la Voz (decisiones con pregunta, receta del efecto, borradores, problemas de la revisión, la amenaza, parentescos, final del autor…). Dos snapshots nuevos con historias que activan todas las secciones (`assistant_prompts.json`, `voice_prompts.json`), **generados con el código anterior** (worktrees de `28d06e1` y `dca5c25`) y verificados con el nuevo: idénticos. Cada uno trae un test que falla si una sección deja de aparecer. `context.py`: las funciones de texto reciben el `TemplateLoader` como parámetro (sin globales); `OBJETIVO` → `context.objective()`. 37 fragmentos en `fragments/asistente/`; los nombres de los actos del Planificador también salen de `label`.
 
 ### S3 — Mensajes para personas
-- [ ] T3.1 `workshop_rules.py` (cierre de ronda, con plurales en dos claves) y avisos por regla de `verifier.py` (las claves estables de los avisos, Spec-550 H10, no cambian).
-- [ ] T3.2 `anthropic_adapter.py` (`_UNAVAILABLE` → `llm.*`), `streaming_service.py` (`stage.*`), `jobs.py` (`job.*`).
-- [ ] T3.3 Los 409/422 visibles de `job_router`, `authoring_router` y `regenerate_beat_voz_use_case` (`api.*`); los 404 técnicos quedan.
-- [ ] T3.4 Tests de vistas, routers y adapter **sin cambiar textos esperados**; `sin-jerga` y `gramatica-visual` en verde.
+- [x] T3.1 `workshop_rules.py` (cierre de ronda, con plurales en dos claves) y avisos por regla de `verifier.py` (las claves estables de los avisos, Spec-550 H10, no cambian).
+- [x] T3.2 `anthropic_adapter.py` (`_UNAVAILABLE` → `llm.*`), `streaming_service.py` (`stage.*`), `jobs.py` (`job.*`).
+- [x] T3.3 Los 409/422 visibles de `job_router`, `authoring_router` y `regenerate_beat_voz_use_case` (`api.*`); los 404 técnicos quedan.
+- [x] T3.4 Tests de vistas, routers y adapter **sin cambiar textos esperados**; `sin-jerga` y `gramatica-visual` en verde.
+- [x] T3.5 (sumado al implementar) **El catálogo pasa a `src/messages.py`**, junto a `src/config.py`: lo necesitan la infraestructura (el adapter de Anthropic) y `main.py`, y desde la capa de aplicación eso invertía las dependencias. Los motivos de fallo de los trabajos salen del **dominio** (`domain/jobs.py` ya no tiene texto): los resuelve `job_manager` y `main.py` le pasa el texto a `SQLJobRepository.recover_interrupted(error)`. También se mudan las validaciones de `create_story.py` (`validacion.*`, con las etiquetas de los campos de la amenaza) y los valores de una historia nueva del asistente (`historia_nueva.relator` y `.sinopsis`: el relator llega a la Voz). Un test fija que los textos mudados no cambiaron. `PENDIENTES` vacía.
 
 ### S4 — Cierre
 - [ ] T4.1 `PENDIENTES` vacía y el guardián sin lista temporal.

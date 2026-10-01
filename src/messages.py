@@ -1,11 +1,14 @@
-"""Mensajes del Core que llegan a la pantalla, desde `config/core_messages.yaml` (Spec-620)."""
+"""Mensajes que llegan a la pantalla, desde `config/core_messages.yaml` (Spec-620).
+
+Como `src/config.py`, lee `config/` y lo usan todas las capas.
+"""
 
 from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
-_DEFAULT_PATH = Path(__file__).resolve().parents[3] / "config" / "core_messages.yaml"
+_DEFAULT_PATH = Path(__file__).resolve().parents[1] / "config" / "core_messages.yaml"
 
 
 class MessageCatalog:
