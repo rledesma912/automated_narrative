@@ -4,7 +4,7 @@ import { galleryPage } from "../controllers/gallery.controller";
 import { debugPage } from "../controllers/debug.controller";
 import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaPage, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal } from "../controllers/historia.controller";
-import { relatosPage, regenerarActoAction, relatoPanelFragment } from "../controllers/relatos.controller";
+import { relatosPage, regenerarActoAction, relatoPanelFragment, corregirRelatoPage } from "../controllers/relatos.controller";
 import { loadEstimates } from "../middleware/estimates.middleware";
 import { nuevoPage, asistentePage } from "../controllers/asistente.controller";
 
@@ -45,5 +45,7 @@ router.post(
   regenerarActoAction
 );
 router.get("/historia/:storyId/relatos/:narrativeId/panel", loadEstimates, relatoPanelFragment);
+// Spec-610: corregir el relato en la web.
+router.get("/historia/:storyId/relatos/:narrativeId/corregir", loadEstimates, corregirRelatoPage);
 
 export default router;

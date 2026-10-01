@@ -36,3 +36,9 @@ class JobCreateRequest(BaseModel):
     kind: JobKind = JobKind.FULL_GENERATION
     beat: int | None = None
     narrative_id: UUID | None = None
+
+
+class ActTextUpdateRequest(BaseModel):
+    """Spec-610 T1.2: el texto corregido de un acto del relato."""
+
+    text: str

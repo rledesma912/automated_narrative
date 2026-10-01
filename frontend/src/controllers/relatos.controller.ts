@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { getStoryById, getRelatosForStory, startActoRegeneration } from "../services/story.service";
+import { getStoryById, getRelatosForStory, getReadingSettings, startActoRegeneration } from "../services/story.service";
+import { splitActs } from "../utils/actos";
 import { renderPage } from "../utils/render";
 
 export const relatosPage = async (req: Request, res: Response) => {
@@ -90,5 +91,34 @@ export const relatoPanelFragment = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(`Error al cargar el panel ${narrativeId}:`, err);
     res.status(500).send("No se pudo cargar el relato.");
+  }
+};
+
+/** Spec-610 T1.4: corregir el relato acto por acto (§3.7.1). */
+export const corregirRelatoPage = async (req: Request, res: Response) => {
+  const storyId = req.params.storyId as string;
+  const narrativeId = req.params.narrativeId as string;
+  try {
+    const story = await getStoryById(storyId);
+    if (!story) return res.status(404).send("Historia no encontrada.");
+    const relato = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
+    if (!relato) return res.status(404).send("Relato no encontrado.");
+    const actos = splitActs(relato.content);
+    const lectura = await getReadingSettings();
+    const acto = Math.min(Math.max(Number(req.query["acto"]) || 1, 1), Math.max(actos.length, 1));
+
+    res.setHeader("Cache-Control", "no-store");
+    await renderPage(res, "relatos/corregir", {
+      story,
+      relato,
+      actos,
+      lectura,
+      actoInicial: acto,
+      title: `Corregir «${story.title || "Sin título"}»`,
+      activePage: "gallery",
+    });
+  } catch (error) {
+    console.error(`Error al abrir la corrección de ${narrativeId}:`, error);
+    res.status(500).send("No se pudo abrir el relato para corregir.");
   }
 };

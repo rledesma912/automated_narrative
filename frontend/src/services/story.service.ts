@@ -102,3 +102,20 @@ export const startActoRegeneration = async (
     detail: typeof detail === "string" ? detail : null,
   };
 };
+
+/** Spec-610: ritmo de lectura y largo del episodio (`config/video/lectura.yaml`). */
+export interface ReadingSettings {
+  palabras_por_minuto: number;
+  episodio_minutos: { desde: number; hasta: number };
+}
+
+const DEFAULT_READING: ReadingSettings = { palabras_por_minuto: 150, episodio_minutos: { desde: 12, hasta: 17 } };
+
+export const getReadingSettings = async (): Promise<ReadingSettings> => {
+  try {
+    const resp = await axios.get<ReadingSettings>(`${CORE_API_URL}/api/v1/video/lectura`, { timeout: 3000 });
+    return resp.data;
+  } catch {
+    return DEFAULT_READING;
+  }
+};

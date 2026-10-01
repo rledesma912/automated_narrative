@@ -13,6 +13,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Spec-610: `hidden` oculta siempre, aunque el elemento tenga `flex` o `grid`
+   (las pantallas que muestran un acto a la vez alternan con el atributo). */
+[hidden] { display: none !important; }
+
 /* ════════════════════════════════════════════════════════════════════════════
    Custom Components (Elementos reutilizables)
    ════════════════════════════════════════════════════════════════════════════ */
@@ -133,6 +137,10 @@
   .nota-forge--error .nota-forge__icono   { @apply text-forge-error; }
 
   /* PISTA: la ayuda de un campo. Solo texto gris con su ícono. */
+  /* Spec-610: lista de actos de «Corregir el relato» (el elegido, con el acento). */
+  .corregir-acto { @apply text-forge-text hover:bg-forge-neutral-bg; }
+  .corregir-acto[aria-current="true"] { @apply bg-forge-accent text-forge-on-accent hover:bg-forge-accent; }
+
   .pista-forge { @apply flex gap-2 text-sm text-forge-muted; }
   .pista-forge > svg, .pista-forge > i { @apply w-4 h-4 shrink-0 mt-0.5; }
 

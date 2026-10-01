@@ -394,37 +394,43 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 
 ### S1 — Corregir el relato (§3.1, §3.7.1)
 
-- [ ] **T1.1 — Partir y unir los actos del relato**
+- [x] **T1.1 — Partir y unir los actos del relato**
   - Acepta: `narrative_acts.py` separa `content` en preámbulo y actos (`## Acto N`), y los párrafos de cada acto (separados por una línea en blanco), y vuelve a unirlos sin perder nada. Ida y vuelta idéntica con los relatos de los fixtures.
   - Verifica: `tests/unit/application/test_narrative_acts.py`.
   - Archivos: `src/application/services/narrative_acts.py`, el test.
-- [ ] **T1.2 — `PUT /generated-narratives/{id}/acts/{n}`**
+- [x] **T1.2 — `PUT /generated-narratives/{id}/acts/{n}`**
   - Acepta:
     - reemplaza el texto del acto y guarda el relato;
     - responde 404 si el relato o el acto no existe, 422 si el texto está vacío y 409 (con `X-Job-Id`) si la historia tiene un job activo;
     - `GET …/repetition` refleja lo corregido.
   - Verifica: `tests/unit/presentation/routers/test_narrative_acts_router.py`.
   - Archivos: `narrative_router.py`, `generated_narrative_repository.py`, schema, test.
-- [ ] **T1.3 — Tiempos compartidos**
+- [x] **T1.3 — Tiempos compartidos**
   - Acepta:
     - `timing.py` y `public/js/tiempos.js` (UMD) calculan palabras, segundos, minutos y si entra en el episodio;
     - los dos pasan **los mismos casos** de `tests/fixtures/video/tiempos_casos.json`.
   - Verifica: pytest + Vitest.
   - Archivos: los dos módulos, el JSON, los dos tests.
-- [ ] **T1.4 — Pantalla «Corregir el relato»**
+- [x] **T1.4 — Pantalla «Corregir el relato»**
   - Acepta:
     - la ruta `/historia/:storyId/relatos/:narrativeId/corregir`, con la lista de actos, el cuadro del acto, «Así terminó el acto anterior», los avisos con «Buscar en el texto», «Regenerar el acto», anterior/siguiente y la regla de duración;
     - el link «Corregir el relato» en el panel de la variante;
     - sin jerga ni colores fijos.
   - Verifica: tests de vistas (`sin-jerga`, `gramatica-visual`), test del controlador.
   - Archivos: `relatos.controller.ts`, `routes/index.ts`, `views/relatos/corregir.ejs`, `relato_panel.ejs`.
-- [ ] **T1.5 — Autoguardado del relato**
+- [x] **T1.5 — Autoguardado del relato**
   - Acepta:
     - `corregir-relato.js` guarda cada acto con la cola y el `flushAll` del asistente, y avisa con `_guardado.ejs`;
     - la lista y la regla se actualizan mientras se escribe;
     - «Buscar en el texto» selecciona la frase.
   - Verifica: E2E `corregir-relato.spec.ts` (corregir un párrafo, recargar, ver el cambio y el aviso de repetición actualizado).
   - Archivos: `public/js/corregir-relato.js`, el E2E.
+
+**Hecho en S1 además de lo previsto (2026-10-01):**
+- **Regenerar un acto ya no pisa lo corregido:** antes rearmaba la variante entera desde los actos de la última generación. Ahora reemplaza solo ese acto (`update_act`), y la Voz sigue desde el final **corregido** del acto anterior (supuesto 4 de §7.4).
+- `GET /api/v1/video/lectura`: la web lee el ritmo y el largo del episodio de `config/video/lectura.yaml`, no los tiene escritos.
+- `public/js/guardado.js`: el aviso flotante del guardado, compartido por las pantallas nuevas. El asistente sigue con el suyo.
+- Regla global `[hidden] { display: none !important; }`: un `hidden` oculta aunque el elemento tenga `flex`.
 
 ### S2 — El job que arma el paquete (§3.2–§3.4)
 

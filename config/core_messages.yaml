@@ -56,6 +56,9 @@ api:
   sin_escaleta_para_revisar: "No hay escaleta para revisar"
   falta_de_que_trata: "Falta contar de qué trata la historia (Dirección)"
   acto_sin_narrar: "El acto {acto} no está narrado"
+  # Spec-610: corregir el relato en la web.
+  acto_vacio: "El acto no puede quedar vacío: escribí algo o regenerá el acto"
+  relato_sin_acto: "Este relato no tiene el acto {acto}"
   acto_sin_narrar_aun: "Acto {acto} no encontrado o no narrado aún"
   sin_escaleta_para_regenerar: "La historia no tiene escaleta: generala de nuevo para poder regenerar un acto"
 

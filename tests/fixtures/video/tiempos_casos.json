@@ -1,0 +1,37 @@
+{
+  "_comentario": "Spec-610 T1.3: los mismos casos para src/application/services/video/timing.py (pytest) y frontend/public/js/tiempos.js (Vitest). Si la web y el PDF dieran números distintos, falla uno de los dos.",
+  "palabras": [
+    { "texto": "", "palabras": 0 },
+    { "texto": "   \n\n  ", "palabras": 0 },
+    { "texto": "Nunca se lo conté a nadie.", "palabras": 6 },
+    { "texto": "Giré la llave.\n\nEl motor hizo un clic —y nada más— … ¿qué?", "palabras": 13 },
+    { "texto": "una\tsola,  limpia", "palabras": 3 }
+  ],
+  "segundos": [
+    { "palabras": 0, "ppm": 150, "segundos": 0 },
+    { "palabras": 150, "ppm": 150, "segundos": 60 },
+    { "palabras": 2191, "ppm": 150, "segundos": 876 },
+    { "palabras": 5, "ppm": 120, "segundos": 3 },
+    { "palabras": 1, "ppm": 150, "segundos": 0 },
+    { "palabras": 477, "ppm": 150, "segundos": 191 }
+  ],
+  "reloj": [
+    { "segundos": 0, "texto": "0:00" },
+    { "segundos": 65, "texto": "1:05" },
+    { "segundos": 936, "texto": "15:36" },
+    { "segundos": 3600, "texto": "60:00" }
+  ],
+  "largo": [
+    { "segundos": 0, "texto": "0 s" },
+    { "segundos": 45, "texto": "45 s" },
+    { "segundos": 60, "texto": "1 min" },
+    { "segundos": 191, "texto": "3 min 11 s" },
+    { "segundos": 936, "texto": "15 min 36 s" }
+  ],
+  "episodio": [
+    { "segundos": 719, "desde": 12, "hasta": 17, "estado": "corto" },
+    { "segundos": 720, "desde": 12, "hasta": 17, "estado": "entra" },
+    { "segundos": 1020, "desde": 12, "hasta": 17, "estado": "entra" },
+    { "segundos": 1021, "desde": 12, "hasta": 17, "estado": "largo" }
+  ]
+}

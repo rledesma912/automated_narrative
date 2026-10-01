@@ -48,6 +48,15 @@ function extractActNumber(title) {
         <i data-lucide="download" class="w-4 h-4"></i>
         Descargar .md
       </a>
+      <%/* Spec-610: corregir el relato en la web (un acto a la vez). */%>
+      <a
+        <% if (regen) { %>aria-disabled="true"<% } else { %>href="/historia/<%= story.id %>/relatos/<%= relato.id %>/corregir"<% } %>
+        data-corregir-relato="<%= relato.id %>"
+        class="btn-forge-outline-sm <%= regen ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' %>"
+      >
+        <i data-lucide="pencil" class="w-4 h-4"></i>
+        Corregir el relato
+      </a>
       <button
         type="button"
         onclick="copyRelatoContent('<%= relato.id %>', this)"

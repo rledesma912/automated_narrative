@@ -3,6 +3,7 @@
 import logging
 from uuid import UUID
 
+from src.application.services import narrative_acts
 from src.application.services.narrative_script_formatter import (
     export_filename,
     to_tts_markdown,
@@ -75,6 +76,20 @@ class GenerateNarrativesUseCase:
             raise ValueError(f"El relato {narrative_id} no pertenece a la historia {story.id}")
 
         narrative.content = self._consolidate_content(story)
+        return await self.narrative_repo.save(narrative)
+
+    async def update_act(self, narrative_id: UUID, number: int, text: str) -> GeneratedNarrative:
+        """Reemplaza solo el acto `number` de una variante (Spec-610: corregir el relato
+        en la web y regenerar un acto sin perder lo corregido en los demás).
+
+        Raises:
+            ValueError: la variante no existe.
+            KeyError: la variante no tiene ese acto.
+        """
+        narrative = await self.narrative_repo.get_by_id(narrative_id)
+        if not narrative:
+            raise ValueError(f"Relato generado no encontrado: {narrative_id}")
+        narrative.content = narrative_acts.replace_act(narrative.content, number, text)
         return await self.narrative_repo.save(narrative)
 
     async def generate_from_existing_beats(self, story_id: UUID, title: str) -> GeneratedNarrative:
