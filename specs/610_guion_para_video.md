@@ -539,7 +539,7 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 
 ### S4 — Los dos PDF (§3.7.3, §3.7.4)
 
-- [ ] **T4.1 — WeasyPrint en la imagen**
+- [x] **T4.1 — WeasyPrint en la imagen**
   - Acepta:
     - `weasyprint` en `pyproject.toml`;
     - `pango` en `Dockerfile` y `Dockerfile.dev`;
@@ -548,20 +548,27 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
     - un PDF mínimo con tildes, «·», «–» y «…» se genera y se lee bien.
   - Verifica: pytest de humo; el peso de la imagen antes y después.
   - Archivos: `pyproject.toml`/`uv.lock`, los dos Dockerfile, `assets/fonts/`, test.
-- [ ] **T4.2 — PDF del guion**
+- [x] **T4.2 — PDF del guion**
   - Acepta:
     - `config/video/pdf/guion.html.j2` + `pdf.css`, con todo lo de §3.7.3: portada, un acto por hoja, bloques sin partir, 14 pt, margen para anotar y «Hoja N de M»;
     - `GET …/guion.pdf`, que responde 409 con un mensaje si cambiaron los párrafos.
   - Verifica: pytest (hojas esperadas, texto con remarcados y tildes; `pypdf` como dependencia de dev) y mirar el PDF real.
   - Archivos: plantilla, CSS, `services/video/pdf.py`, `video_router.py`, test.
-- [ ] **T4.3 — PDF del mapa**
+- [x] **T4.3 — PDF del mapa**
   - Acepta: `config/video/pdf/mapa.html.j2` con todo lo de §3.7.4 (índice, tramas, casillas, fichas sin partir, «Entra cuando dice»/«Hasta», archivos) y `GET …/mapa.pdf`.
   - Verifica: pytest y mirar el PDF real.
   - Archivos: plantilla, CSS, `pdf.py`, `video_router.py`, test.
-- [ ] **T4.4 — Descargas en la pantalla**
+- [x] **T4.4 — Descargas en la pantalla**
   - Acepta: «Descargar PDF» en Guion y en Mapa (`hx-boost="false"`, por el proxy), deshabilitado con el motivo si cambiaron los párrafos.
   - Verifica: E2E (headers y nombre del archivo).
   - Archivos: `video.ejs`, E2E.
+
+**Notas de S4 (2026-10-01):**
+- **Plantillas:** `config/video/pdf/{base.css.j2, guion.html.j2, mapa.html.j2}`, pasadas de las maquetas a `@page`. El pie («Hoja N de M») y el margen para notas van en las cajas de margen. La hoja de cada ficha en el índice sale con `target-counter`. Cada acto empieza en hoja nueva y bloques y fichas no se parten.
+- **Fuentes:** `assets/fonts/` tiene Literata (variable), Atkinson Hyperlegible e IBM Plex Mono, con sus licencias OFL. DejaVu (`fonts-dejavu-core`) cubre `‖` y `▸`.
+- **Tamaño de la imagen:** la de la API de dev pasó de 628 a 734 MB (pango, fuentes y las dependencias de WeasyPrint). La de prod va a crecer algo parecido.
+- **Tiempos:** «No te detengas en el bosque» (≈ 3 200 palabras) da 22 hojas de guion y 8 de mapa; armar los dos tarda ≈ 7 s en esta máquina.
+- **Si cambiaron los párrafos de un acto**, el PDF responde 409 con el acto, y en la pantalla el botón queda deshabilitado con el motivo.
 
 ### S5 — Punta a punta
 

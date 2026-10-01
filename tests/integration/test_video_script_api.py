@@ -206,3 +206,62 @@ async def test_descargar_el_txt_de_la_calabaza(client, monkeypatch):
     assert resp.text == (
         "INTRO\nHola.\n\nOUTRO\nChau.\n\nCIERRE (igual en todos los episodios)\nDejanos un like.\n"
     )
+
+
+# ── T4.2 / T4.3: los PDF ─────────────────────────────────────────────────────
+
+
+def _pdf_text(data: bytes) -> tuple[int, str]:
+    import io
+
+    from pypdf import PdfReader
+
+    reader = PdfReader(io.BytesIO(data))
+    return len(reader.pages), "\n".join(p.extract_text() for p in reader.pages)
+
+
+async def test_pdf_del_guion(client):
+    narrative = await _armado(client)
+    await client.put(_url(narrative, "/blocks/1"), json={"marcas": [[2, 3]]})
+    await client.put(_url(narrative, "/reader"), json={"lector": "Yael"})
+    await client.put(
+        f"/api/v1/generated-narratives/{narrative.id}/acts/1",
+        json={"text": "Párrafo 1 del acto 1, ¿qué? «Sí» — fin…\n\nPárrafo 2.\n\nPárrafo 3."},
+    )
+
+    resp = await client.get(_url(narrative, "/guion.pdf"))
+
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.headers["content-disposition"] == 'attachment; filename="guion-v1.pdf"'
+    pages, text = _pdf_text(resp.content)
+    assert pages >= 6  # portada + un acto por hoja
+    assert "LO LEE" in text and "Yael" in text
+    assert "¿qué? «Sí» — fin…" in text  # tildes y signos, enteros
+    assert "Hoja 1 de" in text
+    assert "Cómo empieza" in text and "Cómo termina" in text
+
+
+async def test_pdf_del_mapa(client):
+    narrative = await _armado(client)
+
+    resp = await client.get(_url(narrative, "/mapa.pdf"))
+
+    assert resp.status_code == 200, resp.text
+    pages, text = _pdf_text(resp.content)
+    assert pages >= 2
+    assert "MAPA DE PRODUCCIÓN" in text
+    assert "ENTRA CUANDO DICE" in text
+    assert "01-camino-1.png" in text
+    assert "calabaza-v1-intro.mp3" in text
+    assert "no people" in text  # el estilo va con el prompt
+
+
+async def test_los_pdf_no_se_bajan_si_cambiaron_los_parrafos(client):
+    narrative = await _armado(client)
+    await client.put(f"/api/v1/generated-narratives/{narrative.id}/acts/2", json={"text": "Uno."})
+
+    for nombre in ("guion.pdf", "mapa.pdf"):
+        resp = await client.get(_url(narrative, f"/{nombre}"))
+        assert resp.status_code == 409
+        assert "acto 2" in resp.json()["detail"]

@@ -141,6 +141,7 @@ video:
   lector_desconocido: "Esa persona no está en la lista de quienes leen"
   marca_invalida: "Lo remarcado no coincide con el texto del bloque: recargá la página"
   transicion_desconocida: "Esa transición no está en la lista"
+  pdf_desactualizado: "Cambiaron los párrafos del acto {actos}: armá el guion de nuevo antes de bajarlo"
   # Rótulos del .txt de la calabaza (cada parte se pega aparte en ElevenLabs).
   txt_intro: "INTRO"
   txt_outro: "OUTRO"

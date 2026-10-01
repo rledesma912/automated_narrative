@@ -1,0 +1,17 @@
+/* Spec-610 §3.7.3 / §3.7.4: los PDF del paquete para el video. A4, para una impresora
+   en blanco y negro: nada importante depende del color. Fuentes libres (OFL) de
+   assets/fonts/; DejaVu (del sistema) cubre los signos que no traen (‖, ▸). */
+@font-face { font-family: "Literata"; src: url("{{ fuentes }}/Literata-Variable.ttf"); font-weight: 200 900; font-style: normal; }
+@font-face { font-family: "Literata"; src: url("{{ fuentes }}/Literata-Italic-Variable.ttf"); font-weight: 200 900; font-style: italic; }
+@font-face { font-family: "Atkinson"; src: url("{{ fuentes }}/AtkinsonHyperlegible-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "Atkinson"; src: url("{{ fuentes }}/AtkinsonHyperlegible-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Atkinson"; src: url("{{ fuentes }}/AtkinsonHyperlegible-Italic.ttf"); font-style: italic; }
+@font-face { font-family: "Plex Mono"; src: url("{{ fuentes }}/IBMPlexMono-Regular.ttf"); }
+
+:root { --tinta: #1a1714; --gris: #5f584e; --linea: #bdb5a8; --suave: #f1efea; }
+* { box-sizing: border-box; }
+html { color: var(--tinta); font-family: "Atkinson", "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.45; }
+body { margin: 0; }
+h1, h2, h3, p { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+.eti { font-size: 7.5pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gris); font-weight: 700; }

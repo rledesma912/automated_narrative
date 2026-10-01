@@ -4,10 +4,12 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel
 
 from src.application.services import narrative_acts
+from src.application.services.video import pdf as video_pdf
 from src.application.services.video import state as video_state
 from src.application.services.video.config import video_config
 from src.application.services.video.files import slug
@@ -211,3 +213,33 @@ async def download_presenter_text(narrative_id: str) -> Response:
         media_type="text/plain; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
     )
+
+
+async def _pdf(narrative_id: str, template: str, build, prefix: str) -> Response:
+    """Spec-610 §3.7.3–4: el PDF se arma al descargar con lo último guardado (D19)."""
+    narrative, script = await _load(narrative_id)
+    status = video_state.state(script, narrative.content)
+    if status.estado == "cambiaron_parrafos":
+        actos = ", ".join(str(n) for n in status.actos)
+        raise HTTPException(
+            status_code=409, detail=message("video.pdf_desactualizado", actos=actos)
+        )
+    title = narrative.title.split(" · ")[0]
+    context = build(script, narrative.content, title, video_config())
+    data = await run_in_threadpool(video_pdf.render_pdf, template, context)
+    name = f"{prefix}-{slug(title, limit=60)}.pdf"
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/generated-narratives/{narrative_id}/video-script/guion.pdf")
+async def download_reading_script(narrative_id: str) -> Response:
+    return await _pdf(narrative_id, "guion.html.j2", video_pdf.guion_context, "guion")
+
+
+@router.get("/generated-narratives/{narrative_id}/video-script/mapa.pdf")
+async def download_production_map(narrative_id: str) -> Response:
+    return await _pdf(narrative_id, "mapa.html.j2", video_pdf.mapa_context, "mapa")

@@ -141,8 +141,23 @@ test("si cambian los párrafos de un acto, avisa; armar de nuevo lo deja al día
 
   await page.reload();
   await expect(page.locator("[data-avisos-paquete]")).toContainText("Cambió la cantidad de párrafos");
+  await expect(page.locator('[data-pdf="guion"]')).toHaveAttribute("aria-disabled", "true");
 
   await page.locator("[data-rearmar]").click();
   await page.locator("#forge-confirm").getByRole("button", { name: "Armar de nuevo" }).click();
   await expect(page.locator("[data-avisos-paquete]")).not.toContainText("Cambió la cantidad", { timeout: 20_000 });
+});
+
+// ── S4: los PDF ─────────────────────────────────────────────────────────────
+
+test("bajar el PDF del guion y el del mapa", async ({ page }) => {
+  await abrirVideo(page);
+  const [guion] = await Promise.all([page.waitForEvent("download"), page.locator('[data-pdf="guion"]').click()]);
+  expect(guion.suggestedFilename()).toMatch(/^guion-.*\.pdf$/);
+  const fs = await import("fs");
+  expect(fs.readFileSync(await guion.path()).subarray(0, 5).toString()).toBe("%PDF-");
+
+  await page.locator('[data-tab="mapa"]').click();
+  const [mapa] = await Promise.all([page.waitForEvent("download"), page.locator('[data-pdf="mapa"]').click()]);
+  expect(mapa.suggestedFilename()).toMatch(/^mapa-.*\.pdf$/);
 });

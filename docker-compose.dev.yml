@@ -30,6 +30,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./config:/app/config
+      - ./assets:/app/assets:ro  # Spec-610: fuentes de los PDF
       - ./data/dev:/app/data/dev
       - ./frontend/public/output_stories:/app/frontend/public/output_stories
     extra_hosts:

@@ -152,6 +152,15 @@
       </div>`;
   }
 
+  /** «Descargar PDF» (T4.4): se arma al bajar con lo último guardado; sin él si
+   *  cambiaron los párrafos de algún acto (el Core respondería 409). */
+  function botonPdf(nombre) {
+    if (S().estado.estado === "cambiaron_parrafos") {
+      return `<span class="btn-forge-sm opacity-40 cursor-not-allowed" aria-disabled="true" title="Armá el guion de nuevo: cambiaron los párrafos" data-pdf="${nombre}"><i data-lucide="download" class="w-4 h-4"></i> Descargar PDF</span>`;
+    }
+    return `<a class="btn-forge-sm" hx-boost="false" download href="${API}/generated-narratives/${page.narrativeId}/video-script/${nombre}.pdf" data-pdf="${nombre}"><i data-lucide="download" class="w-4 h-4"></i> Descargar PDF</a>`;
+  }
+
   // ── Guion de lectura ────────────────────────────────────────────────────
 
   function textoBloque(b, i) {
@@ -197,7 +206,10 @@
     const prev = page.actos[pos - 1];
     const next = page.actos[pos + 1];
     $('[data-panel="guion"]').innerHTML = `
-      <p class="pista-forge"><i data-lucide="info"></i><span>Lo que lee ${esc(s.lector || "quien elijas")}, en bloques cortos. Tocá una palabra para remarcarla, o arrastrá sobre varias para remarcar una frase. Las palabras se cambian en «Corregir el relato».</span></p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="pista-forge"><i data-lucide="info"></i><span>Lo que lee ${esc(s.lector || "quien elijas")}, en bloques cortos. Tocá una palabra para remarcarla, o arrastrá sobre varias para remarcar una frase. Las palabras se cambian en «Corregir el relato».</span></p>
+        ${botonPdf("guion")}
+      </div>
       <div class="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)_15rem] items-start">
         <nav class="card-forge !p-2 flex lg:flex-col gap-1 overflow-x-auto" aria-label="Actos">${page.actos
           .map((a) => {
@@ -329,7 +341,10 @@
     const marcas = [];
     for (let t = 0; t < total; t += 120) marcas.push(`<span class="absolute -translate-x-1/2" style="left:${pct(t)}">${t / 60}′</span>`);
     $('[data-panel="mapa"]').innerHTML = `
-      <p class="pista-forge"><i data-lucide="info"></i><span>Qué va en pantalla mientras se lee, en orden. Al copiar un prompt de imagen se le suma el estilo de todas las imágenes.</span></p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="pista-forge"><i data-lucide="info"></i><span>Qué va en pantalla mientras se lee, en orden. Al copiar un prompt de imagen se le suma el estilo de todas las imágenes.</span></p>
+        ${botonPdf("mapa")}
+      </div>
       <section class="card-forge !p-4 flex flex-col gap-2" aria-label="Línea de tiempo">
         <div class="flex h-11 gap-0.5 rounded-md overflow-hidden">
           ${tramo(COLOR.calabaza, introS, "", 'title="Intro de la calabaza"')}
