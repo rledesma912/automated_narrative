@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, deuda técnica (refactor sin cambio de comportamiento)
-**Estado:** TASKS, a aprobar (SPECIFY cerrado el 2026-09-30: D1–D3 decididas)
+**Estado:** IMPLEMENT — S0 ✅ (2026-10-01)
 **Rama:** `refactor/spec-620-prompts-en-markdown` (desde `development`, `3753205`). Va antes de la 610 (Spec-610 D12).
 **Origen:** observación del usuario (2026-09-30): «los prompts están hardcodeados en vez de vivir en un markdown que se inyecta».
 
@@ -133,9 +133,9 @@ Inventario medido el 2026-09-30 con un recorrido `ast` de `src/` (literales con 
 Cada slice cierra con `make lint`, `make test`, `cd frontend && npm test`, `npx playwright test` en verde (output filtrado) y `make dev-status`. Commit por slice. Sin llamadas a ningún LLM: el snapshot compara los prompts sin generar.
 
 ### S0 — Mecanismo y guardián
-- [ ] T0.1 `TemplateLoader.fragment()` (sin `strip`, quita solo el `\n` final, caché, `KeyError` si falta un dato). Tests: saltos de línea, caché, dato faltante.
-- [ ] T0.2 `MessageCatalog` + `config/core_messages.yaml` (vacío con la estructura). Tests: carga, formato, clave faltante.
-- [ ] T0.3 Test guardián con `PENDIENTES` = inventario de §3 y la lista permitida (logs, SQL, regex, palabras de `repetition_check`, 404 técnicos).
+- [x] T0.1 `TemplateLoader.fragment()` (sin `strip`, quita solo el `\n` final, caché, `KeyError` si falta un dato). Tests: saltos de línea, caché, dato faltante.
+- [x] T0.2 `MessageCatalog` + `config/core_messages.yaml` (vacío con la estructura). Tests: carga, formato, clave faltante.
+- [x] T0.3 Test guardián (`tests/unit/test_prompts_fuera_del_codigo.py`) con `PENDIENTES` = 107 textos (S1: 32, S2: 22, S3: 53) y `PERMITIDOS` = 48 técnicos, cada uno con su motivo (404 técnicos, encabezados HTTP, progreso del CLI, observabilidad, listas de palabras de `repetition_check`); los mocks quedan fuera por archivo. S3 suma los 422 de `create_story.py` y los 409 de `story_router`/`stream_router`, que la UI muestra (`asistente.js` lee el `detail`). Un test prueba que detecta textos y saltea docstrings, logs y regex.
 
 ### S1 — La Voz y la Memoria
 - [ ] T1.1 `outline_narrator.py`: los 19 textos a `fragments/voz/` y `fragments/memoria/`.

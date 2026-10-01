@@ -26,3 +26,19 @@ class TemplateLoader:
                 logger.warning(f"[TemplateLoader] not found: {filename}")
                 self._cache[filename] = ""
         return self._cache[filename]
+
+    def fragment(self, name: str, **data: object) -> str:
+        """Una sección del prompt desde `fragments/<name>.md`, con sus datos (Spec-620).
+
+        A diferencia de `load()`, no hace `strip()`: quita solo el salto de línea final del
+        archivo, así la sección conserva los que necesita (`\\n\\n` para cerrar un bloque se
+        escribe como una línea en blanco al final). Un archivo o un dato que falta es un error:
+        un prompt nunca sale con una sección vacía o un `{placeholder}` sin llenar.
+        """
+        key = f"fragments/{name}.md"
+        if key not in self._cache:
+            path = self._dir / key
+            if not path.exists():
+                raise FileNotFoundError(f"Fragmento de prompt inexistente: {key}")
+            self._cache[key] = path.read_text(encoding="utf-8").removesuffix("\n")
+        return self._cache[key].format(**data)

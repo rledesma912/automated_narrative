@@ -1,0 +1,16 @@
+# Mensajes del Core que llegan a la pantalla (Spec-620).
+#
+# Tono del sitio (Spec-580): coloquial, voseo, frases cortas, sin jerga.
+# Cada clave se usa desde el código con `message("area.clave", **datos)`;
+# los `{datos}` se completan con str.format. Los plurales van en dos claves
+# (`…_uno` / `…_varios`): el código elige cuál.
+#
+# Áreas:
+#   workshop  cierre de cada ronda de preguntas
+#   verifier  avisos por regla de la escaleta
+#   llm       la IA no atiende (Spec-600 D3)
+#   stage     etapa de un trabajo en curso
+#   job       por qué terminó mal un trabajo
+#   api       respuestas 409/422 que se ven en la UI
+#
+# Los textos se mudan en S3; hasta entonces el catálogo está vacío.
