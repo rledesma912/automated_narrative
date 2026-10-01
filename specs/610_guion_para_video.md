@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, feature nueva (después del relato)
-**Estado:** SPECIFY cerrado (D1–D18 decididas el 2026-09-30). PLAN después de implementar la Spec-620.
+**Estado:** SPECIFY cerrado (D1–D23). **PLAN escrito el 2026-10-01, espera OK del usuario** (§7).
 **Rama:** `feat/spec-610-guion-video` (desde `development`, `3753205`). **Se implementa después de la Spec-620** (D12): los prompts nuevos nacen como fragmentos Markdown.
 **Depende de:** Spec-620 (prompts en Markdown), Spec-600 (la Voz en Claude), Spec-490 (export para el TTS), Spec-460 (jobs)
 
@@ -235,7 +235,11 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 | Una imagen muestra una persona o una criatura | Biblia visual con «no people, no figures, no creatures», chequeo de palabras prohibidas y reintento. |
 | El chiste del outro no tiene gracia o repite los ejemplos | Los ejemplos van como referencia de **forma**, con la instrucción de no repetir frases; el usuario lo lee en S4. |
 | Los tiempos estimados no coinciden con la grabación | Ritmo de lectura configurable; se calibra con el primer episodio. |
-| El PDF suma una dependencia pesada a la imagen de prod | Se elige en PLAN con el peso de la imagen como criterio. |
+| El PDF suma una dependencia pesada a la imagen de prod | WeasyPrint (D24): ~50 MB de librerías de texto del sistema en la imagen del Core, nada en la del frontend. |
+| Corregir el relato después de armar el paquete desarma los rangos | Los rangos son **por acto** y el paquete guarda cuántos párrafos tenía cada acto. Si cambia el texto pero no la cantidad de párrafos, el paquete sigue andando (lee el texto actual) con un aviso. Si cambia la cantidad en un acto, se marcan sus bloques y momentos y se bloquean los PDF hasta rearmar (§7.2). |
+| Las marcas de remarcado quedan sobre otras palabras después de corregir | Cada marca guarda su posición **y** su texto; si en esa posición ya no está, se busca el texto dentro del bloque; si no aparece, se descarta y se avisa. |
+| La duración calculada en la web y en el PDF no coinciden | Una sola regla (palabras / ritmo de `config/`) con casos compartidos: el mismo JSON de casos lo prueban pytest y Vitest. |
+| Los tonos de los tipos (imagen, animación…) no se leen con números encima | Los tokens `--tipo-*` entran al test `palette-contrast`; el número va sobre una pastilla del color del papel. |
 
 ---
 
@@ -266,18 +270,102 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 | D21 | ¿Cómo se ve el PDF del guion de lectura? | ✅ (usuario, 2026-10-01) A4 para impresora en blanco y negro (nada depende del color). Portada (título, quién lee, duración, actos con su minuto, «Cómo leer este guion»); cada acto en hoja nueva; un bloque nunca se parte; número de bloque y minuto del video en el margen izquierdo; «cómo se lee» en gris; lo remarcado en negrita subrayada (palabras o frases, por posición); pausas `‖` corta y `‖ ‖` larga. **Texto a leer en 14 pt** (un punto menos que la primera maqueta, para asegurar que entre) y **margen para anotar a mano** en las hojas de lectura. Fuentes libres embebidas: Literata (lectura) y Atkinson Hyperlegible (indicaciones). Maqueta: https://claude.ai/artifact/Cg5Y1fBNs1nnMmw2bumghR |
 | D22 | ¿Cómo se ve y se corrige el paquete en la web? | ✅ (usuario, 2026-10-01) Pantalla «Para el video» con resumen y tres pestañas (guion, calabaza, mapa), en el estilo «uno a la vez» (§3.7.2). Ajustes pedidos sobre la maqueta: remarcar **solo la palabra tocada** y también **frases**; la calabaza con intro y outro **en vertical**; más aire entre bloques y botones. |
 | D23 | ¿Cómo se ve el PDF del mapa de producción? | ✅ (usuario, 2026-10-01) Índice con línea de tiempo y checklist, y una ficha por momento con las frases de entrada y salida, los prompts y el nombre del archivo, en blanco y negro con tramas (§3.7.4). |
+| D24 | ¿Con qué se generan los PDF? | ✅ (usuario, 2026-10-01) **WeasyPrint en el Core**: HTML + CSS (Jinja2, ya en el proyecto) como las maquetas; suma `pango` (~50 MB) a la imagen del Core. Descartadas: Chromium/Playwright en el frontend (~400 MB) y ReportLab/fpdf2 (diseño dibujado por código). |
 
 ---
 
-## 7. PLAN (borrador, se detalla en PLAN)
+## 7. PLAN
 
-| Slice | Qué |
-|---|---|
-| S0 | (Spec-620 hecha.) Fragmentos de esta spec, `presentador.yaml`, biblia visual y mezcla de tipos en `config/` |
-| S1 | Editar el relato en la web (§3.1, §3.7.1) |
-| S2 | Job `video_script`: esquema, prompt (fragmentos), chequeos, reparto al azar de tipos, tabla `video_script` |
-| S3 | La pantalla del paquete (§3.7.2) y los tres archivos: PDF del guion (§3.7.3), PDF del mapa (§3.7.4), .txt de la calabaza |
-| S4 | Un paquete real de punta a punta (con un relato de prod); los chicos graban, quien edita arma el video; ajustes (ritmo de lectura, mezcla de tipos); docs |
+### 7.1 Enfoque
+
+El paquete es **datos guardados** (tabla `video_script`) que la web edita y los archivos leen. El texto del relato no se copia nunca: bloques y momentos apuntan a **párrafos dentro de cada acto**, y cada vista (la pantalla, el PDF, el .txt) lo lee de `generated_narrative.content` en ese momento. La IA corre una sola vez por paquete (job `video_script`); todo lo demás (tiempos, nombres de archivo, reparto de tipos, chequeos) es código determinístico y probado sin LLM.
+
+### 7.2 Piezas
+
+**Datos** (`init_db()`, sin migraciones; `make dev-db`):
+- `video_script`: `id`, `narrative_id` (único, FK con borrado en cascada), `data` (JSON del paquete), `parrafos_por_acto` (JSON: cuántos tenía cada acto al armarlo), `narrative_hash`, `seed`, `created_at`, `updated_at`.
+- El JSON del paquete:
+  - `lector`;
+  - `narra` (`mujer` | `hombre` | `no_se_sabe`, lo infiere la IA desde la prosa: la historia no guarda el género de quien narra);
+  - `bloques[]`: `acto`, `desde`, `hasta` (párrafos del acto), `indicacion`, `pausa`, `marcas[]` (`desde_palabra`, `hasta_palabra`, `texto`);
+  - `momentos[]`: `acto`, `desde`, `hasta`, `fuerte`, `tipo`, `que_se_ve`, `lugar` (para el nombre del archivo), `prompt_imagen`, `prompt_movimiento`, `transicion`, `sonido`;
+  - `calabaza`: `intro`, `outro`.
+- **Estado frente al relato:**
+  - `al_dia`;
+  - `cambio_el_texto`: mismo número de párrafos; anda igual, con un aviso;
+  - `cambiaron_parrafos`: en qué actos; esos bloques y momentos se marcan y los PDF no se bajan hasta rearmar.
+
+**Core:**
+- **Corregir el relato:** `PUT /generated-narratives/{id}/acts/{n}` con el texto del acto; el servidor rearma `content`. La repetición se recalcula sola: ya se calcula en cada `GET …/repetition`.
+- **Dominio y servicios** en `src/application/services/video/`:
+  - `script_builder.py`: de la respuesta de la IA al paquete. Arma los rangos por acto, pasa los énfasis de texto a posiciones y corre los chequeos de §3.2. Si un chequeo falla, un reintento con lo que falló.
+  - `type_mix.py`: reparto de tipos con semilla por variante.
+  - `timing.py`: tiempos por bloque y momento, con el ritmo de `config/`.
+  - `files.py`: nombres de archivo `NN-lugar`.
+  - `pdf.py`: HTML con Jinja2 a PDF con WeasyPrint.
+- **LLM:**
+  - rol nuevo `guion` en los tres perfiles: Sonnet 5.5 en `hibrido-sonnet55` y `anthropic-sonnet55`; gemma con `num_ctx` 16384 en `ollama-gemma3-12b`, solo para probar en local;
+  - esquema Pydantic para `generate_structured()`;
+  - prompt en fragmentos `config/prompts_generation/video_script*.md` + `fragments/video/`;
+  - `mock_structured` para el esquema;
+  - snapshot `video_prompts.json`.
+- **Job:**
+  - `JobKind.VIDEO_SCRIPT` con `params.narrative_id`, runner al estilo de `authoring_jobs.py` y `JobStage.GUIONISTA`;
+  - `estimated_seconds.video_script` en los perfiles;
+  - 409 si hay un job activo en la historia, como siempre.
+- **Endpoints** (prefijo `/generated-narratives/{id}/video-script`):
+  - `GET` del paquete con su estado frente al relato;
+  - `PUT /reader`, `PUT /blocks/{n}`, `PUT /moments/{n}`, `PUT /presenter`;
+  - `GET /guion.pdf`, `GET /mapa.pdf`, `GET /calabaza.txt`.
+
+**Config** (`config/video/`):
+- `presentador.yaml`: ficha, outros de ejemplo y `cierre_fijo`;
+- `biblia_visual.yaml`: estilo, 16:9, palabras prohibidas, mezcla de tipos, transiciones posibles y con qué se genera cada tipo;
+- `lectores.yaml`: Yael y Vale si narra una mujer, Lucas si narra un hombre;
+- ritmo de lectura (150 palabras por minuto);
+- `pdf/guion.html.j2`, `pdf/mapa.html.j2`, `pdf/pdf.css`.
+
+Los textos de pantalla van a `core_messages.yaml` (área `video`). El guardián de la Spec-620 cubre todo lo nuevo.
+
+**PDF (D24):**
+- WeasyPrint en el Core, con `pango` en `Dockerfile` y `Dockerfile.dev`.
+- Fuentes OFL en `assets/fonts/` (Literata, Atkinson Hyperlegible, IBM Plex Mono, con sus licencias) copiadas a la imagen.
+- Las plantillas son las maquetas pasadas a `@page`: A4, «Hoja N de M» con `counter(page)` y `counter(pages)`, `break-inside: avoid`, cada acto en hoja nueva, `<meta charset="utf-8">`.
+
+**Frontend:**
+- **Rutas:**
+  - `/historia/:storyId/relatos/:narrativeId/corregir`: corregir el relato (§3.7.1);
+  - `/historia/:storyId/relatos/:narrativeId/video`: el paquete, con la pestaña en `#guion`, `#calabaza` o `#mapa` (§3.7.2).
+- **Panel de la variante:** «Corregir el relato» y «Armar el guion para el video» (job con modal) o «Para el video» si ya hay paquete.
+- **JS en `public/js/`:**
+  - `corregir-relato.js`;
+  - `paquete-video.js`;
+  - `tiempos.js` y `marcas.js`: UMD testeables en Vitest, como `eta.js`.
+- **Guardado:** el autoguardado y la notificación son los del asistente (`_guardado.ejs`).
+- **Tokens:** `--tipo-imagen`, `--tipo-animacion`, `--tipo-video` y `--tipo-calabaza` en `theme.css`, para Papel y Latte.
+
+### 7.3 Orden (slices) y verificación
+
+Cada slice cierra con tests en verde, `make dev-status` en verde y la URL de `storymaker.test` para mirar.
+
+| Slice | Qué | Se verifica con |
+|---|---|---|
+| **S0** | `config/video/` completo, rol `guion` en los perfiles, tokens `--tipo-*`, fuentes en `assets/fonts/` | pytest de carga de config; `palette-contrast` con los tokens nuevos |
+| **S1** | Corregir el relato: `PUT …/acts/{n}`, pantalla «uno a la vez», regla de duración, avisos con «Buscar en el texto», «Regenerar el acto» | pytest del endpoint (rearma `content`, 404/409/422); Vitest de `tiempos.js`; E2E: corregir un párrafo, recargar y ver el cambio. En dev: corregir un relato real |
+| **S2** | Job `video_script` y tabla: esquema, fragmentos, `script_builder`, chequeos y reintento, reparto de tipos, tiempos, botón y modal. Al terminar se ve una página simple con el paquete en crudo | pytest sin LLM: chequeos (rangos que no cubren, énfasis inexistente, palabras prohibidas, outro sin «Buenas noches»), semilla reproducible, mezcla y «sin dos videos seguidos»; snapshot del prompt; job con el mock. **Una corrida real con Sonnet (≈ US$ 0,05) con tu OK** |
+| **S3** | La pantalla «Para el video»: resumen, pestañas guion / calabaza / mapa, edición con autoguardado, marcas por posición y frase, estado frente al relato, «Armar de nuevo» con confirmación, `.txt` de la calabaza | pytest de los `PUT` y del estado (`al_dia`, `cambio_el_texto`, `cambiaron_parrafos`); Vitest de `marcas.js` (tocar, arrastrar, reubicar tras corregir); E2E con el mock: remarcar una frase, cambiar un prompt, bajar el .txt |
+| **S4** | Los dos PDF con WeasyPrint: plantillas, fuentes, Docker (`make dev-rebuild`), botones de descarga, bloqueo si cambiaron párrafos | pytest: el PDF se genera, tiene las hojas esperadas, ningún bloque partido, el texto extraído trae tildes, «·», «–» y «…» bien; mirar los PDF reales del relato de prueba |
+| **S5** | Punta a punta con un relato de prod: los chicos graban con el guion impreso, Lucas arma el video con el mapa; se ajustan el ritmo y la mezcla de tipos; docs (`CLAUDE.md`, README de fragmentos); `make deploy-check` | Lo que digan Yael, Lucas y Vale; los ajustes van a `config/` |
+
+**Dependencias:** S0 va primero. S1 no depende de S2 y puede ir antes: ya sirve sola, porque hoy las usuarias corrigen el `.md` afuera. S3 necesita S2 y S4 necesita S3. Todo se hace en orden, de a un slice, en `feat/spec-610-guion-video`.
+
+### 7.4 Supuestos (corregime si alguno no va)
+
+1. En el perfil todo local (`ollama-gemma3-12b`) el rol `guion` usa gemma con más contexto. Es solo para probar sin gastar; en dev y prod manda `hibrido-sonnet55` con Sonnet (D3).
+2. Un paquete por variante del relato. Rearmar reemplaza el anterior y lo corregido se pierde, con confirmación (§3.7.2).
+3. El texto del relato se corrige solo en «Corregir el relato»: en la pantalla del paquete el texto se ve, pero no se edita.
+4. Regenerar un acto después de armar el paquete cuenta como corregir el relato: mismo aviso y mismo bloqueo si cambian los párrafos.
+5. Los PDF los arma el Core y el frontend los pasa por su proxy, como el `.md` de la Spec-490.
 
 ---
 
