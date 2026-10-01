@@ -197,3 +197,33 @@ class TestEstimatedSeconds:
         for invalid in ("rápido", 0, -10, None, True):
             self._use(monkeypatch, {"estimated_seconds": {"full_generation": invalid}})
             assert settings.estimated_seconds("full_generation") == 240
+
+
+class TestRolGuion:
+    """Spec-610 T0.2: el paquete para el video tiene su rol en los tres perfiles del repo."""
+
+    def _perfiles(self) -> dict:
+        from src.config import _load_llm_core
+
+        return _load_llm_core()["profiles"]
+
+    def test_los_tres_perfiles_declaran_guion(self):
+        for nombre, perfil in self._perfiles().items():
+            assert "guion" in perfil["roles"], nombre
+            assert perfil["estimated_seconds"]["video_script"] > 0, nombre
+
+    def test_en_los_perfiles_con_claude_el_guion_es_sonnet(self):
+        perfiles = self._perfiles()
+        for nombre in ("hibrido-sonnet55", "anthropic-sonnet55"):
+            guion = perfiles[nombre]["roles"]["guion"]
+            provider = guion.get("provider") or perfiles[nombre]["provider"]
+            assert (provider, guion["model"]) == ("anthropic", "claude-sonnet-5-5"), nombre
+
+    def test_el_local_tiene_contexto_para_el_relato_entero(self):
+        assert self._perfiles()["ollama-gemma3-12b"]["roles"]["guion"]["num_ctx"] >= 16384
+
+    def test_guion_es_un_rol_del_pipeline(self):
+        from src.config import DEFAULT_ESTIMATED_SECONDS, LLM_ROLES
+
+        assert "guion" in LLM_ROLES
+        assert DEFAULT_ESTIMATED_SECONDS["video_script"] > 0

@@ -175,6 +175,9 @@ PERMITIDOS: dict[tuple[str, str], str] = {
 ARCHIVOS_PERMITIDOS = {
     "src/infrastructure/adapters/mock_llm_adapter.py": "respuestas del mock (tests, --mock)",
     "src/infrastructure/adapters/mock_structured.py": "respuestas del mock (tests, --mock)",
+    "src/application/services/video/config.py": (
+        "validación de config/video/ (Spec-610): errores para quien edita el YAML, al arrancar"
+    ),
 }
 
 

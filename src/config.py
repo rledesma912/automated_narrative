@@ -32,6 +32,8 @@ LLM_ROLES = (
     "consultor",
     "planificador",
     "verificador",
+    # Spec-610: el paquete para el video.
+    "guion",
 )
 # Los roles del asistente que un perfil no declara heredan la config del director.
 _ROLE_FALLBACK = {"consultor": "director", "planificador": "director", "verificador": "director"}
@@ -45,6 +47,8 @@ DEFAULT_ESTIMATED_SECONDS = {
     "consult": 40,
     "plan_outline": 75,
     "verify_outline": 30,
+    # Spec-610: el paquete para el video.
+    "video_script": 90,
 }
 
 

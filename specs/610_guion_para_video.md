@@ -177,7 +177,7 @@ Se entra con «Para el video», desde el panel de la variante. Arriba van «Corr
     - Una **línea de tiempo** de todo el episodio. Cada momento ocupa lo que dura, va coloreado por tipo y la calabaza está en las puntas. Tocar un momento lo abre.
     - A un lado, lo que se lee en ese tramo con su minuto de inicio y fin.
     - Al otro, la ficha editable: tipo (opción imagen, animación o video), «Qué se ve», prompt de la imagen y del movimiento con «Copiar» (el del movimiento solo en animación y video), transición y sonido.
-    - Los tipos tienen tokens propios (`--tipo-imagen`, `--tipo-animacion`, `--tipo-video`, `--tipo-calabaza`), distintos del acento y de los estados.
+    - Los tipos tienen tokens propios (`--forge-tipo-imagen`, `--forge-tipo-animacion`, `--forge-tipo-video`, `--forge-tipo-calabaza`), distintos del acento y de los estados.
 
 #### 3.7.3 PDF del guion de lectura (D21)
 
@@ -239,7 +239,7 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 | Corregir el relato después de armar el paquete desarma los rangos | Los rangos son **por acto** y el paquete guarda cuántos párrafos tenía cada acto. Si cambia el texto pero no la cantidad de párrafos, el paquete sigue andando (lee el texto actual) con un aviso. Si cambia la cantidad en un acto, se marcan sus bloques y momentos y se bloquean los PDF hasta rearmar (§7.2). |
 | Las marcas de remarcado quedan sobre otras palabras después de corregir | Cada marca guarda su posición **y** su texto; si en esa posición ya no está, se busca el texto dentro del bloque; si no aparece, se descarta y se avisa. |
 | La duración calculada en la web y en el PDF no coinciden | Una sola regla (palabras / ritmo de `config/`) con casos compartidos: el mismo JSON de casos lo prueban pytest y Vitest. |
-| Los tonos de los tipos (imagen, animación…) no se leen con números encima | Los tokens `--tipo-*` entran al test `palette-contrast`; el número va sobre una pastilla del color del papel. |
+| Los tonos de los tipos (imagen, animación…) no se leen con números encima | Los tokens `--forge-tipo-*` entran al test `palette-contrast` como relleno (≥ 3:1); el número va sobre una pastilla del color del papel. |
 
 ---
 
@@ -342,7 +342,7 @@ Los textos de pantalla van a `core_messages.yaml` (área `video`). El guardián 
   - `paquete-video.js`;
   - `tiempos.js` y `marcas.js`: UMD testeables en Vitest, como `eta.js`.
 - **Guardado:** el autoguardado y la notificación son los del asistente (`_guardado.ejs`).
-- **Tokens:** `--tipo-imagen`, `--tipo-animacion`, `--tipo-video` y `--tipo-calabaza` en `theme.css`, para Papel y Latte.
+- **Tokens:** `--forge-tipo-imagen`, `--forge-tipo-animacion`, `--forge-tipo-video` y `--forge-tipo-calabaza` en `theme.css`, para Papel y Latte.
 
 ### 7.3 Orden (slices) y verificación
 
@@ -375,20 +375,20 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 
 ### S0 — Configuración y base
 
-- [ ] **T0.1 — `config/video/` y su lector**
+- [x] **T0.1 — `config/video/` y su lector**
   - Acepta:
     - existen `presentador.yaml` (ficha, los 3 outros de ejemplo y `cierre_fijo`), `biblia_visual.yaml` (estilo, 16:9, palabras prohibidas, mezcla de tipos, transiciones y con qué se genera cada tipo), `lectores.yaml` y `lectura.yaml` (150 palabras por minuto, episodio de 12–17 min);
     - `VideoConfig` (Pydantic) los carga y valida: la mezcla suma 1 y cada lector tiene a quién lee.
   - Verifica: `tests/unit/application/video/test_config.py`.
   - Archivos: los 4 YAML, `src/application/services/video/config.py`.
-- [ ] **T0.2 — Rol `guion` en los perfiles**
+- [x] **T0.2 — Rol `guion` en los perfiles**
   - Acepta:
     - los tres perfiles declaran `roles.guion`: Sonnet 5.5 en `hibrido-sonnet55` y `anthropic-sonnet55`; gemma con `num_ctx` 16384 en `ollama-gemma3-12b`;
     - `estimated_seconds.video_script` en los tres.
   - Verifica: `tests/unit/test_config_profiles.py`.
   - Archivos: `config/llm_core_definitions.yaml`, el test.
-- [ ] **T0.3 — Colores de los tipos**
-  - Acepta: `--tipo-imagen`, `--tipo-animacion`, `--tipo-video` y `--tipo-calabaza` en Papel y Latte, con clases `forge-tipo-*`. `palette-contrast` cubre el número sobre la pastilla.
+- [x] **T0.3 — Colores de los tipos**
+  - Acepta: `--forge-tipo-imagen`, `--forge-tipo-animacion`, `--forge-tipo-video` y `--forge-tipo-calabaza` en Papel y Latte, con clases `forge-tipo-*`. `palette-contrast` cubre el número sobre la pastilla.
   - Verifica: Vitest (`palette-contrast`, `no-hardcoded-colors`).
   - Archivos: `theme.css`, `tailwind.config.js`, el test de paleta.
 

@@ -1,0 +1,64 @@
+# Lo que va en pantalla (Spec-610 §3.4, D7, D9, D14): solo escenarios insinuantes, sin
+# personajes ni criaturas. El `estilo` va al principio de cada prompt de imagen para que
+# todas parezcan del mismo mundo. Prompts en inglés, en lenguaje natural.
+
+estilo: >-
+  Night photography, film grain, cold desaturated palette, a single light source,
+  empty and silent place, no people, no figures, no creatures, 16:9.
+
+formato: "16:9"
+
+momentos: { desde: 10, hasta: 15 }
+
+# Reparto al azar de los tipos (lo hace el código con una semilla por variante).
+mezcla: { imagen: 0.50, animacion: 0.35, video: 0.15 }
+videos: { desde: 1, hasta: 2 }
+
+tipos:
+  imagen:
+    nombre: Imagen fija
+    se_genera_con: ComfyUI (Flux schnell o Z-Image), Gemini o ChatGPT; zoom o paneo lento al editar
+  animacion:
+    nombre: Animación
+    se_genera_con: La imagen y después LTX-Video
+  video:
+    nombre: Video
+    se_genera_con: La imagen y después Wan 2.2
+
+transiciones:
+  - Fundido desde negro
+  - Corte
+  - Corte seco
+  - Fundido encadenado
+  - Corte a negro
+  - Fundido a negro
+
+# Si aparecen en un prompt (fuera de «no …» / «without …»), el paquete no pasa el chequeo.
+palabras_prohibidas:
+  - people
+  - person
+  - man
+  - men
+  - woman
+  - women
+  - child
+  - children
+  - boy
+  - girl
+  - figure
+  - figures
+  - silhouette
+  - silhouettes
+  - creature
+  - creatures
+  - monster
+  - monsters
+  - face
+  - faces
+  - body
+  - bodies
+  - ghost
+  - ghosts
+  - demon
+  - human
+  - humans
