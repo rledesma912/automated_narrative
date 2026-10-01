@@ -140,7 +140,7 @@ Primero la red de seguridad: capturas «antes» y tests que fallan con colores f
 2. **Variables nuevas** para lo que hoy está fijo:
    - `--forge-overlay`: tinta al 55 %, para los modales;
    - `--forge-on-accent`: texto sobre el acento (`#ffffff`, 8,6:1);
-   - `--forge-warning` y `--forge-warning-bg`: ámbar, para advertencias y el semáforo;
+   - `--forge-warning` y `--forge-warning-bg`: mostaza (`#665f00` / `#f1eecb`, desde el 2026-10-01; antes ámbar), para advertencias y el semáforo;
    - `--forge-success`: verde del semáforo.
 
    Se exponen en Tailwind como `forge.overlay`, `forge.on-accent`, etc.

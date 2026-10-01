@@ -131,7 +131,7 @@ Los tonos saturados de Latte no llegan a AA como texto sobre fondo claro (verde 
 | `--forge-muted` | `#6f6454` | `#5c5f77` (subtext1) | 5,5:1 |
 | `--forge-accent` | `#785e1c` | `#8839ef` (mauve) | 4,8:1; blanco encima 5,4:1 |
 | `--forge-error` | `#a3261a` | `#b30d30` (red oscurecido) | 6,2:1 |
-| `--forge-warning` | `#8a5d0f` | `#8a5a0c` (yellow oscurecido) | 5,2:1 |
+| `--forge-warning` | `#665f00` | `#8a5a0c` (yellow oscurecido) | 5,2:1 |
 | `--forge-success` | `#3f6b3a` | `#2d7a1e` (green oscurecido) | 4,7:1 |
 | `--forge-info` | `#2f5d8a` | `#1650c8` (blue oscurecido) | 6,2:1 |
 

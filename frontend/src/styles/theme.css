@@ -22,9 +22,9 @@
   --forge-error: #a3261a;
   --forge-error-bg: #f8e3df;
   --forge-error-border: #d9958a;
-  --forge-warning: #8a5d0f;
-  --forge-warning-bg: #f6ecd6;
-  --forge-warning-border: #d8b877;
+  --forge-warning: #665f00;      /* mostaza vieja — se separa del acento bronce; 5,9:1 */
+  --forge-warning-bg: #f1eecb;
+  --forge-warning-border: #c9c27a;
   --forge-success: #3f6b3a;
   --forge-success-bg: #e4eedf;
   --forge-success-border: #9dbb95;
