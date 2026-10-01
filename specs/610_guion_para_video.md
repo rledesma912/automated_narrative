@@ -58,6 +58,13 @@ El usuario sube relatos a un canal de YouTube. Cada episodio es una historia de 
 
 En el panel de la variante: **«Editar el relato»**. Un área de texto por acto con el texto de la variante; se guarda la variante (`PATCH /generated-narratives/{id}`). Sin versiones ni historial. El control de repetición se recalcula sobre lo editado. Si ya hay un paquete, queda marcado **«armado con una versión anterior del relato»** (como `stale` en los actos).
 
+**Cómo se ve (D20, maqueta B):** «Editar el relato» abre una pantalla de **un acto a la vez**:
+- **Izquierda:** los cinco actos con su nombre de pantalla («Cómo empieza»…), palabras, minutos y si tiene avisos. El acto elegido va resaltado.
+- **Centro:** el acto en un cuadro de texto grande con la letra del relato (`.prose-forge`), los párrafos separados por una línea en blanco. Arriba, en gris, «Así terminó el acto anterior» con sus últimas palabras. Abajo, botones para ir al acto anterior y al siguiente con sus nombres.
+- **Derecha:** palabras y minutos del acto, los avisos del control de repetición con «Buscar en el texto» (selecciona la frase en el cuadro) y «Regenerar el acto».
+- **Arriba de todo:** la duración del episodio. Es una regla de 0 a 20 min con la franja de 12–17 y cada acto en su tramo, a 150 palabras por minuto, y se actualiza mientras se escribe.
+- Autoguardado con la notificación flotante del asistente (`_guardado.ejs`). Sin botón «Guardar».
+
 ### 3.2 El paquete (job `video_script`, Claude Sonnet 5.5, D3)
 
 Un comando en el panel de la variante: **«Armar el guion para el video»**. Una llamada con salida estructurada (≈ US$ 0,05):
@@ -117,9 +124,10 @@ Un comando en el panel de la variante: **«Armar el guion para el video»**. Una
 
 ### 3.5 Lo que se entrega
 
-- **Guion de lectura (PDF)** y **mapa de producción (PDF)**: los genera el sitio (D2). La librería se elige en PLAN; siguiendo el stack, las opciones son desde el Core en Python o desde el frontend. Mismo tema visual que el sitio, versión para imprimir.
+- **Guion de lectura (PDF)** y **mapa de producción (PDF)**: los genera el sitio (D2). La librería se elige en PLAN; siguiendo el stack, las opciones son desde el Core en Python o desde el frontend. Diseñados para imprimir en blanco y negro (§3.7.3 y §3.7.4).
 - **La calabaza (.txt):** intro y outro, separados y rotulados.
-- **En el panel de la variante:** «Armar el guion para el video» (job) y, cuando está listo, los tres botones de descarga.
+- **En el panel de la variante:** «Armar el guion para el video» (job) y, cuando está listo, «Para el video», que abre la pantalla del paquete (§3.7.2) con un botón de descarga en cada pestaña.
+- **Todo se puede corregir en la web (D19):** el guion, la intro y el outro de la calabaza y cada momento del mapa. Los archivos se arman al descargar con lo último guardado; no son la versión que se edita.
 - **Guardado:** tabla `video_script` (variante, JSON del paquete, versión del relato con la que se armó, semilla, fecha). Rearmar reemplaza el anterior.
 
 ### 3.6 Lo que no entra
@@ -129,6 +137,85 @@ Un comando en el panel de la variante: **«Armar el guion para el video»**. Una
 - Subtítulos con tiempos exactos (los tiempos son estimados).
 - Mostrar personajes o criaturas en las imágenes (D14: «al menos por ahora»; si cambia, va en otra spec).
 - Simplificar la carga de la historia.
+
+### 3.7 La pantalla (D19–D23)
+
+Se diseñó con maquetas interactivas sobre el relato real («No te detengas en el bosque», Spec-600), elegidas por el usuario el 2026-10-01. La implementación sigue las maquetas; si algo no se puede hacer igual, se pregunta.
+
+**Reglas que valen para todo:**
+- Tono coloquial y sin jerga (Spec-580). Los textos de la pantalla viven en `config/` (Spec-620).
+- Gramática visual de la Spec-550 H9: botón, chip, nota, pista y opción. Paleta solo con los tokens de `theme.css`. En prod los tokens son bronce `#785e1c` como acento y mostaza `#665f00` para los avisos (PR #53).
+- **Uno a la vez:** a la izquierda la lista (actos o momentos), en el centro lo que se edita, a la derecha los datos y la ayuda. Abajo, «anterior» y «siguiente» con el nombre de cada uno. En pantallas angostas queda todo en una columna y la lista se recorre de costado.
+- **Autoguardado** con la notificación flotante del asistente (`_guardado.ejs`). No hay botón «Guardar».
+- **La duración** siempre a la vista, calculada a 150 palabras por minuto y actualizada mientras se escribe.
+
+#### 3.7.1 Corregir el relato (D20)
+
+Es lo descrito en §3.1. Maqueta: https://claude.ai/artifact/UMfHAY9sZYoepnzTBoTgtk (opción B).
+
+#### 3.7.2 El paquete en la web (D19, D22)
+
+Se entra con «Para el video», desde el panel de la variante. Arriba van «Corregir el relato» y «Armar de nuevo». «Armar de nuevo» **pide confirmación**, porque pisa lo que se corrigió en el paquete. Maqueta: https://claude.ai/artifact/QxtwWBw1LakhGBDHkTZaZu
+
+- **Resumen:**
+  - quién lee: Yael, Lucas o Vale como opciones, propuesto según quién narra y cambiable;
+  - la duración del episodio con la calabaza incluida;
+  - cuántos momentos hay de cada tipo.
+- **Tres pestañas**, una por persona, cada una con su botón de descarga:
+  - **Guion de lectura** (para quien lee):
+    - Los actos van a la izquierda y los bloques del acto en el centro.
+    - Cada bloque tiene «Cómo se lee» editable y el texto en la letra del relato.
+    - **Remarcar:** tocar una palabra la remarca o la desmarca. **Solo esa palabra**, no las iguales. Arrastrar sobre varias remarca la frase entera. Las marcas se guardan como **posiciones** (tramos de palabras dentro del bloque), no como texto que se busca.
+    - Entre bloques: «Seguido», «Pausa corta» o «Pausa larga».
+    - A la derecha, las frases remarcadas del acto; tocar una la saca.
+    - Las palabras del relato no se editan acá, sino en «Corregir el relato».
+  - **La calabaza** (para quien hace la voz):
+    - Arriba, la ficha del personaje, chica y con su dibujo.
+    - Debajo, **la intro y el outro apilados en vertical**, con scroll de página. Son cuadros que crecen con el texto y muestran palabras, segundos y «Copiar para ElevenLabs».
+    - El cierre fijo (`cierre_fijo`) se muestra en gris debajo del outro y no se edita acá.
+  - **Mapa de producción** (para quien edita):
+    - Una **línea de tiempo** de todo el episodio. Cada momento ocupa lo que dura, va coloreado por tipo y la calabaza está en las puntas. Tocar un momento lo abre.
+    - A un lado, lo que se lee en ese tramo con su minuto de inicio y fin.
+    - Al otro, la ficha editable: tipo (opción imagen, animación o video), «Qué se ve», prompt de la imagen y del movimiento con «Copiar» (el del movimiento solo en animación y video), transición y sonido.
+    - Los tipos tienen tokens propios (`--tipo-imagen`, `--tipo-animacion`, `--tipo-video`, `--tipo-calabaza`), distintos del acento y de los estados.
+
+#### 3.7.3 PDF del guion de lectura (D21)
+
+- A4 vertical, pensado para una impresora en blanco y negro: nada depende del color.
+- **Portada:**
+  - el título, quién lee, cuánto dura, los actos y los bloques;
+  - los cinco actos con el minuto en que empieza cada uno;
+  - el recuadro «Cómo leer este guion».
+- **Hojas de lectura:**
+  - Cada acto empieza en hoja nueva y un bloque nunca se parte entre dos hojas.
+  - En el margen izquierdo, el número de bloque y el minuto del video.
+  - «Cómo se lee» en gris, con ▸.
+  - **Texto a 14 pt** en Literata, con interlineado amplio. Lo remarcado sale en negrita subrayada.
+  - Pausas: `‖` «respirá» y `‖ ‖` «contá hasta tres».
+  - **Margen derecho para anotar** a mano.
+  - Al final de cada acto, «Fin del acto N. Sigue: …».
+  - En el pie, el título, quién lee y «Hoja N de M».
+- Las fuentes son libres y van embebidas en la imagen: Literata (lectura) y Atkinson Hyperlegible (indicaciones). Georgia, la del sitio, no está en Linux.
+- Maqueta: https://claude.ai/artifact/Cg5Y1fBNs1nnMmw2bumghR
+
+#### 3.7.4 PDF del mapa de producción (D23)
+
+- A4 vertical, en blanco y negro. Los tipos se distinguen por **trama**: imagen en blanco, animación rayada, video en negro y la calabaza punteada.
+- **Primera hoja:**
+  - la duración y cuántos momentos hay de cada tipo;
+  - la línea de tiempo con las tramas y los minutos;
+  - la tabla de todos los momentos (número, desde, qué se ve, tipo, hoja de su ficha y **casilla para tachar**);
+  - el recuadro «Cómo usarlo».
+- **Una ficha por momento:**
+  - número, qué se ve, tipo y con qué se genera;
+  - desde y hasta, duración y acto;
+  - **«Entra cuando dice…» y «Hasta…»**: las primeras y las últimas 7 palabras del tramo, para ubicarlo en el audio grabado;
+  - los prompts (en IBM Plex Mono), la transición y el sonido;
+  - el **nombre del archivo** (`NN-lugar.png`, más `.mp4` en animación y video), para que en la carpeta queden en orden;
+  - casillas «Imagen» y «Movimiento».
+- La intro y el outro van como fichas cortas, con su `.mp3`.
+- Las fichas no se parten entre hojas.
+- Maqueta: https://claude.ai/artifact/KvnSibYW3DwrZmSGU3JWU7
 
 ---
 
@@ -158,7 +245,7 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 |---|---|---|
 | D1 | ¿El texto que se lee es el relato tal cual o adaptado? | ✅ **Tal cual** (el relato editado). La IA solo reparte y anota. |
 | D2 | ¿Cómo sale el PDF? | ✅ (usuario, 2026-09-30) **Lo genera el sitio** («Descargar PDF»). Librería a elegir en PLAN, con opciones. |
-| D3 | ¿Qué IA arma el paquete? | ✅ (usuario, 2026-09-30) **Claude Sonnet 5.5** (≈ US$ 0,05 por paquete). |
+| D3 | ¿Qué IA arma el paquete? | ✅ (usuario, 2026-09-30) **Claude Sonnet 5.5** (≈ US$ 0,05 por paquete). Revisada el 2026-10-01: se evaluó Gemma (ahorro chico, no entra en `num_ctx` 8192 en una llamada, la calabaza es lo más difícil) y el usuario **confirmó Sonnet**. |
 | D4 | ¿Cómo se edita el relato antes del guion? | ✅ (usuario, 2026-09-30) **En la web**, primer slice. |
 | D5 | ¿Quién lee? | ✅ Un lector por episodio según quién narra: **Yael** (mujer), **Lucas** (hombre), a veces **Vale**. |
 | D6 | ¿Qué hace la calabaza? | ✅ Personaje 3D que presenta y despide; al final un chiste sarcástico sobre la historia. |
@@ -174,6 +261,11 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 | D16 | ¿La intro presenta a quien lee? | ✅ (usuario, 2026-09-30) **No**: solo la historia. Intro nueva, corta, al estilo del guardián de la cripta. |
 | D17 | Los ejemplos de outro cortaban algunas palabras con guion («conoz-co»). ¿Es a propósito para ElevenLabs? | ✅ (usuario, 2026-09-30) **No, era un error de escritura.** Los ejemplos de §3.3 quedan corregidos; el generador escribe las palabras enteras. |
 | D18 | ¿El pedido de like y suscripción va en el outro generado? | ✅ (usuario, 2026-09-30) **No: es un pedido fijo al final de cada episodio**, igual en todos. El outro generado termina en «Buenas noches». Si se carga su texto en `presentador.yaml` (`cierre_fijo`), el .txt lo agrega al final, rotulado aparte; si no, no se incluye. |
+| D19 | Después de armar el paquete, ¿dónde se cambia lo que haga falta (indicaciones, textos de la calabaza, prompts)? | ✅ (usuario, 2026-10-01) **En la web.** Todo el paquete es editable en el sitio y es la única versión; el PDF y el .txt se arman **al descargar** con lo último guardado. Sin .docx: lo que se cambiara afuera no volvería al sitio y se perdería al rearmar. |
+| D20 | ¿Cómo es la pantalla para corregir el relato? | ✅ (usuario, 2026-10-01) **Un acto a la vez (maqueta B)**: «más simple visualmente y prolija». Descartadas: corregir sobre el texto corrido (A) y un botón «Editar» con dos modos (C). Detalle en §3.1. |
+| D21 | ¿Cómo se ve el PDF del guion de lectura? | ✅ (usuario, 2026-10-01) A4 para impresora en blanco y negro (nada depende del color). Portada (título, quién lee, duración, actos con su minuto, «Cómo leer este guion»); cada acto en hoja nueva; un bloque nunca se parte; número de bloque y minuto del video en el margen izquierdo; «cómo se lee» en gris; lo remarcado en negrita subrayada (palabras o frases, por posición); pausas `‖` corta y `‖ ‖` larga. **Texto a leer en 14 pt** (un punto menos que la primera maqueta, para asegurar que entre) y **margen para anotar a mano** en las hojas de lectura. Fuentes libres embebidas: Literata (lectura) y Atkinson Hyperlegible (indicaciones). Maqueta: https://claude.ai/artifact/Cg5Y1fBNs1nnMmw2bumghR |
+| D22 | ¿Cómo se ve y se corrige el paquete en la web? | ✅ (usuario, 2026-10-01) Pantalla «Para el video» con resumen y tres pestañas (guion, calabaza, mapa), en el estilo «uno a la vez» (§3.7.2). Ajustes pedidos sobre la maqueta: remarcar **solo la palabra tocada** y también **frases**; la calabaza con intro y outro **en vertical**; más aire entre bloques y botones. |
+| D23 | ¿Cómo se ve el PDF del mapa de producción? | ✅ (usuario, 2026-10-01) Índice con línea de tiempo y checklist, y una ficha por momento con las frases de entrada y salida, los prompts y el nombre del archivo, en blanco y negro con tramas (§3.7.4). |
 
 ---
 
@@ -182,15 +274,15 @@ Pregunta del usuario (2026-09-30): si Sonnet supera las expectativas, ¿conviene
 | Slice | Qué |
 |---|---|
 | S0 | (Spec-620 hecha.) Fragmentos de esta spec, `presentador.yaml`, biblia visual y mezcla de tipos en `config/` |
-| S1 | Editar el relato en la web (§3.1) |
+| S1 | Editar el relato en la web (§3.1, §3.7.1) |
 | S2 | Job `video_script`: esquema, prompt (fragmentos), chequeos, reparto al azar de tipos, tabla `video_script` |
-| S3 | Los tres archivos: PDF del guion, PDF del mapa, .txt de la calabaza; botones en el panel |
+| S3 | La pantalla del paquete (§3.7.2) y los tres archivos: PDF del guion (§3.7.3), PDF del mapa (§3.7.4), .txt de la calabaza |
 | S4 | Un paquete real de punta a punta (con un relato de prod); los chicos graban, quien edita arma el video; ajustes (ritmo de lectura, mezcla de tipos); docs |
 
 ---
 
 ## 8. EVOLUTIVOS (fuera de esta spec)
 
-- **Mandar los prompts a ComfyUI desde la app** (imágenes y animaciones), vía su API, con los workflows de Flux / Z-Image / LTX / Wan.
+- **Mandar los prompts a ComfyUI desde la app** (imágenes y animaciones), vía su API, con los workflows de Flux / Z-Image / LTX / Wan. **Se decide cuando Lucas, que edita los videos, diga si le resulta más cómodo** que copiar los prompts a mano (usuario, 2026-10-01).
 - **Mostrar personajes o criaturas** en las imágenes, cuando el canal lo quiera (D14).
 - **Reforzar la escaleta** (§4): pasar el Planificador a Claude si la prosa muestra problemas que vienen de ahí.
