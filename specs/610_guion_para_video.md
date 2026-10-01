@@ -482,7 +482,7 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
     - al terminar se pasa a «Para el video», que en S2 muestra el paquete simple (bloques y momentos en lista).
   - Verifica: E2E con el mock.
   - Archivos: `relato_panel.ejs`, `relatos.js`, controlador, vista simple, E2E.
-- [ ] **T2.7 — Una corrida real con Sonnet** (≈ US$ 0,05, **con OK del usuario**)
+- [x] **T2.7 — Una corrida real con Sonnet** (≈ US$ 0,05, **con OK del usuario**)
   - Acepta: el paquete de «No te detengas en el bosque» pasa los chequeos; se leen la intro, el outro y tres prompts, y se ajustan los fragmentos si hace falta.
   - Verifica: lectura del usuario.
   - Archivos: fragmentos.
@@ -493,6 +493,8 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 - Una transición que no está en la lista pasa a «Corte»; un largo de la calabaza se acepta con un margen del 25 %, porque el modelo cuenta las palabras a ojo.
 - Con un relato de menos párrafos que el mínimo de momentos, se piden tantos momentos como párrafos haya.
 - Modal genérico `ia-modal.js` (`partials/ia_modal.ejs`), con el mismo diseño que el del asistente. La banda de generación no muestra este job, porque tiene su modal.
+
+**T2.7, corrida real con Sonnet (2026-10-01):** «NO TE DETENGAS EN EL BOSQUE» (variante `1d6ff529`, ~3 175 palabras, ≈ 21 min). Tardó **74 s**, con **un reintento**: la primera respuesta dejaba afuera el párrafo 17 del acto 4. El reintento lo arregló; el chequeo y el reintento funcionaron como se esperaba. Salieron 23 bloques, 14 momentos (2 videos, 5 animaciones, 7 imágenes), narra «hombre» y lee Lucas. La intro (67 palabras) y el outro (106) suenan a la calabaza y no copian los ejemplos. Ajuste: un momento abarcaba 9 párrafos (≈ 4 min con una imagen fija), así que el prompt ahora pide momentos **repartidos parejo**. No se volvió a correr.
 
 ### S3 — La pantalla «Para el video» (§3.7.2)
 
