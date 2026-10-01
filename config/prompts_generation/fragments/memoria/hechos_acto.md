@@ -1,0 +1,1 @@
+Acto {numero}: {hechos}

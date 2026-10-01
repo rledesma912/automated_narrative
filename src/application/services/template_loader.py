@@ -31,9 +31,10 @@ class TemplateLoader:
         """Una sección del prompt desde `fragments/<name>.md`, con sus datos (Spec-620).
 
         A diferencia de `load()`, no hace `strip()`: quita solo el salto de línea final del
-        archivo, así la sección conserva los que necesita (`\\n\\n` para cerrar un bloque se
-        escribe como una línea en blanco al final). Un archivo o un dato que falta es un error:
-        un prompt nunca sale con una sección vacía o un `{placeholder}` sin llenar.
+        archivo y respeta el resto (la sangría de «  Qué es: …», los saltos internos). Los
+        saltos que separan una sección de la siguiente los agrega quien la usa, así el texto
+        no depende de una línea en blanco al final del archivo. Un archivo o un dato que falta
+        es un error: un prompt nunca sale con una sección vacía o un `{placeholder}` sin llenar.
         """
         key = f"fragments/{name}.md"
         if key not in self._cache:

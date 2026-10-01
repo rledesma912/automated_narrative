@@ -1,0 +1,1 @@
+- Repetiste «{frase}» (del acto {acto})

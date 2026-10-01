@@ -50,11 +50,6 @@ def test_el_beat_resuelto_no_expone_las_claves_internas(repo):
     assert "reveal_rules" not in beat and "entity_exposure" not in beat
 
 
-def test_format_for_beat_usa_el_nivel(repo):
-    assert CONFIRMAR in repo.format_for_beat(1, "compact")
-    assert CONFIRMAR not in repo.format_for_beat(1, "compact", RevealLevel.EXPLICITA)
-
-
 @pytest.mark.parametrize(
     ("beat", "level", "key", "shows_name"),
     [

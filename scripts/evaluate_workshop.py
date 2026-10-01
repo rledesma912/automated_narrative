@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.voice_metrics import evaluate, split_acts  # noqa: E402
+from src.application.services.core_messages import message  # noqa: E402
 from src.application.services.repetition_check import check  # noqa: E402
 from src.config import settings  # noqa: E402
 from src.domain.models import Direction  # noqa: E402
@@ -113,7 +114,7 @@ def _measure(text: str, story_data: dict, known: str) -> dict:
         "detalle": [
             {
                 "acto": r.number,
-                "repetidas": r.repeated,
+                "repetidas": [message("repeticion.frase", frase=f, acto=a) for f, a in r.repeated],
                 "cliches": r.cliches,
                 "nombres": r.invented_names,
             }

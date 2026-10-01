@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, deuda técnica (refactor sin cambio de comportamiento)
-**Estado:** IMPLEMENT — S0 ✅ (2026-10-01)
+**Estado:** IMPLEMENT — S0 ✅, S1 ✅ (2026-10-01)
 **Rama:** `refactor/spec-620-prompts-en-markdown` (desde `development`, `3753205`). Va antes de la 610 (Spec-610 D12).
 **Origen:** observación del usuario (2026-09-30): «los prompts están hardcodeados en vez de vivir en un markdown que se inyecta».
 
@@ -138,11 +138,12 @@ Cada slice cierra con `make lint`, `make test`, `cd frontend && npm test`, `npx 
 - [x] T0.3 Test guardián (`tests/unit/test_prompts_fuera_del_codigo.py`) con `PENDIENTES` = 107 textos (S1: 32, S2: 22, S3: 53) y `PERMITIDOS` = 48 técnicos, cada uno con su motivo (404 técnicos, encabezados HTTP, progreso del CLI, observabilidad, listas de palabras de `repetition_check`); los mocks quedan fuera por archivo. S3 suma los 422 de `create_story.py` y los 409 de `story_router`/`stream_router`, que la UI muestra (`asistente.js` lee el `detail`). Un test prueba que detecta textos y saltea docstrings, logs y regex.
 
 ### S1 — La Voz y la Memoria
-- [ ] T1.1 `outline_narrator.py`: los 19 textos a `fragments/voz/` y `fragments/memoria/`.
-- [ ] T1.2 `prompt_builder.py`: «Sos … y contás…», «CÓMO LLAMÁS A CADA PERSONAJE…» a fragmentos.
-- [ ] T1.3 `narrator_retry_generator.py`: `_REPHRASE_HINT` a fragmento (se mantiene el texto tal cual; traducirlo cambiaría el prompt: va anotado para otra spec).
-- [ ] T1.4 `beat_spec_repository.py`: borrar `format_compact` / `format_for_beat` y sus tests (código muerto).
-- [ ] T1.5 Snapshot **idéntico** (sin `SNAPSHOT_UPDATE`); `PENDIENTES` −24.
+- [x] T1.1 `outline_narrator.py`: los 19 textos a `fragments/voz/` y `fragments/memoria/`.
+- [x] T1.2 `prompt_builder.py`: «Sos … y contás…», «CÓMO LLAMÁS A CADA PERSONAJE…» a fragmentos.
+- [x] T1.3 `narrator_retry_generator.py`: `_REPHRASE_HINT` a fragmento (se mantiene el texto tal cual; traducirlo cambiaría el prompt: va anotado para otra spec).
+- [x] T1.4 `beat_spec_repository.py`: borrar `format_compact` / `format_for_beat` y sus tests (código muerto).
+- [x] T1.5 Snapshot **idéntico** (sin `SNAPSHOT_UPDATE`); `PENDIENTES` −32 (todo S1).
+- [x] T1.6 (sumado al implementar) Los nombres de los actos que ve la Voz («Exposición», «Clímax»…) pasan de `_ACT_NAMES` a `label` en `llm_beats_definition.yaml`; los textos cortos que el guardián no detecta (`(no se indica)`, `(nada todavía)`, `EL PROTAGONISTA`, `sin rol`, «Qué es», «Límites»…) también van a fragmentos. `repetition_check.ActRepetition.repeated` pasa a datos `(frase, acto)`: el panel los formatea con `message("repeticion.frase")` y la Voz con `voz/evitar/repetida` (la API devuelve el mismo texto). Las funciones de sección de `outline_narrator.py` pasan a métodos (usan el `TemplateLoader` inyectado, sin globales). 38 fragmentos en `fragments/voz/` y `fragments/memoria/`.
 
 ### S2 — El asistente
 - [ ] T2.1 `context.py`: 13 textos a `fragments/asistente/`.

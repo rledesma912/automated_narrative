@@ -6,11 +6,16 @@
 # (`…_uno` / `…_varios`): el código elige cuál.
 #
 # Áreas:
-#   workshop  cierre de cada ronda de preguntas
-#   verifier  avisos por regla de la escaleta
-#   llm       la IA no atiende (Spec-600 D3)
-#   stage     etapa de un trabajo en curso
-#   job       por qué terminó mal un trabajo
-#   api       respuestas 409/422 que se ven en la UI
+#   workshop    cierre de cada ronda de preguntas
+#   verifier    avisos por regla de la escaleta
+#   llm         la IA no atiende (Spec-600 D3)
+#   stage       etapa de un trabajo en curso
+#   job         por qué terminó mal un trabajo
+#   api         respuestas 409/422 que se ven en la UI
+#   repeticion  control de repetición del panel del relato
 #
-# Los textos se mudan en S3; hasta entonces el catálogo está vacío.
+# Los textos se mudan en S3 de la Spec-620.
+
+repeticion:
+  # Panel del relato (Spec-530 §8.3): una frase que ya estaba en un acto anterior.
+  frase: "«{frase}» (del acto {acto})"
