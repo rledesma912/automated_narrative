@@ -85,3 +85,19 @@ intención del acto 5 y del 4).
 `titulo` o `titulo_con_escenario`, `como_llega`, `quiere`, `no_se_cuenta` + `se_revela`,
 `usa`) y `{descartados}` (una `asistente/aviso_de_acto` por aviso ignorado, o
 `asistente/verificador/descartados_vacio`).
+
+## El paquete para el video (`video/`, Spec-610)
+
+`video_script_system.md`: `{presentador}` (nombre de la calabaza, de `config/video/presentador.yaml`).
+
+`video_script.md` (`src/application/services/video/prompts.py`):
+
+| Hueco | Sale de |
+|---|---|
+| `{relato}` | por acto, `video/acto` (`numero`, `nombre` = `label` de `llm_beats_definition.yaml`) con una `video/parrafo` por párrafo (`[n] texto`, numerado dentro del acto) |
+| `{actos}` | por acto, `video/acto_contexto`: el escenario de la escaleta (o `video/lugar_vacio`) y, si hay amenaza, `video/amenaza` con la `guide` de su exposición en ese acto |
+| `{calabaza}` | `video/calabaza` con la ficha, la intro, la forma del outro (`video/paso`) y los outros de ejemplo (`video/ejemplo`) |
+| `{pantalla}` | `video/pantalla` con las palabras prohibidas de `config/video/biblia_visual.yaml` |
+| `{reintento}` | vacío, o `video/reintento` con una `video/problema` por cada problema del chequeo (`video/problemas/*`: `bloques_cobertura`, `momentos_cobertura`, `faltan`, `repetidos`, `no_existe`, `acto_inexistente`, `enfasis`, `momentos_cantidad`, `prohibida`, `outro_cierre`, `largo_intro`, `largo_outro`) |
+| `{momentos_desde}`, `{momentos_hasta}`, `{transiciones}`, `{ppm}`, `{duracion}`, `{titulo}`, `{presentador}` | `config/video/` y el relato |
+

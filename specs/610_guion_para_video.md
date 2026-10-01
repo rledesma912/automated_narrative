@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, feature nueva (después del relato)
-**Estado:** SPECIFY cerrado (D1–D24). PLAN aprobado (2026-10-01). **TASKS escritas (§8), esperan OK del usuario.**
+**Estado:** MVP implementado (S0–S4, 2026-10-01) y aceptado por el usuario como base que va a cambiar con el uso. S5 queda abierto: la prueba con los chicos y los ajustes de `config/`; los docs ya están hechos.
 **Rama:** `feat/spec-610-guion-video` (desde `development`, `3753205`). **Se implementa después de la Spec-620** (D12): los prompts nuevos nacen como fragmentos Markdown.
 **Depende de:** Spec-620 (prompts en Markdown), Spec-600 (la Voz en Claude), Spec-490 (export para el TTS), Spec-460 (jobs)
 
@@ -581,7 +581,7 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
   - Acepta: el ritmo de lectura calibrado con la grabación y la mezcla de tipos ajustada, solo en `config/`.
   - Verifica: los tests de tiempos con el ritmo nuevo.
 - [ ] **T5.3 — Docs y pase**
-  - Acepta: `CLAUDE.md` actualizado (tabla `video_script`, rol `guion`, endpoints, pantallas), README de fragmentos y `make deploy-check` en verde.
+  - Acepta: `CLAUDE.md` actualizado (tabla `video_script`, rol `guion`, endpoints, pantallas), README de fragmentos y `make deploy-check` en verde. Docs hechos el 2026-10-01; `make deploy-check` va con el pase a `main`.
   - Verifica: `make deploy-check`.
 
 ---
