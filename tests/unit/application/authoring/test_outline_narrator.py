@@ -1,6 +1,5 @@
 from src.application.services.authoring.outline_narrator import (
     OutlineNarrator,
-    _avoid,
     merge_motifs,
     word_range,
 )
@@ -230,14 +229,25 @@ def test_avoid_avisa_oraciones_cortadas_y_dialogo():
     rep = ActRepetition(
         number=2, cut_sentences=["Un sonido.", "Más cerca."], cut_count=12, cut_pct=40, dialogue=2
     )
-    text = _avoid(rep)
+    text = OutlineNarrator(llm=None)._avoid(rep)
     assert "EN LA VERSIÓN ANTERIOR DE ESTE ACTO" in text
     assert "Tenía 12 oraciones cortadas (por ejemplo: «Un sonido.», «Más cerca.»)" in text
     assert "Tenía diálogo: contá lo que dicen, sin rayas ni comillas" in text
 
 
 def test_avoid_no_avisa_un_fragmento_suelto():
-    assert _avoid(ActRepetition(number=2, cut_sentences=["Solo."], cut_count=1, cut_pct=5)) == ""
+    rep = ActRepetition(number=2, cut_sentences=["Solo."], cut_count=1, cut_pct=5)
+    assert OutlineNarrator(llm=None)._avoid(rep) == ""
+
+
+def test_avoid_arma_las_frases_repetidas_desde_los_datos():
+    """Spec-620: `repeated` son datos (frase, acto); el texto sale del fragmento."""
+    rep = ActRepetition(number=3, repeated=[("el olor dulce", 1)], cliches=["me heló la sangre"])
+    assert OutlineNarrator(llm=None)._avoid(rep) == (
+        "EN LA VERSIÓN ANTERIOR DE ESTE ACTO PASÓ ESTO — NO LO VUELVAS A HACER:\n"
+        "- Repetiste «el olor dulce» (del acto 1)\n"
+        "- Cliché: «me heló la sangre»\n\n"
+    )
 
 
 def test_la_premisa_llega_solo_con_su_primera_oracion(story):

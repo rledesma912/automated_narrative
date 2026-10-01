@@ -17,8 +17,8 @@ def test_frases_repetidas_de_un_acto_anterior():
     r = check(acts, CLICHES)
     assert r[0].repeated == []
     assert r[1].repeated == [
-        "«el olor dulce y putrefacto» (del acto 1)",  # el acto 2 mete «que» en el medio
-        "«me llenó la nariz» (del acto 1)",
+        ("el olor dulce y putrefacto", 1),  # el acto 2 mete «que» en el medio
+        ("me llenó la nariz", 1),
     ]
     assert r[2].repeated == []
 

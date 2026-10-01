@@ -1,0 +1,1 @@
+- [{id}] {nombre}: {texto} (DECIDIDO POR EL AUTOR: no se discute)

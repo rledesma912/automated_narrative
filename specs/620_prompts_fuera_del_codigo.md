@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-09-30
 **Tipo:** SDD, deuda técnica (refactor sin cambio de comportamiento)
-**Estado:** SPECIFY, borrador para iterar con el usuario (decisiones abiertas en §5)
-**Rama:** a definir (propuesta: `refactor/spec-620-prompts-en-markdown`, desde `development`, **después de cerrar la Spec-600 y antes de la 610**)
+**Estado:** IMPLEMENT — S0–S4 ✅ (2026-10-01); falta el merge del PR a `development`
+**Rama:** `refactor/spec-620-prompts-en-markdown` (desde `development`, `3753205`). Va antes de la 610 (Spec-610 D12).
 **Origen:** observación del usuario (2026-09-30): «los prompts están hardcodeados en vez de vivir en un markdown que se inyecta».
 
 ---
@@ -88,19 +88,25 @@ CÓMO ESTÁ {narrador} AHORA (no lo contradigas): {estado}
 
 ---
 
-## 3. PLAN (borrador)
+## 3. PLAN
 
-| Slice | Qué | Verificación |
-|---|---|---|
-| S0 | `TemplateLoader.fragment()` + test de §2.3 con la lista de pendientes completa (inventario de §1) | El test pasa listando todo lo pendiente |
-| S1 | Voz y Memoria (`outline_narrator.py`, `prompt_builder.py`, `narrator_retry_generator.py`) | Snapshot idéntico; pendientes −16 |
-| S2 | Asistente (`context.py`, `planner.py`, partes del `verifier.py` que van al LLM) | Snapshot idéntico |
-| S3 | Mensajes para personas (§1.2) a `core_messages.yaml` | Tests de vistas y del router sin cambios de texto |
-| S4 | Lista de pendientes vacía; CLAUDE.md («Prompt System»: nada de texto de prompt en Python); regla en `010_marco_sdd.md` | Todo en verde |
+Inventario medido el 2026-09-30 con un recorrido `ast` de `src/` (literales con espacios, sin docstrings ni logs). Criterio: **texto para el LLM → fragmento `.md`; texto que llega a la pantalla → `core_messages.yaml`; texto técnico** (404 de desarrollo, logs, SQL, regex, listas de palabras de `repetition_check`) **→ queda en el código**.
 
-Sin llamadas pagas ni al modelo local: el snapshot compara los prompts sin generar.
+| Slice | Qué | Archivos | Verificación |
+|---|---|---|---|
+| S0 | `TemplateLoader.fragment()` y `MessageCatalog` (`core_messages.yaml`; desde S3 en `src/messages.py`); test guardián con la lista de pendientes | `template_loader.py`, `core_messages.py` (nuevo), `test_prompts_fuera_del_codigo.py` | Guardián en verde listando ~45 pendientes |
+| S1 | La Voz y la Memoria: 19 textos de `outline_narrator.py`, 4 de `prompt_builder.py`, el `_REPHRASE_HINT` de `narrator_retry_generator.py`; se borran `format_compact` / `format_for_beat` de `beat_spec_repository.py` (código muerto: solo los usan sus tests) | `fragments/voz/*.md`, `fragments/memoria/*.md` | **Snapshot idéntico** |
+| S2 | El asistente: 13 de `context.py`, 7 de `planner.py` (los 2 de validación pasan a mensajes) y los 2 de `verifier.py` que van al LLM («Todavía no se cuenta…») | `fragments/asistente/*.md` | **Snapshot idéntico** |
+| S3 | Mensajes: `workshop_rules.py` (7), los avisos por regla de `verifier.py` (7), `_UNAVAILABLE` del adapter (5), etiquetas de etapa de `streaming_service.py` (5), errores de `jobs.py` (3), los 409/422 que se ven en la UI (`job_router`, `authoring_router`, `regenerate_beat_voz_use_case`) | `config/core_messages.yaml` | Tests de vistas, del router y del adapter **sin cambios de texto** |
+| S4 | Lista de pendientes vacía; CLAUDE.md («Prompt System» y regla); regla en `010_marco_sdd.md`; `fragments/README.md` | docs | Todo en verde, `make dev-status` |
 
----
+**Diseño:**
+
+- **`TemplateLoader.fragment(name, **datos) -> str`:** carga `fragments/<name>.md` con caché y `str.format(**datos)`. A diferencia de `load()`, **no hace `strip()`**: quita solo el último salto de línea del archivo y respeta los saltos de línea que la sección necesita (muchas secciones terminan en `\n`). Un fragmento con un placeholder que falta es un `KeyError` (falla en los tests, nunca en silencio).
+- **Fragmentos por rol:** `fragments/voz/` (puente, final_anterior, historia, como_esta, asi_es, meta, cambio, no_revelar, amenaza, version_anterior, ya_paso_vacio…), `fragments/memoria/`, `fragments/asistente/` (contexto, efecto, decisiones, escaleta_autor, problemas_revision…). `fragments/README.md` dice en qué orden arma cada rol su prompt.
+- **`MessageCatalog`** (`src/application/services/core_messages.py`): carga `config/core_messages.yaml` una vez, `messages.get("workshop.listo", **datos)`. Claves por área: `workshop.*`, `verifier.*`, `llm.*`, `stage.*`, `job.*`, `api.*`. Si falta una clave, `KeyError` (lo atrapa un test que recorre todas las claves usadas).
+- **Plurales** (`Te queda{n}`, `quedan N preguntas`): dos claves (`…_uno` / `…_varios`); el código elige cuál. Nada de lógica de idioma en el YAML.
+- **Test guardián** (`tests/unit/test_prompts_fuera_del_codigo.py`): recorre con `ast` `src/application`, `src/infrastructure/adapters` y `src/presentation/routers`; falla con un literal de más de 18 caracteres con espacios que no sea docstring, argumento de `logger.*`, SQL, regex (`re.compile`) ni una constante de una lista permitida explícita (con motivo por entrada). Mientras dure el refactor, `PENDIENTES` lista lo que falta; el test también falla si algo de `PENDIENTES` ya no está (para que la lista solo se achique).
 
 ## 4. RIESGOS
 
@@ -112,10 +118,50 @@ Sin llamadas pagas ni al modelo local: el snapshot compara los prompts sin gener
 
 ---
 
-## 5. DECISIONES ABIERTAS (de a una)
+## 5. DECISIONES
 
-| # | Decisión | Recomendación |
+| # | Decisión | Estado |
 |---|---|---|
-| D1 | ¿Fragmentos con `str.format` (lo que ya se usa) o Jinja2 (condicionales dentro de la plantilla)? | **`str.format` + fragmentos.** Cero dependencias nuevas, mismo mecanismo que hoy, y la lógica queda en Python donde se testea. Jinja2 permitiría ver el prompt entero en un solo archivo, a cambio de lógica en las plantillas. |
-| D2 | ¿Cuándo? | **Después de cerrar la Spec-600 y antes de la 610**, para que el guion nazca con el patrón correcto. |
-| D3 | ¿Los mensajes para personas (§1.2) entran acá o en otra spec? | **Acá (S3):** es el mismo problema y es chico. |
+| D1 | ¿Fragmentos con `str.format` o Jinja2? | ✅ (usuario, 2026-09-30) **Fragmentos + `str.format`**: sin dependencias nuevas, la lógica queda en Python. |
+| D2 | ¿Cuándo? | ✅ (usuario, 2026-09-30) **Antes de la 610.** |
+| D3 | ¿Los mensajes para personas entran acá? | ✅ (usuario, 2026-09-30) **Sí, a `config/core_messages.yaml`** (S3). |
+
+---
+
+## 6. TASKS
+
+Cada slice cierra con `make lint`, `make test`, `cd frontend && npm test`, `npx playwright test` en verde (output filtrado) y `make dev-status`. Commit por slice. Sin llamadas a ningún LLM: el snapshot compara los prompts sin generar.
+
+### S0 — Mecanismo y guardián
+- [x] T0.1 `TemplateLoader.fragment()` (sin `strip`, quita solo el `\n` final, caché, `KeyError` si falta un dato). Tests: saltos de línea, caché, dato faltante.
+- [x] T0.2 `MessageCatalog` + `config/core_messages.yaml` (vacío con la estructura). Tests: carga, formato, clave faltante.
+- [x] T0.3 Test guardián (`tests/unit/test_prompts_fuera_del_codigo.py`) con `PENDIENTES` = 107 textos (S1: 32, S2: 22, S3: 53) y `PERMITIDOS` = 48 técnicos, cada uno con su motivo (404 técnicos, encabezados HTTP, progreso del CLI, observabilidad, listas de palabras de `repetition_check`); los mocks quedan fuera por archivo. S3 suma los 422 de `create_story.py` y los 409 de `story_router`/`stream_router`, que la UI muestra (`asistente.js` lee el `detail`). Un test prueba que detecta textos y saltea docstrings, logs y regex.
+
+### S1 — La Voz y la Memoria
+- [x] T1.1 `outline_narrator.py`: los 19 textos a `fragments/voz/` y `fragments/memoria/`.
+- [x] T1.2 `prompt_builder.py`: «Sos … y contás…», «CÓMO LLAMÁS A CADA PERSONAJE…» a fragmentos.
+- [x] T1.3 `narrator_retry_generator.py`: `_REPHRASE_HINT` a fragmento (se mantiene el texto tal cual; traducirlo cambiaría el prompt: va anotado para otra spec).
+- [x] T1.4 `beat_spec_repository.py`: borrar `format_compact` / `format_for_beat` y sus tests (código muerto).
+- [x] T1.5 Snapshot **idéntico** (sin `SNAPSHOT_UPDATE`); `PENDIENTES` −32 (todo S1).
+- [x] T1.6 (sumado al implementar) Los nombres de los actos que ve la Voz («Exposición», «Clímax»…) pasan de `_ACT_NAMES` a `label` en `llm_beats_definition.yaml`; los textos cortos que el guardián no detecta (`(no se indica)`, `(nada todavía)`, `EL PROTAGONISTA`, `sin rol`, «Qué es», «Límites»…) también van a fragmentos. `repetition_check.ActRepetition.repeated` pasa a datos `(frase, acto)`: el panel los formatea con `message("repeticion.frase")` y la Voz con `voz/evitar/repetida` (la API devuelve el mismo texto). Las funciones de sección de `outline_narrator.py` pasan a métodos (usan el `TemplateLoader` inyectado, sin globales). 38 fragmentos en `fragments/voz/` y `fragments/memoria/`.
+
+### S2 — El asistente
+- [x] T2.1 `context.py`: 13 textos a `fragments/asistente/`.
+- [x] T2.2 `planner.py`: 5 textos de prompt a fragmentos; los 2 de validación («la escaleta tiene que tener los actos…», «actos sin hechos…») a `core_messages.yaml`.
+- [x] T2.3 `verifier.py`: «Todavía no se cuenta…» y «(se revela en el acto N)» a fragmentos.
+- [x] T2.4 Snapshot **idéntico**; `PENDIENTES` −22 (todo S2).
+- [x] T2.5 (sumado al implementar) **El snapshot del pipeline no cubría** el Consultor ni varias secciones del asistente y de la Voz (decisiones con pregunta, receta del efecto, borradores, problemas de la revisión, la amenaza, parentescos, final del autor…). Dos snapshots nuevos con historias que activan todas las secciones (`assistant_prompts.json`, `voice_prompts.json`), **generados con el código anterior** (worktrees de `28d06e1` y `dca5c25`) y verificados con el nuevo: idénticos. Cada uno trae un test que falla si una sección deja de aparecer. `context.py`: las funciones de texto reciben el `TemplateLoader` como parámetro (sin globales); `OBJETIVO` → `context.objective()`. 37 fragmentos en `fragments/asistente/`; los nombres de los actos del Planificador también salen de `label`.
+
+### S3 — Mensajes para personas
+- [x] T3.1 `workshop_rules.py` (cierre de ronda, con plurales en dos claves) y avisos por regla de `verifier.py` (las claves estables de los avisos, Spec-550 H10, no cambian).
+- [x] T3.2 `anthropic_adapter.py` (`_UNAVAILABLE` → `llm.*`), `streaming_service.py` (`stage.*`), `jobs.py` (`job.*`).
+- [x] T3.3 Los 409/422 visibles de `job_router`, `authoring_router` y `regenerate_beat_voz_use_case` (`api.*`); los 404 técnicos quedan.
+- [x] T3.4 Tests de vistas, routers y adapter **sin cambiar textos esperados**; `sin-jerga` y `gramatica-visual` en verde.
+- [x] T3.5 (sumado al implementar) **El catálogo pasa a `src/messages.py`**, junto a `src/config.py`: lo necesitan la infraestructura (el adapter de Anthropic) y `main.py`, y desde la capa de aplicación eso invertía las dependencias. Los motivos de fallo de los trabajos salen del **dominio** (`domain/jobs.py` ya no tiene texto): los resuelve `job_manager` y `main.py` le pasa el texto a `SQLJobRepository.recover_interrupted(error)`. También se mudan las validaciones de `create_story.py` (`validacion.*`, con las etiquetas de los campos de la amenaza) y los valores de una historia nueva del asistente (`historia_nueva.relator` y `.sinopsis`: el relator llega a la Voz). Un test fija que los textos mudados no cambiaron. `PENDIENTES` vacía.
+
+### S4 — Cierre
+- [x] T4.1 `PENDIENTES` vacía y el guardián sin lista temporal.
+- [x] T4.2 `config/prompts_generation/fragments/README.md` (orden de armado por rol).
+- [x] T4.3 CLAUDE.md («Prompt System»: plantillas + fragmentos, `core_messages.yaml`, la regla y el guardián) y regla en `010_marco_sdd.md`.
+- [x] T4.4 PR a `development`. Sin pase a prod obligatorio (no cambia nada visible); va con la 610.
+

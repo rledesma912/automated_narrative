@@ -40,6 +40,7 @@ from src.domain.models import Direction  # noqa: E402
 from src.infrastructure.database.connection import init_db  # noqa: E402
 from src.infrastructure.database.repositories import SQLStoryRepository  # noqa: E402
 from src.infrastructure.factories import LLMFactory  # noqa: E402
+from src.messages import message  # noqa: E402
 
 STORIES = {
     "pena": {
@@ -113,7 +114,7 @@ def _measure(text: str, story_data: dict, known: str) -> dict:
         "detalle": [
             {
                 "acto": r.number,
-                "repetidas": r.repeated,
+                "repetidas": [message("repeticion.frase", frase=f, acto=a) for f, a in r.repeated],
                 "cliches": r.cliches,
                 "nombres": r.invented_names,
             }

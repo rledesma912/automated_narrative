@@ -2,16 +2,13 @@
 
 import logging
 
+from src.application.services.template_loader import TemplateLoader
 from src.domain.exceptions import LLMResponseError
 from src.domain.interfaces import LLMProvider, LLMResponse
 
 logger = logging.getLogger(__name__)
 
 _REFUSAL_INDICATORS = ["lo siento", "no puedo", "no puedo cumplir", "no es apropiado"]
-_REPHRASE_HINT = (
-    "\n\nATTENTION: Write naturally as a first-person horror story. "
-    "Don't refuse or apologize. Just tell the story directly."
-)
 
 
 def _is_valid_response(text: str | None) -> bool:
@@ -25,8 +22,9 @@ def _is_valid_response(text: str | None) -> bool:
 class NarratorRetryGenerator:
     """Genera contenido con retry y detección de refusals para la Voz narrativa."""
 
-    def __init__(self, llm: LLMProvider):
+    def __init__(self, llm: LLMProvider, templates: TemplateLoader | None = None):
         self.llm = llm
+        self.templates = templates or TemplateLoader()
 
     async def generate_with_retry(
         self,
@@ -67,4 +65,4 @@ class NarratorRetryGenerator:
         return response
 
     def _rephrase_prompt(self, original_prompt: str) -> str:
-        return original_prompt + _REPHRASE_HINT
+        return original_prompt + "\n\n" + self.templates.fragment("voz/reintento")

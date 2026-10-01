@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse, Response
 from src.application.services import repetition_check
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.infrastructure.database.repositories import SQLStoryRepository
+from src.messages import message
 from src.presentation.schemas.response import GeneratedNarrativeResponse
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,7 @@ async def get_narrative_repetition(
         "acts": [
             {
                 "number": r.number,
-                "repeated": r.repeated,
+                "repeated": [message("repeticion.frase", frase=f, acto=a) for f, a in r.repeated],
                 "cliches": r.cliches,
                 "invented_names": r.invented_names,
                 "cut_sentences": r.cut_sentences,

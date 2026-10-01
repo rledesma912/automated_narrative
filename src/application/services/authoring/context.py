@@ -2,15 +2,19 @@
 
 Lleva el objetivo y la dirección del autor (sin eso las preguntas no se atan a lo
 que quiere contar), no la teoría: los criterios ya vienen como preguntas concretas.
+
+Spec-620: el texto vive en `config/prompts_generation/fragments/asistente/`; las funciones
+que arman texto reciben el `TemplateLoader` de quien las llama.
 """
 
 from src.application.services.authoring import catalog
+from src.application.services.template_loader import TemplateLoader
 from src.domain.models import CriterionStatus, Story, WorkshopItem, WorkshopLevel
 
-OBJETIVO = (
-    "Estamos ayudando a un autor a preparar un cuento de terror que después se "
-    "genera automáticamente en 5 actos (unas 2.500 palabras) y se escucha como audio."
-)
+
+def objective(templates: TemplateLoader) -> str:
+    """Para qué es todo esto: el objetivo que reciben los roles del asistente."""
+    return templates.fragment("asistente/objetivo")
 
 
 def protagonist(story: Story) -> str:
@@ -23,16 +27,18 @@ def narrator(story: Story) -> str:
     return cfg.get("storyteller_name") or protagonist(story)
 
 
-def story_block(story: Story) -> str:
+def story_block(story: Story, templates: TemplateLoader) -> str:
     """Qué historia es y qué quiere el autor."""
+    t = templates.fragment
     d = story.direction
-    lines = [f"Título: {story.title}"]
+    lines = [t("asistente/historia/titulo", titulo=story.title)]
     genre = " / ".join(x for x in (story.genero, story.subgenero) if x)
     if genre:
-        lines.append(f"Tipo de horror: {genre}")
-    lines.append(f"De qué trata: {(d.premise if d and d.premise else story.sinopsis).strip()}")
-    lines.append(f"Protagonista: {story.protagonista}")
-    lines.append(f"Quién lo cuenta: {narrator(story)}")
+        lines.append(t("asistente/historia/tipo", genero=genre))
+    premise = (d.premise if d and d.premise else story.sinopsis).strip()
+    lines.append(t("asistente/historia/de_que_trata", premisa=premise))
+    lines.append(t("asistente/historia/protagonista", protagonista=story.protagonista))
+    lines.append(t("asistente/historia/quien_lo_cuenta", narrador=narrator(story)))
     if d:
         if d.effect:
             effect = (
@@ -40,19 +46,17 @@ def story_block(story: Story) -> str:
                 if d.effect == "otro"
                 else catalog.label_of(catalog.effects(), d.effect)
             )
-            lines.append(f"Efecto que busca el autor: {effect}")
+            lines.append(t("asistente/historia/efecto", efecto=effect))
         if d.telling:
-            lines.append(f"Cómo lo cuenta: {catalog.label_of(catalog.tellings(), d.telling)}")
+            telling = catalog.label_of(catalog.tellings(), d.telling)
+            lines.append(t("asistente/historia/como_lo_cuenta", como=telling))
         if d.ending:
-            fixed = (
-                " (DECIDIDO POR EL AUTOR: no se discute ni se cambia)"
-                if d.ending_intentional
-                else ""
-            )
-            lines.append(f"Cómo termina: {d.ending}{fixed}")
+            fixed = t("asistente/historia/final_decidido") if d.ending_intentional else ""
+            lines.append(t("asistente/historia/como_termina", final=d.ending, decidido=fixed))
     cast = [p for p in story.personajes_full or [] if p.get("name")]
     if len(cast) > 1:
-        lines.append("Personajes: " + "; ".join(_person(p) for p in cast))
+        people = "; ".join(_person(p) for p in cast)
+        lines.append(t("asistente/historia/personajes", personajes=people))
     return "\n".join(lines)
 
 
@@ -75,34 +79,44 @@ def decisions(story: Story) -> list[tuple[str, str, str]]:
     return out
 
 
-def decisions_block(story: Story) -> str:
+def decisions_block(story: Story, templates: TemplateLoader) -> str:
     """Historial del taller como pregunta → respuesta: sin la pregunta, una respuesta
     corta («su hija») no se entiende."""
+    t = templates.fragment
     by_id = {w.criterion: w for w in _direction_items(story)}
     rows = []
     for cid, nombre, texto in decisions(story):
         item = by_id[cid]
         c = catalog.criterion(cid)
-        nombre += f" (va en el acto {c.acto})" if c and c.acto else ""  # Spec-580 D2
+        if c and c.acto:  # Spec-580 D2
+            nombre += t("asistente/decisiones/va_en_acto", acto=c.acto)
         if item.status == CriterionStatus.INTENCIONAL:
-            rows.append(f"- [{cid}] {nombre}: {texto} (DECIDIDO POR EL AUTOR: no se discute)")
+            rows.append(t("asistente/decisiones/intencional", id=cid, nombre=nombre, texto=texto))
         elif item.asked:
-            rows.append(f"- [{cid}] {nombre}. Pregunta: «{item.asked[-1]}» → Respuesta: {texto}")
+            rows.append(
+                t(
+                    "asistente/decisiones/con_pregunta",
+                    id=cid,
+                    nombre=nombre,
+                    pregunta=item.asked[-1],
+                    texto=texto,
+                )
+            )
         else:
-            rows.append(f"- [{cid}] {nombre}: {texto}")
+            rows.append(t("asistente/decisiones/respondida", id=cid, nombre=nombre, texto=texto))
     if not rows:
-        return "(el autor todavía no tomó decisiones en el taller)"
+        return t("asistente/decisiones/vacio")
     return "\n".join(rows)
 
 
-def pending_block(story: Story) -> str:
+def pending_block(story: Story, templates: TemplateLoader) -> str:
     """Preguntas ya hechas que el autor todavía no respondió (no hay que reformularlas)."""
     rows = [
-        f"- [{w.criterion}] «{w.question}»"
+        templates.fragment("asistente/pendientes/pendiente", id=w.criterion, pregunta=w.question)
         for w in _direction_items(story)
         if w.question and not w.answer and w.status != CriterionStatus.INTENCIONAL
     ]
-    return "\n".join(rows) if rows else "(ninguna)"
+    return "\n".join(rows) if rows else templates.fragment("asistente/pendientes/vacio")
 
 
 def _direction_items(story: Story) -> list[WorkshopItem]:
@@ -120,12 +134,9 @@ def effect_recipe(story: Story) -> tuple[str, str]:
     return (option.label, option.planner) if option and option.planner else ("", "")
 
 
-def effect_block(story: Story, verifier: bool = False) -> str:
+def effect_block(story: Story, templates: TemplateLoader, verifier: bool = False) -> str:
     name, recipe = effect_recipe(story)
     if not recipe:
         return ""
-    if verifier:
-        return (
-            f"EFECTO QUE BUSCA EL AUTOR: {name}. La escaleta tiene que cumplir esto: {recipe}\n\n"
-        )
-    return f"CÓMO TIENE QUE PEGAR (el efecto que busca el autor: {name}):\n{recipe}\n\n"
+    role = "verificador" if verifier else "planificador"
+    return templates.fragment(f"asistente/efecto/{role}", nombre=name, receta=recipe) + "\n\n"

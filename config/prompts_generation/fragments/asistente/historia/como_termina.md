@@ -1,0 +1,1 @@
+Cómo termina: {final}{decidido}

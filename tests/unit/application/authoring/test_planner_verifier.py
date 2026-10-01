@@ -355,5 +355,6 @@ async def test_el_verificador_controla_la_receta(story):
 
 def test_sin_efecto_no_hay_receta(story):
     from src.application.services.authoring import context
+    from src.application.services.template_loader import TemplateLoader
 
-    assert context.effect_block(_with_effect(story, "")) == ""
+    assert context.effect_block(_with_effect(story, ""), TemplateLoader()) == ""

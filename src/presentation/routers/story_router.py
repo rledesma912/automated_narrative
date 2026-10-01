@@ -28,6 +28,7 @@ from src.infrastructure.database.repositories import (
     SQLStoryRepository,
 )
 from src.infrastructure.exporters import YamlStoryExporter
+from src.messages import message
 from src.presentation.schemas.request import StoryCreateRequest
 from src.presentation.schemas.response import StoryResponse
 
@@ -48,7 +49,7 @@ def _input_error(e: Exception) -> HTTPException:
         return HTTPException(status_code=422, detail=e.message)
     return HTTPException(
         status_code=422,
-        detail=f"Datos rechazados por la base (género/subgénero o naturaleza de entidad): {e}",
+        detail=message("api.datos_rechazados_por_la_base", error=e),
     )
 
 
@@ -233,7 +234,7 @@ async def update_story(
         return JSONResponse(
             status_code=409,
             content={
-                "detail": "Hay una generación en curso; esperá a que termine para editar",
+                "detail": message("api.generacion_en_curso_al_editar"),
                 "job_id": str(active.id) if active else None,
             },
         )

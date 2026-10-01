@@ -19,7 +19,8 @@ _MAX_PHRASES = 5
 @dataclass
 class ActRepetition:
     number: int
-    repeated: list[str] = field(default_factory=list)  # «frase» (del acto N)
+    # (frase, acto donde ya estaba): el texto lo arma quien la muestra (Spec-620)
+    repeated: list[tuple[str, int]] = field(default_factory=list)
     cliches: list[str] = field(default_factory=list)
     invented_names: list[str] = field(
         default_factory=list
@@ -179,7 +180,7 @@ def check(
             end = i
             while end + 1 < len(ws) - 3 and tuple(ws[end + 1 : end + 5]) in grams[first]:
                 end += 1
-            phrase = f"«{' '.join(orig[i : end + 4])}» (del acto {first + 1})"
+            phrase = (" ".join(orig[i : end + 4]), first + 1)
             if phrase not in rep.repeated and len(rep.repeated) < _MAX_PHRASES:
                 rep.repeated.append(phrase)
             i = end + 4

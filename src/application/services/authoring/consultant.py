@@ -62,10 +62,10 @@ class WorkshopConsultant:
             if c
         )
         return self.templates.load("authoring_consultant.md").format(
-            objetivo=context.OBJETIVO,
-            historia=context.story_block(story),
-            decisiones=context.decisions_block(story),
-            pendientes=context.pending_block(story),
+            objetivo=context.objective(self.templates),
+            historia=context.story_block(story, self.templates),
+            decisiones=context.decisions_block(story, self.templates),
+            pendientes=context.pending_block(story, self.templates),
             criterios=criterios,
         )
 

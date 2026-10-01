@@ -14,12 +14,12 @@ import pytest
 
 from src.application.services.event_bus import job_channel
 from src.config import settings
-from src.domain.jobs import CANCELLED_ERROR
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.adapters.mock_llm_adapter import MockLLMAdapter
 from src.infrastructure.database.connection import get_connection, init_db
 from src.infrastructure.factories import LLMFactory
 from src.main import app
+from src.messages import message
 from src.presentation import generation
 from src.presentation.runtime import event_bus, job_manager
 
@@ -309,7 +309,7 @@ async def test_cancelar_job_en_curso(client):
     resp = await client.post(f"/api/v1/jobs/{job_id}/cancel")
 
     assert resp.status_code == 200
-    assert (resp.json()["status"], resp.json()["error"]) == ("failed", CANCELLED_ERROR)
+    assert (resp.json()["status"], resp.json()["error"]) == ("failed", message("job.cancelada"))
     story = (await client.get(f"/api/v1/stories/{story_id}")).json()
     assert story["status"] == "failed"
     assert (await client.post(f"/api/v1/jobs/{job_id}/cancel")).status_code == 409
