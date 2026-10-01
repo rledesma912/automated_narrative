@@ -265,3 +265,10 @@ async def test_los_pdf_no_se_bajan_si_cambiaron_los_parrafos(client):
         resp = await client.get(_url(narrative, f"/{nombre}"))
         assert resp.status_code == 409
         assert "acto 2" in resp.json()["detail"]
+
+
+async def test_el_listado_dice_que_version_tiene_guion(client):
+    narrative = await _armado(client)
+    stories = (await client.get("/api/v1/stories")).json()
+    mia = next(s for s in stories if s["id"] == str(narrative.story_template_id))
+    assert mia["video_narrative_id"] == str(narrative.id)

@@ -570,6 +570,8 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 - **Tiempos:** «No te detengas en el bosque» (≈ 3 200 palabras) da 22 hojas de guion y 8 de mapa; armar los dos tarda ≈ 7 s en esta máquina.
 - **Si cambiaron los párrafos de un acto**, el PDF responde 409 con el acto, y en la pantalla el botón queda deshabilitado con el motivo.
 
+**Acceso (usuario, 2026-10-01):** además del panel de cada versión, la tarjeta de la historia en «Mis historias» tiene **«Para el video»**, que lleva a la última versión con guion (`video_narrative_id` en `GET /stories`). No hay entrada en el menú lateral.
+
 ### S5 — Punta a punta
 
 - [ ] **T5.1 — Un episodio de verdad**

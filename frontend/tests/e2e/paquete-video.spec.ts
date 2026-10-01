@@ -46,6 +46,10 @@ test("armar el guion abre el modal y termina en «Para el video»", async ({ pag
   // De vuelta en los relatos, la variante ya tiene su paquete.
   await page.goto(`/historia/${STORY_ID}/relatos`);
   await expect(page.locator(`[data-para-el-video="${narrativeId}"]`)).toBeVisible();
+  // Y en «Mis historias», la tarjeta lleva directo al guion.
+  await page.goto("/galeria");
+  await page.locator(`a[data-para-el-video="${narrativeId}"]`).click();
+  await page.waitForURL(new RegExp(`/relatos/${narrativeId}/video$`));
 });
 
 // ── S3: la pantalla «Para el video» (§3.7.2) ────────────────────────────────

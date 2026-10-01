@@ -23,6 +23,17 @@ class SQLVideoScriptRepository:
             row = await cursor.fetchone()
         return self._to_entity(row) if row else None
 
+    async def latest_by_story(self) -> dict[str, str]:
+        """Por historia, la versión más nueva del relato que tiene paquete."""
+        async with connection() as conn:
+            cursor = await conn.execute(
+                """SELECT n.story_template_id AS story_id, n.id AS narrative_id
+                FROM video_script v JOIN generated_narrative n ON n.id = v.narrative_id
+                ORDER BY n.created_at"""
+            )
+            rows = await cursor.fetchall()
+        return {row["story_id"]: row["narrative_id"] for row in rows}  # gana la última
+
     async def save(self, script: VideoScript) -> VideoScript:
         """Guarda el paquete; si la variante ya tenía uno, lo reemplaza."""
         script.updated_at = now_argentina()
