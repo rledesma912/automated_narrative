@@ -1,0 +1,57 @@
+<%
+/*
+ * Spec-610 S2: «Para el video», versión simple (bloques y momentos en lista).
+ * La pantalla completa (§3.7.2: pestañas, edición, línea de tiempo) llega en S3.
+ *
+ * Variables: story, relato, script (VideoScript), parrafos { acto: [párrafos] }, lectura.
+ */
+const NOMBRES = { 1: 'Cómo empieza', 2: 'Se complica', 3: 'El peor momento', 4: 'Qué hace después', 5: 'Cómo termina' };
+const TIPOS = { imagen: 'Imagen fija', animacion: 'Animación', video: 'Video' };
+const PAUSAS = { ninguna: 'Seguido', corta: 'Pausa corta', larga: 'Pausa larga' };
+const texto = (acto, desde, hasta) => (parrafos[acto] || []).slice(desde - 1, hasta);
+%>
+<div class="max-w-5xl mx-auto flex flex-col gap-6" data-video data-narrative-id="<%= relato.id %>">
+  <div class="flex flex-col gap-2">
+    <a href="/historia/<%= story.id %>/relatos" class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2 w-fit">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a los relatos
+    </a>
+    <h2 class="heading-forge-lg">Para el video</h2>
+    <p class="pista-forge"><i data-lucide="info"></i><span><%= relato.title || story.title %>. Lo lee <%= script.lector || 'quien elijas' %>.</span></p>
+  </div>
+
+  <section class="card-forge !p-5 flex flex-col gap-4">
+    <h3 class="font-serif text-xl text-forge-accent">La calabaza</h3>
+    <div><span class="text-forge-muted-caps !tracking-[0.15em]">Intro</span><p class="prose-forge mt-1"><%= script.calabaza.intro %></p></div>
+    <div><span class="text-forge-muted-caps !tracking-[0.15em]">Outro</span><p class="prose-forge mt-1"><%= script.calabaza.outro %></p></div>
+  </section>
+
+  <section class="card-forge !p-5 flex flex-col gap-4" data-bloques>
+    <h3 class="font-serif text-xl text-forge-accent">Guion de lectura · <%= script.bloques.length %> bloques</h3>
+    <% script.bloques.forEach((b, i) => { %>
+      <article class="border border-forge-border rounded-lg p-4 flex flex-col gap-2" data-bloque="<%= i + 1 %>">
+        <div class="flex flex-wrap justify-between gap-2 text-sm text-forge-muted">
+          <span>Bloque <%= i + 1 %> · acto <%= b.acto %> (<%= NOMBRES[b.acto] || '' %>)</span>
+          <span><%= PAUSAS[b.pausa] %></span>
+        </div>
+        <p class="text-sm italic text-forge-muted">▸ <%= b.indicacion %></p>
+        <% texto(b.acto, b.desde, b.hasta).forEach((p) => { %><p class="prose-forge"><%= p %></p><% }) %>
+        <% if (b.marcas.length) { %><p class="text-sm">Remarcar: <% b.marcas.forEach((m, j) => { %><strong><%= m.texto %></strong><%= j < b.marcas.length - 1 ? ' · ' : '' %><% }) %></p><% } %>
+      </article>
+    <% }) %>
+  </section>
+
+  <section class="card-forge !p-5 flex flex-col gap-4" data-momentos>
+    <h3 class="font-serif text-xl text-forge-accent">Lo que va en pantalla · <%= script.momentos.length %> momentos</h3>
+    <% script.momentos.forEach((m, i) => { %>
+      <article class="border border-forge-border rounded-lg p-4 flex flex-col gap-2" data-momento="<%= i + 1 %>">
+        <div class="flex flex-wrap justify-between gap-2">
+          <strong><%= i + 1 %>. <%= m.que_se_ve %></strong>
+          <span class="chip-forge chip-forge--info"><%= TIPOS[m.tipo] %></span>
+        </div>
+        <p class="text-sm text-forge-muted">Acto <%= m.acto %>, párrafos <%= m.desde %>–<%= m.hasta %> · <%= m.transicion %> · <%= m.sonido %></p>
+        <p class="text-sm font-mono"><%= m.prompt_imagen %></p>
+        <% if (m.tipo !== 'imagen') { %><p class="text-sm font-mono text-forge-muted"><%= m.prompt_movimiento %></p><% } %>
+      </article>
+    <% }) %>
+  </section>
+</div>

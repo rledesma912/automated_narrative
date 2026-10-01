@@ -47,8 +47,48 @@
         const relatoId = tab.getAttribute("data-relato-tab");
         if (relatoId) selectRelato(relatoId);
       }
+      const guion = e.target.closest("[data-armar-guion]");
+      if (guion && !guion.disabled) armarGuion(guion);
     });
     window.__relatosTabClickBound = true;
+  }
+
+  /**
+   * Spec-610: «Armar el guion para el video» lanza el job `video_script` con el modal
+   * que bloquea la página; al terminar se abre «Para el video».
+   */
+  async function armarGuion(button) {
+    const narrativeId = button.dataset.armarGuion;
+    const storyId = button.dataset.storyId;
+    const error = document.querySelector(`[data-guion-error="${narrativeId}"]`);
+    const ok = await window.ForgeConfirm.ask({
+      title: "¿Armar el guion para el video?",
+      message: button.dataset.detalle,
+      confirmLabel: "Armar el guion",
+    });
+    if (!ok) return;
+    if (error) error.classList.add("hidden");
+    const resp = await fetch(`/api/v1/stories/${storyId}/jobs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "video_script", narrative_id: narrativeId }),
+    });
+    if (resp.status !== 202) {
+      if (error) {
+        error.textContent =
+          resp.status === 409
+            ? "La IA ya está trabajando en esta historia: esperá a que termine."
+            : "No se pudo armar el guion. Probá de nuevo.";
+        error.classList.remove("hidden");
+      }
+      return;
+    }
+    const job = await resp.json();
+    window.ForgeIaModal.open(job, {
+      titulo: "Armando el guion para el video…",
+      detalle: "Reparte el relato en bloques, escribe la intro y el outro de la calabaza y arma lo que va en pantalla.",
+      onDone: () => (location.href = `/historia/${storyId}/relatos/${narrativeId}/video`),
+    });
   }
 
   // Bajo hx-boost no se dispara DOMContentLoaded en la primera navegación;

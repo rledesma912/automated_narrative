@@ -25,7 +25,8 @@
   const dismissed = new Set(); // job_id de avisos cerrados (esta pestaña)
   // Spec-530: los jobs del asistente (taller, escaleta, revisión) se siguen con el
   // modal de su propia vista; no son generaciones de relato.
-  const AUTHORING_KINDS = ["consult", "plan_outline", "verify_outline"];
+  // Spec-610: el guion para el video también tiene su modal (en la página del relato).
+  const AUTHORING_KINDS = ["consult", "plan_outline", "verify_outline", "video_script"];
   const isGeneration = (job) => !AUTHORING_KINDS.includes(job.kind);
 
   function stepText(job) {

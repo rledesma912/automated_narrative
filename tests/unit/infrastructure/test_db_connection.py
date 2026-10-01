@@ -44,6 +44,7 @@ class TestDbConnection:
         assert "scenario" in table_names
         assert "act_outline" in table_names
         assert "narrative_journal" in table_names
+        assert "video_script" in table_names  # Spec-610
 
     @pytest.mark.asyncio
     async def test_get_connection_returns_connection(self, temp_db_path):

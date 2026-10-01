@@ -434,14 +434,14 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
 
 ### S2 — El job que arma el paquete (§3.2–§3.4)
 
-- [ ] **T2.1 — Dominio, tabla y repo**
+- [x] **T2.1 — Dominio, tabla y repo**
   - Acepta:
     - modelos `VideoScript`, `ReadingBlock`, `Mark`, `VisualMoment` y `PresenterLines` en `src/domain/video.py`;
     - tabla `video_script` en `init_db()`;
     - `SQLVideoScriptRepository` con `get_by_narrative`, `save` (reemplaza) y borrado en cascada con la variante.
   - Verifica: test del repo; `make dev-db`.
   - Archivos: `video.py`, `connection.py`, el repo, el test.
-- [ ] **T2.2 — Esquema y prompt**
+- [x] **T2.2 — Esquema y prompt**
   - Acepta:
     - esquema Pydantic de la respuesta: `narra`, bloques con `enfasis` como frases, momentos con `fuerte` y `lugar`, intro y outro;
     - el prompt arma el relato con párrafos numerados por acto, el escenario y la exposición de la amenaza por acto, la ficha de la calabaza y la biblia visual, todo con fragmentos `config/prompts_generation/video_script*.md` y `fragments/video/`;
@@ -449,7 +449,7 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
     - snapshot `video_prompts.json` con un test que falla si falta una sección.
   - Verifica: pytest + guardián de la Spec-620.
   - Archivos: `services/video/schema.py`, `services/video/prompts.py`, fragmentos, `mock_structured.py`, test.
-- [ ] **T2.3 — Armar y chequear**
+- [x] **T2.3 — Armar y chequear**
   - Acepta: `script_builder.py` pasa la respuesta a `VideoScript` y la chequea:
     - los rangos cubren cada acto en orden, sin saltos ni solapes;
     - cada énfasis existe en su bloque y se pasa a posiciones;
@@ -461,14 +461,14 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
     Si algo falla, reintenta una vez con la lista de problemas (fragmento `video/reintento`). Si vuelve a fallar, devuelve un error claro (`video.no_se_pudo_armar`).
   - Verifica: un test por chequeo, sin LLM.
   - Archivos: `services/video/script_builder.py`, `core_messages.yaml`, fragmento, test.
-- [ ] **T2.4 — Tipos al azar y nombres de archivo**
+- [x] **T2.4 — Tipos al azar y nombres de archivo**
   - Acepta:
     - `type_mix.py` usa una semilla por variante (mismo relato, mismo mapa) y la mezcla de `config`;
     - 1–2 videos, nunca dos seguidos, y un video o una animación en el momento más fuerte;
     - `files.py` arma `NN-lugar` sin tildes ni espacios.
   - Verifica: tests con varias semillas.
   - Archivos: los dos módulos, tests.
-- [ ] **T2.5 — Job `video_script` y lectura del paquete**
+- [x] **T2.5 — Job `video_script` y lectura del paquete**
   - Acepta:
     - `JobKind.VIDEO_SCRIPT` con `params.narrative_id`, `JobStage.GUIONISTA` y runner en `src/presentation/video_jobs.py`;
     - el job router valida que el relato sea de la historia (404/422) y responde 409 si hay un job activo;
@@ -476,7 +476,7 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
     - el lector propuesto sale de `narra` y `lectores.yaml`.
   - Verifica: tests del router y del job con el mock.
   - Archivos: `jobs.py`, `video_jobs.py`, `job_router.py`, un router nuevo `video_router.py`, test.
-- [ ] **T2.6 — Botón y modal**
+- [x] **T2.6 — Botón y modal**
   - Acepta:
     - en el panel, «Armar el guion para el video» (`data-generation-trigger`) lanza el job, con el modal que bloquea y el tiempo estimado;
     - al terminar se pasa a «Para el video», que en S2 muestra el paquete simple (bloques y momentos en lista).
@@ -486,6 +486,13 @@ Cada tarea: criterio de aceptación, cómo se verifica y archivos (≈ 5 como m�
   - Acepta: el paquete de «No te detengas en el bosque» pasa los chequeos; se leen la intro, el outro y tres prompts, y se ajustan los fragmentos si hace falta.
   - Verifica: lectura del usuario.
   - Archivos: fragmentos.
+
+**Notas de S2 (2026-10-01):**
+- El prompt de imagen se guarda **sin** el estilo de la biblia visual: el estilo se agrega al copiar y en el PDF, así quien edita corrige solo lo propio del momento.
+- La IA siempre escribe `prompt_movimiento`, aunque el momento quede como imagen fija: si alguien cambia el tipo en la pantalla, el prompt ya está.
+- Una transición que no está en la lista pasa a «Corte»; un largo de la calabaza se acepta con un margen del 25 %, porque el modelo cuenta las palabras a ojo.
+- Con un relato de menos párrafos que el mínimo de momentos, se piden tantos momentos como párrafos haya.
+- Modal genérico `ia-modal.js` (`partials/ia_modal.ejs`), con el mismo diseño que el del asistente. La banda de generación no muestra este job, porque tiene su modal.
 
 ### S3 — La pantalla «Para el video» (§3.7.2)
 

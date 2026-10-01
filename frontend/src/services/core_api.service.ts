@@ -139,7 +139,7 @@ export interface JobEstimate {
 }
 
 export type JobEstimates = Record<"full_generation" | "regenerate_voz", JobEstimate> &
-  Partial<Record<"consult" | "plan_outline" | "verify_outline", JobEstimate>>;
+  Partial<Record<"consult" | "plan_outline" | "verify_outline" | "video_script", JobEstimate>>;
 
 export async function getJobEstimates(timeoutMs = 1500): Promise<JobEstimates> {
   const response = await axios.get(`${CORE_API_URL}/api/v1/jobs/estimates`, {

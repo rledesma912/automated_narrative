@@ -55,4 +55,6 @@
 </div>
 
 <%/* Spec-318 §9.C — script extraído a /js/relatos.js. Ver el patrón de streaming-room. */%>
+<%- include('partials/ia_modal') %>
+<script src="/js/ia-modal.js?v=<%= locals.assetVersion || '' %>" defer></script>
 <script src="/js/relatos.js?v=<%= locals.assetVersion || '' %>" defer></script>

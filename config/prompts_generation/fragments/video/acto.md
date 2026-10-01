@@ -1,0 +1,2 @@
+ACTO {numero} ({nombre})
+{parrafos}

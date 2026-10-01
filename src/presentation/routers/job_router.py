@@ -23,6 +23,7 @@ from src.presentation.generation import submit_full_generation, submit_regenerat
 from src.presentation.runtime import event_bus, job_manager
 from src.presentation.schemas.request import JobCreateRequest
 from src.presentation.schemas.response import JobResponse
+from src.presentation.video_jobs import submit_video_script
 
 router = APIRouter(tags=["Jobs"])
 
@@ -83,7 +84,10 @@ async def create_job(story_id: str, request: JobCreateRequest):
     if active is not None:
         return _already_active(active.id)
     try:
-        if request.kind == JobKind.REGENERATE_VOZ:
+        if request.kind == JobKind.VIDEO_SCRIPT:
+            await _validate_video_script(story, request)
+            job = await submit_video_script(story, request.narrative_id)
+        elif request.kind == JobKind.REGENERATE_VOZ:
             await _validate_regenerate_voz(story, request)
             job = await submit_regenerate_voz(story, request.beat, request.narrative_id)
         elif request.kind in AUTHORING_KINDS:
@@ -104,6 +108,15 @@ def _validate_authoring(story, kind: JobKind) -> None:
         return
     if story.direction is None or not story.direction.premise.strip():
         raise HTTPException(status_code=422, detail=message("api.falta_de_que_trata"))
+
+
+async def _validate_video_script(story, request: JobCreateRequest) -> None:
+    """Spec-610: el paquete se arma sobre una variante de esta historia."""
+    if request.narrative_id is None:
+        raise HTTPException(status_code=422, detail=message("video.falta_el_relato"))
+    narrative = await SQLGeneratedNarrativeRepository().get_by_id(request.narrative_id)
+    if narrative is None or narrative.story_template_id != story.id:
+        raise HTTPException(status_code=404, detail=message("video.relato_de_otra_historia"))
 
 
 async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:

@@ -4,8 +4,10 @@ Coherentes con el esquema que pide cada rol, para que los tests de la API y los
 E2E recorran el flujo completo sin un modelo real.
 """
 
+import re
 
-def mock_structured(role: str | None, schema: dict) -> dict:
+
+def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
     if role == "consultor":
         return {"evaluaciones": [_evaluation(i, c) for i, c in enumerate(_criteria(schema))]}
     if role == "planificador":
@@ -23,7 +25,60 @@ def mock_structured(role: str | None, schema: dict) -> dict:
             "asi_es": ["toma mate amargo"],
             "motivos_usados": ["un motivo de ejemplo"],
         }
+    if role == "guion":
+        return _video_script(prompt)
     return _from_schema(schema, schema)
+
+
+def _video_script(prompt: str) -> dict:
+    """Spec-610: un paquete válido para el relato del prompt (lee «ACTO N» y «[n] …»)."""
+    acts: dict[int, int] = {}
+    current = 0
+    for line in prompt.splitlines():
+        if m := re.match(r"ACTO (\d+) ", line):
+            current = int(m.group(1))
+            acts[current] = 0
+        elif current and re.match(r"\[(\d+)\] ", line):
+            acts[current] += 1
+    bloques, momentos = [], []
+    # Momentos de a `grupo` párrafos (sin pasar de un acto a otro): entre 10 y 15
+    # para un relato largo, uno por párrafo para uno corto.
+    grupo = max(1, -(-sum(acts.values()) // 10))
+    for acto, total in acts.items():
+        for n in range(1, total + 1):
+            bloques.append(
+                {
+                    "acto": acto,
+                    "desde": n,
+                    "hasta": n,
+                    "indicacion": f"Tranquilo, bloque {n} del acto {acto}.",
+                    "enfasis": [],
+                    "pausa": "larga" if n == total else "corta",
+                }
+            )
+        for desde in range(1, total + 1, grupo):
+            momentos.append(
+                {
+                    "acto": acto,
+                    "desde": desde,
+                    "hasta": min(desde + grupo - 1, total),
+                    "fuerte": acto == 3 and desde == 1,
+                    "que_se_ve": f"Un camino de noche (acto {acto})",
+                    "lugar": f"camino {acto}",
+                    "prompt_imagen": "An empty dirt road at night under a cold moon, 16:9",
+                    "prompt_movimiento": "Slow push-in; thin mist drifts across the road.",
+                    "transicion": "Corte",
+                    "sonido": "Viento entre los árboles",
+                }
+            )
+    return {
+        "narra": "hombre",
+        "bloques": bloques,
+        "momentos": momentos,
+        "intro": " ".join(["Bienvenidos otra vez a mi cripta, pónganse cómodos."] * 8),
+        "outro": " ".join(["Conozco a algunos de ustedes y no me quedaría ahí."] * 11)
+        + " Buenas noches.",
+    }
 
 
 def _criteria(schema: dict) -> list[str]:

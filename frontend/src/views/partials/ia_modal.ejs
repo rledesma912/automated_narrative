@@ -1,0 +1,20 @@
+<%/*
+  Spec-610: modal que bloquea la página mientras la IA trabaja en un comando de esta
+  página (armar el guion para el video). Mismo diseño que el del asistente
+  (asistente/_analizando.ejs). Lo maneja public/js/ia-modal.js.
+*/%>
+<div id="ia-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-forge-overlay"
+     role="dialog" aria-modal="true" aria-labelledby="ia-modal-titulo" aria-describedby="ia-modal-detalle">
+  <div class="bg-forge-surface border border-forge-border shadow-2xl shadow-forge-text/20 w-full max-w-md mx-4 px-10 py-12 text-center">
+    <div data-ia-modal-spinner class="mx-auto mb-8 w-20 h-20 rounded-full border-[6px] border-forge-accent/20 border-t-forge-accent animate-spin" aria-hidden="true"></div>
+    <h2 id="ia-modal-titulo" class="font-serif text-2xl text-forge-accent mb-3" aria-live="polite"></h2>
+    <p id="ia-modal-detalle" class="text-forge-muted mb-6"></p>
+    <p class="text-sm mb-1" data-ia-modal-eta></p>
+    <p class="text-xs text-forge-muted mb-8" data-ia-modal-nota>Podés cerrar la pestaña: la IA sigue trabajando y cuando vuelvas vas a ver el resultado.</p>
+    <p class="hidden text-sm text-forge-error mb-6" data-ia-modal-error role="alert"></p>
+    <div class="flex flex-col items-center gap-3">
+      <button type="button" class="btn-forge-outline-sm" data-ia-modal-cancelar>Cancelar</button>
+      <button type="button" class="hidden btn-forge-sm" data-ia-modal-cerrar>Cerrar</button>
+    </div>
+  </div>
+</div>

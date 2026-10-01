@@ -19,6 +19,8 @@
   const STAGES = {
     planificador: { label: "Armando los actos", weight: 0 },
     verificador: { label: "Revisando los actos", weight: 0 },
+    // Spec-610: el paquete para el video (tiene su propio modal).
+    guionista: { label: "Armando el guion para el video", weight: 0 },
     voz: { label: "Escribiendo", weight: 0.1 },
     journal: { label: "Repasando lo que pasó", weight: 0.85 },
     consolidando: { label: "Juntando el relato", weight: 1 },

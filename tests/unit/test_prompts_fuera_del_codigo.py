@@ -132,6 +132,7 @@ PERMITIDOS: dict[tuple[str, str], str] = {
     ): "422 técnico (contrato del API)",
     ("src/presentation/routers/narrative_router.py", "Error al generar narrativa"): "500 técnico",
     ("src/presentation/routers/narrative_router.py", "ID de narrativa inválido"): "422 técnico",
+    ("src/presentation/routers/video_router.py", "ID de narrativa inválido"): "400 técnico",
     ("src/presentation/routers/narrative_router.py", "ID de plantilla inválido"): "422 técnico",
     (
         "src/presentation/routers/narrative_router.py",

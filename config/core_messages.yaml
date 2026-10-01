@@ -116,6 +116,7 @@ stage:
   consultor: "Leyendo tu historia…"
   planificador: "Armando los actos…"
   verificador: "Revisando los actos…"
+  guionista: "Armando el guion para el video…"
 
 job:
   # Por qué terminó mal un trabajo (job.error), cuando no lo dice el pipeline.
@@ -128,3 +129,12 @@ job:
   # se reintenta una vez; si vuelve a fallar, es el error del trabajo).
   escaleta_sin_actos: "la escaleta tiene que tener los actos 1 a 5 (llegaron {actos})"
   escaleta_sin_hechos: "actos sin hechos: {actos}"
+
+# Spec-610: el paquete para el video (guion, la calabaza y el mapa).
+video:
+  relato_sin_actos: "Este relato no está separado en actos: no se puede armar el guion"
+  relato_de_otra_historia: "Ese relato no es de esta historia"
+  falta_el_relato: "Falta decir de qué relato se arma el guion"
+  sin_paquete: "Este relato todavía no tiene guion para el video"
+  no_se_pudo_armar: "La IA no pudo armar un guion que cumpla todo ({cantidad} cosas no cumplían). Probá de nuevo."
+

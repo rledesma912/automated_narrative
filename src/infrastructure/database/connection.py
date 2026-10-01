@@ -296,5 +296,20 @@ async def init_db() -> None:
         ON generation_job(story_id) WHERE status IN ('queued', 'running')
     """)
 
+    # Spec-610: el paquete para el video, uno por variante del relato.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS video_script (
+            id TEXT PRIMARY KEY,
+            narrative_id TEXT NOT NULL UNIQUE,
+            data TEXT NOT NULL,
+            parrafos_por_acto TEXT NOT NULL,
+            narrative_hash TEXT NOT NULL,
+            seed INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (narrative_id) REFERENCES generated_narrative(id) ON DELETE CASCADE
+        )
+    """)
+
     await conn.commit()
     await conn.close()

@@ -29,7 +29,7 @@ def _editar(directory: Path, archivo: str, **cambios) -> None:
 def test_la_config_del_repo_carga():
     config = video_config()
     assert config.lectura.palabras_por_minuto == 150
-    assert config.presentador.outro.cierra_con == "Buenas noches."
+    assert config.presentador.outro.cierra_con == "Buenas noches"
     assert len(config.presentador.ejemplos_outro) == 3
     assert set(config.biblia.mezcla) == {"imagen", "animacion", "video"}
     assert "no people" in config.biblia.estilo

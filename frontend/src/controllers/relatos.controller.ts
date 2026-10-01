@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getStoryById, getRelatosForStory, getReadingSettings, startActoRegeneration } from "../services/story.service";
+import { getStoryById, getRelatosForStory, getReadingSettings, getVideoScript, startActoRegeneration } from "../services/story.service";
 import { splitActs } from "../utils/actos";
 import { renderPage } from "../utils/render";
 
@@ -122,3 +122,38 @@ export const corregirRelatoPage = async (req: Request, res: Response) => {
     res.status(500).send("No se pudo abrir el relato para corregir.");
   }
 };
+
+/**
+ * Spec-610: «Para el video», el paquete de una variante (§3.7.2). En S2 muestra los
+ * bloques y los momentos en lista; la pantalla completa llega en S3.
+ */
+export const videoPage = async (req: Request, res: Response) => {
+  const storyId = req.params.storyId as string;
+  const narrativeId = req.params.narrativeId as string;
+  try {
+    const story = await getStoryById(storyId);
+    if (!story) return res.status(404).send("Historia no encontrada.");
+    const relato = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
+    if (!relato) return res.status(404).send("Relato no encontrado.");
+    const script = await getVideoScript(narrativeId);
+    if (!script) return res.redirect(`/historia/${storyId}/relatos`);
+    const parrafos: Record<number, string[]> = {};
+    splitActs(relato.content).forEach((a) => {
+      parrafos[a.number] = a.text.split(/\n[ \t]*\n+/).map((p) => p.trim()).filter(Boolean);
+    });
+    res.setHeader("Cache-Control", "no-store");
+    await renderPage(res, "relatos/video", {
+      story,
+      relato,
+      script,
+      parrafos,
+      lectura: await getReadingSettings(),
+      title: `Para el video: «${story.title || "Sin título"}»`,
+      activePage: "gallery",
+    });
+  } catch (error) {
+    console.error(`Error al abrir el paquete de ${narrativeId}:`, error);
+    res.status(500).send("No se pudo abrir el guion para el video.");
+  }
+};
+
