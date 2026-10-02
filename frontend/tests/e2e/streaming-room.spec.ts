@@ -33,12 +33,13 @@ async function logLines(page: Page): Promise<string[]> {
   return page.locator("#log-container > div").allTextContents();
 }
 
-test("regenerar desde la ficha: confirmación, avance por etapas y fin", async ({ page }) => {
+// Spec-630 B12: sin ficha; se regenera desde la sala en modo lectura.
+test("regenerar desde la sala: confirmación, avance por etapas y fin", async ({ page }) => {
   const posts = countJobPosts(page);
-  await page.goto(`/historia/${STORY_ID}`);
-  await page.getByRole("button", { name: "Regenerar" }).click();
+  await page.goto(`/generar/stream/${STORY_ID}`);
+  await page.getByRole("link", { name: "Regenerar" }).click();
 
-  await expect(page).toHaveURL(/regenerate=1/);
+  await expect(page).toHaveURL(/escribir=1/);
   await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
 
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
@@ -110,9 +111,9 @@ test("cancelar detiene el job en el servidor", async ({ page }) => {
   expect(story.status).toBe("failed");
 });
 
-test("generar desde la ficha lanza el job en el servidor y la sala se ata", async ({ page }) => {
+test("reintentar desde la sala lanza el job en el servidor y la sala se ata", async ({ page }) => {
   const posts = countJobPosts(page); // el POST lo hace Express, no el browser
-  await page.goto(`/historia/${STORY_ID}`); // quedó `failed` en el test anterior
+  await page.goto(`/generar/stream/${STORY_ID}`); // quedó `failed` en el test anterior
 
   await page.locator("form[action$='/generar'] button").first().click();
 

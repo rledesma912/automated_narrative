@@ -25,6 +25,7 @@ from src.domain.models import (
     CharacterKind,
     CriterionStatus,
     Direction,
+    Scenario,
     Story,
     TypedRule,
     WorkshopItem,
@@ -41,6 +42,8 @@ from src.presentation.schemas.authoring import (
     ActForm,
     CharacterForm,
     DirectionForm,
+    NameForm,
+    ScenarioForm,
     WarningDismiss,
     WorkshopAction,
 )
@@ -212,28 +215,153 @@ async def _set_dismissed(story_id: str, number: int, key: str, dismissed: bool) 
     return await _state(await _story(story_id))
 
 
+@router.post("/stories/{story_id}/outline/{number}/warnings/resolve")
+async def resolve_warning(story_id: str, number: int, body: WarningDismiss) -> dict:
+    """Spec-630 B2: aplicar la sugerencia de un aviso lo resuelve: se quita (no pasa a ignorados)."""
+    story = await _editable(story_id)
+    act = _act(story, number)
+    if not any(w.key == body.key for w in act.warnings):
+        raise HTTPException(status_code=404, detail=message("api.aviso_inexistente"))
+    warnings = [w for w in act.warnings if w.key != body.key]
+    await SQLStoryRepository().save_act(story.id, act.model_copy(update={"warnings": warnings}))
+    return await _state(await _story(story_id))
+
+
 @router.post("/stories/{story_id}/characters")
 async def add_character(story_id: str, body: CharacterForm) -> dict:
-    """Suma un personaje al elenco (desde un acto o desde un aviso de la revisión)."""
+    """Suma un personaje al elenco (desde un acto o desde un aviso de la revisión).
+
+    Spec-630 B2: con `act`, además queda en «Quiénes están» de ese acto.
+    """
     story = await _editable(story_id)
     name = " ".join(body.name.split())
-    if not any(p.get("name", "").lower() == name.lower() for p in story.personajes_full):
-        n = len(story.personajes_full) + 1
+    existing = _find(story.personajes_full or [], name, key=lambda p: p.get("name", ""))
+    repo = SQLStoryRepository()
+    if existing is None:
         story.personajes_full = [
             *story.personajes_full,
             {
-                "id": f"P{n}",
+                "id": _next_character_id(story.personajes_full),
                 "name": name,
                 "role": "",
                 "kind": body.kind,
                 "relation": body.relation.strip(),
             },
         ]
-        await SQLStoryRepository().update_inputs(story)
+        await repo.update_inputs(story)
+    else:
+        name = existing["name"]
+    if body.act is not None:
+        act = _act(story, body.act)
+        if not any(_same(n, name) for n in act.on_stage):
+            await repo.save_act(
+                story.id, act.model_copy(update={"on_stage": [*act.on_stage, name]})
+            )
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/characters/remove")
+async def remove_character(story_id: str, body: NameForm) -> dict:
+    """Spec-630 B7: borra un personaje del elenco y de «Quiénes están» de todos los actos."""
+    story = await _editable(story_id)
+    existing = _find(story.personajes_full or [], body.name, key=lambda p: p.get("name", ""))
+    if existing is None:
+        raise HTTPException(
+            status_code=404, detail=message("api.personaje_inexistente", nombre=body.name)
+        )
+    if _same(existing["name"], context.narrator(story)):
+        raise HTTPException(
+            status_code=422, detail=message("api.quien_narra_no_se_borra", nombre=existing["name"])
+        )
+    repo = SQLStoryRepository()
+    story.personajes_full = [p for p in story.personajes_full if p is not existing]
+    await repo.update_inputs(story)
+    for act in story.outline:
+        on_stage = [n for n in act.on_stage if not _same(n, existing["name"])]
+        if on_stage != act.on_stage:
+            await repo.save_act(story.id, act.model_copy(update={"on_stage": on_stage}))
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/scenarios")
+async def add_scenario(story_id: str, body: ScenarioForm) -> dict:
+    """Spec-630 B6: suma un lugar a la historia (opción en todos los actos); con `act`,
+    queda elegido en ese acto."""
+    story = await _editable(story_id)
+    name = " ".join(body.name.split())
+    repo = SQLStoryRepository()
+    existing = _find(story.scenarios, name, key=lambda s: s.name)
+    if existing is None:
+        used = _find([a.scenario for a in story.outline if a.scenario], name, key=lambda n: n)
+        name = used or name  # un lugar que ya usaba algún acto entra con su nombre
+        story.scenarios = [
+            *story.scenarios,
+            Scenario(story_id=story.id, order_index=len(story.scenarios), name=name),
+        ]
+        await repo.update_inputs(story)
+    else:
+        name = existing.name
+    if body.act is not None:
+        act = _act(story, body.act)
+        if act.scenario != name:
+            await repo.save_act(story.id, act.model_copy(update={"scenario": name}))
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/scenarios/remove")
+async def remove_scenario(story_id: str, body: NameForm) -> dict:
+    """Spec-630 B7: borra un lugar de la historia y lo saca de los actos que lo usan."""
+    story = await _editable(story_id)
+    in_story = [s for s in story.scenarios if _same(s.name, body.name)]
+    in_acts = [a for a in story.outline if a.scenario and _same(a.scenario, body.name)]
+    if not in_story and not in_acts:
+        raise HTTPException(
+            status_code=404, detail=message("api.lugar_inexistente", nombre=body.name)
+        )
+    repo = SQLStoryRepository()
+    if in_story:
+        story.scenarios = [
+            s.model_copy(update={"order_index": i})
+            for i, s in enumerate(s for s in story.scenarios if s not in in_story)
+        ]
+        await repo.update_inputs(story)
+    for act in in_acts:
+        await repo.save_act(story.id, act.model_copy(update={"scenario": ""}))
     return await _state(await _story(story_id))
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
+
+def _same(a: str, b: str) -> bool:
+    """Mismo personaje o lugar: sin importar mayúsculas, espacios ni la aclaración
+    entre paréntesis que a veces suma el Planificador («Rubén (su tío)»)."""
+
+    def norm(x: str) -> str:
+        return " ".join(x.split("(")[0].split()).casefold()
+
+    return norm(a) == norm(b)
+
+
+def _find(items, name: str, key):
+    return next((x for x in items if _same(key(x), name)), None)
+
+
+def _next_character_id(cast: list[dict]) -> str:
+    """P<n> que no choque con ninguno (al borrar un personaje, `len + 1` repetiría un id)."""
+    nums = [
+        int(p["id"][1:])
+        for p in cast
+        if str(p.get("id", "")).startswith("P") and p["id"][1:].isdigit()
+    ]
+    return f"P{max(nums, default=0) + 1}"
+
+
+def _act(story: Story, number: int) -> ActOutline:
+    act = next((a for a in story.outline if a.number == number), None)
+    if act is None:
+        raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
+    return act
 
 
 async def _story(story_id: str) -> Story:
@@ -401,16 +529,27 @@ async def _state(story: Story) -> dict:
                 "name": p.get("name", ""),
                 "kind": p.get("kind", "persona"),
                 "relation": p.get("relation", ""),
+                # Spec-630 B7: en qué actos está (lo dice la confirmación de borrar).
+                "acts": [
+                    a.number
+                    for a in story.outline
+                    if any(_same(n, p.get("name", "")) for n in a.on_stage)
+                ],
             }
             for p in story.personajes_full or []
         ],
-        # Los de la historia y los que la escaleta sumó: opciones rápidas en cada acto.
-        "scenarios": list(
-            dict.fromkeys(
+        # Los de la historia y los que la escaleta sumó: opciones rápidas en cada acto,
+        # con los actos que los usan (Spec-630 B7).
+        "scenarios": [
+            {
+                "name": name,
+                "acts": [a.number for a in story.outline if a.scenario and _same(a.scenario, name)],
+            }
+            for name in dict.fromkeys(
                 [s.name for s in story.scenarios]
                 + [a.scenario for a in story.outline if a.scenario]
             )
-        ),
+        ],
         "active_job": await job_manager.payload(active) if active else None,
     }
 

@@ -7,7 +7,6 @@
  * Variables de entrada:
  *   story: { id, ... }
  *   relato: { id, content, title, created_at, ... }
- *   displayTitle: string
  *   isActive: boolean
  *   regenerating: { acto, jobId } | null — acto re-narrándose como job (Spec-460 S7)
  *   panelError: string | null — error al lanzar o completar la regeneración
@@ -15,8 +14,6 @@
 const regen = (typeof regenerating !== 'undefined' && regenerating) ? regenerating : null;
 // Spec-510: «Tarda ≈ N min» en la confirmación (lo deja el middleware loadEstimates).
 const regenEstimate = locals.estimateLabels ? locals.estimateLabels.regenerate_voz : '';
-// Spec-610: cuánto tarda armar el guion para el video.
-const guionEstimate = locals.estimateLabels ? (locals.estimateLabels.video_script || '') : '';
 const errorMsg = (typeof panelError !== 'undefined' && panelError) ? panelError : null;
 const sections = (relato.content || '').split(/^## (.+)$/m);
 const preamble = (sections[0] || '').trim();
@@ -37,52 +34,6 @@ function extractActNumber(title) {
   data-relato-panel="<%= relato.id %>"
   class="relato-panel card-forge !p-8 max-h-[calc(100vh-16rem)] overflow-y-auto <%= isActive ? 'active' : 'hidden' %>"
 >
-  <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
-    <h3 class="heading-forge-lg !text-xl !mb-0"><%= displayTitle %></h3>
-    <div class="flex items-center gap-3">
-      <%/* Spec-490: .md para el TTS; sin hx-boost (htmx convertiría la descarga en un swap). Se deshabilita mientras se regenera un acto. */%>
-      <a
-        <% if (regen) { %>aria-disabled="true"<% } else { %>href="/api/v1/generated-narratives/<%= relato.id %>/export.md" download<% } %>
-        data-descargar-relato="<%= relato.id %>"
-        hx-boost="false"
-        class="btn-forge-outline-sm <%= regen ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' %>"
-      >
-        <i data-lucide="download" class="w-4 h-4"></i>
-        Descargar .md
-      </a>
-      <%/* Spec-610: corregir el relato en la web (un acto a la vez). */%>
-      <a
-        <% if (regen) { %>aria-disabled="true"<% } else { %>href="/historia/<%= story.id %>/relatos/<%= relato.id %>/corregir"<% } %>
-        data-corregir-relato="<%= relato.id %>"
-        class="btn-forge-outline-sm <%= regen ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' %>"
-      >
-        <i data-lucide="pencil" class="w-4 h-4"></i>
-        Corregir el relato
-      </a>
-      <%/* Spec-610: el paquete para el video (guion, la calabaza y el mapa). */%>
-      <% if (relato.hasVideoScript) { %>
-        <a href="/historia/<%= story.id %>/relatos/<%= relato.id %>/video" class="btn-forge-sm cursor-pointer" data-para-el-video="<%= relato.id %>">
-          <i data-lucide="clapperboard" class="w-4 h-4"></i>
-          Para el video
-        </a>
-      <% } else { %>
-        <button type="button" class="btn-forge-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" <%= regen ? 'disabled' : '' %>
-                data-armar-guion="<%= relato.id %>" data-story-id="<%= story.id %>"
-                data-detalle="<%= guionEstimate ? `Tarda ${guionEstimate}. ` : '' %>La IA reparte el relato en bloques para leer, escribe lo que dice la calabaza y arma lo que va en pantalla. El relato no cambia.">
-          <i data-lucide="clapperboard" class="w-4 h-4"></i>
-          Armar el guion para el video
-        </button>
-      <% } %>
-      <button
-        type="button"
-        onclick="copyRelatoContent('<%= relato.id %>', this)"
-        class="btn-forge-outline-sm cursor-pointer"
-      >
-        <i data-lucide="copy" class="w-4 h-4"></i>
-        Copiar Relato
-      </button>
-    </div>
-  </div>
   <% if (regen) { %>
     <%/* Se recarga solo cuando termina el job (generation-guard.js). */%>
     <div role="status" aria-live="polite"
@@ -94,7 +45,6 @@ function extractActNumber(title) {
       Regenerando el acto <%= regen.acto %>… el relato se actualiza solo al terminar.
     </div>
   <% } %>
-  <p class="hidden nota-forge nota-forge--error mb-6" role="alert" data-guion-error="<%= relato.id %>"></p>
   <% if (errorMsg) { %>
     <div role="alert" class="nota-forge nota-forge--error mb-6">
       <i data-lucide="x-circle" class="nota-forge__icono"></i>
@@ -162,3 +112,9 @@ function extractActNumber(title) {
     <% } %>
   </div>
 </section>
+<%/* Spec-630 B15: las acciones de la versión viven arriba (relato_acciones.ejs). Cuando
+     se pide solo el panel (al regenerar un acto), su grupo viaja fuera de banda para
+     deshabilitarse y volver a habilitarse con el panel. */%>
+<% if (locals.conAcciones) { %>
+  <%- include('relato_acciones', { story, relato, isActive: true, regenerating: regen, oob: true }) %>
+<% } %>

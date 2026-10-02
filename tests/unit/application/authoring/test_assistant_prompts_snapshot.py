@@ -23,6 +23,7 @@ from src.domain.models import (
     Direction,
     OutlineWarning,
     Story,
+    TypedRule,
     WorkshopItem,
 )
 
@@ -38,6 +39,10 @@ def _story() -> Story:
             events=[f"Hecho {n}.1", f"Hecho {n}.2"],
             scenario="Ruta 36" if n % 2 else "",
             held_back="Que la mujer murió en ese asiento" if n == 2 else "",
+            # Spec-630 B11: quiénes están y cómo cambia llegan al Verificador.
+            on_stage=["José", "Marta"] if n == 2 else [],
+            change_from="tranquilo" if n == 2 else "",
+            change_to="no puede dejar de mirar el espejo" if n == 2 else "",
             reveal_act=4 if n == 2 else 0,
             decisions=["meta"] if n == 1 else (["transgresion"] if n == 2 else []),
             warnings=[
@@ -50,7 +55,7 @@ def _story() -> Story:
         )
         for n in range(1, 6)
     ]
-    return Story(
+    story = Story(
         title="la pena del colectivo",
         protagonista="José: chofer de micros",
         relator="Primera persona. Narrador: José.",
@@ -94,6 +99,14 @@ def _story() -> Story:
         ],
         outline=acts,
     )
+    # Spec-630 B11: una regla anclada a un acto (y una global, que no es de ningún acto).
+    story.typed_rules = [
+        TypedRule(
+            id="R1", story_id=story.id, content="Marta solo aparece en el espejo", applies_to_beat=2
+        ),
+        TypedRule(id="R2", story_id=story.id, content="El micro nunca para", applies_to_beat=None),
+    ]
+    return story
 
 
 def _prompts() -> dict[str, str]:
@@ -132,6 +145,13 @@ def test_el_snapshot_cubre_todas_las_secciones():
         "cerrar la historia con el final que decidió el autor",
         "acá el protagonista descubre o confiesa la historia secreta",
         "ACTO 1 — Ruta 36",
+        # Spec-630 B11
+        "En escena: José, Marta",
+        "Cómo cambia: tranquilo → no puede dejar de mirar el espejo",
+        "Reglas de este acto: Marta solo aparece en el espejo",
+        "REGLAS QUE PUSO EL AUTOR PARA CADA ACTO",
+        "- Acto 2: Marta solo aparece en el espejo",
+        "PRIMERO, si un acto tiene «Reglas de este acto»",
         "ACTO 2\n",
         "Cómo llega: Pasaron dos horas",
         "Quiere: Que el micro llegue",

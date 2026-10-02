@@ -6,7 +6,7 @@ LA HISTORIA:
 DECISIONES DEL AUTOR (integralas todas):
 {decisiones}
 
-{efecto}{borradores}{problemas}ESCENARIOS YA DEFINIDOS: {escenarios}
+{efecto}{borradores}{problemas}{reglas}ESCENARIOS YA DEFINIDOS: {escenarios}
 Si un acto ocurre en otro lugar, poné un nombre nuevo, corto y descriptivo. Si vuelve a un lugar que ya nombraste, usá EXACTAMENTE el mismo nombre (sin agregados como «de nuevo» o «regreso»).
 
 LOS 5 ACTOS:

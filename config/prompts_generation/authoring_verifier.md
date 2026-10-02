@@ -15,6 +15,7 @@ LA ESCALETA:
 Revisá tres cosas:
 1. "decisiones": para CADA decisión del autor, su id y el número del acto en cuyos HECHOS aparece (0 si no aparece en ningún hecho, aunque el acto diga que la usa).
 2. "avisos", uno por problema, con el número de acto donde conviene arreglarlo:
+   - PRIMERO, si un acto tiene «Reglas de este acto»: cada hecho de ese acto que la contradice (citá la regla y el hecho). El autor las puso a propósito: no se pueden romper;
    - un hecho que se repite en dos actos, o que aparece antes de tiempo;
    - algo que un acto guarda para después y ningún acto posterior revela;
    - un acto que empieza en un lugar o un momento que no se explica desde el final del anterior (ni con su «Cómo llega»);

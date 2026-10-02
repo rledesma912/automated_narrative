@@ -1,0 +1,60 @@
+<%
+/*
+ * Spec-630 B15: las acciones de una versión del relato, en el panel de arriba de
+ * «El relato» (antes iban dentro del panel de la prosa). Se ve solo el grupo de
+ * la pestaña elegida (relatos.js). Con `oob`, viaja fuera de banda junto al panel
+ * cuando se regenera un acto (relato_panel.ejs).
+ *
+ * Entrada: story, relato, isActive, regenerating ({ acto, jobId } | null), oob.
+ */
+const regen = (typeof regenerating !== 'undefined' && regenerating) ? regenerating : null;
+// Spec-610: cuánto tarda armar el guion para el video.
+const guionEstimate = locals.estimateLabels ? (locals.estimateLabels.video_script || '') : '';
+const off = 'opacity-40 cursor-not-allowed';
+%>
+<div id="relato-acciones-<%= relato.id %>" data-acciones-version="<%= relato.id %>"
+     class="<%= isActive ? 'flex' : 'hidden' %> flex-wrap items-center gap-3"
+     <% if (locals.oob) { %>hx-swap-oob="outerHTML"<% } %>>
+  <%/* Spec-610: corregir el relato en la web (un acto a la vez). */%>
+  <a
+    <% if (regen) { %>aria-disabled="true"<% } else { %>href="/historia/<%= story.id %>/relatos/<%= relato.id %>/corregir"<% } %>
+    data-corregir-relato="<%= relato.id %>"
+    class="btn-forge-outline-sm <%= regen ? off : 'cursor-pointer' %>"
+  >
+    <i data-lucide="pencil" class="w-4 h-4"></i>
+    Corregir el relato
+  </a>
+  <%/* Spec-610: el paquete para el video (guion, la calabaza y el mapa). */%>
+  <% if (relato.hasVideoScript) { %>
+    <a href="/historia/<%= story.id %>/relatos/<%= relato.id %>/video" class="btn-forge-outline-sm cursor-pointer" data-para-el-video="<%= relato.id %>">
+      <i data-lucide="clapperboard" class="w-4 h-4"></i>
+      Para el video
+    </a>
+  <% } else { %>
+    <button type="button" class="btn-forge-outline-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" <%= regen ? 'disabled' : '' %>
+            data-armar-guion="<%= relato.id %>" data-story-id="<%= story.id %>"
+            data-detalle="<%= guionEstimate ? `Tarda ${guionEstimate}. ` : '' %>La IA reparte el relato en bloques para leer, escribe lo que dice la calabaza y arma lo que va en pantalla. El relato no cambia.">
+      <i data-lucide="clapperboard" class="w-4 h-4"></i>
+      Armar el guion para el video
+    </button>
+  <% } %>
+  <%/* Spec-490: .md para el TTS; sin hx-boost (htmx convertiría la descarga en un swap). Se deshabilita mientras se regenera un acto. */%>
+  <a
+    <% if (regen) { %>aria-disabled="true"<% } else { %>href="/api/v1/generated-narratives/<%= relato.id %>/export.md" download<% } %>
+    data-descargar-relato="<%= relato.id %>"
+    hx-boost="false"
+    class="btn-forge-outline-sm <%= regen ? off : 'cursor-pointer' %>"
+  >
+    <i data-lucide="download" class="w-4 h-4"></i>
+    Descargar .md
+  </a>
+  <button
+    type="button"
+    onclick="copyRelatoContent('<%= relato.id %>', this)"
+    class="btn-forge-outline-sm cursor-pointer"
+  >
+    <i data-lucide="copy" class="w-4 h-4"></i>
+    Copiar Relato
+  </button>
+  <p class="hidden nota-forge nota-forge--error w-full" role="alert" data-guion-error="<%= relato.id %>"></p>
+</div>

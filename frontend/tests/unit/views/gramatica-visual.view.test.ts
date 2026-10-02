@@ -46,4 +46,23 @@ describe("gramática visual", () => {
     }
     expect(bad).toEqual([]);
   });
+
+  // Spec-630 B10: la opción compacta es píldora con borde y marca; el chip, píldora
+  // sin borde; el botón, rectángulo redondeado. Así no se confunden.
+  it("opción compacta, chip y botón tienen formas distintas", () => {
+    const css = fs.readFileSync(path.join(ROOT, "src/styles/globals.css"), "utf-8");
+    const rule = (sel: string) => {
+      const i = css.indexOf(`${sel} {`);
+      expect(i, sel).toBeGreaterThan(-1);
+      return css.slice(i, css.indexOf("}", i));
+    };
+    expect(rule(".opcion-forge--compacta .opcion-forge__caja")).toMatch(/\brounded-full\b/);
+    expect(rule(".opcion-forge__caja")).toMatch(/\bborder\b/);
+    expect(rule(".opcion-forge__caja::before")).toContain("content");
+    expect(rule(".chip-forge")).toMatch(/\brounded-full\b/);
+    expect(rule(".chip-forge")).not.toMatch(/\bborder\b/);
+    for (const btn of [".btn-forge-sm", ".btn-forge-outline-sm"]) {
+      expect(rule(btn)).not.toMatch(/\brounded-full\b/);
+    }
+  });
 });

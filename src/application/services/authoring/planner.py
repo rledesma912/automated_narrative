@@ -92,6 +92,7 @@ class OutlinePlanner:
             decisiones=context.decisions_block(story, t),
             borradores=self._drafts_block(story),
             problemas=self._problems_block(story),
+            reglas=self._rules_block(story),
             efecto=context.effect_block(story, t),
             escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
@@ -131,6 +132,21 @@ class OutlinePlanner:
         if not lines:
             return ""
         return t("asistente/planificador/borradores") + "\n" + "\n".join(lines) + "\n\n"
+
+    def _rules_block(self, story: Story) -> str:
+        """Spec-630 B11: las reglas que el autor ancló a cada acto. Viven aparte de la
+        escaleta (`rule.applies_to_beat`) y sobreviven a rearmarla: el Planificador las
+        tiene que respetar."""
+        t = self.templates.fragment
+        lines = [
+            t("asistente/planificador/regla", acto=r.applies_to_beat, regla=r.content)
+            for r in sorted(
+                (r for r in story.typed_rules if r.applies_to_beat), key=lambda r: r.applies_to_beat
+            )
+        ]
+        if not lines:
+            return ""
+        return t("asistente/planificador/reglas") + "\n" + "\n".join(lines) + "\n\n"
 
     def _problems_block(self, story: Story) -> str:
         """Spec-560 A6: al rearmar, los avisos visibles de la escaleta anterior (no los

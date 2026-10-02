@@ -18,6 +18,13 @@
       panel.classList.toggle("active", isTarget);
     });
 
+    // Spec-630 B15: las acciones de arriba son las de la versión elegida.
+    document.querySelectorAll("[data-acciones-version]").forEach((group) => {
+      const isTarget = group.getAttribute("data-acciones-version") === relatoId;
+      group.classList.toggle("hidden", !isTarget);
+      group.classList.toggle("flex", isTarget);
+    });
+
     document.querySelectorAll("[data-relato-tab]").forEach((tab) => {
       const isActive = tab.getAttribute("data-relato-tab") === relatoId;
       if (isActive) {

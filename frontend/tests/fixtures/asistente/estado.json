@@ -1,0 +1,306 @@
+{
+ "story_id": "s-1",
+ "status": "draft",
+ "direction": {
+  "title": "El monte",
+  "genero": "paranormal",
+  "subgenero": "fantasmas",
+  "premise": "Susana va al monte.",
+  "effect": "",
+  "effect_other": "",
+  "ending": "",
+  "ending_intentional": false,
+  "telling": "",
+  "protagonist_name": "Susana",
+  "protagonist_role": "",
+  "narrator": "Susana",
+  "threat": {
+   "name": "",
+   "nature": "",
+   "description": "",
+   "manifestations": "",
+   "limits": "",
+   "reveal_level": "insinuada"
+  }
+ },
+ "workshop": {
+  "round": 1,
+  "max_rounds": 3,
+  "finish": {
+   "kind": "seguir",
+   "text": "Te quedan preguntas.",
+   "open_questions": 2
+  },
+  "items": [
+   {
+    "level": "direccion",
+    "criterion": "meta",
+    "status": "falta",
+    "question": "¿Qué busca Susana?",
+    "options": [
+     "Trabajo",
+     "Aventura"
+    ],
+    "answer": "",
+    "round": 1,
+    "question_round": 1,
+    "asked": [],
+    "nombre": "Qué busca Susana",
+    "por_que": "Para que el lector la siga."
+   },
+   {
+    "level": "direccion",
+    "criterion": "inquietud",
+    "status": "parcial",
+    "question": "¿Qué la inquieta?",
+    "options": [
+     "El clima"
+    ],
+    "answer": "",
+    "round": 1,
+    "question_round": 1,
+    "asked": [],
+    "nombre": "Qué la inquieta",
+    "por_que": "Para el miedo."
+   },
+   {
+    "level": "direccion",
+    "criterion": "final",
+    "status": "cumple",
+    "question": "",
+    "options": [],
+    "answer": "Vuelve sola.",
+    "round": 1,
+    "question_round": 1,
+    "asked": [],
+    "nombre": "Cómo termina",
+    "por_que": "Para cerrar."
+   },
+   {
+    "level": "direccion",
+    "criterion": "transgresion",
+    "status": "intencional",
+    "question": "",
+    "options": [],
+    "answer": "No hay.",
+    "round": 1,
+    "question_round": 1,
+    "asked": [],
+    "nombre": "Qué rompe",
+    "por_que": "Para el castigo."
+   }
+  ]
+ },
+ "outline": {
+  "acts": [
+   {
+    "number": 1,
+    "bridge": "",
+    "goal": "Susana quiere algo en el acto 1.",
+    "events": [
+     "Hecho 1.1",
+     "Hecho 1.2"
+    ],
+    "change_from": "con miedo",
+    "change_to": "decidida",
+    "scenario": "Casa de Susana",
+    "on_stage": [
+     "Tío Rubén"
+    ],
+    "held_back": "El tío sabe todo",
+    "reveal_act": 4,
+    "seeds": [
+     "La vieja camioneta"
+    ],
+    "payoffs": [],
+    "decisions": [
+     "meta"
+    ],
+    "warnings": [
+     {
+      "text": "«Tío Rubén» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+      "key": "elenco:tio ruben",
+      "source": "regla",
+      "dismissed": false
+     },
+     {
+      "text": "Se repite un hecho.",
+      "key": "ia:se repite",
+      "source": "ia",
+      "dismissed": true
+     }
+    ],
+    "needs_review": false,
+    "draft": false,
+    "synopsis": "",
+    "rules": [
+     "Solo de noche"
+    ]
+   },
+   {
+    "number": 2,
+    "bridge": "Pasaron dos días (acto 2).",
+    "goal": "Susana quiere algo en el acto 2.",
+    "events": [
+     "Hecho 2.1",
+     "Hecho 2.2"
+    ],
+    "change_from": "con miedo",
+    "change_to": "decidida",
+    "scenario": "Campamento",
+    "on_stage": [
+     "Tío Rubén"
+    ],
+    "held_back": "",
+    "reveal_act": 0,
+    "seeds": [],
+    "payoffs": [
+     "La vieja camioneta"
+    ],
+    "decisions": [],
+    "warnings": [],
+    "needs_review": false,
+    "draft": false,
+    "synopsis": "",
+    "rules": []
+   },
+   {
+    "number": 3,
+    "bridge": "Pasaron dos días (acto 3).",
+    "goal": "Susana quiere algo en el acto 3.",
+    "events": [
+     "Hecho 3.1",
+     "Hecho 3.2"
+    ],
+    "change_from": "con miedo",
+    "change_to": "decidida",
+    "scenario": "Casa de Susana",
+    "on_stage": [
+     "Tío Rubén"
+    ],
+    "held_back": "",
+    "reveal_act": 0,
+    "seeds": [],
+    "payoffs": [],
+    "decisions": [],
+    "warnings": [
+     {
+      "text": "Falta el cambio.",
+      "key": "sin_cambio",
+      "source": "regla",
+      "dismissed": false
+     }
+    ],
+    "needs_review": false,
+    "draft": false,
+    "synopsis": "",
+    "rules": []
+   },
+   {
+    "number": 4,
+    "bridge": "Pasaron dos días (acto 4).",
+    "goal": "Susana quiere algo en el acto 4.",
+    "events": [
+     "Hecho 4.1",
+     "Hecho 4.2"
+    ],
+    "change_from": "con miedo",
+    "change_to": "decidida",
+    "scenario": "Casa de Susana",
+    "on_stage": [
+     "Tío Rubén"
+    ],
+    "held_back": "",
+    "reveal_act": 0,
+    "seeds": [],
+    "payoffs": [],
+    "decisions": [],
+    "warnings": [],
+    "needs_review": false,
+    "draft": false,
+    "synopsis": "",
+    "rules": []
+   },
+   {
+    "number": 5,
+    "bridge": "Pasaron dos días (acto 5).",
+    "goal": "Susana quiere algo en el acto 5.",
+    "events": [
+     "Hecho 5.1",
+     "Hecho 5.2"
+    ],
+    "change_from": "con miedo",
+    "change_to": "decidida",
+    "scenario": "",
+    "on_stage": [
+     "Tío Rubén"
+    ],
+    "held_back": "Nada más",
+    "reveal_act": 0,
+    "seeds": [],
+    "payoffs": [],
+    "decisions": [],
+    "warnings": [],
+    "needs_review": false,
+    "draft": false,
+    "synopsis": "",
+    "rules": []
+   }
+  ],
+  "decisions": [
+   {
+    "id": "meta",
+    "nombre": "Qué busca Susana",
+    "integrada": true
+   },
+   {
+    "id": "final",
+    "nombre": "Cómo termina",
+    "integrada": false
+   }
+  ]
+ },
+ "characters": [
+  {
+   "name": "Susana",
+   "kind": "persona",
+   "relation": "",
+   "acts": []
+  },
+  {
+   "name": "Tío Rubén",
+   "kind": "persona",
+   "relation": "su tío",
+   "acts": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "name": "Los peones",
+   "kind": "grupo",
+   "relation": "",
+   "acts": []
+  }
+ ],
+ "scenarios": [
+  {
+   "name": "Casa de Susana",
+   "acts": [
+    1,
+    3,
+    4
+   ]
+  },
+  {
+   "name": "Campamento",
+   "acts": [
+    2
+   ]
+  }
+ ],
+ "active_job": null
+}

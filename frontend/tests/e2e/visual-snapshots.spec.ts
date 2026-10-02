@@ -33,7 +33,7 @@ test.describe("Capturas del tema", () => {
   test("páginas", async ({ page }) => {
     await capturar(page, "01-home", "/");
     await capturar(page, "02-galeria", "/galeria");
-    await capturar(page, "03-ficha", `/historia/${storyId}`);
+    await capturar(page, "03-actos", `/asistente/${storyId}/escaleta`); // Spec-630: sin ficha
     await capturar(page, "04-relatos", `/historia/${storyId}/relatos`);
     await capturar(page, "05-sala", `/generar/stream/${storyId}`);
     await capturar(page, "08-debug", "/debug");

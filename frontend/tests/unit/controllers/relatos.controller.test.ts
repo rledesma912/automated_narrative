@@ -122,6 +122,7 @@ describe("regenerarActoAction", () => {
     expect(view).toBe("partials/relato_panel");
     expect(locals.regenerating).toEqual({ acto: 3, jobId: "job-7" });
     expect(locals.panelError).toBeNull();
+    expect(locals.conAcciones).toBe(true); // Spec-630 B15: el grupo de arriba viaja fuera de banda
   });
 
   it("con otra generación en curso (409) muestra el aviso en el panel", async () => {

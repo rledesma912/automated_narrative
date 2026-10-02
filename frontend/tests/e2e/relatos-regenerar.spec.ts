@@ -91,5 +91,10 @@ test("mientras se regenera, el panel lo indica y bloquea los botones", async ({ 
   await expect(
     page.locator(`[data-relato-panel].active [data-regenerar-acto="${other}"]`),
   ).toBeDisabled();
+  // Spec-630 B15: las acciones de arriba también se bloquean mientras se regenera, y vuelven.
+  const corregir = page.locator("[data-acciones-version]:not(.hidden) [data-corregir-relato]");
+  await expect(corregir).toHaveAttribute("aria-disabled", "true");
   await expect(regenerating).toHaveCount(0, { timeout: 10_000 });
+  await expect(corregir).not.toHaveAttribute("aria-disabled", "true");
+  await expect(corregir).toHaveAttribute("href", /\/corregir$/);
 });

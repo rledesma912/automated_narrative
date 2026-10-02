@@ -6,11 +6,12 @@
  *   storyStatus:    string — 'processing' | 'completed' | 'failed' | 'draft'
  *   story:          object | null
  *   beats:          array  — beats cargados de DB (modo lectura)
- *   regenerateMode: boolean — true si llegó con ?regenerate=1 y status=completed (Spec-219)
+ *   regenerateMode: boolean — true si llegó con ?escribir=1 (o ?regenerate=1) y status=completed (Spec-219)
+ *   startMode:      boolean — true si llegó con ?escribir=1 y es un borrador o falló (Spec-630 B14)
  */
 %>
 
-<% if (!activeJobId && storyStatus !== 'processing' && !regenerateMode) { %>
+<% if (!activeJobId && storyStatus !== 'processing' && !regenerateMode && !locals.startMode) { %>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
 <%/* MODO LECTURA — historia completed o failed                               */%>
 <%/* ══════════════════════════════════════════════════════════════════════════ */%>
@@ -72,11 +73,12 @@
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Mis historias
     </a>
     <% if (story) { %>
-      <a href="/historia/<%= storyId %>" class="btn-forge-outline">
-        <i data-lucide="book-open" class="w-4 h-4"></i> Ver historia
+      <%/* Spec-630 B12: la ficha se fue; se vuelve a «Los actos». */%>
+      <a href="<%= rutas.editarHref(storyId) %>" class="btn-forge-outline">
+        <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
       <% if (storyStatus === 'completed') { %>
-        <a href="/generar/stream/<%= storyId %>?regenerate=1" class="btn-forge-sm">
+        <a href="/generar/stream/<%= storyId %>?escribir=1" class="btn-forge-sm">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
         </a>
       <% } else if (storyStatus === 'failed') { %>
@@ -85,6 +87,11 @@
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
           </button>
         </form>
+      <% } else if (storyStatus === 'draft') { %>
+        <%/* Spec-630 B14: un borrador se empieza a escribir acá (Mis historias ya no lo lanza). */%>
+        <a href="/generar/stream/<%= storyId %>?escribir=1" class="btn-forge-sm">
+          <i data-lucide="feather" class="w-4 h-4"></i> Escribir el relato
+        </a>
       <% } %>
     <% } %>
   </div>

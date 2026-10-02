@@ -22,6 +22,9 @@
 
   <!-- CSS compilado (Tailwind CLI compilado con PostCSS) — Offline first -->
   <link rel="stylesheet" href="/styles.css?v=<%= locals.assetVersion || '' %>">
+  <%/* Spec-630 B17: si una navegación con hx-boost trae otra versión, se carga la página entera. */%>
+  <meta name="asset-version" content="<%= locals.assetVersion || '' %>">
+  <script src="/js/version-check.js?v=<%= locals.assetVersion || '' %>"></script>
 
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <%/* Spec-460: canal global de eventos + componentes que lo consumen. En <head>

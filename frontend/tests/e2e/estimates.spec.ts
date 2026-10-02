@@ -10,15 +10,13 @@ test.beforeAll(async ({ request }) => {
   if (!STORY_ID) STORY_ID = await storyIdByTitle(request, "El monte prohibido");
 });
 
-test("la galería muestra cuánto tarda generar", async ({ page }) => {
+// Spec-630 B12/B14: la galería ya no lanza generaciones y la ficha se fue; la
+// estimación se ve donde se lanza: la sala y regenerar un acto.
+test("la galería no ofrece generar ni muestra estimación", async ({ page }) => {
   await page.goto("/galeria");
-  const estimate = page.locator('[data-estimate="full_generation"]').first();
-  await expect(estimate).toHaveText(/^≈ \d+ min$/);
-});
-
-test("la ficha muestra la estimación junto a Regenerar", async ({ page }) => {
-  await page.goto(`/historia/${STORY_ID}`);
-  await expect(page.locator('[data-estimate="full_generation"]')).toHaveText(/^≈ \d+ min$/);
+  await expect(page.locator("[data-story-card]").first()).toBeVisible();
+  await expect(page.locator('[data-estimate="full_generation"]')).toHaveCount(0);
+  await expect(page.locator("[data-story-card] [data-generation-trigger]")).toHaveCount(0);
 });
 
 test("la confirmación de la sala dice cuánto tarda y que se puede cerrar la pestaña", async ({
