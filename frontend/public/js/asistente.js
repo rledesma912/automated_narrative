@@ -85,15 +85,117 @@
 
   function restoreScroll() {
     const key = `asistente-scroll:${location.pathname}`;
+    let top = null;
     try {
-      const top = sessionStorage.getItem(key);
-      if (top !== null) {
-        sessionStorage.removeItem(key);
-        const main = $("main");
-        if (main) main.scrollTop = Number(top);
-      }
+      top = sessionStorage.getItem(key);
+      if (top !== null) sessionStorage.removeItem(key);
     } catch {
       /* sin storage */
+    }
+    if (top === null) return;
+    // Spec-630 B5: con la página a medio armar el navegador recorta el scroll al alto
+    // que tiene en ese momento (se pedía 1480 y quedaba en 475): se aplica ya cargada.
+    const apply = () =>
+      requestAnimationFrame(() => {
+        const main = $("main");
+        if (main) main.scrollTop = Number(top);
+      });
+    if (document.readyState === "complete") apply();
+    else window.addEventListener("load", apply, { once: true });
+  }
+
+  // ── Actualizar sin recargar (Spec-630 B5) ─────────────────────────────────
+
+  async function fragment(paso) {
+    const resp = await fetch(`/asistente/${page.storyId}/fragmento/${paso}`, { headers: { Accept: "text/html" } });
+    if (!resp.ok) throw new Error(`fragmento ${resp.status}`);
+    const tpl = document.createElement("template");
+    tpl.innerHTML = await resp.text();
+    return tpl.content;
+  }
+
+  /** Lo escrito y elegido en cada pregunta del taller que no se mandó todavía. */
+  function tallerDrafts(root) {
+    return new Map(
+      $$("[data-pregunta]", root).map((box) => {
+        const checked = $("input[type=radio]:checked", box);
+        const text = $("[data-texto-mia]", box);
+        const cambio = $("[data-cambio]", box);
+        return [
+          box.dataset.pregunta,
+          {
+            radio: checked ? checked.value : null,
+            text: text ? text.value : "",
+            textVisible: text ? !text.classList.contains("hidden") : false,
+            cambioVisible: cambio ? !cambio.classList.contains("hidden") : false,
+          },
+        ];
+      }),
+    );
+  }
+
+  function restoreTallerDrafts(root, drafts, skip) {
+    $$("[data-pregunta]", root).forEach((box) => {
+      const d = drafts.get(box.dataset.pregunta);
+      if (!d || box.dataset.pregunta === skip) return;
+      if (d.radio !== null) {
+        const radio = $$("input[type=radio]", box).find((r) => r.value === d.radio);
+        if (radio) radio.checked = true;
+      }
+      const text = $("[data-texto-mia]", box);
+      if (text) {
+        text.value = d.text;
+        if (!text.closest("[data-cambio]")) text.classList.toggle("hidden", !d.textVisible);
+      }
+      const cambio = $("[data-cambio]", box);
+      if (cambio) cambio.classList.toggle("hidden", !d.cambioVisible);
+    });
+  }
+
+  /**
+   * Reemplaza solo lo que cambió, sin recargar, y deja la pantalla donde estaba:
+   * la primera de `anclas` (selectores) que está antes y después queda a la misma
+   * altura. «Los actos»: el resumen y la tarjeta del acto (o todas, si cambió algo
+   * que comparten: personajes, lugares). «Preguntas»: todo el contenido, sin perder
+   * lo que se estaba escribiendo en otras preguntas.
+   */
+  async function refresh({ paso, actos, anclas = [], foco, skip }) {
+    const frag = await fragment(paso);
+    const main = $("main");
+    const before = anclas.map((sel) => {
+      const el = $(sel);
+      return el ? el.getBoundingClientRect().top : null;
+    });
+
+    if (paso === "escaleta") {
+      const oldActs = $$("[data-acto]");
+      const newActs = $$("[data-acto]", frag);
+      if (!oldActs.length || oldActs.length !== newActs.length) throw new Error("cambió la estructura");
+      const resumen = $("[data-resumen-actos]");
+      const nuevoResumen = $("[data-resumen-actos]", frag);
+      if (resumen && nuevoResumen) resumen.replaceWith(nuevoResumen);
+      newActs.forEach((li) => {
+        if (actos !== "todos" && li.dataset.acto !== String(actos)) return;
+        const old = $(`[data-acto="${li.dataset.acto}"]`);
+        const form = $("form[data-autosave]", old);
+        if (form) pending.delete(form);
+        old.replaceWith(li);
+      });
+    } else {
+      const box = $("[data-preguntas-contenido]");
+      if (!box) throw new Error("sin contenido");
+      const drafts = tallerDrafts(box);
+      box.replaceChildren(frag);
+      restoreTallerDrafts(box, drafts, skip);
+    }
+    icons();
+
+    const i = anclas.findIndex((sel, n) => before[n] !== null && $(sel));
+    if (i >= 0 && main) main.scrollTop += $(anclas[i]).getBoundingClientRect().top - before[i];
+    const target = (foco && $(foco)) || (i >= 0 ? $(anclas[i]) : null);
+    if (target) {
+      if (!target.matches("a, button, input, textarea, select, [tabindex]")) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
     }
   }
 
@@ -304,11 +406,17 @@
 
   // ── Acciones sin IA (taller y escaleta) ───────────────────────────────────
 
-  async function run(action, errorEl) {
+  /** Cómo se actualiza «Los actos» después de una acción en el acto `n`. */
+  function enActo(n, { todos = false } = {}) {
+    const acto = `[data-acto="${n}"]`;
+    return { paso: "escaleta", actos: todos ? "todos" : n, anclas: [acto], foco: acto };
+  }
+
+  /** Una acción sin IA: guarda lo pendiente, la hace y actualiza la pantalla sin recargar. */
+  async function run(action, { error: errorEl, ...vista } = {}) {
     try {
       await flushAll();
       await action();
-      reloadKeepingScroll();
     } catch (err) {
       if (err.status === 409) return attachToActiveJob();
       if (errorEl) {
@@ -317,6 +425,12 @@
       } else {
         status("error", err.message);
       }
+      return;
+    }
+    try {
+      await refresh(vista);
+    } catch {
+      reloadKeepingScroll(); // la pantalla cambió de forma (p. ej. aparecieron los actos)
     }
   }
 
@@ -336,7 +450,17 @@
         return;
       }
     }
-    run(() => api("PATCH", `/authoring/stories/${page.storyId}/workshop/${criterion}`, body), $("[data-error]", box));
+    // Responder mueve la pregunta a «Ya lo tenés»: la pantalla se ancla en la que sigue.
+    const sel = (c) => `[data-preguntas-contenido] [data-pregunta="${c}"]`;
+    const todas = $$("[data-preguntas-contenido] [data-pregunta]").map((el) => el.dataset.pregunta);
+    const siguientes = todas.slice(todas.indexOf(criterion) + 1).map(sel);
+    const abierta = !box.closest("li");
+    run(() => api("PATCH", `/authoring/stories/${page.storyId}/workshop/${criterion}`, body), {
+      error: $("[data-error]", box),
+      paso: "taller",
+      skip: criterion,
+      anclas: abierta ? [...siguientes, sel(criterion)] : [sel(criterion), ...siguientes],
+    });
   }
 
   // ── La IA trabajando: el modal ────────────────────────────────────────────
@@ -573,22 +697,22 @@
         const payload = actPayload(form);
         payload.on_stage = [...new Set([...payload.on_stage, name])];
         await api("PUT", `/authoring/stories/${page.storyId}/outline/${form.dataset.number}`, payload);
-      });
+      }, enActo(form.dataset.number, { todos: true }));
     }
     if (t.matches("[data-sumar-personaje]") && form) {
       const n = form.dataset.number;
       return run(async () => {
         await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "sin_nombre" });
         await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.aviso });
-      });
+      }, enActo(n, { todos: true }));
     }
     if (t.matches("[data-ignorar]") && form) {
       const n = form.dataset.number;
-      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.ignorar }));
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.ignorar }), enActo(n));
     }
     if (t.matches("[data-restaurar]") && form) {
       const n = form.dataset.number;
-      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }));
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }), enActo(n));
     }
     if (t.matches("[data-generar]")) {
       e.preventDefault();

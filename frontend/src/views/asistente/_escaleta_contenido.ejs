@@ -1,0 +1,51 @@
+<%/*
+  Spec-630 S2: el contenido de «Los actos» (resumen + tarjetas). Lo incluye
+  escaleta.ejs y lo devuelve solo GET /asistente/:id/fragmento/escaleta, para
+  actualizar sin recargar. Entrada: state, estimateLabels.
+*/%>
+<%
+  const acts = state.outline.acts;
+  const decisions = state.outline.decisions;
+  const integradas = decisions.filter(d => d.integrada).length;
+  /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. */
+  const avisos = acts.reduce((n, a) => n + a.warnings.filter(w => !w.dismissed).length, 0);
+  const est = locals.estimateLabels || {};
+%>
+  <% if (!acts.length) { %>
+    <section class="bg-forge-surface border border-forge-border p-10 text-center mb-8 max-w-3xl">
+      <i data-lucide="list-ordered" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
+      <p class="font-serif text-xl mb-2">Todavía no armaste los actos</p>
+      <p class="text-forge-muted mb-6">La IA reparte tu historia en cinco actos con lo que respondiste en las preguntas, y después los revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
+      <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
+              data-detalle="La IA reparte tu historia en cinco actos con lo que respondiste y después los revisa.">
+        <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar los actos
+      </button>
+    </section>
+  <% } else { %>
+    <section class="grid md:grid-cols-2 gap-4 mb-10" data-resumen-actos>
+      <div class="bg-forge-surface border border-forge-border p-5">
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que respondiste · <%= integradas %> de <%= decisions.length %> en los actos</h3>
+        <% if (!decisions.length) { %>
+          <p class="text-sm text-forge-muted">Todavía no respondiste preguntas.</p>
+        <% } %>
+        <%/* Spec-550 H9: cada decisión es un chip (integrada / no aparece). */%>
+        <ul class="flex flex-wrap gap-2">
+          <% decisions.forEach(d => { %>
+            <li class="chip-forge chip-forge--md <%= d.integrada ? 'chip-forge--cumple' : 'chip-forge--falta' %>"
+                title="<%= d.integrada ? 'Está en algún acto' : 'No aparece en ningún acto' %>"><%= d.nombre %><% if (!d.integrada) { %> · no aparece<% } %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <div class="bg-forge-surface border border-forge-border p-5">
+        <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que vio la IA</h3>
+        <p class="text-sm mb-2"><span class="chip-forge <%= avisos ? 'chip-forge--parcial' : 'chip-forge--cumple' %>"><%= avisos ? `${avisos} ${avisos === 1 ? 'aviso' : 'avisos'}` : 'Nada para marcar' %></span><%= avisos ? ' en las tarjetas de los actos.' : '' %></p>
+        <p class="pista-forge">Te marca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren. Son sugerencias: vos decidís.</p>
+      </div>
+    </section>
+
+    <ol class="space-y-8 mb-12">
+      <% acts.forEach(a => { %>
+        <%- include('_acto', { a }) %>
+      <% }) %>
+    </ol>
+  <% } %>

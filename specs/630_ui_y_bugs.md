@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1 ✅ (2026-10-02); sigue S2. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** IMPLEMENT — S1 y S2 ✅ (2026-10-02); sigue S3. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -346,13 +346,21 @@ Convención de tests: **pytest** en `tests/` (Core), **Vitest** en `frontend/tes
 - [x] T1.7 Ajustar E2E: `generation-guard`, `relatos`, `visual-snapshots` (pasaban por la ficha o «Vista»), `estimates`, `streaming-room`, `corregir-relato`, `relatos-regenerar` (los que generaban desde la galería: pasan a lanzar por la sala o por «Los actos»). **E2E nuevo** en `asistente.spec.ts`: Mis historias → «Editar» → `/asistente/{id}/escaleta$` con «Los actos» actual; desde «El relato» → paso 3 → «Los actos».
 - [x] T1.8 Checkpoint: `make dev-status`; URLs para mirar (Mis historias, «El relato» de una historia con dos versiones).
 
-### S2 — Sin recargar
-- [ ] T2.1 Extraer `_acto.ejs` y `_pregunta.ejs`. **Test:** `tests/unit/views/asistente-partials.view.test.ts` (el render de `escaleta.ejs` y `taller.ejs` con un estado fijo es igual antes y después: se guarda el HTML actual como fixture en el primer commit del slice).
-- [ ] T2.2 Rutas de fragmento en `asistente.controller.ts`. **Tests:** `tests/unit/controllers/asistente.controller.test.ts` (devuelve solo los actos pedidos, sin layout; 404 si la historia no existe; el del taller trae abiertas y «Ya resuelto»).
-- [ ] T2.3 `run()` + `refresh()` con anclaje de scroll y foco en `asistente.js`; `data-acto` en cada `<li>`.
-- [ ] T2.4 Scroll al terminar un análisis de la IA (`restoreScroll` después del layout).
-- [ ] T2.5 **E2E** `tests/e2e/asistente-sin-recargar.spec.ts`: en el acto 4, «Ignorar», «Volver a mostrar» y «Sumar personaje» no navegan (`page.on('framenavigated')` no dispara) y la tarjeta queda a la misma altura (±4 px); en Preguntas, responder una pregunta no navega; después de un análisis con el mock, el scroll vuelve a donde estaba.
-- [ ] T2.6 Checkpoint en dev.
+### S2 — Sin recargar · ✅ 2026-10-02
+
+**Cómo quedó (ajustes al plan):**
+- Partials: `_acto.ejs` (la tarjeta), `_escaleta_contenido.ejs` (resumen + tarjetas) y `_taller_contenido.ejs` (todo el contenido de «Preguntas»: responder mueve la pregunta de sección, así que no alcanza con la tarjeta; en vez de `_pregunta.ejs`).
+- Una sola ruta: `GET /asistente/:id/fragmento/(escaleta|taller)`, sin layout, `no-store`; 404 / 502.
+- `asistente.js`: `run(action, { error, paso, actos, anclas, foco })` → `refresh()`. En «Preguntas» la pantalla se ancla en la pregunta que sigue (la respondida baja a «Ya lo tenés») y se conserva lo escrito sin mandar en las otras. Si la estructura cambió (p. ej. no había actos), cae a recargar.
+- **Causa del scroll que volvía arriba** (medido en dev): `restoreScroll` corría con la página a medio armar y el navegador recortaba el `scrollTop` (se pedía 1480, quedaba en 475). Ahora se aplica en `load` + `requestAnimationFrame`; solo se usa al terminar un análisis de la IA.
+- Ganchos: `data-acto` + `tabindex="-1"` en cada tarjeta, `data-resumen-actos`, `data-preguntas-contenido` (no `data-taller-…`: lo marca `sin-jerga`).
+
+- [x] T2.1 Extraer `_acto.ejs` y `_pregunta.ejs`. **Test:** `tests/unit/views/asistente-partials.view.test.ts` (el render de `escaleta.ejs` y `taller.ejs` con un estado fijo es igual antes y después: se guarda el HTML actual como fixture en el primer commit del slice).
+- [x] T2.2 Rutas de fragmento en `asistente.controller.ts`. **Tests:** `tests/unit/controllers/asistente.controller.test.ts` (devuelve solo los actos pedidos, sin layout; 404 si la historia no existe; el del taller trae abiertas y «Ya resuelto»).
+- [x] T2.3 `run()` + `refresh()` con anclaje de scroll y foco en `asistente.js`; `data-acto` en cada `<li>`.
+- [x] T2.4 Scroll al terminar un análisis de la IA (`restoreScroll` después del layout).
+- [x] T2.5 **E2E** `tests/e2e/asistente-sin-recargar.spec.ts`: en el acto 4, «Ignorar», «Volver a mostrar» y «Sumar personaje» no navegan (`page.on('framenavigated')` no dispara) y la tarjeta queda a la misma altura (±4 px); en Preguntas, responder una pregunta no navega; después de un análisis con el mock, el scroll vuelve a donde estaba.
+- [x] T2.6 Checkpoint en dev.
 
 ### S3 — Personajes, lugares y avisos
 - [ ] T3.1 `warnings/resolve`. **Test:** `test_authoring_api.py::test_resolver_un_aviso_lo_quita` (desaparece, no queda `dismissed`; 404 con clave inexistente; 409 con job activo).

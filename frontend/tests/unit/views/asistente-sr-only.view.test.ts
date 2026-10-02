@@ -11,7 +11,8 @@ import { describe, expect, it } from "vitest";
  */
 const DIR = path.join(process.cwd(), "src/views/asistente");
 
-describe.each(["direccion.ejs", "taller.ejs", "escaleta.ejs"])("%s", (file) => {
+// Spec-630 S2: las tarjetas de Preguntas y Los actos viven en partials.
+describe.each(["direccion.ejs", "_taller_contenido.ejs", "_acto.ejs"])("%s", (file) => {
   it("cada input sr-only está dentro de un <label> relative", () => {
     const lines = fs.readFileSync(path.join(DIR, file), "utf-8").split("\n");
     const inputs = lines.flatMap((l, i) => (l.includes("<input") && l.includes('class="peer sr-only"') ? [i] : []));

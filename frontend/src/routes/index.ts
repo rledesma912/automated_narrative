@@ -6,7 +6,7 @@ import { streamingRoomPage } from "../controllers/stream.controller";
 import { historiaRedirect, generarDesdeHistoria, deleteStoryHandler, confirmDeleteModal } from "../controllers/historia.controller";
 import { relatosPage, regenerarActoAction, relatoPanelFragment, corregirRelatoPage, videoPage } from "../controllers/relatos.controller";
 import { loadEstimates } from "../middleware/estimates.middleware";
-import { nuevoPage, asistentePage } from "../controllers/asistente.controller";
+import { nuevoPage, asistentePage, fragmentoAsistente } from "../controllers/asistente.controller";
 import { editarHref } from "../utils/rutas";
 
 const router = Router();
@@ -21,6 +21,8 @@ router.get("/debug",       debugPage);
 // Spec-530: asistente de autoría («Nuevo relato»).
 router.get("/nuevo",                          loadEstimates, nuevoPage);
 router.get("/asistente/:storyId/:paso",       loadEstimates, asistentePage);
+// Spec-630 S2: el contenido de un paso, para actualizar sin recargar.
+router.get("/asistente/:storyId/fragmento/:paso", loadEstimates, fragmentoAsistente);
 
 // Spec-530 S7: el wizard se retiró; las rutas viejas llevan al asistente.
 router.get("/generar",                     (_req, res) => res.redirect(301, "/nuevo"));
