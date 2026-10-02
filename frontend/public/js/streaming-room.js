@@ -283,8 +283,8 @@
     const errorActions = document.querySelector("#error-panel .flex.gap-4");
     if (errorActions) {
       errorActions.innerHTML = `
-        <a href="/historia/${STORY_ID}" class="px-6 py-3 bg-forge-accent text-forge-text text-sm uppercase tracking-widest hover:opacity-80 transition-opacity">
-          Ver historia
+        <a href="/asistente/${STORY_ID}/escaleta" class="px-6 py-3 bg-forge-accent text-forge-text text-sm uppercase tracking-widest hover:opacity-80 transition-opacity">
+          Editar
         </a>
         <a href="/galeria" class="px-6 py-3 border border-forge-border text-forge-muted text-sm uppercase tracking-widest hover:text-forge-text transition-colors">
           Mis historias

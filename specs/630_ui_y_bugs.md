@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** PLAN + TASKS escritos (2026-10-02), a revisar — D5–D7 se cierran con la maqueta de S0
+**Estado:** IMPLEMENT — S1 ✅ (2026-10-02); sigue S2. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -200,9 +200,9 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 | D2 | B2: «Sumarlo a los personajes» es **un clic**: suma el personaje (tipo «Con nombre», sin «qué es para»; se completa después si hace falta), lo marca en «Quiénes están» del acto y el aviso se borra (no pasa a ignorados) | decidido | 2026-10-02 |
 | D3 | B7: se puede borrar **cualquier** lugar o personaje (hoy no se distingue quién lo sumó), con `ForgeConfirm` que dice en qué actos se usa; al borrar se quita de esos actos. Quien narra no se borra | decidido | 2026-10-02 |
 | D4 | B5: sin recargar → el Express renderiza la tarjeta de un acto como fragmento (`_acto.ejs`, ruta interna) y `asistente.js` reemplaza solo esa tarjeta; las opciones compartidas (lugares, personajes) se actualizan en las otras tarjetas sin tocar sus campos. En Preguntas, lo mismo con la tarjeta de la pregunta | decidido | 2026-10-02 |
-| D5 | B3: ancho → **recomendado:** usar todo el ancho disponible hasta ~96rem (`max-w-screen-2xl`), columna derecha de `24rem`; los textos largos (encabezado) siguen en `max-w-3xl` para leerse bien | a decidir | |
-| D6 | B9: textos de «Qué cambia» | a aprobar | |
-| D7 | B10: píldora con borde → **recomendado:** solo opciones compactas; las tarjetas grandes de Preguntas y Tu idea quedan | a decidir | |
+| D5 | B3: todo el ancho disponible hasta `max-w-screen-2xl` (96rem), columna derecha de `24rem`; el encabezado sigue en `max-w-3xl`. B4: `lg:gap-10` + línea divisoria (`border-l`) a la izquierda de la columna derecha. B8: caja con borde y fondo suave | decidido (sin maqueta, a pedido del usuario) | 2026-10-02 |
+| D6 | B9: título «Cómo cambia {protagonista} en este acto», pista «Cómo está al empezar el acto y cómo queda al terminar: con miedo → decidida a volver» y rótulos visibles «Al empezar» / «Al terminar» | decidido | 2026-10-02 |
+| D7 | B10: píldora con borde solo en las opciones compactas; las tarjetas grandes de Preguntas y Tu idea quedan | decidido | 2026-10-02 |
 | D9 | B12: la ficha de la historia se va del todo; `/historia/{id}` redirige a «Los actos» (o a la sala con un relato en curso); los «Ver historia» pasan a «Editar» y el del relato terminado a «Ver relato» | decidido | 2026-10-02 |
 | D10 | B13: la pestaña de cada versión dice «Versión del dd/mm/yyyy hh:mm»; el panel pierde el encabezado | decidido | 2026-10-02 |
 | D11 | B14: Mis historias no dispara generaciones: salen «Regenerar», «Reintentar» y «Generar relato» | decidido | 2026-10-02 |
@@ -242,7 +242,7 @@ S6 datos a la IA (B11) ← S3 ────────────┘
 
 S2 va antes que S3 y S4 porque extrae la tarjeta a un partial: S3 la vuelve a pedir después de cada acción y S4 cambia su aspecto en un solo lugar. S6 va después de S3 porque los lugares nuevos recién llegan a `story.scenarios` con B6.
 
-### S0 — Maqueta visual · checkpoint con el usuario
+### S0 — Maqueta visual · **descartado** (2026-10-02: el usuario no necesita validar maquetas; D5–D7 con lo recomendado)
 
 Una maqueta interactiva (artifact HTML, `<meta charset="utf-8">`, las dos paletas «Papel» y «Latte» con los tokens reales de `theme.css`) con:
 - una tarjeta de acto real (datos de «Susana» de la captura) en dos anchos (D5: `max-w-screen-2xl` + columna derecha `24rem` contra el actual);
@@ -331,18 +331,20 @@ Todo en el frontend (Express + EJS), sin tocar el Core.
 Convención de tests: **pytest** en `tests/` (Core), **Vitest** en `frontend/tests/unit/`, **Playwright** en `frontend/tests/e2e/`.
 
 ### S0 — Maqueta
-- [ ] T0.1 Maqueta publicada como artifact (tarjeta de acto, panel del relato, dos paletas).
-- [ ] T0.2 Decisiones D5–D7 y variantes de B4, B8 y B15 anotadas en §2.
+- [x] ~~T0.1–T0.2~~ descartadas: D5–D7 decididos con lo recomendado.
 
-### S1 — Navegación
-- [ ] T1.1 `utils/rutas.ts` con `editarHref`, expuesto en `app.locals.rutas`. **Test:** `tests/unit/utils/rutas.test.ts` (devuelve `/asistente/{id}/escaleta`).
-- [ ] T1.2 B1: «Editar» de la galería y la 301 de `/generar/cargar/:id`. **Tests:** `gallery.view.test.ts` («Editar» → `/escaleta`); `tests/unit/routes/editar.test.ts` (la 301 → `/asistente/{id}/escaleta`, con supertest como `generar-relato-retirado.test.ts`).
-- [ ] T1.3 B12: se borran `historia.ejs`, `historiaPage` y `historia.view.test.ts`; `historiaRedirect`. **Tests:** `tests/unit/routes/historia-redirect.test.ts` (sin job → `/escaleta`; con `full_generation` activo → `/generar/stream/{id}`; Core caído → `/escaleta`).
-- [ ] T1.4 B12: links de la sala, el panel de terminado, el cancelar y la banda. **Tests:** `tests/unit/views/sin-ficha.view.test.ts` (ningún `href="/historia/{id}"` a secas en `src/views` ni en `public/js`, como recorre `sin-jerga`); `streaming_done_panel` dice «Ver relato» → `/relatos`.
-- [ ] T1.5 B13 y B16: pestañas «Versión del …» y la barra con los pasos en `relatos.ejs`. **Tests:** `relatos.view.test.ts` (la pestaña no trae el título y sí «Versión del 02/10/2026 14:30»; la barra tiene los cuatro pasos, «El relato» con `aria-current="step"` y 1–3 como links; no hay «Volver a Galería»).
-- [ ] T1.6 B14: sin botones de generar en la galería. **Test:** `gallery.view.test.ts` (ninguna tarjeta, en ningún estado, trae `data-generation-trigger` ni `action="/historia/…/generar"`; reemplaza el caso de «Vista»).
-- [ ] T1.7 Ajustar E2E: `generation-guard`, `relatos`, `visual-snapshots` (pasaban por la ficha o «Vista»), `estimates`, `streaming-room`, `corregir-relato`, `relatos-regenerar` (los que generaban desde la galería: pasan a lanzar por la sala o por «Los actos»). **E2E nuevo** en `asistente.spec.ts`: Mis historias → «Editar» → `/asistente/{id}/escaleta$` con «Los actos» actual; desde «El relato» → paso 3 → «Los actos».
-- [ ] T1.8 Checkpoint: `make dev-status`; URLs para mirar (Mis historias, «El relato» de una historia con dos versiones).
+### S1 — Navegación · ✅ 2026-10-02
+
+**Hallazgo al implementar (B14):** en un borrador, «Escribir el relato» de «Los actos» llevaba a la sala en modo lectura, sin botón para empezar; solo andaba porque los borradores se lanzaban desde la galería o la ficha. Ahora la sala acepta `?escribir=1` (`stream.controller.ts`: `startMode` para borrador o fallido, `regenerateMode` para terminado; `?regenerate=1` sigue andando) y en modo lectura un borrador ofrece «Escribir el relato». «Escribir el relato» de «Los actos» y «Regenerar» de la sala usan `?escribir=1`. La banda de un job fallido dice «Editar» (antes «Ver detalle», que abría la ficha).
+
+- [x] T1.1 `utils/rutas.ts` con `editarHref`, expuesto en `app.locals.rutas`. **Test:** `tests/unit/utils/rutas.test.ts` (devuelve `/asistente/{id}/escaleta`).
+- [x] T1.2 B1: «Editar» de la galería y la 301 de `/generar/cargar/:id`. **Tests:** `gallery.view.test.ts` («Editar» → `/escaleta`); `tests/unit/routes/editar.test.ts` (la 301 → `/asistente/{id}/escaleta`, con supertest como `generar-relato-retirado.test.ts`).
+- [x] T1.3 B12: se borran `historia.ejs`, `historiaPage` y `historia.view.test.ts`; `historiaRedirect`. **Tests:** `tests/unit/routes/historia-redirect.test.ts` (sin job → `/escaleta`; con `full_generation` activo → `/generar/stream/{id}`; Core caído → `/escaleta`).
+- [x] T1.4 B12: links de la sala, el panel de terminado, el cancelar y la banda. **Tests:** `tests/unit/views/sin-ficha.view.test.ts` (ningún `href="/historia/{id}"` a secas en `src/views` ni en `public/js`, como recorre `sin-jerga`); `streaming_done_panel` dice «Ver relato» → `/relatos`.
+- [x] T1.5 B13 y B16: pestañas «Versión del …» y la barra con los pasos en `relatos.ejs`. **Tests:** `relatos.view.test.ts` (la pestaña no trae el título y sí «Versión del 02/10/2026 14:30»; la barra tiene los cuatro pasos, «El relato» con `aria-current="step"` y 1–3 como links; no hay «Volver a Galería»).
+- [x] T1.6 B14: sin botones de generar en la galería. **Test:** `gallery.view.test.ts` (ninguna tarjeta, en ningún estado, trae `data-generation-trigger` ni `action="/historia/…/generar"`; reemplaza el caso de «Vista»).
+- [x] T1.7 Ajustar E2E: `generation-guard`, `relatos`, `visual-snapshots` (pasaban por la ficha o «Vista»), `estimates`, `streaming-room`, `corregir-relato`, `relatos-regenerar` (los que generaban desde la galería: pasan a lanzar por la sala o por «Los actos»). **E2E nuevo** en `asistente.spec.ts`: Mis historias → «Editar» → `/asistente/{id}/escaleta$` con «Los actos» actual; desde «El relato» → paso 3 → «Los actos».
+- [x] T1.8 Checkpoint: `make dev-status`; URLs para mirar (Mis historias, «El relato» de una historia con dos versiones).
 
 ### S2 — Sin recargar
 - [ ] T2.1 Extraer `_acto.ejs` y `_pregunta.ejs`. **Test:** `tests/unit/views/asistente-partials.view.test.ts` (el render de `escaleta.ejs` y `taller.ejs` con un estado fijo es igual antes y después: se guarda el HTML actual como fixture en el primer commit del slice).

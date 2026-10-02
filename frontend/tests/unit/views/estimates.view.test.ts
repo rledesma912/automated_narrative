@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import ejs from "ejs";
 import path from "path";
+import { rutas } from "../../../src/utils/rutas";
 
 /** Spec-510 T3.2: «≈ N min» antes de lanzar un job. */
 
@@ -25,34 +26,14 @@ function story(status: string) {
   };
 }
 
+// Spec-630: la galería ya no lanza jobs (B14) y la ficha se fue (B12): no muestran estimación.
 describe("galería", () => {
-  it.each(["draft", "failed", "completed"])("muestra la estimación junto al botón (%s)", async (status) => {
+  it.each(["draft", "failed", "completed"])("no muestra estimación (%s)", async (status) => {
     const html = await ejs.renderFile(view("gallery.ejs"), {
+      rutas,
       stories: [story(status)],
       estimateLabels: LABELS,
     });
-    expect(html).toContain('data-estimate="full_generation"');
-    expect(html).toMatch(/<\/button>\s*<span[^>]*data-estimate="full_generation"[^>]*>≈ 4 min<\/span>/);
-  });
-
-  it("sin estimación no muestra nada", async () => {
-    const html = await ejs.renderFile(view("gallery.ejs"), { stories: [story("draft")] });
-    expect(html).not.toContain("data-estimate");
-  });
-});
-
-describe("ficha", () => {
-  it.each(["draft", "completed"])("muestra la estimación junto a Generar/Regenerar (%s)", async (status) => {
-    const html = await ejs.renderFile(view("historia.ejs"), {
-      story: story(status),
-      pageError: null,
-      estimateLabels: LABELS,
-    });
-    expect(html.match(/data-estimate="full_generation"/g)).toHaveLength(1);
-  });
-
-  it("sin estimación no muestra nada", async () => {
-    const html = await ejs.renderFile(view("historia.ejs"), { story: story("draft"), pageError: null });
     expect(html).not.toContain("data-estimate");
   });
 });
@@ -60,6 +41,7 @@ describe("ficha", () => {
 describe("sala: confirmación", () => {
   const room = (regenerateMode: boolean, estimateLabels: unknown) =>
     ejs.renderFile(view("streaming-room.ejs"), {
+      rutas,
       storyId: "s-1",
       // Sin regenerar, el panel de inicio solo aparece con la historia en `processing`.
       story: story(regenerateMode ? "completed" : "processing"),
@@ -84,12 +66,28 @@ describe("sala: confirmación", () => {
   });
 });
 
+// Spec-630 B14: un borrador con ?escribir=1 ve «¿Empezamos a escribir?»; sin eso, «Escribir el relato».
+describe("sala: un borrador", () => {
+  const base = { rutas, storyId: "s-1", story: story("draft"), beats: [], storyStatus: "draft", regenerateMode: false, activeJobId: null };
+
+  it("con startMode muestra el panel para empezar", async () => {
+    const html = (await ejs.renderFile(view("streaming-room.ejs"), { ...base, startMode: true })).replace(/\s+/g, " ");
+    expect(html).toContain("¿Empezamos a escribir?");
+    expect(html).toContain('onclick="initiateGeneration()"');
+  });
+
+  it("en modo lectura ofrece «Escribir el relato» con ?escribir=1", async () => {
+    const html = await ejs.renderFile(view("streaming-room.ejs"), { ...base, startMode: false });
+    expect(html).toMatch(/href="\/generar\/stream\/s-1\?escribir=1"[^>]*>\s*<i[^>]*><\/i> Escribir el relato/);
+    expect(html).toContain('href="/asistente/s-1/escaleta"');
+  });
+});
+
 describe("relatos: regenerar un acto", () => {
   const panel = (estimateLabels: unknown) =>
     ejs.renderFile(view("partials/relato_panel.ejs"), {
       story: { id: "s-1" },
       relato: { id: "r-1", content: "## Acto 1\n\nUno." },
-      displayTitle: "Primera versión",
       isActive: true,
       regenerating: null,
       panelError: null,

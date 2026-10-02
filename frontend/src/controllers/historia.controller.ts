@@ -1,24 +1,27 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { renderPage } from "../utils/render";
-import { checkCoreHealth, deleteStory, startGeneration } from "../services/core_api.service";
+import { checkCoreHealth, deleteStory, getActiveJob, startGeneration } from "../services/core_api.service";
+import { editarHref } from "../utils/rutas";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
 
-export async function historiaPage(req: Request, res: Response): Promise<void> {
-  const { storyId } = req.params;
-
+/**
+ * Spec-630 B12: la ficha de la historia ya no existe. Los links viejos llevan a
+ * «Los actos» o, si hay un relato escribiéndose, a la sala que lo muestra.
+ */
+export async function historiaRedirect(req: Request, res: Response): Promise<void> {
+  const storyId = String(req.params["storyId"]);
+  let job = null;
   try {
-    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
-    await renderPage(res, "historia", {
-      title: resp.data.title ?? "Historia",
-      activePage: "gallery",
-      story: resp.data,
-      pageError: req.query.error ?? null,
-    });
+    job = await getActiveJob(storyId);
   } catch {
-    res.redirect("/galeria");
+    /* Core caído: igual se puede abrir la edición, que avisa por su cuenta */
   }
+  if (job && job.kind === "full_generation") {
+    res.redirect(`/generar/stream/${encodeURIComponent(storyId)}`);
+    return;
+  }
+  res.redirect(editarHref(storyId));
 }
 
 export async function listNarrativesHandler(req: Request, res: Response): Promise<void> {
@@ -93,7 +96,7 @@ export async function generarDesdeHistoria(req: Request, res: Response): Promise
   }
 
   if (currentStatus === "completed") {
-    htmxRedirect(res, req, `/generar/stream/${storyId}?regenerate=1`);
+    htmxRedirect(res, req, `/generar/stream/${storyId}?escribir=1`);
     return;
   }
 

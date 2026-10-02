@@ -65,6 +65,33 @@ describe("streamingRoomPage", () => {
     expect(ctx.storyStatus).toBe("completed");
   });
 
+  // Spec-630 B14: `?escribir=1` arranca desde la sala (Mis historias ya no genera).
+  it.each([
+    ["draft", { startMode: true, regenerateMode: false }],
+    ["failed", { startMode: true, regenerateMode: false }],
+    ["completed", { startMode: false, regenerateMode: true }],
+  ])("?escribir=1 con la historia %s", async (status, expected) => {
+    get
+      .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status } })
+      .mockRejectedValueOnce(notFound())
+      .mockResolvedValueOnce({ data: [] });
+
+    const ctx = await render({ escribir: "1" });
+
+    expect({ startMode: ctx.startMode, regenerateMode: ctx.regenerateMode }).toEqual(expected);
+  });
+
+  it("sin ?escribir=1 un borrador queda en modo lectura", async () => {
+    get
+      .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status: "draft" } })
+      .mockRejectedValueOnce(notFound())
+      .mockResolvedValueOnce({ data: [] });
+
+    const ctx = await render();
+
+    expect(ctx.startMode).toBe(false);
+  });
+
   it("no expone URLs del Core al template (Spec-221: el browser usa rutas relativas)", async () => {
     get
       .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status: "draft" } })

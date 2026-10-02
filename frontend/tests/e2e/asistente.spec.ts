@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { storyIdByTitle } from "./support/stories";
 
 /**
  * Spec-530 S4: el asistente de autoría de punta a punta, con el LLM simulado del
@@ -82,7 +83,28 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await expect(page.locator('form[data-number="1"]').getByRole("checkbox", { name: /El sereno/ })).toBeChecked();
   await expect(page.locator('form[data-number="2"]').getByRole("checkbox", { name: /El sereno/ })).not.toBeChecked();
 
-  await expect(page.getByRole("link", { name: /Escribir el relato/ })).toHaveAttribute("href", `/generar/stream/${sid}`);
+  await expect(page.getByRole("link", { name: /Escribir el relato/ })).toHaveAttribute("href", `/generar/stream/${sid}?escribir=1`);
+
+  // Spec-630 B14: un borrador se escribe desde «Los actos» (antes la sala caía en modo lectura sin botón).
+  await page.getByRole("link", { name: /Escribir el relato/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/generar/stream/${sid}\\?escribir=1$`));
+  await expect(page.locator("#start-panel")).toContainText("¿Empezamos a escribir?");
+});
+
+// Spec-630 B16: «El relato» tiene la barra con los pasos y se vuelve a «Los actos».
+test("desde «El relato» se vuelve a los pasos anteriores", async ({ page, request }) => {
+  const sid = await storyIdByTitle(request, "El monte prohibido");
+  await page.goto(`/historia/${sid}/relatos`);
+  await expect(page.locator('[aria-current="step"]')).toContainText("El relato");
+  await page.locator(".pasos-forge").getByRole("link", { name: /Los actos/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/escaleta$`));
+});
+
+// Spec-630 B12: los links viejos a la ficha llevan a «Los actos».
+test("la ficha vieja redirige a «Los actos»", async ({ page, request }) => {
+  const sid = await storyIdByTitle(request, "El monte prohibido");
+  await page.goto(`/historia/${sid}`);
+  await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/escaleta$`));
 });
 
 test("si la IA no puede empezar, el modal lo dice y se cierra", async ({ page }) => {
@@ -96,10 +118,14 @@ test("si la IA no puede empezar, el modal lo dice y se cierra", async ({ page })
   await expect(page.locator("main")).not.toHaveAttribute("inert", "");
 });
 
-test("la galería edita las historias del asistente en el asistente", async ({ page }) => {
+// Spec-630 B1: «Editar» abre siempre «Los actos».
+test("la galería edita las historias en «Los actos»", async ({ page }) => {
   await page.goto("/galeria");
   const card = page.locator("[data-story-card]", { has: page.getByRole("heading", { name: "E2E asistente" }) });
-  await expect(card.getByRole("link", { name: /Editar/ })).toHaveAttribute("href", /\/asistente\/.+\/direccion$/);
+  await card.getByRole("link", { name: /Editar/ }).click();
+  await expect(page).toHaveURL(/\/asistente\/[0-9a-f-]{36}\/escaleta$/);
+  await expect(page.locator('[aria-current="step"]')).toContainText("Los actos");
+  await page.goto("/galeria");
   await expect(page.getByRole("link", { name: "Nuevo relato" })).toHaveAttribute("href", "/nuevo");
 });
 

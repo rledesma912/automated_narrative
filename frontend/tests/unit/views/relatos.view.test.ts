@@ -11,7 +11,6 @@ function renderPanel(regenerating: { acto: number; jobId: string } | null = null
   return ejs.renderFile(panelPath, {
     story: { id: "s-1" },
     relato: { id: "r-1", content: CONTENT },
-    displayTitle: "Primera versión",
     isActive: true,
     regenerating,
     panelError: null,
@@ -34,7 +33,7 @@ function copyParts(html: string): string[] {
 describe("relatos view", () => {
   it("renders a top switcher for multiple generated narratives", async () => {
     const html = await ejs.renderFile(viewPath, {
-      story: { title: "La casa" },
+      story: { id: "s-1", title: "La casa", status: "completed" },
       relatos: [
         {
           id: "r-1",
@@ -56,13 +55,39 @@ describe("relatos view", () => {
     expect(html).toContain("data-relato-panel=\"r-1\"");
     expect(html).toContain("data-relato-panel=\"r-2\"");
     expect(html).toContain("Copiar Relato");
-    expect(html).toContain("Primera versión");
-    expect(html).toContain("Segunda versión");
+  });
+
+  // Spec-630 B13: la pestaña no repite el título de la historia; dice solo la fecha.
+  it("cada pestaña dice «Versión del dd/mm/yyyy hh:mm» (hora de Argentina)", async () => {
+    const html = await ejs.renderFile(viewPath, {
+      story: { id: "s-1", title: "La casa", status: "completed" },
+      relatos: [
+        { id: "r-1", title: "La casa", content: "## Acto 1\n\nUno.", created_at: "2026-10-02T17:30:00.000Z" },
+      ],
+    });
+    expect(html).toContain("Versión del 02/10/2026 14:30");
+    const tab = html.match(/<button[^>]*data-relato-tab="r-1"[^>]*>([\s\S]*?)<\/button>/)![1];
+    expect(tab).not.toContain("La casa");
+    expect(html).not.toMatch(/<h3[^>]*>\s*La casa\s*<\/h3>/);
+  });
+
+  // Spec-630 B16: «El relato» tiene la barra con los pasos, para volver a los anteriores.
+  it("tiene la barra con los cuatro pasos y «El relato» como actual", async () => {
+    const html = await ejs.renderFile(viewPath, {
+      story: { id: "s-1", title: "La casa", status: "completed" },
+      relatos: [],
+    });
+    expect(html).toContain('class="asistente-barra"');
+    expect(html).toContain('href="/asistente/s-1/direccion"');
+    expect(html).toContain('href="/asistente/s-1/taller"');
+    expect(html).toContain('href="/asistente/s-1/escaleta"');
+    expect(html).toMatch(/aria-current="step"[^>]*>[\s\S]*?El relato/);
+    expect(html).not.toContain("Volver a Galería");
   });
 
   it("renders an explicit empty state when there are no narratives", async () => {
     const html = await ejs.renderFile(viewPath, {
-      story: { title: "La casa" },
+      story: { id: "s-1", title: "La casa", status: "completed" },
       relatos: [],
     });
 
@@ -122,7 +147,6 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
           ],
         },
       },
-      displayTitle: "Primera versión",
       isActive: true,
       regenerating: null,
       panelError: null,
@@ -149,7 +173,6 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
           ],
         },
       },
-      displayTitle: "Primera versión",
       isActive: true,
       regenerating: null,
       panelError: null,
@@ -174,7 +197,6 @@ describe("actos desactualizados", () => {
     const html = await ejs.renderFile(path.join(process.cwd(), "src/views/partials/relato_panel.ejs"), {
       story: { id: "s-1", stale_acts: [3] },
       relato: { id: "r-1", content: "## Acto 2\n\nDos.\n\n## Acto 3\n\nTres." },
-      displayTitle: "Primera versión",
       isActive: true,
       regenerating: null,
       panelError: null,

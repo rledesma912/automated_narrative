@@ -25,8 +25,13 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
   }
 
   const storyStatus = story ? String(story.status) : "draft";
-  const regenerateMode =
-    !activeJobId && req.query["regenerate"] === "1" && storyStatus === "completed";
+  // Spec-630 B14: `?escribir=1` (o el viejo `?regenerate=1`) pide arrancar: con un
+  // relato terminado confirma que se reemplaza; con un borrador o uno fallido,
+  // «¿Empezamos a escribir?». Sin eso, la sala solo muestra lo que hay.
+  const pideEscribir = req.query["escribir"] === "1" || req.query["regenerate"] === "1";
+  const regenerateMode = !activeJobId && pideEscribir && storyStatus === "completed";
+  const startMode =
+    !activeJobId && pideEscribir && (storyStatus === "draft" || storyStatus === "failed");
 
   await renderPage(res, "streaming-room", {
     title: story ? String(story.title ?? "Historia") : "Generando historia...",
@@ -36,6 +41,7 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
     beats,
     storyStatus,
     regenerateMode,
+    startMode,
     activeJobId,
   });
 }

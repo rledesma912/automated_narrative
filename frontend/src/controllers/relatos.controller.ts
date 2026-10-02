@@ -44,7 +44,6 @@ async function renderRelatoPanel(
   res.render("partials/relato_panel", {
     story,
     relato,
-    displayTitle: relato.title || "Relato",
     isActive: true,
     regenerating: extra.regenerating ?? null,
     panelError: extra.panelError ?? null,
