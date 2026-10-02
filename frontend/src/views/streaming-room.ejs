@@ -79,12 +79,12 @@
       </a>
       <% if (storyStatus === 'completed') { %>
         <a href="/generar/stream/<%= storyId %>?escribir=1" class="btn-forge-sm">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar historia
         </a>
       <% } else if (storyStatus === 'failed') { %>
         <form method="POST" action="/historia/<%= storyId %>/generar">
           <button type="submit" class="btn-forge-sm">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar historia
           </button>
         </form>
       <% } else if (storyStatus === 'draft') { %>
@@ -106,6 +106,17 @@
 <%/* Spec-460: la sala tiene su propia conexión SSE (detalle del job): sin canal global. */%>
 <div data-forge-no-global-events hidden></div>
 <div class="max-w-4xl mx-auto" id="streaming-root">
+
+  <%/* Spec-630 B18: también acá se puede volver (irse no corta la generación). Sin
+       hx-boost: una navegación completa cierra la conexión SSE de la sala. */%>
+  <nav class="flex items-center gap-6 mb-8 text-sm" aria-label="Volver" data-sala-volver>
+    <a href="/galeria" hx-boost="false" class="flex items-center gap-2 text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Mis historias
+    </a>
+    <a href="<%= rutas.editarHref(storyId) %>" hx-boost="false" class="flex items-center gap-2 text-forge-muted hover:text-forge-text transition-colors">
+      <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
+    </a>
+  </nav>
 
   <%/* ── Header ────────────────────────────────────────── */%>
   <div class="flex items-center justify-between mb-12">
@@ -154,21 +165,23 @@
   <div id="start-panel" class="<%= activeJobId ? 'hidden ' : '' %>flex flex-col items-center justify-center py-24 gap-8">
     <div class="text-center max-w-2xl">
       <% if (regenerateMode) { %>
-        <p class="text-forge-text text-2xl font-serif mb-6">¿La escribimos de nuevo?</p>
+        <%/* Spec-630 B19: se llama «Regenerar», como en el resto del sitio. */%>
+        <p class="text-forge-text text-2xl font-serif mb-6">¿Regeneramos la historia?</p>
         <%/* Spec-510: cuánto tarda y que no hace falta quedarse mirando. */%>
         <p class="text-sm text-forge-muted mb-8" data-start-estimate>
           <% if (locals.estimateLabels && locals.estimateLabels.full_generation) { %>Tarda <%= locals.estimateLabels.full_generation %>. <% } %>Podés cerrar la pestaña: la IA sigue escribiendo.
         </p>
-        <div class="nota-forge nota-forge--warning mb-8 text-left">
-          <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+        <%/* Spec-630 B20: regenerar crea una versión nueva; no se pierde nada. */%>
+        <div class="nota-forge nota-forge--info mb-8 text-left" data-version-nueva>
+          <i data-lucide="info" class="nota-forge__icono"></i>
           <p class="leading-relaxed">
-            El relato que tenés ahora se reemplaza por uno nuevo, acto por acto.
+            Se escribe una versión nueva con lo que tenés en «Los actos». Las versiones que ya tenés quedan en «El relato».
           </p>
         </div>
         <button type="button" onclick="initiateRegeneration()" class="btn-forge-lg group"
                 data-generation-trigger data-story-id="<%= storyId %>" data-busy-label="Arrancando…">
-          <i data-lucide="sparkles" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
-          Escribirla de nuevo
+          <i data-lucide="refresh-cw" class="w-6 h-6 group-hover:rotate-12 transition-transform"></i>
+          Regenerar historia
         </button>
       <% } else { %>
         <p class="text-forge-text text-2xl font-serif mb-6">¿Empezamos a escribir?</p>

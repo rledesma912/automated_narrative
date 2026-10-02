@@ -83,6 +83,47 @@ describe("sala: un borrador", () => {
   });
 });
 
+// Spec-630 B18–B20: la sala al escribir (confirmar o con la IA trabajando).
+describe("sala: escribir", () => {
+  const sala = (extra: Record<string, unknown>) =>
+    ejs.renderFile(view("streaming-room.ejs"), {
+      rutas,
+      storyId: "s-1",
+      story: story("completed"),
+      beats: [],
+      storyStatus: "completed",
+      regenerateMode: false,
+      startMode: false,
+      activeJobId: null,
+      ...extra,
+    });
+
+  it.each([
+    ["confirmar la regeneración", { regenerateMode: true }],
+    ["empezar un borrador", { startMode: true, storyStatus: "draft", story: story("draft") }],
+    ["con la IA escribiendo", { activeJobId: "j-1", storyStatus: "processing", story: story("processing") }],
+  ])("se puede volver a Mis historias y a «Los actos» (%s)", async (_caso, extra) => {
+    const html = await sala(extra);
+    const nav = html.match(/<nav[^>]*data-sala-volver[^>]*>([\s\S]*?)<\/nav>/)![1];
+    expect(nav).toMatch(/href="\/galeria" hx-boost="false"/);
+    expect(nav).toMatch(/href="\/asistente\/s-1\/escaleta" hx-boost="false"/);
+  });
+
+  it("confirma «¿Regeneramos la historia?» con «Regenerar historia» (B19)", async () => {
+    const html = (await sala({ regenerateMode: true })).replace(/\s+/g, " ");
+    expect(html).toContain("¿Regeneramos la historia?");
+    expect(html).toMatch(/onclick="initiateRegeneration\(\)"[^>]*>[^<]*<i[^>]*><\/i> Regenerar historia/);
+    expect(html).not.toContain("Escribirla de nuevo");
+  });
+
+  it("avisa que sale una versión nueva y que las otras quedan (B20)", async () => {
+    const html = (await sala({ regenerateMode: true })).replace(/\s+/g, " ");
+    expect(html).toMatch(/nota-forge--info[^>]*data-version-nueva/);
+    expect(html).toContain("Se escribe una versión nueva con lo que tenés en «Los actos». Las versiones que ya tenés quedan en «El relato».");
+    expect(html).not.toContain("se reemplaza");
+  });
+});
+
 describe("relatos: regenerar un acto", () => {
   const panel = (estimateLabels: unknown) =>
     ejs.renderFile(view("partials/relato_panel.ejs"), {

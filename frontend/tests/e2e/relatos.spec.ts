@@ -99,10 +99,13 @@ test.describe("Vista de Relatos", () => {
     expect(copied).toBe(segunda.map((t) => t.trim()).filter(Boolean).join("\n\n"));
   });
 
-  test("«Escribir de nuevo la historia completa» lleva a la sala con la confirmación", async ({ page }) => {
-    await page.getByRole("link", { name: /Escribir de nuevo la historia completa/ }).click();
+  // Spec-630 B18/B19: «Regenerar historia» lleva a la sala, que confirma y deja volver.
+  test("«Regenerar historia» lleva a la sala con la confirmación y se puede volver", async ({ page }) => {
+    await page.locator("[data-relato-acciones]").getByRole("link", { name: "Regenerar historia" }).click();
     await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}\\?escribir=1$`));
-    await expect(page.locator("#start-panel")).toContainText("¿La escribimos de nuevo?");
+    await expect(page.locator("#start-panel")).toContainText("¿Regeneramos la historia?");
+    await page.locator("[data-sala-volver]").getByRole("link", { name: "Mis historias" }).click();
+    await expect(page).toHaveURL(/\/galeria$/);
   });
 
   // Spec-490 T2.4

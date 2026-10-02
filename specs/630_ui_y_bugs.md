@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** DONE (2026-10-02) — S1–S6 y B17; PR a `development`. Sin pasar a prod (sin cambio de esquema: `make deploy` cuando el usuario lo pida). Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** S1–S6 y B17 en prod (`24d92c4`, 2026-10-02). §6 (después del pase): B18–B20 ✅ (2026-10-02) en `fix/spec-630-sala-regenerar`, sin pasar a prod. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -425,3 +425,32 @@ Capturas en las dos paletas: `frontend/capturas/531/630-papel/` y `630-latte/` (
 ### Cierre
 - [x] T7.1 `CLAUDE.md` y `fragments/README.md`.
 - [x] T7.2 Suite completa en verde + `make dev-status`; spec en DONE; PR a `development`.
+
+---
+
+## 6. DESPUÉS DEL PASE A PROD (2026-10-02)
+
+Lo que vio el usuario recorriendo prod. Rama `fix/spec-630-sala-regenerar` (desde `development`, `aa2b0bc`).
+
+### B18 — La sala, al regenerar, no tiene cómo volver · **bug**
+
+**Qué pasa hoy:** la sala (`streaming-room.ejs`) tiene dos modos. En **lectura** trae «← Mis historias» y «Editar» (`:70–96`); en el de **escribir** (`«¿La escribimos de nuevo?»`, `«¿Empezamos a escribir?»` y mientras la IA escribe, `:101` en adelante) no trae ningún link: solo queda el menú lateral.
+**Propuesta:** la misma fila de links arriba del encabezado en los dos modos: «← Mis historias» y «Editar» (`rutas.editarHref`). Irse no corta nada: el job sigue (ya lo dice «Podés cerrar la pestaña: la IA sigue escribiendo»).
+**Test:** `estimates.view.test.ts` / vista de la sala: con `regenerateMode`, `startMode` y con un job activo, la sala trae `href="/galeria"` y `href="/asistente/{id}/escaleta"`.
+
+### B19 — «Escribir de nuevo» suena a algo nuevo: es «Regenerar historia» · **UI**
+
+**Qué pasa hoy:** «El relato» dice «Escribir de nuevo la historia completa» (`relatos.ejs:36`, B15) y la sala, «¿La escribimos de nuevo?» / «Escribirla de nuevo» (`streaming-room.ejs:151, 171`). En el resto del sitio la acción se llama «Regenerar» (por acto en «El relato», «Regenerar» en la sala en modo lectura): con otro nombre parece otra función.
+**Propuesta:** «Regenerar historia» en los dos botones; la pregunta de la sala, «¿Regeneramos la historia?». «Escribir el relato» (la primera vez, en un borrador) queda como está: ahí no hay nada que regenerar.
+**Test:** vistas de «El relato» y de la sala con el texto nuevo; E2E que hoy buscan «Escribirla de nuevo» / «Escribir de nuevo la historia completa» (`streaming-room`, `relatos`).
+
+### B20 — La sala dice que el relato se reemplaza: no es así · **bug de texto**
+
+**Qué pasa hoy:** antes de regenerar, la sala avisa «El relato que tenés ahora se reemplaza por uno nuevo, acto por acto» (`streaming-room.ejs:157`). Pero regenerar **siempre crea una versión nueva** (`GenerateNarrativesUseCase.consolidate_and_save`: «siempre crea fila nueva») y las anteriores quedan en «El relato».
+**Propuesta:** «Se escribe una versión nueva con lo que tenés en «Los actos». Las versiones que ya tenés quedan en «El relato».» La nota pasa de aviso (`nota-forge--warning`) a información (`nota-forge--info`): no se pierde nada.
+**Test:** vista de la sala con `regenerateMode`: el texto nuevo y sin «se reemplaza».
+
+**Plan:** un solo slice (todo en el frontend, sin Core): sala (`streaming-room.ejs`), «El relato» (`relatos.ejs`), tests de vista y los E2E que cambian de nombre. Cierre: tests en verde, dev actualizado, PR a `development` y, si el usuario lo pide, `make deploy`.
+
+**Hecho (2026-10-02):** la sala en modo escribir trae «← Mis historias» y «Editar» (`data-sala-volver`, con `hx-boost="false"`: `streaming-room.js` no cierra su conexión SSE al navegar con boost, una navegación completa sí). «Regenerar historia» en «El relato», en la confirmación de la sala y en sus botones de modo lectura; «¿Regeneramos la historia?»; la nota de versión nueva es `nota-forge--info`. Tests: `estimates.view.test.ts` («sala: escribir», los tres modos), `relatos.view.test.ts`, E2E `relatos.spec.ts` (Regenerar historia → sala → «Mis historias») y `streaming-room.spec.ts`. Vitest 377, Playwright 67, pytest 880.
+

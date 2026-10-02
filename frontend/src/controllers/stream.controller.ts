@@ -26,7 +26,7 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
 
   const storyStatus = story ? String(story.status) : "draft";
   // Spec-630 B14: `?escribir=1` (o el viejo `?regenerate=1`) pide arrancar: con un
-  // relato terminado confirma que se reemplaza; con un borrador o uno fallido,
+  // relato terminado confirma «¿Regeneramos la historia?» (una versión nueva); con un borrador o uno fallido,
   // «¿Empezamos a escribir?». Sin eso, la sala solo muestra lo que hay.
   const pideEscribir = req.query["escribir"] === "1" || req.query["regenerate"] === "1";
   const regenerateMode = !activeJobId && pideEscribir && storyStatus === "completed";
