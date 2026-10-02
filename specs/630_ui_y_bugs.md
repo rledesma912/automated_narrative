@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1 y S2 ✅ (2026-10-02); sigue S3. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** IMPLEMENT — S1, S2 y S3 ✅ (2026-10-02); sigue S4. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -362,13 +362,24 @@ Convención de tests: **pytest** en `tests/` (Core), **Vitest** en `frontend/tes
 - [x] T2.5 **E2E** `tests/e2e/asistente-sin-recargar.spec.ts`: en el acto 4, «Ignorar», «Volver a mostrar» y «Sumar personaje» no navegan (`page.on('framenavigated')` no dispara) y la tarjeta queda a la misma altura (±4 px); en Preguntas, responder una pregunta no navega; después de un análisis con el mock, el scroll vuelve a donde estaba.
 - [x] T2.6 Checkpoint en dev.
 
-### S3 — Personajes, lugares y avisos
-- [ ] T3.1 `warnings/resolve`. **Test:** `test_authoring_api.py::test_resolver_un_aviso_lo_quita` (desaparece, no queda `dismissed`; 404 con clave inexistente; 409 con job activo).
-- [ ] T3.2 `characters` con `act` y `characters/remove`. **Tests:** `test_sumar_personaje_lo_marca_en_el_acto` (queda en `on_stage` del acto pedido, los otros no cambian); `test_borrar_personaje_lo_saca_de_los_actos` (sale del elenco y de todo `on_stage`; 422 con quien narra; 404 si no está).
-- [ ] T3.3 `scenarios` y `scenarios/remove`. **Tests:** `test_sumar_lugares_varios` (dos seguidos quedan en `story.scenarios` y en `state.scenarios`; sin duplicar por mayúsculas; con `act` queda elegido); `test_borrar_lugar_vacia_los_actos` (sale de `story.scenarios` y del `scenario` de los actos que lo usaban); `_state` trae en qué actos se usa cada uno.
-- [ ] T3.4 Frontend B2, B6, B7 en `_acto.ejs` + `asistente.js`. **Tests:** `tests/unit/views/escaleta.view.test.ts` (el «×» está al lado de cada lugar y personaje, no adentro de la opción, y no está en quien narra; no hay `scenario_new` en el payload: `actPayload` se prueba exportándolo en `window.ForgeAsistente` como `eta.js`).
-- [ ] T3.5 **E2E** en `asistente.spec.ts`: «Sumarlo a los personajes» → el aviso no está ni visible ni en ignorados y el personaje queda marcado en ese acto; sumar dos lugares seguidos → aparecen en los cinco actos y el segundo queda elegido; elegir otro lugar de la lista se guarda; borrar un lugar y un personaje con confirmación → desaparecen de todos los actos; borrar una regla.
-- [ ] T3.6 Checkpoint en dev.
+### S3 — Personajes, lugares y avisos · ✅ 2026-10-02
+
+**Cómo quedó (ajustes al plan):**
+- `_state.scenarios` pasa de `[str]` a `[{name, acts}]` y cada personaje suma `acts` (lo dice la confirmación de borrar).
+- Personajes y lugares se comparan sin importar mayúsculas, espacios ni la aclaración entre paréntesis del Planificador (`_same`). Un lugar que solo usaba la escaleta también se puede borrar.
+- Bug lateral corregido: el id de un personaje nuevo era `P{len+1}` y, después de borrar uno, se repetía; ahora es el mayor + 1 (`_next_character_id`).
+- «+ Personaje» también usa `act` en `POST …/characters` (antes hacía un `PUT` del acto entero).
+- «Sumarlo» entra como «Con nombre» (`persona`), no «Sin nombre».
+- Mensajes nuevos en `core_messages.yaml` (`api.personaje_inexistente`, `api.lugar_inexistente`, `api.quien_narra_no_se_borra`, `api.aviso_inexistente`).
+- El E2E encontró «Se quita de el acto 2» en la confirmación: corregido a «del acto» / «de los actos».
+- `actPayload` no se exporta para Vitest: lo cubre el E2E («elegir otro lugar se guarda»).
+
+- [x] T3.1 `warnings/resolve`. **Test:** `test_authoring_api.py::test_resolver_un_aviso_lo_quita` (desaparece, no queda `dismissed`; 404 con clave inexistente; 409 con job activo).
+- [x] T3.2 `characters` con `act` y `characters/remove`. **Tests:** `test_sumar_personaje_lo_marca_en_el_acto` (queda en `on_stage` del acto pedido, los otros no cambian); `test_borrar_personaje_lo_saca_de_los_actos` (sale del elenco y de todo `on_stage`; 422 con quien narra; 404 si no está).
+- [x] T3.3 `scenarios` y `scenarios/remove`. **Tests:** `test_sumar_lugares_varios` (dos seguidos quedan en `story.scenarios` y en `state.scenarios`; sin duplicar por mayúsculas; con `act` queda elegido); `test_borrar_lugar_vacia_los_actos` (sale de `story.scenarios` y del `scenario` de los actos que lo usaban); `_state` trae en qué actos se usa cada uno.
+- [x] T3.4 Frontend B2, B6, B7 en `_acto.ejs` + `asistente.js`. **Tests:** `tests/unit/views/escaleta.view.test.ts` (el «×» está al lado de cada lugar y personaje, no adentro de la opción, y no está en quien narra; no hay `scenario_new` en el payload: `actPayload` se prueba exportándolo en `window.ForgeAsistente` como `eta.js`).
+- [x] T3.5 **E2E** en `asistente.spec.ts`: «Sumarlo a los personajes» → el aviso no está ni visible ni en ignorados y el personaje queda marcado en ese acto; sumar dos lugares seguidos → aparecen en los cinco actos y el segundo queda elegido; elegir otro lugar de la lista se guarda; borrar un lugar y un personaje con confirmación → desaparecen de todos los actos; borrar una regla.
+- [x] T3.6 Checkpoint en dev.
 
 ### S4 — Aspecto de «Los actos»
 - [ ] T4.1 Ancho, columnas y caja del secreto según S0.

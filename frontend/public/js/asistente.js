@@ -159,7 +159,7 @@
    * que comparten: personajes, lugares). «Preguntas»: todo el contenido, sin perder
    * lo que se estaba escribiendo en otras preguntas.
    */
-  async function refresh({ paso, actos, anclas = [], foco, skip }) {
+  async function refresh({ paso, actos, anclas = [], foco, skip, mostrar }) {
     const frag = await fragment(paso);
     const main = $("main");
     const before = anclas.map((sel) => {
@@ -188,6 +188,7 @@
       box.replaceChildren(frag);
       restoreTallerDrafts(box, drafts, skip);
     }
+    if (mostrar && $(mostrar)) $(mostrar).classList.remove("hidden");
     icons();
 
     const i = anclas.findIndex((sel, n) => before[n] !== null && $(sel));
@@ -350,14 +351,14 @@
 
   function actPayload(form) {
     const keep = JSON.parse(form.elements.namedItem("keep").value || "{}");
-    const newScenario = value(form, "scenario_new");
     return {
       bridge: value(form, "bridge") || "",
       goal: value(form, "goal"),
       events: texts(form, "events"),
       change_from: value(form, "change_from"),
       change_to: value(form, "change_to"),
-      scenario: newScenario || value(form, "scenario"),
+      // Spec-630 B6: el lugar se elige siempre con la opción (los nuevos se suman antes, aparte).
+      scenario: value(form, "scenario"),
       on_stage: $$('[name="on_stage"]', form)
         .filter((el) => el.checked)
         .map((el) => el.value),
@@ -405,6 +406,32 @@
   }
 
   // ── Acciones sin IA (taller y escaleta) ───────────────────────────────────
+
+  /** Spec-630 B6: suma el lugar a la historia, lo elige en este acto y deja el campo abierto para otro. */
+  function agregarLugar(form) {
+    const input = $("[data-lugar-nombre]", form);
+    const name = input.value.trim();
+    if (!name) return input.focus();
+    const n = Number(form.dataset.number);
+    const acto = `[data-acto="${n}"]`;
+    return run(() => api("POST", `/authoring/stories/${page.storyId}/scenarios`, { name, act: n }), {
+      ...enActo(n, { todos: true }),
+      mostrar: `${acto} [data-lugar-form]`,
+      foco: `${acto} [data-lugar-nombre]`,
+    });
+  }
+
+  /** Spec-630 B7: borrar un lugar o un personaje, diciendo en qué actos se usa. */
+  async function borrar(form, btn, coleccion, name, { titulo, label }) {
+    const usos = (btn.dataset.usos || "").split(",").filter(Boolean);
+    const message = usos.length
+      ? `Se quita ${usos.length === 1 ? "del acto" : "de los actos"} ${usos.join(", ").replace(/, (\d)$/, " y $1")}.`
+      : "Ningún acto lo usa.";
+    const ok = await window.ForgeConfirm.ask({ title: titulo, message, confirmLabel: label });
+    if (!ok) return;
+    const n = Number(form.dataset.number);
+    return run(() => api("POST", `/authoring/stories/${page.storyId}/${coleccion}/remove`, { name }), enActo(n, { todos: true }));
+  }
 
   /** Cómo se actualiza «Los actos» después de una acción en el acto `n`. */
   function enActo(n, { todos = false } = {}) {
@@ -620,10 +647,15 @@
   document.addEventListener("input", (e) => {
     const form = e.target.closest && e.target.closest("form[data-autosave]");
     if (!form || !page) return;
-    if (e.target.name === "scenario_new" && e.target.value.trim()) {
-      $$('[name="scenario"]', form).forEach((r) => (r.checked = false));
-    }
+    if (e.target.matches("[data-lugar-nombre], [data-p-nombre], [data-p-relacion]")) return; // no son del acto
     schedule(form);
+  });
+
+  // Spec-630 B6: Enter en «Nombre del lugar» lo agrega (el form del acto no se envía nunca).
+  document.addEventListener("keydown", (e) => {
+    if (!page || e.key !== "Enter" || !e.target.matches || !e.target.matches("[data-lugar-nombre]")) return;
+    e.preventDefault();
+    agregarLugar(e.target.closest("form[data-autosave]"));
   });
 
   document.addEventListener("change", (e) => {
@@ -644,13 +676,7 @@
     if (e.target.name === "effect") {
       $$("[data-solo-si-efecto]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiEfecto !== e.target.value));
     }
-    if (e.target.name === "scenario") {
-      const nuevo = form.elements.namedItem("scenario_new");
-      if (nuevo) {
-        nuevo.value = "";
-        nuevo.classList.add("hidden");
-      }
-    }
+    if (e.target.matches("[data-p-tipo]")) return; // del formulario de personaje, no del acto
     schedule(form);
   });
 
@@ -678,10 +704,22 @@
       return schedule(form);
     }
     if (t.matches("[data-escenario-nuevo]") && form) {
-      const input = form.elements.namedItem("scenario_new");
-      input.classList.remove("hidden");
-      input.focus();
+      $("[data-lugar-form]", form).classList.remove("hidden");
+      $("[data-lugar-nombre]", form).focus();
       return;
+    }
+    if (t.matches("[data-lugar-agregar]") && form) return agregarLugar(form);
+    if (t.matches("[data-borrar-lugar]") && form) {
+      return borrar(form, t, "scenarios", t.dataset.borrarLugar, {
+        titulo: `¿Borrar el lugar «${t.dataset.borrarLugar}»?`,
+        label: "Borrar el lugar",
+      });
+    }
+    if (t.matches("[data-borrar-personaje]") && form) {
+      return borrar(form, t, "characters", t.dataset.borrarPersonaje, {
+        titulo: `¿Borrar a «${t.dataset.borrarPersonaje}»?`,
+        label: "Borrar el personaje",
+      });
     }
     if (t.matches("[data-personaje-nuevo]") && form) {
       $("[data-personaje-form]", form).classList.toggle("hidden");
@@ -691,19 +729,16 @@
     if (t.matches("[data-personaje-guardar]") && form) {
       const name = $("[data-p-nombre]", form).value.trim();
       if (!name) return $("[data-p-nombre]", form).focus();
-      const character = { name, kind: $("[data-p-tipo]", form).value, relation: $("[data-p-relacion]", form).value.trim() };
-      return run(async () => {
-        await api("POST", `/authoring/stories/${page.storyId}/characters`, character);
-        const payload = actPayload(form);
-        payload.on_stage = [...new Set([...payload.on_stage, name])];
-        await api("PUT", `/authoring/stories/${page.storyId}/outline/${form.dataset.number}`, payload);
-      }, enActo(form.dataset.number, { todos: true }));
+      const n = Number(form.dataset.number);
+      const character = { name, kind: $("[data-p-tipo]", form).value, relation: $("[data-p-relacion]", form).value.trim(), act: n };
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/characters`, character), enActo(n, { todos: true }));
     }
     if (t.matches("[data-sumar-personaje]") && form) {
       const n = form.dataset.number;
+      // Spec-630 B2: un clic; queda en «Quiénes están» del acto y el aviso se resuelve (no se ignora).
       return run(async () => {
-        await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "sin_nombre" });
-        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.aviso });
+        await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "persona", act: Number(n) });
+        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/resolve`, { key: t.dataset.aviso });
       }, enActo(n, { todos: true }));
     }
     if (t.matches("[data-ignorar]") && form) {

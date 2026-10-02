@@ -264,22 +264,43 @@
   {
    "name": "Susana",
    "kind": "persona",
-   "relation": ""
+   "relation": "",
+   "acts": []
   },
   {
    "name": "Tío Rubén",
    "kind": "persona",
-   "relation": "su tío"
+   "relation": "su tío",
+   "acts": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
   },
   {
    "name": "Los peones",
    "kind": "grupo",
-   "relation": ""
+   "relation": "",
+   "acts": []
   }
  ],
  "scenarios": [
-  "Casa de Susana",
-  "Campamento"
+  {
+   "name": "Casa de Susana",
+   "acts": [
+    1,
+    3,
+    4
+   ]
+  },
+  {
+   "name": "Campamento",
+   "acts": [
+    2
+   ]
+  }
  ],
  "active_job": null
 }

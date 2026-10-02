@@ -11,6 +11,7 @@ from src.config import settings
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.adapters import MockLLMAdapter
 from src.infrastructure.database.connection import init_db
+from src.infrastructure.database.repositories import SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
 from src.main import app
 from src.presentation import authoring_jobs
@@ -72,7 +73,7 @@ async def test_crear_desde_la_direccion(client):
 
     assert state["direction"] == FORM | {"narrator": "José", "effect_other": "", "threat": None}
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
-    assert state["characters"] == [{"name": "José", "kind": "persona", "relation": ""}]
+    assert state["characters"] == [{"name": "José", "kind": "persona", "relation": "", "acts": []}]
     story = (await client.get(f"/api/v1/stories/{state['story_id']}")).json()
     assert story["protagonista"] == "José: Chofer de micros"
     assert story["sinopsis"] == FORM["premise"]
@@ -167,7 +168,7 @@ async def test_escaleta_y_revision(client):
         "El encuentro del acto 2 repite el del acto 1."
     ]
     assert acts[1]["warnings"][0]["source"] == "ia" and not acts[1]["warnings"][0]["dismissed"]
-    assert "Escenario de ejemplo" in state["scenarios"]
+    assert "Escenario de ejemplo" in [s["name"] for s in state["scenarios"]]
     state = await _run_job(client, sid, "verify_outline")
     assert state["outline"]["acts"][1]["warnings"]
 
@@ -209,6 +210,14 @@ async def test_con_la_ia_trabajando_no_se_puede_guardar(client, monkeypatch):
     assert (await client.put(f"{API}/stories/{sid}/direction", json=FORM)).status_code == 409
     resp = await client.patch(f"{API}/stories/{sid}/workshop/meta", json={"action": "decide"})
     assert resp.status_code == 409 and resp.headers["x-job-id"] == job["job_id"]
+    # Spec-630 S3: lo nuevo de «Los actos» también espera a la IA.
+    for path, body in [
+        ("outline/1/warnings/resolve", {"key": "x"}),
+        ("characters/remove", {"name": "José"}),
+        ("scenarios", {"name": "El galpón"}),
+        ("scenarios/remove", {"name": "El galpón"}),
+    ]:
+        assert (await client.post(f"{API}/stories/{sid}/{path}", json=body)).status_code == 409
     block.set()
     await job_manager.wait(uuid.UUID(job["job_id"]))
 
@@ -402,3 +411,130 @@ async def test_una_historia_importada_se_abre_en_el_asistente(client):
     assert state["direction"]["premise"] == "Irene cruza el monte de noche."
     assert state["direction"]["protagonist_name"] == "Irene"
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
+
+
+# ── Spec-630 S3: personajes, lugares y avisos desde «Los actos» ──────────────
+
+
+async def test_resolver_un_aviso_lo_quita(client):
+    sid = (await _create(client))["story_id"]
+    state = await _run_job(client, sid, "plan_outline")
+    warning = state["outline"]["acts"][1]["warnings"][0]
+
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/outline/2/warnings/resolve", json={"key": warning["key"]}
+        )
+    ).json()
+    # B2: no queda ni visible ni ignorado.
+    assert warning["key"] not in [w["key"] for w in state["outline"]["acts"][1]["warnings"]]
+    resp = await client.post(f"{API}/stories/{sid}/outline/2/warnings/resolve", json={"key": "x"})
+    assert resp.status_code == 404
+    resp = await client.post(f"{API}/stories/{sid}/outline/6/warnings/resolve", json={"key": "x"})
+    assert resp.status_code == 404
+
+
+async def test_sumar_personaje_lo_marca_en_el_acto(client):
+    sid = (await _create(client))["story_id"]
+    before = await _run_job(client, sid, "plan_outline")
+
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/characters",
+            json={"name": "Tío  Rubén", "kind": "persona", "act": 2},
+        )
+    ).json()
+    acts = state["outline"]["acts"]
+    assert "Tío Rubén" in acts[1]["on_stage"]
+    for n in (0, 2, 3, 4):
+        assert acts[n]["on_stage"] == before["outline"]["acts"][n]["on_stage"]
+    rub = next(c for c in state["characters"] if c["name"] == "Tío Rubén")
+    assert rub["kind"] == "persona" and rub["acts"] == [2]
+
+    # Ya existe: no se duplica; con otro acto, se marca también ahí (con su nombre de siempre).
+    state = (
+        await client.post(f"{API}/stories/{sid}/characters", json={"name": "tío rubén", "act": 4})
+    ).json()
+    assert [c["name"] for c in state["characters"]].count("Tío Rubén") == 1
+    assert "Tío Rubén" in state["outline"]["acts"][3]["on_stage"]
+    assert (
+        await client.post(f"{API}/stories/{sid}/characters", json={"name": "X", "act": 6})
+    ).status_code == 422
+
+
+async def test_borrar_personaje_lo_saca_de_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    for act in (1, 3):
+        await client.post(f"{API}/stories/{sid}/characters", json={"name": "El sereno", "act": act})
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "La vecina"})
+
+    state = (
+        await client.post(f"{API}/stories/{sid}/characters/remove", json={"name": "el sereno"})
+    ).json()
+    assert "El sereno" not in [c["name"] for c in state["characters"]]
+    assert not any("El sereno" in a["on_stage"] for a in state["outline"]["acts"])
+
+    # Un personaje nuevo no repite el id de otro (antes era `len + 1`).
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "El cura"})
+    story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    ids = [p["id"] for p in story.personajes_full]
+    assert len(ids) == len(set(ids))
+
+    assert (
+        await client.post(f"{API}/stories/{sid}/characters/remove", json={"name": "José"})
+    ).status_code == 422  # quien narra
+    assert (
+        await client.post(f"{API}/stories/{sid}/characters/remove", json={"name": "Nadie"})
+    ).status_code == 404
+
+
+async def test_sumar_lugares_varios(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+
+    await client.post(f"{API}/stories/{sid}/scenarios", json={"name": "El galpón"})
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/scenarios", json={"name": "La ruta  vieja", "act": 3}
+        )
+    ).json()
+    names = [s["name"] for s in state["scenarios"]]
+    assert "El galpón" in names and "La ruta vieja" in names
+    assert state["outline"]["acts"][2]["scenario"] == "La ruta vieja"
+    assert next(s for s in state["scenarios"] if s["name"] == "La ruta vieja")["acts"] == [3]
+
+    # Sin duplicar por mayúsculas; con `act`, queda elegido con su nombre de siempre.
+    state = (
+        await client.post(f"{API}/stories/{sid}/scenarios", json={"name": "el galpón", "act": 1})
+    ).json()
+    assert [s["name"] for s in state["scenarios"]].count("El galpón") == 1
+    assert state["outline"]["acts"][0]["scenario"] == "El galpón"
+    story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    assert {"El galpón", "La ruta vieja"} <= {s.name for s in story.scenarios}
+
+
+async def test_borrar_lugar_vacia_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    state = await _run_job(client, sid, "plan_outline")
+    del_plan = state["outline"]["acts"][0]["scenario"]  # un lugar que solo usa la escaleta
+    await client.post(f"{API}/stories/{sid}/scenarios", json={"name": "El galpón", "act": 2})
+    await client.post(f"{API}/stories/{sid}/scenarios", json={"name": "El galpón", "act": 4})
+
+    state = (
+        await client.post(f"{API}/stories/{sid}/scenarios/remove", json={"name": "El galpón"})
+    ).json()
+    assert "El galpón" not in [s["name"] for s in state["scenarios"]]
+    assert (
+        state["outline"]["acts"][1]["scenario"] == ""
+        and state["outline"]["acts"][3]["scenario"] == ""
+    )
+
+    if del_plan:
+        state = (
+            await client.post(f"{API}/stories/{sid}/scenarios/remove", json={"name": del_plan})
+        ).json()
+        assert all(a["scenario"] != del_plan for a in state["outline"]["acts"])
+    assert (
+        await client.post(f"{API}/stories/{sid}/scenarios/remove", json={"name": "Nadie"})
+    ).status_code == 404

@@ -62,8 +62,9 @@ export interface AuthoringState {
     items: WorkshopItem[];
   };
   outline: { acts: Act[]; decisions: Array<{ id: string; nombre: string; integrada: boolean }> };
-  characters: Array<{ name: string; kind: string; relation: string }>;
-  scenarios: string[];
+  // Spec-630 B7: `acts` = en qué actos se usa (lo dice la confirmación de borrar).
+  characters: Array<{ name: string; kind: string; relation: string; acts: number[] }>;
+  scenarios: Array<{ name: string; acts: number[] }>;
   active_job: Record<string, unknown> | null;
 }
 
