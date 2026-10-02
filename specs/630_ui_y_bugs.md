@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1–S6 y B17 ✅ (2026-10-02); falta el cierre (CLAUDE.md, PR a `development`). Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** DONE (2026-10-02) — S1–S6 y B17; PR a `development`. Sin pasar a prod (sin cambio de esquema: `make deploy` cuando el usuario lo pida). Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -221,15 +221,15 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 
 ## 3. CRITERIOS DE ÉXITO
 
-- [ ] B1: las tres entradas de edición llevan a `/asistente/{id}/escaleta`, armadas desde un solo helper.
-- [ ] B2: aplicar «Sumarlo a los personajes» no deja el aviso en ignorados y marca al personaje en el acto.
-- [ ] B5: ninguna acción de «Los actos» ni de «Preguntas» recarga la página; el scroll y el foco quedan donde estaban (E2E que mide `scrollTop` antes y después).
-- [ ] B6/B7: se suman varios lugares seguidos y aparecen en todos los actos; lugares, reglas y personajes se pueden borrar.
-- [ ] B3/B4/B8/B9/B10: validado con capturas en `storymaker.test` (las dos paletas; `palette-contrast` y `gramatica-visual` en verde).
-- [ ] B11: tabla completa, cada fila con su test; snapshots actualizados a propósito.
-- [ ] B12: no queda ningún acceso a la ficha; `/historia/{id}` redirige.
-- [ ] B13–B16: pestañas «Versión del …»; la galería sin botones de generar; acciones del relato arriba; desde «El relato» se vuelve a los pasos 1–3.
-- [ ] Tests en verde (`make lint`, `make test`, `cd frontend && npm test`, Playwright) y dev reflejando los cambios.
+- [x] B1: las tres entradas de edición llevan a `/asistente/{id}/escaleta`, armadas desde un solo helper.
+- [x] B2: aplicar «Sumarlo a los personajes» no deja el aviso en ignorados y marca al personaje en el acto.
+- [x] B5: ninguna acción de «Los actos» ni de «Preguntas» recarga la página; el scroll y el foco quedan donde estaban (E2E que mide `scrollTop` antes y después).
+- [x] B6/B7: se suman varios lugares seguidos y aparecen en todos los actos; lugares, reglas y personajes se pueden borrar.
+- [x] B3/B4/B8/B9/B10: validado con capturas en `storymaker.test` (las dos paletas; `palette-contrast` y `gramatica-visual` en verde).
+- [x] B11: tabla completa, cada fila con su test; snapshots actualizados a propósito.
+- [x] B12: no queda ningún acceso a la ficha; `/historia/{id}` redirige.
+- [x] B13–B16: pestañas «Versión del …»; la galería sin botones de generar; acciones del relato arriba; desde «El relato» se vuelve a los pasos 1–3.
+- [x] Tests en verde (`make lint`, `make test`, `cd frontend && npm test`, Playwright) y dev reflejando los cambios.
 
 ---
 
@@ -423,5 +423,5 @@ Capturas en las dos paletas: `frontend/capturas/531/630-papel/` y `630-latte/` (
 - [x] T6.6 Checkpoint en dev.
 
 ### Cierre
-- [ ] T7.1 `CLAUDE.md` y `fragments/README.md`.
-- [ ] T7.2 Suite completa en verde + `make dev-status`; spec en DONE; PR a `development`.
+- [x] T7.1 `CLAUDE.md` y `fragments/README.md`.
+- [x] T7.2 Suite completa en verde + `make dev-status`; spec en DONE; PR a `development`.
