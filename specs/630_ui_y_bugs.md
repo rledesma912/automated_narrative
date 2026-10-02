@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** SPECIFY — B1 descripto; se suman los hallazgos de la lista que trae el usuario
+**Estado:** SPECIFY — B1–B11 descriptos; D1–D4 y D8 decididos; D5–D7 (visuales) se validan con maqueta
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -48,28 +48,132 @@ Juntar en una spec los arreglos chicos de UI y los bugs que el usuario encuentra
 - Test de ruta: `/generar/cargar/:id` redirige a `/asistente/{id}/escaleta`.
 - E2E: desde Mis historias → «Editar» → URL `/asistente/{id}/escaleta$`, con «Los actos» como paso actual.
 
-### B2… — *(pendientes: lista del usuario)*
+### Hallazgos de la vista «Los actos» (lista del usuario, 2026-10-02)
+
+Todos son de `frontend/src/views/asistente/escaleta.ejs` + `frontend/public/js/asistente.js`, salvo donde se indica. El usuario marcó en una captura: más ancho hacia la derecha (B3) y más separación entre la columna izquierda y la derecha (B4). Comentarios de Vale (usuaria final) en B9 y B10.
+
+### B2 — «Sumarlo a los personajes» deja el aviso como ignorado · **bug**
+
+**Qué pasa hoy:** el botón (`asistente.js:578`) hace dos llamadas: `POST …/characters` (con `kind: "sin_nombre"`) y `POST …/warnings/dismiss`. El aviso queda en «N avisos ignorados», como si el autor lo hubiera descartado, cuando en realidad **lo resolvió**. Además el personaje sumado **no queda marcado en «Quiénes están»** del acto donde apareció el aviso, y entra como «Sin nombre» aunque tenga nombre («Tío Rubén») y sin «qué es para» quien narra (dato que usa la Voz para los parentescos).
+
+**Propuesta:** aplicar una sugerencia **resuelve** el aviso: se borra de la lista (no pasa a ignorados). El personaje queda en «Quiénes están» de ese acto. Ver D2.
+- Backend: `POST …/outline/{n}/warnings/resolve` con `{key}` que quita el aviso (o lo marca `resolved`, sin mostrarse en ignorados). Ignorar sigue igual (Spec-550 H10).
+
+### B3 — La vista de edición es angosta · **UI**
+
+**Qué pasa hoy:** el contenido está limitado a `max-w-5xl` (64rem, `escaleta.ejs:40`) y la columna derecha a `18rem` (`lg:grid-cols-[1fr_18rem]`, `:122`): en una pantalla ancha sobra mucho espacio a la derecha.
+**Propuesta:** ver D5.
+
+### B4 — Las dos columnas del acto se pegan · **UI**
+
+**Qué pasa hoy:** la izquierda («Qué quiere…», «Qué pasa», «Qué cambia») y la derecha («Dónde pasa», «Reglas», «Detalles que vuelven», «Lo que todavía es secreto», «Quiénes están») están separadas solo por `gap-6`; los botones «×» de los hechos quedan al lado de «Dónde pasa».
+**Propuesta:** más espacio entre columnas (`gap-10`) y una línea divisoria sutil a la izquierda de la columna derecha (`border-l border-forge-border pl-8` en `lg`). La columna derecha con fondo apenas distinto es la alternativa si la línea no alcanza (se decide con la captura).
+
+### B5 — Acciones que recargan la página y mandan el scroll arriba · **bug**
+
+**Qué pasa hoy:** todas las acciones que no son autoguardado pasan por `run()` (`asistente.js:307`) → `reloadKeepingScroll()` → `location.reload()`. Intenta volver al scroll guardado, pero la página parpadea y en la práctica el scroll vuelve arriba. Afecta:
+
+| Acción | Dónde | Línea |
+|---|---|---|
+| Ignorar / Volver a mostrar un aviso | Los actos | `:585`, `:589` |
+| Sumarlo a los personajes | Los actos | `:578` |
+| Sumar personaje (formulario) | Los actos | `:569` |
+| Responder / decidir / reabrir una pregunta | Preguntas | `:339` |
+| Al terminar un análisis de la IA sin cambiar de paso | todos | `:429` |
+
+**Propuesta:** ninguna acción de la vista recarga la página: se actualiza solo la parte que cambió, sin mover el scroll ni el foco. Ver D4 (cómo). Al terminar un análisis de la IA sí se puede recargar (cambia todo y el modal ya tapa la página), pero volviendo al mismo lugar.
+
+### B6 — «+ Lugar» no agrega el lugar a la lista; no se puede agregar más de uno · **bug**
+
+**Qué pasa hoy:** el botón (`asistente.js:557`) muestra un único campo `scenario_new` debajo de la lista. Lo que se escribe se guarda como el lugar del acto (`actPayload`: `scenario: newScenario || value(form, "scenario")`), pero:
+- No aparece como opción en la lista hasta recargar la página (la lista sale de `state.scenarios`).
+- Hay un solo campo: escribir otro lugar **pisa** el anterior.
+- Mientras el campo tenga texto, **gana siempre** sobre la opción elegida: elegir otro lugar de la lista no se guarda.
+- El lugar nuevo no entra a `story.scenarios`: solo existe porque algún acto lo usa (`authoring_router._state`, `scenarios`), y desaparece si ningún acto lo elige.
+
+**Propuesta:** «+ Lugar» abre un campo con «Agregar»; al confirmar (botón o Enter) el lugar se suma a la historia (`story.scenarios`, endpoint nuevo `POST …/scenarios`), aparece como opción **en todos los actos**, queda elegido en este y el campo se vacía para sumar otro.
+
+### B7 — Poder borrar lugares, reglas y personajes · **UI**
+
+**Qué pasa hoy:**
+- **Reglas:** ya tienen «×» (`escaleta.ejs:174`) y se guardan al quitarlas. Se verifica que funcione y que se vea (con la lista vacía no hay ninguna «×» a la vista).
+- **Lugares:** no hay forma de borrarlos.
+- **Quiénes están:** no hay forma de borrar un personaje del elenco (solo desmarcarlo del acto).
+
+**Propuesta:** cada lugar y cada personaje tiene un «×» chico al lado (no adentro de la opción, para no elegirla sin querer). Borrar pide confirmación con `ForgeConfirm` y dice en qué actos se usa; al borrar se quita de esos actos. Quien narra no se puede borrar. Ver D3.
+
+### B8 — Agrupar «Lo que todavía es secreto» con «Se descubre en» · **UI**
+
+**Qué pasa hoy:** el secreto (`:191`) y el combo «Se descubre en» (`:195`) van uno debajo del otro, con el mismo peso que el resto de la columna.
+**Propuesta:** los dos dentro de una caja propia (borde y fondo suave, como el formulario de «+ Personaje»), con el combo en la misma línea del título de la caja: «Se descubre en [el Acto 4 ▾]».
+
+### B9 — «Qué cambia» no se entiende · **UI** (comentario de Vale)
+
+**Qué pasa hoy:** el título es «Qué cambia» y los dos campos no tienen rótulo visible (`aria-label` «Al empezar» / «Al terminar»): no se sabe qué hay que poner ni que es un antes → después.
+**Datos:** `change_from` / `change_to` es cómo está el protagonista al empezar y al terminar el acto (la Voz recibe `change_to` como «cambio», el Verificador marca `sin_cambio` si son iguales).
+**Propuesta (textos para aprobar, D6):**
+- Título: «Cómo cambia {protagonista} en este acto».
+- Pista: «Cómo está al empezar el acto y cómo queda al terminar: con miedo → decidida a volver».
+- Rótulos visibles sobre cada campo: «Al empezar» y «Al terminar».
+
+### B10 — Las opciones se confunden con los botones · **UI** (comentario de Vale)
+
+**Qué pasa hoy:** las opciones compactas («Dónde pasa», «Quiénes están»; `.opcion-forge--compacta`) y los botones («+ Lugar», «+ Regla») tienen la misma forma: rectángulo con bordes redondeados. Aunque el color cambie, Vale los confunde.
+**Propuesta:** las opciones compactas pasan a **píldora** (`rounded-full`), con borde y la marca de radio/casilla que ya tienen. Se distinguen de los botones (rectángulo) y de los chips de estado (píldora **sin borde** y sin marca). Actualiza la gramática visual de la Spec-550 H9 y su test (`gramatica-visual.view.test.ts`). Las tarjetas grandes de opción (Preguntas, Tu idea) quedan como están salvo que D7 diga otra cosa.
+
+### B11 — Que todo lo que se edita en «Los actos» se guarde y llegue a la IA · **auditoría**
+
+**Revisión inicial (2026-10-02, a completar en el slice):**
+
+| Dato del acto | Se guarda | Planificador | Verificador | Voz |
+|---|---|---|---|---|
+| Cómo llega acá (`bridge`) | sí | — (lo genera) | sí | sí |
+| Qué quiere (`goal`) | sí | — | sí | sí |
+| Qué pasa (`events`) | sí | — | sí | sí |
+| Qué cambia (`change_from/to`) | sí | — | **no** (solo la regla `sin_cambio`) | solo `change_to` |
+| Dónde pasa (`scenario`) | sí, pero ver B6 | solo los de `story.scenarios` | sí (nombre) | sí (con descripción si la tiene) |
+| Reglas del acto (`rule.applies_to_beat`) | sí | **no** | **no** | sí |
+| Lo que todavía es secreto + se descubre en | sí | — | sí | solo el secreto |
+| Quiénes están (`on_stage`) | sí | — | **solo la regla de elenco** (el LLM no lo ve) | sí |
+| Personaje nuevo (nombre, qué es, tipo) | sí | sí (si hay más de uno) | elenco (nombres) | sí (parentescos) |
+| Lugar nuevo | **a medias** (B6) | **no** (no está en `story.scenarios`) | — | sin descripción |
+
+Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador ni al Verificador; el Verificador no ve «Qué cambia» ni «Quiénes están»; los lugares nuevos no llegan al Planificador. Según la máxima del pipeline, cada dato nuevo para la IA tiene que prevenir un error que se vio. Los que importan: rearmar los actos ignora las reglas que escribió el autor, y la revisión no puede avisar que una regla del acto se contradice con lo que pasa.
+
+**Cómo se verifica:** un test por fila (integración del router + snapshot de prompts `assistant_prompts.json` para lo que se suma), y un E2E que edita cada campo de un acto, recarga y comprueba que quedó.
 
 ---
 
 ## 2. DECISIONES
 
-| # | Decisión | Fecha |
-|---|---|---|
-| D1 | B1: editar una historia existente abre siempre «3 · Los actos» (`/escaleta`), desde cualquier entrada | 2026-10-02 |
+| # | Decisión | Estado | Fecha |
+|---|---|---|---|
+| D1 | B1: editar una historia existente abre siempre «3 · Los actos» (`/escaleta`), desde cualquier entrada | decidido | 2026-10-02 |
+| D2 | B2: «Sumarlo a los personajes» es **un clic**: suma el personaje (tipo «Con nombre», sin «qué es para»; se completa después si hace falta), lo marca en «Quiénes están» del acto y el aviso se borra (no pasa a ignorados) | decidido | 2026-10-02 |
+| D3 | B7: se puede borrar **cualquier** lugar o personaje (hoy no se distingue quién lo sumó), con `ForgeConfirm` que dice en qué actos se usa; al borrar se quita de esos actos. Quien narra no se borra | decidido | 2026-10-02 |
+| D4 | B5: sin recargar → el Express renderiza la tarjeta de un acto como fragmento (`_acto.ejs`, ruta interna) y `asistente.js` reemplaza solo esa tarjeta; las opciones compartidas (lugares, personajes) se actualizan en las otras tarjetas sin tocar sus campos. En Preguntas, lo mismo con la tarjeta de la pregunta | decidido | 2026-10-02 |
+| D5 | B3: ancho → **recomendado:** usar todo el ancho disponible hasta ~96rem (`max-w-screen-2xl`), columna derecha de `24rem`; los textos largos (encabezado) siguen en `max-w-3xl` para leerse bien | a decidir | |
+| D6 | B9: textos de «Qué cambia» | a aprobar | |
+| D7 | B10: píldora con borde → **recomendado:** solo opciones compactas; las tarjetas grandes de Preguntas y Tu idea quedan | a decidir | |
+| D8 | B11: se llenan los tres huecos: reglas del acto al Planificador (al rearmar) y al Verificador; «Qué cambia» y «Quiénes están» al Verificador; lugares nuevos al Planificador (por B6 quedan en `story.scenarios`). Snapshot `assistant_prompts.json` actualizado a propósito, con test por sección nueva | decidido | 2026-10-02 |
 
 ---
 
 ## 3. CRITERIOS DE ÉXITO
 
 - [ ] B1: las tres entradas de edición llevan a `/asistente/{id}/escaleta`, armadas desde un solo helper.
+- [ ] B2: aplicar «Sumarlo a los personajes» no deja el aviso en ignorados y marca al personaje en el acto.
+- [ ] B5: ninguna acción de «Los actos» ni de «Preguntas» recarga la página; el scroll y el foco quedan donde estaban (E2E que mide `scrollTop` antes y después).
+- [ ] B6/B7: se suman varios lugares seguidos y aparecen en todos los actos; lugares, reglas y personajes se pueden borrar.
+- [ ] B3/B4/B8/B9/B10: validado con capturas en `storymaker.test` (las dos paletas; `palette-contrast` y `gramatica-visual` en verde).
+- [ ] B11: tabla completa, cada fila con su test; snapshots actualizados a propósito.
 - [ ] Tests en verde (`make lint`, `make test`, `cd frontend && npm test`, Playwright) y dev reflejando los cambios.
 
 ---
 
 ## 4. PLAN
 
-*(Se arma cuando esté la lista completa de hallazgos, agrupando en slices.)*
+*(Se arma con las decisiones D2–D8.)*
 
 ## 5. TASKS
 
