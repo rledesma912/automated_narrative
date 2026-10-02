@@ -15,7 +15,7 @@ test.skip(!!process.env.BASE_URL, "Modifica relatos: solo contra el arnés con D
 
 async function abrirCorregir(page: Page): Promise<string> {
   await page.goto(`/historia/${STORY_ID}/relatos`);
-  const link = page.locator("[data-relato-panel].active [data-corregir-relato]");
+  const link = page.locator("[data-acciones-version]:not(.hidden) [data-corregir-relato]");
   await link.click();
   await page.waitForURL(/\/corregir/);
   await page.locator("[data-corregir]").waitFor();

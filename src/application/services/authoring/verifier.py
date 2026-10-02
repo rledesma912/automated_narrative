@@ -103,7 +103,9 @@ class OutlineVerifier:
             historia=context.story_block(story, t),
             decisiones=context.decisions_block(story, t),
             elenco=", ".join(cast_names(story)) or t.fragment("asistente/verificador/elenco_vacio"),
-            escaleta="\n\n".join(self._act_text(a, protagonist) for a in outline),
+            escaleta="\n\n".join(
+                self._act_text(a, protagonist, _act_rules(story, a.number)) for a in outline
+            ),
             efecto=context.effect_block(story, t, verifier=True),
             descartados="\n".join(
                 t.fragment("asistente/aviso_de_acto", numero=a.number, aviso=w.text)
@@ -114,7 +116,7 @@ class OutlineVerifier:
             or t.fragment("asistente/verificador/descartados_vacio"),
         )
 
-    def _act_text(self, a: ActOutline, protagonist: str = "") -> str:
+    def _act_text(self, a: ActOutline, protagonist: str = "", rules: list[str] = ()) -> str:
         """El acto como lo lee la revisión."""
         t = self.templates.fragment
         lines = [
@@ -130,7 +132,15 @@ class OutlineVerifier:
             lines.append(t("asistente/verificador/acto/como_llega", puente=a.bridge))
         if a.goal:
             lines.append(t("asistente/verificador/acto/quiere", objetivo=a.goal))
+        # Spec-630 B11: quiénes están, cómo cambia y las reglas del acto (antes solo los
+        # veían las reglas sin IA: elenco y `sin_cambio`).
+        if a.on_stage:
+            lines.append(t("asistente/verificador/acto/en_escena", nombres=", ".join(a.on_stage)))
         lines += [f"- {e}" for e in a.events]
+        if a.change_from or a.change_to:
+            lines.append(t("asistente/verificador/acto/cambia", de=a.change_from, a=a.change_to))
+        if rules:
+            lines.append(t("asistente/verificador/acto/reglas", reglas="; ".join(rules)))
         if a.held_back:
             reveal = (
                 t("asistente/verificador/acto/se_revela", acto=a.reveal_act) if a.reveal_act else ""
@@ -146,6 +156,11 @@ class OutlineVerifier:
             ]
             lines.append(t("asistente/verificador/acto/usa", decisiones=", ".join(names)))
         return "\n".join(lines)
+
+
+def _act_rules(story: Story, number: int) -> list[str]:
+    """Las reglas que el autor ancló a este acto (las globales no son de ningún acto)."""
+    return [r.content for r in story.typed_rules if r.applies_to_beat == number]
 
 
 def rule_warnings(

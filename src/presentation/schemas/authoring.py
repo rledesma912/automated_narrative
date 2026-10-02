@@ -65,6 +65,20 @@ class CharacterForm(BaseModel):
     name: str = Field(..., min_length=1, max_length=60)
     kind: Literal["persona", "sin_nombre", "grupo"] = "sin_nombre"
     relation: str = Field("", max_length=160)
+    act: int | None = Field(None, ge=1, le=5)  # Spec-630 B2: queda en «Quiénes están» de ese acto
+
+
+class ScenarioForm(BaseModel):
+    """Spec-630 B6: un lugar nuevo para la historia (y, si viene `act`, elegido en ese acto)."""
+
+    name: str = Field(..., min_length=1, max_length=120)
+    act: int | None = Field(None, ge=1, le=5)
+
+
+class NameForm(BaseModel):
+    """Spec-630 B7: qué lugar o personaje se borra (por nombre: los actos los guardan así)."""
+
+    name: str = Field(..., min_length=1, max_length=120)
 
 
 class WarningDismiss(BaseModel):

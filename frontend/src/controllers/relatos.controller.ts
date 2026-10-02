@@ -44,10 +44,10 @@ async function renderRelatoPanel(
   res.render("partials/relato_panel", {
     story,
     relato,
-    displayTitle: relato.title || "Relato",
     isActive: true,
     regenerating: extra.regenerating ?? null,
     panelError: extra.panelError ?? null,
+    conAcciones: true, // Spec-630 B15: el grupo de acciones de arriba viaja fuera de banda
   });
 }
 

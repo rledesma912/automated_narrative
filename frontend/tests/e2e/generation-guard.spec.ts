@@ -39,15 +39,15 @@ test("una historia guardada desde el asistente queda como borrador y no genera",
   expect(story.status).toBe("draft");
 });
 
-test("doble click en «Generar» de la galería envía un solo pedido", async ({ page }) => {
-  const posts = countPosts(page, `/historia/${savedStoryId}/generar`);
-  await page.goto("/galeria");
-  const button = page.locator(`[data-story-card="${savedStoryId}"] [data-generation-trigger]`);
+// Spec-630 B14: un borrador se empieza a escribir en la sala (?escribir=1), no en la galería.
+test("doble click en «Escribir el relato» de la sala envía un solo pedido", async ({ page }) => {
+  const posts = countPosts(page, `/api/v1/stories/${savedStoryId}/jobs`);
+  await page.goto(`/generar/stream/${savedStoryId}?escribir=1`);
+  const button = page.locator("#start-panel [data-generation-trigger]");
 
   await button.dblclick();
 
-  await expect(page).toHaveURL(new RegExp(`/generar/stream/${savedStoryId}$`));
-  expect(posts()).toBe(1);
+  await expect.poll(posts).toBe(1);
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
@@ -76,16 +76,17 @@ test("la galería se actualiza sola mientras se genera", async ({ page }) => {
   ).toBe(true);
 });
 
+// Spec-630 B12: la ficha se fue; se regenera desde la sala en modo lectura.
 test("volver atrás desde la confirmación no deja el botón trabado", async ({ page }) => {
-  await page.goto(`/historia/${OFRENDA}`);
-  const regenerar = page.locator("form[action$='/generar'] [data-generation-trigger]");
+  await page.goto(`/generar/stream/${OFRENDA}`);
+  const regenerar = page.getByRole("link", { name: "Regenerar" });
 
   await regenerar.click();
-  await expect(page).toHaveURL(/regenerate=1/);
+  await expect(page).toHaveURL(/escribir=1/);
   await page.goBack();
 
-  await expect(page).toHaveURL(new RegExp(`/historia/${OFRENDA}$`));
-  await expect(regenerar).toBeEnabled();
+  await expect(page).toHaveURL(new RegExp(`/generar/stream/${OFRENDA}$`));
+  await expect(regenerar).toBeVisible();
   await expect(regenerar).not.toHaveAttribute("aria-busy", "true");
-  await expect(regenerar).toContainText("Regenerar");
 });
+

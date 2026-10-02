@@ -6,9 +6,10 @@
   </div>
   <p class="hidden -mt-3 mb-6 text-sm text-forge-muted" data-done-duration></p>
   <div class="flex flex-wrap gap-4">
-    <a href="/historia/<%= storyId %>"
+    <%/* Spec-630 B12: sin ficha; lo que se quiere ver al terminar es el relato. */%>
+    <a href="/historia/<%= storyId %>/relatos"
        class="btn-forge-sm">
-      <i data-lucide="book-open" class="w-5 h-5"></i> Ver Historia Completa
+      <i data-lucide="book-open" class="w-5 h-5"></i> Ver relato
     </a>
     <a href="/galeria"
        class="btn-forge-outline">

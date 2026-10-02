@@ -85,15 +85,118 @@
 
   function restoreScroll() {
     const key = `asistente-scroll:${location.pathname}`;
+    let top = null;
     try {
-      const top = sessionStorage.getItem(key);
-      if (top !== null) {
-        sessionStorage.removeItem(key);
-        const main = $("main");
-        if (main) main.scrollTop = Number(top);
-      }
+      top = sessionStorage.getItem(key);
+      if (top !== null) sessionStorage.removeItem(key);
     } catch {
       /* sin storage */
+    }
+    if (top === null) return;
+    // Spec-630 B5: con la página a medio armar el navegador recorta el scroll al alto
+    // que tiene en ese momento (se pedía 1480 y quedaba en 475): se aplica ya cargada.
+    const apply = () =>
+      requestAnimationFrame(() => {
+        const main = $("main");
+        if (main) main.scrollTop = Number(top);
+      });
+    if (document.readyState === "complete") apply();
+    else window.addEventListener("load", apply, { once: true });
+  }
+
+  // ── Actualizar sin recargar (Spec-630 B5) ─────────────────────────────────
+
+  async function fragment(paso) {
+    const resp = await fetch(`/asistente/${page.storyId}/fragmento/${paso}`, { headers: { Accept: "text/html" } });
+    if (!resp.ok) throw new Error(`fragmento ${resp.status}`);
+    const tpl = document.createElement("template");
+    tpl.innerHTML = await resp.text();
+    return tpl.content;
+  }
+
+  /** Lo escrito y elegido en cada pregunta del taller que no se mandó todavía. */
+  function tallerDrafts(root) {
+    return new Map(
+      $$("[data-pregunta]", root).map((box) => {
+        const checked = $("input[type=radio]:checked", box);
+        const text = $("[data-texto-mia]", box);
+        const cambio = $("[data-cambio]", box);
+        return [
+          box.dataset.pregunta,
+          {
+            radio: checked ? checked.value : null,
+            text: text ? text.value : "",
+            textVisible: text ? !text.classList.contains("hidden") : false,
+            cambioVisible: cambio ? !cambio.classList.contains("hidden") : false,
+          },
+        ];
+      }),
+    );
+  }
+
+  function restoreTallerDrafts(root, drafts, skip) {
+    $$("[data-pregunta]", root).forEach((box) => {
+      const d = drafts.get(box.dataset.pregunta);
+      if (!d || box.dataset.pregunta === skip) return;
+      if (d.radio !== null) {
+        const radio = $$("input[type=radio]", box).find((r) => r.value === d.radio);
+        if (radio) radio.checked = true;
+      }
+      const text = $("[data-texto-mia]", box);
+      if (text) {
+        text.value = d.text;
+        if (!text.closest("[data-cambio]")) text.classList.toggle("hidden", !d.textVisible);
+      }
+      const cambio = $("[data-cambio]", box);
+      if (cambio) cambio.classList.toggle("hidden", !d.cambioVisible);
+    });
+  }
+
+  /**
+   * Reemplaza solo lo que cambió, sin recargar, y deja la pantalla donde estaba:
+   * la primera de `anclas` (selectores) que está antes y después queda a la misma
+   * altura. «Los actos»: el resumen y la tarjeta del acto (o todas, si cambió algo
+   * que comparten: personajes, lugares). «Preguntas»: todo el contenido, sin perder
+   * lo que se estaba escribiendo en otras preguntas.
+   */
+  async function refresh({ paso, actos, anclas = [], foco, skip, mostrar }) {
+    const frag = await fragment(paso);
+    const main = $("main");
+    const before = anclas.map((sel) => {
+      const el = $(sel);
+      return el ? el.getBoundingClientRect().top : null;
+    });
+
+    if (paso === "escaleta") {
+      const oldActs = $$("[data-acto]");
+      const newActs = $$("[data-acto]", frag);
+      if (!oldActs.length || oldActs.length !== newActs.length) throw new Error("cambió la estructura");
+      const resumen = $("[data-resumen-actos]");
+      const nuevoResumen = $("[data-resumen-actos]", frag);
+      if (resumen && nuevoResumen) resumen.replaceWith(nuevoResumen);
+      newActs.forEach((li) => {
+        if (actos !== "todos" && li.dataset.acto !== String(actos)) return;
+        const old = $(`[data-acto="${li.dataset.acto}"]`);
+        const form = $("form[data-autosave]", old);
+        if (form) pending.delete(form);
+        old.replaceWith(li);
+      });
+    } else {
+      const box = $("[data-preguntas-contenido]");
+      if (!box) throw new Error("sin contenido");
+      const drafts = tallerDrafts(box);
+      box.replaceChildren(frag);
+      restoreTallerDrafts(box, drafts, skip);
+    }
+    if (mostrar && $(mostrar)) $(mostrar).classList.remove("hidden");
+    icons();
+
+    const i = anclas.findIndex((sel, n) => before[n] !== null && $(sel));
+    if (i >= 0 && main) main.scrollTop += $(anclas[i]).getBoundingClientRect().top - before[i];
+    const target = (foco && $(foco)) || (i >= 0 ? $(anclas[i]) : null);
+    if (target) {
+      if (!target.matches("a, button, input, textarea, select, [tabindex]")) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
     }
   }
 
@@ -248,14 +351,14 @@
 
   function actPayload(form) {
     const keep = JSON.parse(form.elements.namedItem("keep").value || "{}");
-    const newScenario = value(form, "scenario_new");
     return {
       bridge: value(form, "bridge") || "",
       goal: value(form, "goal"),
       events: texts(form, "events"),
       change_from: value(form, "change_from"),
       change_to: value(form, "change_to"),
-      scenario: newScenario || value(form, "scenario"),
+      // Spec-630 B6: el lugar se elige siempre con la opción (los nuevos se suman antes, aparte).
+      scenario: value(form, "scenario"),
       on_stage: $$('[name="on_stage"]', form)
         .filter((el) => el.checked)
         .map((el) => el.value),
@@ -304,11 +407,43 @@
 
   // ── Acciones sin IA (taller y escaleta) ───────────────────────────────────
 
-  async function run(action, errorEl) {
+  /** Spec-630 B6: suma el lugar a la historia, lo elige en este acto y deja el campo abierto para otro. */
+  function agregarLugar(form) {
+    const input = $("[data-lugar-nombre]", form);
+    const name = input.value.trim();
+    if (!name) return input.focus();
+    const n = Number(form.dataset.number);
+    const acto = `[data-acto="${n}"]`;
+    return run(() => api("POST", `/authoring/stories/${page.storyId}/scenarios`, { name, act: n }), {
+      ...enActo(n, { todos: true }),
+      mostrar: `${acto} [data-lugar-form]`,
+      foco: `${acto} [data-lugar-nombre]`,
+    });
+  }
+
+  /** Spec-630 B7: borrar un lugar o un personaje, diciendo en qué actos se usa. */
+  async function borrar(form, btn, coleccion, name, { titulo, label }) {
+    const usos = (btn.dataset.usos || "").split(",").filter(Boolean);
+    const message = usos.length
+      ? `Se quita ${usos.length === 1 ? "del acto" : "de los actos"} ${usos.join(", ").replace(/, (\d)$/, " y $1")}.`
+      : "Ningún acto lo usa.";
+    const ok = await window.ForgeConfirm.ask({ title: titulo, message, confirmLabel: label });
+    if (!ok) return;
+    const n = Number(form.dataset.number);
+    return run(() => api("POST", `/authoring/stories/${page.storyId}/${coleccion}/remove`, { name }), enActo(n, { todos: true }));
+  }
+
+  /** Cómo se actualiza «Los actos» después de una acción en el acto `n`. */
+  function enActo(n, { todos = false } = {}) {
+    const acto = `[data-acto="${n}"]`;
+    return { paso: "escaleta", actos: todos ? "todos" : n, anclas: [acto], foco: acto };
+  }
+
+  /** Una acción sin IA: guarda lo pendiente, la hace y actualiza la pantalla sin recargar. */
+  async function run(action, { error: errorEl, ...vista } = {}) {
     try {
       await flushAll();
       await action();
-      reloadKeepingScroll();
     } catch (err) {
       if (err.status === 409) return attachToActiveJob();
       if (errorEl) {
@@ -317,6 +452,12 @@
       } else {
         status("error", err.message);
       }
+      return;
+    }
+    try {
+      await refresh(vista);
+    } catch {
+      reloadKeepingScroll(); // la pantalla cambió de forma (p. ej. aparecieron los actos)
     }
   }
 
@@ -336,7 +477,17 @@
         return;
       }
     }
-    run(() => api("PATCH", `/authoring/stories/${page.storyId}/workshop/${criterion}`, body), $("[data-error]", box));
+    // Responder mueve la pregunta a «Ya lo tenés»: la pantalla se ancla en la que sigue.
+    const sel = (c) => `[data-preguntas-contenido] [data-pregunta="${c}"]`;
+    const todas = $$("[data-preguntas-contenido] [data-pregunta]").map((el) => el.dataset.pregunta);
+    const siguientes = todas.slice(todas.indexOf(criterion) + 1).map(sel);
+    const abierta = !box.closest("li");
+    run(() => api("PATCH", `/authoring/stories/${page.storyId}/workshop/${criterion}`, body), {
+      error: $("[data-error]", box),
+      paso: "taller",
+      skip: criterion,
+      anclas: abierta ? [...siguientes, sel(criterion)] : [sel(criterion), ...siguientes],
+    });
   }
 
   // ── La IA trabajando: el modal ────────────────────────────────────────────
@@ -496,10 +647,15 @@
   document.addEventListener("input", (e) => {
     const form = e.target.closest && e.target.closest("form[data-autosave]");
     if (!form || !page) return;
-    if (e.target.name === "scenario_new" && e.target.value.trim()) {
-      $$('[name="scenario"]', form).forEach((r) => (r.checked = false));
-    }
+    if (e.target.matches("[data-lugar-nombre], [data-p-nombre], [data-p-relacion]")) return; // no son del acto
     schedule(form);
+  });
+
+  // Spec-630 B6: Enter en «Nombre del lugar» lo agrega (el form del acto no se envía nunca).
+  document.addEventListener("keydown", (e) => {
+    if (!page || e.key !== "Enter" || !e.target.matches || !e.target.matches("[data-lugar-nombre]")) return;
+    e.preventDefault();
+    agregarLugar(e.target.closest("form[data-autosave]"));
   });
 
   document.addEventListener("change", (e) => {
@@ -520,13 +676,7 @@
     if (e.target.name === "effect") {
       $$("[data-solo-si-efecto]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiEfecto !== e.target.value));
     }
-    if (e.target.name === "scenario") {
-      const nuevo = form.elements.namedItem("scenario_new");
-      if (nuevo) {
-        nuevo.value = "";
-        nuevo.classList.add("hidden");
-      }
-    }
+    if (e.target.matches("[data-p-tipo]")) return; // del formulario de personaje, no del acto
     schedule(form);
   });
 
@@ -554,10 +704,22 @@
       return schedule(form);
     }
     if (t.matches("[data-escenario-nuevo]") && form) {
-      const input = form.elements.namedItem("scenario_new");
-      input.classList.remove("hidden");
-      input.focus();
+      $("[data-lugar-form]", form).classList.remove("hidden");
+      $("[data-lugar-nombre]", form).focus();
       return;
+    }
+    if (t.matches("[data-lugar-agregar]") && form) return agregarLugar(form);
+    if (t.matches("[data-borrar-lugar]") && form) {
+      return borrar(form, t, "scenarios", t.dataset.borrarLugar, {
+        titulo: `¿Borrar el lugar «${t.dataset.borrarLugar}»?`,
+        label: "Borrar el lugar",
+      });
+    }
+    if (t.matches("[data-borrar-personaje]") && form) {
+      return borrar(form, t, "characters", t.dataset.borrarPersonaje, {
+        titulo: `¿Borrar a «${t.dataset.borrarPersonaje}»?`,
+        label: "Borrar el personaje",
+      });
     }
     if (t.matches("[data-personaje-nuevo]") && form) {
       $("[data-personaje-form]", form).classList.toggle("hidden");
@@ -567,28 +729,25 @@
     if (t.matches("[data-personaje-guardar]") && form) {
       const name = $("[data-p-nombre]", form).value.trim();
       if (!name) return $("[data-p-nombre]", form).focus();
-      const character = { name, kind: $("[data-p-tipo]", form).value, relation: $("[data-p-relacion]", form).value.trim() };
-      return run(async () => {
-        await api("POST", `/authoring/stories/${page.storyId}/characters`, character);
-        const payload = actPayload(form);
-        payload.on_stage = [...new Set([...payload.on_stage, name])];
-        await api("PUT", `/authoring/stories/${page.storyId}/outline/${form.dataset.number}`, payload);
-      });
+      const n = Number(form.dataset.number);
+      const character = { name, kind: $("[data-p-tipo]", form).value, relation: $("[data-p-relacion]", form).value.trim(), act: n };
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/characters`, character), enActo(n, { todos: true }));
     }
     if (t.matches("[data-sumar-personaje]") && form) {
       const n = form.dataset.number;
+      // Spec-630 B2: un clic; queda en «Quiénes están» del acto y el aviso se resuelve (no se ignora).
       return run(async () => {
-        await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "sin_nombre" });
-        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.aviso });
-      });
+        await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "persona", act: Number(n) });
+        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/resolve`, { key: t.dataset.aviso });
+      }, enActo(n, { todos: true }));
     }
     if (t.matches("[data-ignorar]") && form) {
       const n = form.dataset.number;
-      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.ignorar }));
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/dismiss`, { key: t.dataset.ignorar }), enActo(n));
     }
     if (t.matches("[data-restaurar]") && form) {
       const n = form.dataset.number;
-      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }));
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }), enActo(n));
     }
     if (t.matches("[data-generar]")) {
       e.preventDefault();

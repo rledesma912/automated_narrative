@@ -61,6 +61,11 @@ api:
   relato_sin_acto: "Este relato no tiene el acto {acto}"
   acto_sin_narrar_aun: "Acto {acto} no encontrado o no narrado aún"
   sin_escaleta_para_regenerar: "La historia no tiene escaleta: generala de nuevo para poder regenerar un acto"
+  # Spec-630 B7: borrar lugares y personajes desde «Los actos».
+  personaje_inexistente: "No hay ningún personaje que se llame «{nombre}»"
+  lugar_inexistente: "No hay ningún lugar que se llame «{nombre}»"
+  quien_narra_no_se_borra: "«{nombre}» es quien cuenta la historia: no se puede borrar"
+  aviso_inexistente: "Aviso inexistente"
 
 historia_nueva:
   # Valores de una historia creada en «Nuevo relato» (se guardan; el relator llega a

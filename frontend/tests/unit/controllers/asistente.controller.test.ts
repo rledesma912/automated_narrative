@@ -7,7 +7,9 @@ vi.mock("../../../src/services/authoring.service", () => ({
 vi.mock("../../../src/services/catalog.service", () => ({ getGenreCatalog: vi.fn() }));
 
 import type { Request, Response } from "express";
-import { asistentePage, nuevoPage } from "../../../src/controllers/asistente.controller";
+import { readFileSync } from "fs";
+import path from "path";
+import { asistentePage, fragmentoAsistente, nuevoPage } from "../../../src/controllers/asistente.controller";
 import { getAuthoringOptions, getAuthoringState } from "../../../src/services/authoring.service";
 import { getGenreCatalog } from "../../../src/services/catalog.service";
 
@@ -86,5 +88,66 @@ describe("asistente.controller (Spec-530 S4)", () => {
     const r = res();
     await asistentePage(req({ storyId: "nada", paso: "taller" }), r as unknown as Response);
     expect(r.redirect).toHaveBeenCalledWith("/galeria");
+  });
+});
+
+/** Spec-630 S2 T2.2: el contenido de un paso, sin layout, para actualizar sin recargar. */
+describe("fragmentoAsistente", () => {
+  const FIXTURE = JSON.parse(
+    readFileSync(path.join(process.cwd(), "tests/fixtures/asistente/estado.json"), "utf8"),
+  );
+
+  function fragRes() {
+    const r = {
+      locals: {},
+      body: "",
+      statusCode: 200,
+      setHeader: vi.fn(),
+      status: vi.fn((c: number) => ((r.statusCode = c), r)),
+      type: vi.fn(() => r),
+      send: vi.fn((b: string) => ((r.body = b), r)),
+    };
+    return r;
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it("«Los actos»: el resumen y las cinco tarjetas, sin layout ni barra", async () => {
+    (getAuthoringState as ReturnType<typeof vi.fn>).mockResolvedValue(FIXTURE);
+    const r = fragRes();
+    await fragmentoAsistente(req({ storyId: "s-1", paso: "escaleta" }), r as unknown as Response);
+    expect(r.body).toContain("data-resumen-actos");
+    expect(r.body.match(/data-acto="\d"/g)).toEqual(["1", "2", "3", "4", "5"].map((n) => `data-acto="${n}"`));
+    expect(r.body).not.toContain("<html");
+    expect(r.body).not.toContain("asistente-barra");
+    expect(r.setHeader).toHaveBeenCalledWith("Cache-Control", "no-store");
+  });
+
+  it("«Preguntas»: lo que falta y lo que ya está", async () => {
+    (getAuthoringState as ReturnType<typeof vi.fn>).mockResolvedValue(FIXTURE);
+    const r = fragRes();
+    await fragmentoAsistente(req({ storyId: "s-1", paso: "taller" }), r as unknown as Response);
+    expect(r.body).toContain("Te falta contarme");
+    expect(r.body).toContain("Ya lo tenés");
+    expect(r.body).toContain('data-pregunta="meta"');
+    expect(r.body).not.toContain("asistente-barra");
+  });
+
+  it("paso inexistente → 404; historia inexistente → 404; Core caído → 502", async () => {
+    const r1 = fragRes();
+    await fragmentoAsistente(req({ storyId: "s-1", paso: "direccion" }), r1 as unknown as Response);
+    expect(r1.statusCode).toBe(404);
+
+    (getAuthoringState as ReturnType<typeof vi.fn>).mockRejectedValue(
+      Object.assign(new Error("404"), { isAxiosError: true, response: { status: 404 } }),
+    );
+    const r2 = fragRes();
+    await fragmentoAsistente(req({ storyId: "nada", paso: "escaleta" }), r2 as unknown as Response);
+    expect(r2.statusCode).toBe(404);
+
+    (getAuthoringState as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("ECONNREFUSED"));
+    const r3 = fragRes();
+    await fragmentoAsistente(req({ storyId: "s-1", paso: "escaleta" }), r3 as unknown as Response);
+    expect(r3.statusCode).toBe(502);
   });
 });

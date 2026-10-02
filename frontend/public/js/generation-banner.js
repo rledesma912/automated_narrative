@@ -101,7 +101,8 @@
       const took = state === "done" ? eta.formatDuration(job.elapsed_seconds) : "";
       setText(panel, "[data-banner-duration]", took ? ` · en ${took}` : "");
       panel.querySelector("[data-banner-link]").href =
-        state === "done" ? `/historia/${job.story_id}/relatos` : `/historia/${job.story_id}`;
+        // Spec-630 B12: si falló, se vuelve a «Los actos» (= utils/rutas.ts editarHref).
+        state === "done" ? `/historia/${job.story_id}/relatos` : `/asistente/${job.story_id}/escaleta`;
       panel.querySelector("[data-banner-close]").dataset.jobId = job.job_id;
       showState(banner, state);
       if (state === "done") setTimeout(render, DONE_VISIBLE_MS + 100);
