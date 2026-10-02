@@ -4,6 +4,7 @@ import router from "./routes";
 import { createApiProxy } from "./middleware/api_proxy";
 import { getEnvironment } from "./utils/environment";
 import { rutas } from "./utils/rutas";
+import { assetVersion } from "./utils/assets";
 
 const app = express();
 
@@ -11,9 +12,9 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // Versión de los estáticos: las vistas los piden como `/js/x.js?v=<versión>`.
-// Cambia en cada arranque (cada deploy reinicia el proceso), así el navegador no
-// sigue usando el CSS/JS de la versión anterior. ASSET_VERSION la fija a mano.
-app.locals.assetVersion = process.env.ASSET_VERSION ?? String(Date.now());
+// Spec-630 B17: sale de la última modificación de los estáticos (utils/assets.ts)
+// y se calcula en cada request, así cambia apenas cambian (también en dev).
+app.locals.assetVersion = assetVersion();
 
 // Spec-630 B1: las URLs que se arman en más de una vista (editar una historia).
 app.locals.rutas = rutas;
@@ -33,6 +34,7 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 // request para que la marca muestre siempre el último commit.
 app.use((_req, res, next) => {
   res.locals.environment = getEnvironment();
+  res.locals.assetVersion = assetVersion();
   next();
 });
 

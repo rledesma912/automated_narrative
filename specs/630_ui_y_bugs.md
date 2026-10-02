@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1–S5 ✅ (2026-10-02); sigue S6. B17 a decidir. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** IMPLEMENT — S1–S5 y B17 ✅ (2026-10-02); sigue S6. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -194,7 +194,8 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 
 **Qué pasó:** después de S4 el usuario vio «Los actos» en una sola columna. En un navegador limpio quedan dos (medido a 1714 y 1280 px). Causa: el sitio navega con `hx-boost` (htmx 1.9, sin la extensión `head-support`), que reemplaza el `<body>` y **no vuelve a cargar el `<head>`**: el `styles.css` de la primera carga sigue vivo mientras se navega por links. El CSS viejo no tiene `lg:grid-cols-[1fr_24rem]` y la grilla cae a una columna. Se arregla con una recarga completa (Ctrl+Shift+R).
 **Alcance:** pasa en dev (tailwind recompila y el `?v=` no cambia hasta que se reinicia el proceso) y en **prod después de cada `make deploy`** con una pestaña abierta.
-**Propuesta (a decidir, D13):** cuando una navegación con `hx-boost` trae una versión de estáticos distinta de la cargada, el navegador hace una navegación completa a esa URL. La versión (`assetVersion`) pasa a calcularse con la fecha de modificación de `public/styles.css` y `public/js/` (así también cambia en dev cuando tailwind recompila) y viaja en un `<meta name="asset-version">`.
+**Decisión (D13, 2026-10-02):** cuando una navegación con `hx-boost` trae una versión de estáticos distinta de la cargada, el navegador hace una navegación completa a esa URL. La versión (`assetVersion`) pasa a calcularse con la fecha de modificación de `public/styles.css` y `public/js/` (así también cambia en dev cuando tailwind recompila) y viaja en un `<meta name="asset-version">`.
+**Cómo quedó (✅ 2026-10-02):** `frontend/src/utils/assets.ts` (`assetVersion()`, en cada request; `ASSET_VERSION` la fija a mano) y `public/js/version-check.js` (UMD, en el `<head>`: en `htmx:beforeSwap`, si la respuesta es una página con otra versión, `shouldSwap = false` y `location.assign`). Los fragmentos (sin `<meta>`) se reemplazan como siempre. Tests: `tests/unit/public/version-check.test.ts`, `tests/unit/utils/assets.test.ts` y el E2E `version-check.spec.ts`. Una pestaña abierta desde antes de este cambio no tiene el script: necesita una recarga completa una vez.
 
 ---
 
@@ -213,6 +214,7 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 | D10 | B13: la pestaña de cada versión dice «Versión del dd/mm/yyyy hh:mm»; el panel pierde el encabezado | decidido | 2026-10-02 |
 | D11 | B14: Mis historias no dispara generaciones: salen «Regenerar», «Reintentar» y «Generar relato» | decidido | 2026-10-02 |
 | D12 | B15: panel de acciones arriba de las versiones (no en la barra fija): «Escribir de nuevo la historia completa» (va a la sala, que ya confirma con el tiempo estimado) + las de la versión elegida; «Regenerar» por acto queda igual. B16: la barra fija con los pasos también en «El relato» | decidido | 2026-10-02 |
+| D13 | B17: si una navegación con `hx-boost` trae otra versión de los estáticos, se carga la página entera; la versión sale de la fecha de modificación de los estáticos | decidido | 2026-10-02 |
 | D8 | B11: se llenan los tres huecos: reglas del acto al Planificador (al rearmar) y al Verificador; «Qué cambia» y «Quiénes están» al Verificador; lugares nuevos al Planificador (por B6 quedan en `story.scenarios`). Snapshot `assistant_prompts.json` actualizado a propósito, con test por sección nueva | decidido | 2026-10-02 |
 
 ---
