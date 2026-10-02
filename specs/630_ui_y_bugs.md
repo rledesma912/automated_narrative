@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** SPECIFY — B1–B12 descriptos; D1–D4, D8 y D9 decididos; D5–D7 (visuales) se validan con maqueta
+**Estado:** SPECIFY — B1–B16 descriptos; D1–D4 y D8–D12 decididos; D5–D7 (visuales) se validan con maqueta
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -164,6 +164,32 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 
 **Cómo se verifica:** test de vista (ningún link a `/historia/{id}` a secas en vistas ni en `public/js`), test de ruta de la redirección (con y sin job activo), y se ajustan los E2E que pasaban por la ficha (`generation-guard`, `generation-banner`, `estimates`, `streaming-room`, `visual-snapshots`…).
 
+### B13 — Las pestañas de versiones repiten el nombre de la historia · **UI**
+
+**Qué pasa hoy:** en «El relato» (`/historia/{id}/relatos`, `relatos.ejs:28`) cada pestaña de versión muestra el título del relato (el de la historia) y abajo la fecha; el panel repite el título como encabezado (`relato_panel.ejs:41`). Todas dicen lo mismo y el título ya está arriba de la página («Relatos de …»).
+**Decisión (D10):** la pestaña dice solo **«Versión del dd/mm/yyyy hh:mm»** (hora de Buenos Aires, como hoy). El encabezado del panel se va: las acciones suben (B15) y el panel queda con la prosa.
+
+### B14 — Mis historias no dispara generaciones · **UI**
+
+**Qué pasa hoy:** cada tarjeta de Mis historias (`gallery.ejs:67–104`) tiene «Regenerar» (relato terminado), «Reintentar» (falló) y «Generar relato» (borrador). Escribir desde ahí es a ciegas: quien arma la historia siempre quiere repasar los actos antes.
+**Decisión (D11):** salen **los tres**. La tarjeta queda para entrar: «Editar», «Ver relato», «Para el video», «Ver avance» (en curso o fallido) y «Borrar». Se escribe desde «Los actos» («Escribir el relato») o desde «El relato» («Escribir de nuevo», B15). `POST /historia/{id}/generar` queda solo si lo usa otra vista; si no, se borra.
+**Cómo se verifica:** test de vista de la galería (ningún `data-generation-trigger` en las tarjetas) y ajuste de los E2E que generaban desde la galería (`generation-guard`, `estimates`…).
+
+### B15 — Las acciones del relato, agrupadas arriba · **UI**
+
+**Qué pasa hoy:** «Descargar .md», «Corregir el relato», «Armar el guion para el video» / «Para el video» y «Copiar Relato» están dentro del panel de cada versión (`relato_panel.ejs:42–84`), mezcladas con la prosa y dentro del scroll del panel. No hay forma de escribir la historia completa de nuevo desde esta vista.
+**Decisión (D12):** un **panel de acciones arriba de todo**, entre el título de la página y las pestañas de versiones, con todo agrupado:
+- **«Escribir de nuevo la historia completa»** (job `full_generation`, crea una versión nueva): confirmación con `ForgeConfirm` y el tiempo estimado (`estimate.ejs`).
+- De la **versión elegida**: «Corregir el relato», «Armar el guion para el video» / «Para el video», «Descargar .md» y «Copiar relato». Cambian al cambiar de pestaña (`relatos.js`) y se deshabilitan mientras se regenera un acto de esa versión, como hoy.
+- «Regenerar» de cada acto **queda como está**, al lado del título del acto.
+- La barra fija arriba tiene solo los pasos (B16).
+
+### B16 — «El relato» no deja volver a los pasos anteriores · **bug**
+
+**Qué pasa hoy:** «Tu idea», «Preguntas» y «Los actos» tienen la barra fija con los cuatro pasos (`_cabecera.ejs`), y el 4 («El relato») lleva a `/historia/{id}/relatos`. Pero esa vista no tiene la barra: solo «Volver a Galería» (`relatos.ejs:12`). Se entra al paso 4 y no se puede volver al 3.
+**Decisión:** «El relato» lleva la misma barra fija (`.asistente-barra` + `_cabecera.ejs` con `pasoActual: 'relato'`), con los pasos 1–3 como links. «Volver a Galería» se va (Mis historias está en el menú). «Corregir el relato» y «Para el video» siguen con su «Volver a los relatos».
+**Cómo se verifica:** test de vista (la barra con los cuatro pasos y «El relato» actual) y E2E: desde «El relato» → «Los actos».
+
 ---
 
 ## 2. DECISIONES
@@ -178,6 +204,9 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 | D6 | B9: textos de «Qué cambia» | a aprobar | |
 | D7 | B10: píldora con borde → **recomendado:** solo opciones compactas; las tarjetas grandes de Preguntas y Tu idea quedan | a decidir | |
 | D9 | B12: la ficha de la historia se va del todo; `/historia/{id}` redirige a «Los actos» (o a la sala con un relato en curso); los «Ver historia» pasan a «Editar» y el del relato terminado a «Ver relato» | decidido | 2026-10-02 |
+| D10 | B13: la pestaña de cada versión dice «Versión del dd/mm/yyyy hh:mm»; el panel pierde el encabezado | decidido | 2026-10-02 |
+| D11 | B14: Mis historias no dispara generaciones: salen «Regenerar», «Reintentar» y «Generar relato» | decidido | 2026-10-02 |
+| D12 | B15: panel de acciones arriba de las versiones (no en la barra fija): «Escribir de nuevo la historia completa» + las de la versión elegida; «Regenerar» por acto queda igual. B16: la barra fija con los pasos también en «El relato» | decidido | 2026-10-02 |
 | D8 | B11: se llenan los tres huecos: reglas del acto al Planificador (al rearmar) y al Verificador; «Qué cambia» y «Quiénes están» al Verificador; lugares nuevos al Planificador (por B6 quedan en `story.scenarios`). Snapshot `assistant_prompts.json` actualizado a propósito, con test por sección nueva | decidido | 2026-10-02 |
 
 ---
@@ -191,6 +220,7 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 - [ ] B3/B4/B8/B9/B10: validado con capturas en `storymaker.test` (las dos paletas; `palette-contrast` y `gramatica-visual` en verde).
 - [ ] B11: tabla completa, cada fila con su test; snapshots actualizados a propósito.
 - [ ] B12: no queda ningún acceso a la ficha; `/historia/{id}` redirige.
+- [ ] B13–B16: pestañas «Versión del …»; la galería sin botones de generar; acciones del relato arriba; desde «El relato» se vuelve a los pasos 1–3.
 - [ ] Tests en verde (`make lint`, `make test`, `cd frontend && npm test`, Playwright) y dev reflejando los cambios.
 
 ---
