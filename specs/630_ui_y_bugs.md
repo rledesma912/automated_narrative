@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** SPECIFY — B1–B11 descriptos; D1–D4 y D8 decididos; D5–D7 (visuales) se validan con maqueta
+**Estado:** SPECIFY — B1–B12 descriptos; D1–D4, D8 y D9 decididos; D5–D7 (visuales) se validan con maqueta
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -142,6 +142,28 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 
 **Cómo se verifica:** un test por fila (integración del router + snapshot de prompts `assistant_prompts.json` para lo que se suma), y un E2E que edita cada campo de un acto, recarga y comprueba que quedó.
 
+### B12 — «Vista» no suma: se va la ficha de la historia · **UI** (pedido del usuario)
+
+**Qué pasa hoy:** «Vista» en Mis historias (`gallery.ejs:50`) abre la ficha (`/historia/{id}`, `historia.ejs`): un resumen de solo lectura (tipo de horror, quién lo cuenta, personajes, lugares, reglas, de qué trata) con los mismos botones que ya tiene la tarjeta de la galería. «Editar» alcanza. Otros accesos a la ficha:
+
+| Acceso | Archivo |
+|---|---|
+| «Vista» en Mis historias | `frontend/src/views/gallery.ejs:50` |
+| «Ver historia» en la sala de generación | `frontend/src/views/streaming-room.ejs:75` |
+| «Ver Historia Completa» al terminar un relato | `frontend/src/views/partials/streaming_done_panel.ejs:9` |
+| «Ver historia» al cancelar un relato | `frontend/public/js/streaming-room.js:286` |
+| La banda de generación cuando un job falla | `frontend/public/js/generation-banner.js:104` |
+
+**Decisión (D9):** la ficha **se va del todo**.
+- Se borran `historia.ejs` y su controlador de página (quedan `POST /historia/{id}/generar`, `/historia/{id}/relatos/…` y el borrado).
+- `GET /historia/{id}` **redirige**: a «Los actos» (el helper de B1) o, si hay un relato escribiéndose, a la sala (`/generar/stream/{id}`), para que los links viejos sigan andando.
+- «Vista» sale de la galería.
+- «Ver Historia Completa» (relato terminado) → **«Ver relato»** (`/historia/{id}/relatos`).
+- «Ver historia» de la sala y del cancelar, y la banda cuando falla → **«Editar»** (helper de B1).
+- B1 queda con dos entradas de edición (galería y la ruta vieja `/generar/cargar/:id`), más la redirección de `/historia/{id}`.
+
+**Cómo se verifica:** test de vista (ningún link a `/historia/{id}` a secas en vistas ni en `public/js`), test de ruta de la redirección (con y sin job activo), y se ajustan los E2E que pasaban por la ficha (`generation-guard`, `generation-banner`, `estimates`, `streaming-room`, `visual-snapshots`…).
+
 ---
 
 ## 2. DECISIONES
@@ -155,6 +177,7 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 | D5 | B3: ancho → **recomendado:** usar todo el ancho disponible hasta ~96rem (`max-w-screen-2xl`), columna derecha de `24rem`; los textos largos (encabezado) siguen en `max-w-3xl` para leerse bien | a decidir | |
 | D6 | B9: textos de «Qué cambia» | a aprobar | |
 | D7 | B10: píldora con borde → **recomendado:** solo opciones compactas; las tarjetas grandes de Preguntas y Tu idea quedan | a decidir | |
+| D9 | B12: la ficha de la historia se va del todo; `/historia/{id}` redirige a «Los actos» (o a la sala con un relato en curso); los «Ver historia» pasan a «Editar» y el del relato terminado a «Ver relato» | decidido | 2026-10-02 |
 | D8 | B11: se llenan los tres huecos: reglas del acto al Planificador (al rearmar) y al Verificador; «Qué cambia» y «Quiénes están» al Verificador; lugares nuevos al Planificador (por B6 quedan en `story.scenarios`). Snapshot `assistant_prompts.json` actualizado a propósito, con test por sección nueva | decidido | 2026-10-02 |
 
 ---
@@ -167,6 +190,7 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 - [ ] B6/B7: se suman varios lugares seguidos y aparecen en todos los actos; lugares, reglas y personajes se pueden borrar.
 - [ ] B3/B4/B8/B9/B10: validado con capturas en `storymaker.test` (las dos paletas; `palette-contrast` y `gramatica-visual` en verde).
 - [ ] B11: tabla completa, cada fila con su test; snapshots actualizados a propósito.
+- [ ] B12: no queda ningún acceso a la ficha; `/historia/{id}` redirige.
 - [ ] Tests en verde (`make lint`, `make test`, `cd frontend && npm test`, Playwright) y dev reflejando los cambios.
 
 ---
