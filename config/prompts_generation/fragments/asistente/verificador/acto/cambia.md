@@ -1,0 +1,1 @@
+Cómo cambia: {de} → {a}

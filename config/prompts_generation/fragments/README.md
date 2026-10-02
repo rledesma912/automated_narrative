@@ -76,13 +76,15 @@ Contexto común (`context.py`), que reciben los tres roles:
 **Planificador** — `authoring_planner.md`: además `{borradores}`
 (`asistente/planificador/borradores` + `borrador`), `{problemas}`
 (`asistente/planificador/problemas` + una `asistente/aviso_de_acto` por aviso visible),
-`{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
+`{reglas}` (Spec-630: `asistente/planificador/reglas` + una `regla` por regla anclada a un acto;
+vacío si no hay), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
 `asistente/planificador/acto` por acto; `final_del_autor` y `historia_secreta` cambian la
 intención del acto 5 y del 4).
 
 **Verificador** — `authoring_verifier.md`: además `{elenco}` (o
 `asistente/verificador/elenco_vacio`), `{escaleta}` (por acto, `asistente/verificador/acto/*`:
-`titulo` o `titulo_con_escenario`, `como_llega`, `quiere`, `no_se_cuenta` + `se_revela`,
+`titulo` o `titulo_con_escenario`, `como_llega`, `quiere`, `en_escena`, los hechos, `cambia`,
+`reglas` —las tres de la Spec-630, solo si el acto tiene el dato—, `no_se_cuenta` + `se_revela`,
 `usa`) y `{descartados}` (una `asistente/aviso_de_acto` por aviso ignorado, o
 `asistente/verificador/descartados_vacio`).
 

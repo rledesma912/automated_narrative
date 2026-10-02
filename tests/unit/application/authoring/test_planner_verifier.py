@@ -358,3 +358,49 @@ def test_sin_efecto_no_hay_receta(story):
     from src.application.services.template_loader import TemplateLoader
 
     assert context.effect_block(_with_effect(story, ""), TemplateLoader()) == ""
+
+
+# ── Spec-630 B11: lo que se edita en «Los actos» llega a la IA ───────────────
+
+
+def test_el_verificador_ve_quienes_estan_como_cambia_y_las_reglas_del_acto(story):
+    from src.domain.models import TypedRule
+
+    acts = [
+        ActOutline(
+            number=1,
+            events=["Arranca"],
+            on_stage=["José", "Marta"],
+            change_from="tranquilo",
+            change_to="asustado",
+        ),
+        ActOutline(number=2, events=["Frena"]),
+    ]
+    story.typed_rules = [
+        TypedRule(id="R1", story_id=story.id, content="Solo de noche", applies_to_beat=1),
+        TypedRule(id="R2", story_id=story.id, content="Regla global", applies_to_beat=None),
+    ]
+    prompt = OutlineVerifier(llm=None)._prompt(story, acts)
+    acto1, acto2 = prompt.split("ACTO 1")[1].split("ACTO 2")
+    assert "En escena: José, Marta" in acto1
+    assert "Cómo cambia: tranquilo → asustado" in acto1
+    assert "Reglas de este acto: Solo de noche" in acto1
+    # Sin datos, sin líneas; y la regla global no es de ningún acto.
+    for line in ("En escena:", "Cómo cambia:", "Reglas de este acto:"):
+        assert line not in acto2.split("AVISOS QUE EL AUTOR")[0]
+    assert "Regla global" not in prompt
+
+
+def test_el_planificador_respeta_las_reglas_de_cada_acto(story):
+    from src.domain.models import TypedRule
+
+    assert "REGLAS QUE PUSO EL AUTOR" not in OutlinePlanner(llm=None)._prompt(story)
+    story.typed_rules = [
+        TypedRule(id="R1", story_id=story.id, content="Aparece en el espejo", applies_to_beat=3),
+        TypedRule(id="R2", story_id=story.id, content="Solo de noche", applies_to_beat=1),
+    ]
+    prompt = OutlinePlanner(llm=None)._prompt(story)
+    i = prompt.index("REGLAS QUE PUSO EL AUTOR")
+    assert prompt.index("- Acto 1: Solo de noche", i) < prompt.index(
+        "- Acto 3: Aparece en el espejo", i
+    )

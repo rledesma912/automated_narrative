@@ -538,3 +538,15 @@ async def test_borrar_lugar_vacia_los_actos(client):
     assert (
         await client.post(f"{API}/stories/{sid}/scenarios/remove", json={"name": "Nadie"})
     ).status_code == 404
+
+
+async def test_un_lugar_sumado_en_los_actos_llega_al_planificador(client):
+    """Spec-630 B11: antes, un lugar nuevo vivía solo en el acto y el Planificador no lo veía."""
+    from src.application.services.authoring.planner import OutlinePlanner
+
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await client.post(f"{API}/stories/{sid}/scenarios", json={"name": "El galpón", "act": 2})
+    story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    assert "ESCENARIOS YA DEFINIDOS: " in (prompt := OutlinePlanner(llm=None)._prompt(story))
+    assert "El galpón" in prompt.split("ESCENARIOS YA DEFINIDOS: ")[1].split("\n")[0]

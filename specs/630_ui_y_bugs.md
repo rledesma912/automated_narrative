@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1–S5 y B17 ✅ (2026-10-02); sigue S6. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** IMPLEMENT — S1–S6 y B17 ✅ (2026-10-02); falta el cierre (CLAUDE.md, PR a `development`). Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -314,7 +314,7 @@ Todo en el frontend (Express + EJS), sin tocar el Core.
 - **Verificador** (`verifier._act_text`, fragmentos nuevos en `fragments/asistente/verificador/acto/`): `cambia.md` («Cómo cambia: {de} → {a}»), `en_escena.md` («En escena: …»), `reglas.md` («Reglas de este acto: …»). `authoring_verifier.md`: una línea para que avise si un hecho contradice una regla del acto.
 - **Planificador** (`planner._prompt`): `{reglas}` nuevo en `authoring_planner.md` con `fragments/asistente/planificador/reglas.md` (las reglas por acto que puso el autor, para respetarlas al rearmar). Los lugares nuevos ya llegan por `{escenarios}` desde S3.
 - `fragments/README.md`: qué fragmento llena cada hueco nuevo.
-- Snapshot `assistant_prompts.json` regenerado a propósito (`SNAPSHOT_UPDATE=1`), y `test_el_snapshot_cubre_todas_las_secciones` con los marcadores nuevos. `pipeline_prompts.json` y `voice_prompts.json` **no cambian** (la Voz no se toca).
+- Snapshot `assistant_prompts.json` regenerado a propósito (`SNAPSHOT_UPDATE=1`), y `test_el_snapshot_cubre_todas_las_secciones` con los marcadores nuevos. `voice_prompts.json` **no cambia** (la Voz no se toca); `pipeline_prompts.json` cambia solo en el prompt del Verificador (ver S6 en §5).
 - **Auditoría de persistencia:** un E2E que edita cada campo de un acto (puente, qué quiere, hechos, cómo cambia, lugar, reglas, secreto + se descubre en, quiénes están), recarga y comprueba cada valor.
 
 ### Cierre
@@ -408,13 +408,19 @@ Capturas en las dos paletas: `frontend/capturas/531/630-papel/` y `630-latte/` (
 - [x] T5.3 `relatos.js`: cambiar de pestaña cambia el grupo. **E2E** en `relatos-switcher.spec.ts`: con dos versiones, pasar a la segunda muestra sus acciones y «Copiar relato» copia la segunda; `paquete-video.spec.ts` y `corregir-relato.spec.ts` entran por el panel nuevo.
 - [x] T5.4 Checkpoint en dev.
 
-### S6 — Datos a la IA
-- [ ] T6.1 Fragmentos del Verificador y línea de reglas en `authoring_verifier.md`. **Test:** `test_planner_verifier.py` (el acto en el prompt trae «Cómo cambia», «En escena» y las reglas del acto; sin datos, no aparecen las líneas).
-- [ ] T6.2 `{reglas}` del Planificador. **Test:** `test_planner_verifier.py` (las reglas por acto llegan al prompt; sin reglas, la sección no aparece; un lugar sumado por `POST …/scenarios` llega en `{escenarios}`).
-- [ ] T6.3 `SNAPSHOT_UPDATE=1` de `assistant_prompts.json` y marcadores nuevos en `test_el_snapshot_cubre_todas_las_secciones`; `pipeline_prompts.json` y `voice_prompts.json` sin cambios; `test_prompts_fuera_del_codigo.py` en verde.
-- [ ] T6.4 **E2E** `tests/e2e/escaleta-persistencia.spec.ts`: cada campo del acto, recarga y comprobación.
-- [ ] T6.5 Una corrida real de «Que la IA lo revise» en dev con una historia con reglas, para ver que los avisos nuevos tienen sentido (sin costo: el Verificador es local).
-- [ ] T6.6 Checkpoint en dev.
+### S6 — Datos a la IA · ✅ 2026-10-02
+
+**Cómo quedó:**
+- Verificador: por acto, «En escena», «Cómo cambia» y «Reglas de este acto» (solo las ancladas a ese acto; solo si hay dato). Planificador: `{reglas}` con las reglas por acto (al rearmar los actos, las reglas siguen en `rule` y ahora el Planificador las ve). Los lugares nuevos ya llegan por `{escenarios}` desde S3 (test de integración).
+- **Corrección al plan:** `pipeline_prompts.json` **sí cambia**: la generación sin escaleta llama al Verificador (suma «Cómo cambia»). Cambió solo ese prompt; la Voz y la Memoria (`voice_prompts.json`) no.
+- **Prueba real (T6.5, gemma3:12b local, historia de prueba borrada después):** con la regla «Susana no sale de la carpa en todo este acto» y el hecho «Susana se levanta de la carpa y sale…», la revisión **no la marcó en 3 de 3 corridas** con la instrucción al final de la lista. Con la instrucción **primera** y más firme («PRIMERO, si un acto tiene «Reglas de este acto»: cada hecho que la contradice…»), la marcó **3 de 3** («En el acto 2 Susana sale de la carpa, pero la regla dice que no puede: ¿la modificamos o la escena se queda en la carpa?»). Control con una regla que el acto respeta («Todo pasa de noche, en el monte»): **0 avisos de regla en 2 corridas**.
+
+- [x] T6.1 Fragmentos del Verificador y línea de reglas en `authoring_verifier.md`. **Test:** `test_planner_verifier.py` (el acto en el prompt trae «Cómo cambia», «En escena» y las reglas del acto; sin datos, no aparecen las líneas).
+- [x] T6.2 `{reglas}` del Planificador. **Test:** `test_planner_verifier.py` (las reglas por acto llegan al prompt; sin reglas, la sección no aparece; un lugar sumado por `POST …/scenarios` llega en `{escenarios}`).
+- [x] T6.3 `SNAPSHOT_UPDATE=1` de `assistant_prompts.json` y marcadores nuevos en `test_el_snapshot_cubre_todas_las_secciones`; `pipeline_prompts.json` y `voice_prompts.json` sin cambios; `test_prompts_fuera_del_codigo.py` en verde.
+- [x] T6.4 **E2E** `tests/e2e/escaleta-persistencia.spec.ts`: cada campo del acto, recarga y comprobación.
+- [x] T6.5 Una corrida real de «Que la IA lo revise» en dev con una historia con reglas, para ver que los avisos nuevos tienen sentido (sin costo: el Verificador es local).
+- [x] T6.6 Checkpoint en dev.
 
 ### Cierre
 - [ ] T7.1 `CLAUDE.md` y `fragments/README.md`.
