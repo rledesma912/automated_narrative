@@ -40,7 +40,7 @@ test("regenerar desde la sala: confirmación, avance por etapas y fin", async ({
   await page.getByRole("link", { name: "Regenerar" }).click();
 
   await expect(page).toHaveURL(/escribir=1/);
-  await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
+  await page.getByRole("button", { name: "Regenerar historia" }).click();
 
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
@@ -64,7 +64,7 @@ test("regenerar desde la sala: confirmación, avance por etapas y fin", async ({
 test("recargar a mitad de camino se ata al mismo job sin lanzar otro", async ({ page }) => {
   const posts = countJobPosts(page);
   await page.goto(`/generar/stream/${STORY_ID}?regenerate=1`);
-  await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
+  await page.getByRole("button", { name: "Regenerar historia" }).click();
   await expect(page.locator("#log-container")).toContainText("Escribiendo el acto 2 de 5", {
     timeout: 15_000,
   });
@@ -88,7 +88,7 @@ test("recargar a mitad de camino se ata al mismo job sin lanzar otro", async ({ 
 
 test("cancelar detiene el job en el servidor", async ({ page }) => {
   await page.goto(`/generar/stream/${STORY_ID}?regenerate=1`);
-  await page.getByRole("button", { name: "Escribirla de nuevo" }).click();
+  await page.getByRole("button", { name: "Regenerar historia" }).click();
   await expect(page.locator("#log-container")).toContainText("Escribiendo el acto 1 de 5", {
     timeout: 15_000,
   });

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** S1–S6 y B17 en prod (`24d92c4`, 2026-10-02). §6 (después del pase): B18–B20 en SPECIFY, rama `fix/spec-630-sala-regenerar`. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** S1–S6 y B17 en prod (`24d92c4`, 2026-10-02). §6 (después del pase): B18–B20 ✅ (2026-10-02) en `fix/spec-630-sala-regenerar`, sin pasar a prod. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -451,4 +451,6 @@ Lo que vio el usuario recorriendo prod. Rama `fix/spec-630-sala-regenerar` (desd
 **Test:** vista de la sala con `regenerateMode`: el texto nuevo y sin «se reemplaza».
 
 **Plan:** un solo slice (todo en el frontend, sin Core): sala (`streaming-room.ejs`), «El relato» (`relatos.ejs`), tests de vista y los E2E que cambian de nombre. Cierre: tests en verde, dev actualizado, PR a `development` y, si el usuario lo pide, `make deploy`.
+
+**Hecho (2026-10-02):** la sala en modo escribir trae «← Mis historias» y «Editar» (`data-sala-volver`, con `hx-boost="false"`: `streaming-room.js` no cierra su conexión SSE al navegar con boost, una navegación completa sí). «Regenerar historia» en «El relato», en la confirmación de la sala y en sus botones de modo lectura; «¿Regeneramos la historia?»; la nota de versión nueva es `nota-forge--info`. Tests: `estimates.view.test.ts` («sala: escribir», los tres modos), `relatos.view.test.ts`, E2E `relatos.spec.ts` (Regenerar historia → sala → «Mis historias») y `streaming-room.spec.ts`. Vitest 377, Playwright 67, pytest 880.
 

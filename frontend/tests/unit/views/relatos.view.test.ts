@@ -234,11 +234,13 @@ describe("actos desactualizados", () => {
     expect(html).toContain('data-para-el-video="r-2"');
   });
 
-  it("«Escribir de nuevo la historia completa» va a la sala, que confirma", async () => {
+  // Spec-630 B19: se llama «Regenerar historia», como en el resto del sitio.
+  it("«Regenerar historia» va a la sala, que confirma", async () => {
     const html = await ejs.renderFile(viewPath, DOS);
     expect(html).toMatch(
-      /<a href="\/generar\/stream\/s-1\?escribir=1"[^>]*data-generation-trigger[^>]*>\s*<i[^>]*><\/i> Escribir de nuevo la historia completa/,
+      /<a href="\/generar\/stream\/s-1\?escribir=1"[^>]*data-generation-trigger[^>]*>\s*<i[^>]*><\/i> Regenerar historia/,
     );
+    expect(html).not.toContain("Escribir de nuevo");
   });
 
   it("el panel de la versión trae la prosa y «Regenerar» por acto, sin las acciones", async () => {
