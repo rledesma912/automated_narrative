@@ -74,12 +74,44 @@ test.describe("Vista de Relatos", () => {
     expect(hasBorder || hasOutline || hasShadow).toBeTruthy();
   });
 
+  // Spec-630 B15: las acciones de arriba son las de la pestaña elegida.
+  test("cambiar de versión cambia las acciones de arriba y «Copiar» copia esa versión", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const tabs = page.locator("[data-relato-tab]");
+    if ((await tabs.count()) < 2) test.skip();
+    const [id1, id2] = await Promise.all([0, 1].map((i) => tabs.nth(i).getAttribute("data-relato-tab")));
+
+    await expect(page.locator(`[data-acciones-version="${id1}"]`)).toBeVisible();
+    await tabs.nth(1).click();
+    await expect(page.locator(`[data-acciones-version="${id2}"]`)).toBeVisible();
+    await expect(page.locator(`[data-acciones-version="${id1}"]`)).toBeHidden();
+    await expect(page.locator(`[data-acciones-version="${id2}"] [data-corregir-relato]`)).toHaveAttribute(
+      "href",
+      new RegExp(`/relatos/${id2}/corregir$`),
+    );
+
+    await page.locator(`[data-acciones-version="${id2}"]`).getByRole("button", { name: "Copiar Relato" }).click();
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    const segunda = await page.locator(`#relato-content-${id2} [data-copy-part]`).allInnerTexts();
+    expect(copied).toBe(segunda.map((t) => t.trim()).filter(Boolean).join("\n\n"));
+  });
+
+  test("«Escribir de nuevo la historia completa» lleva a la sala con la confirmación", async ({ page }) => {
+    await page.getByRole("link", { name: /Escribir de nuevo la historia completa/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}\\?escribir=1$`));
+    await expect(page.locator("#start-panel")).toContainText("¿La escribimos de nuevo?");
+  });
+
   // Spec-490 T2.4
   test("Descargar .md baja el relato para el TTS", async ({ page }) => {
-    const panel = page.locator("[data-relato-panel].active").first();
+    // Spec-630 B15: las acciones de la versión elegida están en el panel de arriba.
+    const acciones = page.locator("[data-acciones-version]:not(.hidden)");
     const [download] = await Promise.all([
       page.waitForEvent("download"),
-      panel.locator("[data-descargar-relato]").click(),
+      acciones.locator("[data-descargar-relato]").click(),
     ]);
 
     expect(download.suggestedFilename()).toMatch(/^el-monte-prohibido-\d{4}-\d{2}-\d{2}-\d{4}\.md$/);
@@ -95,9 +127,9 @@ test.describe("Vista de Relatos", () => {
     context,
   }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-    const panel = page.locator("[data-relato-panel].active").first();
-    await panel.getByRole("button", { name: "Copiar Relato" }).click();
-    await expect(panel.getByRole("button", { name: /Copiado/ })).toBeVisible();
+    const acciones = page.locator("[data-acciones-version]:not(.hidden)");
+    await acciones.getByRole("button", { name: "Copiar Relato" }).click();
+    await expect(acciones.getByRole("button", { name: /Copiado/ })).toBeVisible();
 
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(copied).toMatch(/^Acto 1\n\n/);

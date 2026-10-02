@@ -16,7 +16,7 @@ test.skip(!!process.env.BASE_URL, "Arma paquetes: solo contra el arnés con DB d
 
 test("cancelar la confirmación no lanza nada", async ({ page }) => {
   await page.goto(`/historia/${STORY_ID}/relatos`);
-  const boton = page.locator("[data-relato-panel].active [data-armar-guion]");
+  const boton = page.locator("[data-acciones-version]:not(.hidden) [data-armar-guion]");
   let jobs = 0;
   page.on("request", (r) => r.method() === "POST" && r.url().includes("/jobs") && jobs++);
 
@@ -33,7 +33,7 @@ test("armar el guion abre el modal y termina en «Para el video»", async ({ pag
   const panel = page.locator("[data-relato-panel].active");
   const narrativeId = await panel.getAttribute("data-relato-panel");
 
-  await panel.locator("[data-armar-guion]").click();
+  await page.locator(`[data-acciones-version="${narrativeId}"] [data-armar-guion]`).click();
   await page.locator("#forge-confirm").getByRole("button", { name: "Armar el guion" }).click();
 
   await page.waitForURL(new RegExp(`/relatos/${narrativeId}/video$`), { timeout: 20_000 });
@@ -56,7 +56,7 @@ test("armar el guion abre el modal y termina en «Para el video»", async ({ pag
 
 async function abrirVideo(page: import("@playwright/test").Page, tab = "") {
   await page.goto(`/historia/${STORY_ID}/relatos`);
-  await page.locator("[data-relato-panel].active [data-para-el-video]").click();
+  await page.locator("[data-acciones-version]:not(.hidden) [data-para-el-video]").click();
   await page.waitForURL(/\/video/);
   await page.locator("[data-video]").waitFor();
   await page.locator("[data-resumen] [data-lector]").first().waitFor(); // el script ya dibujó

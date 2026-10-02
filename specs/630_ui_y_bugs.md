@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1–S4 ✅ (2026-10-02); sigue S5. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** IMPLEMENT — S1–S5 ✅ (2026-10-02); sigue S6. B17 a decidir. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -189,6 +189,12 @@ Huecos que hay que decidir (D8): las reglas del acto no llegan al Planificador n
 **Qué pasa hoy:** «Tu idea», «Preguntas» y «Los actos» tienen la barra fija con los cuatro pasos (`_cabecera.ejs`), y el 4 («El relato») lleva a `/historia/{id}/relatos`. Pero esa vista no tiene la barra: solo «Volver a Galería» (`relatos.ejs:12`). Se entra al paso 4 y no se puede volver al 3.
 **Decisión:** «El relato» lleva la misma barra fija (`.asistente-barra` + `_cabecera.ejs` con `pasoActual: 'relato'`), con los pasos 1–3 como links. «Volver a Galería» se va (Mis historias está en el menú). «Corregir el relato» y «Para el video» siguen con su «Volver a los relatos».
 **Cómo se verifica:** test de vista (la barra con los cuatro pasos y «El relato» actual) y E2E: desde «El relato» → «Los actos».
+
+### B17 — Después de un cambio de estilos, una pestaña abierta sigue con el CSS viejo · **bug** (visto por el usuario en S4)
+
+**Qué pasó:** después de S4 el usuario vio «Los actos» en una sola columna. En un navegador limpio quedan dos (medido a 1714 y 1280 px). Causa: el sitio navega con `hx-boost` (htmx 1.9, sin la extensión `head-support`), que reemplaza el `<body>` y **no vuelve a cargar el `<head>`**: el `styles.css` de la primera carga sigue vivo mientras se navega por links. El CSS viejo no tiene `lg:grid-cols-[1fr_24rem]` y la grilla cae a una columna. Se arregla con una recarga completa (Ctrl+Shift+R).
+**Alcance:** pasa en dev (tailwind recompila y el `?v=` no cambia hasta que se reinicia el proceso) y en **prod después de cada `make deploy`** con una pestaña abierta.
+**Propuesta (a decidir, D13):** cuando una navegación con `hx-boost` trae una versión de estáticos distinta de la cargada, el navegador hace una navegación completa a esa URL. La versión (`assetVersion`) pasa a calcularse con la fecha de modificación de `public/styles.css` y `public/js/` (así también cambia en dev cuando tailwind recompila) y viaja en un `<meta name="asset-version">`.
 
 ---
 
@@ -391,11 +397,14 @@ Capturas en las dos paletas: `frontend/capturas/531/630-papel/` y `630-latte/` (
 - [x] T4.4 `sin-jerga`, `no-hardcoded-colors` y `palette-contrast` en verde; capturas `CAPTURAS=630 npx playwright test visual-snapshots` en las dos paletas.
 - [x] T4.5 Checkpoint en dev con las capturas.
 
-### S5 — Acciones del relato
-- [ ] T5.1 Panel de acciones en `relatos.ejs` y salida de las acciones de `relato_panel.ejs`. **Tests:** `relatos.view.test.ts` (el panel está antes de las pestañas; un grupo por versión, visible solo el primero; «Escribir de nuevo la historia completa» → `/generar/stream/{id}?regenerate=1` con `data-generation-trigger`; el panel de la versión no trae Descargar/Corregir/Copiar y sí «Regenerar» por acto).
-- [ ] T5.2 `hx-swap-oob` del grupo al regenerar un acto. **Test:** `relatos.controller.test.ts` (el fragmento del panel trae el grupo de esa versión, deshabilitado con `regenerating`).
-- [ ] T5.3 `relatos.js`: cambiar de pestaña cambia el grupo. **E2E** en `relatos-switcher.spec.ts`: con dos versiones, pasar a la segunda muestra sus acciones y «Copiar relato» copia la segunda; `paquete-video.spec.ts` y `corregir-relato.spec.ts` entran por el panel nuevo.
-- [ ] T5.4 Checkpoint en dev.
+### S5 — Acciones del relato · ✅ 2026-10-02
+
+**Cómo quedó:** `partials/relato_acciones.ejs` (un grupo por versión: Corregir, Armar el guion / Para el video, Descargar .md, Copiar relato) en un panel arriba de las pestañas, con «Escribir de nuevo la historia completa» (`/generar/stream/{id}?escribir=1`, `data-generation-trigger`). El panel de la versión queda con la prosa, los avisos y «Regenerar» por acto; cuando el Express lo sirve solo (`conAcciones`) trae su grupo con `hx-swap-oob`, que se deshabilita mientras se regenera y vuelve al terminar (E2E en `relatos-regenerar`).
+
+- [x] T5.1 Panel de acciones en `relatos.ejs` y salida de las acciones de `relato_panel.ejs`. **Tests:** `relatos.view.test.ts` (el panel está antes de las pestañas; un grupo por versión, visible solo el primero; «Escribir de nuevo la historia completa» → `/generar/stream/{id}?regenerate=1` con `data-generation-trigger`; el panel de la versión no trae Descargar/Corregir/Copiar y sí «Regenerar» por acto).
+- [x] T5.2 `hx-swap-oob` del grupo al regenerar un acto. **Test:** `relatos.controller.test.ts` (el fragmento del panel trae el grupo de esa versión, deshabilitado con `regenerating`).
+- [x] T5.3 `relatos.js`: cambiar de pestaña cambia el grupo. **E2E** en `relatos-switcher.spec.ts`: con dos versiones, pasar a la segunda muestra sus acciones y «Copiar relato» copia la segunda; `paquete-video.spec.ts` y `corregir-relato.spec.ts` entran por el panel nuevo.
+- [x] T5.4 Checkpoint en dev.
 
 ### S6 — Datos a la IA
 - [ ] T6.1 Fragmentos del Verificador y línea de reglas en `authoring_verifier.md`. **Test:** `test_planner_verifier.py` (el acto en el prompt trae «Cómo cambia», «En escena» y las reglas del acto; sin datos, no aparecen las líneas).

@@ -47,6 +47,7 @@ async function renderRelatoPanel(
     isActive: true,
     regenerating: extra.regenerating ?? null,
     panelError: extra.panelError ?? null,
+    conAcciones: true, // Spec-630 B15: el grupo de acciones de arriba viaja fuera de banda
   });
 }
 

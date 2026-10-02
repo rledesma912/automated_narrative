@@ -23,6 +23,20 @@
       <p class="text-forge-body">Todavía no hay relatos de esta historia.</p>
     </div>
   <% } else { %>
+    <%/* Spec-630 B15: todas las acciones juntas, arriba: escribir la historia de nuevo
+         (una versión nueva; la sala confirma con el tiempo estimado) y las de la versión elegida. */%>
+    <section class="card-forge !p-5 mb-6 flex flex-wrap items-center justify-between gap-4" data-relato-acciones>
+      <div class="flex flex-wrap items-center gap-3">
+        <% relatos.forEach(function(relato, index) { %>
+          <%- include('partials/relato_acciones', { story, relato, isActive: index === 0, regenerating: null, oob: false }) %>
+        <% }); %>
+      </div>
+      <a href="/generar/stream/<%= story.id %>?escribir=1" class="btn-forge-sm"
+         data-generation-trigger data-story-id="<%= story.id %>" data-busy-label="Abriendo…">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Escribir de nuevo la historia completa
+      </a>
+    </section>
+
     <div class="border-b border-forge-border mb-6">
       <div class="flex items-center gap-2 overflow-x-auto pb-3">
         <% relatos.forEach(function(relato, index) { %>

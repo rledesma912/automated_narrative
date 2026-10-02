@@ -14,6 +14,7 @@ function renderPanel(regenerating: { acto: number; jobId: string } | null = null
     isActive: true,
     regenerating,
     panelError: null,
+    conAcciones: true, // como lo sirve el Express (Spec-630 B15)
   });
 }
 
@@ -203,5 +204,60 @@ describe("actos desactualizados", () => {
     });
     expect((html.match(/data-acto-desactualizado/g) || []).length).toBe(1);
     expect(html.indexOf("data-acto-desactualizado")).toBeGreaterThan(html.indexOf("Acto 3"));
+  });
+
+  // ── Spec-630 B15: las acciones, agrupadas arriba ─────────────────────────────
+
+  const DOS = {
+    story: { id: "s-1", title: "La casa", status: "completed" },
+    relatos: [
+      { id: "r-1", content: "## Acto 1\n\nUno.", created_at: "2026-10-02T17:30:00.000Z" },
+      { id: "r-2", content: "## Acto 1\n\nDos.", created_at: "2026-10-01T17:30:00.000Z", hasVideoScript: true },
+    ],
+  };
+
+  it("el panel de acciones va antes de las pestañas, con un grupo por versión", async () => {
+    const html = await ejs.renderFile(viewPath, DOS);
+    const acciones = html.indexOf("data-relato-acciones");
+    expect(acciones).toBeGreaterThan(-1);
+    expect(acciones).toBeLessThan(html.indexOf("data-relato-tab="));
+    const grupo = (id: string) => html.match(new RegExp(`<div id="relato-acciones-${id}"[^>]*class="([^"]*)"`))![1];
+    expect(grupo("r-1")).toMatch(/\bflex\b/);
+    expect(grupo("r-2")).toMatch(/\bhidden\b/);
+    // Cada grupo con lo suyo: corregir, guion / para el video, descargar y copiar.
+    for (const id of ["r-1", "r-2"]) {
+      expect(html).toContain(`data-corregir-relato="${id}"`);
+      expect(html).toContain(`data-descargar-relato="${id}"`);
+      expect(html).toContain(`copyRelatoContent('${id}', this)`);
+    }
+    expect(html).toContain('data-armar-guion="r-1"');
+    expect(html).toContain('data-para-el-video="r-2"');
+  });
+
+  it("«Escribir de nuevo la historia completa» va a la sala, que confirma", async () => {
+    const html = await ejs.renderFile(viewPath, DOS);
+    expect(html).toMatch(
+      /<a href="\/generar\/stream\/s-1\?escribir=1"[^>]*data-generation-trigger[^>]*>\s*<i[^>]*><\/i> Escribir de nuevo la historia completa/,
+    );
+  });
+
+  it("el panel de la versión trae la prosa y «Regenerar» por acto, sin las acciones", async () => {
+    const html = await ejs.renderFile(panelPath, {
+      story: { id: "s-1" },
+      relato: { id: "r-1", content: CONTENT },
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+    expect(html).not.toContain("data-descargar-relato");
+    expect(html).not.toContain("data-corregir-relato");
+    expect(html).not.toContain("copyRelatoContent");
+    expect(html).toContain('data-regenerar-acto="1"');
+  });
+
+  it("al regenerar un acto, el grupo de esa versión viaja fuera de banda y deshabilitado", async () => {
+    const html = await renderPanel({ acto: 2, jobId: "j-1" });
+    expect(html).toMatch(/<div id="relato-acciones-r-1"[^>]*hx-swap-oob="outerHTML"/);
+    expect(html).toMatch(/data-corregir-relato="r-1"[\s\S]*?opacity-40/);
   });
 });
