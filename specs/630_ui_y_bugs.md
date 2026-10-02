@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** IMPLEMENT — S1, S2 y S3 ✅ (2026-10-02); sigue S4. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** IMPLEMENT — S1–S4 ✅ (2026-10-02); sigue S5. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -381,12 +381,15 @@ Convención de tests: **pytest** en `tests/` (Core), **Vitest** en `frontend/tes
 - [x] T3.5 **E2E** en `asistente.spec.ts`: «Sumarlo a los personajes» → el aviso no está ni visible ni en ignorados y el personaje queda marcado en ese acto; sumar dos lugares seguidos → aparecen en los cinco actos y el segundo queda elegido; elegir otro lugar de la lista se guarda; borrar un lugar y un personaje con confirmación → desaparecen de todos los actos; borrar una regla.
 - [x] T3.6 Checkpoint en dev.
 
-### S4 — Aspecto de «Los actos»
-- [ ] T4.1 Ancho, columnas y caja del secreto según S0.
-- [ ] T4.2 «Cómo cambia {protagonista} en este acto», pista y rótulos visibles. **Test:** `escaleta.view.test.ts` (título con el nombre; `<label for="change-from-{n}">Al empezar</label>` y «Al terminar»).
-- [ ] T4.3 Opciones compactas en píldora. **Test:** `gramatica-visual.view.test.ts` (la opción compacta es `rounded-full` con borde y marca; el chip sigue sin borde; el botón no es píldora).
-- [ ] T4.4 `sin-jerga`, `no-hardcoded-colors` y `palette-contrast` en verde; capturas `CAPTURAS=630 npx playwright test visual-snapshots` en las dos paletas.
-- [ ] T4.5 Checkpoint en dev con las capturas.
+### S4 — Aspecto de «Los actos» · ✅ 2026-10-02
+
+Capturas en las dos paletas: `frontend/capturas/531/630-papel/` y `630-latte/` (`asistente-escaleta.png`, `03-actos.png`; no se versionan). En la caja del secreto, «Se descubre en» queda debajo del título cuando la columna no da el ancho (24rem): sigue dentro de la caja.
+
+- [x] T4.1 Ancho, columnas y caja del secreto según S0.
+- [x] T4.2 «Cómo cambia {protagonista} en este acto», pista y rótulos visibles. **Test:** `escaleta.view.test.ts` (título con el nombre; `<label for="change-from-{n}">Al empezar</label>` y «Al terminar»).
+- [x] T4.3 Opciones compactas en píldora. **Test:** `gramatica-visual.view.test.ts` (la opción compacta es `rounded-full` con borde y marca; el chip sigue sin borde; el botón no es píldora).
+- [x] T4.4 `sin-jerga`, `no-hardcoded-colors` y `palette-contrast` en verde; capturas `CAPTURAS=630 npx playwright test visual-snapshots` en las dos paletas.
+- [x] T4.5 Checkpoint en dev con las capturas.
 
 ### S5 — Acciones del relato
 - [ ] T5.1 Panel de acciones en `relatos.ejs` y salida de las acciones de `relato_panel.ejs`. **Tests:** `relatos.view.test.ts` (el panel está antes de las pestañas; un grupo por versión, visible solo el primero; «Escribir de nuevo la historia completa» → `/generar/stream/{id}?regenerate=1` con `data-generation-trigger`; el panel de la versión no trae Descargar/Corregir/Copiar y sí «Regenerar» por acto).

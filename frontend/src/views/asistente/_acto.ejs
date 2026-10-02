@@ -56,7 +56,8 @@
               </details>
             <% } %>
 
-            <div class="grid lg:grid-cols-[1fr_18rem] gap-6 p-6">
+            <%/* Spec-630 B3/B4: columna derecha más ancha y separada con una línea. */%>
+            <div class="grid lg:grid-cols-[1fr_24rem] gap-6 lg:gap-10 p-6">
               <div>
                 <% if (a.number > 1) { %>
                   <%/* Spec-560 A1: el puente entre actos. */%>
@@ -79,15 +80,23 @@
                 </ol>
                 <button type="button" class="btn-forge-outline-sm mb-5" data-agregar="events"><i data-lucide="plus" class="w-4 h-4"></i> Agregar hecho</button>
 
-                <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Qué cambia</p>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <textarea name="change_from" rows="1" maxlength="200" aria-label="Al empezar" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= a.change_from %></textarea>
-                  <i data-lucide="arrow-right" class="w-4 h-4 text-forge-accent shrink-0 self-center"></i>
-                  <textarea name="change_to" rows="1" maxlength="200" aria-label="Al terminar" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= a.change_to %></textarea>
+                <%/* Spec-630 B9: «Qué cambia» no se entendía: título con el nombre, pista y rótulos visibles. */%>
+                <p class="text-xs uppercase tracking-widest text-forge-muted mb-1">Cómo cambia <%= state.direction.protagonist_name || 'el protagonista' %> en este acto</p>
+                <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>Cómo está al empezar el acto y cómo queda al terminar: con miedo → decidida a volver.</p>
+                <div class="flex flex-col sm:flex-row sm:items-end gap-2">
+                  <div class="flex-1">
+                    <label class="block text-xs text-forge-muted mb-1" for="change-from-<%= a.number %>">Al empezar</label>
+                    <textarea id="change-from-<%= a.number %>" name="change_from" rows="1" maxlength="200" class="w-full [field-sizing:content] resize-none <%= field %>"><%= a.change_from %></textarea>
+                  </div>
+                  <i data-lucide="arrow-right" class="w-4 h-4 text-forge-accent shrink-0 self-center sm:mb-3" aria-hidden="true"></i>
+                  <div class="flex-1">
+                    <label class="block text-xs text-forge-muted mb-1" for="change-to-<%= a.number %>">Al terminar</label>
+                    <textarea id="change-to-<%= a.number %>" name="change_to" rows="1" maxlength="200" class="w-full [field-sizing:content] resize-none <%= field %>"><%= a.change_to %></textarea>
+                  </div>
                 </div>
               </div>
 
-              <aside class="space-y-5 text-sm">
+              <aside class="space-y-5 text-sm lg:border-l lg:border-forge-border lg:pl-10">
                 <fieldset>
                   <legend class="text-xs uppercase tracking-widest text-forge-muted mb-2">Dónde pasa</legend>
                   <div class="flex flex-wrap gap-2">
@@ -131,19 +140,22 @@
                   </div>
                 <% } %>
 
-                <div>
-                  <%/* Spec-560 A4: lo que el acto sabe pero todavía no cuenta, y dónde se revela. */%>
-                  <label class="block text-xs uppercase tracking-widest text-forge-muted mb-1" for="held-<%= a.number %>">Lo que todavía es secreto</label>
+                <%/* Spec-560 A4: lo que el acto sabe pero todavía no cuenta, y dónde se revela.
+                     Spec-630 B8: los dos juntos en una caja, el «Se descubre en» al lado del título. */%>
+                <div class="border border-forge-border bg-forge-bg p-3" data-secreto>
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <label class="text-xs uppercase tracking-widest text-forge-muted" for="held-<%= a.number %>">Lo que todavía es secreto</label>
+                    <% if (a.number < 5) { %>
+                      <label class="flex items-center gap-2 text-xs text-forge-muted" for="reveal-<%= a.number %>">Se descubre en
+                        <select id="reveal-<%= a.number %>" name="reveal_act" class="bg-forge-surface border border-forge-border px-2 py-1">
+                          <option value="0" <%= a.reveal_act ? '' : 'selected' %>>—</option>
+                          <% for (let n = a.number + 1; n <= 5; n++) { %><option value="<%= n %>" <%= a.reveal_act === n ? 'selected' : '' %>>el Acto <%= n %></option><% } %>
+                        </select>
+                      </label>
+                    <% } %>
+                  </div>
                   <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>En este acto no se cuenta; se descubre más adelante.</p>
-                  <textarea id="held-<%= a.number %>" name="held_back" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none <%= field %>"><%= a.held_back %></textarea>
-                  <% if (a.number < 5) { %>
-                    <label class="flex items-center gap-2 mt-2 text-xs text-forge-muted" for="reveal-<%= a.number %>">Se descubre en
-                      <select id="reveal-<%= a.number %>" name="reveal_act" class="bg-forge-bg border border-forge-border px-2 py-1">
-                        <option value="0" <%= a.reveal_act ? '' : 'selected' %>>—</option>
-                        <% for (let n = a.number + 1; n <= 5; n++) { %><option value="<%= n %>" <%= a.reveal_act === n ? 'selected' : '' %>>el Acto <%= n %></option><% } %>
-                      </select>
-                    </label>
-                  <% } %>
+                  <textarea id="held-<%= a.number %>" name="held_back" rows="1" maxlength="300" class="w-full [field-sizing:content] resize-none bg-forge-surface border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent"><%= a.held_back %></textarea>
                 </div>
 
                 <fieldset>

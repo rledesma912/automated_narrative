@@ -40,4 +40,29 @@ describe("tarjeta del acto", () => {
     const html = await acto(1);
     expect(html).toMatch(/data-sumar-personaje="Tío Rubén" data-aviso="elenco:tio ruben"/);
   });
+
+  // Spec-630 B9: «Qué cambia» con el nombre, pista y rótulos visibles.
+  it("«Cómo cambia Susana en este acto» con «Al empezar» y «Al terminar»", async () => {
+    const html = await acto(2);
+    expect(html).toContain("Cómo cambia Susana en este acto");
+    expect(html).toMatch(/<label[^>]*for="change-from-2">Al empezar<\/label>\s*<textarea id="change-from-2" name="change_from"/);
+    expect(html).toMatch(/<label[^>]*for="change-to-2">Al terminar<\/label>\s*<textarea id="change-to-2" name="change_to"/);
+    expect(html).not.toContain("Qué cambia");
+  });
+
+  // Spec-630 B8: el secreto y «Se descubre en» van juntos en una caja.
+  it("el secreto y «Se descubre en» van en la misma caja", async () => {
+    const caja = (await acto(1)).match(/<div[^>]*data-secreto>([\s\S]*?)<\/textarea>/)![1];
+    expect(caja).toContain("Lo que todavía es secreto");
+    expect(caja).toMatch(/Se descubre en[\s\S]*?<option value="4" selected>el Acto 4<\/option>/);
+    // El último acto no tiene en qué acto descubrirse.
+    expect(await acto(5)).not.toContain('name="reveal_act"');
+  });
+
+  // Spec-630 B3/B4: columna derecha más ancha y separada.
+  it("la columna derecha es más ancha y tiene la línea divisoria", async () => {
+    const html = await acto(1);
+    expect(html).toContain("lg:grid-cols-[1fr_24rem]");
+    expect(html).toMatch(/<aside class="[^"]*lg:border-l[^"]*lg:pl-10/);
+  });
 });
