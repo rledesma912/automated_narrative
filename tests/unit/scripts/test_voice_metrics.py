@@ -91,3 +91,16 @@ def test_oraciones_cortadas_y_dialogo_por_acto():
     m = evaluate(text, "Irene", CAST)
     assert (m["oraciones_cortadas"], m["oraciones_cortadas_pct"], m["dialogo"]) == (2, 50, 1)
     assert len(m["por_acto"]) == 2
+
+
+def test_comparaciones_por_acto():
+    # Spec-640: lo literario que se cuenta sin IA.
+    text = (
+        "## Acto 1\n\nJuan bajó la linterna como si le pesara y seguimos caminando.\n\n"
+        "## Acto 2\n\nLlegamos como a las cuatro y la casa estaba cerrada."
+    )
+    uno, dos = cut_by_act(split_acts(text))
+    assert (uno["comparaciones"], dos["comparaciones"]) == (1, 0)
+    m = evaluate(text, "Irene", CAST)
+    assert m["comparaciones"] == 1
+    assert m["comparaciones_detalle"] == ["como si le pesara y seguimos"]

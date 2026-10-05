@@ -1,0 +1,136 @@
+{
+  "e7d00400-1558-416f-be68-afaf0cada5c7": {
+    "palabras": 2243,
+    "cliches": 0,
+    "cliches_detalle": {},
+    "parentescos_mal": 11,
+    "parentescos_en_dialogo": {},
+    "narrador_3ra_persona": 0,
+    "frases_repetidas": 0,
+    "oraciones_cortadas": 1,
+    "oraciones_cortadas_pct": 1,
+    "dialogo": 0,
+    "comparaciones": 8,
+    "comparaciones_detalle": [
+      "como un tambor",
+      "como una brasa metida en un",
+      "como si hubiera chupado una moneda",
+      "como una cortina justo en la",
+      "como si el que reía supiera",
+      "como si alguien probara el peso",
+      "como si hubiera estado esperando que",
+      "como si nunca hubiera tenido una"
+    ],
+    "por_acto": [
+      {
+        "palabras": 500,
+        "oraciones": 24,
+        "cortadas": 1,
+        "cortadas_pct": 4,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 503,
+        "oraciones": 24,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 0
+      },
+      {
+        "palabras": 457,
+        "oraciones": 23,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 4
+      },
+      {
+        "palabras": 457,
+        "oraciones": 21,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 3
+      },
+      {
+        "palabras": 311,
+        "oraciones": 13,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 0
+      }
+    ],
+    "frases_640": {}
+  },
+  "f4ccc4b5-0bca-4107-ab1d-0c9b5450a3fb": {
+    "palabras": 2249,
+    "cliches": 1,
+    "cliches_detalle": {
+      "lo peor fue": 1
+    },
+    "parentescos_mal": 12,
+    "parentescos_en_dialogo": {},
+    "narrador_3ra_persona": 0,
+    "frases_repetidas": 1,
+    "oraciones_cortadas": 4,
+    "oraciones_cortadas_pct": 4,
+    "dialogo": 0,
+    "comparaciones": 5,
+    "comparaciones_detalle": [
+      "como si necesitara convencerse él también",
+      "como un golpe de horno abierto",
+      "como si las chapas pudieran atajar",
+      "como si alguien las pisara con",
+      "como si ya supiera cómo terminan"
+    ],
+    "por_acto": [
+      {
+        "palabras": 484,
+        "oraciones": 20,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 0
+      },
+      {
+        "palabras": 505,
+        "oraciones": 25,
+        "cortadas": 2,
+        "cortadas_pct": 8,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 492,
+        "oraciones": 23,
+        "cortadas": 2,
+        "cortadas_pct": 9,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 439,
+        "oraciones": 17,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 2
+      },
+      {
+        "palabras": 314,
+        "oraciones": 11,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 1
+      }
+    ],
+    "frases_640": {
+      "lo peor fue": 1,
+      "se lo tragó": 1
+    }
+  }
+}

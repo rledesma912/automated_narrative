@@ -7,9 +7,17 @@ OFICIO DE HORROR:
 - Clichés prohibidos (no los uses nunca; en su lugar, una sensación física concreta y propia de esta escena):
 {cliches}
 
-ASÍ NO Y ASÍ SÍ (es un ejemplo de la forma; no uses estas palabras en tu relato):
+CONTALO COMO UNA ANÉCDOTA:
+- Es algo que te pasó y se lo contás a alguien en una sobremesa, no un cuento escrito. Decí lo que se veía, lo que se escuchaba y lo que hiciste, con las palabras de todos los días.
+- Sin metáforas ni imágenes de escritor: las cosas no hacen lo que no pueden hacer (la luz no tiembla, el silencio no pesa, nada se traga a nadie) y los colores no tienen sentimientos.
+- Como mucho una comparación por acto («como si…», «como una…»), y con algo de todos los días.
+- No anuncies lo que viene: contá directamente lo que pasó.
+
+ASÍ NO Y ASÍ SÍ (son ejemplos de la forma; no uses estas palabras en tu relato):
 - Así no: «La puerta. Abierta. Un olor raro. Me acerqué. Nada. Solo el silencio.»
 - Así sí: «Cuando llegué, la puerta estaba abierta y de adentro salía un olor raro, como a algo quemado. Me acerqué despacio porque no quería hacer ruido, pero adentro no había nadie y la casa estaba en silencio.»
+- Así no: «El farol dibujaba sombras que bailaban en la pared, y el viento aullaba entre los árboles como un animal herido.»
+- Así sí: «El farol de la galería alumbraba poco y con el viento las sombras se movían en la pared. Afuera soplaba tan fuerte que los árboles crujían, y yo no me animaba a asomarme.»
 
 PRIMERA PERSONA:
 - Los EVENTOS vienen escritos en tercera persona. Contalos siempre desde vos, {narrador}: «{narrador} no se atreve» → «no me atrevo». Tu nombre no aparece en lo que narrás.

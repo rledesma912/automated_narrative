@@ -86,6 +86,8 @@
     (rep.cliches || []).forEach((c) => out.push({ texto: `Cliché: «${c}»`, buscar: c }));
     (rep.invented_names || []).forEach((name) => out.push({ texto: `Nombre que no está en la historia: ${name}`, buscar: name }));
     if (rep.too_cut) (rep.cut_sentences || []).forEach((s) => out.push({ texto: `Oración cortada: «${s}»`, buscar: s }));
+    // Spec-640: comparaciones de escritor (desde la segunda del acto).
+    if (rep.too_literary) (rep.comparisons || []).forEach((s) => out.push({ texto: `Comparación: «${s}…»`, buscar: s }));
     if (rep.dialogue) out.push({ texto: `Tiene diálogo: ${rep.dialogue} ${rep.dialogue === 1 ? "frase" : "frases"} con raya o entre comillas` });
     return out;
   }

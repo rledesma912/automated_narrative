@@ -60,3 +60,11 @@ def test_sin_protagonista_dice_el_protagonista():
     assert (
         "a el " not in c["vulnerabilidad"].por_que and "de el " not in c["historia_secreta"].por_que
     )
+
+
+def test_ninguna_forma_de_contarlo_pide_prosa_literaria():
+    """Spec-640: la guía de oficio pide una anécdota (sin metáforas); ninguna opción de
+    «¿Cómo lo cuenta?» puede pedir lo contrario."""
+    assert [t.id for t in catalog.tellings()] == ["caso", "confesion", "cronica"]
+    for t in catalog.tellings():
+        assert "literari" not in t.voice.lower() and "imágenes" not in t.voice.lower(), t.id

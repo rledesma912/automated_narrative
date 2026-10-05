@@ -141,6 +141,7 @@ async def get_narrative_repetition(
     """Spec-530 §8.3: frases que cada acto repite de uno anterior y clichés (sin LLM).
 
     Spec-590 F: también oraciones cortadas (`too_cut` desde el 25 %) y diálogo directo.
+    Spec-640: comparaciones de escritor (`too_literary` desde la segunda del acto).
     """
     try:
         nid = UUID(narrative_id)
@@ -165,6 +166,9 @@ async def get_narrative_repetition(
                 "cut_pct": r.cut_pct,
                 "too_cut": r.too_cut,
                 "dialogue": r.dialogue,
+                "comparisons": r.comparisons,  # Spec-640
+                "comparison_count": r.comparison_count,
+                "too_literary": r.too_literary,
             }
             for r in repetition_check.check(acts, known=known)
         ]
