@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-05
 **Tipo:** SDD — calidad de la prosa de la Voz
-**Estado:** S1–S3 ✅ (2026-10-05) en dev; falta la lectura a ciegas de Yael (criterio 2). D1–D4 con lo recomendado (OK del usuario 2026-10-05)
+**Estado:** S1–S3 ✅ (2026-10-05); Yael leyó la versión de dev y pidió el pase a producción (2026-10-05). D1–D4 con lo recomendado (OK del usuario 2026-10-05)
 **Rama:** `feat/spec-640-voz-anecdota` (desde `development`, `4253c48`)
 **Extiende:** Spec-470 (oficio de la Voz), Spec-590 (prosa según la prueba con usuarias), Spec-600 (Voz en Sonnet 5.5), Spec-530 §8.3 (control de repetición).
 
@@ -162,8 +162,8 @@ Hoy, para prohibir una frase hay que editar `voice_cliches.txt` y hacer `make de
 - [x] `authoring_options.yaml` sin la opción; comentario en `Direction.telling`; test del catálogo. pytest 887, Vitest 378, Playwright 67.
 
 ### Pendiente
-- [ ] Lectura de Yael (criterio 2, simplificado 2026-10-05): en dev queda solo la versión de las 10:49 (`ff2375b8`); la compara con la que ya leyó y corrigió en prod. Las otras tres se borraron de dev; sus textos están en `base/` y `despues/`.
-- [ ] PR a `development`; prod con `make deploy` si el usuario lo pide.
+- [x] Lectura de Yael (criterio 2, simplificado 2026-10-05): OK, pidió pasarlo a producción: en dev queda solo la versión de las 10:49 (`ff2375b8`); la compara con la que ya leyó y corrigió en prod. Las otras tres se borraron de dev; sus textos están en `base/` y `despues/`.
+- [x] PR a `development`; prod con `make deploy` (pedido 2026-10-05).
 
 ---
 
