@@ -1,0 +1,128 @@
+{
+  "ff2375b8-d1c9-4a06-83cb-9710b8787259": {
+    "palabras": 2170,
+    "cliches": 0,
+    "cliches_detalle": {},
+    "parentescos_mal": 16,
+    "parentescos_en_dialogo": {},
+    "narrador_3ra_persona": 0,
+    "frases_repetidas": 2,
+    "oraciones_cortadas": 1,
+    "oraciones_cortadas_pct": 1,
+    "dialogo": 0,
+    "comparaciones": 4,
+    "comparaciones_detalle": [
+      "como si se le fuera a",
+      "como si me hubieran apoyado una",
+      "como si alguien estuviera practicando",
+      "como si nunca hubiera tenido ningún"
+    ],
+    "por_acto": [
+      {
+        "palabras": 472,
+        "oraciones": 21,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 476,
+        "oraciones": 24,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 0
+      },
+      {
+        "palabras": 489,
+        "oraciones": 23,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 422,
+        "oraciones": 20,
+        "cortadas": 1,
+        "cortadas_pct": 5,
+        "dialogo": 0,
+        "comparaciones": 2
+      },
+      {
+        "palabras": 296,
+        "oraciones": 15,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 0
+      }
+    ],
+    "frases_640": {}
+  },
+  "e268d623-e771-4bb4-a2aa-94db319f2b06": {
+    "palabras": 2262,
+    "cliches": 0,
+    "cliches_detalle": {},
+    "parentescos_mal": 0,
+    "parentescos_en_dialogo": {},
+    "narrador_3ra_persona": 0,
+    "frases_repetidas": 0,
+    "oraciones_cortadas": 2,
+    "oraciones_cortadas_pct": 2,
+    "dialogo": 1,
+    "comparaciones": 6,
+    "comparaciones_detalle": [
+      "como si esperara algo",
+      "como si se estuviera quedando sin",
+      "como una mano grande empujándome",
+      "como si ella me escuchara",
+      "como si alguien las pisara a",
+      "como si nunca hubiera pasado nada"
+    ],
+    "por_acto": [
+      {
+        "palabras": 490,
+        "oraciones": 24,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 482,
+        "oraciones": 24,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 494,
+        "oraciones": 24,
+        "cortadas": 1,
+        "cortadas_pct": 4,
+        "dialogo": 1,
+        "comparaciones": 1
+      },
+      {
+        "palabras": 473,
+        "oraciones": 24,
+        "cortadas": 0,
+        "cortadas_pct": 0,
+        "dialogo": 0,
+        "comparaciones": 3
+      },
+      {
+        "palabras": 308,
+        "oraciones": 13,
+        "cortadas": 1,
+        "cortadas_pct": 8,
+        "dialogo": 0,
+        "comparaciones": 0
+      }
+    ],
+    "frases_640": {}
+  }
+}

@@ -31,15 +31,28 @@ class ActRepetition:
     cut_count: int = 0
     cut_pct: int = 0
     dialogue: int = 0
+    # Spec-640: comparaciones de escritor (hasta 3 ejemplos y el total).
+    comparisons: list[str] = field(default_factory=list)
+    comparison_count: int = 0
 
     @property
     def too_cut(self) -> bool:
         """Un fragmento suelto está bien; se avisa cuando pasa a ser el estilo del acto."""
         return self.cut_pct >= CUT_PCT_WARNING
 
+    @property
+    def too_literary(self) -> bool:
+        """Spec-640 D2: una comparación por acto está bien; desde la segunda, se avisa."""
+        return self.comparison_count > COMPARISONS_PER_ACT
+
     def has_findings(self) -> bool:
         return bool(
-            self.repeated or self.cliches or self.invented_names or self.too_cut or self.dialogue
+            self.repeated
+            or self.cliches
+            or self.invented_names
+            or self.too_cut
+            or self.dialogue
+            or self.too_literary
         )
 
 
@@ -157,6 +170,20 @@ def dialogue_lines(text: str) -> list[str]:
     return lines + quotes
 
 
+# ── Spec-640: comparaciones («como si…», «como una cortina») ────────────────
+# Lo literario que se puede contar sin IA. «como a las cuatro», «como siempre» o
+# «como yo» no son comparaciones de escritor y no cuentan.
+
+COMPARISONS_PER_ACT = 1  # Spec-640 D2: las que admite un acto sin aviso
+_COMPARISON = re.compile(r"\bcomo (?:si|una?)\b(?:\s+[\wáéíóúñü]+){1,4}", re.I)
+
+
+def comparisons(text: str) -> list[str]:
+    """Las comparaciones de la narración, desde «como» hasta 5 palabras."""
+    narration = "\n".join(ln for ln in text.splitlines() if not _DIALOGUE_LINE.match(ln))
+    return [m.group(0) for s in narration_sentences(narration) for m in _COMPARISON.finditer(s)]
+
+
 def check(
     acts: list[str], cliches: list[str] | None = None, known: str | None = None
 ) -> list[ActRepetition]:
@@ -197,6 +224,9 @@ def check(
         rep.cut_count = len(cut)
         rep.cut_pct = round(100 * len(cut) / total) if total else 0
         rep.dialogue = len(dialogue_lines(acts[n]))
+        found_comparisons = comparisons(acts[n])
+        rep.comparisons = found_comparisons[:_MAX_EXAMPLES]
+        rep.comparison_count = len(found_comparisons)
         result.append(rep)
     return result
 

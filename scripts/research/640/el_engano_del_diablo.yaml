@@ -1,0 +1,395 @@
+title: el engaño del diablo
+personajes_full:
+- id: P1
+  name: susana
+  role: sobrina del tio que trabaja como postero
+- id: P2
+  name: Tío Rubén
+  role: ''
+  kind: sin_nombre
+- id: P3
+  name: Carlos
+  role: ''
+  kind: sin_nombre
+- id: P4
+  name: Juan
+  role: ''
+  kind: sin_nombre
+- id: P5
+  name: la mujer
+  role: ''
+  kind: sin_nombre
+  relation: una desconocida
+- id: P6
+  name: el niño
+  role: ''
+  kind: sin_nombre
+- id: P7
+  name: empleado de la estacion de servicio
+  role: ''
+  kind: sin_nombre
+protagonista: 'susana: sobrina del tio que trabaja como postero'
+relator: 'Primera persona en pasado. Narrador: susana.'
+atmosfera: folk_horror (mitologia_regional)
+escenarios: ''
+sinopsis: |-
+  susana cuenta la historia de cuando adolescente acompaño a su tio ruben y 2 compañeros de él , a pasar unos dias en el monte salvaje para trabajar como posteros. llegaron en la vieja camioneta del tio. una noche hicieron una fogata y en un momemto, carlos, uno de los compañeros, se alejo del campamento y volvio nervioso diciendo que una señora le pidio ayuda porque su pequeño hijo se habia perdido en una cueva. todos salieron en su ayuda,cuando llegaron la mujer no estaba ,pero escucharon el llanto de un niño dentro de la cueva. entonces entraron, se perdieron entre tuneles  buscando el origen del llanto. finalmente en una caverna con una sola entrada se encontraron con un pequeño de espaldas, quien se dio vuelta y lanzando una carcajada mostro su rostro demoniaco. la cueva entro en llamas y el grupo huyo despavorido como pudo. al volver al campamento, intentaron escapar en la chata pero no pudieron arrancarla y se quedaron despiertos toda la noche. al amanecer pudieron arrancar la chata y pasaron por el  lugar donde estaba la cueva pero alli no habia nada. se fueron sin comprender el hecho paranormal. al llegar a una estacion de servicio, entre charlas,  el que atiende les pregunto de donde venian y cuando ellos le dijeron del lugar, el hombre se asombro y les dijo que estuvieron en la cueva de la salamanca.
+reglas: []
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: susana
+  voice:
+    person: primera
+    tense: pasado
+  atmosphere:
+    genre: folk_horror
+    subgenre: mitologia_regional
+  scenarios: []
+  rules: []
+  entities: []
+  actos:
+    act_1:
+      type: exposicion
+      text: ''
+    act_2:
+      type: accion_ascendente
+      text: ''
+    act_3:
+      type: climax
+      text: ''
+    act_4:
+      type: accion_descendente
+      text: ''
+    act_5:
+      type: desenlace
+      text: ''
+direction:
+  premise: susana cuenta la historia de cuando adolescente acompaño a su tio ruben y 2 compañeros de él
+    , a pasar unos dias en el monte salvaje para trabajar como posteros. llegaron en la vieja camioneta
+    del tio. una noche hicieron una fogata y en un momemto, carlos, uno de los compañeros, se alejo del
+    campamento y volvio nervioso diciendo que una señora le pidio ayuda porque su pequeño hijo se habia
+    perdido en una cueva. todos salieron en su ayuda,cuando llegaron la mujer no estaba ,pero escucharon
+    el llanto de un niño dentro de la cueva. entonces entraron, se perdieron entre tuneles  buscando el
+    origen del llanto. finalmente en una caverna con una sola entrada se encontraron con un pequeño de
+    espaldas, quien se dio vuelta y lanzando una carcajada mostro su rostro demoniaco. la cueva entro
+    en llamas y el grupo huyo despavorido como pudo. al volver al campamento, intentaron escapar en la
+    chata pero no pudieron arrancarla y se quedaron despiertos toda la noche. al amanecer pudieron arrancar
+    la chata y pasaron por el  lugar donde estaba la cueva pero alli no habia nada. se fueron sin comprender
+    el hecho paranormal. al llegar a una estacion de servicio, entre charlas,  el que atiende les pregunto
+    de donde venian y cuando ellos le dijeron del lugar, el hombre se asombro y les dijo que estuvieron
+    en la cueva de la salamanca.
+  effect: susto
+  effect_other: ''
+  ending: ellos se van del monte horrorizados y en la estacion de servicio se enteran que estuvieron en
+    las entrañas de la mismisima salamanca.
+  ending_intentional: true
+  telling: caso
+workshop:
+- level: direccion
+  criterion: meta
+  status: cumple
+  question: ''
+  options: []
+  answer: queria conocer el trabajo de su tio, y acampar en el monte
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué necesita Susana de este trabajo de posteros que la haga arriesgarse a ir al monte?
+- level: direccion
+  criterion: inquietud
+  status: cumple
+  question: ''
+  options: []
+  answer: Un comentario sobre el clima
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué dice el tío Rubén antes de entrar al monte que Susana ignora?
+- level: direccion
+  criterion: en_juego
+  status: cumple
+  question: ''
+  options: []
+  answer: perderia su alma
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué pasaría con Susana si la salamanca la atrapa?
+- level: direccion
+  criterion: vulnerabilidad
+  status: cumple
+  question: ''
+  options: []
+  answer: Ayuda a buscar al niño
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué hace Susana que la acerca a la cueva y la pone en peligro?
+- level: direccion
+  criterion: transgresion
+  status: cumple
+  question: ''
+  options: []
+  answer: Insistir en buscar al niño
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué decide hacer Susana que los empuja a entrar en la cueva?
+- level: direccion
+  criterion: historia_secreta
+  status: cumple
+  question: ''
+  options: []
+  answer: la salamanca persigue a cualquiera que llegue a su cueva
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Por qué la salamanca elige a Susana, o a alguno de ellos?
+- level: direccion
+  criterion: descubrimiento
+  status: cumple
+  question: ''
+  options: []
+  answer: Ojos muy brillantes
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué nota Susana en el rostro del niño antes de que se transforme?
+- level: direccion
+  criterion: reaccion
+  status: cumple
+  question: ''
+  options: []
+  answer: Que nunca más volverá
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué piensa Susana al enterarse de que estaban en la cueva de la salamanca?
+- level: direccion
+  criterion: final
+  status: intencional
+  question: ''
+  options: []
+  answer: ellos se van del monte horrorizados y en la estacion de servicio se enteran que estuvieron en
+    las entrañas de la mismisima salamanca.
+  round: 1
+  question_round: 0
+  asked: []
+outline:
+- number: 1
+  bridge: ''
+  goal: Susana quiere conocer el trabajo de su tío y acampar en el monte, a pesar de la inquietud que
+    le genera el comentario del tío.
+  events:
+  - Susana convence a su tío Rubén de llevarla al monte donde trabajaran
+  - Rubén acepta a cambio de que al regresar le cocine su comida favorita, pastel de papas.
+  - 'Antes de irse, Rubén le dice a Susana: ''El clima va a cambiar, andá preparada''.'
+  - Llegan al monte en la vieja camioneta de Rubén, con Carlos y Juan como compañeros.
+  - Montan el campamento y Rubén le muestra a Susana cómo trabajan y como armar el campamento.
+  change_from: Susana está en casa de su tio con ganas de acompañarlo al monte
+  change_to: Susana está en el monte, con ganas de una aventura en el monte.
+  scenario: Casa de Susana / Monte Salvaje
+  on_stage:
+  - susana
+  - Tío Rubén
+  - Carlos
+  - Juan
+  held_back: estan en un monte donde vive la salamanca
+  reveal_act: 5
+  seeds:
+  - El comentario del tío Rubén sobre el clima
+  - La vieja camioneta de Rubén.
+  payoffs: []
+  decisions:
+  - meta
+  - inquietud
+  warnings:
+  - text: '«Tío Rubén» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:tio ruben
+    source: regla
+    dismissed: false
+  - text: '«Carlos» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:carlos
+    source: regla
+    dismissed: true
+  - text: '«Juan» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:juan
+    source: regla
+    dismissed: true
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 2
+  bridge: La noche cae sobre el campamento. Después de la cena, Carlos se aleja del fuego.
+  goal: Susana y los demás intentan ayudar a encontrar al niño perdido, pero terminan transigiendo al
+    entrar en la cueva.
+  events:
+  - Carlos se aleja del campamento, nervioso, diciendo que necesita aire.
+  - 'Carlos regresa corriendo, alterado, y les cuenta que una mujer le pidió ayuda: su hijo se habría
+    perdido en una cueva cercana.'
+  - La mujer no está en el lugar donde Carlos la vio, pero se escucha el llanto de un niño proveniente
+    de una cueva oscura.
+  - Susana, impulsada por la curiosidad y la necesidad de ayudar, insiste en entrar a buscar al niño.
+  - Entran a la cueva, perdiéndose entre túneles oscuros y húmedos, siguiendo el llanto.
+  change_from: Calma en el campamento, ambiente festivo.
+  change_to: Tensión y oscuridad dentro de la cueva, con el llanto del niño como única guía.
+  scenario: Campamento / Cueva Oscura
+  on_stage:
+  - susana
+  - Tío Rubén
+  - Carlos
+  - Juan
+  - la mujer
+  held_back: La identidad de la mujer que pide ayuda es sospechosa.
+  reveal_act: 4
+  seeds:
+  - El llanto del niño
+  - La insistencia de Susana en entrar a la cueva.
+  payoffs:
+  - El comentario del tío Rubén sobre el clima (la oscuridad y la humedad de la cueva son intensas)
+  decisions:
+  - transgresion
+  warnings:
+  - text: '«Tío Rubén» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:tio ruben
+    source: regla
+    dismissed: true
+  - text: '«Carlos» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:carlos
+    source: regla
+    dismissed: true
+  - text: '«Juan» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:juan
+    source: regla
+    dismissed: true
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 3
+  bridge: Después de perderse por los túneles, el grupo llega a una caverna con una sola entrada.
+  goal: Encontrar al niño y salir de la cueva, pero se topan con una revelación aterradora.
+  events:
+  - Llegan a una caverna con una sola entrada, donde ven a un niño de espaldas.
+  - Susana nota que los ojos del niño brillan con una luz extraña e inhumana.
+  - y con una carcajada macabra, revela un rostro demoníaco.
+  - La cueva se ilumina repentinamente con un fuego infernal, bloqueando la entrada.
+  - El grupo huye despavorido, tropezando en la oscuridad y sintiendo el calor del fuego en sus espaldas.
+  change_from: Esperanza de encontrar al niño.
+  change_to: Terror absoluto al descubrir la verdadera naturaleza del niño.
+  scenario: Caverna Demoníaca
+  on_stage:
+  - susana
+  - Tío Rubén
+  - Carlos
+  - Juan
+  - el niño
+  held_back: ''
+  reveal_act: 5
+  seeds:
+  - La apariencia demoníaca del niño
+  - El brillo inusual en los ojos del niño.
+  payoffs:
+  - El llanto del niño (ahora una carcajada macabra)
+  - La insistencia de Susana en entrar a la cueva (la acerca al peligro)
+  decisions:
+  - descubrimiento
+  warnings:
+  - text: '«Tío Rubén» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:tio ruben
+    source: regla
+    dismissed: true
+  - text: '«Carlos» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:carlos
+    source: regla
+    dismissed: false
+  - text: '«Juan» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:juan
+    source: regla
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 4
+  bridge: Logran salir de la cueva, pero la camioneta no arranca.
+  goal: Escapar del monte y comprender lo que sucedió, pero el pánico y la frustración los consumen.
+  events:
+  - Intentan arrancar la camioneta para escapar del monte, pero el motor no responde.
+  - Pasaron toda la noche despiertos, escuchando ruidos extraños en la oscuridad.
+  - Al amanecer, la camioneta arranca de repente.
+  - Mientras se alejan, Susana mira hacia atrás y ve que la cueva ha desaparecido.
+  change_from: Alivio al salir de la cueva.
+  change_to: Desesperación y confusión al no poder escapar del monte.
+  scenario: campamento
+  on_stage:
+  - susana
+  - Tío Rubén
+  - Carlos
+  - Juan
+  - empleado de la estacion de servicio
+  held_back: ''
+  reveal_act: 5
+  seeds: []
+  payoffs:
+  - La vieja camioneta de Rubén (su falla es crucial para su encierro)
+  decisions:
+  - reaccion
+  warnings:
+  - text: '«Tío Rubén» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:tio ruben
+    source: regla
+    dismissed: false
+  - text: '«Carlos» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:carlos
+    source: regla
+    dismissed: false
+  - text: '«Juan» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:juan
+    source: regla
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 5
+  bridge: Llegan a una estación de servicio y el empleado les revela la verdad.
+  goal: Comprender lo sucedido y escapar de la experiencia, pero la verdad es más aterradora de lo que
+    imaginaban.
+  events:
+  - El empleado de la estación de servicio les dice, sorprendido, que estaban en la cueva de la salamanca.
+  - Susana piensa que nunca más volverá a pisar un monte.
+  - Carlos, Juan y Rubén se miran con terror, entendiendo que estuvieron al borde de la perdición.
+  - Susana recuerda el comentario del tío Rubén sobre el clima, dándose cuenta de que era una advertencia.
+  - Se alejan de la estación de servicio, dejando atrás el monte y la cueva de la salamanca, con el terror
+    grabado en sus almas.
+  change_from: Confusión y alivio al salir del monte.
+  change_to: Horror y resignación al descubrir la verdad sobre la cueva de la salamanca.
+  scenario: Estación de Servicio
+  on_stage:
+  - susana
+  - Tío Rubén
+  - Carlos
+  - Juan
+  - empleado de la estacion de servicio
+  held_back: ''
+  reveal_act: 0
+  seeds: []
+  payoffs:
+  - El comentario del tío Rubén sobre el clima (ahora se entiende como una advertencia sobre la salamanca)
+  - La vieja camioneta de Rubén (su falla fue causada por la salamanca)
+  decisions:
+  - final
+  warnings:
+  - text: '«Tío Rubén» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:tio ruben
+    source: regla
+    dismissed: false
+  - text: '«Carlos» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:carlos
+    source: regla
+    dismissed: false
+  - text: '«Juan» aparece en este acto pero no está entre los personajes: ¿lo sumamos?'
+    key: elenco:juan
+    source: regla
+    dismissed: false
+  needs_review: false
+  draft: false
+  synopsis: ''

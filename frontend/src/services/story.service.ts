@@ -27,6 +27,10 @@ export interface ActRepetition {
   cut_pct?: number;
   too_cut?: boolean;
   dialogue?: number;
+  /** Spec-640: comparaciones de escritor (hasta 3 ejemplos y el total); aviso desde la segunda. */
+  comparisons?: string[];
+  comparison_count?: number;
+  too_literary?: boolean;
 }
 
 export interface Relato {

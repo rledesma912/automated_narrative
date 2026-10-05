@@ -186,6 +186,31 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
     expect(copyParts(html).join(" ")).not.toContain("oraciones cortadas");
   });
 
+  // Spec-640: comparaciones de escritor, desde la segunda del acto.
+  it("avisa las comparaciones cuando pasan de una por acto", async () => {
+    const base = { repeated: [], cliches: [], cut_sentences: [], cut_count: 0, cut_pct: 0, too_cut: false, dialogue: 0 };
+    const html = await ejs.renderFile(panelPath, {
+      story: { id: "s-1" },
+      relato: {
+        id: "r-1",
+        content: CONTENT,
+        repetition: {
+          acts: [
+            { number: 1, ...base, comparisons: ["como si le pesara"], comparison_count: 1, too_literary: false },
+            { number: 2, ...base, comparisons: ["como si le pesara", "como una cortina"], comparison_count: 3, too_literary: true },
+          ],
+        },
+      },
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+    expect(html.match(/data-repeticion/g)).toHaveLength(1);
+    expect(html).toContain("3 comparaciones");
+    expect(html).toContain("Comparaciones: 3 en este acto, por ejemplo «como si le pesara…», «como una cortina…»");
+    expect(copyParts(html).join(" ")).not.toContain("Comparaciones");
+  });
+
   it("sin control de repetición (Core caído) el panel se ve como antes", async () => {
     const html = await renderPanel();
     expect(html).not.toContain("data-repeticion");

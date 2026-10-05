@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.application.services.repetition_check import (  # noqa: E402
+    comparisons,
     cut_sentences,
     dialogue_lines,
     narration_sentences,
@@ -134,6 +135,7 @@ def cut_by_act(acts: list[str]) -> list[dict]:
                 "cortadas": len(cut),
                 "cortadas_pct": round(100 * len(cut) / total) if total else 0,
                 "dialogo": len(dialogue_lines(act)),
+                "comparaciones": len(comparisons(act)),  # Spec-640
             }
         )
     return rows
@@ -157,5 +159,7 @@ def evaluate(text: str, narrator: str, cast: list[dict]) -> dict:
         "oraciones_cortadas": cut,
         "oraciones_cortadas_pct": round(100 * cut / sentences) if sentences else 0,
         "dialogo": sum(a["dialogo"] for a in acts),
+        "comparaciones": sum(a["comparaciones"] for a in acts),  # Spec-640
+        "comparaciones_detalle": comparisons(text),
         "por_acto": acts,
     }

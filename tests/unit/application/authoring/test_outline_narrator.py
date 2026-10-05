@@ -235,6 +235,17 @@ def test_avoid_avisa_oraciones_cortadas_y_dialogo():
     assert "Tenía diálogo: contá lo que dicen, sin rayas ni comillas" in text
 
 
+def test_avoid_avisa_comparaciones_desde_la_segunda():
+    """Spec-640: una comparación por acto está bien; con más, la Voz lo sabe al regenerar."""
+    una = ActRepetition(number=2, comparisons=["como si le pesara"], comparison_count=1)
+    assert OutlineNarrator(llm=None)._avoid(una) == ""
+    rep = ActRepetition(
+        number=2, comparisons=["como si le pesara", "como una cortina"], comparison_count=4
+    )
+    text = OutlineNarrator(llm=None)._avoid(rep)
+    assert "Tenía 4 comparaciones (por ejemplo: «como si le pesara», «como una cortina»)" in text
+
+
 def test_avoid_no_avisa_un_fragmento_suelto():
     rep = ActRepetition(number=2, cut_sentences=["Solo."], cut_count=1, cut_pct=5)
     assert OutlineNarrator(llm=None)._avoid(rep) == ""
