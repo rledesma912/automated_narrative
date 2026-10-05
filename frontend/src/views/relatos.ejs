@@ -53,6 +53,10 @@
             class="relato-tab btn-forge-outline !text-left !block whitespace-nowrap"
           >
             <span class="block font-medium">Versión del <%= createdAt %></span>
+            <%/* Spec-630 B21: qué versión tiene el guion para el video. */%>
+            <% if (relato.hasVideoScript) { %>
+              <span class="chip-forge chip-forge--info mt-1" data-con-guion>Con guion</span>
+            <% } %>
           </button>
         <% }); %>
       </div>

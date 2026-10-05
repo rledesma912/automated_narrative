@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-02
 **Tipo:** SDD — mejoras de UI y corrección de bugs
-**Estado:** S1–S6 y B17 en prod (`24d92c4`, 2026-10-02). §6 (después del pase): B18–B20 ✅ (2026-10-02) en `fix/spec-630-sala-regenerar`, sin pasar a prod. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
+**Estado:** S1–S6 y B17 en prod (`24d92c4`, 2026-10-02). §6 (después del pase): B18–B20 ✅ (2026-10-02) en `fix/spec-630-sala-regenerar`, sin pasar a prod; B21 (2026-10-05) en `fix/spec-630-guion-visible`. Plan aprobado sin maqueta (D5–D7 con lo recomendado)
 **Rama:** `feat/spec-630-ui-y-bugs` (desde `development`, `453cccb`)
 **Extiende:** Spec-530 (asistente), Spec-550 (recorrido de la UI), Spec-580 (tono del sitio).
 
@@ -454,3 +454,14 @@ Lo que vio el usuario recorriendo prod. Rama `fix/spec-630-sala-regenerar` (desd
 
 **Hecho (2026-10-02):** la sala en modo escribir trae «← Mis historias» y «Editar» (`data-sala-volver`, con `hx-boost="false"`: `streaming-room.js` no cierra su conexión SSE al navegar con boost, una navegación completa sí). «Regenerar historia» en «El relato», en la confirmación de la sala y en sus botones de modo lectura; «¿Regeneramos la historia?»; la nota de versión nueva es `nota-forge--info`. Tests: `estimates.view.test.ts` («sala: escribir», los tres modos), `relatos.view.test.ts`, E2E `relatos.spec.ts` (Regenerar historia → sala → «Mis historias») y `streaming-room.spec.ts`. Vitest 377, Playwright 67, pytest 880.
 
+
+### B21 — No se ve qué versión tiene el guion para el video · **UI** (2026-10-05)
+
+**Qué pasa hoy:** el guion es de **una versión** del relato (`video_script.narrative_id`). En «El relato» se abre la versión más nueva; si el guion está en otra, solo se ve «Armar el guion para el video», que arma uno nuevo (con costo) y no muestra el que ya existe. Las pestañas dicen solo «Versión del …». En dev: la del 02/10 abre primero y el guion está en la del 30/09 07:53. En prod, la hija recordaba un guion de «El engaño del diablo» que nunca se armó (el único es el de «NO TE DETENGAS EN EL BOSQUE»): la galería no dice cuál tiene y cuál no.
+**Propuesta (aprobada):**
+- **A.** La pestaña de una versión con guion trae el chip «Con guion» (`.chip-forge--info`, `data-con-guion`).
+- **B.** Si la versión elegida no tiene guion y otra sí, una nota en sus acciones: «El guion para el video está en la versión del dd/mm/yyyy hh:mm.» con «Ver el guion» → `/historia/{id}/relatos/{rid}/video` (`data-guion-en-otra`). Si hay varias, la más nueva. El servicio (`getRelatosForStory`) deja `guionEn: {id, fecha}` en cada versión sin guion; viaja también con el panel fuera de banda.
+- **C.** La galería, en una historia terminada sin guion, dice el estado con un chip «Sin guion para el video» (`data-sin-guion`), junto a «Ver relato».
+**Test:** `relatos.view.test.ts` (chip en la pestaña, nota con link, sin nota si la versión tiene guion o ninguna lo tiene), `story.service` (`guionEn` a la más nueva con guion), `gallery.view.test.ts` (chip sin guion / «Para el video»).
+
+**Hecho (2026-10-05):** `conGuionEn()` en `story.service.ts` (fecha con `utils/fechas.ts`); chip «Con guion» en la pestaña (`relatos.ejs`), nota con «Ver el guion» en `relato_acciones.ejs` y chip neutro «Sin guion para el video» en la galería. Tests: `relatos.view.test.ts`, `gallery.view.test.ts`, `services/guion-en.test.ts`. Vitest 382, Playwright 67.

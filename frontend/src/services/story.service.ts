@@ -1,4 +1,5 @@
 import axios from "axios";
+import { fechaVersion } from "../utils/fechas";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
 
@@ -39,6 +40,8 @@ export interface Relato {
   repetition?: { acts: ActRepetition[] } | null;
   /** Spec-610: si la variante ya tiene su paquete para el video. */
   hasVideoScript?: boolean;
+  /** Spec-630 B21: sin guion propio, la versión más nueva que sí lo tiene. */
+  guionEn?: { id: string; fecha: string } | null;
 }
 
 async function withRepetition(relato: Relato): Promise<Relato> {
@@ -52,6 +55,20 @@ async function withRepetition(relato: Relato): Promise<Relato> {
     getVideoScript(relato.id),
   ]);
   return { ...relato, repetition, hasVideoScript: script !== null };
+}
+
+/**
+ * Spec-630 B21: el guion es de una versión. A cada versión sin guion le dice en
+ * cuál está (la más nueva que lo tenga), para no armar otro sin saberlo.
+ */
+export function conGuionEn(relatos: Relato[]): Relato[] {
+  const conGuion = relatos
+    .filter((r) => r.hasVideoScript)
+    .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""))[0];
+  return relatos.map((r) => ({
+    ...r,
+    guionEn: !r.hasVideoScript && conGuion ? { id: conGuion.id, fecha: fechaVersion(conGuion.created_at) } : null,
+  }));
 }
 
 export const getStoryById = async (storyId: string): Promise<Story | null> => {
@@ -73,7 +90,7 @@ export const getRelatosForStory = async (storyId: string): Promise<Relato[]> => 
       `${CORE_API_URL}/api/v1/story-templates/${storyId}/narratives`,
       { timeout: 5000 }
     );
-    return await Promise.all(response.data.map(withRepetition));
+    return conGuionEn(await Promise.all(response.data.map(withRepetition)));
   } catch (error) {
     console.error(`Error fetching narratives for story ${storyId}:`, error);
     return [];
