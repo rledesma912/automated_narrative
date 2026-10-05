@@ -375,6 +375,9 @@ async def test_control_de_repeticion_del_relato(client):
         "cut_pct": 0,
         "too_cut": False,
         "dialogue": 0,
+        "comparisons": [],
+        "comparison_count": 0,
+        "too_literary": False,
     }
     assert data["acts"][1]["repeated"] == ["«el olor dulce y putrefacto» (del acto 1)"]
     assert data["acts"][1]["cliches"] == ["me heló la sangre"]  # una vez, aunque haya variantes

@@ -186,6 +186,31 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
     expect(copyParts(html).join(" ")).not.toContain("oraciones cortadas");
   });
 
+  // Spec-640: comparaciones de escritor, desde la segunda del acto.
+  it("avisa las comparaciones cuando pasan de una por acto", async () => {
+    const base = { repeated: [], cliches: [], cut_sentences: [], cut_count: 0, cut_pct: 0, too_cut: false, dialogue: 0 };
+    const html = await ejs.renderFile(panelPath, {
+      story: { id: "s-1" },
+      relato: {
+        id: "r-1",
+        content: CONTENT,
+        repetition: {
+          acts: [
+            { number: 1, ...base, comparisons: ["como si le pesara"], comparison_count: 1, too_literary: false },
+            { number: 2, ...base, comparisons: ["como si le pesara", "como una cortina"], comparison_count: 3, too_literary: true },
+          ],
+        },
+      },
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+    expect(html.match(/data-repeticion/g)).toHaveLength(1);
+    expect(html).toContain("3 comparaciones");
+    expect(html).toContain("Comparaciones: 3 en este acto, por ejemplo «como si le pesara…», «como una cortina…»");
+    expect(copyParts(html).join(" ")).not.toContain("Comparaciones");
+  });
+
   it("sin control de repetición (Core caído) el panel se ve como antes", async () => {
     const html = await renderPanel();
     expect(html).not.toContain("data-repeticion");
@@ -261,5 +286,44 @@ describe("actos desactualizados", () => {
     const html = await renderPanel({ acto: 2, jobId: "j-1" });
     expect(html).toMatch(/<div id="relato-acciones-r-1"[^>]*hx-swap-oob="outerHTML"/);
     expect(html).toMatch(/data-corregir-relato="r-1"[\s\S]*?opacity-40/);
+  });
+
+  // Spec-630 B21: qué versión tiene el guion para el video.
+  describe("el guion para el video (B21)", () => {
+    const story = { id: "s-1", title: "La casa", status: "completed" };
+    const nueva = { id: "r-2", content: "## Acto 1\n\nDos.", created_at: "2026-10-02T14:47:00.000Z" };
+    const vieja = { id: "r-1", content: "## Acto 1\n\nUno.", created_at: "2026-09-30T10:53:00.000Z" };
+
+    function tab(html: string, id: string): string {
+      return html.match(new RegExp(`<button[^>]*data-relato-tab="${id}"[^>]*>([\\s\\S]*?)</button>`))![1];
+    }
+
+    it("la pestaña de la versión con guion trae «Con guion»; la nueva sin guion avisa dónde está", async () => {
+      const html = await ejs.renderFile(viewPath, {
+        story,
+        relatos: [
+          { ...nueva, hasVideoScript: false, guionEn: { id: "r-1", fecha: "30/09/2026 07:53" } },
+          { ...vieja, hasVideoScript: true, guionEn: null },
+        ],
+      });
+      expect(tab(html, "r-1")).toContain("Con guion");
+      expect(tab(html, "r-2")).not.toContain("Con guion");
+      const acciones = html.match(/<div id="relato-acciones-r-2"[\s\S]*?data-guion-error/)![0];
+      expect(acciones).toContain("El guion para el video está en la versión del 30/09/2026 07:53.");
+      expect(acciones).toContain('href="/historia/s-1/relatos/r-1/video"');
+      expect(acciones).toContain("Armar el guion para el video");
+      const accionesVieja = html.match(/<div id="relato-acciones-r-1"[\s\S]*?data-guion-error/)![0];
+      expect(accionesVieja).not.toContain("data-guion-en-otra");
+      expect(accionesVieja).toContain("Para el video");
+    });
+
+    it("sin guion en ninguna versión: ni chip ni nota", async () => {
+      const html = await ejs.renderFile(viewPath, {
+        story,
+        relatos: [{ ...nueva, hasVideoScript: false, guionEn: null }],
+      });
+      expect(html).not.toContain("data-con-guion");
+      expect(html).not.toContain("data-guion-en-otra");
+    });
   });
 });

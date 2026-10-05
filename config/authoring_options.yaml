@@ -3,6 +3,8 @@
 # reemplaza al perfil del narrador del wizard, que no movía la prosa (§1.4).
 # `planificador` (en «efectos», Spec-560 A5) es la receta con la que el efecto pesa en
 # la escaleta: la recibe el Planificador y la controla el Verificador (no la Voz).
+# Spec-640: sin «Literario»: todas las formas de contarlo son de anécdota, como pide
+# la guía de oficio (`voice_craft.md`, «CONTALO COMO UNA ANÉCDOTA»).
 
 efectos:
   - id: pavor
@@ -38,7 +40,3 @@ como_lo_cuenta:
     label: Como una crónica seca
     ejemplo: "«Eran las tres y diez. La terminal estaba vacía.»"
     voz: "Contalo como una crónica seca: hechos precisos, horas y lugares concretos, casi sin adjetivos ni comparaciones."
-  - id: literario
-    label: Literario
-    ejemplo: "«La terminal dormía bajo una luz que parpadeaba sin ganas.»"
-    voz: "Contalo con prosa literaria cuidada: imágenes precisas y propias, ritmo trabajado, sin adornos gratuitos."

@@ -88,7 +88,8 @@ function extractActNumber(title) {
       <% const names = (rep && rep.invented_names) || []; %>
       <% const cortadas = rep && rep.too_cut ? (rep.cut_count || 0) : 0; %>
       <% const dialogo = (rep && rep.dialogue) || 0; %>
-      <% const resumen = rep ? [rep.repeated.length ? `repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : '', cortadas ? `${cortadas} oraciones cortadas` : '', dialogo ? `tiene diálogo` : ''].filter(Boolean).join(' · ') : ''; %>
+      <% const comparaciones = rep && rep.too_literary ? (rep.comparison_count || 0) : 0; %>
+      <% const resumen = rep ? [rep.repeated.length ? `repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : '', cortadas ? `${cortadas} oraciones cortadas` : '', dialogo ? `tiene diálogo` : '', comparaciones ? `${comparaciones} comparaciones` : ''].filter(Boolean).join(' · ') : ''; %>
       <% if (resumen) { %>
         <%/* Spec-530 §8.3: control de repetición (no se copia ni va al .md). */%>
         <%/* Spec-550 H9: nota; lo que se toca es el link «Ver detalle», no la caja. */%>
@@ -104,6 +105,8 @@ function extractActNumber(title) {
             <% rep.cliches.forEach((c) => { %><li>Cliché: «<%= c %>»</li><% }) %>
             <% if (names.length) { %><li>Nombres que no están en la historia: <%= names.join(', ') %> (si no los querés, regenerá el acto)</li><% } %>
             <% if (cortadas) { %><li>Oraciones cortadas: <%= cortadas %> de este acto (<%= rep.cut_pct %> %), por ejemplo <%= (rep.cut_sentences || []).map((s) => `«${s}»`).join(', ') %>. Si molestan, regenerá el acto.</li><% } %>
+            <%/* Spec-640: suena a cuento escrito, no a anécdota. */%>
+            <% if (comparaciones) { %><li data-aviso-comparaciones>Comparaciones: <%= comparaciones %> en este acto, por ejemplo <%= (rep.comparisons || []).map((s) => `«${s}…»`).join(', ') %>. Si suena muy a cuento, regenerá el acto.</li><% } %>
             <% if (dialogo) { %><li>Diálogo: <%= dialogo %> <%= dialogo === 1 ? 'frase' : 'frases' %> con raya o entre comillas. Si no lo querés, regenerá el acto.</li><% } %>
           </ul>
         </details>

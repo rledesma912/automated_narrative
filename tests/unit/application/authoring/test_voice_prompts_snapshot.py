@@ -150,5 +150,9 @@ def test_el_snapshot_cubre_todas_las_secciones():
         "Acto 1: José oye un golpe",
         "· Exposición",
         "· Desenlace",
+        # Spec-640: el registro de anécdota y las muletillas que marcó la usuaria.
+        "CONTALO COMO UNA ANÉCDOTA",
+        "Como mucho una comparación por acto",
+        "pasó lo peor",
     ):
         assert section in text, section

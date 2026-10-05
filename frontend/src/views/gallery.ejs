@@ -72,6 +72,9 @@ function renderStatusLabel(s) {
                      class="btn-forge-outline-sm" data-para-el-video="<%= s.video_narrative_id %>">
                     <i data-lucide="clapperboard" class="w-4 h-4"></i> Para el video
                   </a>
+                <% } else { %>
+                  <%/* Spec-630 B21: que se note qué falta, no solo qué hay. */%>
+                  <span class="chip-forge" data-sin-guion>Sin guion para el video</span>
                 <% } %>
               <% } else if (s.status === 'failed') { %>
                 <a href="/generar/stream/<%= s.id %>"

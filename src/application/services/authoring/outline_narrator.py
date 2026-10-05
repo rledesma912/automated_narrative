@@ -303,6 +303,13 @@ class OutlineNarrator:
             )
         if rep.dialogue:
             lines.append(t.fragment("voz/evitar/dialogo"))
+        if rep.too_literary:  # Spec-640
+            ejemplos = ", ".join(f"«{s}»" for s in rep.comparisons)
+            lines.append(
+                t.fragment(
+                    "voz/evitar/comparaciones", cantidad=rep.comparison_count, ejemplos=ejemplos
+                )
+            )
         if not lines:
             return ""
         return t.fragment("voz/evitar/titulo") + "\n" + "\n".join(lines) + "\n\n"

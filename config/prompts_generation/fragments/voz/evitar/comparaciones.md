@@ -1,0 +1,1 @@
+- Tenía {cantidad} comparaciones (por ejemplo: {ejemplos}): contalo con las palabras de todos los días, sin imágenes de escritor y con una comparación como mucho

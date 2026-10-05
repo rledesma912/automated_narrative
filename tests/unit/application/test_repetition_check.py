@@ -1,5 +1,6 @@
 from src.application.services.repetition_check import (
     check,
+    comparisons,
     cut_sentences,
     dialogue_lines,
     has_finite_verb,
@@ -147,3 +148,42 @@ def test_un_fragmento_suelto_no_es_aviso():
     assert (rep.cut_count, rep.cut_pct, rep.too_cut) == (1, 25, True)
     (rep,) = check([act + " Entonces entendí que no estaba solo en el camino."], CLICHES)
     assert (rep.cut_count, rep.cut_pct, rep.too_cut) == (1, 20, False)
+
+
+# ── Spec-640: comparaciones ──────────────────────────────────────────────────
+
+
+def test_comparaciones_de_escritor():
+    # Las frases de «el engaño del diablo» que marcó la usuaria.
+    act = (
+        "Juan bajó la linterna como si le pesara. Detrás de nosotros la grieta se llenó "
+        "de llamas que subían como una cortina."
+    )
+    assert comparisons(act) == ["como si le pesara", "como una cortina"]
+
+
+def test_como_que_no_es_comparacion():
+    act = "Llegamos como a las cuatro, como siempre, y yo hice como mi tío: me callé."
+    assert comparisons(act) == []
+
+
+def test_comparaciones_en_dialogo_no_cuentan():
+    act = "—Corré como si te persiguiera el diablo —me dijo.\nY corrí hasta la chata."
+    assert comparisons(act) == []
+
+
+def test_aviso_de_comparaciones_desde_la_segunda():
+    una = "Juan bajó la linterna como si le pesara y seguimos caminando por el túnel."
+    cuatro = (
+        "Juan bajó la linterna como si le pesara. La grieta se llenó de llamas que subían "
+        "como una cortina. El dedo me latía como si me lo hubieran pisado. Brillaba como "
+        "una brasa metida en un hueco."
+    )
+    r = check([una, cuatro], [])
+    assert (r[0].comparison_count, r[0].too_literary, r[0].has_findings()) == (1, False, False)
+    assert (r[1].comparison_count, r[1].too_literary) == (4, True)
+    assert r[1].comparisons == [
+        "como si le pesara",
+        "como una cortina",
+        "como si me lo hubieran pisado",
+    ]
