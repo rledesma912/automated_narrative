@@ -5,7 +5,7 @@
  * la pestaña elegida (relatos.js). Con `oob`, viaja fuera de banda junto al panel
  * cuando se regenera un acto (relato_panel.ejs).
  *
- * Entrada: story, relato, isActive, regenerating ({ acto, jobId } | null), oob.
+ * Entrada: story, relato (con hasVideoScript y guionEn, B21), isActive, regenerating ({ acto, jobId } | null), oob.
  */
 const regen = (typeof regenerating !== 'undefined' && regenerating) ? regenerating : null;
 // Spec-610: cuánto tarda armar el guion para el video.
@@ -56,5 +56,12 @@ const off = 'opacity-40 cursor-not-allowed';
     <i data-lucide="copy" class="w-4 h-4"></i>
     Copiar Relato
   </button>
+  <%/* Spec-630 B21: el guion está en otra versión; armar acá haría uno nuevo. */%>
+  <% if (!relato.hasVideoScript && relato.guionEn) { %>
+    <p class="nota-forge nota-forge--info w-full" data-guion-en-otra="<%= relato.guionEn.id %>">
+      El guion para el video está en la versión del <%= relato.guionEn.fecha %>.
+      <a href="/historia/<%= story.id %>/relatos/<%= relato.guionEn.id %>/video" class="nota-forge__accion">Ver el guion</a>
+    </p>
+  <% } %>
   <p class="hidden nota-forge nota-forge--error w-full" role="alert" data-guion-error="<%= relato.id %>"></p>
 </div>

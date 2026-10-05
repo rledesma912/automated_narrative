@@ -262,4 +262,43 @@ describe("actos desactualizados", () => {
     expect(html).toMatch(/<div id="relato-acciones-r-1"[^>]*hx-swap-oob="outerHTML"/);
     expect(html).toMatch(/data-corregir-relato="r-1"[\s\S]*?opacity-40/);
   });
+
+  // Spec-630 B21: qué versión tiene el guion para el video.
+  describe("el guion para el video (B21)", () => {
+    const story = { id: "s-1", title: "La casa", status: "completed" };
+    const nueva = { id: "r-2", content: "## Acto 1\n\nDos.", created_at: "2026-10-02T14:47:00.000Z" };
+    const vieja = { id: "r-1", content: "## Acto 1\n\nUno.", created_at: "2026-09-30T10:53:00.000Z" };
+
+    function tab(html: string, id: string): string {
+      return html.match(new RegExp(`<button[^>]*data-relato-tab="${id}"[^>]*>([\\s\\S]*?)</button>`))![1];
+    }
+
+    it("la pestaña de la versión con guion trae «Con guion»; la nueva sin guion avisa dónde está", async () => {
+      const html = await ejs.renderFile(viewPath, {
+        story,
+        relatos: [
+          { ...nueva, hasVideoScript: false, guionEn: { id: "r-1", fecha: "30/09/2026 07:53" } },
+          { ...vieja, hasVideoScript: true, guionEn: null },
+        ],
+      });
+      expect(tab(html, "r-1")).toContain("Con guion");
+      expect(tab(html, "r-2")).not.toContain("Con guion");
+      const acciones = html.match(/<div id="relato-acciones-r-2"[\s\S]*?data-guion-error/)![0];
+      expect(acciones).toContain("El guion para el video está en la versión del 30/09/2026 07:53.");
+      expect(acciones).toContain('href="/historia/s-1/relatos/r-1/video"');
+      expect(acciones).toContain("Armar el guion para el video");
+      const accionesVieja = html.match(/<div id="relato-acciones-r-1"[\s\S]*?data-guion-error/)![0];
+      expect(accionesVieja).not.toContain("data-guion-en-otra");
+      expect(accionesVieja).toContain("Para el video");
+    });
+
+    it("sin guion en ninguna versión: ni chip ni nota", async () => {
+      const html = await ejs.renderFile(viewPath, {
+        story,
+        relatos: [{ ...nueva, hasVideoScript: false, guionEn: null }],
+      });
+      expect(html).not.toContain("data-con-guion");
+      expect(html).not.toContain("data-guion-en-otra");
+    });
+  });
 });

@@ -90,4 +90,19 @@ describe("fecha de la galería", () => {
       process.env.TZ = tz;
     }
   });
+
+  // Spec-630 B21: la galería dice también cuándo falta el guion.
+  it("una historia terminada dice si tiene guion para el video", async () => {
+    const html = await ejs.renderFile(viewPath, {
+      rutas,
+      stories: [
+        { id: "con", title: "Con", status: "completed", created_at: "2026-10-01T10:00:00.000Z", video_narrative_id: "n-1" },
+        { id: "sin", title: "Sin", status: "completed", created_at: "2026-10-01T10:00:00.000Z" },
+        { id: "borrador", title: "Borrador", status: "draft", created_at: "2026-10-01T10:00:00.000Z" },
+      ],
+    });
+    expect(html).toContain('href="/historia/con/relatos/n-1/video"');
+    expect(html.match(/data-sin-guion/g)).toHaveLength(1);
+    expect(html).toMatch(/href="\/historia\/sin\/relatos"[\s\S]*?data-sin-guion[\s\S]*?confirmar-borrar\/sin/);
+  });
 });
