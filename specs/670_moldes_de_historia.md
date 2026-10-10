@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN (esperando OK)
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS (esperando OK)
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -231,3 +231,46 @@ Medición D7 (con aviso de costo y OK): la misma sinopsis con 3 moldes; las 5 hi
 6. **S6 — Medición y cierre.**
 
 Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en todo-Claude hasta cerrar la prueba de la chispa.
+
+---
+
+## 6. TASKS (2026-10-10)
+
+### S1 — El motor (regla = hoy + asedio)
+
+- **T1.1** `config/moldes/formas.yaml` (base 5 criterios; `regla` sin intenciones propias; `asedio` con sus 4 criterios, intenciones largo/corto, reglas y `revela`) y `ingredientes.yaml` (vacío de contenido salvo uno para el test). `workshop_criteria.yaml` = banco con ids únicos (suma los de `asedio`). **Hecho cuando:** carga validada al arrancar; un campo que falta → error con el nombre del archivo y la pieza.
+- **T1.2** `molde.py`: `Molde.for_story(story)` → `criterios`, `intencion(n)`, `reglas`, `revela`, `arco`; fallback D16. **Hecho cuando:** tests unitarios de cada método con regla, asedio, otra y forma inexistente.
+- **T1.3** `Direction` (+ `form`, `ingredient`, `form_other`, `form_suggested`, `form_reason`), `DirectionForm`, `_direction` / `_form`, `update_direction` conserva lo de la IA (D13). **Hecho cuando:** test de que el autoguardado no borra `form_suggested` / `form_reason`.
+- **T1.4** Taller por molde (D11): `catalog.criterion` sobre el banco, `initial_items`, `to_evaluate`, `context.decisions` / `decisions_block` / `pending_block`, Consultor, `_state`, `PATCH …/workshop/{c}` (criterio fuera del molde → 404). **Hecho cuando:** test: una respuesta de otra forma no aparece en ningún prompt ni en el estado.
+- **T1.5** Planificador y Voz por molde: `_acts_block` y `_function` con `Molde.intencion`; secreto según `revela` (D15); `{reglas_forma}` en `authoring_planner_system.md`. **Hecho cuando:** snapshots de hoy **idénticos** (pipeline, voice, assistant; largo y corto) y snapshots nuevos de asedio (largo y corto) con su test de secciones (sin «romper la regla» ni «transgresión»).
+- **T1.6** Tests de catálogo: completitud (cada forma/giro en las dos estructuras) y **tope** (D10). YAML round-trip con forma y giro; un YAML viejo = regla.
+- **T1.7** Cierre: pytest, Vitest, Playwright, lint; dev: «La laguna oscura» con `form: asedio` puesto por API → «Armar los actos de nuevo» (en todo-Claude) y comparar con `scripts/research/chispa/laguna_gemma.json`.
+
+### S2 — El contenido del catálogo
+
+- **T2.1** Redactar `lugar`, `casa`, `senuelo`, `otra` (D14) y los 6 giros: criterios (nombre, pregunta, para qué sirve, acto), intenciones (largo y corto), reglas, `revela`; cruce con «¿Cómo lo cuenta?» y efectos.
+- **T2.2** Documento para tu lectura (artifact) con todo el contenido, sin código. **Hecho cuando:** OK del usuario (o sus cambios).
+- **T2.3** Cargarlo en `config/moldes/`; snapshots por forma; tope y completitud en verde.
+
+### S3 — «No va en tu historia» (D8, D12)
+
+- **T3.1** `CriterionStatus.NO_APLICA`; `merge_round` / `to_evaluate` / `finish` (`mal_elegida` con ≥ 2 de la forma).
+- **T3.2** Consultor: esquema con `no_aplica` + motivo, salvo criterios con la marca de rechazo; prompt: solo si la idea lo **contradice**. Snapshot.
+- **T3.3** `reopen` con marca (D12). Planificador y Verificador: bloque «LO QUE NO VA EN ESTA HISTORIA». Snapshots.
+- **T3.4** Tests: no se vuelve a evaluar, reabrir impide otro «no va», `mal_elegida` con 2.
+
+### S4 — La IA sugiere la forma (D1)
+
+- **T4.1** `JobKind.SUGGEST_FORM`, runner, `estimated_seconds` en los 3 perfiles, `mock_structured`, prompt `authoring_form*.md` (+ snapshot).
+- **T4.2** Guarda `form` (si no había), `form_suggested`, `form_reason`, `form_other` (si «otra»). **Hecho cuando:** test del runner con mock; prueba con el modelo del perfil activo sobre las 5 historias del §1.2 (se registra qué sugirió; criterio 6).
+
+### S5 — La UI
+
+- **T5.1** «Tu idea»: «¿Qué clase de historia es?» + «Que la IA lo sugiera» + «Otra»; «¿Le sumamos un giro?» + «Sorprendeme» (uso por giro en `_state`) + «Sin giro»; pistas D10.
+- **T5.2** «Preguntas»: chips agrupados, `no_aplica` (gris, motivo, «Preguntármelo igual»), notas de forma mal elegida y de respuestas guardadas; pistas D10.
+- **T5.3** Tests de vista, guardianes, fixtures (`UPDATE_FIXTURES=1` + diff), E2E (elegir, sugerir con mock, cambiar de forma sin perder respuestas, «no va» y reabrir).
+
+### S6 — Medición y cierre
+
+- **T6.1** Medición D7 (aviso de costo y OK antes).
+- **T6.2** CLAUDE.md (catálogo, cómo ampliarlo, D10), memoria, PR a `development`.
