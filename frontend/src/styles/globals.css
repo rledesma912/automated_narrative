@@ -211,6 +211,9 @@
   }
   .confirm-forge::backdrop { background: var(--forge-overlay); }
   .confirm-forge__icono { @apply p-3 rounded-full bg-forge-warning-bg text-forge-warning shrink-0; }
+  /* Spec-660: escribir el relato (pluma) y borrar de la historia (tacho). */
+  .confirm-forge__icono--escribir { @apply bg-forge-accent/10 text-forge-accent; }
+  .confirm-forge__icono--borrar { @apply bg-forge-error-bg text-forge-error; }
 
   /* ── Barra del asistente (Spec-530) ─────────────────────────────────── */
 

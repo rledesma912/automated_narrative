@@ -70,3 +70,12 @@ def replace_act(content: str, number: int, text: str) -> str:
         raise KeyError(number)
     narrative.acts[number] = normalize(text)
     return join(narrative)
+
+
+def same_structure(story, content: str) -> bool:
+    """Spec-650 D11: el relato guardado tiene los actos de la estructura actual de la
+    historia (si la historia cambió de largo, sus versiones viejas no se regeneran)."""
+    from src.application.services.beat_spec_repository import BeatSpecRepository
+
+    expected = BeatSpecRepository().estructura(story.structure).numeros
+    return split(content).numbers() == expected

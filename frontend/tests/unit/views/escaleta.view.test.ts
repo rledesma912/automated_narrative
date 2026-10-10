@@ -12,7 +12,7 @@ const acto = (n: number) =>
   ejs.renderFile(view, { state, a: state.outline.acts.find((a: { number: number }) => a.number === n) });
 
 describe("tarjeta del acto", () => {
-  it("cada lugar tiene su «×» al lado, fuera de la opción, con los actos que lo usan (B7)", async () => {
+  it("cada lugar tiene su tacho al lado, fuera de la opción, con los actos que lo usan (B7)", async () => {
     const html = await acto(1);
     for (const e of state.scenarios) {
       const grupo = html.match(new RegExp(`<span[^>]*data-lugar="${e.name}"[^>]*>([\\s\\S]*?)</span>\\s*</span>`))![1];
@@ -21,12 +21,24 @@ describe("tarjeta del acto", () => {
     }
   });
 
-  it("cada personaje tiene su «×», menos quien narra (B7)", async () => {
+  it("cada personaje tiene su tacho, menos quien narra (B7)", async () => {
     const html = await acto(1);
     expect(html).toContain('data-borrar-personaje="Tío Rubén"');
     expect(html).toContain('data-borrar-personaje="Los peones"');
     expect(html).not.toContain('data-borrar-personaje="Susana"');
     expect(html).toMatch(/data-borrar-personaje="Tío Rubén" data-usos="1,2,3,4,5"/);
+  });
+
+  it("borrar es un tacho «de la historia», y la pista dice cómo sacar a alguien de un acto (Spec-660 B2)", async () => {
+    const html = await acto(1);
+    const botones = html.match(/<button[^>]*data-borrar-(?:personaje|lugar)=[^>]*>[\s\S]*?<\/button>/g)!;
+    expect(botones.length).toBeGreaterThan(0);
+    for (const b of botones) {
+      expect(b).toContain('data-lucide="trash-2"');
+      expect(b).toContain('title="Borrar de la historia"');
+      expect(b).toMatch(/aria-label="Borrar [^"]* de la historia"/);
+    }
+    expect(html).toContain("Destildá a alguien para sacarlo de este acto.");
   });
 
   it("«+ Lugar» abre un campo con «Agregar» que no es parte del acto (B6)", async () => {

@@ -51,6 +51,13 @@ function extractActNumber(title) {
       <span data-panel-error><%= errorMsg %></span>
     </div>
   <% } %>
+  <% if (relato.otroLargo) { %>
+    <%/* Spec-650 D11: versión del otro largo; el Core no la regenera por actos. */%>
+    <p class="nota-forge nota-forge--info mb-6" data-otro-largo>
+      <i data-lucide="info" class="nota-forge__icono"></i>
+      <span>Esta versión se escribió cuando la historia tenía otro largo: se puede leer, corregir y descargar, pero para regenerar un acto hay que escribir la historia de nuevo.</span>
+    </p>
+  <% } %>
   <div id="relato-content-<%= relato.id %>" class="text-forge-text">
     <% if (preamble) { %>
       <div class="prose-forge whitespace-pre-wrap" data-copy-part><%= preamble %></div>
@@ -59,7 +66,7 @@ function extractActNumber(title) {
       <% const actNumber = extractActNumber(sections[i]); %>
       <div class="flex items-center justify-between gap-3 <%= i === 1 && !preamble ? 'mt-0' : 'mt-10' %> mb-4">
         <h3 class="heading-forge-lg !text-2xl !text-forge-accent !mt-0 !mb-0" data-copy-part><%= mapBeatTitle(sections[i]) %></h3>
-        <% if (actNumber) { %>
+        <% if (actNumber && !relato.otroLargo) { %>
           <button
             type="button"
             class="btn-forge-outline !text-xs !py-1 !px-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"

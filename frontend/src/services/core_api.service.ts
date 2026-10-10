@@ -101,21 +101,6 @@ export interface CoreJob {
   narrative_id: string | null;
 }
 
-/**
- * Lanza la generación completa de una historia. Si ya hay una en curso (409),
- * devuelve ese job en vez de fallar: el llamador redirige a su sala.
- */
-export async function startGeneration(
-  storyId: string,
-): Promise<{ jobId: string; alreadyRunning: boolean }> {
-  const response = await axios.post(
-    `${CORE_API_URL}/api/v1/stories/${storyId}/jobs`,
-    { kind: "full_generation" },
-    { timeout: 5000, validateStatus: (s) => s === 202 || s === 409 },
-  );
-  return { jobId: response.data.job_id, alreadyRunning: response.status === 409 };
-}
-
 /** Job en curso de la historia, o null si no hay. */
 export async function getActiveJob(storyId: string): Promise<CoreJob | null> {
   try {
@@ -141,9 +126,11 @@ export interface JobEstimate {
 export type JobEstimates = Record<"full_generation" | "regenerate_voz", JobEstimate> &
   Partial<Record<"consult" | "plan_outline" | "verify_outline" | "video_script", JobEstimate>>;
 
-export async function getJobEstimates(timeoutMs = 1500): Promise<JobEstimates> {
+export async function getJobEstimates(timeoutMs = 1500, storyId?: string): Promise<JobEstimates> {
+  // Spec-650: con la historia, el Core estima según su largo (5 o 3 actos).
   const response = await axios.get(`${CORE_API_URL}/api/v1/jobs/estimates`, {
     timeout: timeoutMs,
+    params: storyId ? { story_id: storyId } : undefined,
   });
   return response.data;
 }

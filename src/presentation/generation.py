@@ -71,7 +71,7 @@ def regenerate_voz_runner(story: Story, beat: int, narrative_id: UUID) -> JobRun
     def _run():
         async def _gen():
             prompt_builder = PromptBuilder()
-            yield stage_event(JobStage.VOZ, beat, prompt_builder.num_beats)
+            yield stage_event(JobStage.VOZ, beat, prompt_builder.estructura(story).num_actos)
             use_case = RegenerateBeatVozUseCase(
                 llm=LLMFactory.get_provider(),
                 prompt_builder=prompt_builder,

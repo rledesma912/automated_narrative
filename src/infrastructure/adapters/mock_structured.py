@@ -11,7 +11,8 @@ def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
     if role == "consultor":
         return {"evaluaciones": [_evaluation(i, c) for i, c in enumerate(_criteria(schema))]}
     if role == "planificador":
-        return {"actos": [_act(n) for n in range(1, 6)]}
+        total = _planned_acts(prompt)
+        return {"actos": [_act(n, total) for n in range(1, total + 1)]}
     if role == "verificador":
         return {
             "decisiones": [],
@@ -100,7 +101,18 @@ def _evaluation(i: int, criterion: str) -> dict:
 _ANSWERS = ("Primera opción", "Segunda opción", "Tercera opción", "Cuarta")
 
 
-def _act(n: int) -> dict:
+def _planned_acts(prompt: str) -> int:
+    """Spec-650: tantos actos como lista el prompt del Planificador («N. Nombre (intensidad
+    …)»); sin prompt, los de la estructura larga."""
+    listed = re.findall(r"^(\d+)\. .+\(intensidad ", prompt, re.M)
+    if listed:
+        return max(int(n) for n in listed)
+    from src.application.services.beat_spec_repository import BeatSpecRepository
+
+    return BeatSpecRepository().estructura().num_actos
+
+
+def _act(n: int, total: int) -> dict:
     return {
         "numero": n,
         "como_llega": "" if n == 1 else f"Esa misma noche, después del acto {n - 1}, sigue",
@@ -110,8 +122,8 @@ def _act(n: int) -> dict:
         "cambio_a": f"Estado al terminar el acto {n}",
         "escenario": "Escenario de ejemplo",
         "en_escena": [],
-        "se_guarda": "" if n == 5 else f"Algo que se revela después del acto {n}",
-        "se_revela_en": 0 if n == 5 else n + 1,
+        "se_guarda": "" if n == total else f"Algo que se revela después del acto {n}",
+        "se_revela_en": 0 if n == total else n + 1,
         "siembra": [],
         "retoma": [],
         "decisiones": [],

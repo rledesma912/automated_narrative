@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.application.dto import StoryCreateDTO
 from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.use_cases.create_story import (
     CreateStoryUseCase,
     build_entities,
@@ -44,6 +45,7 @@ from src.presentation.schemas.authoring import (
     DirectionForm,
     NameForm,
     ScenarioForm,
+    StructureForm,
     WarningDismiss,
     WorkshopAction,
 )
@@ -61,6 +63,11 @@ async def get_options() -> dict:
         "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
         "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
+        # Spec-650: largos posibles («¿Qué tan largo?»).
+        "structures": [
+            {"id": e.id, "label": e.label, "acts": e.num_actos}
+            for e in (_estructuras().estructura(sid) for sid in _estructuras().structure_ids)
+        ],
     }
 
 
@@ -75,6 +82,7 @@ async def create_authoring_story(form: DirectionForm) -> dict:
         **_story_fields(form, existing=None),
         direction=_direction(form).model_dump(),
         entities=_threat(form),
+        structure=form.structure,  # Spec-650: se elige al crear
     )
     try:
         story = await CreateStoryUseCase(repo, SQLGenreRepository()).execute(dto)
@@ -105,6 +113,28 @@ async def update_direction(story_id: str, form: DirectionForm) -> dict:
     await repo.update_inputs(story)
     await repo.update_direction(story.id, _direction(form))
     return await _state(await repo.get_by_id(story.id))
+
+
+@router.put("/stories/{story_id}/structure")
+async def change_structure(story_id: str, body: StructureForm) -> dict:
+    """Spec-650 §2.5: cambia el largo. Los actos armados se borran (son de la otra
+    estructura) y las reglas de cada acto pasan al acto equivalente (D10). Lo respondido
+    en las preguntas y las versiones del relato quedan. Mismo largo = no hace nada."""
+    story = await _editable(story_id)
+    if body.structure == story.structure:
+        return await _state(story)
+    old = _estructuras().estructura(story.structure)
+    new = _estructuras().estructura(body.structure)
+    rules = [
+        r.model_copy(
+            update={"applies_to_beat": new.reubicar(r.applies_to_beat, old)}
+            if r.applies_to_beat
+            else {}
+        )
+        for r in story.typed_rules
+    ]
+    await SQLStoryRepository().change_structure(story.id, body.structure, rules)
+    return await _state(await _story(story_id))
 
 
 # ── Estado completo ────────────────────────────────────────────────────────
@@ -161,9 +191,10 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
 @router.put("/stories/{story_id}/outline/{number}")
 async def update_act(story_id: str, number: int, form: ActForm) -> dict:
     """Guardado automático de un acto. Los avisos de la revisión quedan hasta revisar de nuevo."""
-    if not 1 <= number <= 5:
-        raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     story = await _editable(story_id)
+    # Spec-650: solo los actos de su estructura (una pestaña vieja no crea un acto de más).
+    if not _estructuras().estructura(story.structure).tiene(number):
+        raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     previous = next((a for a in story.outline if a.number == number), None)
     fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
     act = ActOutline(
@@ -357,6 +388,10 @@ def _next_character_id(cast: list[dict]) -> str:
     return f"P{max(nums, default=0) + 1}"
 
 
+def _estructuras() -> BeatSpecRepository:
+    return BeatSpecRepository()
+
+
 def _act(story: Story, number: int) -> ActOutline:
     act = next((a for a in story.outline if a.number == number), None)
     if act is None:
@@ -496,6 +531,12 @@ async def _state(story: Story) -> dict:
         "story_id": str(story.id),
         "status": story.status.value,
         "direction": _form(story),
+        # Spec-650: el largo y sus actos (la UI arma las tarjetas y los nombres con esto).
+        "structure": story.structure,
+        "structure_acts": [
+            {"number": a["id"], "name": a["nombre_ui"], "intensity": a["intensity"]}
+            for a in _estructuras().estructura(story.structure).actos
+        ],
         "workshop": {
             "round": workshop_rules.current_round(ordered),
             "max_rounds": workshop_rules.MAX_ROUNDS,

@@ -5,8 +5,8 @@
  * por un <script> previo del template antes de cargar este archivo).
  *
  * Spec-460: la generación es un job del servidor.
- *   - Iniciar/Regenerar → POST /api/v1/stories/{id}/jobs (202; 409 = ya hay uno
- *     en curso → nos atamos a ese).
+ *   - Iniciar/Regenerar: Spec-660, se pregunta y se crea donde se toca el botón
+ *     (escribir-relato.js); la sala se abre con el job en marcha.
  *   - Avance → EventSource /api/v1/jobs/{job_id}/events (replay + en vivo; ante
  *     un corte el browser reconecta solo y retoma con Last-Event-ID).
  *   - Cancelar → POST /api/v1/jobs/{job_id}/cancel (detiene el pipeline).
@@ -17,13 +17,14 @@
  *
  * Handlers expuestos a window (los botones del template los referencian
  * con onclick="..."):
- *   initiateGeneration, initiateRegeneration, retryStream, cancelGeneration
+ *   retryStream, cancelGeneration
  */
 (function () {
   "use strict";
 
   const STORY_ID = window.STORY_ID;
-  const TOTAL_BEATS = window.TOTAL_BEATS || 5;
+  // Spec-650: cuántos actos escribe (5 o 3). El job también lo trae desde que se crea.
+  const totalBeats = () => (jobInfo && jobInfo.total_beats) || window.TOTAL_BEATS || 0;
 
   let beatCount = 0;
   let es = null;
@@ -295,60 +296,25 @@
   }
 
   // Reintentar: si el job sigue en curso nos volvemos a atar; si terminó, se
-  // lanza uno nuevo.
-  async function retryStream() {
-    activateAnimations();
-    const errorPanel = document.getElementById("error-panel");
-    if (errorPanel) errorPanel.classList.add("hidden");
+  // pregunta como en cualquier botón de escribir (Spec-660 D3).
+  async function retryStream(btn) {
     if (currentJobId) {
       try {
         const resp = await fetch(`/api/v1/jobs/${currentJobId}`);
         const job = resp.ok ? await resp.json() : null;
         if (job && (job.status === "queued" || job.status === "running")) {
+          const errorPanel = document.getElementById("error-panel");
+          if (errorPanel) errorPanel.classList.add("hidden");
+          activateAnimations();
           startStream(currentJobId);
           return;
         }
       } catch {
-        /* sin red: intentamos lanzar uno nuevo */
+        /* sin red: se pregunta igual */
       }
     }
-    startJob();
+    if (window.ForgeEscribir && btn) window.ForgeEscribir.start(btn);
   }
-
-  function showStarting() {
-    const startPanel = document.getElementById("start-panel");
-    if (startPanel) startPanel.classList.add("hidden");
-    const initialSpinner = document.getElementById("initial-spinner");
-    if (initialSpinner) initialSpinner.classList.remove("hidden");
-    if (window.lucide) lucide.createIcons();
-  }
-
-  // Crea el job en el servidor y se ata a su canal. Un 409 significa que ya hay
-  // una generación en curso para la historia: nos atamos a esa.
-  async function startJob() {
-    showStarting();
-    setBadge("Iniciando", "");
-    try {
-      const resp = await fetch(`/api/v1/stories/${STORY_ID}/jobs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "full_generation" }),
-      });
-      const body = await resp.json().catch(() => ({}));
-      if ((resp.status === 202 || resp.status === 409) && body.job_id) {
-        startStream(body.job_id);
-        return;
-      }
-      showError(`No se pudo iniciar la generación: ${body.detail || resp.status}`);
-    } catch {
-      showError("No se pudo arrancar: no hay conexión. Probá de nuevo.");
-    }
-  }
-
-  // Spec-219: la regeneración sigue pidiendo confirmación en la UI; la limpieza
-  // de la generación anterior la hace el job al arrancar (Spec-460).
-  const initiateGeneration = startJob;
-  const initiateRegeneration = startJob;
 
   function activateAnimations() {
     const spin = document.getElementById("spinner-spin");
@@ -450,7 +416,7 @@
         setStatus("Conexión interrumpida — reconectando...");
         return;
       }
-      if (beatCount === TOTAL_BEATS) {
+      if (totalBeats() && beatCount === totalBeats()) {
         showDone();
         return;
       }
@@ -459,15 +425,10 @@
   }
 
   // Si al cargar la sala ya hay un job en curso, nos atamos sin pedir confirmación.
-  if (currentJobId) {
-    showStarting();
-    startStream(currentJobId);
-  }
+  if (currentJobId) startStream(currentJobId);
 
   /* ── Exposición a window (onclick handlers del template) ───────────────── */
 
-  window.initiateGeneration = initiateGeneration;
-  window.initiateRegeneration = initiateRegeneration;
   window.retryStream = retryStream;
   window.cancelGeneration = cancelGeneration;
 })();

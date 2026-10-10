@@ -99,13 +99,14 @@ test.describe("Vista de Relatos", () => {
     expect(copied).toBe(segunda.map((t) => t.trim()).filter(Boolean).join("\n\n"));
   });
 
-  // Spec-630 B18/B19: «Regenerar historia» lleva a la sala, que confirma y deja volver.
-  test("«Regenerar historia» lleva a la sala con la confirmación y se puede volver", async ({ page }) => {
-    await page.locator("[data-relato-acciones]").getByRole("link", { name: "Regenerar historia" }).click();
-    await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}\\?escribir=1$`));
-    await expect(page.locator("#start-panel")).toContainText("¿Regeneramos la historia?");
-    await page.locator("[data-sala-volver]").getByRole("link", { name: "Mis historias" }).click();
-    await expect(page).toHaveURL(/\/galeria$/);
+  // Spec-660 B1: «Regenerar historia» pregunta acá, avisa que es una versión nueva y se puede cancelar.
+  test("«Regenerar historia» confirma en la página y avisa que es una versión nueva", async ({ page }) => {
+    await page.locator("[data-relato-acciones]").getByRole("button", { name: "Regenerar historia" }).click();
+    const dialogo = page.locator("#forge-confirm");
+    await expect(dialogo).toContainText("¿Regeneramos la historia?");
+    await expect(dialogo.locator("[data-confirm-nota]")).toContainText("Las que ya tenés quedan en «El relato»");
+    await dialogo.getByRole("button", { name: "Cancelar" }).click();
+    await expect(page).toHaveURL(new RegExp(`/historia/${STORY_ID}/relatos$`));
   });
 
   // Spec-490 T2.4

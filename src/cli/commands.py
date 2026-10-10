@@ -123,7 +123,7 @@ async def _generate_async(
             personajes_full = dto.personajes_full
             entities = dto.entities
             actos = dto.actos
-            authoring = dto.model_dump(include={"direction", "workshop", "outline"})
+            authoring = dto.model_dump(include={"structure", "direction", "workshop", "outline"})
         except YamlStoryLoaderError as e:
             raise ValidationError(f"Error al cargar YAML: {e}")
 

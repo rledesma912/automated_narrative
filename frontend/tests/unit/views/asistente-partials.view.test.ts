@@ -25,3 +25,28 @@ describe.each(["escaleta", "taller"])("%s", (paso) => {
     expect(html).toBe(fs.readFileSync(file, "utf8"));
   });
 });
+
+// Spec-660 B1: «Escribir el relato» pregunta en «Los actos» y, con versiones, avisa que es nueva.
+describe("escaleta: escribir el relato", () => {
+  const boton = async (status: string) => {
+    const html = await ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      estimateLabels: { full_generation: "≈ 2 min" },
+      state: { ...state, status },
+      pasoActual: "escaleta",
+    });
+    return html.match(/<button[^>]*data-escribir-relato[^>]*>/)![0];
+  };
+
+  it("es un botón con la historia y el tiempo estimado, sin link a la sala", async () => {
+    const b = await boton("draft");
+    expect(b).toContain(`data-story-id="${state.story_id}"`);
+    expect(b).toContain('data-estimado="≈ 2 min"');
+    expect(b).toContain("data-generation-trigger");
+    expect(b).not.toContain("data-version-nueva");
+  });
+
+  it("con un relato terminado avisa que es una versión nueva", async () => {
+    expect(await boton("completed")).toContain("data-version-nueva");
+  });
+});

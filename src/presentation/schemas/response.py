@@ -26,6 +26,7 @@ class StoryResponse(BaseModel):
     personajes_full: list | None = None
     # Spec-530: la historia se armó con el asistente (se edita ahí, no en el wizard).
     authoring: bool = False
+    structure: str = "largo"  # Spec-650: largo | corto (la galería marca los cortos)
     # Spec-560 A2: actos escritos con la versión anterior de un acto previo (se regeneró
     # un acto de antes). Solo en GET /stories/{id}.
     stale_acts: list[int] = []

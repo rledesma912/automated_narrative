@@ -28,6 +28,7 @@ const JERGA: RegExp[] = [
   /\bcl[ií]max\b/i,
   /\bexposici[oó]n\b/i,
   /\bdesenlace\b/i,
+  /\bnudo\b/i, // Spec-650: el acto 2 del corto se llama «Qué pasa»
   /\bacci[oó]n (ascendente|descendente)\b/i,
   /\bcriterios?\b/i,
   /\bDirecci[oó]n\b/,

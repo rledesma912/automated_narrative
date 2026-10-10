@@ -6,6 +6,8 @@ from pathlib import Path
 
 import yaml
 
+from src.application.services.structure import DEFAULT_STRUCTURE
+
 _CONFIG = Path(__file__).resolve().parents[4] / "config"
 
 
@@ -40,16 +42,28 @@ class Option:
 
 
 @lru_cache
-def direction_criteria() -> tuple[Criterion, ...]:
+def direction_criteria(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, ...]:
+    """Spec-650: `acto` del criterio en la estructura pedida (largo / corto)."""
     data = yaml.safe_load((_CONFIG / "workshop_criteria.yaml").read_text(encoding="utf-8"))
     return tuple(
-        Criterion(c["id"], c["nombre"], c["pregunta"], c["por_que"], c.get("acto", 0))
+        Criterion(
+            c["id"], c["nombre"], c["pregunta"], c["por_que"], _for(c.get("acto", 0), structure)
+        )
         for c in data["direccion"]
     )
 
 
-def criterion(criterion_id: str) -> Criterion | None:
-    return next((c for c in direction_criteria() if c.id == criterion_id), None)
+def criterion(criterion_id: str, structure: str = DEFAULT_STRUCTURE) -> Criterion | None:
+    return next((c for c in direction_criteria(structure) if c.id == criterion_id), None)
+
+
+def _for(value, structure: str):
+    """Spec-650: un valor del YAML que puede venir por estructura (`{largo: …, corto: …}`)."""
+    if isinstance(value, dict):
+        if structure not in value:
+            raise KeyError(f"falta la variante «{structure}» en {value}")
+        return value[structure]
+    return value
 
 
 @lru_cache
@@ -57,9 +71,15 @@ def _options() -> dict:
     return yaml.safe_load((_CONFIG / "authoring_options.yaml").read_text(encoding="utf-8"))
 
 
-def effects() -> tuple[Option, ...]:
+def effects(structure: str = DEFAULT_STRUCTURE) -> tuple[Option, ...]:
+    """Spec-650: la receta del efecto (`planificador`) de la estructura pedida."""
     return tuple(
-        Option(e["id"], e["label"], e.get("ayuda", ""), planner=e.get("planificador", ""))
+        Option(
+            e["id"],
+            e["label"],
+            e.get("ayuda", ""),
+            planner=_for(e.get("planificador", ""), structure),
+        )
         for e in _options()["efectos"]
     )
 

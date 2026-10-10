@@ -260,11 +260,12 @@ describe("actos desactualizados", () => {
   });
 
   // Spec-630 B19: se llama «Regenerar historia», como en el resto del sitio.
-  it("«Regenerar historia» va a la sala, que confirma", async () => {
+  it("«Regenerar historia» pregunta ahí mismo y avisa que es una versión nueva (Spec-660)", async () => {
     const html = await ejs.renderFile(viewPath, DOS);
     expect(html).toMatch(
-      /<a href="\/generar\/stream\/s-1\?escribir=1"[^>]*data-generation-trigger[^>]*>\s*<i[^>]*><\/i> Regenerar historia/,
+      /<button[^>]*data-escribir-relato data-version-nueva[^>]*data-generation-trigger[^>]*>\s*<i[^>]*><\/i> Regenerar historia/,
     );
+    expect(html).not.toContain("?escribir=1");
     expect(html).not.toContain("Escribir de nuevo");
   });
 

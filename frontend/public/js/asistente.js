@@ -25,7 +25,7 @@
   const POLL_MS = 3000;
   const AUTHORING = {
     consult: { titulo: "Leyendo tu historia…", detalle: "La IA lee tu idea para ver qué le falta." },
-    plan_outline: { titulo: "Armando los actos…", detalle: "La IA reparte tu historia en cinco actos y después los revisa." },
+    plan_outline: { titulo: "Armando los actos…", detalle: "La IA reparte tu historia en actos y después los revisa." },
     verify_outline: { titulo: "Revisando los actos…", detalle: "La IA busca respuestas tuyas que quedaron afuera, repeticiones y secretos que nunca se descubren." },
   };
   const STAGE_TEXT = {
@@ -299,13 +299,65 @@
       await api("PUT", `/authoring/stories/${page.storyId}/direction`, payload);
       return;
     }
-    const state = await api("POST", "/authoring/stories", payload);
+    // Spec-650: el largo va solo al crear; después se cambia con cambiarLargo().
+    const state = await api("POST", "/authoring/stories", { ...payload, structure: value(form, "structure") || "largo" });
     page.storyId = state.story_id;
+    page.root.dataset.largo = state.structure;
     page.root.dataset.storyId = state.story_id;
     history.replaceState(null, "", `/asistente/${state.story_id}/direccion`);
     $$("[data-analizar]").forEach((b) => (b.disabled = false));
     const pista = $("[data-pista-titulo]");
     if (pista) pista.remove();
+    // Si eligió otro largo mientras se creaba, se aplica ahora (todavía no hay actos).
+    const elegido = value(form, "structure") || "largo";
+    if (elegido !== state.structure) {
+      await api("PUT", `/authoring/stories/${state.story_id}/structure`, { structure: elegido });
+      page.root.dataset.largo = elegido;
+    }
+  }
+
+  /**
+   * Spec-650 §2.5: cambiar el largo de una historia ya creada. Si ya hay actos, se
+   * borran (son del otro largo): se pregunta antes. Cancelar deja el largo de antes.
+   */
+  async function cambiarLargo(input) {
+    const antes = page.root.dataset.largo || "largo";
+    const volver = () => {
+      const prev = $(`input[name="structure"][value="${antes}"]`, page.root);
+      if (prev) prev.checked = true;
+    };
+    // Marca el cambio en curso desde ya (la esperan los E2E) y de nuevo después de descargar
+    // lo pendiente de «Tu idea»: ese guardado dice «Guardado» antes de que el largo cambie.
+    status("pending", "Sin guardar…");
+    try {
+      await flushAll();
+      status("pending", "Sin guardar…");
+      const actual = await api("GET", `/authoring/stories/${page.storyId}`);
+      if (actual.outline.acts.length) {
+        const ok = await window.ForgeConfirm.ask({
+          title: "¿Cambiar el largo?",
+          message:
+            "Los actos que armaste se borran y los vas a tener que armar de nuevo. Lo que respondiste en las preguntas queda, las reglas de cada acto pasan al acto que corresponde y los relatos que ya escribiste se siguen pudiendo leer.",
+          confirmLabel: "Cambiar el largo",
+        });
+        if (!ok) {
+          status("hint", "");
+          return volver();
+        }
+      }
+      status("saving", "Guardando…");
+      const state = await api("PUT", `/authoring/stories/${page.storyId}/structure`, { structure: input.value });
+      page.root.dataset.largo = state.structure;
+      status("ok", "Guardado");
+    } catch (err) {
+      volver();
+      if (err.status === 409) {
+        status("error", "No se cambió: la IA está trabajando");
+        attachToActiveJob();
+      } else {
+        status("error", `No se cambió: ${err.message}`);
+      }
+    }
   }
 
   function value(form, name) {
@@ -421,13 +473,14 @@
     });
   }
 
-  /** Spec-630 B7: borrar un lugar o un personaje, diciendo en qué actos se usa. */
-  async function borrar(form, btn, coleccion, name, { titulo, label }) {
+  /** Spec-630 B7 + Spec-660 B2: borrar un lugar o un personaje de toda la historia,
+   *  diciendo en qué actos está hoy y cómo se cambia un solo acto (`soloUnActo`). */
+  async function borrar(form, btn, coleccion, name, { titulo, label, soloUnActo }) {
     const usos = (btn.dataset.usos || "").split(",").filter(Boolean);
     const message = usos.length
-      ? `Se quita ${usos.length === 1 ? "del acto" : "de los actos"} ${usos.join(", ").replace(/, (\d)$/, " y $1")}.`
-      : "Ningún acto lo usa.";
-    const ok = await window.ForgeConfirm.ask({ title: titulo, message, confirmLabel: label });
+      ? `Desaparece de todos los actos (hoy está en ${usos.length === 1 ? "el acto" : "los actos"} ${usos.join(", ").replace(/, (\d)$/, " y $1")}). ${soloUnActo}`
+      : "No aparece en ningún acto.";
+    const ok = await window.ForgeConfirm.ask({ title: titulo, message, confirmLabel: label, icon: "borrar" });
     if (!ok) return;
     const n = Number(form.dataset.number);
     return run(() => api("POST", `/authoring/stories/${page.storyId}/${coleccion}/remove`, { name }), enActo(n, { todos: true }));
@@ -648,6 +701,7 @@
     const form = e.target.closest && e.target.closest("form[data-autosave]");
     if (!form || !page) return;
     if (e.target.matches("[data-lugar-nombre], [data-p-nombre], [data-p-relacion]")) return; // no son del acto
+    if (e.target.name === "structure") return; // Spec-650: el largo no es del guardado automático
     schedule(form);
   });
 
@@ -672,6 +726,11 @@
     }
     const form = e.target.closest("form[data-autosave]");
     if (!form) return;
+    if (e.target.name === "structure") {
+      // Spec-650: sin historia todavía, va con el alta; con historia, se cambia aparte.
+      if (page.storyId) cambiarLargo(e.target);
+      return;
+    }
     if (e.target.name === "genero") onGenreChange(form);
     if (e.target.name === "effect") {
       $$("[data-solo-si-efecto]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiEfecto !== e.target.value));
@@ -711,14 +770,16 @@
     if (t.matches("[data-lugar-agregar]") && form) return agregarLugar(form);
     if (t.matches("[data-borrar-lugar]") && form) {
       return borrar(form, t, "scenarios", t.dataset.borrarLugar, {
-        titulo: `¿Borrar el lugar «${t.dataset.borrarLugar}»?`,
-        label: "Borrar el lugar",
+        titulo: `¿Borrar el lugar «${t.dataset.borrarLugar}» de la historia?`,
+        label: "Borrar de la historia",
+        soloUnActo: "Para cambiarlo en un solo acto, elegí otro lugar en ese acto.",
       });
     }
     if (t.matches("[data-borrar-personaje]") && form) {
       return borrar(form, t, "characters", t.dataset.borrarPersonaje, {
-        titulo: `¿Borrar a «${t.dataset.borrarPersonaje}»?`,
-        label: "Borrar el personaje",
+        titulo: `¿Borrar a «${t.dataset.borrarPersonaje}» de la historia?`,
+        label: "Borrar de la historia",
+        soloUnActo: "Para sacarlo de un solo acto, destildalo en ese acto.",
       });
     }
     if (t.matches("[data-personaje-nuevo]") && form) {
@@ -748,11 +809,6 @@
     if (t.matches("[data-restaurar]") && form) {
       const n = form.dataset.number;
       return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }), enActo(n));
-    }
-    if (t.matches("[data-generar]")) {
-      e.preventDefault();
-      flushAll().finally(() => (location.href = t.href));
-      return;
     }
     if (t.matches("[data-analizando-cancelar]") && modal.job && modal.job.job_id) {
       t.disabled = true;

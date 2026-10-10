@@ -12,12 +12,16 @@
   const genre = genres.find(g => g.id === d.genero);
   const others = state ? state.characters.slice(1).filter(c => c.kind === 'persona') : [];
   const est = (locals.estimateLabels && estimateLabels.consult) || '';
+  /* Spec-650: el largo no viaja con el guardado automático (D9): se manda al crear y se
+     cambia aparte, con confirmación si ya hay actos (public/js/asistente.js). */
+  const largo = state ? state.structure : 'largo';
+  const largos = options.structures || [];
   const REVEAL = [
     ['nunca', 'Nunca se muestra'], ['insinuada', 'Se insinúa'],
     ['progresiva', 'Se va mostrando'], ['explicita', 'Se muestra entera'],
   ];
 %>
-<div data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>">
+<div data-asistente="direccion" data-story-id="<%= state ? state.story_id : '' %>" data-largo="<%= largo %>">
   <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
   <div class="asistente-barra">
     <%- include('_cabecera') %>
@@ -64,6 +68,27 @@
         </div>
       </div>
     </section>
+
+    <% if (largos.length) { %>
+    <section class="bg-forge-surface border border-forge-border p-6" data-largo-opciones>
+      <h3 class="font-serif text-xl mb-1">¿Qué tan largo?</h3>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
+        Es lo que dura leído en voz alta. El corto cuenta lo mismo en menos actos.</p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <% largos.forEach(l => { const [nombre, ...resto] = l.label.split(' · '); %>
+          <label class="opcion-forge h-full">
+            <input type="radio" name="structure" value="<%= l.id %>" class="peer sr-only" <%= l.id === largo ? 'checked' : '' %>>
+            <span class="opcion-forge__caja h-full">
+              <span>
+                <span class="block font-semibold"><%= nombre %></span>
+                <span class="block text-sm text-forge-muted"><%= resto.join(' · ') %></span>
+              </span>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
 
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1"><label for="a-premise">¿De qué trata?</label></h3>

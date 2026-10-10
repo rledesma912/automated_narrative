@@ -2,7 +2,7 @@
  * Banda de generación + punto del sidebar (Spec-460 S5).
  *
  * Pinta el estado que mantiene /js/event-bus.js (window.ForgeEvents):
- *   - running: el job más reciente, "y N más", acto N de 5 · etapa — tiempo
+ *   - running: el job más reciente, "y N más", acto N de M · etapa — tiempo
  *     restante (Spec-510), barra de progreso y "Ver progreso" (link real a la
  *     sala; solo existe con un job).
  *   - done:    "«Título» está lista · en N min" + "Leer relato"; se oculta sola a los 15 s.
@@ -36,7 +36,8 @@
     const stage = eta.STAGES[job.stage];
     if (!stage) return "Iniciando...";
     if (job.stage === "consolidando" || !job.beat) return stage.label;
-    return `Acto ${job.beat} de ${job.total_beats || 5} · ${stage.label}`;
+    // Spec-650: «de N» solo si el job lo dice (5 o 3).
+    return `Acto ${job.beat}${job.total_beats ? ` de ${job.total_beats}` : ""} · ${stage.label}`;
   }
 
   function setText(root, selector, text) {

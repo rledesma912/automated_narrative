@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { ActoDeLaEstructura } from "../utils/actos";
 
 /**
  * Spec-530: lectura del estado del asistente de autoría en el Core.
@@ -18,6 +19,8 @@ export interface AuthoringOptions {
   effects: AuthoringOption[];
   tellings: AuthoringOption[];
   criteria: Array<{ id: string; nombre: string; pregunta: string; por_que: string }>;
+  /** Spec-650: los largos posibles («¿Qué tan largo?»). */
+  structures?: Array<{ id: string; label: string; acts: number }>;
 }
 
 export interface WorkshopItem {
@@ -54,6 +57,9 @@ export interface Act {
 export interface AuthoringState {
   story_id: string;
   status: string;
+  /** Spec-650: el largo y sus actos (nombre y tensión de cada tarjeta). */
+  structure: string;
+  structure_acts: ActoDeLaEstructura[];
   direction: Record<string, unknown> & { title: string };
   workshop: {
     round: number;

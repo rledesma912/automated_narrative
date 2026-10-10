@@ -7,6 +7,8 @@
   const w = state.workshop;
   const est = locals.estimateLabels || {};
   const analizado = w.items.length > 0;
+  /* Spec-650: cuántos actos tiene, en palabras («tres» o «cinco»). */
+  const cuantosActos = ({ 3: 'tres', 5: 'cinco' })[state.structure_acts.length] || String(state.structure_acts.length);
 %>
 <div data-asistente="taller" data-story-id="<%= state.story_id %>">
   <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
@@ -19,7 +21,7 @@
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Preguntame de nuevo<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
         </button>
         <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
-                data-detalle="La IA reparte tu historia en cinco actos con lo que respondiste y después los revisa."
+                data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos con lo que respondiste y después los revisa."
                 data-destino="escaleta"
                 <%- state.outline.acts.length ? 'data-confirmar="Ya armaste los actos: armarlos de nuevo reemplaza los que tenés, con lo que les cambiaste." data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo"' : '' %>>
           <i data-lucide="list-ordered" class="w-4 h-4"></i> <%= state.outline.acts.length ? 'Armar los actos de nuevo' : 'Armar los actos' %><% if (est.plan_outline) { %> <span class="normal-case tracking-normal">· <%= est.plan_outline %></span><% } %>

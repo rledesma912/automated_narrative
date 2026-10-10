@@ -1,0 +1,128 @@
+{
+  "label": "corto",
+  "perfil": "hibrido-sonnet55",
+  "historia": "no_te_detengas_corto.yaml",
+  "voz_temperature": null,
+  "relatos": [
+    {
+      "variante": "relato",
+      "corrida": 1,
+      "palabras": 1115,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 0,
+      "oraciones_cortadas": 4,
+      "oraciones_cortadas_pct": 7,
+      "dialogo": 0,
+      "comparaciones": 3,
+      "comparaciones_detalle": [
+        "como si alguien le hubiera ido",
+        "como una corriente",
+        "como si no me quisieran dejar"
+      ],
+      "por_acto": [
+        {
+          "palabras": 341,
+          "oraciones": 19,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0,
+          "comparaciones": 1
+        },
+        {
+          "palabras": 500,
+          "oraciones": 24,
+          "cortadas": 4,
+          "cortadas_pct": 17,
+          "dialogo": 0,
+          "comparaciones": 2
+        },
+        {
+          "palabras": 265,
+          "oraciones": 18,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0,
+          "comparaciones": 0
+        }
+      ],
+      "costo_usd": 0.0487,
+      "tokens": {
+        "voz": [
+          11805,
+          2513
+        ]
+      }
+    },
+    {
+      "variante": "relato",
+      "corrida": 2,
+      "palabras": 1267,
+      "cliches": 0,
+      "cliches_detalle": {},
+      "parentescos_mal": 0,
+      "parentescos_en_dialogo": {},
+      "narrador_3ra_persona": 0,
+      "frases_repetidas": 0,
+      "oraciones_cortadas": 1,
+      "oraciones_cortadas_pct": 2,
+      "dialogo": 0,
+      "comparaciones": 4,
+      "comparaciones_detalle": [
+        "como si fuera a seguir",
+        "como si se hubiera acercado mientras",
+        "como si no fuera la primera",
+        "como si nunca hubiera fallado"
+      ],
+      "por_acto": [
+        {
+          "palabras": 377,
+          "oraciones": 15,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0,
+          "comparaciones": 1
+        },
+        {
+          "palabras": 584,
+          "oraciones": 22,
+          "cortadas": 1,
+          "cortadas_pct": 5,
+          "dialogo": 0,
+          "comparaciones": 1
+        },
+        {
+          "palabras": 297,
+          "oraciones": 16,
+          "cortadas": 0,
+          "cortadas_pct": 0,
+          "dialogo": 0,
+          "comparaciones": 2
+        }
+      ],
+      "costo_usd": 0.0629,
+      "tokens": {
+        "voz": [
+          14403,
+          3409
+        ]
+      }
+    }
+  ],
+  "promedios": {
+    "relato": {
+      "cliches": 0.0,
+      "parentescos_mal": 0.0,
+      "narrador_3ra_persona": 0.0,
+      "frases_repetidas": 0.0,
+      "palabras": 1191.0,
+      "oraciones_cortadas_pct": 4.5,
+      "dialogo": 0.0
+    }
+  },
+  "costo_total_usd": 0.1116,
+  "costo_por_relato_usd": 0.06
+}

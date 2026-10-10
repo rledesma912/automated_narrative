@@ -39,12 +39,16 @@ verifier:
   sin_hechos: "En este acto no pasa nada todavía: ¿qué pasa acá?"
   sin_puente: "No dice cómo se llega acá desde el acto anterior: completá «Cómo llega acá» (cuánto tiempo pasó y qué pasó en el medio)."
   sin_cambio: "El acto termina igual que empieza: ¿qué le cambia a {protagonista}?"
+  # Spec-650: en el relato corto cada acto tiene un tope de hechos (la Voz escribe un párrafo por hecho).
+  muchos_hechos: "Este acto tiene {cantidad} hechos y en un relato corto entran {maximo}: ¿cuáles juntamos o sacamos?"
   elenco: "«{nombre}» aparece en este acto pero no está entre los personajes: ¿lo sumamos?"
   sin_revelacion: "El secreto de este acto no se descubre en ningún acto posterior: elegí en cuál se descubre."
   siembra: "«{siembra}» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?"
   siembras: "{siembras} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?"
 
 api:
+  # Spec-650 D11: regenerar un acto de una versión escrita con el otro largo.
+  version_de_otro_largo: "Esta versión se escribió cuando la historia tenía otro largo: para regenerar actos, escribí la historia de nuevo."
   # Respuestas 409/422 que la UI muestra tal cual (el asistente lee el `detail`).
   ia_trabajando: "La IA está trabajando en esta historia: esperá a que termine"
   generacion_en_curso: "La historia ya tiene una generación en curso"
@@ -82,6 +86,7 @@ validacion:
     escaleta: "escaleta, elemento {n}"
   tipo_de_personaje: "Tipo de personaje inválido para «{nombre}»: {tipo}"
   acto_repetido: "La escaleta repite un número de acto"
+  acto_fuera_de_estructura: "Esta historia tiene {total} actos: no puede traer el acto {actos}"
   demasiadas_entidades: "Una historia admite hasta {maximo} entidades (llegaron {llegaron})"
   entidad: "Entidad {n}: {error}"
   naturaleza: "Entidad {n}: la naturaleza '{naturaleza}' no corresponde {donde}"
@@ -132,7 +137,7 @@ job:
   ya_activo: "La historia ya tiene un job activo: {job}"
   # Spec-530: la escaleta que devolvió el Planificador no sirve (lo valida Pydantic y
   # se reintenta una vez; si vuelve a fallar, es el error del trabajo).
-  escaleta_sin_actos: "la escaleta tiene que tener los actos 1 a 5 (llegaron {actos})"
+  escaleta_sin_actos: "la escaleta tiene que tener los actos 1 a {total} (llegaron {actos})"
   escaleta_sin_hechos: "actos sin hechos: {actos}"
 
 # Spec-610: el paquete para el video (guion, la calabaza y el mapa).

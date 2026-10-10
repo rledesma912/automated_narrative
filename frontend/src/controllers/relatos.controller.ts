@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { getStoryById, getRelatosForStory, getReadingSettings, getVideoScript, startActoRegeneration } from "../services/story.service";
-import { splitActs } from "../utils/actos";
+import { splitActs, deOtroLargo } from "../utils/actos";
 import { renderPage } from "../utils/render";
 
 export const relatosPage = async (req: Request, res: Response) => {
@@ -12,7 +12,10 @@ export const relatosPage = async (req: Request, res: Response) => {
       return res.status(404).send("Historia no encontrada.");
     }
 
-    const relatos = await getRelatosForStory(storyId);
+    const relatos = (await getRelatosForStory(storyId)).map((r) => ({
+      ...r,
+      otroLargo: deOtroLargo(r.content, story.structure), // Spec-650 D11
+    }));
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -38,8 +41,9 @@ async function renderRelatoPanel(
 ) {
   const story = await getStoryById(storyId);
   if (!story) return res.status(404).send("Historia no encontrada.");
-  const relato = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
-  if (!relato) return res.status(404).send("Relato no encontrado.");
+  const found = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
+  if (!found) return res.status(404).send("Relato no encontrado.");
+  const relato = { ...found, otroLargo: deOtroLargo(found.content, story.structure) }; // Spec-650 D11
 
   res.render("partials/relato_panel", {
     story,
@@ -104,7 +108,8 @@ export const corregirRelatoPage = async (req: Request, res: Response) => {
     const relato = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
     if (!relato) return res.status(404).send("Relato no encontrado.");
     const actos = splitActs(relato.content);
-    const lectura = await getReadingSettings();
+    const otroLargo = deOtroLargo(relato.content, story.structure); // Spec-650 D11
+    const lectura = await getReadingSettings(actos.length); // Spec-650: según el largo del relato
     const acto = Math.min(Math.max(Number(req.query["acto"]) || 1, 1), Math.max(actos.length, 1));
 
     res.setHeader("Cache-Control", "no-store");
@@ -112,6 +117,7 @@ export const corregirRelatoPage = async (req: Request, res: Response) => {
       story,
       relato,
       actos,
+      otroLargo,
       lectura,
       actoInicial: acto,
       title: `Corregir «${story.title || "Sin título"}»`,
@@ -145,7 +151,7 @@ export const videoPage = async (req: Request, res: Response) => {
       relato,
       script,
       actos,
-      lectura: await getReadingSettings(),
+      lectura: await getReadingSettings(actos.length), // Spec-650: según el largo del relato
       title: `Para el video: «${story.title || "Sin título"}»`,
       activePage: "gallery",
     });
