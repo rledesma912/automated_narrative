@@ -16,6 +16,7 @@ export interface EstimateLabels {
   regenerate_voz: string;
   // Spec-530: análisis del asistente.
   consult?: string;
+  suggest_form?: string; // Spec-670: sugerir la clase de historia
   plan_outline?: string;
   verify_outline?: string;
   // Spec-610: el guion para el video.
@@ -41,6 +42,7 @@ export function createLoadEstimates(
         full_generation: formatEstimate(estimates?.full_generation?.seconds),
         regenerate_voz: formatEstimate(estimates?.regenerate_voz?.seconds),
         consult: formatShortEstimate(estimates?.consult?.seconds),
+        suggest_form: formatShortEstimate(estimates?.suggest_form?.seconds), // Spec-670
         plan_outline: formatShortEstimate(estimates?.plan_outline?.seconds),
         verify_outline: formatShortEstimate(estimates?.verify_outline?.seconds),
         video_script: formatShortEstimate(estimates?.video_script?.seconds),

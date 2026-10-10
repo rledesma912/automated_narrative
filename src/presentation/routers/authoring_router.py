@@ -62,6 +62,15 @@ async def get_options() -> dict:
         "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
         "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
+        # Spec-670: las clases de historia y los giros («Tu idea»).
+        "forms": [
+            {"id": f.id, "nombre": f.nombre, "ayuda": f.ayuda, "otra": f.arco_del_autor}
+            for f in molde.catalogo().formas
+        ],
+        "ingredients": [
+            {"id": g.id, "nombre": g.nombre, "ayuda": g.ayuda, "no_con": list(g.no_con)}
+            for g in molde.catalogo().giros
+        ],
         # Spec-650: largos posibles («¿Qué tan largo?»).
         "structures": [
             {"id": e.id, "label": e.label, "acts": e.num_actos}
@@ -572,13 +581,27 @@ async def _state(story: Story) -> dict:
             "max_rounds": workshop_rules.MAX_ROUNDS,
             "finish": finish,
             "items": [
-                {**w.model_dump(mode="json"), "nombre": c.nombre, "por_que": c.por_que}
+                {
+                    **w.model_dump(mode="json"),
+                    "nombre": c.nombre,
+                    "por_que": c.por_que,
+                    "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
+                }
                 for w, c in (
                     (by_id[c.id], c.for_story(context.protagonist(story)))
                     for c in criterios
                     if c.id in by_id
                 )
             ],
+            # Spec-670: el molde y las respuestas de otra forma que quedan guardadas (D2).
+            "molde": {
+                "form": m.forma.id,
+                "form_name": m.forma.nombre,
+                "ingredient": m.giro.id if m.giro else "",
+                "ingredient_name": m.giro.nombre if m.giro else "",
+                "default": m.forma.id == molde.catalogo().por_defecto.id and not m.giro,
+            },
+            "hidden_answers": sum(1 for w in items if w.answer and w.criterion not in set(m.ids)),
         },
         "outline": {
             "acts": [
@@ -622,7 +645,15 @@ async def _state(story: Story) -> dict:
             )
         ],
         "active_job": await job_manager.payload(active) if active else None,
+        # Spec-670 D6: cuántas historias usan cada giro («Sorprendeme»).
+        "ingredient_usage": await SQLStoryRepository().ingredient_usage(),
     }
+
+
+def _grupo(m: molde.Molde, criterion: str) -> str:
+    if m.giro and criterion in m.giro.criterios:
+        return "giro"
+    return "forma" if criterion in m.forma.criterios else "base"
 
 
 def _clean(value):

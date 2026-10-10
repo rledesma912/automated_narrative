@@ -140,7 +140,7 @@ test("género → estilo y la amenaza dependen del catálogo y se guardan", asyn
   await page.getByLabel("Tipo de horror").selectOption("paranormal");
   await expect(estilo).toBeEnabled();
   await estilo.selectOption("fantasmas");
-  await page.getByText("La amenaza").click();
+  await page.getByText("La amenaza", { exact: true }).click();
   await expect(naturaleza).toBeEnabled();
   await naturaleza.selectOption("espiritu");
   await page.getByLabel("Qué quiere").fill("Que José se detenga.");

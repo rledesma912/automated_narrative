@@ -33,12 +33,29 @@ async def main(out: Path, files: list[Path]) -> None:
     suggester = FormSuggester(LLMFactory.get_provider())
     results = []
     for f in files:
-        story = await CreateStoryUseCase(repo, genres).execute(YamlStoryLoader().load(f.read_text("utf-8")))
+        story = await CreateStoryUseCase(repo, genres).execute(
+            YamlStoryLoader().load(f.read_text("utf-8"))
+        )
         story = await repo.get_by_id(story.id)
         s, elapsed = await suggester.suggest(story)
-        results.append({"historia": story.title, "forma": s.form, "motivo": s.reason, "arco": s.arc, "segundos": round(elapsed, 1)})
+        results.append(
+            {
+                "historia": story.title,
+                "forma": s.form,
+                "motivo": s.reason,
+                "arco": s.arc,
+                "segundos": round(elapsed, 1),
+            }
+        )
         print(f"{story.title}: {s.form} — {s.reason}" + (f" [{s.arc}]" if s.arc else ""))
-    out.write_text(json.dumps({"perfil": settings.active_profile_name, "resultados": results}, ensure_ascii=False, indent=2), "utf-8")
+    out.write_text(
+        json.dumps(
+            {"perfil": settings.active_profile_name, "resultados": results},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        "utf-8",
+    )
 
 
 if __name__ == "__main__":

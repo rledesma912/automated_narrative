@@ -33,6 +33,7 @@ describe("loadEstimates", () => {
       consult: "",
       plan_outline: "",
       verify_outline: "",
+      suggest_form: "",
       video_script: "", // Spec-610
     });
   });

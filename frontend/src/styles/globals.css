@@ -119,6 +119,8 @@
   .chip-forge--parcial { @apply bg-forge-warning-bg text-forge-warning; }
   .chip-forge--falta   { @apply bg-forge-error-bg text-forge-error; }
   .chip-forge--info    { @apply bg-forge-info-bg text-forge-info; }
+  /* Spec-670 D8: lo que no va en la historia (gris, tachado). */
+  .chip-forge--no-va   { @apply line-through decoration-forge-muted/60; }
 
   /* NOTA: explica o avisa. Sin caja: barra de color a la izquierda. Sus acciones
      son links subrayados (`.nota-forge__accion`), nunca la nota entera. */

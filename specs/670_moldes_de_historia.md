@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -300,3 +300,10 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
 
 - Job `suggest_form` (rol consultor, `form_suggester.py`, prompt `authoring_form*.md`; cada forma suma `arco` en `formas.yaml` para que la IA las distinga). Guarda `form_suggested` y `form_reason` siempre, `form` solo si la persona no había elegido, y con «Otra» el arco propuesto si el campo estaba vacío. Excluido de la banda de generación.
 - Criterio 6 (`scripts/research/670/sugerir_formas.py`, Claude, base temporal): primera vuelta 4 de 5 (Yadira → asedio) y motivos en segunda persona («tu padre»). Con dos reglas más en el system prompt (personajes por su nombre y en tercera persona; si le advierten y sigue igual, es romper una regla) → **5 de 5**: señuelo, regla, casa, lugar, asedio (`sugerencias.json`). La regla de la advertencia salió de este caso: vigilar que se sostenga con historias nuevas. Idea que no encaja (la muñeca que envejece) → «otra» con un arco razonable (`sugerencia_otra.json`).
+
+### S5 (2026-10-10)
+
+- «Tu idea»: «¿Qué clase de historia es?» (6 opciones con su línea, «Que la IA lo sugiera» con la nota del motivo y la marca «Sugerida por la IA», campo de «Otra», pista de qué pasa sin elegir) y «¿Le sumamos un giro?» («Sin giro», los 6 —los de `no_con` se esconden según la forma—, «Sorprendeme» entre los menos usados con «Salió «X»…»). Pistas D10.
+- «Preguntas»: chips agrupados (de toda historia / de «forma» / del giro), «No van en tu historia» con el motivo y «Preguntármelo igual», aviso de forma mal elegida con el link a «Tu idea», nota de respuestas guardadas de otra forma (D2). Chip `chip-forge--no-va` (tachado) en el resumen.
+- Core: `/options` trae `forms` e `ingredients`; `_state` trae `grupo` por pregunta, `molde`, `hidden_answers` e `ingredient_usage` (`json_extract` sobre la dirección, sin columna nueva). Estimación `suggest_form` en el front.
+- Tests: 4 de vista (`taller-no-va.view.test.ts`), 5 E2E (`moldes.spec.ts`); un E2E viejo con `getByText("La amenaza")` pasó a `exact` (lo ambiguaba el giro «La amenaza tiene una regla rara»).

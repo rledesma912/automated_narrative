@@ -7,6 +7,7 @@
   const d = state ? state.direction : {
     title: '', genero: '', subgenero: '', premise: '', effect: '', effect_other: '', ending: '',
     ending_intentional: false, telling: '', protagonist_name: '', protagonist_role: '', narrator: '', threat: null,
+    form: '', ingredient: '', form_other: '', form_suggested: '', form_reason: '',
   };
   const t = d.threat || { name: '', nature: '', description: '', manifestations: '', limits: '', reveal_level: 'insinuada' };
   const genre = genres.find(g => g.id === d.genero);
@@ -16,6 +17,12 @@
      cambia aparte, con confirmación si ya hay actos (public/js/asistente.js). */
   const largo = state ? state.structure : 'largo';
   const largos = options.structures || [];
+  /* Spec-670: la clase de historia y el giro. Sin forma elegida, la de siempre (la primera). */
+  const formas = options.forms || [];
+  const giros = options.ingredients || [];
+  const sugerida = formas.find(f => f.id === d.form_suggested);
+  const uso = (state && state.ingredient_usage) || {};
+  const estForma = (locals.estimateLabels && estimateLabels.suggest_form) || '';
   const REVEAL = [
     ['nunca', 'Nunca se muestra'], ['insinuada', 'Se insinúa'],
     ['progresiva', 'Se va mostrando'], ['explicita', 'Se muestra entera'],
@@ -97,6 +104,76 @@
       <textarea id="a-premise" name="premise" rows="4" maxlength="6000"
                 class="w-full [field-sizing:content] min-h-[6rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= d.premise %></textarea>
     </section>
+
+    <% if (formas.length) { %>
+    <%/* Spec-670: «¿Qué clase de historia es?» — la IA la sugiere (job suggest_form) y la persona decide. */%>
+    <section class="bg-forge-surface border border-forge-border p-6" id="forma" data-formas>
+      <h3 class="font-serif text-xl mb-1">¿Qué clase de historia es?</h3>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
+        De esto depende qué te pregunta la IA y qué pasa en cada acto: no te va a preguntar cosas que tu historia no tiene.
+        Si no sabés cuál es, que la IA te sugiera una leyendo tu idea; si no es ninguna, elegí «Otra» y contala con tus palabras.
+        La podés cambiar cuando quieras: lo que ya respondiste no se pierde.</p>
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <button type="button" class="btn-forge-outline-sm" data-analizar="suggest_form" data-titulo="Leyendo tu idea…"
+                data-detalle="La IA busca qué clase de historia es." <%= state ? '' : 'disabled' %>>
+          <i data-lucide="sparkles" class="w-4 h-4"></i> Que la IA lo sugiera<% if (estForma) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= estForma %></span><% } %>
+        </button>
+      </div>
+      <% if (sugerida && d.form_reason) { %>
+        <p class="nota-forge nota-forge--info mb-4" data-sugerencia><i data-lucide="sparkles" class="nota-forge__icono"></i>
+          <span>La IA sugiere <strong>«<%= sugerida.nombre %>»</strong>: <%= d.form_reason %><% if (d.form && d.form !== sugerida.id) { %> Si te convence, elegila abajo.<% } %></span></p>
+      <% } %>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <% formas.forEach(f => { %>
+          <label class="opcion-forge h-full">
+            <input type="radio" name="form" value="<%= f.id %>" class="peer sr-only" <%= f.id === d.form ? 'checked' : '' %>>
+            <span class="opcion-forge__caja h-full">
+              <span>
+                <% if (sugerida && f.id === sugerida.id) { %><span class="block text-[10px] uppercase tracking-widest font-bold" data-sugerida>Sugerida por la IA</span><% } %>
+                <span class="block font-semibold"><%= f.nombre %></span>
+                <span class="block text-sm text-forge-muted"><%= f.ayuda %></span>
+              </span>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+      <div class="<%= (formas.find(f => f.id === d.form) || {}).otra ? '' : 'hidden' %> mt-3" data-solo-si-forma="otra">
+        <label class="pista-forge mb-1 block" for="a-form-other">Contá en una o dos frases cómo es tu historia: qué pasa al principio, qué cambia y cómo queda.</label>
+        <textarea id="a-form-other" name="form_other" rows="2" maxlength="600"
+                  class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent"><%= d.form_other %></textarea>
+      </div>
+      <% if (!d.form) { %><p class="pista-forge mt-3" data-sin-forma><i data-lucide="info"></i>Si no elegís ninguna, te pregunta como en «<%= formas[0].nombre %>».</p><% } %>
+    </section>
+
+    <%/* Spec-670: el giro (opcional). «Sorprendeme» sortea entre los menos usados (asistente.js). */%>
+    <section class="bg-forge-surface border border-forge-border p-6" data-giros data-uso='<%- JSON.stringify(uso).replace(/'/g, "&#39;") %>'>
+      <h3 class="font-serif text-xl mb-1">¿Le sumamos un giro?</h3>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
+        Es opcional. Un giro es un detalle que le da algo propio a tu historia y suma una sola pregunta.
+        Elegí uno, dejá que lo sorteemos («Sorprendeme» elige entre los que menos usaste) o seguí sin giro.</p>
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <button type="button" class="btn-forge-outline-sm" data-sorprendeme><i data-lucide="shuffle" class="w-4 h-4"></i> Sorprendeme</button>
+      </div>
+      <p class="text-sm mb-3 hidden" data-giro-salio aria-live="polite"></p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <label class="opcion-forge h-full">
+          <input type="radio" name="ingredient" value="" class="peer sr-only" <%= d.ingredient ? '' : 'checked' %>>
+          <span class="opcion-forge__caja h-full"><span><span class="block font-semibold">Sin giro</span><span class="block text-sm text-forge-muted">Como viene.</span></span></span>
+        </label>
+        <% giros.forEach(g => { const fuera = g.no_con.includes(d.form); %>
+          <label class="opcion-forge h-full<%= fuera ? ' hidden' : '' %>" data-giro="<%= g.id %>" data-no-con="<%= g.no_con.join(',') %>">
+            <input type="radio" name="ingredient" value="<%= g.id %>" class="peer sr-only" <%= g.id === d.ingredient ? 'checked' : '' %>>
+            <span class="opcion-forge__caja h-full">
+              <span>
+                <span class="block font-semibold"><%= g.nombre %></span>
+                <span class="block text-sm text-forge-muted"><%= g.ayuda %></span>
+              </span>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
 
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1">¿Qué querés que sienta quien lo escuche?</h3>
