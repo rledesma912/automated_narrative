@@ -128,6 +128,8 @@ Si un día las usuarias quieren crear o editar moldes desde la pantalla, ahí co
 | D5 | ¿Dónde se guarda? | `direction.form` y `direction.ingredient` (JSON, sin esquema nuevo). Se editan en «Tu idea», así que viajan con su autoguardado (cuidado de la D9 de la 650) |
 | D6 | «Sorprendeme» | Al azar entre los ingredientes menos usados en las historias de la base; se ve cuál salió y se puede cambiar |
 | D7 | Medición | La misma sinopsis con 3 moldes distintos (paga, con aviso de costo antes): ¿salen escaletas distintas y menos de manual? Más la lectura de las usuarias (una versión + 1–2 preguntas) |
+| D8 | ¿Y si la forma elegida no encaja con la historia (la IA sugirió mal, se eligió rápido, la historia mezcla dos)? Volverían las preguntas inválidas, como hoy («¿qué hace Tito que despierta a la criatura?» cuando nadie la provoca) | Estado nuevo del criterio **«No va en tu historia»** (`no_aplica`): el Consultor lo marca cuando la idea lo contradice, con el motivo en una línea; chip gris, sin pregunta; la persona lo puede reabrir. El Planificador no pide en ningún acto lo que no va (p. ej. «romper la regla»). Si **2 o más** criterios de la forma no van, nota: «Parece que tu historia no es de esta clase. ¿Probamos con otra?» con la sugerencia de la IA. (Agregado 2026-10-10, OK del usuario) |
+| D9 | ¿Y si la historia no tiene ninguna de las formas del catálogo? | Opción **«Otra clase de historia»** (como «Otro» en el efecto): la persona cuenta el arco en una o dos frases. Preguntas: solo la base (+ el giro); el Planificador reparte **esa descripción** entre los actos en vez de lo que pide una forma, con las reglas universales. «Que la IA lo sugiera» puede devolver «Otra» con una descripción propuesta para corregir. Cada «Otra» queda en `direction` y sirve de evidencia para sumar formas al catálogo. (Agregado 2026-10-10) |
 
 ---
 
@@ -135,8 +137,8 @@ Si un día las usuarias quieren crear o editar moldes desde la pantalla, ahí co
 
 1. Las 5 formas y los 6 ingredientes están completos para largo y corto (test de completitud: criterios, lo que pide cada acto, reglas, textos de pantalla).
 2. «Alguien rompe una regla» sin ingrediente = hoy: snapshots `pipeline/voice/assistant` (largo y corto) idénticos.
-3. Con su forma, las historias del §1.2 dejan de chocar: «La laguna oscura» como «Algo viene por nosotros» no recibe preguntas de transgresión ni de un secreto personal, y su acto 2 no pide «romper la regla» (snapshot por forma).
-4. Por historia, entre 7 y 9 preguntas (base + forma + ingrediente).
+3. Ningún criterio que contradiga la idea se pregunta: se marca «No va en tu historia» (D8) o no existe en la forma. Con su forma, las historias del §1.2 dejan de chocar: «La laguna oscura» como «Algo viene por nosotros» no recibe preguntas de transgresión ni de un secreto personal, y su acto 2 no pide «romper la regla» (snapshot por forma).
+4. Por historia, entre 7 y 9 preguntas (base + forma + ingrediente); con «Otra» (D9), 4–5.
 5. La IA sugiere una forma razonable para las 5 historias del §1.2 (prueba con el modelo del perfil activo; se registra qué sugirió).
 6. Medición D7: con la misma sinopsis, 3 moldes dan escaletas distintas entre sí; lectura de las usuarias.
 7. Guardianes en verde (`sin-jerga`, `gramatica-visual`, `test_prompts_fuera_del_codigo`, `sin-cinco-actos`…); pytest, Vitest, Playwright; dev con el cambio.
