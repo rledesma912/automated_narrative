@@ -83,12 +83,14 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
   await expect(page.locator('form[data-number="1"]').getByRole("checkbox", { name: /El sereno/ })).toBeChecked();
   await expect(page.locator('form[data-number="2"]').getByRole("checkbox", { name: /El sereno/ })).not.toBeChecked();
 
-  await expect(page.getByRole("link", { name: /Escribir el relato/ })).toHaveAttribute("href", `/generar/stream/${sid}?escribir=1`);
-
-  // Spec-630 B14: un borrador se escribe desde «Los actos» (antes la sala caía en modo lectura sin botón).
-  await page.getByRole("link", { name: /Escribir el relato/ }).click();
-  await expect(page).toHaveURL(new RegExp(`/generar/stream/${sid}\\?escribir=1$`));
-  await expect(page.locator("#start-panel")).toContainText("¿Empezamos a escribir?");
+  // Spec-660 B1: se pregunta en «Los actos» y la sala arranca ya escribiendo.
+  await page.locator(".asistente-barra").getByRole("button", { name: /Escribir el relato/ }).click();
+  const dialogo = page.locator("#forge-confirm");
+  await expect(dialogo).toContainText("¿Escribimos el relato?");
+  await expect(dialogo.locator("[data-confirm-nota]")).toBeHidden();
+  await dialogo.getByRole("button", { name: "Escribir el relato" }).click();
+  await expect(page).toHaveURL(new RegExp(`/generar/stream/${sid}$`));
+  await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", { timeout: 30_000 });
 });
 
 // Spec-630 B16: «El relato» tiene la barra con los pasos y se vuelve a «Los actos».

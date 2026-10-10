@@ -101,21 +101,6 @@ export interface CoreJob {
   narrative_id: string | null;
 }
 
-/**
- * Lanza la generación completa de una historia. Si ya hay una en curso (409),
- * devuelve ese job en vez de fallar: el llamador redirige a su sala.
- */
-export async function startGeneration(
-  storyId: string,
-): Promise<{ jobId: string; alreadyRunning: boolean }> {
-  const response = await axios.post(
-    `${CORE_API_URL}/api/v1/stories/${storyId}/jobs`,
-    { kind: "full_generation" },
-    { timeout: 5000, validateStatus: (s) => s === 202 || s === 409 },
-  );
-  return { jobId: response.data.job_id, alreadyRunning: response.status === 409 };
-}
-
 /** Job en curso de la historia, o null si no hay. */
 export async function getActiveJob(storyId: string): Promise<CoreJob | null> {
   try {

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { checkCoreHealth, deleteStory, getActiveJob, startGeneration } from "../services/core_api.service";
+import { deleteStory, getActiveJob } from "../services/core_api.service";
 import { editarHref } from "../utils/rutas";
 
 const CORE_API_URL = process.env.CORE_API_URL ?? "http://localhost:8010";
@@ -73,41 +73,10 @@ function htmxRedirect(res: Response, req: import("express").Request, url: string
   }
 }
 
+/**
+ * Spec-660 D2: escribir se pregunta donde se toca el botón (escribir-relato.js). Este
+ * POST queda solo para pestañas o links viejos y lleva a la sala, sin lanzar nada.
+ */
 export async function generarDesdeHistoria(req: Request, res: Response): Promise<void> {
-  const { storyId } = req.params;
-
-  const health = await checkCoreHealth();
-  if (!health.reachable || (health.status !== "healthy" && health.status !== "degraded")) {
-    htmxRedirect(res, req, "/debug?error=backend_offline");
-    return;
-  }
-
-  // Spec-219: si la historia está completed, no patchear ahora — dejar que la sala
-  // muestre la pantalla de regeneración con advertencia y dispare el PATCH desde JS
-  // cuando el usuario confirme. Mantiene la regeneración no destructiva.
-  let currentStatus = "";
-  try {
-    const resp = await axios.get(`${CORE_API_URL}/api/v1/stories/${storyId}`, { timeout: 5000 });
-    currentStatus = String((resp.data as { status?: string })?.status ?? "");
-  } catch (err: any) {
-    const detail = err?.response?.data?.detail ?? err?.message ?? "unknown";
-    htmxRedirect(res, req, `/debug?error=regeneration_failed&detail=${encodeURIComponent(detail)}`);
-    return;
-  }
-
-  if (currentStatus === "completed") {
-    htmxRedirect(res, req, `/generar/stream/${storyId}?escribir=1`);
-    return;
-  }
-
-  // Spec-460: lanza la generación como job (un 409 = ya hay una en curso: vamos a su sala).
-  try {
-    await startGeneration(String(storyId));
-  } catch (err: any) {
-    const detail = err?.response?.data?.detail ?? err?.message ?? "unknown";
-    htmxRedirect(res, req, `/debug?error=regeneration_failed&detail=${encodeURIComponent(detail)}`);
-    return;
-  }
-
-  htmxRedirect(res, req, `/generar/stream/${storyId}`);
+  htmxRedirect(res, req, `/generar/stream/${String(req.params["storyId"])}`);
 }

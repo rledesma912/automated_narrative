@@ -20,10 +20,11 @@
                 data-detalle="La IA busca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren.">
           <i data-lucide="search-check" class="w-4 h-4"></i> Que la IA lo revise<% if (est.verify_outline) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.verify_outline %></span><% } %>
         </button>
-        <%/* Spec-630 B14: ?escribir=1 → la sala pide confirmación y arranca (antes, un borrador caía en modo lectura sin botón). */%>
-        <a href="/generar/stream/<%= state.story_id %>?escribir=1" class="btn-forge-sm" data-generar>
+        <%/* Spec-660 B1: pregunta acá (escribir-relato.js) y va a la sala ya escribiendo. */%>
+        <button type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= state.story_id %>"
+                data-estimado="<%= est.full_generation || '' %>"<% if (state.status === 'completed') { %> data-version-nueva<% } %>>
           <i data-lucide="feather" class="w-4 h-4"></i> Escribir el relato<% if (est.full_generation) { %> <span class="normal-case tracking-normal">· <%= est.full_generation %></span><% } %>
-        </a>
+        </button>
       </div>
     <% } %>
   </div>

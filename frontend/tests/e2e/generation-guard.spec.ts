@@ -39,13 +39,18 @@ test("una historia guardada desde el asistente queda como borrador y no genera",
   expect(story.status).toBe("draft");
 });
 
-// Spec-630 B14: un borrador se empieza a escribir en la sala (?escribir=1), no en la galería.
-test("doble click en «Escribir el relato» de la sala envía un solo pedido", async ({ page }) => {
+// Spec-660: un borrador se escribe desde su botón, que pregunta una sola vez.
+test("doble click en «Escribir el relato» pregunta una vez y envía un solo pedido", async ({ page }) => {
   const posts = countPosts(page, `/api/v1/stories/${savedStoryId}/jobs`);
-  await page.goto(`/generar/stream/${savedStoryId}?escribir=1`);
-  const button = page.locator("#start-panel [data-generation-trigger]");
+  await page.goto(`/generar/stream/${savedStoryId}`);
+  const button = page.locator("[data-escribir-relato]");
 
   await button.dblclick();
+  // El segundo clic no acepta ni cierra el diálogo recién abierto: hay que leerlo y aceptar.
+  const dialogo = page.locator("#forge-confirm");
+  await expect(dialogo).toBeVisible();
+  expect(posts()).toBe(0);
+  await dialogo.getByRole("button", { name: "Escribir el relato" }).click();
 
   await expect.poll(posts).toBe(1);
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
@@ -76,17 +81,23 @@ test("la galería se actualiza sola mientras se genera", async ({ page }) => {
   ).toBe(true);
 });
 
-// Spec-630 B12: la ficha se fue; se regenera desde la sala en modo lectura.
-test("volver atrás desde la confirmación no deja el botón trabado", async ({ page }) => {
+// Spec-660 B1: se pregunta donde está el botón; cancelar no lanza nada ni lo deja trabado.
+test("cancelar la confirmación no crea nada ni deja el botón trabado", async ({ page }) => {
+  let posts = 0;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && r.url().includes(`/stories/${OFRENDA}/jobs`)) posts++;
+  });
   await page.goto(`/generar/stream/${OFRENDA}`);
-  const regenerar = page.getByRole("link", { name: "Regenerar" });
+  const regenerar = page.getByRole("button", { name: "Regenerar historia" });
 
   await regenerar.click();
-  await expect(page).toHaveURL(/escribir=1/);
-  await page.goBack();
+  await page.locator("#forge-confirm").getByRole("button", { name: "Cancelar" }).click();
 
   await expect(page).toHaveURL(new RegExp(`/generar/stream/${OFRENDA}$`));
-  await expect(regenerar).toBeVisible();
+  await expect(regenerar).toBeEnabled();
   await expect(regenerar).not.toHaveAttribute("aria-busy", "true");
+  expect(posts).toBe(0);
+  const activo = await page.request.get(`/api/v1/stories/${OFRENDA}/jobs/active`);
+  expect(activo.ok() ? await activo.json() : null).toBeNull();
 });
 

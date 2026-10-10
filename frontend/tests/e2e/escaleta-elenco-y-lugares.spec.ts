@@ -84,17 +84,20 @@ test("se suman varios lugares seguidos, aparecen en todos los actos y se elige o
 test("borrar un lugar, un personaje y una regla", async ({ page }) => {
   await page.goto(`/asistente/${sid}/escaleta`);
 
-  await acto(page, 1).getByRole("button", { name: "Borrar el lugar «La ruta vieja»" }).click();
-  await expect(dialogo(page)).toContainText("Ningún acto lo usa.");
-  await dialogo(page).getByRole("button", { name: "Borrar el lugar" }).click();
+  await acto(page, 1).getByRole("button", { name: "Borrar el lugar «La ruta vieja» de la historia" }).click();
+  await expect(dialogo(page)).toContainText("¿Borrar el lugar «La ruta vieja» de la historia?");
+  await expect(dialogo(page)).toContainText("No aparece en ningún acto.");
+  await dialogo(page).getByRole("button", { name: "Borrar de la historia" }).click();
   await expect(page.getByRole("radio", { name: "La ruta vieja" })).toHaveCount(0);
 
-  await acto(page, 4).getByRole("button", { name: "Borrar el personaje «El sereno»" }).click();
-  await expect(dialogo(page)).toContainText("Se quita del acto 2.");
-  await dialogo(page).getByRole("button", { name: "Borrar el personaje" }).click();
+  await acto(page, 4).getByRole("button", { name: "Borrar a «El sereno» de la historia" }).click();
+  // Spec-660 B2: dice que es de toda la historia (desde el acto 4 se borra aunque esté en el 2).
+  await expect(dialogo(page)).toContainText("Desaparece de todos los actos (hoy está en el acto 2).");
+  await expect(dialogo(page)).toContainText("destildalo en ese acto");
+  await dialogo(page).getByRole("button", { name: "Borrar de la historia" }).click();
   await expect(page.getByRole("checkbox", { name: /El sereno/ })).toHaveCount(0);
   // Quien narra no se puede borrar.
-  await expect(page.getByRole("button", { name: "Borrar el personaje «José»" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Borrar a «José» de la historia" })).toHaveCount(0);
 
   const a1 = acto(page, 1);
   await a1.getByRole("button", { name: "Regla", exact: true }).click();

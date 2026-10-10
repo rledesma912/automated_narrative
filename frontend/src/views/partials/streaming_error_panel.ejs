@@ -7,7 +7,9 @@
   </div>
   <p id="error-msg" class="text-base leading-relaxed"></p>
   <div class="flex gap-4 flex-wrap">
-    <button onclick="retryStream()"
+    <%/* Spec-660 D3: con el job vivo se vuelve a atar; si no, pregunta como cualquier botón de escribir. */%>
+    <button onclick="retryStream(this)" data-story-id="<%= storyId %>"
+            data-estimado="<%= (locals.estimateLabels && locals.estimateLabels.full_generation) || '' %>"
             class="btn-forge-sm">
       Reintentar
     </button>

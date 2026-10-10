@@ -26,13 +26,8 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
   }
 
   const storyStatus = story ? String(story.status) : "draft";
-  // Spec-630 B14: `?escribir=1` (o el viejo `?regenerate=1`) pide arrancar: con un
-  // relato terminado confirma «¿Regeneramos la historia?» (una versión nueva); con un borrador o uno fallido,
-  // «¿Empezamos a escribir?». Sin eso, la sala solo muestra lo que hay.
-  const pideEscribir = req.query["escribir"] === "1" || req.query["regenerate"] === "1";
-  const regenerateMode = !activeJobId && pideEscribir && storyStatus === "completed";
-  const startMode =
-    !activeJobId && pideEscribir && (storyStatus === "draft" || storyStatus === "failed");
+  // Spec-660 B1: la sala no pregunta (eso pasa donde se toca el botón). `?escribir=1` y
+  // `?regenerate=1` de links viejos se ignoran: sin job, la sala muestra lo que hay.
 
   await renderPage(res, "streaming-room", {
     title: story ? String(story.title ?? "Historia") : "Generando historia...",
@@ -41,8 +36,6 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
     story,
     beats,
     storyStatus,
-    regenerateMode,
-    startMode,
     activeJobId,
     // Spec-650: los puntos de avance según el largo de la historia (5 o 3).
     actos: actosDe(story ? String(story.structure ?? "") : undefined),

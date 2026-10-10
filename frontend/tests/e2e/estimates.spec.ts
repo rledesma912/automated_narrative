@@ -19,13 +19,14 @@ test("la galería no ofrece generar ni muestra estimación", async ({ page }) =>
   await expect(page.locator("[data-story-card] [data-generation-trigger]")).toHaveCount(0);
 });
 
-test("la confirmación de la sala dice cuánto tarda y que se puede cerrar la pestaña", async ({
-  page,
-}) => {
-  await page.goto(`/generar/stream/${STORY_ID}?regenerate=1`);
-  await expect(page.locator("#start-panel [data-start-estimate]").first()).toHaveText(
-    /Tarda ≈ \d+ min\. Podés cerrar la pestaña: la IA sigue escribiendo\./,
+// Spec-660: la confirmación es el diálogo, en la misma página.
+test("la confirmación de escribir dice cuánto tarda y que se puede cerrar la pestaña", async ({ page }) => {
+  await page.goto(`/generar/stream/${STORY_ID}`);
+  await page.getByRole("button", { name: "Regenerar historia" }).click();
+  await expect(page.locator("#forge-confirm [data-confirm-mensaje]")).toHaveText(
+    /^Tarda ≈ \d+ min\. Podés cerrar la pestaña: la IA sigue escribiendo\.$/,
   );
+  await page.locator("#forge-confirm").getByRole("button", { name: "Cancelar" }).click();
 });
 
 test("regenerar un acto pide confirmación con la estimación", async ({ page }) => {
