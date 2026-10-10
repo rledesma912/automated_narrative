@@ -22,7 +22,7 @@ class RecordingLLM:
         self.calls.append({"role": role, "system": system_prompt or "", "prompt": prompt})
         schema = kw.get("response_schema")
         if schema:
-            text = json.dumps(mock_structured(role, schema), ensure_ascii=False)
+            text = json.dumps(mock_structured(role, schema, prompt), ensure_ascii=False)
         else:
             n = len([c for c in self.calls if c["role"] == role])
             text = f"Prosa del acto {n}. Rosa camina por el galpón y escucha algo."

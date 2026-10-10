@@ -19,13 +19,14 @@ from pydantic import BaseModel
 
 from src.application.services.authoring import catalog, context, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.manifestations import manifestations_for_act
 from src.application.services.prompt_builder import PromptBuilder
+from src.application.services.structure import DEFAULT_STRUCTURE, Estructura
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, NarrativeJournal, Story
 
-NUM_ACTS = 5
 # Spec-610 D11 (en la Spec-600 S1): un episodio de ~15 min leído en voz alta, ≈ 1 950
 # palabras a 130 por minuto. Antes (Spec-590 D) 170 / 400–900 / 250–450 daban ~3 200.
 WORDS_PER_EVENT = 100
@@ -45,9 +46,16 @@ class Memoria(BaseModel):
     motivos_usados: list[str]
 
 
-def word_range(act: ActOutline) -> tuple[int, int]:
-    """Extensión proporcional a los hechos del acto (no 450–530 fijo)."""
-    if act.number == NUM_ACTS:
+def word_range(act: ActOutline, estructura: Estructura | None = None) -> tuple[int, int]:
+    """Extensión proporcional a los hechos del acto (no 450–530 fijo).
+
+    Spec-650: si la estructura fija `palabras` para el acto, manda ese rango.
+    """
+    estructura = estructura or BeatSpecRepository().estructura()
+    fixed = estructura.acto(act.number).get("palabras")
+    if fixed:
+        return fixed[0], fixed[1]
+    if act.number == estructura.ultimo:
         return LAST_ACT_WORDS
     top = max(MIN_WORDS, min(MAX_WORDS, WORDS_PER_EVENT * max(1, len(act.events)) + 60))
     return max(MIN_WORDS - 50, top - RANGE_WIDTH), top
@@ -97,8 +105,9 @@ class OutlineNarrator:
             parentescos=extras["parentescos"],
             guia_oficio=extras["guia_oficio"],
         )
-        info = self.prompt_builder.get_beat_info(act.number)
-        low, high = word_range(act)
+        estructura = self.prompt_builder.estructura(story)
+        info = self.prompt_builder.get_beat_info(act.number, structure=estructura.id)
+        low, high = word_range(act, estructura)
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
             historia=self._premise(story, narrator),
@@ -147,7 +156,8 @@ class OutlineNarrator:
 
     def _function(self, story: Story, act: ActOutline, info: dict) -> str:
         d = story.direction
-        if act.number == NUM_ACTS and d and d.ending_intentional and d.ending:
+        last = self.prompt_builder.estructura(story).ultimo
+        if act.number == last and d and d.ending_intentional and d.ending:
             # El final del autor manda sobre la función genérica del acto (Spec-530 S2).
             return self.templates.fragment("voz/final_del_autor", final=d.ending)
         return info.get("intent", "")
@@ -183,9 +193,16 @@ class OutlineNarrator:
         if not story.entities:
             return ""
         act_texts = [" ".join(a.events) for a in story.outline]
-        return "\n".join(self._threat_lines(act.number, story.entities, act_texts)) + "\n"
+        lines = self._threat_lines(act.number, story.entities, act_texts, story.structure)
+        return "\n".join(lines) + "\n"
 
-    def _threat_lines(self, beat_number: int, entities, act_texts: list[str]) -> list[str]:
+    def _threat_lines(
+        self,
+        beat_number: int,
+        entities,
+        act_texts: list[str],
+        structure: str = DEFAULT_STRUCTURE,
+    ) -> list[str]:
         """Solo los campos que la exposición del acto permite ver de cada entidad (Spec-450).
 
         Con «señales» la Voz no recibe ni el nombre ni la naturaleza: no puede revelarlos.
@@ -193,7 +210,7 @@ class OutlineNarrator:
         lines = [self.templates.fragment("voz/amenaza/titulo")]
         beat_repo = self.prompt_builder._beat_repo
         for e in entities:
-            exposure = beat_repo.exposure_for(beat_number, e.reveal_level)
+            exposure = beat_repo.exposure_for(beat_number, e.reveal_level, structure)
             show = exposure.get("show", ["manifestations"])
             head = []
             if "name" in show and e.name:

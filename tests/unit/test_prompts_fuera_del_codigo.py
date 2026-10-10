@@ -181,6 +181,12 @@ PERMITIDOS: dict[tuple[str, str], str] = {
 ARCHIVOS_PERMITIDOS = {
     "src/infrastructure/adapters/mock_llm_adapter.py": "respuestas del mock (tests, --mock)",
     "src/infrastructure/adapters/mock_structured.py": "respuestas del mock (tests, --mock)",
+    "src/application/services/structure.py": (
+        "validación de las estructuras de llm_beats_definition.yaml (Spec-650), al arrancar"
+    ),
+    "src/application/services/beat_spec_repository.py": (
+        "errores de carga de llm_beats_definition.yaml (Spec-650), para quien edita el YAML"
+    ),
     "src/application/services/video/config.py": (
         "validación de config/video/ (Spec-610): errores para quien edita el YAML, al arrancar"
     ),

@@ -1,6 +1,9 @@
-"""Planificador de la escaleta (Spec-530 §5.2): reparte la historia en 5 actos."""
+"""Planificador de la escaleta (Spec-530 §5.2): reparte la historia en los actos de su
+estructura (Spec-650: 5 en el largo)."""
 
 import re
+from functools import cache
+from typing import ClassVar
 
 from pydantic import BaseModel, model_validator
 
@@ -13,7 +16,6 @@ from src.domain.models import ActOutline, Story
 from src.messages import message
 
 ROLE = "planificador"
-NUM_ACTS = 5
 
 
 class ActoPlan(BaseModel):
@@ -34,16 +36,24 @@ class ActoPlan(BaseModel):
 
 class Escaleta(BaseModel):
     actos: list[ActoPlan]
+    NUM_ACTOS: ClassVar[int] = 0  # lo fija `escaleta_model` según la estructura
 
     @model_validator(mode="after")
-    def _cinco_actos(self) -> "Escaleta":
+    def _actos_completos(self) -> "Escaleta":
         numbers = sorted(a.numero for a in self.actos)
-        if numbers != list(range(1, NUM_ACTS + 1)):
+        if numbers != list(range(1, self.NUM_ACTOS + 1)):
             raise ValueError(message("job.escaleta_sin_actos", actos=numbers))
         empty = [a.numero for a in self.actos if not [h for h in a.hechos if h.strip()]]
         if empty:
             raise ValueError(message("job.escaleta_sin_hechos", actos=empty))
         return self
+
+
+@cache
+def escaleta_model(num_actos: int) -> type[Escaleta]:
+    """Spec-650: la escaleta que valida exactamente `num_actos` actos. Mismo nombre y
+    mismo esquema JSON para cualquier cantidad (lo que cambia es solo la validación)."""
+    return type("Escaleta", (Escaleta,), {"NUM_ACTOS": num_actos, "__module__": __name__})
 
 
 class OutlinePlanner:
@@ -64,10 +74,11 @@ class OutlinePlanner:
             role=ROLE,
             prompt=self._prompt(story),
             system_prompt=self.templates.load("authoring_planner_system.md"),
-            output=Escaleta,
+            output=escaleta_model(self.prompt_builder.estructura(story).num_actos),
         )
         valid = {cid for cid, _, _ in context.decisions(story)}
-        acts = [_to_outline(a, valid) for a in sorted(result.actos, key=lambda a: a.numero)]
+        last = self.prompt_builder.estructura(story).ultimo
+        acts = [_to_outline(a, valid, last) for a in sorted(result.actos, key=lambda a: a.numero)]
         # Spec-570 D2: la sinopsis por acto del autor queda con su acto (vuelve al exportar).
         synopsis = {a.number: a.synopsis for a in story.outline if a.synopsis}
         acts = [
@@ -102,13 +113,14 @@ class OutlinePlanner:
         ending_fixed = bool(story.direction and story.direction.ending_intentional)
         has_secret = any(cid == "historia_secreta" for cid, _, _ in context.decisions(story))
         t = self.templates.fragment
+        estructura = self.prompt_builder.estructura(story)
         lines = []
-        for n in range(1, NUM_ACTS + 1):
-            info = self.prompt_builder.get_beat_info(n)
+        for n in estructura.numeros:
+            info = self.prompt_builder.get_beat_info(n, structure=estructura.id)
             intent = info.get("intent", "")
-            if n == NUM_ACTS and ending_fixed:
+            if n == estructura.ultimo and ending_fixed:
                 intent = t("asistente/planificador/final_del_autor")
-            if n == NUM_ACTS - 1 and has_secret:
+            if n == estructura.revela_secreto and has_secret:
                 intent += t("asistente/planificador/historia_secreta")
             lines.append(
                 t(
@@ -173,7 +185,7 @@ def _clean(items: list[str]) -> list[str]:
     return [" ".join(i.split()) for i in items if i and i.strip()]
 
 
-def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
+def _to_outline(a: ActoPlan, valid_decisions: set[str], last: int) -> ActOutline:
     return ActOutline(
         number=a.numero,
         bridge="" if a.numero == 1 else " ".join(a.como_llega.split()),
@@ -184,7 +196,9 @@ def _to_outline(a: ActoPlan, valid_decisions: set[str]) -> ActOutline:
         scenario=_scenario_name(a.escenario),
         on_stage=list(dict.fromkeys(_scenario_name(n) for n in _clean(a.en_escena))),
         held_back=a.se_guarda.strip(),
-        reveal_act=a.se_revela_en if a.se_guarda.strip() and a.numero < a.se_revela_en <= 5 else 0,
+        reveal_act=a.se_revela_en
+        if a.se_guarda.strip() and a.numero < a.se_revela_en <= last
+        else 0,
         seeds=_clean(a.siembra),
         payoffs=_clean(a.retoma),
         decisions=[d for d in _clean(a.decisiones) if d in valid_decisions],

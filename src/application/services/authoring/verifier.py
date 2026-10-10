@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from src.application.services.authoring import catalog, context, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, OutlineWarning, Story, normalize_key
@@ -173,6 +174,7 @@ def rule_warnings(
     """
     dismissed = dismissed or {}
     out: dict[int, list[OutlineWarning]] = {}
+    last = BeatSpecRepository().estructura(story.structure).ultimo  # Spec-650
 
     def add(n: int, key: str, text: str) -> None:
         if key not in dismissed.get(n, set()):
@@ -198,7 +200,7 @@ def rule_warnings(
                     f"elenco:{key}",
                     message("verifier.elenco", nombre=name),
                 )
-        if act.held_back.strip() and not act.number < act.reveal_act <= 5:
+        if act.held_back.strip() and not act.number < act.reveal_act <= last:
             add(act.number, "sin_revelacion", message("verifier.sin_revelacion"))
         later = [a for a in outline if a.number > act.number]
         loose = [

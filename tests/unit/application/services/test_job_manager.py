@@ -62,7 +62,10 @@ class _SlowDirector:
     """Pipeline lento: informa etapas y narra un beat cada `delay` segundos."""
 
     def __init__(self, beats: int = 5, delay: float = 0.05) -> None:
-        self.prompt_builder = SimpleNamespace(num_beats=beats)
+        # Spec-650: la cantidad de actos sale de la estructura de la historia.
+        self.prompt_builder = SimpleNamespace(
+            estructura=lambda _s: SimpleNamespace(num_actos=beats)
+        )
         self._beats = beats
         self._delay = delay
 
@@ -549,3 +552,22 @@ async def test_si_falla_el_estimador_el_job_arranca_igual(bus, job_repo, story_r
     saved = await job_repo.get(job.id)
     assert saved.status == JobStatus.DONE
     assert "estimated_seconds" not in saved.params
+
+
+# ── Spec-650: el job sabe cuántos actos va a escribir desde que se crea ───────
+
+
+async def test_el_job_que_escribe_actos_nace_con_el_total(manager, story_repo):
+    story = await _story(story_repo)
+
+    job = await manager.submit(story, JobKind.FULL_GENERATION, _quick_run())
+    assert job.total_beats == 5  # la estructura larga
+    await manager.wait(job.id)
+
+
+async def test_el_job_del_asistente_no_tiene_total(manager, story_repo):
+    story = await _story(story_repo)
+
+    job = await manager.submit(story, JobKind.CONSULT, _quick_run())
+    assert job.total_beats is None
+    await manager.wait(job.id)

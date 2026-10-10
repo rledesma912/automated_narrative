@@ -342,6 +342,9 @@ class Story(BaseModel):
     typed_rules: list[TypedRule] = []
     personajes_full: list[dict] = []
 
+    # Spec-650: estructura del relato (id de `estructuras` en llm_beats_definition.yaml).
+    structure: str = "largo"
+
     # Spec-530: asistente de autoría (vacíos en las historias del wizard).
     direction: Optional[Direction] = None
     workshop: list[WorkshopItem] = []

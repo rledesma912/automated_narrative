@@ -52,128 +52,140 @@ beats_spec:
       show: [name, nature, manifestations]
       guide: "Lo decide el EVENTO de este acto: si la identifica, se la nombra; si no, queda ambigua y solo se ve su rastro."
 
-  macro_beats:
+  # Spec-650: estructuras del relato. Cada historia elige una (`story.structure`);
+  # la cantidad de actos, sus nombres y su función salen de acá, nunca de una constante.
+  # `revela_secreto`: el acto donde se revela la historia secreta del taller.
+  estructuras:
+    largo:
+      label: "Largo · 5 actos · unos 15 minutos"
+      revela_secreto: 4
+      actos:
 
-    - id: 1
-      name: "exposicion"
-      label: "Exposición"  # Spec-620: el nombre que ve la Voz
-      word_limit: "entre 450 y 530 palabras"
-      intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
-      intensity: baja
-      must:
-        - "presentar situacion base del narrador"
-        - "introducir una anomalia sutil"
-        - "incluir regla, advertencia o limite implicito"
-      must_not: []
-      # Spec-450 §2: reglas de revelación según el reveal_level de la entidad
-      # principal. `default` = sin entidades y niveles sin override.
-      reveal_rules:
-        must_not:
-          default: ["confirmar lo paranormal"]
-          explicita: []
-      state_change:
-        from: "estabilidad"
-        to: "incomodidad leve"
-      success_signal:
-        - "quien escucha el relato percibe que algo no encaja pero no sabe que"
-      entity_exposure:
-        nunca: senales
-        insinuada: senales
-        progresiva: senales
-        explicita: presencia
+        - id: 1
+          name: "exposicion"
+          label: "Exposición"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Cómo empieza"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          word_limit: "entre 450 y 530 palabras"
+          intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
+          intensity: baja
+          must:
+            - "presentar situacion base del narrador"
+            - "introducir una anomalia sutil"
+            - "incluir regla, advertencia o limite implicito"
+          must_not: []
+          # Spec-450 §2: reglas de revelación según el reveal_level de la entidad
+          # principal. `default` = sin entidades y niveles sin override.
+          reveal_rules:
+            must_not:
+              default: ["confirmar lo paranormal"]
+              explicita: []
+          state_change:
+            from: "estabilidad"
+            to: "incomodidad leve"
+          success_signal:
+            - "quien escucha el relato percibe que algo no encaja pero no sabe que"
+          entity_exposure:
+            nunca: senales
+            insinuada: senales
+            progresiva: senales
+            explicita: presencia
 
-    - id: 2
-      name: "accion_ascendente"
-      label: "Acción ascendente"  # Spec-620: el nombre que ve la Voz
-      word_limit: "entre 450 y 530 palabras"
-      intent: "activar el conflicto mediante transgresion"
-      intensity: media
-      must:
-        - "romper la regla o ignorar la advertencia"
-        - "mostrar un evento anomalo concreto"
-        - "intentar explicacion racional"
-      must_not: []
-      reveal_rules:
-        must_not:
-          default: ["aceptar lo paranormal como hecho"]
-          explicita: []
-      state_change:
-        from: "incomodidad"
-        to: "inquietud concreta"
-      success_signal:
-        - "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
-      entity_exposure:
-        nunca: senales
-        insinuada: manifestacion_parcial
-        progresiva: manifestacion_parcial
-        explicita: presencia
+        - id: 2
+          name: "accion_ascendente"
+          label: "Acción ascendente"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Se complica"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          word_limit: "entre 450 y 530 palabras"
+          intent: "activar el conflicto mediante transgresion"
+          intensity: media
+          must:
+            - "romper la regla o ignorar la advertencia"
+            - "mostrar un evento anomalo concreto"
+            - "intentar explicacion racional"
+          must_not: []
+          reveal_rules:
+            must_not:
+              default: ["aceptar lo paranormal como hecho"]
+              explicita: []
+          state_change:
+            from: "incomodidad"
+            to: "inquietud concreta"
+          success_signal:
+            - "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
+          entity_exposure:
+            nunca: senales
+            insinuada: manifestacion_parcial
+            progresiva: manifestacion_parcial
+            explicita: presencia
 
-    - id: 3
-      name: "climax"
-      label: "Clímax"  # Spec-620: el nombre que ve la Voz
-      word_limit: "entre 450 y 530 palabras"
-      intent: "forzar reconocimiento del horror"
-      intensity: alta
-      must:
-        - "invalidar explicacion racional"
-      reveal_rules:
-        must:
-          default: ["mostrar amenaza o presencia directa"]
-          nunca: ["mostrar señales intensas de la amenaza sin confirmar qué es"]
-      must_not:
-        - "explicar origen o reglas completas del fenomeno"
-      state_change:
-        from: "negacion"
-        to: "reconocimiento"
-      success_signal:
-        - "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
-      entity_exposure:
-        nunca: senales_intensas
-        insinuada: revelacion
-        progresiva: presencia_directa
-        explicita: confrontacion
+        - id: 3
+          name: "climax"
+          label: "Clímax"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "El peor momento"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          word_limit: "entre 450 y 530 palabras"
+          intent: "forzar reconocimiento del horror"
+          intensity: alta
+          must:
+            - "invalidar explicacion racional"
+          reveal_rules:
+            must:
+              default: ["mostrar amenaza o presencia directa"]
+              nunca: ["mostrar señales intensas de la amenaza sin confirmar qué es"]
+          must_not:
+            - "explicar origen o reglas completas del fenomeno"
+          state_change:
+            from: "negacion"
+            to: "reconocimiento"
+          success_signal:
+            - "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
+          entity_exposure:
+            nunca: senales_intensas
+            insinuada: revelacion
+            progresiva: presencia_directa
+            explicita: confrontacion
 
-    - id: 4
-      name: "accion_descendente"
-      label: "Acción descendente"  # Spec-620: el nombre que ve la Voz
-      word_limit: "entre 450 y 530 palabras"
-      intent: "llevar al protagonista al colapso y reaccion"
-      intensity: media-alta
-      must:
-        - "perdida de control o desorientacion"
-        - "intento de escape o respuesta (instinto, fe, memoria)"
-      must_not:
-        - "resolución fácil del conflicto"
-      state_change:
-        from: "reconocimiento"
-        to: "desesperacion"
-      success_signal:
-        - "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
-      entity_exposure:
-        nunca: senales
-        insinuada: limites_consecuencias
-        progresiva: presencia_plena
-        explicita: consecuencias
+        - id: 4
+          name: "accion_descendente"
+          label: "Acción descendente"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Qué hace después"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          word_limit: "entre 450 y 530 palabras"
+          intent: "llevar al protagonista al colapso y reaccion"
+          intensity: media-alta
+          must:
+            - "perdida de control o desorientacion"
+            - "intento de escape o respuesta (instinto, fe, memoria)"
+          must_not:
+            - "resolución fácil del conflicto"
+          state_change:
+            from: "reconocimiento"
+            to: "desesperacion"
+          success_signal:
+            - "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
+          entity_exposure:
+            nunca: senales
+            insinuada: limites_consecuencias
+            progresiva: presencia_plena
+            explicita: consecuencias
 
-    - id: 5
-      name: "desenlace"
-      label: "Desenlace"  # Spec-620: el nombre que ve la Voz
-      word_limit: "entre 150 y 200 palabras (máxima brevedad emocional)"
-      intent: "cerrar con brevedad emocional, escape incompleto y secuela"
-      intensity: baja
-      must:
-        - "salida rapida o alejamiento del peligro"
-        - "marca persistente o evidencia ambigua"
-        - "reflexion final corta y contundente"
-      must_not:
-        - "cerrar completamente el misterio"
-      state_change:
-        from: "desesperacion"
-        to: "calma inestable"
-      success_signal:
-        - "quien escucha el relato queda con la sensacion de que el horror no termino"
-      entity_exposure:
-        nunca: segun_acto_5
-        insinuada: huella
-        progresiva: huella
-        explicita: huella
+        - id: 5
+          name: "desenlace"
+          label: "Desenlace"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Cómo termina"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          word_limit: "entre 150 y 200 palabras (máxima brevedad emocional)"
+          intent: "cerrar con brevedad emocional, escape incompleto y secuela"
+          intensity: baja
+          must:
+            - "salida rapida o alejamiento del peligro"
+            - "marca persistente o evidencia ambigua"
+            - "reflexion final corta y contundente"
+          must_not:
+            - "cerrar completamente el misterio"
+          state_change:
+            from: "desesperacion"
+            to: "calma inestable"
+          success_signal:
+            - "quien escucha el relato queda con la sensacion de que el horror no termino"
+          entity_exposure:
+            nunca: segun_acto_5
+            insinuada: huella
+            progresiva: huella
+            explicita: huella

@@ -22,8 +22,10 @@ from collections.abc import AsyncIterator, Callable
 from datetime import timedelta
 from uuid import UUID
 
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.event_bus import GLOBAL_CHANNEL, EventBus, job_channel
 from src.application.services.job_duration_estimator import JobDurationEstimator
+from src.application.services.structure import DEFAULT_STRUCTURE
 from src.config import settings
 from src.domain.jobs import (
     Job,
@@ -103,7 +105,9 @@ class JobManager:
             active = await self._jobs.get_active_for_story(story.id)
             if active is not None:
                 raise JobAlreadyActiveError(active.id)
-            job = Job(story_id=story.id, kind=kind, params=params)
+            job = Job(
+                story_id=story.id, kind=kind, params=params, total_beats=_total_beats(story, kind)
+            )
             try:
                 await self._jobs.create(job)
             except sqlite3.IntegrityError:
@@ -297,3 +301,12 @@ class JobManager:
             "finished_at": job.finished_at.isoformat() if job.finished_at else None,
             "elapsed_seconds": job.elapsed_seconds(),
         }
+
+
+def _total_beats(story: Story, kind: JobKind) -> int | None:
+    """Spec-650: los jobs que escriben actos saben desde el principio cuántos son (la
+    banda y la sala no muestran «Acto 1 de 5» en un relato corto)."""
+    if kind not in (JobKind.FULL_GENERATION, JobKind.REGENERATE_VOZ):
+        return None
+    structure = getattr(story, "structure", DEFAULT_STRUCTURE)  # dobles de prueba sin el campo
+    return BeatSpecRepository().estructura(structure).num_actos

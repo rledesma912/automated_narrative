@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 
 from src.application.dto import StoryCreateDTO
 from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.use_cases.create_story import (
     CreateStoryUseCase,
     build_entities,
@@ -161,9 +162,10 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
 @router.put("/stories/{story_id}/outline/{number}")
 async def update_act(story_id: str, number: int, form: ActForm) -> dict:
     """Guardado automático de un acto. Los avisos de la revisión quedan hasta revisar de nuevo."""
-    if not 1 <= number <= 5:
-        raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     story = await _editable(story_id)
+    # Spec-650: solo los actos de su estructura (una pestaña vieja no crea un acto de más).
+    if not BeatSpecRepository().estructura(story.structure).tiene(number):
+        raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     previous = next((a for a in story.outline if a.number == number), None)
     fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
     act = ActOutline(

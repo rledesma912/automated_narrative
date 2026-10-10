@@ -64,7 +64,7 @@ class StoryRunner:
             Lista de beats completados.
         """
         completed = []
-        total = self.prompt_builder.num_beats
+        total = self.prompt_builder.estructura(story).num_actos
         beat_t0 = perf_counter()
 
         async for beat, journal, llm_elapsed in beat_iterator:
