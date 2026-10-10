@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — UI (frontend; el Core no cambia)
-**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS ✅ (OK 2026-10-10) · S1 ✅ · S2 ✅ (2026-10-10)
+**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS ✅ (OK 2026-10-10) · S1 ✅ · S2 ✅ · S3 ✅ (2026-10-10)
 **Rama:** propia, desde `development` después del PR de la Spec-650 (decisión del usuario 2026-10-10)
 **Cambia:** Spec-630 B14 («siempre por la sala con `?escribir=1`») y B7 (borrar personajes).
 
@@ -159,3 +159,12 @@ Cada slice cierra con tests en verde y dev mostrando el cambio (URL para mirar).
 - **T3.3** `generarDesdeHistoria` redirige a la sala sin lanzar (D2). Test unitario del controlador.
 - **T3.4** E2E: `streaming-room`, `relatos`, `generation-guard`, `asistente`, `estimates`, `relato-corto` arrancan con botón → diálogo → aceptar; nuevos: cancelar no crea job, `?escribir=1` sin job muestra modo lectura, POST viejo no lanza.
 - **T3.5** CLAUDE.md (Galería / B14 → Spec-660), memoria, PR a `development`. Cierre: todo en verde y dev con el cambio.
+
+---
+
+## 6. Notas de la implementación (2026-10-10)
+
+- **Texto del diálogo con versiones:** «¿Regeneramos la historia?» / «Regenerar historia» (no «Escribir de nuevo» de la maqueta), para coincidir con el botón de «El relato» y la B19 de la Spec-630.
+- **Doble clic (encontrado en S3):** el segundo clic de un doble clic sobre el botón caía en el diálogo recién abierto y lo aceptaba sin leer (o lo cerraba). `ForgeConfirm` ignora los clics con `detail` ≥ 2; una ventana de tiempo frenaba también clics normales rápidos. E2E: `generation-guard` («doble click … pregunta una vez»).
+- **Guardado antes de escribir:** se usa `ForgeAsistente.flushAll` (ya existía) en vez de una global nueva; solo dentro de `[data-asistente]` (con hx-boost queda la de una página anterior).
+- `startGeneration` (servicio del front) quedó sin uso y se borró: ningún camino del servidor lanza la escritura.

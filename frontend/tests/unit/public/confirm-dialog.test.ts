@@ -65,3 +65,12 @@ describe("ForgeConfirm.paint", () => {
     expect(d.partes["[data-confirm-aceptar]"].textContent).toBe("Confirmar");
   });
 });
+
+describe("ForgeConfirm.isRepeatClick", () => {
+  it("ignora el segundo clic de un doble clic; un clic suelto o el teclado valen", () => {
+    expect(confirmar.isRepeatClick({ detail: 2 })).toBe(true);
+    expect(confirmar.isRepeatClick({ detail: 3 })).toBe(true);
+    expect(confirmar.isRepeatClick({ detail: 1 })).toBe(false);
+    expect(confirmar.isRepeatClick({ detail: 0 })).toBe(false); // Enter / Espacio
+  });
+});

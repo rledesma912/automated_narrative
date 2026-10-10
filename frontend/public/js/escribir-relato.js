@@ -114,24 +114,29 @@
     if (p) p.remove();
   }
 
+  /** El flujo con el navegador de verdad (también lo usa «Reintentar» de la sala). */
+  function start(btn) {
+    return run(btn, {
+      confirm: (o) => window.ForgeConfirm.ask(o),
+      // Solo en el asistente: con hx-boost ForgeAsistente queda de una página anterior.
+      before: btn.closest("[data-asistente]") && window.ForgeAsistente ? window.ForgeAsistente.flushAll : undefined,
+      fetch: (url, init) => window.fetch(url, init),
+      go: (url) => (window.location.href = url),
+      busy,
+      restore,
+      error,
+      clearError,
+    });
+  }
+
   if (typeof document !== "undefined") {
     document.addEventListener("click", (e) => {
       const btn = e.target.closest && e.target.closest("[data-escribir-relato]");
       if (!btn) return;
       e.preventDefault();
-      run(btn, {
-        confirm: (o) => window.ForgeConfirm.ask(o),
-        // Solo en el asistente: con hx-boost ForgeAsistente queda de una página anterior.
-        before: btn.closest("[data-asistente]") && window.ForgeAsistente ? window.ForgeAsistente.flushAll : undefined,
-        fetch: (url, init) => window.fetch(url, init),
-        go: (url) => (window.location.href = url),
-        busy,
-        restore,
-        error,
-        clearError,
-      });
+      start(btn);
     });
   }
 
-  return { run, textos };
+  return { run, textos, start };
 });

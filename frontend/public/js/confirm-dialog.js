@@ -16,6 +16,14 @@
   "use strict";
 
   const ICONOS = ["aviso", "escribir", "borrar"];
+  /**
+   * Spec-660: el segundo clic de un doble clic cae sobre el diálogo recién abierto y lo
+   * aceptaba (o cerraba) sin que se leyera. El navegador lo marca con `detail` ≥ 2
+   * (un clic suelto es 1; con el teclado, 0): ese se ignora.
+   */
+  function isRepeatClick(e) {
+    return (e && e.detail) > 1;
+  }
 
   /** Llena el diálogo; sin `icon` ni `note` queda como siempre. */
   function paint(dialog, { title = "¿Seguro?", message = "", confirmLabel = "Confirmar", icon, note } = {}) {
@@ -48,6 +56,7 @@
         resolve(ok);
       }
       function onClick(e) {
+        if (isRepeatClick(e)) return;
         if (e.target.closest("[data-confirm-aceptar]")) done(true);
         else if (e.target.closest("[data-confirm-cancelar]") || e.target === dialog) done(false);
       }
@@ -74,5 +83,5 @@
     });
   }
 
-  return { ask, paint };
+  return { ask, paint, isRepeatClick };
 });

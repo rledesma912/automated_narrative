@@ -42,54 +42,39 @@ describe("streamingRoomPage", () => {
       .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status: "processing" } })
       .mockResolvedValueOnce({ data: { job_id: "job-1", status: "running" } });
 
-    const ctx = await render({ regenerate: "1" });
+    const ctx = await render();
 
     expect(ctx.activeJobId).toBe("job-1");
-    expect(ctx.regenerateMode).toBe(false); // con job activo no se pide confirmación
     expect(ctx.beats).toEqual([]);
     expect(get).toHaveBeenCalledTimes(2);
     expect(get.mock.calls[1][0]).toMatch(/\/api\/v1\/stories\/abc-123\/jobs\/active$/);
   });
 
-  it("sin job activo carga los beats y habilita la confirmación de regenerar", async () => {
+  it("sin job activo carga los beats para el modo lectura", async () => {
     get
       .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status: "completed" } })
       .mockRejectedValueOnce(notFound())
       .mockResolvedValueOnce({ data: [{ number: 1, content: "x" }] });
 
-    const ctx = await render({ regenerate: "1" });
+    const ctx = await render();
 
     expect(ctx.activeJobId).toBeNull();
-    expect(ctx.regenerateMode).toBe(true);
     expect(ctx.beats).toEqual([{ number: 1, content: "x" }]);
     expect(ctx.storyStatus).toBe("completed");
   });
 
-  // Spec-630 B14: `?escribir=1` arranca desde la sala (Mis historias ya no genera).
-  it.each([
-    ["draft", { startMode: true, regenerateMode: false }],
-    ["failed", { startMode: true, regenerateMode: false }],
-    ["completed", { startMode: false, regenerateMode: true }],
-  ])("?escribir=1 con la historia %s", async (status, expected) => {
-    get
-      .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status } })
-      .mockRejectedValueOnce(notFound())
-      .mockResolvedValueOnce({ data: [] });
-
-    const ctx = await render({ escribir: "1" });
-
-    expect({ startMode: ctx.startMode, regenerateMode: ctx.regenerateMode }).toEqual(expected);
-  });
-
-  it("sin ?escribir=1 un borrador queda en modo lectura", async () => {
+  // Spec-660 D4: `?escribir=1` / `?regenerate=1` de links viejos no cambian nada.
+  it.each([{ escribir: "1" }, { regenerate: "1" }, {}])("la sala no pregunta (%o)", async (query) => {
     get
       .mockResolvedValueOnce({ data: { id: "abc-123", title: "T", status: "draft" } })
       .mockRejectedValueOnce(notFound())
       .mockResolvedValueOnce({ data: [] });
 
-    const ctx = await render();
+    const ctx = await render(query);
 
-    expect(ctx.startMode).toBe(false);
+    expect(ctx).not.toHaveProperty("startMode");
+    expect(ctx).not.toHaveProperty("regenerateMode");
+    expect(ctx.activeJobId).toBeNull();
   });
 
   it("no expone URLs del Core al template (Spec-221: el browser usa rutas relativas)", async () => {
