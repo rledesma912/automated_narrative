@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6: medición ✅
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ✅ (medición, CLAUDE.md, PR)
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
