@@ -109,7 +109,7 @@ export const corregirRelatoPage = async (req: Request, res: Response) => {
     if (!relato) return res.status(404).send("Relato no encontrado.");
     const actos = splitActs(relato.content);
     const otroLargo = deOtroLargo(relato.content, story.structure); // Spec-650 D11
-    const lectura = await getReadingSettings();
+    const lectura = await getReadingSettings(actos.length); // Spec-650: según el largo del relato
     const acto = Math.min(Math.max(Number(req.query["acto"]) || 1, 1), Math.max(actos.length, 1));
 
     res.setHeader("Cache-Control", "no-store");
@@ -151,7 +151,7 @@ export const videoPage = async (req: Request, res: Response) => {
       relato,
       script,
       actos,
-      lectura: await getReadingSettings(),
+      lectura: await getReadingSettings(actos.length), // Spec-650: según el largo del relato
       title: `Para el video: «${story.title || "Sin título"}»`,
       activePage: "gallery",
     });

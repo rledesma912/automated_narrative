@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-09
 **Tipo:** SDD — épica (estructura del relato: asistente, pipeline, UI y video)
-**Estado:** SPECIFY ✅ (D1–D8 con lo recomendado, OK del usuario 2026-10-09) · PLAN ✅ (D9–D11 con lo recomendado, OK 2026-10-09) · TASKS ✅ (OK 2026-10-09) · S1 ✅ (2026-10-09) · S2 ✅ · S3 ✅ (2026-10-10)
+**Estado:** SPECIFY ✅ (D1–D8 con lo recomendado, OK del usuario 2026-10-09) · PLAN ✅ (D9–D11 con lo recomendado, OK 2026-10-09) · TASKS ✅ (OK 2026-10-09) · S1 ✅ (2026-10-09) · S2 ✅ · S3 ✅ · S4 ✅ (2026-10-10)
 **Rama:** `feat/spec-650-relato-corto-tres-actos` (desde `development`, `cafb508`)
 **Extiende:** Spec-530 (asistente y escaleta), Spec-560 (puente y receta del efecto), Spec-590/610 D11 (extensión por acto), Spec-610 (paquete para el video), Spec-620 (textos fuera del código).
 
@@ -324,12 +324,13 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
   **Encontrado en S3:** (1) el front lee todo 409 como «la IA está trabajando»: D11 pasa a **422** (Core + Corregir muestra el motivo); además el panel del relato y Corregir **no ofrecen «Regenerar»** en una versión del otro largo y lo explican con una nota. (2) «≈ N min» antes de lanzar salía del largo: `GET /jobs/estimates?story_id=` (el Core resuelve el largo; el middleware lo pasa). (3) Cambiar el largo justo después de que se guardara «Tu idea» mostraba «Guardado» antes de tiempo (lo agarró el E2E): se vuelve a marcar pendiente después de descargar lo pendiente. (4) Si eligen el largo mientras la historia se está creando, se aplica apenas existe.
   **Aparte:** Vitest a veces se cae con *segmentation fault* / «Worker exited unexpectedly» (≈ 1 de 8 corridas), también con el front de `9d60c27`: es del entorno, no de estos cambios.
 
-### S4 — Video
+### S4 — Video · ✅ 2026-10-10
 
 - **T4.1** Rangos por estructura en `biblia_visual.yaml`, `lectura.yaml`, `video/config.py` (validados).
 - **T4.2** `script_builder`, `prompts`, `video_router` (`/video/lectura` y `…/video-script` con el episodio del relato).
 - **T4.3** `timing.py` / `tiempos.js` en «Corregir» con el rango del relato + casos compartidos del corto.
 - **Checkpoint S4:** paquete de un corto con el mock pasa los chequeos.
+- **Resultado S4:** los rangos del largo quedan donde estaban (`momentos`, `videos`, `episodio_minutos`) y el corto va en `por_estructura` (biblia: 6–9 momentos, 1–2 videos) y `episodio_por_estructura` (lectura: 6–8 min); `VideoConfig` no carga si falta el corto. El largo del relato sale de **cuántos actos tiene la versión** (`estructura_del_relato`), no de la historia (D11). `GET /video/lectura?actos=N`; Corregir y «Para el video» lo piden con los actos de la versión. pytest 947 ✅ (snapshot `video_prompts.json` sin cambios; `test_video_corto.py`, 9 casos; casos compartidos de `tiempos` con 6–8), Vitest 392 ✅, Playwright 72 ✅ (E2E del corto: Corregir muestra «6–8 min» y el guion se arma), lint/tsc ✅, `make dev-status` ✅. El test de `/video/lectura` se actualizó: la respuesta trae además `estructura`.
 
 ### S5 — Medición y validación
 

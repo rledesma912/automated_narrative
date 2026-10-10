@@ -14,6 +14,13 @@ momentos: { desde: 10, hasta: 15 }
 mezcla: { imagen: 0.50, animacion: 0.35, video: 0.15 }
 videos: { desde: 1, hasta: 2 }
 
+# Spec-650: `momentos` y `videos` de arriba son los del relato largo (~15 min). El corto
+# (~7 min, 3 actos) tiene menos momentos en pantalla.
+por_estructura:
+  corto:
+    momentos: { desde: 6, hasta: 9 }
+    videos: { desde: 1, hasta: 2 }
+
 tipos:
   imagen:
     nombre: Imagen fija

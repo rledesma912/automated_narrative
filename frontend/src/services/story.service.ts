@@ -139,9 +139,13 @@ export interface ReadingSettings {
 
 const DEFAULT_READING: ReadingSettings = { palabras_por_minuto: 150, episodio_minutos: { desde: 12, hasta: 17 } };
 
-export const getReadingSettings = async (): Promise<ReadingSettings> => {
+/** Spec-650: con los actos del relato, el episodio es el de su largo (el corto, ~7 min). */
+export const getReadingSettings = async (actos?: number): Promise<ReadingSettings> => {
   try {
-    const resp = await axios.get<ReadingSettings>(`${CORE_API_URL}/api/v1/video/lectura`, { timeout: 3000 });
+    const resp = await axios.get<ReadingSettings>(`${CORE_API_URL}/api/v1/video/lectura`, {
+      timeout: 3000,
+      params: actos ? { actos } : undefined,
+    });
     return resp.data;
   } catch {
     return DEFAULT_READING;

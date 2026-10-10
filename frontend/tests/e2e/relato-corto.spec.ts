@@ -70,6 +70,20 @@ test("«El relato» y «Mis historias» marcan el corto", async ({ page }) => {
   await expect(card.locator("[data-corto]")).toHaveText("Corto");
 });
 
+test("S4: corregir y armar el guion del corto usan su largo (6–8 min)", async ({ page }) => {
+  await page.goto(`/historia/${sid}/relatos`);
+  const narrativeId = await page.locator("[data-relato-panel].active").getAttribute("data-relato-panel");
+
+  await page.goto(`/historia/${sid}/relatos/${narrativeId}/corregir`);
+  await expect(page.locator("[data-duracion-estado]")).toContainText("(6–8 min)");
+
+  await page.goto(`/historia/${sid}/relatos`);
+  await page.locator(`[data-acciones-version="${narrativeId}"] [data-armar-guion]`).click();
+  await page.locator("#forge-confirm").getByRole("button", { name: "Armar el guion" }).click();
+  await page.waitForURL(new RegExp(`/relatos/${narrativeId}/video$`), { timeout: 20_000 });
+  await expect(page.locator("[data-bloque]").first()).toBeVisible();
+});
+
 test("cambiar el largo pide confirmación; cancelar no cambia nada", async ({ page, request }) => {
   await page.goto(`/asistente/${sid}/direccion`);
   await page.getByText("Largo", { exact: true }).click();
