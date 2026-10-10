@@ -194,6 +194,9 @@ ARCHIVOS_PERMITIDOS = {
     "src/application/services/video/config.py": (
         "validación de config/video/ (Spec-610): errores para quien edita el YAML, al arrancar"
     ),
+    "src/application/services/authoring/molde.py": (
+        "validación de config/moldes/ (Spec-670): errores para quien edita el YAML, al arrancar"
+    ),
 }
 
 

@@ -11,6 +11,9 @@
 #
 # Spec-650: `acto` dice en qué acto va según la estructura (largo / corto).
 # El orden es el orden en que se muestran y se evalúan: sigue a los actos.
+#
+# Spec-670: es el **banco** de criterios (ids únicos). Cuáles pregunta cada historia lo
+# dice su molde (`config/moldes/`): la base, los de su forma y el de su giro.
 
 direccion:
   - id: meta
@@ -46,11 +49,33 @@ direccion:
     acto: { largo: 2, corto: 2 }
     origen: Aristóteles (nudo) / Freytag (incidente incitador) / transgresión del acto 2
 
+  # Spec-670, forma «Algo viene por nosotros» (asedio).
+  - id: asedio_acercamiento
+    nombre: Cómo se acerca
+    pregunta: ¿Cómo se va acercando la amenaza, paso a paso (cada vez más cerca, cada vez más señales), hasta llegar al protagonista?
+    por_que: "Primero lejos, después más cerca, después en la puerta. Cada paso tiene que dar más miedo que el anterior."
+    acto: { largo: 2, corto: 2 }
+    origen: asedio / home invasion (escalada por proximidad)
+
+  - id: asedio_refugio
+    nombre: Dónde se refugian
+    pregunta: ¿Dónde se esconde o se protege el protagonista cuando la amenaza llega, y por qué cree que ahí está a salvo?
+    por_que: "El lugar donde {protagonista} se siente seguro. Cuando la amenaza llega hasta ahí, el miedo es más grande."
+    acto: { largo: 3, corto: 2 }
+    origen: asedio (el refugio que se rompe)
+
   - id: historia_secreta
     nombre: Lo que esconde la historia
     pregunta: ¿Hay algo oculto que explique por qué la amenaza lo busca a él (un vínculo, una culpa, un secreto)?
     por_que: "Lo que no se ve al principio y explica por qué le pasa justo a {protagonista}: un vínculo, una culpa, algo que pasó antes."
     origen: Piglia, «Tesis sobre el cuento»
+
+  - id: asedio_causa
+    nombre: Qué la empuja a venir
+    pregunta: ¿Qué empuja a la amenaza a acercarse (hambre, algo que cambió en su lugar, algo que la echó), sin que el protagonista la haya provocado?
+    por_que: "En esta clase de historia nadie tiene la culpa: algo la empuja a venir. Saber qué es, aunque {protagonista} lo entienda tarde, le da sentido a todo."
+    acto: { largo: 4, corto: 2 }
+    origen: asedio (la causa externa; horror ecológico)
 
   - id: descubrimiento
     nombre: Lo que descubre {protagonista}
@@ -72,3 +97,10 @@ direccion:
     por_que: "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
     acto: { largo: 5, corto: 3 }
     origen: Poe (unidad de efecto) / residuo
+
+  # Spec-670, giro «La amenaza tiene una regla rara».
+  - id: regla_de_la_amenaza
+    nombre: La regla de la amenaza
+    pregunta: ¿Qué regla extraña sigue la amenaza (no cruza el agua, solo sale de a uno, contesta si la nombran)? Tiene que poder decidir el final.
+    por_que: "Una regla rara hace que la amenaza sea de esta historia y no de cualquiera. Y si {protagonista} la descubre, la puede usar."
+    origen: "folklore (las reglas del ser: umbral, nombre, sal, agua)"

@@ -1,0 +1,11 @@
+# Spec-670: giros (ingredientes). Opcionales: cada uno suma un criterio (una pregunta)
+# y reglas para el Planificador, y se cruza con cualquier forma. El resto del catálogo
+# llega en la S2 (con la lectura del usuario).
+
+ingredientes:
+  - id: regla_rara
+    nombre: La amenaza tiene una regla rara
+    ayuda: "No cruza el agua, solo sale de a uno, contesta si la nombran…"
+    criterios: [regla_de_la_amenaza]
+    reglas:
+      - "La regla rara de la amenaza aparece en un hecho antes del último acto y decide cómo termina."

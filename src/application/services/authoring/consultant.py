@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, create_model
 
-from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.authoring import catalog, context, molde, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
@@ -28,7 +28,8 @@ class WorkshopConsultant:
 
     async def analyze(self, story: Story) -> WorkshopRound:
         """Una ronda del taller: evalúa lo pendiente y devuelve el taller actualizado."""
-        items = workshop_rules.initial_items(story.direction, story.workshop)
+        criterios = molde.for_story(story).criterios  # Spec-670 D11: solo los del molde
+        items = workshop_rules.initial_items(story.direction, story.workshop, criterios)
         round_ = max((w.round for w in story.workshop), default=0) + 1
         pending = workshop_rules.to_evaluate(items)
         if not pending:

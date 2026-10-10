@@ -154,7 +154,7 @@ class OutlineVerifier:
         if a.decisions:
             names = [
                 c.for_story(protagonist).nombre
-                for c in catalog.direction_criteria()
+                for c in catalog.criteria_bank()  # Spec-670: el banco (cualquier forma)
                 if c.id in a.decisions
             ]
             lines.append(t("asistente/verificador/acto/usa", decisiones=", ".join(names)))

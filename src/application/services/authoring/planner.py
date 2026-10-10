@@ -7,7 +7,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel, model_validator
 
-from src.application.services.authoring import context
+from src.application.services.authoring import context, molde
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
@@ -73,9 +73,7 @@ class OutlinePlanner:
             self.llm,
             role=ROLE,
             prompt=self._prompt(story),
-            system_prompt=self.templates.load("authoring_planner_system.md").format(
-                num_actos=self.prompt_builder.estructura(story).num_actos
-            ),
+            system_prompt=self.system_prompt(story),
             output=escaleta_model(self.prompt_builder.estructura(story).num_actos),
         )
         valid = {cid for cid, _, _ in context.decisions(story)}
@@ -94,6 +92,17 @@ class OutlinePlanner:
                 acts[-1] = last.model_copy(update={"decisions": [*last.decisions, "final"]})
         return acts, elapsed
 
+    def system_prompt(self, story: Story) -> str:
+        """Las reglas de siempre y, al final, las de la forma y el giro (Spec-670)."""
+        base = self.templates.load("authoring_planner_system.md").format(
+            num_actos=self.prompt_builder.estructura(story).num_actos
+        )
+        reglas = [
+            self.templates.fragment("asistente/planificador/regla_de_la_forma", regla=r)
+            for r in molde.for_story(story).reglas
+        ]
+        return "\n".join([base, *reglas])
+
     def _prompt(self, story: Story) -> str:
         scenarios = "; ".join(
             f"{s.name}: {s.description}" if s.description else s.name for s in story.scenarios
@@ -106,7 +115,7 @@ class OutlinePlanner:
             borradores=self._drafts_block(story),
             problemas=self._problems_block(story),
             reglas=self._rules_block(story),
-            efecto=context.effect_block(story, t),
+            efecto=self._arc_block(story) + context.effect_block(story, t),
             escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
             ultimo=self.prompt_builder.estructura(story).ultimo,
@@ -114,19 +123,31 @@ class OutlinePlanner:
             hechos_por_acto=self.prompt_builder.estructura(story).hechos_por_acto,
         )
 
+    def _arc_block(self, story: Story) -> str:
+        """Spec-670 D14: con «Otra», cómo contó el autor su historia."""
+        arco = molde.for_story(story).arco
+        return (
+            self.templates.fragment("asistente/planificador/arco", arco=arco) + "\n\n"
+            if arco
+            else ""
+        )
+
     def _acts_block(self, story: Story) -> str:
         ending_fixed = bool(story.direction and story.direction.ending_intentional)
-        has_secret = any(cid == "historia_secreta" for cid, _, _ in context.decisions(story))
+        m = molde.for_story(story)
+        # Spec-670 D15: cada forma dice qué se revela (en la de siempre, la historia secreta).
+        decided = {cid for cid, _, _ in context.decisions(story)}
+        reveal = m.revela if m.revela and m.revela.criterio in decided else None
         t = self.templates.fragment
         estructura = self.prompt_builder.estructura(story)
         lines = []
         for n in estructura.numeros:
             info = self.prompt_builder.get_beat_info(n, structure=estructura.id)
-            intent = info.get("intent", "")
+            intent = m.intencion(n, info.get("intent", ""))  # Spec-670: lo que pide la forma
             if n == estructura.ultimo and ending_fixed:
                 intent = t("asistente/planificador/final_del_autor")
-            if n == estructura.revela_secreto and has_secret:
-                intent += t("asistente/planificador/historia_secreta")
+            if n == estructura.revela_secreto and reveal:
+                intent += reveal.texto
             if info.get("hechos"):  # Spec-650: cuántos hechos (la extensión sale de ahí)
                 intent += t("asistente/planificador/hechos", hechos=info["hechos"])
             lines.append(

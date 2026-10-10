@@ -42,8 +42,9 @@ class Option:
 
 
 @lru_cache
-def direction_criteria(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, ...]:
-    """Spec-650: `acto` del criterio en la estructura pedida (largo / corto)."""
+def criteria_bank(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, ...]:
+    """Spec-670: todos los criterios (el banco), con su `acto` en la estructura pedida
+    (Spec-650). Cuáles pregunta cada historia lo dice su molde (`molde.py`)."""
     data = yaml.safe_load((_CONFIG / "workshop_criteria.yaml").read_text(encoding="utf-8"))
     return tuple(
         Criterion(
@@ -53,8 +54,17 @@ def direction_criteria(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, .
     )
 
 
+def direction_criteria(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, ...]:
+    """Los criterios del molde de siempre (la primera forma, sin giro). Para lo que no
+    tiene una historia a mano (`/options`); lo de cada historia es `molde.for_story`."""
+    from src.application.services.authoring import molde  # molde importa este módulo
+
+    return molde.default(structure).criterios
+
+
 def criterion(criterion_id: str, structure: str = DEFAULT_STRUCTURE) -> Criterion | None:
-    return next((c for c in direction_criteria(structure) if c.id == criterion_id), None)
+    """Un criterio del banco (de cualquier forma o giro)."""
+    return next((c for c in criteria_bank(structure) if c.id == criterion_id), None)
 
 
 def _for(value, structure: str):

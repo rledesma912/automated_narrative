@@ -7,7 +7,7 @@ Spec-620: el texto vive en `config/prompts_generation/fragments/asistente/`; las
 que arman texto reciben el `TemplateLoader` de quien las llama.
 """
 
-from src.application.services.authoring import catalog
+from src.application.services.authoring import catalog, molde
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
 from src.domain.models import CriterionStatus, Story, WorkshopItem, WorkshopLevel
@@ -125,7 +125,10 @@ def pending_block(story: Story, templates: TemplateLoader) -> str:
 
 
 def _direction_items(story: Story) -> list[WorkshopItem]:
-    return [w for w in story.workshop if w.level == WorkshopLevel.DIRECCION]
+    """Spec-670 D11: solo los criterios del molde de la historia. Las respuestas de otra
+    forma quedan guardadas (vuelven si se vuelve a esa forma) pero no llegan a la IA."""
+    ids = set(molde.for_story(story).ids)
+    return [w for w in story.workshop if w.level == WorkshopLevel.DIRECCION and w.criterion in ids]
 
 
 def effect_recipe(story: Story) -> tuple[str, str]:

@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 
 from src.application.dto import StoryCreateDTO
-from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.authoring import catalog, context, molde, workshop_rules
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.use_cases.create_story import (
     CreateStoryUseCase,
@@ -80,7 +80,7 @@ async def create_authoring_story(form: DirectionForm) -> dict:
     repo = SQLStoryRepository()
     dto = StoryCreateDTO(
         **_story_fields(form, existing=None),
-        direction=_direction(form).model_dump(),
+        direction=_direction_or_422(form).model_dump(),
         entities=_threat(form),
         structure=form.structure,  # Spec-650: se elige al crear
     )
@@ -111,7 +111,11 @@ async def update_direction(story_id: str, form: DirectionForm) -> dict:
         setattr(story, key, value)
     story.entities = entities
     await repo.update_inputs(story)
-    await repo.update_direction(story.id, _direction(form))
+    try:
+        direction = _direction(form, story.direction)
+    except InvalidStoryInputError as e:
+        raise _unprocessable(e) from e
+    await repo.update_direction(story.id, direction)
     return await _state(await repo.get_by_id(story.id))
 
 
@@ -160,9 +164,9 @@ async def act_on_criterion(story_id: str, criterion: str, body: WorkshopAction) 
         ),
         None,
     )
+    if criterion not in molde.for_story(story).ids:  # Spec-670 D11: de otra forma o inexistente
+        raise HTTPException(status_code=404, detail=f"Criterio desconocido: {criterion}")
     if item is None:
-        if catalog.criterion(criterion) is None:
-            raise HTTPException(status_code=404, detail=f"Criterio desconocido: {criterion}")
         item = WorkshopItem(criterion=criterion)
     try:
         updated = _apply(item, body)
@@ -430,7 +434,14 @@ def _unprocessable(e: Exception) -> HTTPException:
     return HTTPException(status_code=422, detail=text)
 
 
-def _direction(form: DirectionForm) -> Direction:
+def _direction(form: DirectionForm, existing: Direction | None = None) -> Direction:
+    """La dirección del formulario. Lo que sugirió la IA no viene en el formulario: se
+    conserva de la guardada (Spec-670 D13; si no, cada autoguardado lo borraría)."""
+    cat = molde.catalogo()
+    if form.form and cat.forma(form.form) is None:
+        raise InvalidStoryInputError(message("api.forma_desconocida", forma=form.form))
+    if form.ingredient and cat.giro(form.ingredient) is None:
+        raise InvalidStoryInputError(message("api.giro_desconocido", giro=form.ingredient))
     return Direction(
         premise=form.premise.strip(),
         effect=form.effect,
@@ -438,7 +449,19 @@ def _direction(form: DirectionForm) -> Direction:
         ending=form.ending.strip(),
         ending_intentional=form.ending_intentional,
         telling=form.telling,
+        form=form.form,
+        ingredient=form.ingredient,
+        form_other=form.form_other.strip(),
+        form_suggested=existing.form_suggested if existing else "",
+        form_reason=existing.form_reason if existing else "",
     )
+
+
+def _direction_or_422(form: DirectionForm) -> Direction:
+    try:
+        return _direction(form)
+    except InvalidStoryInputError as e:
+        raise _unprocessable(e) from e
 
 
 def _threat(form: DirectionForm) -> list[dict]:
@@ -490,6 +513,12 @@ def _form(story: Story) -> dict:
         "ending": d.ending,
         "ending_intentional": d.ending_intentional,
         "telling": d.telling,
+        # Spec-670: el molde ("" = la forma de siempre / sin giro).
+        "form": d.form,
+        "ingredient": d.ingredient,
+        "form_other": d.form_other,
+        "form_suggested": d.form_suggested,
+        "form_reason": d.form_reason,
         "protagonist_name": lead.get("name", ""),
         "protagonist_role": lead.get("role", ""),
         "narrator": (story.narrator_config or {}).get("storyteller_name", ""),
@@ -515,7 +544,8 @@ async def _state(story: Story) -> dict:
     """Todo lo que necesitan las tres vistas del asistente."""
     items = [w for w in story.workshop if w.level == WorkshopLevel.DIRECCION]
     by_id = {w.criterion: w for w in items}
-    ordered = [by_id[c.id] for c in catalog.direction_criteria() if c.id in by_id]
+    criterios = molde.for_story(story).criterios  # Spec-670 D11: los del molde, en su orden
+    ordered = [by_id[c.id] for c in criterios if c.id in by_id]
     if ordered:
         f = workshop_rules.finish(ordered)
         finish = {"kind": f.kind, "text": f.text, "open_questions": f.open_questions}
@@ -545,7 +575,7 @@ async def _state(story: Story) -> dict:
                 {**w.model_dump(mode="json"), "nombre": c.nombre, "por_que": c.por_que}
                 for w, c in (
                     (by_id[c.id], c.for_story(context.protagonist(story)))
-                    for c in catalog.direction_criteria()
+                    for c in criterios
                     if c.id in by_id
                 )
             ],

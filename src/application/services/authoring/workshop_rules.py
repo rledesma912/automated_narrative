@@ -36,11 +36,16 @@ class Finish:
     open_questions: int
 
 
-def initial_items(direction: Direction | None, existing: list[WorkshopItem]) -> list[WorkshopItem]:
-    """Un ítem por criterio de la dirección; el final intencional ya viene resuelto."""
+def initial_items(
+    direction: Direction | None,
+    existing: list[WorkshopItem],
+    criteria: tuple[catalog.Criterion, ...] | None = None,
+) -> list[WorkshopItem]:
+    """Un ítem por criterio del molde (Spec-670: `criteria`; sin eso, el de siempre); el
+    final intencional ya viene resuelto. Los guardados de otros criterios no entran (D11)."""
     by_id = {w.criterion: w for w in existing if w.level == WorkshopLevel.DIRECCION}
     items = []
-    for c in catalog.direction_criteria():
+    for c in criteria if criteria is not None else catalog.direction_criteria():
         item = by_id.get(c.id) or WorkshopItem(criterion=c.id, round=1)
         if c.id == "final" and direction and direction.ending_intentional and direction.ending:
             item = item.model_copy(

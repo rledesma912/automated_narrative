@@ -1,0 +1,65 @@
+# Spec-670: moldes de historia. El molde de una historia = base + forma + giro + largo.
+#
+# - `base`: los criterios que toda historia lleva (ids del banco `config/workshop_criteria.yaml`).
+# - `formas`: la clase de historia. Cada una suma sus criterios (como mucho 4: con la
+#   base, 9 preguntas como máximo, D10), lo que pide cada acto por estructura
+#   (`actos`; si no trae, los de `llm_beats_definition.yaml`), reglas para el
+#   Planificador y qué se revela (`revela`: el criterio y el texto que se suma en el
+#   acto `revela_secreto` de la estructura; la intención de ese acto no lo repite).
+# - `arco_del_autor`: la forma «Otra» (D14): el Planificador recibe cómo la contó el autor.
+#
+# La primera forma es la de siempre (historias viejas y YAML importados, D3 / D16):
+# sin `actos` ni `reglas` propias sale igual que antes de la Spec-670.
+# Cada pieza tiene que prevenir un error que se vio de verdad (§1.2 de la spec).
+
+base: [meta, inquietud, en_juego, reaccion, final]
+
+formas:
+  - id: regla
+    nombre: Alguien rompe una regla
+    ayuda: Le avisan, no hace caso, lo hace igual y algo despierta.
+    criterios: [vulnerabilidad, transgresion, historia_secreta, descubrimiento]
+    revela:
+      criterio: historia_secreta
+      texto: "; acá el protagonista descubre o confiesa la historia secreta"
+
+  # «La laguna oscura»: nadie provoca a la criatura; viene por hambre (la fábrica).
+  - id: asedio
+    nombre: Algo viene por nosotros
+    ayuda: "Nadie lo provocó: viene por una causa de afuera y no se va."
+    criterios: [asedio_acercamiento, asedio_refugio, asedio_causa]
+    actos:
+      largo:
+        1: "establecer la normalidad del lugar y sembrar las primeras señales de que algo se acerca, sin culpables: nadie provoca nada"
+        2: "la amenaza se acerca paso a paso: cada señal más cerca y más concreta que la anterior, y el protagonista intenta protegerse"
+        3: "la amenaza llega y ataca justo donde se sentían a salvo: el peor momento"
+        4: "reaccionar ante la amenaza: resistir, huir o pedir ayuda"
+        5: "cerrar con brevedad emocional: sobreviven, pero la causa sigue ahí y la amenaza puede volver"
+      corto:
+        1: "establecer la normalidad del lugar y sembrar las primeras señales de que algo se acerca, sin culpables: nadie provoca nada"
+        2: "la amenaza se acerca paso a paso y ataca justo donde se sentían a salvo"
+        3: "sobrevivir sin resolverlo: la causa sigue ahí y la amenaza puede volver; cerrar con brevedad emocional y una marca que queda"
+    reglas:
+      - "Nadie provoca a la amenaza: viene por una causa de afuera. No inventes una culpa, una transgresión ni un secreto del protagonista."
+      - "La amenaza se acerca por etapas: en cada acto está más cerca que en el anterior."
+    revela:
+      criterio: asedio_causa
+      texto: "; acá se entiende qué empuja a la amenaza a venir: una causa de afuera, no algo que hizo el protagonista"
+
+  # D14: la historia no es de ninguna clase del catálogo; el autor cuenta el arco.
+  - id: otra
+    nombre: Otra clase de historia
+    ayuda: "No es ninguna de estas: contala con tus palabras."
+    criterios: []
+    arco_del_autor: true
+    actos:
+      largo:
+        1: "establecer la normalidad y lo primero raro, siguiendo cómo contó el autor su historia"
+        2: "que la situación se complique, siguiendo cómo contó el autor su historia"
+        3: "llegar al peor momento, siguiendo cómo contó el autor su historia"
+        4: "lo que hace el protagonista después del peor momento, siguiendo cómo contó el autor su historia"
+        5: "cerrar con brevedad emocional y una marca que queda, siguiendo cómo contó el autor su historia"
+      corto:
+        1: "establecer la normalidad y lo primero raro, siguiendo cómo contó el autor su historia"
+        2: "que la situación se complique hasta el peor momento, siguiendo cómo contó el autor su historia"
+        3: "cerrar con brevedad emocional y una marca que queda, siguiendo cómo contó el autor su historia"

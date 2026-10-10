@@ -30,6 +30,10 @@ class DirectionForm(BaseModel):
     ending: str = Field("", max_length=600)
     ending_intentional: bool = False
     telling: str = ""
+    # Spec-670: la clase de historia, el giro y, con «Otra», cómo la cuenta el autor.
+    form: str = ""
+    ingredient: str = ""
+    form_other: str = Field("", max_length=600)
     protagonist_name: str = Field("", max_length=60)
     protagonist_role: str = Field("", max_length=160)
     narrator: str = Field("", max_length=60)  # "" = el protagonista
