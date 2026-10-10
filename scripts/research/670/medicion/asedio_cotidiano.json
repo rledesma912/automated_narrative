@@ -1,0 +1,47 @@
+{
+  "molde": "asedio+cotidiano",
+  "forma": "Algo viene por nosotros",
+  "giro": "Lo de todos los días es lo que asusta",
+  "actos": [
+    {
+      "numero": 1,
+      "hechos": [
+        "Tito cuenta, como un caso entre amigos, cómo es la casa de su familia: una chacra al borde del bosque, con la laguna oscura a unos cien metros del fondo del patio, y cómo su viejo usa el balde de lata de siempre para llevarle agua al gallinero.",
+        "Una tarde Tito y su padre salen a revisar el cerco del fondo y encuentran la orilla cubierta de peces muertos, panza arriba, y huellas anchas y arrastradas que van del barro hacia el pasto.",
+        "Don Raúl, el viejo del campo vecino, pasa con la carretilla, mira las huellas sin decir nada al principio y después les cuenta que desde siempre dicen que algo vive en el fondo de la laguna y que nunca sale.",
+        "Esa noche el perro del vecino ladra hasta que se corta de golpe, y Tito se queda despierto mirando por la ventana hacia el fondo, sin ver nada."
+      ],
+      "avisos": [
+        "Este acto tiene 4 hechos y en un relato corto entran 3: ¿cuáles juntamos o sacamos?",
+        "Tito quiere entender qué le pasa a Bruno, que no se acerca a la laguna, pero Bruno no aparece en ningún hecho ni está entre los personajes. Sumalo o mostrá en algún momento qué pasa con él.",
+        "Al final del acto Tito ya sabe de los peces muertos, las huellas y la leyenda: hay bastante para un primer acto, pero la huella ya muestra una pista bien concreta y no solo una insinuación. Si querés que en este acto solo se insinúe, dejá las huellas para el acto 2."
+      ]
+    },
+    {
+      "numero": 2,
+      "hechos": [
+        "Tito y su padre caminan hasta el cerco de la fábrica y ven que un caño tira un líquido espeso y brillante directo a la laguna, y un obrero les dice que la actividad sigue igual, sin explicaciones.",
+        "Esa tarde el vecino aparece en la puerta con sus perros, que están flacos y temblando, y cuenta que el más viejo desapareció de noche sin hacer ruido, arrastrando la cadena.",
+        "Tito encuentra el balde de lata del gallinero tirado en el patio, abollado y con restos de barro negro, mucho más cerca de la casa que el cerco.",
+        "Esa noche Tito escucha pasos pesados y mojados en el patio, sale con una linterna y ve las huellas frescas llegando hasta la puerta de la cocina.",
+        "Una forma enorme y oscura se levanta del pasto junto al gallinero, y Tito, con la luz temblando, grita para despertar a sus padres mientras la criatura avanza hacia la casa."
+      ],
+      "avisos": [
+        "Las huellas aparecen en el acto 1 y vuelven a aparecer en el 2 como hallazgo ('ves las huellas frescas'). Cuidá que el segundo hallazgo sume algo nuevo (llegan hasta la puerta) y no repita el primero.",
+        "El vecino aparece en este acto pero no está en el acto 1, donde solo se mencionan los perros del vecino. Está en el elenco, así que está bien, pero acordate de que quien escucha no lo conoce: presentalo con una línea cuando entre."
+      ]
+    },
+    {
+      "numero": 3,
+      "hechos": [
+        "A la mañana Tito sale con su padre y encuentra el camino de barro negro que baja hasta la orilla, y en la puerta de la cocina la marca húmeda que dejó la criatura.",
+        "Don Raúl se acerca, mira la laguna oscura y les dice que mientras la fábrica siga tirando eso al agua, lo que vive ahí abajo no va a poder quedarse mucho tiempo quieto.",
+        "Tito cuenta cómo esa misma noche vuelve a apoyar la linterna en la ventana y mira hacia el fondo, y cómo hasta hoy el balde de lata sigue sin sonar de noche y a veces el agua del patio amanece turbia."
+      ],
+      "avisos": [
+        "La explicación de por qué la criatura sale del agua (el líquido de la fábrica) ya se ve en el acto 2, cuando Tito mira el caño. En el acto 3 Don Raúl la vuelve a decir con otras palabras: usá a Don Raúl para sumar algo nuevo (cuánto aguanta bajo el agua, qué es realmente) y no repetir lo que ya se sabe.",
+        "El acto 2 promete que se va a saber si la criatura volverá a salir o puede quedarse bajo el agua, pero el acto 3 solo dice que 'puede volver cuando quiera'. Si querés dejar la duda abierta, está bien; si no, que se sepa algo más claro."
+      ]
+    }
+  ]
+}

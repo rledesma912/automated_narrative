@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6: medición ✅
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -307,3 +307,13 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
 - «Preguntas»: chips agrupados (de toda historia / de «forma» / del giro), «No van en tu historia» con el motivo y «Preguntármelo igual», aviso de forma mal elegida con el link a «Tu idea», nota de respuestas guardadas de otra forma (D2). Chip `chip-forge--no-va` (tachado) en el resumen.
 - Core: `/options` trae `forms` e `ingredients`; `_state` trae `grupo` por pregunta, `molde`, `hidden_answers` e `ingredient_usage` (`json_extract` sobre la dirección, sin columna nueva). Estimación `suggest_form` en el front.
 - Tests: 4 de vista (`taller-no-va.view.test.ts`), 5 E2E (`moldes.spec.ts`); un E2E viejo con `getByText("La amenaza")` pasó a `exact` (lo ambiguaba el giro «La amenaza tiene una regla rara»).
+
+### S6 — Medición D7 (2026-10-10, solo actos, Claude, ~US$ 0,10)
+
+`scripts/research/670/medir_moldes.py` con la idea de «La laguna oscura», sin respuestas, en base temporal: forma de siempre, «Algo viene por nosotros», y la misma + giro «Lo de todos los días es lo que asusta». Actos en `scripts/research/670/medicion/`.
+
+- **El giro es la chispa más clara:** «el balde de lata del gallinero» aparece en el acto 1, vuelve en el 2 abollado y con barro negro más cerca de la casa, y cierra el relato («hasta hoy el balde de lata sigue sin sonar de noche»). Detalle propio de la historia, como lo pide la regla del giro.
+- **La forma ordena:** con asedio aparecen el refugio (la cocina), los padres que no le creen, la causa explicada al final y la amenaza que puede volver.
+- **Lo de manual no cambia con el molde:** huellas, perros que ladran y se callan de golpe, una sombra enorme, golpes en la puerta en los tres (5 / 7 / 5 menciones). Sale del género y de los hábitos del modelo, no del molde.
+- **Límite de la medición:** la idea ya es un asedio y sin respuestas la forma de siempre no fuerza una transgresión fuerte (Tito va a la orilla tras la advertencia): la diferencia entre formas está subestimada; con una idea más neutra sería mayor.
+- **Siguiente paso propuesto (spec aparte):** una lista de recursos gastados del género para el Planificador (como `voice_cliches.txt` para la Voz), medible con el mismo script.
