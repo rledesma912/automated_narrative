@@ -77,21 +77,19 @@
       <a href="<%= rutas.editarHref(storyId) %>" class="btn-forge-outline">
         <i data-lucide="edit-3" class="w-4 h-4"></i> Editar
       </a>
-      <% if (storyStatus === 'completed') { %>
-        <a href="/generar/stream/<%= storyId %>?escribir=1" class="btn-forge-sm">
+      <%/* Spec-660 B1 (D2): los tres casos preguntan acá con el diálogo (escribir-relato.js);
+           el fallido ya no lanza con un POST sin confirmar. */%>
+      <% const estimado = (locals.estimateLabels && locals.estimateLabels.full_generation) || ''; %>
+      <% if (storyStatus === 'completed' || storyStatus === 'failed') { %>
+        <button type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= storyId %>"
+                data-estimado="<%= estimado %>"<% if (storyStatus === 'completed') { %> data-version-nueva<% } %>>
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar historia
-        </a>
-      <% } else if (storyStatus === 'failed') { %>
-        <form method="POST" action="/historia/<%= storyId %>/generar">
-          <button type="submit" class="btn-forge-sm">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar historia
-          </button>
-        </form>
+        </button>
       <% } else if (storyStatus === 'draft') { %>
-        <%/* Spec-630 B14: un borrador se empieza a escribir acá (Mis historias ya no lo lanza). */%>
-        <a href="/generar/stream/<%= storyId %>?escribir=1" class="btn-forge-sm">
+        <button type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= storyId %>"
+                data-estimado="<%= estimado %>">
           <i data-lucide="feather" class="w-4 h-4"></i> Escribir el relato
-        </a>
+        </button>
       <% } %>
     <% } %>
   </div>

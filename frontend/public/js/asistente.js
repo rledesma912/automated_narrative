@@ -810,11 +810,6 @@
       const n = form.dataset.number;
       return run(() => api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/restore`, { key: t.dataset.restaurar }), enActo(n));
     }
-    if (t.matches("[data-generar]")) {
-      e.preventDefault();
-      flushAll().finally(() => (location.href = t.href));
-      return;
-    }
     if (t.matches("[data-analizando-cancelar]") && modal.job && modal.job.job_id) {
       t.disabled = true;
       api("POST", `/jobs/${modal.job.job_id}/cancel`)

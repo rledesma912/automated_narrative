@@ -76,17 +76,23 @@ test("la galería se actualiza sola mientras se genera", async ({ page }) => {
   ).toBe(true);
 });
 
-// Spec-630 B12: la ficha se fue; se regenera desde la sala en modo lectura.
-test("volver atrás desde la confirmación no deja el botón trabado", async ({ page }) => {
+// Spec-660 B1: se pregunta donde está el botón; cancelar no lanza nada ni lo deja trabado.
+test("cancelar la confirmación no crea nada ni deja el botón trabado", async ({ page }) => {
+  let posts = 0;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && r.url().includes(`/stories/${OFRENDA}/jobs`)) posts++;
+  });
   await page.goto(`/generar/stream/${OFRENDA}`);
-  const regenerar = page.getByRole("link", { name: "Regenerar" });
+  const regenerar = page.getByRole("button", { name: "Regenerar historia" });
 
   await regenerar.click();
-  await expect(page).toHaveURL(/escribir=1/);
-  await page.goBack();
+  await page.locator("#forge-confirm").getByRole("button", { name: "Cancelar" }).click();
 
   await expect(page).toHaveURL(new RegExp(`/generar/stream/${OFRENDA}$`));
-  await expect(regenerar).toBeVisible();
+  await expect(regenerar).toBeEnabled();
   await expect(regenerar).not.toHaveAttribute("aria-busy", "true");
+  expect(posts).toBe(0);
+  const activo = await page.request.get(`/api/v1/stories/${OFRENDA}/jobs/active`);
+  expect(activo.ok() ? await activo.json() : null).toBeNull();
 });
 

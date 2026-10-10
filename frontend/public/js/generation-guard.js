@@ -96,7 +96,10 @@
   document.addEventListener(
     "click",
     (e) => {
-      const trigger = e.target.closest("a[data-generation-trigger], button[data-generation-trigger]:not([type='submit'])");
+      // Spec-660: «Escribir el relato» pregunta antes; lo bloquea escribir-relato.js al aceptar.
+      const trigger = e.target.closest(
+        "a[data-generation-trigger], button[data-generation-trigger]:not([type='submit']):not([data-escribir-relato])",
+      );
       if (!trigger) return;
       if (isLocked(trigger)) {
         e.preventDefault();

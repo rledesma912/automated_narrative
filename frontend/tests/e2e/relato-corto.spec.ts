@@ -50,9 +50,9 @@ test("crear un corto, armar sus 3 actos y escribirlo", async ({ page, request })
   await expect(page.locator("#reveal-1 option")).toHaveText(["—", "el Acto 2", "el Acto 3"]);
   await expect(page.locator("#reveal-3")).toHaveCount(0);
 
-  await page.getByRole("link", { name: /Escribir el relato/ }).click();
+  await page.locator(".asistente-barra").getByRole("button", { name: /Escribir el relato/ }).click();
+  await page.locator("#forge-confirm").getByRole("button", { name: "Escribir el relato" }).click();
   await expect(page.locator("#beat-dots [id^='dot-']")).toHaveCount(3);
-  await page.getByRole("button", { name: "Escribir el relato" }).click();
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", { timeout: 30_000 });
   const log = await page.locator("#log-container > div").allTextContents();
   expect(log.some((l) => l.includes("Escribiendo el acto 1 de 3"))).toBe(true);

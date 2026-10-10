@@ -76,9 +76,10 @@ describe("sala: un borrador", () => {
     expect(html).toContain('onclick="initiateGeneration()"');
   });
 
-  it("en modo lectura ofrece «Escribir el relato» con ?escribir=1", async () => {
+  it("en modo lectura ofrece «Escribir el relato», que pregunta ahí mismo (Spec-660)", async () => {
     const html = await ejs.renderFile(view("streaming-room.ejs"), { ...base, startMode: false });
-    expect(html).toMatch(/href="\/generar\/stream\/s-1\?escribir=1"[^>]*>\s*<i[^>]*><\/i> Escribir el relato/);
+    expect(html).toMatch(/<button[^>]*data-escribir-relato[^>]*data-estimado="[^"]*"[^>]*>\s*<i[^>]*><\/i> Escribir el relato/);
+    expect(html).not.toContain("data-version-nueva");
     expect(html).toContain('href="/asistente/s-1/escaleta"');
   });
 });

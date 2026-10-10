@@ -37,10 +37,10 @@ async function logLines(page: Page): Promise<string[]> {
 test("regenerar desde la sala: confirmación, avance por etapas y fin", async ({ page }) => {
   const posts = countJobPosts(page);
   await page.goto(`/generar/stream/${STORY_ID}`);
-  await page.getByRole("link", { name: "Regenerar" }).click();
-
-  await expect(page).toHaveURL(/escribir=1/);
+  // Spec-660 B1: pregunta en la misma página y la sala arranca ya escribiendo.
   await page.getByRole("button", { name: "Regenerar historia" }).click();
+  await page.locator("#forge-confirm").getByRole("button", { name: "Regenerar historia" }).click();
+  await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}$`));
 
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
@@ -111,17 +111,22 @@ test("cancelar detiene el job en el servidor", async ({ page }) => {
   expect(story.status).toBe("failed");
 });
 
-test("reintentar desde la sala lanza el job en el servidor y la sala se ata", async ({ page }) => {
-  const posts = countJobPosts(page); // el POST lo hace Express, no el browser
+test("una historia fallida se regenera con la confirmación y la sala se ata", async ({ page }) => {
+  const posts = countJobPosts(page);
   await page.goto(`/generar/stream/${STORY_ID}`); // quedó `failed` en el test anterior
 
-  await page.locator("form[action$='/generar'] button").first().click();
+  // Spec-660 D2: ya no hay un POST que lance sin preguntar.
+  await expect(page.locator("form[action$='/generar']")).toHaveCount(0);
+  await page.getByRole("button", { name: "Regenerar historia" }).click();
+  const dialogo = page.locator("#forge-confirm");
+  await expect(dialogo.locator("[data-confirm-nota]")).toBeHidden(); // fallida: no hay versión que conservar
+  await dialogo.getByRole("button", { name: "Escribir el relato" }).click();
 
   await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}$`));
   await expect(page.locator("#start-panel")).toBeHidden();
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,
   });
-  expect(posts()).toBe(0);
+  expect(posts()).toBe(1);
   expect(await activeJob(page)).toBeNull();
 });

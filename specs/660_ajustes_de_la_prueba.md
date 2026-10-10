@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — UI (frontend; el Core no cambia)
-**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS ✅ (OK 2026-10-10) · S1 ✅ (2026-10-10)
+**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS ✅ (OK 2026-10-10) · S1 ✅ · S2 ✅ (2026-10-10)
 **Rama:** propia, desde `development` después del PR de la Spec-650 (decisión del usuario 2026-10-10)
 **Cambia:** Spec-630 B14 («siempre por la sala con `?escribir=1`») y B7 (borrar personajes).
 
@@ -101,9 +101,9 @@ Relevado en `feat/spec-660-ajustes-de-la-prueba` (desde `development` `86270d6`)
 | Lugar | Cambio |
 |---|---|
 | `partials/confirm_dialog.ejs`, `public/js/confirm-dialog.js` | `icon` (`aviso`/`escribir`/`borrar`) y `note` (nota de info, oculta si no viene) |
-| **Nuevo** `public/js/escribir-relato.js` (UMD, testeable en Vitest como `eta.js`) | Click en `[data-escribir-relato]`: `await window.forgeAntesDeEscribir?.()` (en el asistente, `flushAll`) → `ForgeConfirm.ask` → `POST /api/v1/stories/{id}/jobs` → 202/409 → `/generar/stream/{id}`; si falla, D5. Textos con el estimado de `data-estimado` |
+| **Nuevo** `public/js/escribir-relato.js` (UMD, testeable en Vitest como `eta.js`) | Click en `[data-escribir-relato]`: en el asistente, `await ForgeAsistente.flushAll()` → `ForgeConfirm.ask` → `POST /api/v1/stories/{id}/jobs` → 202/409 → `/generar/stream/{id}`; si falla, D5. Textos con el estimado de `data-estimado` |
 | `layout` (`<head>`) | Cargar `escribir-relato.js` (defer, con `?v=`), como `confirm-dialog.js` |
-| `asistente/escaleta.ejs` + `asistente.js:810` | El `<a data-generar>` pasa a `<button data-escribir-relato …>`; `asistente.js` deja de navegar y expone `forgeAntesDeEscribir = flushAll` |
+| `asistente/escaleta.ejs` + `asistente.js:810` | El `<a data-generar>` pasa a `<button data-escribir-relato …>`; `asistente.js` deja de navegar; el guardado lo pide `escribir-relato.js` (`ForgeAsistente.flushAll`) |
 | `relatos.ejs:34` | «Regenerar historia» → `<button data-escribir-relato data-version-nueva>` |
 | `streaming-room.ejs` | Modo lectura: los tres botones (completed / failed / draft) → `[data-escribir-relato]` (D2). Se van `#start-panel`, `regenerateMode` y `startMode`; la vista «en vivo» se muestra solo con un job activo |
 | `stream.controller.ts` | Sin `regenerateMode` / `startMode` (D4) |
@@ -117,7 +117,7 @@ Relevado en `feat/spec-660-ajustes-de-la-prueba` (desde `development` `86270d6`)
 
 | Test | Cambio |
 |---|---|
-| **Nuevo** Vitest `escribir-relato.test.ts` | Cancelar no hace POST; 202 y 409 navegan a la sala; error → nota y botón restaurado; nota de versión nueva solo con `data-version-nueva`; espera `forgeAntesDeEscribir` antes del POST |
+| **Nuevo** Vitest `escribir-relato.test.ts` | Cancelar no hace POST; 202 y 409 navegan a la sala; error → nota y botón restaurado; nota de versión nueva solo con `data-version-nueva`; guarda lo pendiente antes del POST |
 | Vitest `confirm-dialog` (nuevo o el existente) | `icon` y `note`; sin ellos, igual que hoy |
 | `stream.controller.test.ts` (10), `estimates.view.test.ts` (22), `relatos.view.test.ts` (3), `escaleta.view.test.ts` | Sin `start-panel`; los botones llevan `data-escribir-relato` y `data-estimado`; tacho en vez de «×» |
 | E2E `streaming-room` (8), `relatos` (5), `generation-guard` (5), `asistente` (4), `estimates` (2), `relato-corto` (2) | Arrancar = botón → diálogo → aceptar → sala en marcha; uno nuevo: cancelar el diálogo no crea job; `?escribir=1` sin job = modo lectura |
@@ -146,8 +146,8 @@ Cada slice cierra con tests en verde y dev mostrando el cambio (URL para mirar).
 
 ### S2 — Escribir desde el botón
 
-- **T2.1** Nuevo `public/js/escribir-relato.js` (UMD): click en `[data-escribir-relato]` → `forgeAntesDeEscribir?.()` → `ForgeConfirm.ask({ icon: "escribir", title, message con data-estimado, note si data-version-nueva })` → `POST /api/v1/stories/{id}/jobs` `{kind: "full_generation"}` → 202/409 con `job_id` → `location` a `/generar/stream/{id}`; si no, D5 (nota de error al lado, botón restaurado). Busy «Arrancando…» desde que se acepta (D6). Cargado en el `<head>` del layout. **Hecho cuando:** Vitest `escribir-relato.test.ts` (cancelar = sin POST; 202 y 409 navegan; 422/5xx/sin red = nota y sin navegar; nota de versión nueva solo con el atributo; espera `forgeAntesDeEscribir`).
-- **T2.2** «Los actos»: `escaleta.ejs` → `<button data-escribir-relato data-generation-trigger data-story-id data-estimado [data-version-nueva si completed]>`; `asistente.js` saca el handler de `data-generar` y define `window.forgeAntesDeEscribir = flushAll`.
+- **T2.1** Nuevo `public/js/escribir-relato.js` (UMD): click en `[data-escribir-relato]` → `ForgeConfirm.ask({ icon: "escribir", title, message con data-estimado, note si data-version-nueva })` → `POST /api/v1/stories/{id}/jobs` `{kind: "full_generation"}` → 202/409 con `job_id` → `location` a `/generar/stream/{id}`; si no, D5 (nota de error al lado, botón restaurado). Busy «Arrancando…» desde que se acepta (D6). Cargado en el `<head>` del layout. **Hecho cuando:** Vitest `escribir-relato.test.ts` (cancelar = sin POST; 202 y 409 navegan; 422/5xx/sin red = nota y sin navegar; nota de versión nueva solo con el atributo; guarda lo pendiente antes).
+- **T2.2** «Los actos»: `escaleta.ejs` → `<button data-escribir-relato data-generation-trigger data-story-id data-estimado [data-version-nueva si completed]>`; `asistente.js` saca el handler de `data-generar` (el guardado lo pide `escribir-relato.js` con `ForgeAsistente.flushAll`).
 - **T2.3** «El relato»: `relatos.ejs` → `<button data-escribir-relato data-version-nueva …>`.
 - **T2.4** Sala en modo lectura: los tres botones (completed / failed / draft) → `[data-escribir-relato]` (D2: sale el `<form POST>`).
 - **T2.5** Tests de vista (`estimates.view`, `relatos.view`, `escaleta.view`) con los atributos nuevos. Cierre de slice como en S1; mirar «Los actos» y «El relato» en dev.
