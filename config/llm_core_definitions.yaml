@@ -29,7 +29,7 @@ profiles:
     # Spec-510: valor inicial de la duración estimada (s), medido 2026-09-24
     # (relato completo 206 s, regenerar un acto 22 s). Con historial manda la mediana.
     # Spec-590: actos más largos → relato completo 268 y 302 s en dev (2026-09-30).
-    estimated_seconds: { full_generation: 285, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15, video_script: 180 }
+    estimated_seconds: { full_generation: 285, regenerate_voz: 20, consult: 20, suggest_form: 10, plan_outline: 60, verify_outline: 15, video_script: 180 }
     roles:
       director:
         model: gemma3:12b
@@ -89,7 +89,7 @@ profiles:
     anthropic: { model: claude-sonnet-5-5 }
     # Spec-510: valores iniciales sin medir (la Voz en Claude tarda menos; la Memoria
     # sigue local). Con historial manda la mediana.
-    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 20, plan_outline: 60, verify_outline: 15, video_script: 60 }
+    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 20, suggest_form: 10, plan_outline: 60, verify_outline: 15, video_script: 60 }
     roles:
       director:
         model: gemma3:12b
@@ -143,7 +143,7 @@ profiles:
     provider: anthropic
     anthropic: { model: claude-sonnet-5-5 }
     # Spec-510: sin medir; manda el historial.
-    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 20, plan_outline: 60, verify_outline: 15, video_script: 60 }
+    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 20, suggest_form: 10, plan_outline: 60, verify_outline: 15, video_script: 60 }
     roles:
       director:
         model: claude-sonnet-5-5

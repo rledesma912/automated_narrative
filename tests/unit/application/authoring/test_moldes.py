@@ -280,3 +280,32 @@ def test_un_giro_no_va_con_la_forma_que_ya_pregunta_lo_mismo():
     assert "lugar_historia" in {g.id for g in cat.giros_para("casa")}
     story = _con_forma(asistente._story(), "lugar", giro="lugar_historia")
     assert molde.for_story(story).giro is None
+
+
+# ── S4: la IA sugiere la forma ────────────────────────────────────────────────
+
+
+def test_el_pedido_de_sugerir_la_forma_trae_la_idea_y_todas_las_formas():
+    from src.application.services.authoring.form_suggester import FormSuggester
+
+    prompt = FormSuggester(llm=None).prompt(asistente._story())
+    assert "José ve por el espejo a una mujer que murió en su micro." in prompt
+    for f in molde.catalogo().formas:
+        assert f"- {f.id}: «{f.nombre}». {f.arco}" in prompt
+
+
+def test_lo_que_guarda_la_sugerencia():
+    from src.application.services.authoring.form_suggester import FormSuggestion, apply
+    from src.domain.models import Direction
+
+    d = apply(Direction(), FormSuggestion("otra", "No es ninguna.", "Una muñeca que envejece."))
+    assert (d.form, d.form_suggested, d.form_reason, d.form_other) == (
+        "otra",
+        "otra",
+        "No es ninguna.",
+        "Una muñeca que envejece.",
+    )
+    elegida = apply(
+        Direction(form="casa", form_other="lo mío"), FormSuggestion("otra", "x", "otro arco")
+    )
+    assert (elegida.form, elegida.form_other) == ("casa", "lo mío")

@@ -19,6 +19,7 @@ formas:
   - id: regla
     nombre: Alguien rompe una regla
     ayuda: Le avisan, no hace caso, lo hace igual y algo despierta.
+    arco: "Le avisan de algo, no hace caso, rompe una regla y eso despierta a la amenaza; al final descubre un secreto que lo involucra."  # para la IA que sugiere la forma (Spec-670 D1)
     criterios: [vulnerabilidad, transgresion, historia_secreta, descubrimiento]
     revela:
       criterio: historia_secreta
@@ -28,6 +29,7 @@ formas:
   - id: asedio
     nombre: Algo viene por nosotros
     ayuda: "Nadie lo provocó: viene por una causa de afuera y no se va."
+    arco: "Nadie provoca a la amenaza: algo la empuja a venir por una causa de afuera; se acerca paso a paso, ataca donde se sentían a salvo y la causa sigue ahí."  # para la IA que sugiere la forma (Spec-670 D1)
     criterios: [asedio_acercamiento, asedio_refugio, asedio_causa]
     actos:
       largo:
@@ -51,6 +53,7 @@ formas:
   - id: lugar
     nombre: Un lugar que no hay que pisar
     ayuda: "El peligro es el lugar: llegar, quedarse y tratar de salir."
+    arco: "El peligro es un lugar: el protagonista llega o queda varado ahí, el lugar se muestra cada vez más raro, lo que vive ahí aparece y hay que salir; lo que pasó ahí antes explica todo."  # para la IA que sugiere la forma (Spec-670 D1)
     criterios: [lugar_llegada, lugar_rareza, lugar_pasado]
     actos:
       largo:
@@ -74,6 +77,7 @@ formas:
   - id: casa
     nombre: Alguien que llega a casa
     ayuda: "Algo de afuera entra, algo no cuadra y se ve lo que es."
+    arco: "Alguien o algo de afuera entra a la casa, casi siempre con permiso; un detalle no cuadra, después otro, hasta que se ve lo que es en realidad."  # para la IA que sugiere la forma (Spec-670 D1)
     criterios: [casa_llegada, casa_detalle, casa_verdad]
     actos:
       largo:
@@ -98,6 +102,7 @@ formas:
   - id: senuelo
     nombre: Algo se hace pasar por otra cosa
     ayuda: "Parece lo que necesitás; seguirlo es el error."
+    arco: "La amenaza se presenta como algo inofensivo o que necesita ayuda; el protagonista la sigue por una buena razón, algo no encaja y se cae la máscara."  # para la IA que sugiere la forma (Spec-670 D1)
     criterios: [senuelo_parece, senuelo_cebo, senuelo_grieta, senuelo_verdad]
     actos:
       largo:
@@ -122,6 +127,7 @@ formas:
   - id: otra
     nombre: Otra clase de historia
     ayuda: "No es ninguna de estas: contala con tus palabras."
+    arco: "La historia no tiene ninguna de estas formas."  # para la IA que sugiere la forma (Spec-670 D1)
     criterios: []
     arco_del_autor: true
     actos:

@@ -22,6 +22,7 @@ class JobKind(str, Enum):
     CONSULT = "consult"  # una ronda del taller
     PLAN_OUTLINE = "plan_outline"  # armar la escaleta (y revisarla)
     VERIFY_OUTLINE = "verify_outline"  # revisar la escaleta
+    SUGGEST_FORM = "suggest_form"  # Spec-670: sugerir la clase de historia
     # Spec-610: el paquete para el video (guion, la calabaza y el mapa).
     VIDEO_SCRIPT = "video_script"
 

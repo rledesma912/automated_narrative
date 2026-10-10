@@ -40,6 +40,7 @@ class Forma:
     id: str
     nombre: str
     ayuda: str
+    arco: str  # D1: cómo es la forma, para la IA que la sugiere
     criterios: tuple[str, ...]
     actos: dict[str, dict[int, str]] = field(default_factory=dict)  # {estructura: {n: intención}}
     reglas: tuple[str, ...] = ()
@@ -205,6 +206,7 @@ def catalogo() -> Catalogo:
                 id=texto(where, f, "id"),
                 nombre=texto(where, f, "nombre"),
                 ayuda=texto(where, f, "ayuda"),
+                arco=texto(where, f, "arco"),
                 criterios=ids,
                 actos=actos,
                 reglas=tuple(str(x).strip() for x in f.get("reglas") or ()),

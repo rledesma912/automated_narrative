@@ -631,3 +631,19 @@ async def test_yaml_ida_y_vuelta_conserva_la_forma_y_el_giro(client):
         data["direction"].pop(key)
     viejo = await CreateStoryUseCase(repo, genres).execute(YamlStoryLoader().load_from_dict(data))
     assert molde.for_story(viejo).forma.id == "regla"
+
+
+async def test_la_ia_sugiere_la_forma_y_se_guarda(client):
+    """Spec-670 D1: el job `suggest_form` guarda la sugerencia y su motivo; si la persona
+    no había elegido una forma, también la deja elegida."""
+    sid = (await _create(client))["story_id"]
+    d = (await _run_job(client, sid, "suggest_form"))["direction"]
+    assert (d["form"], d["form_suggested"]) == ("asedio", "asedio")  # el mock elige la segunda
+    assert d["form_reason"] == "Por cómo es tu idea."
+
+
+async def test_la_sugerencia_no_pisa_la_forma_que_eligio_la_persona(client):
+    sid = (await _create(client, form="lugar"))["story_id"]
+    await _run_job(client, sid, "suggest_form")
+    d = (await client.get(f"{API}/stories/{sid}")).json()["direction"]
+    assert (d["form"], d["form_suggested"]) == ("lugar", "asedio")
