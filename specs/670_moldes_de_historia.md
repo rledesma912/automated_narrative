@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY (estrategia por capas y elección b + c con OK del usuario 2026-10-10; faltan D1–D7 y maquetas)
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · faltan maquetas
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -69,7 +69,7 @@ Es **un solo molde**, el del cuento de advertencia: aviso → no lo toma en seri
 | **Ingrediente** | 1 criterio + 1 regla que se cruzan con cualquier forma | 6 |
 | **Largo** | Reparte lo que pide la forma entre 3 o 5 actos (Spec-650) | las de hoy |
 
-Además, **una pregunta abierta de la IA** en cada historia: «¿Qué tiene tu historia que no tenga otra?» (con opciones propuestas por la IA a partir de la idea). Es la chispa explícita.
+~~Una pregunta abierta fija («¿Qué tiene tu historia que no tenga otra?»)~~: **descartada** por el usuario (2026-10-10): es genérica. La chispa sale de la forma y del ingrediente.
 
 ### 2.2 Las 5 formas iniciales (salen de tus historias)
 
@@ -83,7 +83,7 @@ Además, **una pregunta abierta de la IA** en cada historia: «¿Qué tiene tu h
 
 Cada forma trae **lo que pide cada acto** para largo (5) y corto (3), y sus reglas. Ejemplo («Algo viene por nosotros», corto): 1 = la normalidad y las primeras señales, sin culpables; 2 = la amenaza llega y ataca; al final se entiende la causa; 3 = sobrevivir sin resolverlo: la causa sigue ahí. Regla: «Nadie provoca a la amenaza: la causa es de afuera».
 
-Formas para después (fuera del MVP): duelo que no se cierra, transformación, pacto o deuda, persecución.
+Formas para después (fuera del MVP): duelo que no se cierra, transformación, pacto o deuda, persecución. **Decisión del usuario:** se arranca con estas 5 (y los 6 ingredientes) y el catálogo se amplía cuando haya más historias que muestren otras formas.
 
 ### 2.3 Los 6 ingredientes iniciales
 
@@ -102,11 +102,22 @@ Cada ingrediente se cruza con la opción «¿Cómo lo cuenta?» y las demás ant
 
 - En «Tu idea», debajo de la idea: **«¿Qué clase de historia es?»** con las 5 formas (`.opcion-forge`) y el botón **«Que la IA lo sugiera»** (job nuevo `suggest_form`, 1 llamada corta, con modal como los demás).
 - **«Un giro»**: elegir un ingrediente, «Sorprendeme» (sortea entre los menos usados en tus historias; se puede volver a sortear) o «Ninguno».
-- Las preguntas (`consult`) usan **base + forma + ingrediente + la pregunta abierta**.
+- Las preguntas (`consult`) usan **base + forma + ingrediente**.
+
+### 2.5 Qué se guarda dónde
+
+| Qué | Dónde | Por qué |
+|---|---|---|
+| **El catálogo** (formas, ingredientes, sus criterios, lo que pide cada acto, reglas, textos) | YAML en `config/` (p. ej. `config/moldes/formas.yaml`, `ingredientes.yaml`), como hoy `workshop_criteria.yaml` y `llm_beats_definition.yaml` | Es contenido del sistema, no de la persona: viaja con el código en git (se revisa en cada PR), lo validan tests de completitud y snapshots, entra en la imagen de prod (Spec-520: prod cambia solo con `make deploy`) y cumple la Spec-620 (textos en `config/`). En la DB necesitaría una pantalla para editarlo, seeds y cambios de esquema (sin migraciones), y los tests no podrían fijarlo |
+| **La elección de cada historia** (qué forma e ingrediente usa) | DB: `story.direction` (JSON), columna que ya existe | Es dato de la historia; sin esquema nuevo |
+| **Las respuestas** | DB: `story_workshop` (como hoy; el criterio es un texto, entran los nuevos sin cambiar la tabla) | — |
+| **«Sorprendeme»** | Cuenta los ingredientes usados leyendo la DB | — |
+
+Si un día las usuarias quieren crear o editar moldes desde la pantalla, ahí conviene pasar el catálogo a la DB (con seeds, como el de géneros). Mientras lo amplíe el desarrollo, YAML es más simple y más seguro. Una historia que apunte a una forma que ya no existe cae a la de hoy (test).
 
 ---
 
-## 3. Decisiones
+## 3. Decisiones (OK del usuario 2026-10-10)
 
 | # | Duda | Recomendación |
 |---|---|---|
@@ -125,7 +136,7 @@ Cada ingrediente se cruza con la opción «¿Cómo lo cuenta?» y las demás ant
 1. Las 5 formas y los 6 ingredientes están completos para largo y corto (test de completitud: criterios, lo que pide cada acto, reglas, textos de pantalla).
 2. «Alguien rompe una regla» sin ingrediente = hoy: snapshots `pipeline/voice/assistant` (largo y corto) idénticos.
 3. Con su forma, las historias del §1.2 dejan de chocar: «La laguna oscura» como «Algo viene por nosotros» no recibe preguntas de transgresión ni de un secreto personal, y su acto 2 no pide «romper la regla» (snapshot por forma).
-4. Por historia, entre 7 y 10 preguntas (base + forma + ingrediente + la abierta).
+4. Por historia, entre 7 y 9 preguntas (base + forma + ingrediente).
 5. La IA sugiere una forma razonable para las 5 historias del §1.2 (prueba con el modelo del perfil activo; se registra qué sugirió).
 6. Medición D7: con la misma sinopsis, 3 moldes dan escaletas distintas entre sí; lectura de las usuarias.
 7. Guardianes en verde (`sin-jerga`, `gramatica-visual`, `test_prompts_fuera_del_codigo`, `sin-cinco-actos`…); pytest, Vitest, Playwright; dev con el cambio.
@@ -138,6 +149,5 @@ Cada ingrediente se cruza con la opción «¿Cómo lo cuenta?» y las demás ant
 
 ## OPEN QUESTIONS
 
-- ¿La pregunta abierta («qué tiene tu historia que no tenga otra») va siempre o solo si la persona quiere? Propuesta: siempre, como la primera de «Preguntas».
 - ¿Los nombres de las formas en pantalla son claros para las usuarias? Se validan con la maqueta.
 - La prueba en curso (dev en todo-Claude) dirá si además conviene mover el Planificador (y el Consultor) a Claude; es independiente de esta spec.
