@@ -328,6 +328,17 @@ class SQLStoryRepository:
             )
             await conn.commit()
 
+    async def ingredient_usage(self) -> dict[str, int]:
+        """Spec-670 D6: cuántas historias usan cada giro («Sorprendeme» sortea entre los
+        menos usados). Lee el JSON de la dirección, sin columna nueva."""
+        async with connection() as conn:
+            cursor = await conn.execute(
+                "SELECT json_extract(direction, '$.ingredient') AS giro, COUNT(*) FROM story "
+                "WHERE direction IS NOT NULL AND json_extract(direction, '$.ingredient') <> '' "
+                "GROUP BY giro"
+            )
+            return {row[0]: row[1] for row in await cursor.fetchall() if row[0]}
+
     async def list_all(self) -> list[Story]:
         """List all stories."""
         async with connection() as conn:

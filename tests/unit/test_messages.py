@@ -52,7 +52,7 @@ def test_los_textos_mudados_no_cambiaron():
     assert message("job.error") == "error en el pipeline"
     assert message("stage.voz", beat=2, total=5) == "Escribiendo el acto 2 de 5..."
     assert message("workshop.abierto", n=3) == (
-        "Te quedan 3 preguntas. Podés responder, pedirle a la IA que te pregunte de nuevo "
+        "Te quedan 3 preguntas. Podés responder, pedirle a la IA que te pregunte lo que falta "
         "o pasar a los actos cuando quieras."
     )
     assert message("workshop.ultima_vuelta", maximo=3) == (

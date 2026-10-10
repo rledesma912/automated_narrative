@@ -8,6 +8,7 @@ resultado antes de publicar `done`.
 
 from uuid import UUID
 
+from src.application.services.authoring import form_suggester
 from src.application.services.authoring.consultant import WorkshopConsultant
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
@@ -77,8 +78,28 @@ def verify_outline_runner(story_id: UUID) -> JobRunner:
     return _run
 
 
+def suggest_form_runner(story_id: UUID) -> JobRunner:
+    """Spec-670 D1: la IA sugiere la clase de historia; se guarda en la dirección."""
+
+    def _run():
+        async def _gen():
+            yield stage_event(JobStage.CONSULTOR, None, None)
+            story = await _load(story_id)
+            suggestion, _ = await form_suggester.FormSuggester(LLMFactory.get_provider()).suggest(
+                story
+            )
+            direction = form_suggester.apply(story.direction, suggestion)
+            await SQLStoryRepository().update_direction(story_id, direction)
+            yield _done(story_id, form=suggestion.form, reason=suggestion.reason)
+
+        return _gen()
+
+    return _run
+
+
 _RUNNERS = {
     JobKind.CONSULT: consult_runner,
+    JobKind.SUGGEST_FORM: suggest_form_runner,
     JobKind.PLAN_OUTLINE: plan_outline_runner,
     JobKind.VERIFY_OUTLINE: verify_outline_runner,
 }

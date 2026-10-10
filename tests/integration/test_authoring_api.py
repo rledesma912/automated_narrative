@@ -71,7 +71,17 @@ async def test_opciones(client):
 async def test_crear_desde_la_direccion(client):
     state = await _create(client)
 
-    assert state["direction"] == FORM | {"narrator": "José", "effect_other": "", "threat": None}
+    assert state["direction"] == FORM | {
+        "narrator": "José",
+        "effect_other": "",
+        "threat": None,
+        # Spec-670: sin forma ni giro = la forma de siempre.
+        "form": "",
+        "ingredient": "",
+        "form_other": "",
+        "form_suggested": "",
+        "form_reason": "",
+    }
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
     assert state["characters"] == [{"name": "José", "kind": "persona", "relation": "", "acts": []}]
     story = (await client.get(f"/api/v1/stories/{state['story_id']}")).json()
@@ -553,3 +563,87 @@ async def test_un_lugar_sumado_en_los_actos_llega_al_planificador(client):
     story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
     assert "ESCENARIOS YA DEFINIDOS: " in (prompt := OutlinePlanner(llm=None)._prompt(story))
     assert "El galpón" in prompt.split("ESCENARIOS YA DEFINIDOS: ")[1].split("\n")[0]
+
+
+# ── Spec-670: el molde en la dirección ─────────────────────────────────────
+
+
+async def test_el_autoguardado_conserva_lo_que_sugirio_la_ia(client):
+    """D13: `form_suggested` y `form_reason` no vienen del formulario; un guardado de
+    «Tu idea» no los borra (la trampa de la D9 de la Spec-650)."""
+    from src.infrastructure.database.repositories import SQLStoryRepository
+
+    sid = (await _create(client))["story_id"]
+    repo = SQLStoryRepository()
+    story = await repo.get_by_id(sid)
+    await repo.update_direction(
+        sid,
+        story.direction.model_copy(
+            update={
+                "form": "asedio",
+                "form_suggested": "asedio",
+                "form_reason": "Nadie la provoca.",
+            }
+        ),
+    )
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "form": "regla"})
+    assert resp.status_code == 200, resp.text
+    d = resp.json()["direction"]
+    assert (d["form"], d["form_suggested"], d["form_reason"]) == (
+        "regla",
+        "asedio",
+        "Nadie la provoca.",
+    )
+
+
+@pytest.mark.parametrize("campo", ["form", "ingredient"])
+async def test_forma_o_giro_desconocido_422(client, campo):
+    sid = (await _create(client))["story_id"]
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, campo: "no-existe"})
+    assert resp.status_code == 422
+    assert "no-existe" in resp.json()["detail"]
+
+
+async def test_yaml_ida_y_vuelta_conserva_la_forma_y_el_giro(client):
+    """Spec-670 D3: `export-yaml` / `import-yaml` llevan la forma y el giro (dentro de la
+    dirección); un YAML sin forma es la de siempre."""
+    import uuid
+
+    import yaml
+
+    from src.application.services.authoring import molde
+    from src.application.use_cases.create_story import CreateStoryUseCase
+    from src.infrastructure.database.repositories import SQLGenreRepository, SQLStoryRepository
+    from src.infrastructure.exporters import YamlStoryExporter
+    from src.infrastructure.loaders import YamlStoryLoader
+
+    sid = (await _create(client, form="asedio", ingredient="regla_rara"))["story_id"]
+    story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    text = YamlStoryExporter().export(story)
+    data = yaml.safe_load(text)
+    assert (data["direction"]["form"], data["direction"]["ingredient"]) == ("asedio", "regla_rara")
+
+    repo, genres = SQLStoryRepository(), SQLGenreRepository()
+    again = await CreateStoryUseCase(repo, genres).execute(YamlStoryLoader().load(text))
+    assert (again.direction.form, again.direction.ingredient) == ("asedio", "regla_rara")
+
+    for key in ("form", "ingredient", "form_other", "form_suggested", "form_reason"):
+        data["direction"].pop(key)
+    viejo = await CreateStoryUseCase(repo, genres).execute(YamlStoryLoader().load_from_dict(data))
+    assert molde.for_story(viejo).forma.id == "regla"
+
+
+async def test_la_ia_sugiere_la_forma_y_se_guarda(client):
+    """Spec-670 D1: el job `suggest_form` guarda la sugerencia y su motivo; si la persona
+    no había elegido una forma, también la deja elegida."""
+    sid = (await _create(client))["story_id"]
+    d = (await _run_job(client, sid, "suggest_form"))["direction"]
+    assert (d["form"], d["form_suggested"]) == ("asedio", "asedio")  # el mock elige la segunda
+    assert d["form_reason"] == "Por cómo es tu idea."
+
+
+async def test_la_sugerencia_no_pisa_la_forma_que_eligio_la_persona(client):
+    sid = (await _create(client, form="lugar"))["story_id"]
+    await _run_job(client, sid, "suggest_form")
+    d = (await client.get(f"{API}/stories/{sid}")).json()["direction"]
+    assert (d["form"], d["form_suggested"]) == ("lugar", "asedio")

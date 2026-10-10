@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-09
 **Tipo:** SDD — épica (estructura del relato: asistente, pipeline, UI y video)
-**Estado:** SPECIFY ✅ (D1–D8 con lo recomendado, OK del usuario 2026-10-09) · PLAN ✅ (D9–D11 con lo recomendado, OK 2026-10-09) · TASKS ✅ (OK 2026-10-09) · S1 ✅ (2026-10-09) · S2 ✅ · S3 ✅ · S4 ✅ (2026-10-10)
+**Estado:** SPECIFY ✅ (D1–D8 con lo recomendado, OK del usuario 2026-10-09) · PLAN ✅ (D9–D11 con lo recomendado, OK 2026-10-09) · TASKS ✅ (OK 2026-10-09) · S1 ✅ (2026-10-09) · S2 ✅ · S3 ✅ · S4 ✅ · S5 medición ✅ (2026-10-10) · **en prod** `cafc287` (2026-10-10, PR #68; base nueva + import-yaml) · falta la lectura de las usuarias
 **Rama:** `feat/spec-650-relato-corto-tres-actos` (desde `development`, `cafb508`)
 **Extiende:** Spec-530 (asistente y escaleta), Spec-560 (puente y receta del efecto), Spec-590/610 D11 (extensión por acto), Spec-610 (paquete para el video), Spec-620 (textos fuera del código).
 

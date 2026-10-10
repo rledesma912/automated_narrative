@@ -1,0 +1,38 @@
+{
+  "perfil": "anthropic-sonnet55",
+  "historia": "laguna.yaml",
+  "moldes": [
+    {
+      "molde": "regla",
+      "hechos": 11,
+      "de_manual": {
+        "huella": 3,
+        "golpe": 2
+      },
+      "total_de_manual": 5
+    },
+    {
+      "molde": "asedio",
+      "hechos": 11,
+      "de_manual": {
+        "huella": 1,
+        "sombra": 1,
+        "golpe": 1,
+        "ladr": 1,
+        "chapoteo": 2,
+        "rasca": 1
+      },
+      "total_de_manual": 7
+    },
+    {
+      "molde": "asedio+cotidiano",
+      "hechos": 12,
+      "de_manual": {
+        "huella": 3,
+        "golpe": 1,
+        "ladr": 1
+      },
+      "total_de_manual": 5
+    }
+  ]
+}

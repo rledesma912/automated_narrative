@@ -25,6 +25,7 @@
   const POLL_MS = 3000;
   const AUTHORING = {
     consult: { titulo: "Leyendo tu historia…", detalle: "La IA lee tu idea para ver qué le falta." },
+    suggest_form: { titulo: "Leyendo tu idea…", detalle: "La IA busca qué clase de historia es." }, // Spec-670
     plan_outline: { titulo: "Armando los actos…", detalle: "La IA reparte tu historia en actos y después los revisa." },
     verify_outline: { titulo: "Revisando los actos…", detalle: "La IA busca respuestas tuyas que quedaron afuera, repeticiones y secretos que nunca se descubren." },
   };
@@ -187,6 +188,10 @@
       const drafts = tallerDrafts(box);
       box.replaceChildren(frag);
       restoreTallerDrafts(box, drafts, skip);
+      // Respondida la última pregunta, «Preguntame lo que falta» ya no haría nada.
+      const fin = $("[data-fin]", box);
+      const preguntar = $("[data-preguntar-falta]");
+      if (fin && preguntar) preguntar.classList.toggle("hidden", fin.dataset.fin === "respondido");
     }
     if (mostrar && $(mostrar)) $(mostrar).classList.remove("hidden");
     icons();
@@ -379,6 +384,10 @@
       effect_other: value(form, "effect_other"),
       ending: value(form, "ending"),
       telling: value(form, "telling"),
+      // Spec-670: la clase de historia, el giro y, con «Otra», cómo la cuenta.
+      form: value(form, "form"),
+      ingredient: value(form, "ingredient"),
+      form_other: value(form, "form_other"),
       protagonist_name: value(form, "protagonist_name"),
       protagonist_role: value(form, "protagonist_role"),
       narrator: value(form, "narrator"),
@@ -656,6 +665,46 @@
     return `${Math.max(5, Math.round(seconds / 5) * 5)} s`;
   }
 
+  // ── Spec-670: la clase de historia y el giro («Tu idea») ─────────────────
+
+  function onFormChange(form, forma) {
+    $$("[data-solo-si-forma]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiForma !== forma));
+    const pista = $("[data-sin-forma]", form);
+    if (pista) pista.remove();
+    // Los giros que repiten una pregunta de esta forma no se ofrecen (y si estaba elegido, se va).
+    $$("[data-giro]", form).forEach((label) => {
+      const fuera = (label.dataset.noCon || "").split(",").includes(forma);
+      label.classList.toggle("hidden", fuera);
+      const radio = $("input", label);
+      if (fuera && radio.checked) $("[name=ingredient][value='']", form).checked = true;
+    });
+  }
+
+  /** «Sorprendeme»: un giro al azar entre los que menos se usaron (sin repetir el actual). */
+  function sorprendeme(btn) {
+    const section = btn.closest("[data-giros]");
+    const form = btn.closest("form[data-autosave]");
+    let uso = {};
+    try {
+      uso = JSON.parse(section.dataset.uso || "{}");
+    } catch {
+      /* sin datos de uso: todos valen lo mismo */
+    }
+    const actual = value(form, "ingredient");
+    const candidatos = $$("[data-giro]", section).filter((l) => !l.classList.contains("hidden") && l.dataset.giro !== actual);
+    if (!candidatos.length) return;
+    const minimo = Math.min(...candidatos.map((l) => uso[l.dataset.giro] || 0));
+    const menos = candidatos.filter((l) => (uso[l.dataset.giro] || 0) === minimo);
+    const elegido = menos[Math.floor(Math.random() * menos.length)];
+    const radio = $("input", elegido);
+    radio.checked = true;
+    radio.dispatchEvent(new Event("change", { bubbles: true }));
+    const nombre = $(".font-semibold", elegido).textContent.trim();
+    const salio = $("[data-giro-salio]", section);
+    salio.textContent = `Salió «${nombre}». ¿No te gusta? Tocá «Sorprendeme» otra vez o elegí otro.`;
+    salio.classList.remove("hidden");
+  }
+
   async function analyze(btn) {
     if (!page.storyId) return;
     if (btn.dataset.confirmar) {
@@ -735,6 +784,7 @@
     if (e.target.name === "effect") {
       $$("[data-solo-si-efecto]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiEfecto !== e.target.value));
     }
+    if (e.target.name === "form") onFormChange(form, e.target.value);
     if (e.target.matches("[data-p-tipo]")) return; // del formulario de personaje, no del acto
     schedule(form);
   });
@@ -747,6 +797,7 @@
 
     if (t.closest("[data-guardado-cerrar]")) return hideToast();
     if (t.matches("[data-analizar]")) return analyze(t);
+    if (t.matches("[data-sorprendeme]")) return sorprendeme(t);
     if (t.matches("[data-taller]")) return tallerAction(t);
     if (t.matches("[data-cambiar]")) {
       $("[data-cambio]", t.closest("[data-pregunta]")).classList.toggle("hidden");

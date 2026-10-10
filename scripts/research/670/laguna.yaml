@@ -1,0 +1,279 @@
+title: La laguna oscura
+personajes_full:
+- id: P1
+  name: Tito
+  role: Es el hijo de la familia a la que le ocurre el evento
+- id: P2
+  name: Don Raúl
+  role: ''
+- id: P3
+  name: Padres de Tito
+  role: ''
+- id: P4
+  name: Perros del vecino
+  role: ''
+- id: P5
+  name: Vecino
+  role: ''
+protagonista: 'Tito: Es el hijo de la familia a la que le ocurre el evento'
+relator: 'Primera persona en pasado. Narrador: Tito.'
+atmosfera: folk_horror (mitologia_regional)
+escenarios: ''
+sinopsis: |-
+  En una zona aislada de los bosques patagónicos, una familia comienza a encontrar rastros de una criatura legendaria que, según los lugareños, habita en una oscura laguna cercana. Cuando el ser irrumpe una noche en el patio de su casa, la familia descubre que algo lo ha obligado a abandonar las profundidades y buscar alimento en tierra firme. La aparición de una fábrica junto a la laguna y la misteriosa muerte de los peces revelan una posible causa, pero mientras la actividad industrial continúa, nadie sabe qué es realmente la criatura ni cuánto tiempo podrá permanecer bajo el agua antes de volver a salir a cazar.
+reglas: []
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: Tito
+  voice:
+    person: primera
+    tense: pasado
+  atmosphere:
+    genre: folk_horror
+    subgenre: mitologia_regional
+  scenarios: []
+  rules: []
+  entities: []
+  actos:
+    act_1:
+      type: exposicion
+      text: ''
+    act_2:
+      type: accion_ascendente
+      text: ''
+    act_3:
+      type: climax
+      text: ''
+    act_4:
+      type: accion_descendente
+      text: ''
+    act_5:
+      type: desenlace
+      text: ''
+estructura: corto
+direction:
+  premise: En una zona aislada de los bosques patagónicos, una familia comienza a encontrar rastros de
+    una criatura legendaria que, según los lugareños, habita en una oscura laguna cercana. Cuando el ser
+    irrumpe una noche en el patio de su casa, la familia descubre que algo lo ha obligado a abandonar
+    las profundidades y buscar alimento en tierra firme. La aparición de una fábrica junto a la laguna
+    y la misteriosa muerte de los peces revelan una posible causa, pero mientras la actividad industrial
+    continúa, nadie sabe qué es realmente la criatura ni cuánto tiempo podrá permanecer bajo el agua antes
+    de volver a salir a cazar.
+  effect: pavor
+  effect_other: ''
+  ending: ''
+  ending_intentional: false
+  telling: caso
+  form: ''
+  ingredient: ''
+  form_other: ''
+  form_suggested: ''
+  form_reason: ''
+workshop:
+- level: direccion
+  criterion: meta
+  status: cumple
+  question: ''
+  options: []
+  answer: A su familia a salvo y sin riesgos por la amenzada desconocida.
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué necesita Tito para sentirse seguro en su casa, que la criatura le impide?
+- level: direccion
+  criterion: inquietud
+  status: cumple
+  question: ''
+  options: []
+  answer: que es de noche peligrosa
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué le cuenta un vecino a Tito sobre la laguna que él ignora al principio?
+- level: direccion
+  criterion: en_juego
+  status: intencional
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué podría perder Tito si la criatura lo sigue acechando?
+- level: direccion
+  criterion: vulnerabilidad
+  status: cumple
+  question: ''
+  options: []
+  answer: Tito ni su familia se acerca. Es al revés, la criatura los acecha en su propia casa
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué hace Tito que lo acerca a la laguna, a pesar de los rumores?
+- level: direccion
+  criterion: transgresion
+  status: intencional
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué hace Tito que molesta a la criatura y la saca de su escondite?
+- level: direccion
+  criterion: historia_secreta
+  status: cumple
+  question: ''
+  options: []
+  answer: Nada que ver con Tito, sino que una fabrica se asenta en el habítat de la criatura, matando
+    su alimento.
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué conexión tiene la familia con la laguna que la criatura conoce?
+- level: direccion
+  criterion: descubrimiento
+  status: intencional
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué ve Tito en el agua que le confirma que algo está mal?
+- level: direccion
+  criterion: reaccion
+  status: cumple
+  question: ''
+  options: []
+  answer: Le cuenta a su padre y la incertidumbre y angustia se acrementan
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué hace Tito después de ver las huellas que desaparecen en el agua?
+- level: direccion
+  criterion: final
+  status: intencional
+  question: ''
+  options: []
+  answer: 'La familia descubre que una fábrica instalada cerca de la laguna está contaminando el agua
+    y provocando la muerte de los peces, lo que habría obligado a la criatura a salir en busca de alimento.
+    Aunque no vuelven a verla, el padre encuentra huellas recientes que conducen desde el bosque hasta
+    la laguna y desaparecen bajo el agua. La fábrica sigue funcionando y nadie sabe si la criatura ha
+    regresado a las profundidades o si volverá a salir cuando el hambre la obligue. El relato termina
+    dejando una sensación de pavor e impotencia: quizá el verdadero peligro no sea la criatura, sino aquello
+    que l'
+  round: 1
+  question_round: 0
+  asked: []
+outline:
+- number: 1
+  bridge: ''
+  goal: Tito intenta adaptarse a su nueva vida, pero la inquietud que le genera la laguna lo consume.
+  events:
+  - Tito escucha a Don Raúl, un vecino, hablar sobre la laguna oscura. Le cuenta que es peligroso andar
+    por ahí de noche.
+  - Tito intenta convencer a sus padres para que lo lleven a explorar la laguna, pero ellos se niegan,
+    diciendo que es mejor evitarla.
+  - Tito se asoma por la ventana y ve una sombra moverse cerca de la laguna, pero cuando enfoca la vista,
+    no ve nada.
+  change_from: Tito se siente seguro en su nueva casa, aunque algo le incomoda.
+  change_to: Tito siente una creciente inquietud y desconfianza hacia la laguna oscura.
+  scenario: Casa de campo
+  on_stage:
+  - Tito
+  - Don Raúl
+  - Padres de Tito
+  held_back: La naturaleza de la sombra que Tito vio cerca de la laguna.
+  reveal_act: 2
+  seeds:
+  - La advertencia de Don Raúl sobre la laguna oscura.
+  - La sombra que Tito ve cerca de la laguna.
+  payoffs: []
+  decisions:
+  - inquietud
+  warnings:
+  - text: '«La sombra que Tito ve cerca de la laguna.» aparece acá y no vuelve en ningún acto posterior:
+      ¿lo retomamos?'
+    key: siembra:la sombra que tito ve cerca de la laguna
+    source: regla
+    dismissed: true
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 2
+  bridge: Una semana después, la familia empieza a notar cosas extrañas en el patio de su casa. El ambiente
+    se torna tenso y la tranquilidad se rompe.
+  goal: Tito intenta entender lo que está pasando y se enfrenta a la amenaza que se cierne sobre su familia.
+  events:
+  - La familia encuentra huellas extrañas en el patio, demasiado grandes para ser de un perro.
+  - Los perros del vecino ladran incesantemente hacia la laguna, como si estuvieran advirtiendo de algo.
+  - Tito ve una figura oscura acechando entre los árboles, pero al acercarse, la figura desaparece.
+  - Una noche, un fuerte golpe despierta a la familia. Al salir, ven que algo grande ha destrozado la
+    cerca del patio.
+  - La familia se altera, la criatura intenta ingresar a la casa
+  - el padre de tito se defiende cara a cara con la criatura y la hiere
+  - la criatura se aleja con alaridos
+  change_from: La familia vive en un ambiente de miedo y tensión, amenazada por una criatura desconocida.
+  change_to: La familia pasa por un hecho traumático al enfrentarse al acoso de la criatura
+  scenario: Casa de campo, Patio trasero
+  on_stage:
+  - Tito
+  - Padres de Tito
+  - Perros del vecino
+  held_back: La razón por la cual la criatura ha abandonado su hábitat natural.
+  reveal_act: 3
+  seeds:
+  - Las huellas extrañas en el patio.
+  - El comportamiento inusual de los perros.
+  payoffs:
+  - La advertencia de Don Raúl sobre la laguna oscura.
+  decisions:
+  - vulnerabilidad
+  warnings:
+  - text: 'La familia empieza a notar cosas extrañas en el patio: esto adelanta la aparición de la criatura,
+      que debería ser un descubrimiento gradual.'
+    key: ia:la familia empieza a notar cosas extranas en el patio esto adelanta la aparicion de la criatura
+      que deberia ser un descubrimiento gradual
+    source: ia
+    dismissed: true
+  needs_review: false
+  draft: false
+  synopsis: ''
+- number: 3
+  bridge: Al día siguiente, la familia decide investigar el origen de los destrozos en el patio. Tito
+    acompaña a su padre, sintiendo una mezcla de miedo e intriga.
+  goal: La familia sigue su vida rutinaria pero por miedo a volver a enfrentarse o convivir en el bosque
+    con esa criatura que las atacó.
+  events:
+  - El padre de Tito revisa por las tardes los lugares cercanos a su casa y ya no encuentra rastros de
+    la criatura
+  - La familia descubre una fábrica recién instalada cerca de la laguna, y el olor a químicos es fuerte.
+  - Un vecino les cuenta que los peces de la laguna han estado muriendo últimamente.
+  - Tito ahora mayor comprende que quizas la criatura se vio obligada a buscar alimento fuera del lago
+    por la falta de peces, pero no lo sabe con certeza
+  change_from: La familia no vuelve a ver a la criatura y sigue con su vida normal.
+  change_to: Tito a la distancia del hecho sospecha la actitud de la criatura, pero es solo una sospecha.
+  scenario: Laguna oscura, Fábrica
+  on_stage:
+  - Tito
+  - Padres de Tito
+  - Vecino
+  held_back: ''
+  reveal_act: 0
+  seeds: []
+  payoffs:
+  - Las huellas extrañas en el patio.
+  - El comportamiento inusual de los perros.
+  decisions:
+  - meta
+  - reaccion
+  - final
+  warnings:
+  - text: 'Este acto tiene 5 hechos y en un relato corto entran 3: ¿cuáles juntamos o sacamos?'
+    key: muchos_hechos
+    source: regla
+    dismissed: true
+  needs_review: false
+  draft: false
+  synopsis: ''

@@ -1,0 +1,12 @@
+{
+  "perfil": "anthropic-sonnet55",
+  "resultados": [
+    {
+      "historia": "La muñeca de la abuela",
+      "forma": "otra",
+      "motivo": "La muñeca de Julia no rompe ninguna regla ni viene por nadie: simplemente envejece con ella, año tras año, hasta que el día de los cien años de la abuela ya no está.",
+      "arco": "Julia hereda una muñeca que cada cumpleaños cambia un poco, y crece mientras la muñeca envejece a la par suya, sin que nadie lo explique. El día que la abuela habría cumplido cien años la muñeca desaparece, y queda la sensación de que algo se cumplió o se cerró.",
+      "segundos": 3.0
+    }
+  ]
+}

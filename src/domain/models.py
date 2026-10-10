@@ -204,6 +204,15 @@ class Direction(BaseModel):
     # llegue se ignora): con texto, el final es del autor y la IA no lo cambia.
     ending_intentional: bool = False
     telling: str = ""  # «¿Cómo lo cuenta?»: caso | confesion | cronica (Spec-640: sin literario)
+    # Spec-670: el molde. `form` e `ingredient` son ids de `config/moldes/` ("" = la forma
+    # de siempre / sin giro); `form_other` es cómo contó el autor su historia («Otra», D14).
+    form: str = ""
+    ingredient: str = ""
+    form_other: str = ""
+    # Lo que sugirió la IA (job `suggest_form`, D1). No viene del formulario: el
+    # autoguardado lo conserva (D13).
+    form_suggested: str = ""
+    form_reason: str = ""
 
     @model_validator(mode="after")
     def _ending_fixed_when_written(self) -> "Direction":
@@ -225,6 +234,9 @@ class CriterionStatus(str, Enum):
     PARCIAL = "parcial"
     FALTA = "falta"
     INTENCIONAL = "intencional"
+    # Spec-670 D8: la idea lo contradice (nadie provoca a la amenaza, no hay secreto
+    # personal…). El motivo va en `WorkshopItem.question` (D12); no se pregunta.
+    NO_APLICA = "no_aplica"
 
 
 class WorkshopItem(BaseModel):

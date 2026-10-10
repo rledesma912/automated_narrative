@@ -59,9 +59,7 @@ def _assistant_prompts() -> dict[str, str]:
     planner = OutlinePlanner(llm=None)
     return {
         "consultor": WorkshopConsultant(llm=None)._prompt(story, pending),
-        "planificador_system": planner.templates.load("authoring_planner_system.md").format(
-            num_actos=3
-        ),
+        "planificador_system": planner.system_prompt(story),
         "planificador": planner._prompt(story),
         "verificador": OutlineVerifier(llm=None)._prompt(story, story.outline),
     }

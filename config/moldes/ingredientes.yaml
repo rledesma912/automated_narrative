@@ -1,0 +1,47 @@
+# Spec-670: giros (ingredientes). Opcionales: cada uno suma un criterio (una pregunta)
+# y reglas para el Planificador, y se cruza con cualquier forma salvo las de `no_con`
+# (formas que ya preguntan lo mismo: en pantalla no se ofrece).
+
+ingredientes:
+  - id: regla_rara
+    nombre: La amenaza tiene una regla rara
+    ayuda: "No cruza el agua, solo sale de a uno, contesta si la nombran…"
+    criterios: [regla_de_la_amenaza]
+    reglas:
+      - "La regla rara de la amenaza aparece en un hecho antes del último acto y decide cómo termina."
+
+  - id: lugar_historia
+    nombre: El lugar tiene su propia historia
+    ayuda: "Algo que pasó ahí antes se ve antes de explicarse."
+    criterios: [historia_del_lugar]
+    no_con: [lugar]  # «Un lugar que no hay que pisar» ya pregunta «Qué pasó ahí antes»
+    reglas:
+      - "Un detalle de lo que pasó en el lugar se ve en un hecho antes de que se explique."
+
+  - id: cotidiano
+    nombre: Lo de todos los días es lo que asusta
+    ayuda: "Un objeto o costumbre común se vuelve raro."
+    criterios: [objeto_cotidiano]
+    reglas:
+      - "El objeto de todos los días aparece en el acto 1 sin importancia y vuelve cambiado en un acto posterior; es lo que más asusta."
+
+  - id: entiende_mal
+    nombre: Quien cuenta entiende mal algo
+    ayuda: "El que escucha se da cuenta antes que el narrador."
+    criterios: [lo_que_cree]
+    reglas:
+      - "En los hechos, escribí lo que cree quien cuenta y el detalle que lo contradice, sin explicarlo: quien escucha lo nota antes que el narrador."
+
+  - id: victima
+    nombre: La víctima no es quien parece
+    ayuda: "Le pasa a otro, y se insinúa antes de mostrarse."
+    criterios: [victima_real]
+    reglas:
+      - "Casi todo el cuento parece que el peligro es para el protagonista; un hecho antes del final insinúa a quién le pasa de verdad, y el final lo muestra."
+
+  - id: recuerdo
+    nombre: Algo se lleva de recuerdo
+    ayuda: "Un objeto o una marca que queda."
+    criterios: [lo_que_se_lleva]
+    reglas:
+      - "Lo que le queda al protagonista aparece antes del final sin importancia; en el último acto se entiende qué es."

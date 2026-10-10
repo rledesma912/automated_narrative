@@ -11,9 +11,18 @@
     parcial:     { label: 'A medias',    chip: 'chip-forge chip-forge--parcial' },
     falta:       { label: 'Falta',       chip: 'chip-forge chip-forge--falta' },
     intencional: { label: 'A propósito', chip: 'chip-forge' },
+    no_aplica:   { label: 'No va en tu historia', chip: 'chip-forge chip-forge--no-va' },  /* Spec-670 D8 */
   };
   const abiertas = w.items.filter(i => (i.status === 'falta' || i.status === 'parcial') && i.question);
-  const resueltas = w.items.filter(i => !abiertas.includes(i));
+  const noVan = w.items.filter(i => i.status === 'no_aplica');
+  const resueltas = w.items.filter(i => !abiertas.includes(i) && !noVan.includes(i));
+  /* Spec-670: las preguntas por grupo (de toda historia, de la forma, del giro). */
+  const m = w.molde || {};
+  const GRUPOS = [
+    ['base', 'De toda historia'],
+    ['forma', m.form_name ? `De «${m.form_name}»` : 'De tu clase de historia'],
+    ['giro', m.ingredient_name ? `Del giro · ${m.ingredient_name}` : 'Del giro'],
+  ].map(([id, titulo]) => ({ titulo, items: w.items.filter(i => (i.grupo || 'base') === id) })).filter(g => g.items.length);
   const est = locals.estimateLabels || {};
   const analizado = w.items.length > 0;
 %>
@@ -29,13 +38,30 @@
     </section>
   <% } else { %>
     <section class="bg-forge-surface border border-forge-border p-6 mb-8">
-      <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-4">Cómo viene tu historia</h3>
-      <ul class="flex flex-wrap gap-2 mb-5">
-        <% w.items.forEach(i => { const s = SEMAFORO[i.status]; %>
-          <li class="<%= s.chip %> chip-forge--md" title="<%= s.label %>: <%= i.por_que %>"><%= i.nombre %></li>
+      <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-2">Cómo viene tu historia</h3>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>Unas preguntas son de toda historia; otras, de la clase de historia que elegiste en «Tu idea», y una del giro si elegiste uno. Son 10 como mucho y ninguna es obligatoria.</p>
+      <div class="space-y-3 mb-5">
+        <% GRUPOS.forEach(g => { %>
+          <div data-grupo>
+            <% if (GRUPOS.length > 1) { %><p class="text-[10px] uppercase tracking-widest text-forge-muted mb-1"><%= g.titulo %></p><% } %>
+            <ul class="flex flex-wrap gap-2">
+              <% g.items.forEach(i => { const s = SEMAFORO[i.status]; %>
+                <li class="<%= s.chip %> chip-forge--md" title="<%= s.label %>: <%= i.por_que %>"><%= i.nombre %></li>
+              <% }) %>
+            </ul>
+          </div>
         <% }) %>
-      </ul>
-      <p class="nota-forge nota-forge--info" data-fin="<%= w.finish.kind %>"><i data-lucide="info" class="nota-forge__icono"></i><span><%= w.finish.text %></span></p>
+      </div>
+      <% if (w.finish.kind === 'mal_elegida') { %>
+        <div class="nota-forge nota-forge--warning" data-fin="mal_elegida"><i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+          <span><%= w.finish.text %> <a class="nota-forge__accion" href="/asistente/<%= state.story_id %>/direccion#forma">Cambiar la clase de historia</a></span></div>
+      <% } else { %>
+        <p class="nota-forge nota-forge--info" data-fin="<%= w.finish.kind %>"><i data-lucide="info" class="nota-forge__icono"></i><span><%= w.finish.text %></span></p>
+      <% } %>
+      <% if (w.hidden_answers) { %>
+        <p class="nota-forge nota-forge--info mt-3" data-guardadas><i data-lucide="archive" class="nota-forge__icono"></i>
+          <span>Tenés <%= w.hidden_answers === 1 ? '1 respuesta' : `${w.hidden_answers} respuestas` %> de otra clase de historia que esta no usa. Quedan guardadas: vuelven si volvés a esa clase.</span></p>
+      <% } %>
     </section>
 
     <% if (abiertas.length) { %>
@@ -79,6 +105,25 @@
       </div>
     <% } %>
 
+    <% if (noVan.length) { %>
+      <%/* Spec-670 D8: la IA vio que la idea las contradice; no se preguntan (D12: «Preguntármelo igual» las reabre). */%>
+      <h3 class="font-serif text-xl mb-2">No van en tu historia</h3>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>La IA vio que tu idea las contradice y no te las pregunta. Si no estás de acuerdo, tocá «Preguntármelo igual».</p>
+      <ul class="space-y-3 mb-12">
+        <% noVan.forEach(p => { %>
+          <li class="bg-forge-surface border border-forge-border px-5 py-4" data-pregunta="<%= p.criterion %>" data-no-va>
+            <div class="flex flex-wrap items-start gap-4">
+              <div class="flex-1 min-w-0">
+                <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="chip-forge">No va en tu historia</span></p>
+                <p><%= p.question %></p>
+              </div>
+              <button type="button" class="btn-forge-outline-sm shrink-0" data-taller="reopen">Preguntármelo igual</button>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+
     <% if (resueltas.length) { %>
       <h3 class="font-serif text-xl mb-4">Ya lo tenés</h3>
       <ul class="space-y-3 mb-12">
@@ -87,7 +132,7 @@
             <div class="flex items-start gap-4">
               <div class="flex-1">
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
-                <p><%= p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
+                <p><%= p.status === 'no_aplica' ? `La IA no te lo pregunta: ${p.question}` : p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
                 <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.por_que %></p>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
