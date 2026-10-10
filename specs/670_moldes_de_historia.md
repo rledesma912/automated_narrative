@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅ · S4 ✅
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -295,3 +295,8 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
 
 - `no_aplica` con motivo (en `question`), reabrir con marca, `mal_elegida` con 2 de la forma, bloque «LO QUE NO VA EN ESTA HISTORIA» para Consultor, Planificador y Verificador. La pantalla de «Preguntas» lo dibuja con lo mínimo (chip + motivo + «Que la IA lo vuelva a preguntar»); lo completo, en la S5. Los snapshots del Consultor cambiaron a propósito (las líneas de `no_aplica` y `motivo`), en todas las formas.
 - Prueba en dev (Claude), copia de la laguna con la forma de siempre (`53a8cc34…`): con la instrucción solo al final del pedido, Claude **no** usó «no va». Con una regla explícita en el system prompt (dos casos típicos: causa de afuera, la amenaza ataca a cualquiera), marcó «Lo que Tito no tendría que haber hecho» («La criatura sale porque la fábrica la obligó, no porque Tito la haya provocado…») y «Lo que esconde la historia» («…busca comida, no a Tito en particular…»), y apareció el aviso de forma mal elegida. «En qué se equivoca Tito» lo siguió preguntando (es discutible: un error de Tito puede existir igual).
+
+### S4 (2026-10-10)
+
+- Job `suggest_form` (rol consultor, `form_suggester.py`, prompt `authoring_form*.md`; cada forma suma `arco` en `formas.yaml` para que la IA las distinga). Guarda `form_suggested` y `form_reason` siempre, `form` solo si la persona no había elegido, y con «Otra» el arco propuesto si el campo estaba vacío. Excluido de la banda de generación.
+- Criterio 6 (`scripts/research/670/sugerir_formas.py`, Claude, base temporal): primera vuelta 4 de 5 (Yadira → asedio) y motivos en segunda persona («tu padre»). Con dos reglas más en el system prompt (personajes por su nombre y en tercera persona; si le advierten y sigue igual, es romper una regla) → **5 de 5**: señuelo, regla, casa, lugar, asedio (`sugerencias.json`). La regla de la advertencia salió de este caso: vigilar que se sostenga con historias nuevas. Idea que no encaja (la muñeca que envejece) → «otra» con un arco razonable (`sugerencia_otra.json`).
