@@ -11,6 +11,7 @@
     parcial:     { label: 'A medias',    chip: 'chip-forge chip-forge--parcial' },
     falta:       { label: 'Falta',       chip: 'chip-forge chip-forge--falta' },
     intencional: { label: 'A propósito', chip: 'chip-forge' },
+    no_aplica:   { label: 'No va en tu historia', chip: 'chip-forge' },  /* Spec-670 D8 (la presentación completa, en la S5) */
   };
   const abiertas = w.items.filter(i => (i.status === 'falta' || i.status === 'parcial') && i.question);
   const resueltas = w.items.filter(i => !abiertas.includes(i));
@@ -87,7 +88,7 @@
             <div class="flex items-start gap-4">
               <div class="flex-1">
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
-                <p><%= p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
+                <p><%= p.status === 'no_aplica' ? `La IA no te lo pregunta: ${p.question}` : p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
                 <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.por_que %></p>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>

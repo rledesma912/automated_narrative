@@ -109,9 +109,24 @@ def decisions_block(story: Story, templates: TemplateLoader) -> str:
             )
         else:
             rows.append(t("asistente/decisiones/respondida", id=cid, nombre=nombre, texto=texto))
-    if not rows:
-        return t("asistente/decisiones/vacio")
-    return "\n".join(rows)
+    out = "\n".join(rows) if rows else t("asistente/decisiones/vacio")
+    return out + _not_here_block(story, templates)
+
+
+def _not_here_block(story: Story, templates: TemplateLoader) -> str:
+    """Spec-670 D8: lo que no va en esta historia (con su motivo), para que nadie lo pida."""
+    t = templates.fragment
+    rows = [
+        t(
+            "asistente/no_va/item",
+            id=w.criterion,
+            nombre=c.for_story(protagonist(story)).nombre,
+            motivo=w.question,
+        )
+        for w, c in ((w, catalog.criterion(w.criterion)) for w in _direction_items(story))
+        if c and w.status == CriterionStatus.NO_APLICA
+    ]
+    return "\n\n" + t("asistente/no_va/titulo") + "\n" + "\n".join(rows) if rows else ""
 
 
 def pending_block(story: Story, templates: TemplateLoader) -> str:

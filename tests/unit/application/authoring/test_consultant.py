@@ -5,12 +5,13 @@ from src.domain.models import WorkshopItem
 from tests.unit.application.authoring.conftest import ScriptedLLM
 
 
-def _eval(criterio, estado, pregunta="", opciones=()):
+def _eval(criterio, estado, pregunta="", opciones=(), motivo=""):
     return {
         "criterio": criterio,
         "estado": estado,
         "pregunta": pregunta,
         "opciones": list(opciones),
+        "motivo": motivo,
     }
 
 
@@ -86,3 +87,94 @@ async def test_sin_pendientes_no_llama_a_la_ia(story):
     r = await WorkshopConsultant(llm).analyze(story.model_copy(update={"workshop": items}))
     assert llm.calls == [] and r.finish.kind == "respondido"
     assert "no le queda nada para preguntarte" in r.finish.text
+
+
+# ── Spec-670 D8 / D12: «No va en tu historia» ─────────────────────────────────
+
+
+def _con_forma(story, forma):
+    return story.model_copy(
+        update={"direction": story.direction.model_copy(update={"form": forma})}
+    )
+
+
+async def test_no_va_queda_con_su_motivo_y_no_se_vuelve_a_evaluar(story):
+    llm = ScriptedLLM(
+        {
+            "evaluaciones": [
+                _eval(
+                    "transgresion",
+                    "no_aplica",
+                    "¿Qué hizo José?",
+                    ["algo"],
+                    motivo="Nadie provoca al fantasma.",
+                ),
+            ]
+        }
+    )
+    r = await WorkshopConsultant(llm).analyze(story)
+    item = next(w for w in r.items if w.criterion == "transgresion")
+    assert (item.status, item.question, item.options) == (
+        S.NO_APLICA,
+        "Nadie provoca al fantasma.",
+        [],
+    )
+    assert "transgresion" not in {w.criterion for w in wr.to_evaluate(r.items)}
+
+
+async def test_preguntarmelo_igual_impide_otro_no_va(story):
+    """D12: reabierto por el autor, la IA ya no lo puede descartar: queda como pregunta."""
+    item = WorkshopItem(criterion="transgresion", status=S.NO_APLICA, question="No va.")
+    reabierto = wr.reopen(item)
+    assert (reabierto.status, reabierto.question) == (S.FALTA, "")
+    assert wr.no_aplica_rejected(reabierto)
+
+    llm = ScriptedLLM(
+        {
+            "evaluaciones": [
+                _eval(
+                    "transgresion",
+                    "no_aplica",
+                    "¿Qué hace José con el espejo?",
+                    ["Lo mira"],
+                    motivo="Otra vez",
+                )
+            ]
+        }
+    )
+    r = await WorkshopConsultant(llm).analyze(story.model_copy(update={"workshop": [reabierto]}))
+    item = next(w for w in r.items if w.criterion == "transgresion")
+    assert (item.status, item.question) == (S.FALTA, "¿Qué hace José con el espejo?")
+    assert "pidió que se lo pregunten" in llm.calls[0]["prompt"]
+
+
+async def test_dos_de_la_forma_que_no_van_avisan_que_la_forma_esta_mal_elegida(story):
+    llm = ScriptedLLM(
+        {
+            "evaluaciones": [
+                _eval("transgresion", "no_aplica", motivo="Nadie la provoca."),
+                _eval("historia_secreta", "no_aplica", motivo="No hay nada de José."),
+            ]
+        }
+    )
+    r = await WorkshopConsultant(llm).analyze(story)
+    assert r.finish.kind == "mal_elegida"
+    assert "2 de sus preguntas no van" in r.finish.text
+
+
+def test_lo_que_no_va_llega_a_la_ia_con_su_motivo(story):
+    from src.application.services.authoring import context
+    from src.application.services.template_loader import TemplateLoader
+
+    s = story.model_copy(
+        update={
+            "workshop": [
+                WorkshopItem(
+                    criterion="transgresion", status=S.NO_APLICA, question="Nadie lo provoca."
+                )
+            ]
+        }
+    )
+    texto = context.decisions_block(s, TemplateLoader())
+    assert "LO QUE NO VA EN ESTA HISTORIA" in texto
+    assert "- [transgresion] Lo que José no tendría que haber hecho: Nadie lo provoca." in texto

@@ -24,7 +24,6 @@ from src.domain.exceptions import InvalidStoryInputError
 from src.domain.models import (
     ActOutline,
     CharacterKind,
-    CriterionStatus,
     Direction,
     Scenario,
     Story,
@@ -185,8 +184,8 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
         return workshop_rules.decide_for_me(item)
     if body.action == "intentional":
         return workshop_rules.mark_intentional(item, body.text)
-    # reopen: vuelve a evaluarse en la próxima ronda.
-    return item.model_copy(update={"status": CriterionStatus.FALTA, "answer": ""})
+    # reopen: vuelve a evaluarse en la próxima ronda (Spec-670 D12: si «no iba», con marca).
+    return workshop_rules.reopen(item)
 
 
 # ── Escaleta ───────────────────────────────────────────────────────────────
@@ -544,10 +543,11 @@ async def _state(story: Story) -> dict:
     """Todo lo que necesitan las tres vistas del asistente."""
     items = [w for w in story.workshop if w.level == WorkshopLevel.DIRECCION]
     by_id = {w.criterion: w for w in items}
-    criterios = molde.for_story(story).criterios  # Spec-670 D11: los del molde, en su orden
+    m = molde.for_story(story)
+    criterios = m.criterios  # Spec-670 D11: los del molde, en su orden
     ordered = [by_id[c.id] for c in criterios if c.id in by_id]
     if ordered:
-        f = workshop_rules.finish(ordered)
+        f = workshop_rules.finish(ordered, form_criteria=m.forma.criterios)
         finish = {"kind": f.kind, "text": f.text, "open_questions": f.open_questions}
     else:
         finish = {

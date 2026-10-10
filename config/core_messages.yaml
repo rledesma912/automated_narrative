@@ -21,6 +21,7 @@
 workshop:
   # Cierre de cada ronda de preguntas (Spec-530 §3.3, Spec-580).
   cumple: "Tu historia ya tiene todo lo que hace falta. Ya podés armar los actos."
+  mal_elegida: "Parece que tu historia no es de esta clase: {n} de sus preguntas no van. Probá con otra en «Tu idea»."
   respondido: "Ya respondiste o decidiste todo lo que la IA te preguntó: no le queda nada para preguntarte. Ya podés armar los actos."
   tope: "Ya van {maximo} vueltas de preguntas, que es el máximo. Podés responder lo que quedó o armar los actos."
   sin_preguntas: "La IA no tiene más preguntas. Ya podés armar los actos."

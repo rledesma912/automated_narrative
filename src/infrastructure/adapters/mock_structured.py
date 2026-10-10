@@ -89,12 +89,19 @@ def _criteria(schema: dict) -> list[str]:
 
 def _evaluation(i: int, criterion: str) -> dict:
     if i == len(_ANSWERS):  # a partir del quinto, cumple
-        return {"criterio": criterion, "estado": "cumple", "pregunta": "", "opciones": []}
+        return {
+            "criterio": criterion,
+            "estado": "cumple",
+            "pregunta": "",
+            "opciones": [],
+            "motivo": "",
+        }
     return {
         "criterio": criterion,
         "estado": "falta" if i % 2 == 0 else "parcial",
         "pregunta": f"¿Pregunta de ejemplo sobre {criterion}?",
         "opciones": [f"{a} ({criterion})" for a in _ANSWERS],
+        "motivo": "",
     }
 
 

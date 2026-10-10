@@ -234,6 +234,9 @@ class CriterionStatus(str, Enum):
     PARCIAL = "parcial"
     FALTA = "falta"
     INTENCIONAL = "intencional"
+    # Spec-670 D8: la idea lo contradice (nadie provoca a la amenaza, no hay secreto
+    # personal…). El motivo va en `WorkshopItem.question` (D12); no se pregunta.
+    NO_APLICA = "no_aplica"
 
 
 class WorkshopItem(BaseModel):
