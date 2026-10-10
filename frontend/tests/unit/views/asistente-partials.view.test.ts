@@ -50,3 +50,25 @@ describe("escaleta: escribir el relato", () => {
     expect(await boton("completed")).toContain("data-version-nueva");
   });
 });
+
+// Con todo respondido o decidido, «Preguntame lo que falta» no haría nada: no se ofrece.
+describe("taller: preguntar lo que falta", () => {
+  const boton = async (kind: string) => {
+    const html = await ejs.renderFile(path.join(VIEWS, "asistente", "taller.ejs"), {
+      ...locals,
+      state: { ...state, workshop: { ...state.workshop, finish: { kind, text: "…" } } },
+      pasoActual: "taller",
+    });
+    return html.match(/<button[^>]*data-preguntar-falta[^>]*>[\s\S]*?<\/button>/)![0];
+  };
+
+  it("con preguntas abiertas se ofrece y dice lo que hace", async () => {
+    const b = await boton("abierto");
+    expect(b).toContain("Preguntame lo que falta");
+    expect(b).not.toMatch(/class="[^"]*\bhidden\b/);
+  });
+
+  it("con todo respondido queda escondido", async () => {
+    expect(await boton("respondido")).toMatch(/class="[^"]*\bhidden\b/);
+  });
+});

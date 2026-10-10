@@ -187,6 +187,10 @@
       const drafts = tallerDrafts(box);
       box.replaceChildren(frag);
       restoreTallerDrafts(box, drafts, skip);
+      // Respondida la última pregunta, «Preguntame lo que falta» ya no haría nada.
+      const fin = $("[data-fin]", box);
+      const preguntar = $("[data-preguntar-falta]");
+      if (fin && preguntar) preguntar.classList.toggle("hidden", fin.dataset.fin === "respondido");
     }
     if (mostrar && $(mostrar)) $(mostrar).classList.remove("hidden");
     icons();

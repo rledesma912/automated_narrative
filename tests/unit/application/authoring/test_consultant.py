@@ -84,4 +84,5 @@ async def test_sin_pendientes_no_llama_a_la_ia(story):
     ]
     llm = ScriptedLLM()
     r = await WorkshopConsultant(llm).analyze(story.model_copy(update={"workshop": items}))
-    assert llm.calls == [] and r.finish.kind == "cumple"
+    assert llm.calls == [] and r.finish.kind == "respondido"
+    assert "no le queda nada para preguntarte" in r.finish.text

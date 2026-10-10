@@ -134,6 +134,10 @@ def finish(items: list[WorkshopItem], round_: int | None = None) -> Finish:
     questions = [w for w in pending if w.question]
     n = len(questions)
     new_questions = sum(1 for w in questions if w.question_round == round_)
+    if items and not to_evaluate(items):
+        # Todo respondido o decidido por el autor: la IA no tiene nada que mirar y
+        # «Preguntame lo que falta» no haría nada (la pantalla lo esconde).
+        return Finish("respondido", message("workshop.respondido"), 0)
     if not pending:
         return Finish("cumple", message("workshop.cumple"), 0)
     if round_ >= MAX_ROUNDS and n == 0:
