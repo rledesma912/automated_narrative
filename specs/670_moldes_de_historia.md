@@ -63,7 +63,7 @@ Es **un solo molde**, el del cuento de advertencia: aviso → no lo toma en seri
 
 | Capa | Qué aporta a los 3 lugares | Cuántas al empezar |
 |---|---|---|
-| **Base** | Criterios: qué quiere, algo raro desde el principio, qué puede perder, cómo termina. Reglas universales (hechos concretos, sin repetir sustos, nada se adelanta) | 1 |
+| **Base** | Criterios: qué quiere, algo raro desde el principio, qué puede perder, qué hace después, cómo termina (5; «qué hace después» es de toda historia y así «Alguien rompe una regla» = las 9 de hoy). Reglas universales (hechos concretos, sin repetir sustos, nada se adelanta) | 1 |
 | **Forma** | 3–4 criterios propios, **lo que pide cada acto** (largo y corto) y 1–3 reglas | 5 |
 | **Efecto** | Ya existe (pavor, melancolía, revelación…): cuándo se muestra la amenaza y qué se guarda | las de hoy |
 | **Ingrediente** | 1 criterio + 1 regla que se cruzan con cualquier forma | 6 |
@@ -129,6 +129,7 @@ Si un día las usuarias quieren crear o editar moldes desde la pantalla, ahí co
 | D6 | «Sorprendeme» | Al azar entre los ingredientes menos usados en las historias de la base; se ve cuál salió y se puede cambiar |
 | D7 | Medición | La misma sinopsis con 3 moldes distintos (paga, con aviso de costo antes): ¿salen escaletas distintas y menos de manual? Más la lectura de las usuarias (una versión + 1–2 preguntas) |
 | D8 | ¿Y si la forma elegida no encaja con la historia (la IA sugirió mal, se eligió rápido, la historia mezcla dos)? Volverían las preguntas inválidas, como hoy («¿qué hace Tito que despierta a la criatura?» cuando nadie la provoca) | Estado nuevo del criterio **«No va en tu historia»** (`no_aplica`): el Consultor lo marca cuando la idea lo contradice, con el motivo en una línea; chip gris, sin pregunta; la persona lo puede reabrir. El Planificador no pide en ningún acto lo que no va (p. ej. «romper la regla»). Si **2 o más** criterios de la forma no van, nota: «Parece que tu historia no es de esta clase. ¿Probamos con otra?» con la sugerencia de la IA. (Agregado 2026-10-10, OK del usuario) |
+| D10 | ¿Se entiende? ¿No volvemos al formulario gigante (pedido de hace mucho: no llenar «10.000 preguntas»)? | **Explicaciones en pantalla** donde se usa cada cosa (pistas `.pista-forge`, tono coloquial): qué cambia la forma («de esto depende qué te pregunta la IA y qué pasa en cada acto»), qué es un giro y que es opcional, por qué hay preguntas «de toda historia / de la forma / del giro», qué significa «No va en tu historia», y qué hace «Otra». **Tope de preguntas:** base 5 + forma ≤ 4 = **9 como máximo sin giro** (hoy son 9 fijas); el giro, que es opcional, suma 1 (**10 con giro**). Un test recorre todas las combinaciones del catálogo y falla si alguna pasa de 9 sin giro o de 10 con giro. Las que no van no se preguntan (D8); ninguna es obligatoria. «Tu idea» suma 2 elecciones de un clic (la forma la sugiere la IA; el giro arranca en «Sin giro»). CLAUDE.md documenta el catálogo y cómo ampliarlo. (Agregado 2026-10-10, pedido del usuario) |
 | D9 | ¿Y si la historia no tiene ninguna de las formas del catálogo? | Opción **«Otra clase de historia»** (como «Otro» en el efecto): la persona cuenta el arco en una o dos frases. Preguntas: solo la base (+ el giro); el Planificador reparte **esa descripción** entre los actos en vez de lo que pide una forma, con las reglas universales. «Que la IA lo sugiera» puede devolver «Otra» con una descripción propuesta para corregir. Cada «Otra» queda en `direction` y sirve de evidencia para sumar formas al catálogo. (Agregado 2026-10-10) |
 
 ---
@@ -138,10 +139,11 @@ Si un día las usuarias quieren crear o editar moldes desde la pantalla, ahí co
 1. Las 5 formas y los 6 ingredientes están completos para largo y corto (test de completitud: criterios, lo que pide cada acto, reglas, textos de pantalla).
 2. «Alguien rompe una regla» sin ingrediente = hoy: snapshots `pipeline/voice/assistant` (largo y corto) idénticos.
 3. Ningún criterio que contradiga la idea se pregunta: se marca «No va en tu historia» (D8) o no existe en la forma. Con su forma, las historias del §1.2 dejan de chocar: «La laguna oscura» como «Algo viene por nosotros» no recibe preguntas de transgresión ni de un secreto personal, y su acto 2 no pide «romper la regla» (snapshot por forma).
-4. Por historia, entre 7 y 9 preguntas (base + forma + ingrediente); con «Otra» (D9), 4–5.
-5. La IA sugiere una forma razonable para las 5 historias del §1.2 (prueba con el modelo del perfil activo; se registra qué sugirió).
-6. Medición D7: con la misma sinopsis, 3 moldes dan escaletas distintas entre sí; lectura de las usuarias.
-7. Guardianes en verde (`sin-jerga`, `gramatica-visual`, `test_prompts_fuera_del_codigo`, `sin-cinco-actos`…); pytest, Vitest, Playwright; dev con el cambio.
+4. Por historia, **9 preguntas como máximo sin giro y 10 con giro** (hoy son 9 fijas), garantizado por un test sobre todas las combinaciones (D10); con «Otra» (D9), 5–6; las que «no van» (D8) no se preguntan.
+5. Cada elemento nuevo se explica en pantalla donde se usa (D10).
+6. La IA sugiere una forma razonable para las 5 historias del §1.2 (prueba con el modelo del perfil activo; se registra qué sugirió).
+7. Medición D7: con la misma sinopsis, 3 moldes dan escaletas distintas entre sí; lectura de las usuarias.
+8. Guardianes en verde (`sin-jerga`, `gramatica-visual`, `test_prompts_fuera_del_codigo`, `sin-cinco-actos`…); pytest, Vitest, Playwright; dev con el cambio.
 
 ## BOUNDARIES
 
