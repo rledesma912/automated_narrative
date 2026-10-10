@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN pendiente
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN (esperando OK)
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -155,3 +155,79 @@ Si un día las usuarias quieren crear o editar moldes desde la pantalla, ahí co
 
 - ¿Los nombres de las formas en pantalla son claros para las usuarias? Se validan con la maqueta.
 - La prueba en curso (dev en todo-Claude) dirá si además conviene mover el Planificador (y el Consultor) a Claude; es independiente de esta spec.
+
+---
+
+## 5. PLAN (2026-10-10)
+
+Relevado en `feat/spec-670-moldes`. Principio, como en la 650: **una sola fuente** (el molde de la historia, resuelto desde `config/moldes/`) y lo de hoy como valor por defecto, byte a byte.
+
+### 5.1 Decisiones nuevas que salieron de la revisión
+
+| # | Riesgo encontrado | Decisión recomendada |
+|---|---|---|
+| D11 | **Respuestas ocultas que se cuelan.** `context.decisions()` toma la respuesta de *cualquier* criterio guardado: al cambiar de forma (D2), las respuestas de la forma anterior llegarían igual al Planificador y al Verificador como «decisiones del autor». | Todo lo que lee el taller pasa por **los criterios activos del molde** (`Molde.criterios`): `initial_items`, `decisions`, `pending_block`, `_state`, el Consultor. Test: una respuesta de otra forma no aparece en ningún prompt. |
+| D12 | **Dónde se guarda el motivo de «No va en tu historia» (D8)** sin cambiar el esquema. | Estado nuevo `no_aplica` (la columna `status` no tiene `CHECK`); el motivo va en `question` (con `no_aplica` no hay pregunta) y la UI lo muestra como motivo. `to_evaluate` no lo vuelve a mirar. «Preguntármelo igual» = reabrir **con marca** (`asked` guarda `·no_aplica_rechazado`): en ese criterio la IA ya no puede volver a decir «no va» (si no, reabrir sería un ida y vuelta sin fin). |
+| D13 | **El autoguardado de «Tu idea» rearma `Direction` entero** (`_direction(form)`, la misma trampa de la D9 de la 650): borraría lo que puso la IA al sugerir (la forma sugerida y su motivo). | `form`, `ingredient` y `form_other` (el arco de «Otra») viajan en el formulario (los elige la persona). `form_suggested` y `form_reason` (de la IA) los **conserva el servidor** al guardar: `update_direction` los copia de la dirección guardada. Test explícito. |
+| D14 | **«Otra clase de historia» con las intenciones de hoy:** el acto 2 diría igual «romper la regla». | «Otra» tiene **intenciones neutras** por acto (las de los nombres de pantalla: cómo empieza · se complica · el peor momento · qué hace después · cómo termina; corto: empieza · qué pasa · termina) y el Planificador recibe el arco del autor en un bloque propio. |
+| D15 | El secreto (`historia_secreta`) está atado en el código al acto `revela_secreto` (`planner.py:119`). | Cada forma declara **su criterio de revelación** (`revela: {criterio, texto}`): regla → `historia_secreta` (el fragmento de hoy), asedio → la causa, etc. El acto sigue siendo `revela_secreto` de la estructura. |
+| D16 | Una forma o un giro que se borra del catálogo con historias que lo usan. | Cae a «Alguien rompe una regla» / sin giro, con log. Test. |
+
+### 5.2 Núcleo: el molde (S1)
+
+**Nuevo** `src/application/services/authoring/molde.py`: `Molde.for_story(story)` → `criterios` (base + forma + giro, con su acto por estructura), `intencion(n)` (la de la forma o, si la forma no trae, la de `llm_beats_definition.yaml`), `reglas` (las de la forma y el giro para el Planificador), `revela` (D15), `arco` (D14). Carga y valida `config/moldes/formas.yaml` e `ingredientes.yaml` al arrancar (falla temprano si falta un campo), como `Estructura`.
+
+| Lugar | Cambio | Bug que se evita |
+|---|---|---|
+| `config/moldes/formas.yaml` (nuevo) | Base (5 criterios: los de hoy `meta`, `inquietud`, `en_juego`, `reaccion`, `final`), forma `regla` (= `vulnerabilidad`, `transgresion`, `historia_secreta`, `descubrimiento`, **sin** intenciones propias → las de hoy) y las demás | — |
+| `config/workshop_criteria.yaml` | Pasa a ser el **banco de criterios** (todos, con id único); qué criterios usa cada forma lo dice `formas.yaml` | Dos criterios con el mismo id en formas distintas |
+| `catalog.py` | `criterion(id)` busca en todo el banco; `direction_criteria()` queda solo para «regla» (compatibilidad) | Un criterio de otra forma «desconocido» → 404 al responder |
+| `workshop_rules.initial_items`, `context.decisions/pending_block`, Consultor, `_state` | Por `Molde.criterios` (D11) | Respuestas ocultas en los prompts |
+| `planner._acts_block`, `outline_narrator._function` | `Molde.intencion(n)`; secreto según `revela` (D15) | El acto 2 de un asedio pidiendo «romper la regla»; la Voz recibe la intención del acto, así que también cambia ahí |
+| `authoring_planner_system.md` | `{reglas_forma}` al final de las reglas; vacío para «regla» sin giro | — |
+| `Direction` (dominio) + `DirectionForm` + `_direction` / `_form` | `form`, `ingredient`, `form_other`, `form_suggested`, `form_reason` (D13) | — |
+| YAML export / import | Viajan dentro de `direction` (el exportador ya la vuelca entera); un YAML viejo = regla | — |
+
+**Precaución de S1:** con forma «regla» y sin giro, los snapshots `pipeline`, `voice`, `assistant` (largo y corto) quedan **byte a byte iguales**. Snapshots nuevos: `assistant_prompts_asedio.json` y `voice_prompts_asedio.json` (largo y corto) con su test de secciones (no aparece «romper la regla» ni «transgresión»). Tests nuevos: completitud del catálogo (cada forma y giro, en las dos estructuras), **tope de preguntas** (D10: todas las combinaciones ≤ 9 sin giro, ≤ 10 con giro), D11, D16.
+
+### 5.3 Contenido del catálogo (S2)
+
+Las 4 formas nuevas + «Otra» (D14) y los 6 giros, con sus criterios (nombre, pregunta para la IA, «para qué sirve»), lo que pide cada acto (largo y corto) y sus reglas. Cada texto se cruza con «¿Cómo lo cuenta?» y los efectos (memoria: reglas vs opciones). **Te lo paso para leer antes de seguir** (un documento con todo el contenido, sin código): es lo que más pesa en el resultado.
+
+### 5.4 «No va en tu historia» (S3, D8 + D12)
+
+| Lugar | Cambio | Precaución |
+|---|---|---|
+| `CriterionStatus` | `NO_APLICA = "no_aplica"` | La UI y los tests que recorren estados |
+| Consultor: esquema y prompt | `estado` admite `no_aplica` con `motivo`, salvo en los criterios con la marca de rechazo (D12) | Que la IA marque «no va» lo que solo está flojo: el prompt pide que sea **contradicción** con la idea, no falta de datos |
+| `merge_round`, `to_evaluate`, `finish` | `no_aplica` no se vuelve a evaluar; `finish` cuenta los de la forma: ≥ 2 → `mal_elegida` (con la sugerencia) | — |
+| Planificador / Verificador | Bloque «LO QUE NO VA EN ESTA HISTORIA» (los `no_aplica` con su motivo): no se pide en ningún acto | Que el Planificador meta igual una transgresión |
+| `PATCH …/workshop/{c}` `reopen` | Con la marca de D12 | — |
+
+### 5.5 Sugerir la forma (S4, D1)
+
+Job nuevo `suggest_form` (`JobKind`, runner en `authoring_jobs.py`, `estimated_seconds` en los perfiles, `mock_structured`), rol `consultor`. Prompt en `config/prompts_generation/authoring_form_*.md` con las formas del catálogo (nombre + arco) y la idea; salida `{forma, motivo, arco}` (`arco` solo si es «otra»). Guarda `form` (si la persona no eligió una), `form_suggested`, `form_reason` y, para «otra», `form_other`. La sala de la IA es el modal de siempre; al terminar, «Tu idea» se recarga.
+
+### 5.6 La UI (S5)
+
+| Lugar | Cambio |
+|---|---|
+| «Tu idea» (`direccion.ejs`, `asistente.js`) | «¿Qué clase de historia es?» (6 `.opcion-forge` con su línea) + «Que la IA lo sugiera» (job) + campo de «Otra»; «¿Le sumamos un giro?» (6 + «Sin giro») + «Sorprendeme» (entre los menos usados: `_state` trae cuántas historias usan cada giro); pistas de D10 |
+| «Preguntas» (`_taller_contenido.ejs`) | Chips agrupados (de toda historia / de la forma / del giro), `no_aplica` en gris tachado con motivo y «Preguntármelo igual», nota de forma mal elegida, nota de respuestas guardadas de otra forma (D2), pistas de D10 |
+| Guardianes | `sin-jerga`, `gramatica-visual`, `no-hardcoded-colors`; fixtures del asistente con `UPDATE_FIXTURES=1` (diff revisado) |
+| E2E | Elegir forma y giro, sugerir (con el mock), cambiar de forma sin perder respuestas, «no va» y reabrir |
+
+### 5.7 Cierre (S6)
+
+Medición D7 (con aviso de costo y OK): la misma sinopsis con 3 moldes; las 5 historias del §1.2 con la forma sugerida (criterio 6). CLAUDE.md (el catálogo, cómo ampliarlo, D10), memoria, PR a `development`.
+
+### 5.8 Slices
+
+1. **S1 — El motor** con «regla» (= hoy) y «asedio» (para probar con la laguna). Sin UI: la forma se fija por API/YAML.
+2. **S2 — El contenido** del resto del catálogo (documento para tu lectura antes del código).
+3. **S3 — «No va en tu historia».**
+4. **S4 — La IA sugiere la forma.**
+5. **S5 — La UI** de «Tu idea» y «Preguntas».
+6. **S6 — Medición y cierre.**
+
+Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en todo-Claude hasta cerrar la prueba de la chispa.
