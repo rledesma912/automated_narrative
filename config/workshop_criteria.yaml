@@ -30,6 +30,28 @@ direccion:
     acto: { largo: 1, corto: 1 }
     origen: Freytag (exposición) / inquietud sutil del acto 1
 
+  # Spec-670: lo que abre cada forma (acto 1).
+  - id: lugar_llegada
+    nombre: Por qué está ahí
+    pregunta: "¿Por qué el protagonista llega o se queda en ese lugar (se le rompe algo, se pierde, va por trabajo, alguien lo lleva)?"
+    por_que: "Nadie va a un lugar así porque sí: se rompe el camión, se pierden, hay que cumplir un trabajo. Eso deja a {protagonista} ahí, aunque no quiera."
+    acto: { largo: 1, corto: 1 }
+    origen: "lugar maldito (llegar o quedar varado)"
+
+  - id: casa_llegada
+    nombre: Quién llega y cómo entra
+    pregunta: "¿Quién o qué llega y cómo entra a la casa (pide dónde dormir, lo invitan, se hace pasar por alguien)?"
+    por_que: "Muchas veces lo dejan entrar ellos mismos. Por eso da más miedo: el peligro está adentro y fue invitado."
+    acto: { largo: 1, corto: 1 }
+    origen: "el visitante / el huésped (hospitalidad traicionada)"
+
+  - id: senuelo_parece
+    nombre: Qué parece
+    pregunta: "¿Qué parece ser la amenaza cuando aparece (un chico perdido, una voz conocida, alguien que pide ayuda, un animal herido)?"
+    por_que: "Lo que engaña tiene que parecer algo bueno, o algo que da pena dejar solo."
+    acto: { largo: 1, corto: 1 }
+    origen: "el señuelo (folklore: la luz mala, el duende que llama)"
+
   - id: en_juego
     nombre: Qué puede perder {protagonista}
     pregunta: ¿Qué pierde el protagonista si la amenaza sigue (trabajo, vida, cordura, alguien querido)?
@@ -48,6 +70,35 @@ direccion:
     por_que: "En los cuentos de miedo casi siempre alguien abre la puerta que no tenía que abrir. ¿Cuál es la de {protagonista}?"
     acto: { largo: 2, corto: 2 }
     origen: Aristóteles (nudo) / Freytag (incidente incitador) / transgresión del acto 2
+
+  # Spec-670: lo que complica cada forma (acto 2).
+  - id: lugar_rareza
+    nombre: Qué tiene de raro el lugar
+    pregunta: "¿Qué tiene ese lugar que no está bien (algo que se repite, algo que falta, una costumbre de los que viven cerca)?"
+    por_que: "Un camino que vuelve al mismo lugar, árboles demasiado iguales, un silencio que no es normal. Es lo que hace que ese lugar no sea cualquiera."
+    acto: { largo: 2, corto: 2 }
+    origen: "lugar maldito (las reglas del lugar)"
+
+  - id: casa_detalle
+    nombre: Qué no cuadra
+    pregunta: "¿Qué detalle del que llegó no cuadra (algo de su cuerpo, de su forma de hablar, de lo que hace de noche)?"
+    por_que: "Un detalle chico: no come, no se le oyen los pasos, el bebé llora toda la noche. Es lo primero que hace dudar a {protagonista}."
+    acto: { largo: 2, corto: 2 }
+    origen: "el visitante (la señal en el cuerpo)"
+
+  - id: senuelo_cebo
+    nombre: Por qué {protagonista} le cree
+    pregunta: "¿Por qué el protagonista le cree y lo sigue (quiere ayudar, extraña a alguien, necesita algo)?"
+    por_que: "El engaño funciona porque toca algo bueno de {protagonista}. Por eso no es un error tonto: cualquiera habría caído."
+    acto: { largo: 2, corto: 2 }
+    origen: "el señuelo (el cebo)"
+
+  - id: senuelo_grieta
+    nombre: Lo que no encaja
+    pregunta: "¿Cuál es el primer detalle que no encaja con lo que parece (no tiene sombra, sabe un nombre que no podría saber, deja huellas raras)?"
+    por_que: "Un detalle chico que quien escucha nota antes que {protagonista}. Ahí empieza el miedo."
+    acto: { largo: 2, corto: 2 }
+    origen: "el señuelo (la primera grieta)"
 
   # Spec-670, forma «Algo viene por nosotros» (asedio).
   - id: asedio_acercamiento
@@ -77,6 +128,28 @@ direccion:
     acto: { largo: 4, corto: 2 }
     origen: asedio (la causa externa; horror ecológico)
 
+  # Spec-670: lo que se revela en cada forma.
+  - id: lugar_pasado
+    nombre: Qué pasó ahí antes
+    pregunta: "¿Qué pasó en ese lugar antes, que explica lo que hay ahora (una tragedia, una leyenda, algo que se enterró)?"
+    por_que: "Los lugares malditos tienen su historia. {protagonista} la entiende tarde, o nunca del todo."
+    acto: { largo: 4, corto: 2 }
+    origen: "lugar maldito (la historia del lugar)"
+
+  - id: casa_verdad
+    nombre: Qué es en realidad
+    pregunta: "¿Qué es en realidad el que llegó, y cómo se ve cuando se muestra?"
+    por_que: "El momento en que {protagonista} lo ve como es. Todo lo raro de antes cobra sentido."
+    acto: { largo: 3, corto: 2 }
+    origen: "el visitante (la revelación)"
+
+  - id: senuelo_verdad
+    nombre: Qué es en realidad
+    pregunta: "¿Qué es en realidad, y qué quería del protagonista?"
+    por_que: "Cuando se cae la máscara, se entiende todo lo anterior."
+    acto: { largo: 3, corto: 2 }
+    origen: "el señuelo (se cae la máscara)"
+
   - id: descubrimiento
     nombre: Lo que descubre {protagonista}
     pregunta: ¿Qué ve, encuentra o se entera el protagonista que le hace entender de golpe qué está pasando?
@@ -104,3 +177,33 @@ direccion:
     pregunta: ¿Qué regla extraña sigue la amenaza (no cruza el agua, solo sale de a uno, contesta si la nombran)? Tiene que poder decidir el final.
     por_que: "Una regla rara hace que la amenaza sea de esta historia y no de cualquiera. Y si {protagonista} la descubre, la puede usar."
     origen: "folklore (las reglas del ser: umbral, nombre, sal, agua)"
+
+  - id: historia_del_lugar
+    nombre: Lo que pasó ahí antes
+    pregunta: "¿Qué pasó antes en el lugar donde ocurre la historia (una muerte, una leyenda, algo que se construyó encima)?"
+    por_que: "Un lugar con historia asusta más: lo que pasó ahí antes se asoma en lo que pasa ahora."
+    origen: "giro: el lugar tiene su propia historia"
+
+  - id: objeto_cotidiano
+    nombre: El objeto de todos los días
+    pregunta: "¿Qué objeto o costumbre común se vuelve raro en esta historia (el mate, la radio, el espejo del baño, el reloj de la cocina)?"
+    por_que: "Lo que da más miedo es lo que usamos todos los días: después del cuento, quien escucha lo mira distinto."
+    origen: "giro: lo cotidiano que se vuelve raro (unheimlich)"
+
+  - id: lo_que_cree
+    nombre: Lo que cree quien cuenta
+    pregunta: "¿Qué cree quien cuenta que en realidad no es así?"
+    por_que: "Quien escucha se da cuenta antes que {protagonista}: ese escalofrío de saber más que el que cuenta."
+    origen: "giro: el narrador que se equivoca"
+
+  - id: victima_real
+    nombre: A quién le pasa de verdad
+    pregunta: "¿A quién le está pasando esto de verdad (no al protagonista, sino a alguien cercano)?"
+    por_que: "Parece que el peligro es para {protagonista}, pero era para otro. Cuando se entiende, todo lo anterior se ve distinto."
+    origen: "giro: la víctima equivocada"
+
+  - id: lo_que_se_lleva
+    nombre: Lo que le queda
+    pregunta: "¿Qué objeto o marca le queda al protagonista después (algo que trajo sin querer, una cicatriz, un olor que no se va)?"
+    por_que: "Algo que {protagonista} se lleva y que prueba que pasó. El miedo sigue después del cuento."
+    origen: "giro: el souvenir / la marca"

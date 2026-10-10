@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48)
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -284,3 +284,9 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
   - **Mejor:** escalada concreta y sin culpa inventada (la orilla → los peces muertos y la fábrica → el patio → rasca las paredes), detalles propios (la gallina más grande, los animales que callan de golpe, los galpones que siguen largando humo), el final abierto que pide la forma. El Verificador en Claude da avisos de continuidad muy precisos (cómo se va la criatura, qué sabe el padre).
   - **Sigue de manual:** «huellas enormes», «el brillo de unos ojos», «una sombra enorme». Es lo que deberían atacar los giros (S2).
   - Inventó personajes (madre, hermana): el Verificador lo marca.
+
+### S2 (2026-10-10)
+
+- Contenido leído y aprobado por el usuario (https://claude.ai/artifact/PUX3DitoZcfPmZPR9fuBcp): formas `lugar`, `casa`, `senuelo` y `otra`; giros `lugar_historia`, `cotidiano`, `entiende_mal`, `victima`, `recuerdo` (más `regla_rara` de la S1). Los «para qué sirve» de las preguntas de los giros se escribieron al cargar (el documento traía solo la pregunta).
+- Dos ajustes al motor: `revela.acto` por forma (casa y señuelo revelan en el peor momento: acto 3 del largo, 2 del corto) y `no_con` en los giros (`lugar_historia` no va con `lugar`: `Catalogo.giros_para`, y si llega igual se ignora).
+- Preguntas por combinación: regla 9, asedio/lugar/casa 8, señuelo 9, otra 5 (+1 con giro). Snapshot `moldes_formas_prompts.json` (consultor, system y planificador de cada forma nueva, largo y corto) y tests de que ninguna pide «romper la regla».

@@ -146,7 +146,7 @@ class OutlinePlanner:
             intent = m.intencion(n, info.get("intent", ""))  # Spec-670: lo que pide la forma
             if n == estructura.ultimo and ending_fixed:
                 intent = t("asistente/planificador/final_del_autor")
-            if n == estructura.revela_secreto and reveal:
+            if n == m.acto_revela(estructura.revela_secreto) and reveal:
                 intent += reveal.texto
             if info.get("hechos"):  # Spec-650: cuántos hechos (la extensión sale de ahí)
                 intent += t("asistente/planificador/hechos", hechos=info["hechos"])

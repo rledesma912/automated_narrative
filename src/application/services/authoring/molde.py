@@ -31,7 +31,8 @@ MAX_CRITERIOS_GIRO = 1
 @dataclass(frozen=True)
 class Revela:
     criterio: str  # el criterio cuya respuesta se revela
-    texto: str  # lo que se suma a la intención del acto `revela_secreto`
+    texto: str  # lo que se suma a la intención del acto donde se revela
+    acto: dict[str, int] = field(default_factory=dict)  # {estructura: n}; sin eso, `revela_secreto`
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,7 @@ class Giro:
     ayuda: str
     criterios: tuple[str, ...]
     reglas: tuple[str, ...] = ()
+    no_con: tuple[str, ...] = ()  # formas que ya preguntan lo mismo: con ellas no va
 
 
 @dataclass(frozen=True)
@@ -70,6 +72,10 @@ class Catalogo:
 
     def giro(self, giro_id: str) -> Giro | None:
         return next((g for g in self.giros if g.id == giro_id), None)
+
+    def giros_para(self, forma_id: str) -> tuple[Giro, ...]:
+        """Los giros que se pueden sumar a la forma (los de `no_con` no)."""
+        return tuple(g for g in self.giros if forma_id not in g.no_con)
 
 
 @dataclass(frozen=True)
@@ -106,6 +112,10 @@ class Molde:
     def revela(self) -> Revela | None:
         return self.forma.revela
 
+    def acto_revela(self, revela_secreto: int) -> int:
+        """El acto donde se revela: el de la forma o, si no dice, el de la estructura."""
+        return (self.revela.acto.get(self.structure) if self.revela else None) or revela_secreto
+
 
 def for_story(story: Story) -> Molde:
     d = story.direction
@@ -124,6 +134,11 @@ def for_story(story: Story) -> Molde:
             logger.warning(
                 "Giro desconocido «%s» en la historia %s: sin giro", d.ingredient, story.id
             )
+        elif forma.id in giro.no_con:
+            logger.warning(
+                "El giro «%s» no va con «%s» (historia %s): sin giro", giro.id, forma.id, story.id
+            )
+            giro = None
     arco = d.form_other.strip() if d and forma.arco_del_autor else ""
     return Molde(forma, giro, story.structure or DEFAULT_STRUCTURE, arco)
 
@@ -178,7 +193,13 @@ def catalogo() -> Catalogo:
             r = f["revela"]
             if r.get("criterio") not in ids:
                 raise ValueError(f"{where}: «revela» usa un criterio que la forma no tiene")
-            revela = Revela(r["criterio"], texto(where, r, "texto"))
+            acto = {str(k): int(v) for k, v in (r.get("acto") or {}).items()}
+            for sid, n in acto.items():
+                if n not in estructuras.estructura(sid).numeros:
+                    raise ValueError(f"{where}: «revela.acto» {n} no existe en «{sid}»")
+            if acto and set(acto) != set(estructuras.structure_ids):
+                raise ValueError(f"{where}: «revela.acto» tiene que decir el acto de cada largo")
+            revela = Revela(r["criterio"], texto(where, r, "texto"), acto)
         formas.append(
             Forma(
                 id=texto(where, f, "id"),
@@ -201,6 +222,7 @@ def catalogo() -> Catalogo:
                 ayuda=texto(where, g, "ayuda"),
                 criterios=criterios(where, g.get("criterios"), MAX_CRITERIOS_GIRO),
                 reglas=tuple(str(x).strip() for x in g.get("reglas") or ()),
+                no_con=tuple(g.get("no_con") or ()),
             )
         )
     if not formas:
@@ -212,4 +234,10 @@ def catalogo() -> Catalogo:
     ids = [f.id for f in formas] + [g.id for g in giros]
     if len(ids) != len(set(ids)):
         raise ValueError("config/moldes: ids repetidos")
+    formas_ids = {f.id for f in formas}
+    for g in giros:
+        if set(g.no_con) - formas_ids:
+            raise ValueError(
+                f"ingredientes.yaml, giro «{g.id}»: «no_con» con formas que no existen"
+            )
     return Catalogo(base, tuple(formas), tuple(giros))

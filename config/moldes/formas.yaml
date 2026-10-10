@@ -5,7 +5,8 @@
 #   base, 9 preguntas como máximo, D10), lo que pide cada acto por estructura
 #   (`actos`; si no trae, los de `llm_beats_definition.yaml`), reglas para el
 #   Planificador y qué se revela (`revela`: el criterio y el texto que se suma en el
-#   acto `revela_secreto` de la estructura; la intención de ese acto no lo repite).
+#   acto `revela_secreto` de la estructura, o en `revela.acto` si la forma revela en otro;
+#   la intención de ese acto no lo repite).
 # - `arco_del_autor`: la forma «Otra» (D14): el Planificador recibe cómo la contó el autor.
 #
 # La primera forma es la de siempre (historias viejas y YAML importados, D3 / D16):
@@ -45,6 +46,77 @@ formas:
     revela:
       criterio: asedio_causa
       texto: "; acá se entiende qué empuja a la amenaza a venir: una causa de afuera, no algo que hizo el protagonista"
+
+  # «NO TE DETENGAS EN EL BOSQUE»: «No hay conexión. Lo maldito es la zona.»
+  - id: lugar
+    nombre: Un lugar que no hay que pisar
+    ayuda: "El peligro es el lugar: llegar, quedarse y tratar de salir."
+    criterios: [lugar_llegada, lugar_rareza, lugar_pasado]
+    actos:
+      largo:
+        1: "llegar al lugar o quedar varado ahí por una razón concreta, y mostrar lo primero que no está bien"
+        2: "el lugar muestra que no es normal: algo que se repite, algo que falta o algo que no tendría que estar; quedarse se vuelve peligroso"
+        3: "lo que vive en el lugar se muestra de frente: el peor momento"
+        4: "intentar salir del lugar: lo que cuesta y lo que hay que dejar atrás"
+        5: "cerrar con brevedad emocional: sale (o no), pero el lugar se queda con algo o deja una marca"
+      corto:
+        1: "llegar al lugar o quedar varado ahí por una razón concreta, y mostrar lo primero que no está bien"
+        2: "el lugar muestra que no es normal y lo que vive ahí se muestra de frente: el peor momento"
+        3: "salir del lugar (o no) con brevedad emocional: el lugar se queda con algo o deja una marca"
+    reglas:
+      - "El peligro es el lugar, no una culpa del protagonista: lo que le pasa es por estar ahí. No inventes un secreto personal que lo ate al lugar."
+      - "El lugar se vuelve cada vez más raro: cada acto muestra algo de él que no estaba en el anterior."
+    revela:
+      criterio: lugar_pasado
+      texto: "; acá se entiende qué pasó en ese lugar antes y por qué es así, sin que sea culpa del protagonista"
+
+  # «los desconocidos»: los mochileros que piden dónde dormir; las patas de cabra.
+  - id: casa
+    nombre: Alguien que llega a casa
+    ayuda: "Algo de afuera entra, algo no cuadra y se ve lo que es."
+    criterios: [casa_llegada, casa_detalle, casa_verdad]
+    actos:
+      largo:
+        1: "la normalidad de la casa y la llegada de alguien o algo de afuera, que entra con permiso o con una excusa"
+        2: "un detalle del que llegó no cuadra; después otro; adentro de la casa ya nadie está tranquilo"
+        3: "se ve lo que es en realidad el que llegó: el peor momento, adentro de la casa"
+        4: "reaccionar: echarlo, esconderse o escapar de la propia casa"
+        5: "cerrar con brevedad emocional: se fue (o no), pero la casa ya no es la misma y queda una marca"
+      corto:
+        1: "la normalidad de la casa y la llegada de alguien o algo de afuera, que entra con permiso o con una excusa"
+        2: "un detalle del que llegó no cuadra, después otro, hasta que se ve lo que es en realidad: el peor momento"
+        3: "echarlo o escapar, con brevedad emocional: la casa ya no es la misma y queda una marca"
+    reglas:
+      - "El peligro entra a la casa y casi siempre lo dejan entrar: no inventes una culpa del protagonista ni un secreto suyo."
+      - "Lo raro del que llegó se muestra de a poco: un detalle por acto, cada uno más difícil de explicar."
+    revela:
+      criterio: casa_verdad
+      texto: "; acá se ve lo que es en realidad el que llegó"
+      acto: { largo: 3, corto: 2 }  # el peor momento, no el acto del secreto de siempre
+
+  # «el engaño del diablo»: el chico perdido que lleva a la salamanca.
+  - id: senuelo
+    nombre: Algo se hace pasar por otra cosa
+    ayuda: "Parece lo que necesitás; seguirlo es el error."
+    criterios: [senuelo_parece, senuelo_cebo, senuelo_grieta, senuelo_verdad]
+    actos:
+      largo:
+        1: "la normalidad y la aparición de algo que parece inofensivo o que necesita ayuda"
+        2: "el protagonista lo sigue o lo ayuda por una buena razón, aunque hay un detalle que no encaja"
+        3: "se cae la máscara: se ve lo que es en realidad, lejos de donde estaba seguro: el peor momento"
+        4: "escapar del engaño: volver, pedir ayuda o romper lo que lo ata"
+        5: "cerrar con brevedad emocional: se salva (o no), pero desconfía para siempre de lo que parece inofensivo"
+      corto:
+        1: "la normalidad y la aparición de algo que parece inofensivo o que necesita ayuda"
+        2: "el protagonista lo sigue por una buena razón, aparece un detalle que no encaja y se cae la máscara: el peor momento"
+        3: "escapar del engaño con brevedad emocional, y quedar con una marca o una desconfianza para siempre"
+    reglas:
+      - "La amenaza se presenta como algo que el protagonista quiere ayudar o necesita: seguirla es el error, no romper una regla."
+      - "Antes de mostrarse, deja al menos un detalle que no encaja y que quien escucha puede notar."
+    revela:
+      criterio: senuelo_verdad
+      texto: "; acá se cae la máscara: se ve lo que es en realidad y lo que quería"
+      acto: { largo: 3, corto: 2 }
 
   # D14: la historia no es de ninguna clase del catálogo; el autor cuenta el arco.
   - id: otra

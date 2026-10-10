@@ -194,3 +194,89 @@ def test_otra_lleva_el_arco_del_autor_y_ninguna_pregunta_de_forma():
     assert "CÓMO ES ESTA HISTORIA (la contó el autor" in planificador
     assert "Un micro que cada noche tiene un pasajero menos." in planificador
     assert "romper la regla" not in planificador and "transgresi" not in planificador
+
+
+# ── S2: las formas y los giros nuevos ─────────────────────────────────────────
+
+NUEVAS = ["lugar", "casa", "senuelo", "otra"]
+
+
+def _formas() -> dict:
+    out = {}
+    for forma in NUEVAS:
+        story = _con_forma(
+            asistente._story(), forma, arco="Un micro que cada noche lleva un pasajero menos."
+        )
+        for sid, s in (("largo", story), ("corto", corto._corto(story))):
+            p = _asistente(s)
+            out[f"{forma}/{sid}"] = {
+                k: p[k] for k in ("consultor", "planificador_system", "planificador")
+            }
+    return out
+
+
+def test_prompts_de_las_formas_nuevas_no_cambian():
+    prompts = _formas()
+    file = SNAPSHOTS / "moldes_formas_prompts.json"
+    if os.environ.get("SNAPSHOT_UPDATE"):
+        file.write_text(json.dumps(prompts, ensure_ascii=False, indent=2) + "\n", "utf-8")
+    assert prompts == json.loads(file.read_text("utf-8"))
+
+
+@pytest.mark.parametrize("clave", [f"{f}/{s}" for f in NUEVAS for s in ("largo", "corto")])
+def test_ninguna_forma_nueva_pide_romper_una_regla(clave):
+    p = _formas()[clave]
+    assert "romper la regla" not in p["planificador"]
+    assert "transgresi" not in p["planificador"] and "- transgresion:" not in p["consultor"]
+    assert "historia secreta" not in p["planificador"]
+
+
+def _linea_del_acto(planificador: str, n: int) -> str:
+    return next(line for line in planificador.splitlines() if line.startswith(f"{n}. "))
+
+
+def test_cada_forma_revela_en_su_acto():
+    """Ajuste de la S2: «Alguien que llega a casa» revela en el peor momento (acto 3 del
+    largo), no en el acto del secreto de siempre (4); «Un lugar…» usa el de siempre."""
+    casa = _con_forma(asistente._story(), "casa")
+    casa = casa.model_copy(
+        update={
+            "workshop": [
+                *casa.workshop,
+                WorkshopItem(
+                    criterion="casa_verdad",
+                    status=CriterionStatus.CUMPLE,
+                    answer="Tiene patas de cabra.",
+                ),
+            ]
+        }
+    )
+    plan = OutlinePlanner(llm=None)._prompt(casa)
+    assert "acá se ve lo que es en realidad el que llegó" in _linea_del_acto(plan, 3)
+    assert "acá se ve lo que es" not in _linea_del_acto(plan, 4)
+
+    lugar = _con_forma(asistente._story(), "lugar")
+    lugar = lugar.model_copy(
+        update={
+            "workshop": [
+                *lugar.workshop,
+                WorkshopItem(
+                    criterion="lugar_pasado",
+                    status=CriterionStatus.CUMPLE,
+                    answer="Ahí hubo un accidente.",
+                ),
+            ]
+        }
+    )
+    plan = OutlinePlanner(llm=None)._prompt(lugar)
+    assert "acá se entiende qué pasó en ese lugar antes" in _linea_del_acto(plan, 4)
+
+
+def test_un_giro_no_va_con_la_forma_que_ya_pregunta_lo_mismo():
+    """Ajuste de la S2: «El lugar tiene su propia historia» no se ofrece con «Un lugar que no
+    hay que pisar» (repetiría «Qué pasó ahí antes»); si llega igual, se ignora."""
+    cat = molde.catalogo()
+    assert "lugar_historia" not in {g.id for g in cat.giros_para("lugar")}
+    assert "lugar_historia" in {g.id for g in cat.giros_para("casa")}
+    story = _con_forma(asistente._story(), "lugar", giro="lugar_historia")
+    assert molde.for_story(story).giro is None
