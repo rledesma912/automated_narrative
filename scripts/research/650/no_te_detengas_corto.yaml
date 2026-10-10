@@ -1,0 +1,154 @@
+# Spec-650 S5: «No te detengas en el bosque» como relato corto (3 actos). Sin escaleta:
+# la arma el Planificador (gemma, local) con la estructura corta. Sale de
+# input_stories/no_te_detengas_en_el_bosque.yaml sin `outline` ni `actos`.
+title: NO TE DETENGAS EN EL BOSQUE
+personajes_full:
+- id: P1
+  name: Leonardo
+  role: Trailero turno nocturno
+protagonista: 'Leonardo: Trailero turno nocturno'
+relator: 'Primera persona en pasado. Narrador: Leonardo.'
+atmosfera: folk_horror (rural)
+escenarios: ''
+sinopsis: 'Un camionero que viaja de madrugada por una ruta rodeada de bosque sufre
+  una avería justo en una zona donde su empresa tiene una regla clara: nunca detenerse
+  allí. Al bajar del camión, empieza a ver numerosas siluetas humanas entre los árboles,
+  todas iguales, con ojos brillantes y extrañas astas de ciervo. Son hostiles y comienzan
+  a acercarse lentamente, obligándolo a escapar por la carretera. El camionero, que
+  además no está en buen estado físico, corre desesperadamente hacia un pequeño pueblo
+  que acaba de dejar atrás.'
+reglas: []
+storyteller_config:
+  storyteller_id: P1
+  storyteller_name: Leonardo
+  voice:
+    person: primera
+    tense: pasado
+  atmosphere:
+    genre: folk_horror
+    subgenre: rural
+  scenarios: []
+  rules: []
+  entities:
+  - name: Los oscuros
+    nature: culto
+    description: Perseguir al protagonista y llevarlo al bosque para comerlo
+    manifestations: ''
+    limits: volar
+    reveal_level: progresiva
+direction:
+  premise: 'Un camionero que viaja de madrugada por una ruta rodeada de bosque sufre
+    una avería justo en una zona donde su empresa tiene una regla clara: nunca detenerse
+    allí. Al bajar del camión, empieza a ver numerosas siluetas humanas entre los
+    árboles, todas iguales, con ojos brillantes y extrañas astas de ciervo. Son hostiles
+    y comienzan a acercarse lentamente, obligándolo a escapar por la carretera. El
+    camionero, que además no está en buen estado físico, corre desesperadamente hacia
+    un pequeño pueblo que acaba de dejar atrás.'
+  effect: pavor
+  effect_other: ''
+  ending: 'El camionero logra llegar al almacén del pueblo y cuenta lo ocurrido. El
+    hombre que atiende parece conocer la zona y le pregunta: “¿Viste cuántos eran?”.
+    El camionero responde que eran muchos. Entonces le pregunta: “¿Y todos tenían
+    astas?”. Cuando el camionero asiente, el hombre responde: “Entonces todavía no
+    salieron del bosque”. Poco después llega el rescate, recuperan el camión y la
+    historia queda sin explicación. El camionero continúa trabajando, pero desde entonces
+    jamás se detiene en ese tramo.'
+  ending_intentional: true
+  telling: confesion
+workshop:
+- level: direccion
+  criterion: meta
+  status: cumple
+  question: ''
+  options: []
+  answer: Entregar un cargamento urgente
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué necesita Leonardo para terminar su trabajo esa noche, que las criaturas le
+    impiden conseguir?
+- level: direccion
+  criterion: inquietud
+  status: cumple
+  question: ''
+  options: []
+  answer: Que evite una zona específica
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué le dice el jefe de la empresa a Leonardo antes de que empiece el turno?
+- level: direccion
+  criterion: en_juego
+  status: cumple
+  question: ''
+  options: []
+  answer: Pierde su empleo
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué le pasa a Leonardo si no puede volver a trabajar?
+- level: direccion
+  criterion: vulnerabilidad
+  status: cumple
+  question: ''
+  options: []
+  answer: Problemas de respiración
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué problema físico tiene Leonardo que dificulta su huida?
+- level: direccion
+  criterion: transgresion
+  status: cumple
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked: []
+- level: direccion
+  criterion: historia_secreta
+  status: cumple
+  question: ''
+  options: []
+  answer: No hay conexión. Lo maldito es la zona.
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué conexión tiene Leonardo con el bosque, que lo hace un objetivo para las criaturas?
+- level: direccion
+  criterion: descubrimiento
+  status: cumple
+  question: ''
+  options: []
+  answer: Los cuernos en la cabeza y los ojos muy brillantes. El cuerpo es con forma
+    humana.
+  round: 1
+  question_round: 0
+  asked:
+  - ¿Qué detalle de las criaturas hace que Leonardo se dé cuenta de que no son humanos?
+- level: direccion
+  criterion: reaccion
+  status: cumple
+  question: ''
+  options: []
+  answer: ''
+  round: 1
+  question_round: 0
+  asked: []
+- level: direccion
+  criterion: final
+  status: intencional
+  question: ''
+  options: []
+  answer: 'El camionero logra llegar al almacén del pueblo y cuenta lo ocurrido. El
+    hombre que atiende parece conocer la zona y le pregunta: “¿Viste cuántos eran?”.
+    El camionero responde que eran muchos. Entonces le pregunta: “¿Y todos tenían
+    astas?”. Cuando el camionero asiente, el hombre responde: “Entonces todavía no
+    salieron del bosque”. Poco después llega el rescate, recuperan el camión y la
+    historia queda sin explicación. El camionero continúa trabajando, pero desde entonces
+    jamás se detiene en ese tramo.'
+  round: 1
+  question_round: 0
+  asked: []
+estructura: corto
