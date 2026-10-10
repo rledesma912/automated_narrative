@@ -9,6 +9,8 @@ export interface Story {
   status: string;
   /** Spec-560 A2: actos escritos con la versión anterior de un acto previo. */
   stale_acts?: number[];
+  /** Spec-650: largo | corto. */
+  structure?: string;
   created_at: string;
   atmosfera?: string;
   protagonista?: string;
@@ -46,6 +48,8 @@ export interface Relato {
   hasVideoScript?: boolean;
   /** Spec-630 B21: sin guion propio, la versión más nueva que sí lo tiene. */
   guionEn?: { id: string; fecha: string } | null;
+  /** Spec-650 D11: la versión es de cuando la historia tenía otro largo (no se regenera por actos). */
+  otroLargo?: boolean;
 }
 
 async function withRepetition(relato: Relato): Promise<Relato> {

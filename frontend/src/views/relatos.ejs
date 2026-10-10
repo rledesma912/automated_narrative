@@ -14,7 +14,7 @@
   <%- include('asistente/_cabecera', { state: { story_id: story.id, status: story.status }, pasoActual: 'relato' }) %>
 </div>
 <div class="max-w-5xl mx-auto">
-  <h2 class="font-serif text-3xl text-forge-accent mb-2">Relatos de <%= story.title || 'Sin título' %></h2>
+  <h2 class="font-serif text-3xl text-forge-accent mb-2">Relatos de <%= story.title || 'Sin título' %><% if (story.structure === 'corto') { %> <span class="chip-forge chip-forge--info align-middle" data-corto>Corto</span><% } %></h2>
   <p class="text-forge-muted text-sm uppercase tracking-widest mb-12">Cada vez que la IA escribe esta historia queda una versión. Acá están todas.</p>
 
   <% if (!relatos || relatos.length === 0) { %>

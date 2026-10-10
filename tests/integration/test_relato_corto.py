@@ -270,7 +270,7 @@ async def test_una_version_del_otro_largo_no_se_regenera_por_actos(client):
         json={"kind": "regenerate_voz", "beat": 2, "narrative_id": job["narrative_id"]},
     )
 
-    assert resp.status_code == 409
+    assert resp.status_code == 422  # un 409 en el front es «la IA está trabajando»
     assert "otro largo" in resp.json()["detail"]
     assert "## Acto 5" in await _narrative(client, job["narrative_id"])  # se sigue leyendo
 
@@ -287,7 +287,7 @@ async def test_d11_tambien_justo_despues_de_cambiar_el_largo(client):
         json={"kind": "regenerate_voz", "beat": 2, "narrative_id": job["narrative_id"]},
     )
 
-    assert resp.status_code == 409
+    assert resp.status_code == 422  # un 409 en el front es «la IA está trabajando»
     assert "otro largo" in resp.json()["detail"]
 
 
@@ -300,6 +300,11 @@ async def test_la_estimacion_del_corto_es_aparte(client):
     sid = (await _create(client, structure="corto"))["story_id"]
     job = await _generate(client, sid)
     assert job["params"]["structure"] == "corto"
+    # Con la historia, el largo sale de ella (lo usa el front para «≈ N min»).
+    por_historia = (await client.get(f"/api/v1/jobs/estimates?story_id={sid}")).json()
+    assert por_historia["full_generation"] == corto["full_generation"]
+    otra = (await client.get("/api/v1/jobs/estimates?story_id=no-es-un-id")).json()
+    assert otra["full_generation"] == largo["full_generation"]
 
 
 # ── YAML ─────────────────────────────────────────────────────────────────────

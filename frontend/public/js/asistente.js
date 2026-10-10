@@ -25,7 +25,7 @@
   const POLL_MS = 3000;
   const AUTHORING = {
     consult: { titulo: "Leyendo tu historia…", detalle: "La IA lee tu idea para ver qué le falta." },
-    plan_outline: { titulo: "Armando los actos…", detalle: "La IA reparte tu historia en cinco actos y después los revisa." },
+    plan_outline: { titulo: "Armando los actos…", detalle: "La IA reparte tu historia en actos y después los revisa." },
     verify_outline: { titulo: "Revisando los actos…", detalle: "La IA busca respuestas tuyas que quedaron afuera, repeticiones y secretos que nunca se descubren." },
   };
   const STAGE_TEXT = {
@@ -299,13 +299,65 @@
       await api("PUT", `/authoring/stories/${page.storyId}/direction`, payload);
       return;
     }
-    const state = await api("POST", "/authoring/stories", payload);
+    // Spec-650: el largo va solo al crear; después se cambia con cambiarLargo().
+    const state = await api("POST", "/authoring/stories", { ...payload, structure: value(form, "structure") || "largo" });
     page.storyId = state.story_id;
+    page.root.dataset.largo = state.structure;
     page.root.dataset.storyId = state.story_id;
     history.replaceState(null, "", `/asistente/${state.story_id}/direccion`);
     $$("[data-analizar]").forEach((b) => (b.disabled = false));
     const pista = $("[data-pista-titulo]");
     if (pista) pista.remove();
+    // Si eligió otro largo mientras se creaba, se aplica ahora (todavía no hay actos).
+    const elegido = value(form, "structure") || "largo";
+    if (elegido !== state.structure) {
+      await api("PUT", `/authoring/stories/${state.story_id}/structure`, { structure: elegido });
+      page.root.dataset.largo = elegido;
+    }
+  }
+
+  /**
+   * Spec-650 §2.5: cambiar el largo de una historia ya creada. Si ya hay actos, se
+   * borran (son del otro largo): se pregunta antes. Cancelar deja el largo de antes.
+   */
+  async function cambiarLargo(input) {
+    const antes = page.root.dataset.largo || "largo";
+    const volver = () => {
+      const prev = $(`input[name="structure"][value="${antes}"]`, page.root);
+      if (prev) prev.checked = true;
+    };
+    // Marca el cambio en curso desde ya (la esperan los E2E) y de nuevo después de descargar
+    // lo pendiente de «Tu idea»: ese guardado dice «Guardado» antes de que el largo cambie.
+    status("pending", "Sin guardar…");
+    try {
+      await flushAll();
+      status("pending", "Sin guardar…");
+      const actual = await api("GET", `/authoring/stories/${page.storyId}`);
+      if (actual.outline.acts.length) {
+        const ok = await window.ForgeConfirm.ask({
+          title: "¿Cambiar el largo?",
+          message:
+            "Los actos que armaste se borran y los vas a tener que armar de nuevo. Lo que respondiste en las preguntas queda, las reglas de cada acto pasan al acto que corresponde y los relatos que ya escribiste se siguen pudiendo leer.",
+          confirmLabel: "Cambiar el largo",
+        });
+        if (!ok) {
+          status("hint", "");
+          return volver();
+        }
+      }
+      status("saving", "Guardando…");
+      const state = await api("PUT", `/authoring/stories/${page.storyId}/structure`, { structure: input.value });
+      page.root.dataset.largo = state.structure;
+      status("ok", "Guardado");
+    } catch (err) {
+      volver();
+      if (err.status === 409) {
+        status("error", "No se cambió: la IA está trabajando");
+        attachToActiveJob();
+      } else {
+        status("error", `No se cambió: ${err.message}`);
+      }
+    }
   }
 
   function value(form, name) {
@@ -648,6 +700,7 @@
     const form = e.target.closest && e.target.closest("form[data-autosave]");
     if (!form || !page) return;
     if (e.target.matches("[data-lugar-nombre], [data-p-nombre], [data-p-relacion]")) return; // no son del acto
+    if (e.target.name === "structure") return; // Spec-650: el largo no es del guardado automático
     schedule(form);
   });
 
@@ -672,6 +725,11 @@
     }
     const form = e.target.closest("form[data-autosave]");
     if (!form) return;
+    if (e.target.name === "structure") {
+      // Spec-650: sin historia todavía, va con el alta; con historia, se cambia aparte.
+      if (page.storyId) cambiarLargo(e.target);
+      return;
+    }
     if (e.target.name === "genero") onGenreChange(form);
     if (e.target.name === "effect") {
       $$("[data-solo-si-efecto]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiEfecto !== e.target.value));

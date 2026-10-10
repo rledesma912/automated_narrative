@@ -23,17 +23,20 @@ export interface EstimateLabels {
 }
 
 export function createLoadEstimates(
-  fetchEstimates: () => Promise<JobEstimates> = () => getJobEstimates(ESTIMATES_TIMEOUT_MS),
+  fetchEstimates: (storyId?: string) => Promise<JobEstimates> = (storyId) =>
+    getJobEstimates(ESTIMATES_TIMEOUT_MS, storyId),
   timeoutMs = ESTIMATES_TIMEOUT_MS,
 ) {
-  return async function loadEstimates(_req: Request, res: Response, next: NextFunction) {
+  return async function loadEstimates(req: Request, res: Response, next: NextFunction) {
     res.locals.estimateLabels = null;
     let timer: NodeJS.Timeout | undefined;
     try {
       const timeout = new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
       });
-      const estimates = await Promise.race([fetchEstimates(), timeout]);
+      // Spec-650: en las páginas de una historia, la estimación es la de su largo.
+      const storyId = req.params?.["storyId"] as string | undefined;
+      const estimates = await Promise.race([fetchEstimates(storyId), timeout]);
       const labels: EstimateLabels = {
         full_generation: formatEstimate(estimates?.full_generation?.seconds),
         regenerate_voz: formatEstimate(estimates?.regenerate_voz?.seconds),

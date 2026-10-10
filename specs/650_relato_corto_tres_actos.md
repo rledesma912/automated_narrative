@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-09
 **Tipo:** SDD — épica (estructura del relato: asistente, pipeline, UI y video)
-**Estado:** SPECIFY ✅ (D1–D8 con lo recomendado, OK del usuario 2026-10-09) · PLAN ✅ (D9–D11 con lo recomendado, OK 2026-10-09) · TASKS ✅ (OK 2026-10-09) · S1 ✅ (2026-10-09)
+**Estado:** SPECIFY ✅ (D1–D8 con lo recomendado, OK del usuario 2026-10-09) · PLAN ✅ (D9–D11 con lo recomendado, OK 2026-10-09) · TASKS ✅ (OK 2026-10-09) · S1 ✅ (2026-10-09) · S2 ✅ · S3 ✅ (2026-10-10)
 **Rama:** `feat/spec-650-relato-corto-tres-actos` (desde `development`, `cafb508`)
 **Extiende:** Spec-530 (asistente y escaleta), Spec-560 (puente y receta del efecto), Spec-590/610 D11 (extensión por acto), Spec-610 (paquete para el video), Spec-620 (textos fuera del código).
 
@@ -179,7 +179,7 @@ Recorrí cada lugar donde el código depende de la cantidad de actos. Abajo: qu�
 |---|---|---|
 | D9 | Guardar el largo dentro de `direction` es frágil: el autoguardado de «Tu idea» rearma `Direction` entero desde el formulario (`_direction(form)`), así que una pestaña vieja o un campo que falte **volvería la historia a «largo» en silencio**. | Columna propia `story.structure TEXT NOT NULL DEFAULT 'largo' CHECK (structure IN ('largo','corto'))` y endpoint propio `PUT …/structure`. El autoguardado de «Tu idea» **no la toca**. Costo: cambio de esquema → `make dev-db` y, en prod, el procedimiento de siempre (export-yaml con el código viejo, DB nueva, import-yaml). |
 | D10 | Al cambiar de largo, las **reglas ancladas** a los actos 4 y 5 quedarían huérfanas (nadie las ve ni le llegan a la Voz), y las ancladas a 2 y 3 caerían en actos que significan otra cosa. | Se reubican con una tabla en config: largo→corto `1→1, 2→2, 3→2, 4→3, 5→3`; corto→largo `1→1, 2→3, 3→5`. La confirmación lo dice («Las reglas de cada acto pasan al acto equivalente»). |
-| D11 | Una versión del relato escrita con el **otro largo** (p. ej. 5 actos y ahora la historia es corta): «Regenerar el acto 2» usaría el acto 2 de la escaleta nueva con la prosa vieja → texto que no encaja, **sin error**. | Regenerar un acto exige que la versión tenga tantos actos como la estructura actual; si no, 409 con un mensaje coloquial («Esta versión es de cuando la historia era larga: escribila de nuevo para regenerar actos»). La versión vieja se sigue leyendo, corrigiendo y descargando. |
+| D11 | Una versión del relato escrita con el **otro largo** (p. ej. 5 actos y ahora la historia es corta): «Regenerar el acto 2» usaría el acto 2 de la escaleta nueva con la prosa vieja → texto que no encaja, **sin error**. | Regenerar un acto exige que la versión tenga tantos actos como la estructura actual; si no, 422 (en S3 se vio que el front lee todo 409 como «la IA está trabajando») con un mensaje coloquial («Esta versión es de cuando la historia era larga: escribila de nuevo para regenerar actos»). La versión vieja se sigue leyendo, corrigiendo y descargando. |
 
 ### 6.2 Núcleo: `Estructura` (S1)
 
@@ -253,7 +253,7 @@ Maqueta: la opción nueva es una `.opcion-forge` más, como las de «¿Cómo lo 
 23 archivos de `tests/` usan 5 actos (fixtures de escaleta, `range(1, 6)`, mocks). En S1 **no se cambian**: si pasan sin tocarlos, el refactor es fiel. En S2 se suman casos del corto al lado (no reemplazos). Además:
 - **Guardián** `tests/unit/test_sin_cinco_actos_fijos.py`: recorre `src/` con `ast` y falla con `range(1, 6)`, comparaciones con `5` sobre números de acto o `NUM_ACTS`; en el front, un Vitest busca `|| 5` y `< 5` en vistas y `public/js`.
 - **Recorrido E2E corto** (Playwright, LLM mock): crear corto → preguntas → armar actos (3) → escribir → sala con 3 → «El relato» con 3 nombres correctos → regenerar acto 2 → cambiar a largo con confirmación → 5 actos vacíos y reglas reubicadas.
-- **Integración:** `PUT outline/4` en una historia corta → 404; regenerar acto de una versión del otro largo → 409; autoguardado de «Tu idea» no cambia `structure`.
+- **Integración:** `PUT outline/4` en una historia corta → 404; regenerar acto de una versión del otro largo → 422; autoguardado de «Tu idea» no cambia `structure`.
 
 ### 6.7 Orden, checkpoints y riesgos
 
@@ -300,7 +300,7 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
 - **T2.3** `authoring_options.yaml` (`planificador: {largo, corto}`) y `workshop_criteria.yaml` (`acto: {largo, corto}`) + `catalog`/`Criterion.for_story`; test de que todo efecto y criterio tiene las dos.
 - **T2.4** Prompts: `{num_actos}` / `{ultimo}` en Planificador, Verificador, `objetivo.md`; `core_messages.yaml`; `fragments/README.md`. *Verif.:* snapshots del largo idénticos.
 - **T2.5** API: `POST /stories` con `structure`; `PUT …/structure` (409 con job activo); `_state` con `structure` y actos; test de que `PUT …/direction` no cambia `structure`.
-- **T2.6** D11 en `RegenerateBeatVozUseCase` (409 + mensaje en `core_messages.yaml`) y `last_version_findings` solo con la misma estructura.
+- **T2.6** D11 en la API (422 + mensaje en `core_messages.yaml`) y `last_version_findings` solo con la misma estructura.
 - **T2.7** Estimaciones por estructura (`params.structure`, `JobDurationEstimator`, `GET /jobs/estimates?structure=`, `full_generation_corto` opcional).
 - **T2.8** YAML: `estructura:` en export/import + CLI `generate --input`; round-trip de las dos.
 - **T2.9** Snapshots `*_corto.json` con sus tests de secciones.
@@ -310,7 +310,7 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
   **Encontrado al leer los snapshots** (ningún assert lo agarraba): «LOS 5 ACTOS», `"numero": 1 a 5` y «de 3 a 5 hechos» en `authoring_planner.md`, y «ACTO N DE 5» en `outline_voice.md`. Arreglados con `{num_actos}`, `{hechos_por_acto}` y `{total}`; el guardián ahora revisa también los prompts.
   **Encontrado en la corrida local (T2.10, gemma):** el Planificador no respeta la cantidad de hechos del corto (pidió 2–3 / 4–5 / 2 y armó 5 / 7 / 7). Se hizo: (1) el prompt lo pide más firme («Lleva N hechos, no más», «ni uno más: es un relato de unos 7 minutos») → bajó a 4 / 6 / 7; (2) aviso por regla `muchos_hechos` en «Los actos» (Verificador, ignorable) con el tope `hechos_max` de cada acto: la persona decide qué junta o saca, no se corrige solo; (3) el desenlace pasa a 2 o 3 hechos (absorbe el «qué hace después» del largo; las palabras de D2 no cambian). El acto 3 de «No te detengas en el bosque» sigue con 7 porque copia el final que escribió la autora (≈ 7 momentos): es su decisión y el aviso se lo muestra.
 
-### S3 — UI
+### S3 — UI · ✅ 2026-10-10
 
 - **T3.1** `utils/actos.ts` (estructuras, `nombresPara`, `estructuraPorCantidad`) en `app.locals` + Vitest contra el YAML.
 - **T3.2** `_acto.ejs`, `escaleta.ejs`, `_escaleta_contenido.ejs`, `taller.ejs`, `home.ejs`, `asistente.js`: nombres, intensidad y «último acto» por estructura; fuera «cinco».
@@ -320,6 +320,9 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
 - **T3.6** Chip «Corto» en galería y «El relato».
 - **T3.7** Vitest guardián (`|| 5`, `< 5`); fixtures `UPDATE_FIXTURES=1` revisando el diff; E2E del recorrido corto (§6.6).
 - **Checkpoint S3:** Vitest + Playwright completos; URL en `storymaker.test`.
+- **Resultado S3:** Vitest 389 ✅, Playwright 71 ✅ (3 skipped; nuevo `relato-corto.spec.ts`, 4 casos, también con `--repeat-each=3`), pytest 934 ✅, lint y `tsc` ✅, `make dev-status` ✅. Referencias HTML del asistente (largo): idénticas salvo el JSON del estado embebido (que ahora trae `structure` y `structure_acts`). Guardián del front (`sin-cinco-actos.view.test.ts`): 16 casos en el front de `9d60c27`, ninguno ahora; «nudo» suma a la jerga prohibida.
+  **Encontrado en S3:** (1) el front lee todo 409 como «la IA está trabajando»: D11 pasa a **422** (Core + Corregir muestra el motivo); además el panel del relato y Corregir **no ofrecen «Regenerar»** en una versión del otro largo y lo explican con una nota. (2) «≈ N min» antes de lanzar salía del largo: `GET /jobs/estimates?story_id=` (el Core resuelve el largo; el middleware lo pasa). (3) Cambiar el largo justo después de que se guardara «Tu idea» mostraba «Guardado» antes de tiempo (lo agarró el E2E): se vuelve a marcar pendiente después de descargar lo pendiente. (4) Si eligen el largo mientras la historia se está creando, se aplica apenas existe.
+  **Aparte:** Vitest a veces se cae con *segmentation fault* / «Worker exited unexpectedly» (≈ 1 de 8 corridas), también con el front de `9d60c27`: es del entorno, no de estos cambios.
 
 ### S4 — Video
 

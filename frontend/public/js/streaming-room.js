@@ -23,7 +23,8 @@
   "use strict";
 
   const STORY_ID = window.STORY_ID;
-  const TOTAL_BEATS = window.TOTAL_BEATS || 5;
+  // Spec-650: cuántos actos escribe (5 o 3). El job también lo trae desde que se crea.
+  const totalBeats = () => (jobInfo && jobInfo.total_beats) || window.TOTAL_BEATS || 0;
 
   let beatCount = 0;
   let es = null;
@@ -450,7 +451,7 @@
         setStatus("Conexión interrumpida — reconectando...");
         return;
       }
-      if (beatCount === TOTAL_BEATS) {
+      if (totalBeats() && beatCount === totalBeats()) {
         showDone();
         return;
       }

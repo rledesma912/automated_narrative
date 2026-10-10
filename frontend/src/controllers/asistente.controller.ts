@@ -5,6 +5,7 @@ import axios from "axios";
 import { renderPage } from "../utils/render";
 import { getGenreCatalog } from "../services/catalog.service";
 import { getAuthoringOptions, getAuthoringState } from "../services/authoring.service";
+import { conLargo } from "../utils/actos";
 
 /**
  * Spec-530 S4: vistas del asistente de autoría (Tu idea, Preguntas, Los actos; Spec-580).
@@ -41,7 +42,7 @@ export async function asistentePage(req: Request, res: Response): Promise<void> 
   }
   let state;
   try {
-    state = await getAuthoringState(storyId);
+    state = conLargo(await getAuthoringState(storyId)); // Spec-650
   } catch {
     res.redirect("/galeria");
     return;
@@ -80,7 +81,7 @@ export async function fragmentoAsistente(req: Request, res: Response): Promise<v
   }
   let state;
   try {
-    state = await getAuthoringState(storyId);
+    state = conLargo(await getAuthoringState(storyId)); // Spec-650
   } catch (err) {
     const notFound = axios.isAxiosError(err) && err.response?.status === 404;
     res.status(notFound ? 404 : 502).send(notFound ? "Historia inexistente" : "El Core no responde");

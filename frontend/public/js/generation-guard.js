@@ -128,7 +128,7 @@
   function progressText(job) {
     const stage = STAGE_LABELS[job.stage] || "Iniciando";
     if (!job.beat || job.stage === "consolidando") return stage;
-    return `Acto ${job.beat} de ${job.total_beats || 5} · ${stage}`;
+    return `Acto ${job.beat}${job.total_beats ? ` de ${job.total_beats}` : ""} · ${stage}`; // Spec-650
   }
 
   document.addEventListener("forge:job-started", (e) => {

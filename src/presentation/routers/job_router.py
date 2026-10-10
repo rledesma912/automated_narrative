@@ -131,7 +131,8 @@ async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:
     # escaleta de ahora no se corresponde con su prosa). Va antes que «acto sin narrar»:
     # cambiar el largo borra la prosa de la última generación y ese aviso no diría por qué.
     if mine and not same_structure(story, narrative.content):
-        raise HTTPException(status_code=409, detail=message("api.version_de_otro_largo"))
+        # 422, no 409: en el front un 409 es «la IA ya está trabajando» (Spec-460).
+        raise HTTPException(status_code=422, detail=message("api.version_de_otro_largo"))
     beat = next((b for b in story.beats if b.number == request.beat), None)
     if beat is None or not beat.has_content():
         raise HTTPException(
@@ -155,9 +156,19 @@ async def get_active_job(story_id: str):
 
 # Declarada antes de /jobs/{job_id}: si no, "estimates" se toma como un id.
 @router.get("/jobs/estimates")
-async def get_estimates(structure: StructureId = "largo") -> dict[str, dict]:
+async def get_estimates(
+    structure: StructureId = "largo", story_id: str | None = None
+) -> dict[str, dict]:
     """Duración estimada de cada tipo de job con el perfil activo (Spec-510), para una
-    historia de ese largo (Spec-650: `?structure=corto`)."""
+    historia de ese largo (Spec-650: `?structure=corto`, o `?story_id=` y el largo sale
+    de la historia; una historia que no existe usa `structure`)."""
+    if story_id:
+        try:
+            story = await SQLStoryRepository().get_by_id(UUID(story_id))
+        except ValueError:
+            story = None
+        if story is not None:
+            structure = story.structure
     return await job_manager.estimates(structure)
 
 
