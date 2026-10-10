@@ -335,5 +335,7 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
 ### S5 — Medición y validación
 
 - **T5.1** `evaluate_voice.py --input <corto> --runs 2 --yes` (aviso de costo antes) → criterios 3 y 4 del §5; evidencia en `scripts/research/650/`.
+  - **Resultado (2026-10-10, US$ 0,11, `scripts/research/650/corto/`):** corrida 1 = 341 / 500 / 265 (1 115 palabras, todo dentro); corrida 2 = 377 / 584 / 297 (1 267: el acto 1 +18 % y el total se pasa ~70 palabras, unos 30 s). Sonnet escribe en el techo del rango o arriba. Prosa pareja con el largo (0 clichés, 0 diálogo, 0 frases repetidas; cortadas 7 % y 2 %); comparaciones 3 y 4 (2,7 y 3,2 cada 1 000 palabras contra 1,8 y 2,7 del largo de la 640): no se tocan, las muestra el control de repetición.
+  - **Ajuste (decisión del usuario, sin volver a medir):** rangos bajados ~8 %: 240–290 / 450–520 / 190–240 (880–1 050 en total). Con el desvío medido, lo real queda cerca de 1 000–1 150. Si hace falta, se reajusta después del uso de las usuarias.
 - **T5.2** Una versión corta en dev para las usuarias + 1–2 preguntas.
 - **T5.3** CLAUDE.md, memoria y PR a `development`.

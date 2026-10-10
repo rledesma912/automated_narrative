@@ -190,12 +190,12 @@ class TestEstructuras:
             BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
 
     def test_el_yaml_real_trae_el_corto(self):
-        """Spec-650 §2.1: 3 actos, 940–1 140 palabras (≈ 7 min a 150 por minuto)."""
+        """Spec-650 §2.1: 3 actos, 880–1 050 palabras (S5: la Voz escribe en el techo) (≈ 7 min a 150 por minuto)."""
         corto = BeatSpecRepository().estructura("corto")
         assert (corto.num_actos, corto.ultimo, corto.revela_secreto) == (3, 3, 2)
         assert [a["nombre_ui"] for a in corto.actos] == ["Cómo empieza", "Qué pasa", "Cómo termina"]
-        assert sum(a["palabras"][0] for a in corto.actos) == 940
-        assert sum(a["palabras"][1] for a in corto.actos) == 1140
+        assert sum(a["palabras"][0] for a in corto.actos) == 880
+        assert sum(a["palabras"][1] for a in corto.actos) == 1050
 
     def test_el_yaml_real_carga_y_la_larga_tiene_cinco(self):
         repo = BeatSpecRepository()

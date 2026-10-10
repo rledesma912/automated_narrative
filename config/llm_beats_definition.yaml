@@ -197,7 +197,8 @@ beats_spec:
 
     # Spec-650: relato corto, ~7 minutos leído en voz alta (≈ 1 050 palabras a 150
     # palabras por minuto, config/video/lectura.yaml). El clímax cae al final del nudo
-    # (D3). `palabras` fija el rango de cada acto (940–1 140 en total); `hechos`, cuántos
+    # (D3). `palabras` fija el rango de cada acto (880–1 050 en total: S5 midió que Sonnet
+    # escribe en el techo del rango o arriba, así que lo real queda cerca de 1 050); `hechos`, cuántos
     # le pide el Planificador (la Voz escribe un párrafo por hecho).
     corto:
       label: "Corto · 3 actos · unos 7 minutos"
@@ -212,7 +213,7 @@ beats_spec:
           name: "inicio"
           label: "Inicio"
           nombre_ui: "Cómo empieza"  # = frontend/src/utils/actos.ts
-          palabras: [260, 320]
+          palabras: [240, 290]
           hechos: "2 o 3"
           hechos_max: 3  # más que esto → aviso en «Los actos» (Verificador)
           intent: "establecer la normalidad, la regla o advertencia, y sembrar una inquietud sutil"
@@ -227,7 +228,7 @@ beats_spec:
           name: "nudo"
           label: "Nudo"
           nombre_ui: "Qué pasa"
-          palabras: [480, 560]
+          palabras: [450, 520]
           hechos: "4 o 5"
           hechos_max: 5  # más que esto → aviso en «Los actos» (Verificador)
           intent: "romper la regla, mostrar un evento anómalo concreto y llevar al protagonista hasta el enfrentamiento: la explicación racional ya no alcanza"
@@ -242,7 +243,7 @@ beats_spec:
           name: "desenlace"
           label: "Desenlace"
           nombre_ui: "Cómo termina"
-          palabras: [200, 260]
+          palabras: [190, 240]
           hechos: "2 o 3"  # absorbe el «qué hace después» del largo (la salida) y el cierre
           hechos_max: 3  # más que esto → aviso en «Los actos» (Verificador)
           intent: "salir o alejarse del peligro sin una resolución fácil y cerrar con brevedad emocional: una marca que queda y la sensación de que el horror no terminó"

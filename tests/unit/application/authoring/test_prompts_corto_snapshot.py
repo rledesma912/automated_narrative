@@ -88,9 +88,9 @@ def test_la_voz_del_corto_recibe_sus_actos_y_sus_palabras():
     for n, user in prompts.items():
         assert user.startswith(f"ACTO {n} DE 3 ·"), user[:40]
         assert "de 5" not in user.lower()
-    assert "· Inicio" in prompts[1] and "260" in prompts[1] and "320" in prompts[1]
-    assert "· Nudo" in prompts[2] and "480" in prompts[2] and "560" in prompts[2]
-    assert "· Desenlace" in prompts[3] and "200" in prompts[3] and "260" in prompts[3]
+    assert "· Inicio" in prompts[1] and "240" in prompts[1] and "290" in prompts[1]
+    assert "· Nudo" in prompts[2] and "450" in prompts[2] and "520" in prompts[2]
+    assert "· Desenlace" in prompts[3] and "190" in prompts[3] and "240" in prompts[3]
     # El final del autor va en el último acto del corto (el 3), no en el 5.
     assert "cerrar la historia con el final que decidió el autor" in prompts[3]
     assert "cerrar la historia con el final que decidió el autor" not in prompts[2]
