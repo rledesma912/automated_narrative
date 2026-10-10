@@ -26,6 +26,10 @@
     consolidando: { label: "Juntando el relato", weight: 1 },
   };
 
+  // Spec-650: el job trae `total_beats` desde que se crea (5 o 3). Los jobs de antes que
+  // no lo traían eran todos de la estructura larga.
+  const LEGACY_TOTAL_BEATS = 5;
+
   // Por debajo de este avance, el ritmo real todavía no dice nada.
   const MIN_PROGRESS_FOR_PACE = 0.15;
 
@@ -38,7 +42,7 @@
     if (job.stage === "consolidando") return 1;
     const stage = STAGES[job.stage];
     if (!stage || !job.beat) return 0.03;
-    const total = job.total_beats || 5;
+    const total = job.total_beats || LEGACY_TOTAL_BEATS;
     return Math.min(0.99, (job.beat - 1 + stage.weight) / total);
   }
 

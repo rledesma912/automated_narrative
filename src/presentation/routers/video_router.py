@@ -9,9 +9,10 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from src.application.services import narrative_acts
+from src.application.services.structure import DEFAULT_STRUCTURE
 from src.application.services.video import pdf as video_pdf
 from src.application.services.video import state as video_state
-from src.application.services.video.config import video_config
+from src.application.services.video.config import estructura_del_relato, video_config
 from src.application.services.video.files import slug
 from src.domain.models import GeneratedNarrative
 from src.domain.video import Mark, VideoScript
@@ -26,13 +27,16 @@ router = APIRouter(tags=["Video"])
 
 
 @router.get("/video/lectura")
-async def get_reading_settings() -> dict:
+async def get_reading_settings(actos: int | None = None) -> dict:
     """Ritmo de lectura y largo del episodio (`config/video/lectura.yaml`): la web hace
-    las mismas cuentas que el Core con estos valores."""
+    las mismas cuentas que el Core con estos valores. Spec-650: con `?actos=N` (los del
+    relato), el episodio es el de su largo (el corto dura unos 7 minutos)."""
     lectura = video_config().lectura
+    estructura = estructura_del_relato(actos) if actos else DEFAULT_STRUCTURE
     return {
         "palabras_por_minuto": lectura.palabras_por_minuto,
-        "episodio_minutos": lectura.episodio_minutos.model_dump(),
+        "episodio_minutos": lectura.episodio(estructura).model_dump(),
+        "estructura": estructura,
     }
 
 

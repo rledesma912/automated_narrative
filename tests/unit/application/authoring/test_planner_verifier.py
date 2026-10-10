@@ -404,3 +404,29 @@ def test_el_planificador_respeta_las_reglas_de_cada_acto(story):
     assert prompt.index("- Acto 1: Solo de noche", i) < prompt.index(
         "- Acto 3: Aparece en el espejo", i
     )
+
+
+# ── Spec-650: el relato corto tiene un tope de hechos por acto ────────────────
+
+
+def test_corto_con_muchos_hechos_avisa_y_el_largo_no(story):
+    outline = [
+        ActOutline(number=1, events=["a", "b", "c", "d"], bridge=""),
+        ActOutline(number=2, events=["a"] * 5, bridge="Después."),
+        ActOutline(number=3, events=["a", "b", "c", "d"], bridge="Después."),
+    ]
+    corto = rule_warnings(story.model_copy(update={"structure": "corto"}), outline)
+    keys = {n: {w.key for w in ws} for n, ws in corto.items()}
+    assert "muchos_hechos" in keys[1] and "muchos_hechos" in keys[3]
+    assert "muchos_hechos" not in keys.get(2, set())  # 5 entra en el nudo
+    texto = next(w.text for w in corto[3] if w.key == "muchos_hechos")
+    assert "tiene 4 hechos" in texto and "entran 3" in texto
+
+    largo = rule_warnings(story, outline)
+    assert not any(w.key == "muchos_hechos" for ws in largo.values() for w in ws)
+
+
+def test_muchos_hechos_ignorado_no_vuelve(story):
+    outline = [ActOutline(number=3, events=["a", "b", "c", "d"], bridge="Después.")]
+    corto = story.model_copy(update={"structure": "corto"})
+    assert not rule_warnings(corto, outline, {3: {"muchos_hechos"}}).get(3)

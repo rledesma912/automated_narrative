@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from src.domain.models import StructureId
+
 
 class ThreatForm(BaseModel):
     """La amenaza (opcional): la entidad principal de la Spec-450."""
@@ -32,6 +34,15 @@ class DirectionForm(BaseModel):
     protagonist_role: str = Field("", max_length=160)
     narrator: str = Field("", max_length=60)  # "" = el protagonista
     threat: ThreatForm | None = None  # sin naturaleza = sin amenaza
+    # Spec-650 D9: solo al crear (POST). El autoguardado (PUT) la ignora: el largo se
+    # cambia únicamente con PUT …/structure, que confirma y rearma.
+    structure: StructureId = "largo"
+
+
+class StructureForm(BaseModel):
+    """Spec-650: cambiar el largo de la historia (borra los actos y reubica las reglas)."""
+
+    structure: StructureId
 
 
 class WorkshopAction(BaseModel):

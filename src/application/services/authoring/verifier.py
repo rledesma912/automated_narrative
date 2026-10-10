@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from src.application.services.authoring import catalog, context, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActOutline, OutlineWarning, Story, normalize_key
@@ -56,7 +57,9 @@ class OutlineVerifier:
             self.llm,
             role=ROLE,
             prompt=self._prompt(story, outline),
-            system_prompt=self.templates.load("authoring_verifier_system.md"),
+            system_prompt=self.templates.load("authoring_verifier_system.md").format(
+                num_actos=BeatSpecRepository().estructura(story.structure).num_actos
+            ),
             output=Revision,
         )
         numbers = {a.number for a in outline}
@@ -173,6 +176,8 @@ def rule_warnings(
     """
     dismissed = dismissed or {}
     out: dict[int, list[OutlineWarning]] = {}
+    estructura = BeatSpecRepository().estructura(story.structure)  # Spec-650
+    last = estructura.ultimo
 
     def add(n: int, key: str, text: str) -> None:
         if key not in dismissed.get(n, set()):
@@ -184,6 +189,13 @@ def rule_warnings(
     for act in outline:
         if not act.events:
             add(act.number, "sin_hechos", message("verifier.sin_hechos"))
+        top = estructura.acto(act.number).get("hechos_max")
+        if top and len(act.events) > top:  # Spec-650: el corto tiene un tope por acto
+            add(
+                act.number,
+                "muchos_hechos",
+                message("verifier.muchos_hechos", cantidad=len(act.events), maximo=top),
+            )
         if act.number > 1 and not act.bridge.strip():
             add(act.number, "sin_puente", message("verifier.sin_puente"))
         if act.change_from and workshop_rules.normalize(
@@ -198,7 +210,7 @@ def rule_warnings(
                     f"elenco:{key}",
                     message("verifier.elenco", nombre=name),
                 )
-        if act.held_back.strip() and not act.number < act.reveal_act <= 5:
+        if act.held_back.strip() and not act.number < act.reveal_act <= last:
             add(act.number, "sin_revelacion", message("verifier.sin_revelacion"))
         later = [a for a in outline if a.number > act.number]
         loose = [

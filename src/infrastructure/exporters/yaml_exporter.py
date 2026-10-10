@@ -72,6 +72,9 @@ class YamlStoryExporter:
             "reglas": list(story.reglas or []),
             "storyteller_config": self._build_storyteller_config(sc, story),
         }
+        # Spec-650: el largo, solo si no es el de siempre (sin la clave = largo).
+        if story.structure != "largo":
+            doc["estructura"] = story.structure
         # Spec-530: solo si la historia pasó por el asistente (los YAML viejos no cambian).
         if story.direction:
             doc["direction"] = story.direction.model_dump(mode="json")

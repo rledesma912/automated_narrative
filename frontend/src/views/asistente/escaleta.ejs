@@ -7,6 +7,8 @@
 <%
   const acts = state.outline.acts;
   const est = locals.estimateLabels || {};
+  /* Spec-650: cuántos actos tiene, en palabras («tres» o «cinco»). */
+  const cuantosActos = ({ 3: 'tres', 5: 'cinco' })[state.structure_acts.length] || String(state.structure_acts.length);
 %>
 <div data-asistente="escaleta" data-story-id="<%= state.story_id %>">
   <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
@@ -31,7 +33,7 @@
 
   <header class="mb-8 max-w-3xl">
     <h2 class="font-serif text-3xl text-forge-accent mb-2">Los actos</h2>
-    <p class="text-forge-muted">Los cinco actos de tu historia antes de escribirla. Cambiá lo que quieras: el relato sale de acá.</p>
+    <p class="text-forge-muted">Los <%= cuantosActos %> actos de tu historia antes de escribirla. Cambiá lo que quieras: el relato sale de acá.</p>
   </header>
 
   <%- include('_escaleta_contenido') %>

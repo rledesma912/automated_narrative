@@ -9,7 +9,7 @@ from src.application.services.narrative_acts import NarrativeActs
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
 from src.application.services.video import timing
-from src.application.services.video.config import VideoConfig
+from src.application.services.video.config import VideoConfig, estructura_del_relato
 from src.domain.models import Story
 
 SYSTEM_TEMPLATE = "video_script_system.md"
@@ -33,6 +33,8 @@ class VideoScriptPrompts:
         total = sum(len(narrative.paragraphs(n)) for n in narrative.numbers())
         words = sum(timing.palabras(narrative.acts[n]) for n in narrative.numbers())
         ppm = cfg.lectura.palabras_por_minuto
+        # Spec-650: los momentos según el largo del relato (por cuántos actos tiene).
+        biblia = cfg.biblia.para(estructura_del_relato(len(narrative.numbers())))
         user = self.templates.load(USER_TEMPLATE).format(
             titulo=story.title,
             relato="\n".join(self._act(n, narrative) for n in narrative.numbers()),
@@ -51,8 +53,8 @@ class VideoScriptPrompts:
                 if problems
                 else ""
             ),
-            momentos_desde=min(cfg.biblia.momentos.desde, total),
-            momentos_hasta=min(cfg.biblia.momentos.hasta, total),
+            momentos_desde=min(biblia.momentos.desde, total),
+            momentos_hasta=min(biblia.momentos.hasta, total),
             transiciones=", ".join(cfg.biblia.transiciones),
             presentador=presentador,
         )

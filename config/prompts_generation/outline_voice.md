@@ -1,4 +1,4 @@
-ACTO {numero} DE 5 · {nombre} · intensidad {intensidad}
+ACTO {numero} DE {total} · {nombre} · intensidad {intensidad}
 {historia}QUÉ TIENE QUE LOGRAR ESTE ACTO: {funcion}
 {meta}{puente}{final_anterior}
 EVENTOS DE ESTE ACTO (contalos en primera persona, como {narrador}, en este orden, sin cambiar qué pasó):
@@ -13,6 +13,6 @@ LO QUE YA PASÓ (no lo vuelvas a contar):
 {evitar}YA USADO EN ACTOS ANTERIORES (no repitas estas imágenes, frases ni comparaciones; buscá otras, propias de esta escena):
 {ya_usado}
 
-EXTENSIÓN: contá cada evento en un párrafo, y el momento más fuerte del acto en dos; en total, entre {min_palabras} y {max_palabras} palabras.
+{comienzo}EXTENSIÓN: contá cada evento en un párrafo, y el momento más fuerte del acto en dos; en total, entre {min_palabras} y {max_palabras} palabras.
 
 Escribí el fragmento del relato para este acto.

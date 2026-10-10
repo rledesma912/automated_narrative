@@ -9,6 +9,7 @@
 # personaje, sin términos de oficio). `acto` (opcional) dice en qué acto va la
 # respuesta: el Planificador lo ve como «(va en el acto N)».
 #
+# Spec-650: `acto` dice en qué acto va según la estructura (largo / corto).
 # El orden es el orden en que se muestran y se evalúan: sigue a los actos.
 
 direccion:
@@ -16,14 +17,14 @@ direccion:
     nombre: Qué quiere {protagonista}
     pregunta: ¿Qué quiere el protagonista en esta historia, algo concreto que la amenaza pueda frustrar?
     por_que: "Llegar a casa, cobrar el viaje, cuidar a alguien. El miedo crece cuando algo se mete en el medio de lo que {protagonista} quiere."
-    acto: 1
+    acto: { largo: 1, corto: 1 }
     origen: Swain / McKee
 
   - id: inquietud
     nombre: Algo raro desde el principio
     pregunta: ¿Hay desde el comienzo un detalle raro o una advertencia que el protagonista no toma en serio?
     por_que: "Un ruido, un comentario, algo fuera de lugar. Al principio nadie le da importancia, pero quien escucha ya se queda con la duda."
-    acto: 1
+    acto: { largo: 1, corto: 1 }
     origen: Freytag (exposición) / inquietud sutil del acto 1
 
   - id: en_juego
@@ -42,7 +43,7 @@ direccion:
     nombre: Lo que {protagonista} no tendría que haber hecho
     pregunta: ¿Qué hace el protagonista (entrar, tocar, seguir, contestar, quedarse) que despierta a la amenaza y lo mete de lleno en el problema?
     por_que: "En los cuentos de miedo casi siempre alguien abre la puerta que no tenía que abrir. ¿Cuál es la de {protagonista}?"
-    acto: 2
+    acto: { largo: 2, corto: 2 }
     origen: Aristóteles (nudo) / Freytag (incidente incitador) / transgresión del acto 2
 
   - id: historia_secreta
@@ -55,19 +56,19 @@ direccion:
     nombre: Lo que descubre {protagonista}
     pregunta: ¿Qué ve, encuentra o se entera el protagonista que le hace entender de golpe qué está pasando?
     por_que: "Una foto, un nombre, un objeto: el momento en que {protagonista} entiende todo. Es el golpe más fuerte del cuento."
-    acto: 3
+    acto: { largo: 3, corto: 2 }
     origen: Anagnórisis (Aristóteles) / clímax del acto 3
 
   - id: reaccion
     nombre: Qué hace {protagonista} después
     pregunta: "¿Qué hace el protagonista después de entender lo que pasa: huye, enfrenta, niega, pide ayuda?"
     por_que: "Ya sabe lo que pasa. ¿Sale corriendo, lo enfrenta, hace como si nada? Lo que haga {protagonista} dice quién es."
-    acto: 4
+    acto: { largo: 4, corto: 3 }
     origen: Peripecia / caída (Freytag)
 
   - id: final
     nombre: Cómo termina
     pregunta: ¿El final deja una marca coherente con el efecto que busca el autor?
     por_que: "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
-    acto: 5
+    acto: { largo: 5, corto: 3 }
     origen: Poe (unidad de efecto) / residuo

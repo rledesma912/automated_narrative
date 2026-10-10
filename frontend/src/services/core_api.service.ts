@@ -141,9 +141,11 @@ export interface JobEstimate {
 export type JobEstimates = Record<"full_generation" | "regenerate_voz", JobEstimate> &
   Partial<Record<"consult" | "plan_outline" | "verify_outline" | "video_script", JobEstimate>>;
 
-export async function getJobEstimates(timeoutMs = 1500): Promise<JobEstimates> {
+export async function getJobEstimates(timeoutMs = 1500, storyId?: string): Promise<JobEstimates> {
+  // Spec-650: con la historia, el Core estima según su largo (5 o 3 actos).
   const response = await axios.get(`${CORE_API_URL}/api/v1/jobs/estimates`, {
     timeout: timeoutMs,
+    params: storyId ? { story_id: storyId } : undefined,
   });
   return response.data;
 }

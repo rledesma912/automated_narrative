@@ -13,7 +13,7 @@ from uuid import UUID
 from src.application.services.narrative_acts import NarrativeActs
 from src.application.services.template_loader import TemplateLoader
 from src.application.services.video import type_mix
-from src.application.services.video.config import VideoConfig
+from src.application.services.video.config import VideoConfig, estructura_del_relato
 from src.application.services.video.schema import BloqueIA, PaqueteIA
 from src.domain.video import Mark, PresenterLines, ReadingBlock, VideoScript, VisualMoment
 
@@ -81,7 +81,8 @@ class VideoScriptBuilder:
                 else:
                     taken.update(range(found[0], found[1] + 1))
         total = sum(counts.values())
-        rango = self.config.biblia.momentos
+        # Spec-650: el corto tiene menos momentos (por cuántos actos tiene el relato).
+        rango = self.config.biblia.para(estructura_del_relato(len(counts))).momentos
         desde, hasta = min(rango.desde, total), min(rango.hasta, total)
         if not desde <= len(paquete.momentos) <= hasta:
             problems.append(
@@ -165,7 +166,8 @@ class VideoScriptBuilder:
         bloques = sorted(paquete.bloques, key=lambda b: (b.acto, b.desde))
         momentos = sorted(paquete.momentos, key=lambda m: (m.acto, m.desde))
         seed = type_mix.seed_for(narrative_id)
-        tipos = type_mix.assign([m.fuerte for m in momentos], cfg.biblia, seed)
+        biblia = cfg.biblia.para(estructura_del_relato(len(narrative.numbers())))  # Spec-650
+        tipos = type_mix.assign([m.fuerte for m in momentos], biblia, seed)
         transiciones = {t.lower(): t for t in cfg.biblia.transiciones}
         return VideoScript(
             narrative_id=narrative_id,

@@ -32,6 +32,9 @@
     { "segundos": 719, "desde": 12, "hasta": 17, "estado": "corto" },
     { "segundos": 720, "desde": 12, "hasta": 17, "estado": "entra" },
     { "segundos": 1020, "desde": 12, "hasta": 17, "estado": "entra" },
-    { "segundos": 1021, "desde": 12, "hasta": 17, "estado": "largo" }
+    { "segundos": 1021, "desde": 12, "hasta": 17, "estado": "largo" },
+    { "segundos": 359, "desde": 6, "hasta": 8, "estado": "corto" },
+    { "segundos": 420, "desde": 6, "hasta": 8, "estado": "entra" },
+    { "segundos": 481, "desde": 6, "hasta": 8, "estado": "largo" }
   ]
 }

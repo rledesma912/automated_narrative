@@ -68,12 +68,17 @@ const estimate = locals.estimateLabels ? locals.estimateLabels.regenerate_voz : 
           <span class="text-forge-muted-caps !tracking-[0.15em]">Avisos</span>
           <div class="flex flex-col gap-2" data-avisos="<%= acto.number %>"></div>
           <span class="text-forge-muted-caps !tracking-[0.15em]">¿No te convence?</span>
+          <% if (locals.otroLargo) { %>
+            <%/* Spec-650 D11: versión del otro largo; el Core no la regenera por actos. */%>
+            <p class="pista-forge" data-otro-largo><i data-lucide="info"></i>Esta versión se escribió cuando la historia tenía otro largo: se puede leer, corregir y descargar, pero para regenerar un acto hay que escribir la historia de nuevo.</p>
+          <% } else { %>
           <button type="button" class="btn-forge-outline-sm w-fit" data-regenerar="<%= acto.number %>"
                   data-confirmar-titulo="¿Regenerar el acto <%= acto.number %>?"
                   data-detalle="<%= estimate ? `Tarda ${estimate}. ` : '' %>La IA lo escribe de nuevo y se pierde lo que corregiste en este acto.">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar el acto
           </button>
           <p class="pista-forge hidden" data-regenerando="<%= acto.number %>"><i data-lucide="loader" class="animate-spin"></i><span>Regenerando… se actualiza sola al terminar.</span></p>
+          <% } %>
         </section>
       <% }) %>
     </aside>

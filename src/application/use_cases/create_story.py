@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from pydantic import ValidationError
 
 from src.application.dto import StoryCreateDTO
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.domain.exceptions import InvalidAuthoringError, InvalidEntityError, InvalidGenreError
 from src.domain.interfaces import GenreRepository, StoryRepository
 from src.domain.models import (
@@ -55,6 +56,7 @@ class CreateStoryUseCase:
             status=initial_status,
             narrator_config=dto.narrator_config,
             personajes_full=dto.personajes_full,
+            structure=dto.structure,
         )
         story.entities = build_entities(story.id, dto.entities)
         story.direction, story.workshop, story.outline = build_authoring(dto)
@@ -102,7 +104,26 @@ class CreateStoryUseCase:
                 if (synopsis := " ".join(str(act.get("synopsis", "")).split()))
             ]
 
+        ensure_acts_in_structure(story)
         return await self.story_repository.save(story)
+
+
+def ensure_acts_in_structure(story: Story) -> None:
+    """Spec-650: los actos y las reglas ancladas caen dentro de la estructura de la
+    historia (un YAML corto con 5 actos no entra: la generación los rearmaría)."""
+    estructura = BeatSpecRepository().estructura(story.structure)
+    numbers = [a.number for a in story.outline] + [
+        r.applies_to_beat for r in story.typed_rules if r.applies_to_beat
+    ]
+    outside = sorted({n for n in numbers if not estructura.tiene(n)})
+    if outside:
+        raise InvalidAuthoringError(
+            message(
+                "validacion.acto_fuera_de_estructura",
+                actos=", ".join(map(str, outside)),
+                total=estructura.num_actos,
+            )
+        )
 
 
 async def ensure_valid_genre(

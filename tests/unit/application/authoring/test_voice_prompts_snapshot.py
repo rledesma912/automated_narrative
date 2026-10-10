@@ -156,3 +156,15 @@ def test_el_snapshot_cubre_todas_las_secciones():
         "pasó lo peor",
     ):
         assert section in text, section
+
+
+def test_el_comienzo_libre_va_solo_en_el_acto_1():
+    """Spec-650 (prueba de las usuarias): todos los relatos arrancaban con «Mirá».
+
+    La opción «Como un caso entre amigos» traía «mirá» de ejemplo y la Voz lo ponía en la
+    primera palabra. En el acto 1 la Voz elige por dónde entrar, sin muletillas.
+    """
+    prompts = _prompts()
+    assert "CÓMO EMPEZAR" in prompts[0]["user"]
+    assert all("CÓMO EMPEZAR" not in p["user"] for p in prompts[1:])
+    assert all("«mirá»" not in p["system"].lower() for p in prompts)

@@ -43,7 +43,11 @@ function renderStatusLabel(s) {
                 <% if (s.atmosfera) { %><%= s.atmosfera %> · <% } %><%= date %>
               </p>
             </div>
-            <%- renderStatusLabel(s) %>
+            <div class="flex flex-wrap justify-end gap-2">
+              <%/* Spec-650: los relatos cortos (~7 min) se marcan; el largo es el de siempre. */%>
+              <% if (s.structure === 'corto') { %><span class="chip-forge chip-forge--info" data-corto>Corto</span><% } %>
+              <%- renderStatusLabel(s) %>
+            </div>
           </div>
 
           <%/* Spec-630: la tarjeta es para entrar (B12: sin «Vista»; B14: sin generar a ciegas:

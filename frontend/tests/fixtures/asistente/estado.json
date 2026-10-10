@@ -1,6 +1,34 @@
 {
  "story_id": "s-1",
  "status": "draft",
+ "structure": "largo",
+ "structure_acts": [
+  {
+   "number": 1,
+   "name": "Cómo empieza",
+   "intensity": "baja"
+  },
+  {
+   "number": 2,
+   "name": "Se complica",
+   "intensity": "media"
+  },
+  {
+   "number": 3,
+   "name": "El peor momento",
+   "intensity": "alta"
+  },
+  {
+   "number": 4,
+   "name": "Qué hace después",
+   "intensity": "media-alta"
+  },
+  {
+   "number": 5,
+   "name": "Cómo termina",
+   "intensity": "baja"
+  }
+ ],
  "direction": {
   "title": "El monte",
   "genero": "paranormal",

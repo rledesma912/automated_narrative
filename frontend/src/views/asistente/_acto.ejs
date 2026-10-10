@@ -6,8 +6,10 @@
   const visibles = (a) => a.warnings.filter(w => !w.dismissed);
   const ignorados = (a) => a.warnings.filter(w => w.dismissed);
   const narrador = state.direction.narrator || state.direction.protagonist_name;
-  const NOMBRES = { 1: 'Cómo empieza', 2: 'Se complica', 3: 'El peor momento', 4: 'Qué hace después', 5: 'Cómo termina' };
-  const INTENSIDAD = { 1: 'baja', 2: 'media', 3: 'alta', 4: 'media-alta', 5: 'baja' };
+  /* Spec-650: nombre, tensión y cantidad de actos según el largo de la historia (los da el Core). */
+  const actosDelLargo = state.structure_acts;
+  const def = actosDelLargo.find(x => x.number === a.number) || { name: '', intensity: '' };
+  const totalActos = actosDelLargo.length;
   const TIPOS = { persona: 'Con nombre', sin_nombre: 'Sin nombre', grupo: 'Grupo' };
   const PERSONAJE_FUERA = /^«(.+?)» aparece en este acto pero no está entre los personajes/;
   const field = 'bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent';
@@ -23,8 +25,8 @@
 
           <form class="bg-forge-surface border border-forge-border" data-autosave="act" data-number="<%= a.number %>" onsubmit="return false" novalidate>
             <header class="flex flex-wrap items-baseline justify-between gap-2 px-6 pt-5 pb-3 border-b border-forge-border">
-              <h3 class="font-serif text-2xl">Acto <%= a.number %> · <%= NOMBRES[a.number] %></h3>
-              <span class="text-xs uppercase tracking-widest text-forge-muted">tensión <%= INTENSIDAD[a.number] %></span>
+              <h3 class="font-serif text-2xl">Acto <%= a.number %> · <%= def.name %></h3>
+              <span class="text-xs uppercase tracking-widest text-forge-muted">tensión <%= def.intensity %></span>
             </header>
 
             <% if (visibles(a).length) { %>
@@ -145,11 +147,11 @@
                 <div class="border border-forge-border bg-forge-bg p-3" data-secreto>
                   <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <label class="text-xs uppercase tracking-widest text-forge-muted" for="held-<%= a.number %>">Lo que todavía es secreto</label>
-                    <% if (a.number < 5) { %>
+                    <% if (a.number < totalActos) { %>
                       <label class="flex items-center gap-2 text-xs text-forge-muted" for="reveal-<%= a.number %>">Se descubre en
                         <select id="reveal-<%= a.number %>" name="reveal_act" class="bg-forge-surface border border-forge-border px-2 py-1">
                           <option value="0" <%= a.reveal_act ? '' : 'selected' %>>—</option>
-                          <% for (let n = a.number + 1; n <= 5; n++) { %><option value="<%= n %>" <%= a.reveal_act === n ? 'selected' : '' %>>el Acto <%= n %></option><% } %>
+                          <% for (let n = a.number + 1; n <= totalActos; n++) { %><option value="<%= n %>" <%= a.reveal_act === n ? 'selected' : '' %>>el Acto <%= n %></option><% } %>
                         </select>
                       </label>
                     <% } %>

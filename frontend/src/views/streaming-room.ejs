@@ -136,18 +136,13 @@
 
   <%/* ── Fases de Avance (Círculos Vistosos) ──────────────── */%>
   <div class="flex items-start justify-between mb-16 px-4" id="beat-dots">
-    <% 
-      const phases = [
-        { id: 1, label: 'Cómo empieza' },
-        { id: 2, label: 'Se complica' },
-        { id: 3, label: 'El peor momento' },
-        { id: 4, label: 'Qué hace después' },
-        { id: 5, label: 'Cómo termina' }
-      ];
+    <%
+      /* Spec-650: los actos del largo de la historia (los arma el controlador con utils/actos.ts). */
+      const phases = (locals.actos || []).map(a => ({ id: a.number, label: a.name }));
     %>
     <% phases.forEach(p => { %>
       <div class="flex flex-col items-center gap-4 flex-1 relative">
-        <% if (p.id < 5) { %>
+        <% if (p.id < phases.length) { %>
           <div class="absolute top-6 left-[60%] right-[-40%] h-0.5 bg-forge-border z-0" id="line-<%= p.id %>"></div>
         <% } %>
         <div id="dot-<%= p.id %>"
@@ -234,7 +229,7 @@
 <%/* Spec-318 §9.C — variables inyectadas desde el server, lógica en /js/streaming-room.js */%>
 <script>
   window.STORY_ID      = "<%= storyId %>";
-  window.TOTAL_BEATS   = 5;
+  window.TOTAL_BEATS   = <%= (locals.actos || []).length || 'null' %>; // Spec-650: 5 o 3
   window.ACTIVE_JOB_ID = <%- JSON.stringify(activeJobId || null) %>;
 </script>
 <script src="/js/streaming-room.js?v=<%= locals.assetVersion || '' %>" defer></script>

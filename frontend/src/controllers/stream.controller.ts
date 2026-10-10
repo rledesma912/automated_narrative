@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import axios from "axios";
 import { getActiveJob } from "../services/core_api.service";
 import { renderPage } from "../utils/render";
+import { actosDe } from "../utils/actos";
 
 export async function streamingRoomPage(req: Request, res: Response): Promise<void> {
   const { storyId } = req.params as { storyId: string };
@@ -43,5 +44,7 @@ export async function streamingRoomPage(req: Request, res: Response): Promise<vo
     regenerateMode,
     startMode,
     activeJobId,
+    // Spec-650: los puntos de avance según el largo de la historia (5 o 3).
+    actos: actosDe(story ? String(story.structure ?? "") : undefined),
   });
 }

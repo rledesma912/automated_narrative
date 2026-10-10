@@ -10,14 +10,16 @@
   /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. */
   const avisos = acts.reduce((n, a) => n + a.warnings.filter(w => !w.dismissed).length, 0);
   const est = locals.estimateLabels || {};
+  /* Spec-650: cuántos actos tiene, en palabras («tres» o «cinco»). */
+  const cuantosActos = ({ 3: 'tres', 5: 'cinco' })[state.structure_acts.length] || String(state.structure_acts.length);
 %>
   <% if (!acts.length) { %>
     <section class="bg-forge-surface border border-forge-border p-10 text-center mb-8 max-w-3xl">
       <i data-lucide="list-ordered" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
       <p class="font-serif text-xl mb-2">Todavía no armaste los actos</p>
-      <p class="text-forge-muted mb-6">La IA reparte tu historia en cinco actos con lo que respondiste en las preguntas, y después los revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
+      <p class="text-forge-muted mb-6">La IA reparte tu historia en <%= cuantosActos %> actos con lo que respondiste en las preguntas, y después los revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
       <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
-              data-detalle="La IA reparte tu historia en cinco actos con lo que respondiste y después los revisa.">
+              data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos con lo que respondiste y después los revisa.">
         <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar los actos
       </button>
     </section>

@@ -1,7 +1,7 @@
 """PromptBuilder - piezas compartidas de los prompts (Spec-530 S7).
 
-Tras retirar el pipeline viejo quedan: la definición de los 5 actos
-(`llm_beats_definition.yaml`) y los extras de la Voz de la Spec-470 (guía de
+Tras retirar el pipeline viejo quedan: la definición de los actos de cada
+estructura (`llm_beats_definition.yaml`, Spec-650) y los extras de la Voz de la Spec-470 (guía de
 oficio, parentescos y presentación de quien narra). Los prompts en sí los arman
 los servicios del asistente (`authoring/`).
 """
@@ -10,6 +10,7 @@ import logging
 from pathlib import Path
 
 from src.application.services.beat_spec_repository import BeatSpecRepository
+from src.application.services.structure import DEFAULT_STRUCTURE, Estructura
 from src.application.services.template_loader import TemplateLoader
 from src.application.services.voice_cliches import load_cliches
 from src.config import settings
@@ -25,11 +26,16 @@ class PromptBuilder:
         self.prompts_dir = Path(prompts_dir or settings.prompts_dir)
         self._loader = TemplateLoader(self.prompts_dir)
         self._beat_repo = BeatSpecRepository()
-        self.num_beats: int = self._beat_repo.num_beats
 
-    def get_beat_info(self, beat_id: int, reveal_level: str | None = None) -> dict:
+    def estructura(self, story: Story) -> Estructura:
+        """Spec-650: la estructura de la historia (cuántos actos y qué hace cada uno)."""
+        return self._beat_repo.estructura(story.structure)
+
+    def get_beat_info(
+        self, beat_id: int, reveal_level: str | None = None, structure: str = DEFAULT_STRUCTURE
+    ) -> dict:
         """Nombre, intención e intensidad del acto (y reglas de revelación, Spec-450)."""
-        return self._beat_repo.get_by_id(beat_id, reveal_level)
+        return self._beat_repo.get_by_id(beat_id, reveal_level, structure)
 
     # -- Spec-470: oficio de la Voz ----------------------------------------------
 

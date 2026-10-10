@@ -9,6 +9,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.voice_cliches import load_cliches
 
 _MIN_PREFIX = 3  # letras en común para considerar dos palabras la misma raíz
@@ -282,6 +283,10 @@ def last_version_findings(story) -> dict[int, ActRepetition]:
     """Lo que el control marca en la última prosa de cada acto (macro_beat)."""
     beats = sorted((b for b in story.beats if b.generated_act), key=lambda b: b.number)
     if not beats:
+        return {}
+    # Spec-650: la prosa guardada es de otra estructura (no debería pasar: cambiar el largo
+    # la borra) → lo que marcó no corresponde a estos actos.
+    if beats[-1].number > BeatSpecRepository().estructura(story.structure).num_actos:
         return {}
     reps = check([b.generated_act for b in beats], known=known_text(story))
     return {b.number: r for b, r in zip(beats, reps, strict=True) if r.has_findings()}

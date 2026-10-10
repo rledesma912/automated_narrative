@@ -206,7 +206,12 @@
       body: JSON.stringify({ kind: "regenerate_voz", beat: n, narrative_id: page.narrativeId }),
     });
     if (resp.status !== 202) {
-      window.ForgeGuardado.status("error", resp.status === 409 ? "La IA ya está trabajando en esta historia: esperá a que termine" : "No se pudo regenerar el acto");
+      // Spec-650 D11: un 422 trae el motivo (p. ej. una versión de cuando la historia tenía otro largo).
+      const detail = resp.status === 422 ? ((await resp.json().catch(() => ({}))).detail || "") : "";
+      window.ForgeGuardado.status(
+        "error",
+        resp.status === 409 ? "La IA ya está trabajando en esta historia: esperá a que termine" : detail || "No se pudo regenerar el acto",
+      );
       return;
     }
     page.regenerating = { job: (await resp.json()).job_id, acto: n };

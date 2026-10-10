@@ -57,7 +57,9 @@ class GenerateStoryUseCase:
         from src.application.services.authoring.outline_narrator import OutlineNarrator
 
         # Sin escaleta completa, o solo con borradores importados (Spec-570 D2): se arma.
-        if len(story.outline) != self.prompt_builder.num_beats or all(
+        # Spec-650: completa = tantos actos como su estructura (no 5 fijos).
+        expected = self.prompt_builder.estructura(story).numeros
+        if sorted(a.number for a in story.outline) != expected or all(
             a.draft for a in story.outline
         ):
             await self._plan(story, on_stage, on_step_start)

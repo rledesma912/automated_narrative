@@ -35,7 +35,7 @@ def _make_story() -> Story:
 
 def _fake_director(num_beats: int):
     director = MagicMock()
-    director.prompt_builder.num_beats = num_beats
+    director.prompt_builder.estructura.return_value.num_actos = num_beats  # Spec-650
 
     async def _execute_full(_story, **_kwargs):
         for i in range(1, num_beats + 1):
@@ -141,7 +141,7 @@ async def test_stream_emite_status_con_etapa_estructurada():
     from src.domain.jobs import JobStage
 
     director = MagicMock()
-    director.prompt_builder.num_beats = 2
+    director.prompt_builder.estructura.return_value.num_actos = 2  # Spec-650
 
     async def _execute_full(_story, on_stage=None, **_kwargs):
         on_stage(JobStage.PLANIFICADOR, None)

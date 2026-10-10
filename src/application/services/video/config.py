@@ -51,6 +51,19 @@ class Presentador(BaseModel):
     cierre_fijo: str = ""
 
 
+class RangosDelLargo(BaseModel):
+    """Spec-650: momentos y videos de un largo que no es el de siempre (el corto)."""
+
+    momentos: Rango
+    videos: Rango
+
+    @model_validator(mode="after")
+    def _videos_entran(self) -> "RangosDelLargo":
+        if self.videos.hasta > self.momentos.desde:
+            raise ValueError("no puede haber más videos que momentos")
+        return self
+
+
 class Tipo(BaseModel):
     nombre: str
     se_genera_con: str
@@ -65,6 +78,8 @@ class BibliaVisual(BaseModel):
     tipos: dict[TipoMomento, Tipo]
     transiciones: list[str] = Field(min_length=1)
     palabras_prohibidas: list[str] = Field(min_length=1)
+    # Spec-650: `momentos` y `videos` de arriba son los del largo; acá, los de los demás.
+    por_estructura: dict[str, RangosDelLargo] = {}
 
     @model_validator(mode="after")
     def _completa(self) -> "BibliaVisual":
@@ -76,6 +91,13 @@ class BibliaVisual(BaseModel):
         if self.videos.hasta > self.momentos.desde:
             raise ValueError("no puede haber más videos que momentos")
         return self
+
+    def para(self, estructura: str) -> "BibliaVisual":
+        """Spec-650: la biblia con los momentos y videos del largo del relato."""
+        rangos = self.por_estructura.get(estructura)
+        if rangos is None:
+            return self
+        return self.model_copy(update={"momentos": rangos.momentos, "videos": rangos.videos})
 
 
 class Lector(BaseModel):
@@ -104,7 +126,12 @@ class Lectores(BaseModel):
 
 class Lectura(BaseModel):
     palabras_por_minuto: int = Field(gt=0)
-    episodio_minutos: Rango
+    episodio_minutos: Rango  # el del largo
+    episodio_por_estructura: dict[str, Rango] = {}  # Spec-650: el de los demás (el corto)
+
+    def episodio(self, estructura: str) -> Rango:
+        """Spec-650: cuánto dura un episodio del largo del relato."""
+        return self.episodio_por_estructura.get(estructura, self.episodio_minutos)
 
 
 class VideoConfig(BaseModel):
@@ -112,6 +139,34 @@ class VideoConfig(BaseModel):
     biblia: BibliaVisual
     lectores: Lectores
     lectura: Lectura
+
+    @model_validator(mode="after")
+    def _cada_largo_tiene_sus_rangos(self) -> "VideoConfig":
+        """Spec-650: un largo sin sus rangos usaría los del largo de siempre sin avisar."""
+        from src.application.services.beat_spec_repository import BeatSpecRepository
+        from src.application.services.structure import DEFAULT_STRUCTURE
+
+        otros = set(BeatSpecRepository().structure_ids) - {DEFAULT_STRUCTURE}
+        for nombre, tiene in (
+            ("biblia_visual.yaml: por_estructura", set(self.biblia.por_estructura)),
+            ("lectura.yaml: episodio_por_estructura", set(self.lectura.episodio_por_estructura)),
+        ):
+            if tiene != otros:
+                raise ValueError(f"{nombre} tiene que traer {sorted(otros)} (trae {sorted(tiene)})")
+        return self
+
+
+def estructura_del_relato(cantidad_de_actos: int) -> str:
+    """Spec-650: el largo de un relato guardado, por cuántos actos tiene (una versión puede
+    ser de cuando la historia tenía otro largo). Una cantidad rara se toma como larga."""
+    from src.application.services.beat_spec_repository import BeatSpecRepository
+    from src.application.services.structure import DEFAULT_STRUCTURE
+
+    repo = BeatSpecRepository()
+    for sid in repo.structure_ids:
+        if repo.estructura(sid).num_actos == cantidad_de_actos:
+            return sid
+    return DEFAULT_STRUCTURE
 
 
 def _yaml(path: Path) -> dict:

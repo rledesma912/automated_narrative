@@ -59,7 +59,7 @@ async def stream_story(
         error      → cualquier excepción (puede ocurrir a mitad de conexión)
     """
     queue: asyncio.Queue[StreamEvent | object] = asyncio.Queue()
-    num_beats = director.prompt_builder.num_beats
+    num_beats = director.prompt_builder.estructura(story).num_actos
 
     # ── Productor principal ───────────────────────────────────────────────────
     async def _main_producer():
