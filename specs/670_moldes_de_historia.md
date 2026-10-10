@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48) · S2 ✅ · S3 ✅
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -290,3 +290,8 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
 - Contenido leído y aprobado por el usuario (https://claude.ai/artifact/PUX3DitoZcfPmZPR9fuBcp): formas `lugar`, `casa`, `senuelo` y `otra`; giros `lugar_historia`, `cotidiano`, `entiende_mal`, `victima`, `recuerdo` (más `regla_rara` de la S1). Los «para qué sirve» de las preguntas de los giros se escribieron al cargar (el documento traía solo la pregunta).
 - Dos ajustes al motor: `revela.acto` por forma (casa y señuelo revelan en el peor momento: acto 3 del largo, 2 del corto) y `no_con` en los giros (`lugar_historia` no va con `lugar`: `Catalogo.giros_para`, y si llega igual se ignora).
 - Preguntas por combinación: regla 9, asedio/lugar/casa 8, señuelo 9, otra 5 (+1 con giro). Snapshot `moldes_formas_prompts.json` (consultor, system y planificador de cada forma nueva, largo y corto) y tests de que ninguna pide «romper la regla».
+
+### S3 (2026-10-10)
+
+- `no_aplica` con motivo (en `question`), reabrir con marca, `mal_elegida` con 2 de la forma, bloque «LO QUE NO VA EN ESTA HISTORIA» para Consultor, Planificador y Verificador. La pantalla de «Preguntas» lo dibuja con lo mínimo (chip + motivo + «Que la IA lo vuelva a preguntar»); lo completo, en la S5. Los snapshots del Consultor cambiaron a propósito (las líneas de `no_aplica` y `motivo`), en todas las formas.
+- Prueba en dev (Claude), copia de la laguna con la forma de siempre (`53a8cc34…`): con la instrucción solo al final del pedido, Claude **no** usó «no va». Con una regla explícita en el system prompt (dos casos típicos: causa de afuera, la amenaza ataca a cualquiera), marcó «Lo que Tito no tendría que haber hecho» («La criatura sale porque la fábrica la obligó, no porque Tito la haya provocado…») y «Lo que esconde la historia» («…busca comida, no a Tito en particular…»), y apareció el aviso de forma mal elegida. «En qué se equivoca Tito» lo siguió preguntando (es discutible: un error de Tito puede existir igual).
