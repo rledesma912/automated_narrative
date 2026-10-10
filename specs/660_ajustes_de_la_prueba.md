@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — UI (frontend; el Core no cambia)
-**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS ✅ (OK 2026-10-10) · S1 ✅ · S2 ✅ · S3 ✅ (2026-10-10)
+**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS ✅ (OK 2026-10-10) · S1 ✅ · S2 ✅ · S3 ✅ (2026-10-10) · **en prod** `cafc287` (PR #67 → #68)
 **Rama:** propia, desde `development` después del PR de la Spec-650 (decisión del usuario 2026-10-10)
 **Cambia:** Spec-630 B14 («siempre por la sala con `?escribir=1`») y B7 (borrar personajes).
 
