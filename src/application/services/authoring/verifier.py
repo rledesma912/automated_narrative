@@ -57,7 +57,9 @@ class OutlineVerifier:
             self.llm,
             role=ROLE,
             prompt=self._prompt(story, outline),
-            system_prompt=self.templates.load("authoring_verifier_system.md"),
+            system_prompt=self.templates.load("authoring_verifier_system.md").format(
+                num_actos=BeatSpecRepository().estructura(story.structure).num_actos
+            ),
             output=Revision,
         )
         numbers = {a.number for a in outline}
@@ -174,7 +176,8 @@ def rule_warnings(
     """
     dismissed = dismissed or {}
     out: dict[int, list[OutlineWarning]] = {}
-    last = BeatSpecRepository().estructura(story.structure).ultimo  # Spec-650
+    estructura = BeatSpecRepository().estructura(story.structure)  # Spec-650
+    last = estructura.ultimo
 
     def add(n: int, key: str, text: str) -> None:
         if key not in dismissed.get(n, set()):
@@ -186,6 +189,13 @@ def rule_warnings(
     for act in outline:
         if not act.events:
             add(act.number, "sin_hechos", message("verifier.sin_hechos"))
+        top = estructura.acto(act.number).get("hechos_max")
+        if top and len(act.events) > top:  # Spec-650: el corto tiene un tope por acto
+            add(
+                act.number,
+                "muchos_hechos",
+                message("verifier.muchos_hechos", cantidad=len(act.events), maximo=top),
+            )
         if act.number > 1 and not act.bridge.strip():
             add(act.number, "sin_puente", message("verifier.sin_puente"))
         if act.change_from and workshop_rules.normalize(

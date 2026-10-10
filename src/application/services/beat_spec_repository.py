@@ -5,7 +5,12 @@ from pathlib import Path
 
 import yaml
 
-from src.application.services.structure import DEFAULT_STRUCTURE, Estructura, validate
+from src.application.services.structure import (
+    DEFAULT_STRUCTURE,
+    Estructura,
+    validate,
+    validate_relocations,
+)
 from src.config import settings
 
 logger = logging.getLogger(__name__)
@@ -35,6 +40,7 @@ class BeatSpecRepository:
         self._structures: dict[str, Estructura] = {
             sid: validate(sid, data, self._exposures) for sid, data in raw.items()
         }
+        validate_relocations(self._structures)
 
     def _load(self) -> dict:
         if not self._path.exists():

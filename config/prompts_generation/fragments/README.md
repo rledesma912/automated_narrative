@@ -33,11 +33,12 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 
 | Hueco | Sale de | Va si… |
 |---|---|---|
-| `{nombre}` | `label` del acto en `config/llm_beats_definition.yaml` | siempre |
+| `{total}` | cantidad de actos de la estructura de la historia (Spec-650: 5 o 3) | siempre |
+| `{nombre}` | `label` del acto en `config/llm_beats_definition.yaml` (`estructuras.<largo>.actos`) | siempre |
 | `{historia}` | `voz/historia` (primera oración de la premisa) | hay premisa o sinopsis |
-| `{funcion}` | `intent` del acto, o `voz/final_del_autor` en el acto 5 | siempre |
+| `{funcion}` | `intent` del acto, o `voz/final_del_autor` en el último acto | siempre |
 | `{meta}` | `voz/objetivo` | el acto tiene objetivo |
-| `{puente}` | `voz/puente` | actos 2–5 con «cómo llega acá» |
+| `{puente}` | `voz/puente` | actos desde el 2 con «cómo llega acá» |
 | `{final_anterior}` | `voz/final_anterior` (último párrafo del acto anterior) | hay acto anterior |
 | `{escenario}` | el escenario, o `voz/escenario_vacio` | siempre |
 | `{reglas}` | `voz/reglas` + las reglas del acto | hay reglas |
@@ -78,8 +79,11 @@ Contexto común (`context.py`), que reciben los tres roles:
 (`asistente/planificador/problemas` + una `asistente/aviso_de_acto` por aviso visible),
 `{reglas}` (Spec-630: `asistente/planificador/reglas` + una `regla` por regla anclada a un acto;
 vacío si no hay), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
-`asistente/planificador/acto` por acto; `final_del_autor` y `historia_secreta` cambian la
-intención del acto 5 y del 4).
+`asistente/planificador/acto` por acto; `final_del_autor` cambia la intención del último acto,
+`historia_secreta` se suma en el acto `revela_secreto` de la estructura y `hechos` cuando el acto
+dice cuántos hechos lleva). Spec-650: `{num_actos}`, `{ultimo}` y `{hechos_por_acto}` salen de
+la estructura de la historia; el system prompt (`authoring_planner_system.md`) y el del
+Verificador reciben `{num_actos}`, y `asistente/objetivo` recibe `{num_actos}` y `{palabras}`.
 
 **Verificador** — `authoring_verifier.md`: además `{elenco}` (o
 `asistente/verificador/elenco_vacio`), `{escaleta}` (por acto, `asistente/verificador/acto/*`:

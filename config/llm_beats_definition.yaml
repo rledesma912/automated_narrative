@@ -58,7 +58,12 @@ beats_spec:
   estructuras:
     largo:
       label: "Largo · 5 actos · unos 15 minutos"
+      palabras_total: "2.500"  # lo que dice el objetivo del asistente (texto de siempre)
+      hechos_por_acto: "de 3 a 5 hechos"  # lo que pide el Planificador para cada acto
       revela_secreto: 4
+      # D10: al pasar de otra estructura, la regla anclada al acto N va al acto M.
+      reubicar_desde:
+        corto: { 1: 1, 2: 3, 3: 5 }
       actos:
 
         - id: 1
@@ -184,6 +189,64 @@ beats_spec:
             to: "calma inestable"
           success_signal:
             - "quien escucha el relato queda con la sensacion de que el horror no termino"
+          entity_exposure:
+            nunca: segun_acto_5
+            insinuada: huella
+            progresiva: huella
+            explicita: huella
+
+    # Spec-650: relato corto, ~7 minutos leído en voz alta (≈ 1 050 palabras a 150
+    # palabras por minuto, config/video/lectura.yaml). El clímax cae al final del nudo
+    # (D3). `palabras` fija el rango de cada acto (940–1 140 en total); `hechos`, cuántos
+    # le pide el Planificador (la Voz escribe un párrafo por hecho).
+    corto:
+      label: "Corto · 3 actos · unos 7 minutos"
+      palabras_total: "1.050"
+      hechos_por_acto: "exactamente los que pide cada acto arriba (ni uno más: es un relato de unos 7 minutos), hechos"  # el número va en cada acto (`hechos`)
+      revela_secreto: 2
+      reubicar_desde:
+        largo: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
+      actos:
+
+        - id: 1
+          name: "inicio"
+          label: "Inicio"
+          nombre_ui: "Cómo empieza"  # = frontend/src/utils/actos.ts
+          palabras: [260, 320]
+          hechos: "2 o 3"
+          hechos_max: 3  # más que esto → aviso en «Los actos» (Verificador)
+          intent: "establecer la normalidad, la regla o advertencia, y sembrar una inquietud sutil"
+          intensity: baja
+          entity_exposure:
+            nunca: senales
+            insinuada: senales
+            progresiva: senales
+            explicita: presencia
+
+        - id: 2
+          name: "nudo"
+          label: "Nudo"
+          nombre_ui: "Qué pasa"
+          palabras: [480, 560]
+          hechos: "4 o 5"
+          hechos_max: 5  # más que esto → aviso en «Los actos» (Verificador)
+          intent: "romper la regla, mostrar un evento anómalo concreto y llevar al protagonista hasta el enfrentamiento: la explicación racional ya no alcanza"
+          intensity: alta
+          entity_exposure:
+            nunca: senales_intensas
+            insinuada: revelacion
+            progresiva: presencia_directa
+            explicita: confrontacion
+
+        - id: 3
+          name: "desenlace"
+          label: "Desenlace"
+          nombre_ui: "Cómo termina"
+          palabras: [200, 260]
+          hechos: "2 o 3"  # absorbe el «qué hace después» del largo (la salida) y el cierre
+          hechos_max: 3  # más que esto → aviso en «Los actos» (Verificador)
+          intent: "salir o alejarse del peligro sin una resolución fácil y cerrar con brevedad emocional: una marca que queda y la sensación de que el horror no terminó"
+          intensity: baja
           entity_exposure:
             nunca: segun_acto_5
             insinuada: huella

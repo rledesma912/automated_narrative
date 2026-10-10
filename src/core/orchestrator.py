@@ -99,8 +99,9 @@ class StoryRunner:
         direction: dict | None = None,
         workshop: list[dict] | None = None,
         outline: list[dict] | None = None,
+        structure: str = "largo",
     ) -> Story:
-        """Flujo completo: crear la historia, armar su escaleta y narrar los 5 actos."""
+        """Flujo completo: crear la historia, armar su escaleta y narrar sus actos."""
         from src.config import settings as cfg
 
         logger.info("[SESSION] ── Iniciando generación ──────────────────────────────")
@@ -135,6 +136,7 @@ class StoryRunner:
             direction=direction,
             workshop=workshop or [],
             outline=outline or [],
+            structure=structure,  # Spec-650
         )
         story = await create_story.execute(dto)
         logger.info(f"[ORQUESTADOR] Historia creada en BD con ID: {story.id}")

@@ -110,6 +110,7 @@ class OutlineNarrator:
         low, high = word_range(act, estructura)
         user = self.templates.load("outline_voice.md").format(
             numero=act.number,
+            total=estructura.num_actos,
             historia=self._premise(story, narrator),
             puente=self._bridge(act),
             evitar=self._avoid(avoid),

@@ -100,7 +100,12 @@ class JobManager:
         Raises:
             JobAlreadyActiveError: la historia ya tiene un job activo.
         """
-        params = {**(params or {}), **await self._estimate_params(kind)}
+        structure = getattr(story, "structure", DEFAULT_STRUCTURE)  # dobles de prueba sin el campo
+        params = {
+            **(params or {}),
+            "structure": structure,  # Spec-650: la estimación se separa por largo
+            **await self._estimate_params(kind, structure),
+        }
         async with self._lock:
             active = await self._jobs.get_active_for_story(story.id)
             if active is not None:
@@ -121,22 +126,23 @@ class JobManager:
             )
         return job
 
-    async def estimates(self) -> dict[str, dict]:
-        """Duración estimada de cada tipo de job con el perfil activo (Spec-510)."""
+    async def estimates(self, structure: str = DEFAULT_STRUCTURE) -> dict[str, dict]:
+        """Duración estimada de cada tipo de job con el perfil activo (Spec-510), para
+        una historia de ese largo (Spec-650)."""
         profile = settings.active_profile_name
         return {
-            kind.value: (await self._estimator.estimate(kind, profile)).as_dict()
+            kind.value: (await self._estimator.estimate(kind, profile, structure)).as_dict()
             for kind in JobKind
         }
 
-    async def _estimate_params(self, kind: JobKind) -> dict:
+    async def _estimate_params(self, kind: JobKind, structure: str = DEFAULT_STRUCTURE) -> dict:
         """Perfil y duración estimada que el job lleva en `params` (Spec-510).
 
         Una falla del estimador no impide lanzar el job: queda sin estimación.
         """
         profile = settings.active_profile_name
         try:
-            estimate = await self._estimator.estimate(kind, profile)
+            estimate = await self._estimator.estimate(kind, profile, structure)
         except Exception:  # noqa: BLE001
             logger.exception("[JOB] No se pudo estimar la duración (%s)", kind.value)
             return {"profile": profile}

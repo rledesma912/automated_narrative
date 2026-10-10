@@ -293,7 +293,7 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
 - **Resultado S1:** pytest 898 ✅ (887 + 11 nuevos), Vitest 383 ✅, Playwright 67 ✅ (3 skipped, como siempre), lint ✅, snapshots sin cambios, esquema JSON de la escaleta idéntico (comparado con el de `cafb508`), `make dev-status` ✅. El guardián detecta 14 casos en el código de `cafb508` y ninguno en el nuevo.
   Tests existentes que **sí** se tocaron, porque probaban la interfaz que cambió: `test_beat_spec_repository.py` (formato del YAML; el fallback de 5 actos vacíos sin YAML pasó a error), los dobles de `test_job_manager.py` / `test_streaming_service.py` (imitaban `prompt_builder.num_beats`), `recording_llm.py` (le pasa el prompt al mock, que cuenta los actos de ahí) y `PERMITIDOS` del guardián de la Spec-620 (errores de carga del YAML). El video sigue con la estructura larga hasta S4.
 
-### S2 — El corto en el Core
+### S2 — El corto en el Core · ✅ 2026-10-10
 
 - **T2.1** `init_db()`: columna `story.structure` con CHECK; `story_repository` insert/select tolerante/`update_structure()` transaccional (columna + borra actos, `macro_beat`, memoria + reubica reglas, D10). Tests de integración del repo.
 - **T2.2** Config: estructura `corto` (§2.1) con `nombre_ui`, `palabras`, `revela_secreto: 2`, tabla de reubicación; validación al cargar.
@@ -306,6 +306,9 @@ Cada tarea cierra con su verificación. Checkpoint de slice = `make lint` + `mak
 - **T2.9** Snapshots `*_corto.json` con sus tests de secciones.
 - **T2.10** Corrida local gratis (gemma, `--mock` no) del Planificador con una historia corta: ¿arma 3 actos sanos?
 - **Checkpoint S2:** suite verde; `make dev-db`; `uv run python -m src generate --input <corto.yaml> --mock` → 3 actos.
+- **Resultado S2:** pytest 934 ✅ (snapshots del largo idénticos; 3 nuevos del corto: `voice_prompts_corto`, `assistant_prompts_corto`, `pipeline_prompts_corto` = 8 llamadas), lint ✅, `make dev-db` (antes: copia de la DB y export-yaml de las 2 historias de dev, reimportadas como borradores), API de dev probada a mano (crear corto, acto 4 → 404, cambiar a largo, estimación), CLI `generate --input <corto> --mock` → 3 actos.
+  **Encontrado al leer los snapshots** (ningún assert lo agarraba): «LOS 5 ACTOS», `"numero": 1 a 5` y «de 3 a 5 hechos» en `authoring_planner.md`, y «ACTO N DE 5» en `outline_voice.md`. Arreglados con `{num_actos}`, `{hechos_por_acto}` y `{total}`; el guardián ahora revisa también los prompts.
+  **Encontrado en la corrida local (T2.10, gemma):** el Planificador no respeta la cantidad de hechos del corto (pidió 2–3 / 4–5 / 2 y armó 5 / 7 / 7). Se hizo: (1) el prompt lo pide más firme («Lleva N hechos, no más», «ni uno más: es un relato de unos 7 minutos») → bajó a 4 / 6 / 7; (2) aviso por regla `muchos_hechos` en «Los actos» (Verificador, ignorable) con el tope `hechos_max` de cada acto: la persona decide qué junta o saca, no se corrige solo; (3) el desenlace pasa a 2 o 3 hechos (absorbe el «qué hace después» del largo; las palabras de D2 no cambian). El acto 3 de «No te detengas en el bosque» sigue con 7 porque copia el final que escribió la autora (≈ 7 momentos): es su decisión y el aviso se lo muestra.
 
 ### S3 — UI
 

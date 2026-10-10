@@ -8,13 +8,18 @@ que arman texto reciben el `TemplateLoader` de quien las llama.
 """
 
 from src.application.services.authoring import catalog
+from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
 from src.domain.models import CriterionStatus, Story, WorkshopItem, WorkshopLevel
 
 
-def objective(templates: TemplateLoader) -> str:
-    """Para qué es todo esto: el objetivo que reciben los roles del asistente."""
-    return templates.fragment("asistente/objetivo")
+def objective(templates: TemplateLoader, story: Story) -> str:
+    """Para qué es todo esto: el objetivo que reciben los roles del asistente (con la
+    cantidad de actos y de palabras de la estructura de la historia, Spec-650)."""
+    estructura = BeatSpecRepository().estructura(story.structure)
+    return templates.fragment(
+        "asistente/objetivo", num_actos=estructura.num_actos, palabras=estructura.palabras_total
+    )
 
 
 def protagonist(story: Story) -> str:
@@ -87,7 +92,7 @@ def decisions_block(story: Story, templates: TemplateLoader) -> str:
     rows = []
     for cid, nombre, texto in decisions(story):
         item = by_id[cid]
-        c = catalog.criterion(cid)
+        c = catalog.criterion(cid, story.structure)
         if c and c.acto:  # Spec-580 D2
             nombre += t("asistente/decisiones/va_en_acto", acto=c.acto)
         if item.status == CriterionStatus.INTENCIONAL:
@@ -130,7 +135,7 @@ def effect_recipe(story: Story) -> tuple[str, str]:
         return "", ""
     if d.effect == "otro":
         return (d.effect_other, d.effect_other) if d.effect_other.strip() else ("", "")
-    option = next((o for o in catalog.effects() if o.id == d.effect), None)
+    option = next((o for o in catalog.effects(story.structure) if o.id == d.effect), None)
     return (option.label, option.planner) if option and option.planner else ("", "")
 
 

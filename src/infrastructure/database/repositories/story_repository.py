@@ -35,8 +35,8 @@ class SQLStoryRepository:
             await conn.execute(
                 """INSERT OR REPLACE INTO story
                 (id, title, protagonista, relator, sinopsis, genero, subgenero,
-                 narrator_config, direction, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                 narrator_config, direction, structure, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(story.id),
                     story.title,
@@ -47,6 +47,7 @@ class SQLStoryRepository:
                     story.subgenero or None,
                     json.dumps(story.narrator_config) if story.narrator_config else None,
                     _direction_json(story.direction),
+                    story.structure,
                     story.status.value,
                     story.created_at.isoformat(),
                 ),
@@ -500,6 +501,34 @@ class SQLStoryRepository:
         async with connection() as conn:
             return await self._load_outline(conn, str(story_id))
 
+    async def change_structure(
+        self, story_id: UUID, structure: str, rules: list[TypedRule]
+    ) -> None:
+        """Spec-650 §2.5: cambia el largo de la historia en una sola transacción.
+
+        Los actos armados, la prosa de la última generación y su memoria son de la
+        estructura vieja: se borran (las versiones del relato quedan, D11). Las reglas
+        llegan ya reubicadas (D10) y reemplazan a las anteriores.
+        """
+        sid = str(story_id)
+        async with connection() as conn:
+            try:
+                await conn.execute("UPDATE story SET structure = ? WHERE id = ?", (structure, sid))
+                await conn.execute("DELETE FROM act_outline WHERE story_id = ?", (sid,))
+                await conn.execute("DELETE FROM macro_beat WHERE story_id = ?", (sid,))
+                await conn.execute("DELETE FROM narrative_journal WHERE story_id = ?", (sid,))
+                await conn.execute("DELETE FROM rule WHERE story_id = ?", (sid,))
+                for r in rules:
+                    await conn.execute(
+                        "INSERT INTO rule (id, story_id, content, applies_to_beat)"
+                        " VALUES (?, ?, ?, ?)",
+                        (str(uuid.uuid4()), sid, r.content, r.applies_to_beat),
+                    )
+                await conn.commit()
+            except Exception:
+                await conn.rollback()
+                raise
+
     async def save_outline(self, story_id: UUID, acts: list[ActOutline]) -> None:
         """Reemplaza la escaleta completa (la arma el Planificador)."""
         async with connection() as conn:
@@ -686,6 +715,7 @@ class SQLStoryRepository:
             subgenero=(row["subgenero"] if "subgenero" in keys else "") or "",
             narrator_config=json.loads(raw_cfg) if raw_cfg else None,
             direction=Direction.model_validate_json(raw_direction) if raw_direction else None,
+            structure=(row["structure"] if "structure" in keys else None) or "largo",
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,

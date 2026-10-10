@@ -513,6 +513,7 @@ async def test_params_llevan_perfil_y_estimacion_sin_pisar_los_del_job(
     assert saved.params == {
         "beat": 3,
         "narrative_id": "n-1",
+        "structure": "largo",  # Spec-650: la estimación se separa por largo
         "profile": "perfil-test",
         "estimated_seconds": 70,
     }

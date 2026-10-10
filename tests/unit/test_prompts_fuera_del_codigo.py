@@ -30,6 +30,10 @@ PERMITIDOS: dict[tuple[str, str], str] = {
         "Respuesta vacía después de max_retries intentos",
     ): "excepción interna (respuesta vacía del LLM)",
     (
+        "src/application/services/authoring/catalog.py",
+        "falta la variante «{…}» en {…}",
+    ): "error de config al leer los YAML del asistente (Spec-650), para quien los edita",
+    (
         "src/application/services/repetition_check.py",
         "aquí allí así ahí sí mí ti qué fe café bebé mamá papá allá a",
     ): "lista de palabras de la heurística (Spec-590), no es texto",

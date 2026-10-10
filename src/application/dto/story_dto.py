@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.domain.models import StructureId
+
 
 class StoryCreateDTO(BaseModel):
     """DTO for creating a story."""
@@ -26,6 +28,7 @@ class StoryCreateDTO(BaseModel):
     entities: list[dict] = []
     # Spec-530: asistente de autoría (formato de `Direction`, `WorkshopItem`, `ActOutline`).
     direction: Optional[dict] = None
+    structure: StructureId = "largo"  # Spec-650
     workshop: list[dict] = []
     outline: list[dict] = []
 

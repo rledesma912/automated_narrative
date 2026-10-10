@@ -9,7 +9,11 @@ from src.application.services.beat_spec_repository import BeatSpecRepository
 
 
 def _write_yaml(tmp_path: Path, beats: list[dict], **extra) -> Path:
-    largo = {"label": "Largo", "revela_secreto": 4, "actos": beats}
+    textos = {"palabras_total": "2.500", "hechos_por_acto": "de 3 a 5 hechos"}
+    largo = {"label": "Largo", "revela_secreto": 4, "actos": beats, **textos}
+    if "corto" in extra:  # D10: tablas de reubicación entre las dos
+        largo["reubicar_desde"] = {"corto": {1: 1, 2: 3, 3: 5}}
+        extra["corto"].setdefault("reubicar_desde", {"largo": {1: 1, 2: 2, 3: 2, 4: 3, 5: 3}})
     data = {"beats_spec": {"estructuras": {"largo": largo, **extra}}}
     f = tmp_path / "beats.yaml"
     f.write_text(yaml.dump(data, allow_unicode=True), encoding="utf-8")
@@ -113,7 +117,8 @@ class TestEstructuras:
 
     def _corto(self) -> dict:
         actos = [{**FIVE_BEATS[i], "id": i + 1, "palabras": [100, 200]} for i in range(3)]
-        return {"label": "Corto", "revela_secreto": 2, "actos": actos}
+        textos = {"palabras_total": "1.050", "hechos_por_acto": "los que pide cada acto,"}
+        return {"label": "Corto", "revela_secreto": 2, "actos": actos, **textos}
 
     def test_estructura_pedida(self, tmp_path):
         repo = BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=self._corto()))
@@ -154,6 +159,43 @@ class TestEstructuras:
         corto["actos"][0]["entity_exposure"] = {"nunca": "no_existe"}
         with pytest.raises(ValueError, match="exposición"):
             BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
+
+    def test_reubicar_entre_estructuras(self, tmp_path):
+        repo = BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=self._corto()))
+        largo, corto = repo.estructura("largo"), repo.estructura("corto")
+        assert [corto.reubicar(n, largo) for n in range(1, 6)] == [1, 2, 2, 3, 3]
+        assert [largo.reubicar(n, corto) for n in range(1, 4)] == [1, 3, 5]
+        assert largo.reubicar(4, largo) == 4
+
+    def test_tabla_de_reubicacion_incompleta_es_error(self, tmp_path):
+        corto = {**self._corto(), "reubicar_desde": {"largo": {1: 1, 2: 2, 3: 3}}}
+        with pytest.raises(ValueError, match="reubicar_desde"):
+            BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
+
+    def test_reubicar_a_un_acto_que_no_existe_es_error(self, tmp_path):
+        corto = {**self._corto(), "reubicar_desde": {"largo": {1: 1, 2: 2, 3: 2, 4: 3, 5: 4}}}
+        with pytest.raises(ValueError, match="no existe"):
+            BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
+
+    def test_hechos_sin_tope_es_error(self, tmp_path):
+        corto = self._corto()
+        corto["actos"][0]["hechos"] = "2 o 3"
+        with pytest.raises(ValueError, match="hechos_max"):
+            BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
+
+    def test_palabras_invertidas_es_error(self, tmp_path):
+        corto = self._corto()
+        corto["actos"][0]["palabras"] = [300, 200]
+        with pytest.raises(ValueError, match="palabras"):
+            BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
+
+    def test_el_yaml_real_trae_el_corto(self):
+        """Spec-650 §2.1: 3 actos, 940–1 140 palabras (≈ 7 min a 150 por minuto)."""
+        corto = BeatSpecRepository().estructura("corto")
+        assert (corto.num_actos, corto.ultimo, corto.revela_secreto) == (3, 3, 2)
+        assert [a["nombre_ui"] for a in corto.actos] == ["Cómo empieza", "Qué pasa", "Cómo termina"]
+        assert sum(a["palabras"][0] for a in corto.actos) == 940
+        assert sum(a["palabras"][1] for a in corto.actos) == 1140
 
     def test_el_yaml_real_carga_y_la_larga_tiene_cinco(self):
         repo = BeatSpecRepository()

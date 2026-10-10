@@ -111,3 +111,20 @@ def test_el_guardian_detecta_los_casos():
     assert kinds.count("NUM_ACTS") == 1
     assert kinds.count("range(…, 6)") == 1
     assert kinds.count("comparación con 5") == 2  # `len(words) == 5` no es un acto
+
+
+def test_no_hay_cinco_actos_fijos_en_los_prompts():
+    """Los prompts reciben la cantidad de actos de la estructura (`{num_actos}`,
+    `{total}`, `{ultimo}`); un «5 actos» o «ACTO N DE 5» escrito a mano le miente
+    al relato corto (pasó en S2: lo encontró la lectura de los snapshots)."""
+    import re
+
+    pattern = re.compile(r"\b5 actos\b|\bde 5\b|\b1 a 5\b|\bacto 5\b|\bactos 2[–-]5\b", re.I)
+    found = []
+    for path in sorted((ROOT / "config" / "prompts_generation").rglob("*.md")):
+        if path.name == "README.md":  # documentación de los huecos, no la lee el LLM
+            continue
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if pattern.search(line):
+                found.append(f"{path.relative_to(ROOT)}:{lineno}: {line.strip()}")
+    assert not found, "\n".join(found)

@@ -42,7 +42,7 @@ class Escaleta(BaseModel):
     def _actos_completos(self) -> "Escaleta":
         numbers = sorted(a.numero for a in self.actos)
         if numbers != list(range(1, self.NUM_ACTOS + 1)):
-            raise ValueError(message("job.escaleta_sin_actos", actos=numbers))
+            raise ValueError(message("job.escaleta_sin_actos", actos=numbers, total=self.NUM_ACTOS))
         empty = [a.numero for a in self.actos if not [h for h in a.hechos if h.strip()]]
         if empty:
             raise ValueError(message("job.escaleta_sin_hechos", actos=empty))
@@ -73,7 +73,9 @@ class OutlinePlanner:
             self.llm,
             role=ROLE,
             prompt=self._prompt(story),
-            system_prompt=self.templates.load("authoring_planner_system.md"),
+            system_prompt=self.templates.load("authoring_planner_system.md").format(
+                num_actos=self.prompt_builder.estructura(story).num_actos
+            ),
             output=escaleta_model(self.prompt_builder.estructura(story).num_actos),
         )
         valid = {cid for cid, _, _ in context.decisions(story)}
@@ -98,7 +100,7 @@ class OutlinePlanner:
         )
         t = self.templates
         return t.load("authoring_planner.md").format(
-            objetivo=context.objective(t),
+            objetivo=context.objective(t, story),
             historia=context.story_block(story, t),
             decisiones=context.decisions_block(story, t),
             borradores=self._drafts_block(story),
@@ -107,6 +109,9 @@ class OutlinePlanner:
             efecto=context.effect_block(story, t),
             escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
+            ultimo=self.prompt_builder.estructura(story).ultimo,
+            num_actos=self.prompt_builder.estructura(story).num_actos,
+            hechos_por_acto=self.prompt_builder.estructura(story).hechos_por_acto,
         )
 
     def _acts_block(self, story: Story) -> str:
@@ -122,6 +127,8 @@ class OutlinePlanner:
                 intent = t("asistente/planificador/final_del_autor")
             if n == estructura.revela_secreto and has_secret:
                 intent += t("asistente/planificador/historia_secreta")
+            if info.get("hechos"):  # Spec-650: cuántos hechos (la extensión sale de ahí)
+                intent += t("asistente/planificador/hechos", hechos=info["hechos"])
             lines.append(
                 t(
                     "asistente/planificador/acto",

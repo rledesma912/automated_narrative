@@ -116,6 +116,8 @@ async def init_db() -> None:
             subgenero TEXT,
             narrator_config TEXT,
             direction TEXT,
+            -- Spec-650: estructura del relato (llm_beats_definition.yaml → estructuras)
+            structure TEXT NOT NULL DEFAULT 'largo' CHECK (structure IN ('largo', 'corto')),
             status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (genero) REFERENCES genre(id),
