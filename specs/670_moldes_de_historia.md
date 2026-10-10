@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — épica (asistente, Planificador, Verificador, Voz, UI)
-**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS (esperando OK)
+**Estado:** SPECIFY ✅ (2026-10-10: capas, b + c, D1–D7, catálogo inicial 5 + 6, sin pregunta abierta) · maquetas ✅ (v3, https://claude.ai/artifact/BRfXu1GVCxNSEZcfq5Cupm; el usuario verifica al probar) · PLAN ✅ (OK 2026-10-10, D11–D16) · TASKS ✅ · S1 ✅ (2026-10-10, bdb2e48)
 **Rama:** `feat/spec-670-moldes`
 **Extiende:** Spec-530 (asistente), Spec-560 A5 (receta del efecto), Spec-580 (criterios en tono coloquial), Spec-650 (estructuras largo/corto).
 
@@ -274,3 +274,13 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
 
 - **T6.1** Medición D7 (aviso de costo y OK antes).
 - **T6.2** CLAUDE.md (catálogo, cómo ampliarlo, D10), memoria, PR a `development`.
+
+## 7. Resultados
+
+### S1 (2026-10-10)
+
+- Forma de siempre: snapshots `pipeline`, `voice`, `assistant` (largo y corto) **idénticos**. Nuevo `moldes_asedio_prompts.json`; tope D10, D11, D13, D16 y YAML con tests.
+- Prueba en dev (todo-Claude): copia de «La laguna oscura» con «Algo viene por nosotros» (`df046285…`), las respuestas que aplican copiadas (la del secreto pasó a «qué la empuja a venir»). Comparación con los actos de gemma en `scripts/research/chispa/` (`laguna_gemma.json` tiene hechos del usuario en los actos 2 y 3).
+  - **Mejor:** escalada concreta y sin culpa inventada (la orilla → los peces muertos y la fábrica → el patio → rasca las paredes), detalles propios (la gallina más grande, los animales que callan de golpe, los galpones que siguen largando humo), el final abierto que pide la forma. El Verificador en Claude da avisos de continuidad muy precisos (cómo se va la criatura, qué sabe el padre).
+  - **Sigue de manual:** «huellas enormes», «el brillo de unos ojos», «una sombra enorme». Es lo que deberían atacar los giros (S2).
+  - Inventó personajes (madre, hermana): el Verificador lo marca.
