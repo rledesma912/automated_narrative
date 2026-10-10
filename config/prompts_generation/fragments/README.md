@@ -50,6 +50,7 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 | `{asi_es}` | `voz/asi_es` + los rasgos | la memoria trae rasgos |
 | `{evitar}` | `voz/evitar/titulo` + `repetida`, `cliche`, `nombres`, `cortadas`, `dialogo`, `comparaciones` (Spec-640) | se regenera un acto y el control marcó algo |
 | `{ya_usado}` | los motivos usados, o `voz/ya_usado_vacio` | siempre |
+| `{comienzo}` | `voz/comienzo` (Spec-650: que no arranque siempre con «Mirá») | acto 1 |
 
 `voz/protagonista` reemplaza el nombre cuando no hay uno. `voz/reintento` se agrega al
 prompt si el modelo se niega a narrar (`NarratorRetryGenerator`).

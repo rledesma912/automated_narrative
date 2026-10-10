@@ -1,0 +1,1 @@
+CÓMO EMPEZAR: elegí vos por dónde entrar a la historia: un lugar, un momento del día, algo que estabas haciendo, una persona, un detalle raro. No arranques con una muletilla dirigida a quien escucha («Mirá», «Escuchá», «Te cuento», «Te lo cuento porque…»).

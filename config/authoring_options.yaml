@@ -39,7 +39,7 @@ como_lo_cuenta:
   - id: caso
     label: Como un caso entre amigos
     ejemplo: "«Mirá, yo no creía en nada de eso, pero esa noche…»"
-    voz: "Contalo como un caso que le contás a unos amigos: habla rioplatense coloquial, con alguna marca oral («mirá», «te juro») sin abusar, sin apurarte."
+    voz: "Contalo como un caso que le contás a unos amigos: habla rioplatense coloquial, con las marcas orales de alguien que cuenta algo en una sobremesa, sin abusar, sin apurarte."
   - id: confesion
     label: Como una confesión
     ejemplo: "«Nunca se lo conté a nadie. Ni a mi mujer.»"

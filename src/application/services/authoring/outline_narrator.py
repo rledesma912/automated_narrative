@@ -143,6 +143,7 @@ class OutlineNarrator:
             ),
             ya_usado="\n".join(f"- {m}" for m in self._motifs_for(story, act, memory))
             or self.templates.fragment("voz/ya_usado_vacio"),
+            comienzo=self.templates.fragment("voz/comienzo") + "\n\n" if act.number == 1 else "",
             min_palabras=low,
             max_palabras=high,
         )
