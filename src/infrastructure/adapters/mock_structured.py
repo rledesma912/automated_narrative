@@ -8,6 +8,14 @@ import re
 
 
 def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
+    if role == "consultor" and "forma" in schema.get("properties", {}):
+        # Spec-670: sugerir la forma (la primera que no es la de siempre).
+        formas = schema["properties"]["forma"].get("enum", [])
+        return {
+            "forma": formas[1] if len(formas) > 1 else formas[0],
+            "motivo": "Por cómo es tu idea.",
+            "arco": "",
+        }
     if role == "consultor":
         return {"evaluaciones": [_evaluation(i, c) for i, c in enumerate(_criteria(schema))]}
     if role == "planificador":
@@ -89,12 +97,19 @@ def _criteria(schema: dict) -> list[str]:
 
 def _evaluation(i: int, criterion: str) -> dict:
     if i == len(_ANSWERS):  # a partir del quinto, cumple
-        return {"criterio": criterion, "estado": "cumple", "pregunta": "", "opciones": []}
+        return {
+            "criterio": criterion,
+            "estado": "cumple",
+            "pregunta": "",
+            "opciones": [],
+            "motivo": "",
+        }
     return {
         "criterio": criterion,
         "estado": "falta" if i % 2 == 0 else "parcial",
         "pregunta": f"¿Pregunta de ejemplo sobre {criterion}?",
         "opciones": [f"{a} ({criterion})" for a in _ANSWERS],
+        "motivo": "",
     }
 
 

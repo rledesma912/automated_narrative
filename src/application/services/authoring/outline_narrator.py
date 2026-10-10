@@ -17,7 +17,7 @@ import re
 
 from pydantic import BaseModel
 
-from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.authoring import catalog, context, molde, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.manifestations import manifestations_for_act
@@ -162,7 +162,8 @@ class OutlineNarrator:
         if act.number == last and d and d.ending_intentional and d.ending:
             # El final del autor manda sobre la función genérica del acto (Spec-530 S2).
             return self.templates.fragment("voz/final_del_autor", final=d.ending)
-        return info.get("intent", "")
+        # Spec-670: lo que pide el acto según la forma (la de siempre: el de la estructura).
+        return molde.for_story(story).intencion(act.number, info.get("intent", ""))
 
     @staticmethod
     def _motifs_for(story: Story, act: ActOutline, memory: NarrativeJournal | None) -> list[str]:

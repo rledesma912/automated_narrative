@@ -168,3 +168,7 @@ Cada slice cierra con tests en verde y dev mostrando el cambio (URL para mirar).
 - **Doble clic (encontrado en S3):** el segundo clic de un doble clic sobre el botón caía en el diálogo recién abierto y lo aceptaba sin leer (o lo cerraba). `ForgeConfirm` ignora los clics con `detail` ≥ 2; una ventana de tiempo frenaba también clics normales rápidos. E2E: `generation-guard` («doble click … pregunta una vez»).
 - **Guardado antes de escribir:** se usa `ForgeAsistente.flushAll` (ya existía) en vez de una global nueva; solo dentro de `[data-asistente]` (con hx-boost queda la de una página anterior).
 - `startGeneration` (servicio del front) quedó sin uso y se borró: ningún camino del servidor lanza la escritura.
+
+## 7. Ajuste después del pase (2026-10-10, `fix/preguntas-sin-pendientes`)
+
+- **«Preguntame de nuevo» no hacía nada y parecía que sí.** Con todo respondido o decidido por el autor, el Consultor no tiene nada que evaluar (`workshop_rules.to_evaluate` vacío): el job terminaba en milisegundos sin llamar a la IA y la pantalla quedaba igual. Ahora `finish` devuelve `respondido` con su mensaje («Ya respondiste o decidiste todo… no le queda nada para preguntarte»), el botón se esconde (también al responder la última sin recargar) y pasa a llamarse **«Preguntame lo que falta»**, que es lo que hace. Repreguntar lo ya respondido no existe (decisión del usuario: está bien así).

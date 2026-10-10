@@ -1,0 +1,55 @@
+{
+  "perfil": "anthropic-sonnet55, forma asedio",
+  "actos": [
+    {
+      "numero": 1,
+      "objetivo": "Tito quiere mantener a su familia a salvo y sin riesgos frente a algo que todavía no entiende.",
+      "hechos": [
+        "Tito cuenta que su familia vive en una casa aislada, a unos cientos de metros de una laguna oscura en el bosque patagónico, y que los lugareños dicen que ahí vive algo antiguo.",
+        "Una tarde Tito encuentra en el barro de la orilla unas huellas enormes que nadie del pueblo sabe explicar, y se las muestra a su padre, que las pisa con la bota y lo manda para la casa.",
+        "Esa noche Tito sale al patio a cerrar el gallinero y oye chapoteos pesados que vienen de la laguna; entra corriendo, traba la puerta y avisa que nadie salga de noche."
+      ],
+      "puente": "",
+      "se_guarda": "Qué está empujando a la criatura a salir del agua.",
+      "avisos": [
+        "«el padre de Tito» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+        "Tito ve las huellas enormes en el barro de la orilla en el acto 1 y vuelve a ver huellas frescas en el acto 2 y en el 3: ¿qué cambia cada vez que las ve, para que no sea el mismo susto repetido?",
+        "El padre pisa las huellas y manda a Tito a la casa, pero no se cuenta por qué: si ya sospecha algo o sabe más de lo que dice, mostrá una pista, porque después se lo cuenta 'todo' y se muestra sorprendido."
+      ]
+    },
+    {
+      "numero": 2,
+      "objetivo": "Tito intenta averiguar qué le pasa a la laguna y mantener a su familia adentro, a salvo.",
+      "hechos": [
+        "Tito recorre la orilla y encuentra decenas de peces muertos flotando, con el agua turbia y un olor químico que le arde en la nariz.",
+        "Siguiendo el olor, descubre que una fábrica nueva levantó sus galpones pegados a la laguna y vierte desechos en el agua; entiende que el lugar donde vive la criatura se está envenenando y que ya no le queda qué comer.",
+        "Al caer la noche, Tito ve que los animales de la zona callan de golpe, y desde la ventana nota el barro mojado y las huellas frescas que llegan hasta el borde del patio.",
+        "La criatura irrumpe en el patio y se lleva la gallina más grande, destrozando el gallinero; Tito, escondido tras la ventana, solo alcanza a ver una sombra enorme y el brillo de unos ojos.",
+        "Tito agarra a su madre y a su hermana, las encierra en el cuarto y se queda vigilando, mientras la sombra rasca las paredes de la casa hasta casi el amanecer."
+      ],
+      "puente": "Pasan unos días sin que nadie pueda dormir bien; Tito empieza a revisar la orilla antes de que oscurezca.",
+      "se_guarda": "Qué es realmente la criatura y si va a volver.",
+      "avisos": [
+        "«la madre de Tito» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+        "«la hermana de Tito» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+        "La madre y la hermana de Tito aparecen en escena y en los hechos, pero no figuran entre los personajes: sumalas para que no queden sueltas."
+      ]
+    },
+    {
+      "numero": 3,
+      "objetivo": "Tito quiere que su padre sepa lo que vio y que lo ayude a proteger a la familia.",
+      "hechos": [
+        "Tito le cuenta a su padre todo lo que vio, desde las huellas hasta la fábrica, y el padre, pálido, no sabe qué decir ni qué es lo que viene; la incertidumbre y la angustia crecen.",
+        "Mirando la laguna desde el patio, Tito ve que los galpones de la fábrica siguen largando humo y que la superficie del agua queda quieta, y comprende que la criatura puede volver cuando el hambre la empuje otra vez.",
+        "Esa noche Tito se queda sentado junto a la puerta, escuchando cada ruido, con las huellas frescas todavía marcadas en el barro del patio."
+      ],
+      "puente": "Amanece y la criatura se fue; Tito pasa el día entre los restos del gallinero, sin haber dormido.",
+      "se_guarda": "",
+      "avisos": [
+        "«el padre de Tito» aparece en este acto pero no está entre los personajes: ¿lo sumamos?",
+        "Al final del acto 2 la sombra rasca las paredes hasta casi el amanecer y en el acto 3 la criatura 'se fue', pero no se cuenta cómo ni por qué se va: mostrá un momento en que se aleja, para que quien escucha entienda qué pasó.",
+        "En el acto 2 Tito ya sabe lo de la fábrica y el veneno, pero en el 3 el padre sigue sin saber qué es 'lo que viene': ¿qué le explica Tito, o qué se queda sin explicar, cuando le cuenta todo? Y el acto 2 dice que se aclara qué es la criatura y si vuelve, pero el 3 solo deja la duda: decidí si algo se descubre o si queda abierto a propósito."
+      ]
+    }
+  ]
+}

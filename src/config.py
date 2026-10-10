@@ -47,6 +47,8 @@ DEFAULT_ESTIMATED_SECONDS = {
     "consult": 40,
     "plan_outline": 75,
     "verify_outline": 30,
+    # Spec-670: sugerir la clase de historia (una llamada corta).
+    "suggest_form": 15,
     # Spec-610: el paquete para el video.
     "video_script": 90,
 }

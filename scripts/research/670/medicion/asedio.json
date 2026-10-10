@@ -1,0 +1,42 @@
+{
+  "molde": "asedio",
+  "forma": "Algo viene por nosotros",
+  "giro": "",
+  "actos": [
+    {
+      "numero": 1,
+      "hechos": [
+        "Tito cuenta cómo es la casa de su familia: aislada, en el bosque patagónico, a unos cientos de metros de la laguna oscura, donde nadie se baña ni pesca de más.",
+        "Una tarde, Tito encuentra en el barro de la orilla unas huellas enormes que salen del agua y se pierden entre los árboles, y le muestra a Don Raúl, que le dice que la laguna tiene dueño y que no ande por ahí.",
+        "Esa noche, Tito escucha desde su cuarto un chapoteo largo y pesado en la laguna, y los perros del vecino aúllan sin parar hasta la madrugada."
+      ],
+      "avisos": []
+    },
+    {
+      "numero": 2,
+      "hechos": [
+        "Tito va a la orilla de la laguna y encuentra decenas de peces muertos flotando, y un olor químico fuerte que viene de la fábrica nueva, donde una cañería vuelca un líquido turbio al agua.",
+        "Tito vuelve corriendo y le cuenta a sus padres lo de los peces y la fábrica, pero ellos lo toman por exagerado y le piden que no se acerque más a la laguna.",
+        "Esa noche, los perros del vecino se ponen frenéticos, ladran hacia el bosque y de golpe se callan todos juntos.",
+        "Tito mira por la ventana y ve en el patio una sombra enorme y mojada que se arrastra hacia la leñera, donde su padre guarda la carne para el invierno.",
+        "Tito despierta a sus padres y, en silencio, los tres se encierran en la cocina mientras la criatura rasca la puerta de atrás y se lleva la carne y a uno de los perros del vecino."
+      ],
+      "avisos": [
+        "Don Raúl dice en el acto 1 que la laguna tiene dueño, pero en el acto 2 ni aparece cuando la criatura sale del agua. Tito se la pasa buscando a alguien que le crea y justo ahí no recurre al único que ya le dio la razón; ¿lo hacés pasar por la casa o lo nombrás?",
+        "La criatura entra al patio, rasca la puerta de la cocina y se lleva la carne y al perro, pero queda muy en off: «una sombra enorme y mojada». Cuando se acerca a la puerta, ¿Tito escucha o ve algo concreto (una pata, un ojo, un olor) para que el miedo suba antes del final del acto?"
+      ]
+    },
+    {
+      "numero": 3,
+      "hechos": [
+        "A la mañana, Tito y su padre encuentran el patio revuelto, rastros de barro hasta la laguna y las marcas de garras en la puerta, y el vecino llora por su perro.",
+        "Tito va a ver a Don Raúl, que le dice que nadie sabe qué es esa cosa ni cuánto aguanta bajo el agua, y que mientras la fábrica siga volcando, volverá.",
+        "Esa noche, Tito se queda despierto junto a la ventana; la fábrica sigue funcionando a lo lejos, y desde la laguna llega otra vez el chapoteo."
+      ],
+      "avisos": [
+        "La fábrica sigue funcionando y Don Raúl dice que mientras vuelque, la criatura volverá. Pero ningún personaje intenta avisar a alguien, denunciar o enfrentar a la fábrica, ni siquiera lo piensa. Si Tito «quiere saber si hay algo que pueda hacer», ¿qué opción descubre (o descarta) en el acto 3?",
+        "El acto 3 empieza con el patio revuelto y los rastros hasta la laguna, pero en el acto 2 no queda claro si los padres le siguen sin creer a Tito, o si después de ver la criatura ya le creen. Aclarar en el acto 3 cómo cambió esa relación (un gesto, una frase) para que no parezca que nada pasó."
+      ]
+    }
+  ]
+}

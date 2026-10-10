@@ -1,0 +1,42 @@
+{
+  "molde": "regla",
+  "forma": "Alguien rompe una regla",
+  "giro": "",
+  "actos": [
+    {
+      "numero": 1,
+      "hechos": [
+        "Tito cuenta que su familia vive aislada en el bosque patagónico, a unos kilómetros de una laguna oscura que nadie del pueblo quiere nombrar.",
+        "Don Raúl, un lugareño, les advierte que no se acerquen a la laguna de noche, porque ahí vive algo viejo que siempre se quedó abajo.",
+        "Tito va a la orilla de la laguna y encuentra peces muertos flotando y unas huellas hondas en el barro que nadie del pueblo sabe explicar."
+      ],
+      "avisos": []
+    },
+    {
+      "numero": 2,
+      "hechos": [
+        "Una noche los perros del vecino empiezan a aullar sin parar y después se callan de golpe.",
+        "Tito sigue las huellas frescas hasta el alambrado y encuentra del lado del vecino un perro destripado, mientras desde la laguna llega un olor a podrido.",
+        "Tito camina hasta la orilla y ve una fábrica con las luces prendidas desde donde caen chorros turbios al agua; entiende que los peces murieron por eso.",
+        "De vuelta en la casa, la criatura irrumpe en el patio y se ve entera por primera vez: un cuerpo enorme, mojado, que husmea buscando comida.",
+        "Tito despierta a sus padres y entre los tres se encierran en la casa, mientras la criatura golpea la puerta y las paredes hasta que amanece."
+      ],
+      "avisos": [
+        "En el acto 2 Tito ve la fábrica y entiende que los peces murieron por eso, pero en ese momento el acto 1 ya había dicho que eso se descubría en el 2; está bien ahí, pero además dice que la criatura 'busca alimento por culpa' de la fábrica sin que nadie lo haya dicho: ¿cómo lo sabe Tito? Mostrá antes una pista que una la fábrica con la criatura.",
+        "Cuando Tito ve a la criatura 'entera por primera vez' en el patio, esto es lo único que se muestra entero antes de tiempo, pero en el acto 1 ya hay huellas y en el 2 un perro destripado: la subida es razonable. El problema es que en el mismo acto Tito camina solo hasta la fábrica de noche y vuelve sin que pase nada, justo cuando la criatura anda suelta: ¿por qué no se cruzan ahí? Sumá un momento de miedo en ese camino."
+      ]
+    },
+    {
+      "numero": 3,
+      "hechos": [
+        "Don Raúl y el vecino llegan a la casa y confirman que la criatura volvió a la laguna, pero Don Raúl dice que nadie sabe por cuánto tiempo.",
+        "Tito mira desde la ventana la fábrica funcionando y las huellas del patio que nadie se animó a borrar.",
+        "Tito termina el relato diciendo que cada noche escucha el agua moverse y que no sabe cuándo van a volver los aullidos."
+      ],
+      "avisos": [
+        "El acto 3 no explica cómo Don Raúl y el vecino saben que la criatura volvió a la laguna: ¿la vieron o lo suponen? Decí qué los hace estar seguros, porque si no quien escucha no entiende por qué dicen que 'volvió' pero que puede salir de nuevo.",
+        "En el acto 3 Tito 'mira desde la ventana la fábrica funcionando': la fábrica estaba junto a la laguna y Tito tuvo que caminar hasta la orilla para verla en el acto 2. ¿Se ve desde la casa? Aclará la distancia para que no se contradiga con lo del acto 1 (a unos kilómetros)."
+      ]
+    }
+  ]
+}

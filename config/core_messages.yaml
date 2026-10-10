@@ -21,13 +21,15 @@
 workshop:
   # Cierre de cada ronda de preguntas (Spec-530 §3.3, Spec-580).
   cumple: "Tu historia ya tiene todo lo que hace falta. Ya podés armar los actos."
+  mal_elegida: "Parece que tu historia no es de esta clase: {n} de sus preguntas no van. Probá con otra en «Tu idea»."
+  respondido: "Ya respondiste o decidiste todo lo que la IA te preguntó: no le queda nada para preguntarte. Ya podés armar los actos."
   tope: "Ya van {maximo} vueltas de preguntas, que es el máximo. Podés responder lo que quedó o armar los actos."
   sin_preguntas: "La IA no tiene más preguntas. Ya podés armar los actos."
   no_suma: "La IA no encontró preguntas nuevas: {quedan} sin responder de antes. Respondé lo que quieras o armá los actos."
   queda_una: "queda 1 pregunta"
   quedan: "quedan {n} preguntas"
-  abierto_una: "Te queda 1 pregunta. Podés responder, pedirle a la IA que te pregunte de nuevo o pasar a los actos cuando quieras."
-  abierto: "Te quedan {n} preguntas. Podés responder, pedirle a la IA que te pregunte de nuevo o pasar a los actos cuando quieras."
+  abierto_una: "Te queda 1 pregunta. Podés responder, pedirle a la IA que te pregunte lo que falta o pasar a los actos cuando quieras."
+  abierto: "Te quedan {n} preguntas. Podés responder, pedirle a la IA que te pregunte lo que falta o pasar a los actos cuando quieras."
   ultima_vuelta: " (Es la última vuelta de preguntas: el máximo es {maximo}.)"
   sin_opciones: "El criterio {criterio} no tiene opciones para elegir"
   sin_analizar: "Todavía no hay preguntas: apretá «Que la IA me pregunte»."
@@ -47,6 +49,9 @@ verifier:
   siembras: "{siembras} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?"
 
 api:
+  # Spec-670: una forma o un giro que no está en config/moldes/.
+  forma_desconocida: "No conozco la clase de historia «{forma}»."
+  giro_desconocido: "No conozco el giro «{giro}»."
   # Spec-650 D11: regenerar un acto de una versión escrita con el otro largo.
   version_de_otro_largo: "Esta versión se escribió cuando la historia tenía otro largo: para regenerar actos, escribí la historia de nuevo."
   # Respuestas 409/422 que la UI muestra tal cual (el asistente lee el `detail`).

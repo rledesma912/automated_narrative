@@ -81,10 +81,12 @@ Contexto común (`context.py`), que reciben los tres roles:
 `{reglas}` (Spec-630: `asistente/planificador/reglas` + una `regla` por regla anclada a un acto;
 vacío si no hay), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
 `asistente/planificador/acto` por acto; `final_del_autor` cambia la intención del último acto,
-`historia_secreta` se suma en el acto `revela_secreto` de la estructura y `hechos` cuando el acto
+Spec-670: la intención sale del molde (`molde.py`) y en el acto `revela_secreto` se suma el `revela.texto` de la forma (en la de siempre, la historia secreta); `hechos` cuando el acto
 dice cuántos hechos lleva). Spec-650: `{num_actos}`, `{ultimo}` y `{hechos_por_acto}` salen de
 la estructura de la historia; el system prompt (`authoring_planner_system.md`) y el del
-Verificador reciben `{num_actos}`, y `asistente/objetivo` recibe `{num_actos}` y `{palabras}`.
+Verificador reciben `{num_actos}` (Spec-670: al system prompt del Planificador se le suma una
+`asistente/planificador/regla_de_la_forma` por regla de la forma y del giro; con «Otra», `{efecto}`
+empieza con `asistente/planificador/arco`, cómo contó el autor su historia), y `asistente/objetivo` recibe `{num_actos}` y `{palabras}`.
 
 **Verificador** — `authoring_verifier.md`: además `{elenco}` (o
 `asistente/verificador/elenco_vacio`), `{escaleta}` (por acto, `asistente/verificador/acto/*`:

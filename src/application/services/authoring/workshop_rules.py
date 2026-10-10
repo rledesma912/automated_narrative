@@ -17,6 +17,10 @@ MAX_OPTIONS = 3
 _SIMILAR = 0.6  # Jaccard de palabras largas: desde acá dos preguntas son «la misma»
 
 OPEN = (CriterionStatus.FALTA, CriterionStatus.PARCIAL)
+# Spec-670 D12: el autor reabrió un «No va en tu historia»: en ese criterio la IA ya no
+# puede volver a decir que no va (si no, reabrir sería un ida y vuelta sin fin).
+NO_APLICA_RECHAZADO = "·no_aplica_rechazado"
+MAL_ELEGIDA = 2  # D8: desde cuántos criterios de la forma que no van se avisa
 
 
 @dataclass(frozen=True)
@@ -27,20 +31,26 @@ class Evaluation:
     status: CriterionStatus  # cumple | parcial | falta
     question: str = ""
     options: tuple[str, ...] = ()
+    reason: str = ""  # Spec-670 D8: por qué no va (con `no_aplica`)
 
 
 @dataclass(frozen=True)
 class Finish:
-    kind: str  # abierto | cumple | sin_preguntas | no_suma | tope
+    kind: str  # abierto | cumple | sin_preguntas | no_suma | tope | respondido | mal_elegida
     text: str
     open_questions: int
 
 
-def initial_items(direction: Direction | None, existing: list[WorkshopItem]) -> list[WorkshopItem]:
-    """Un ítem por criterio de la dirección; el final intencional ya viene resuelto."""
+def initial_items(
+    direction: Direction | None,
+    existing: list[WorkshopItem],
+    criteria: tuple[catalog.Criterion, ...] | None = None,
+) -> list[WorkshopItem]:
+    """Un ítem por criterio del molde (Spec-670: `criteria`; sin eso, el de siempre); el
+    final intencional ya viene resuelto. Los guardados de otros criterios no entran (D11)."""
     by_id = {w.criterion: w for w in existing if w.level == WorkshopLevel.DIRECCION}
     items = []
-    for c in catalog.direction_criteria():
+    for c in criteria if criteria is not None else catalog.direction_criteria():
         item = by_id.get(c.id) or WorkshopItem(criterion=c.id, round=1)
         if c.id == "final" and direction and direction.ending_intentional and direction.ending:
             item = item.model_copy(
@@ -56,8 +66,27 @@ def initial_items(direction: Direction | None, existing: list[WorkshopItem]) -> 
 
 
 def to_evaluate(items: list[WorkshopItem]) -> list[WorkshopItem]:
-    """Lo que el Consultor evalúa: ni lo intencional ni lo que el autor ya respondió."""
-    return [w for w in items if w.status != CriterionStatus.INTENCIONAL and not w.answer]
+    """Lo que el Consultor evalúa: ni lo intencional, ni lo que no va en la historia
+    (Spec-670 D8), ni lo que el autor ya respondió."""
+    done = (CriterionStatus.INTENCIONAL, CriterionStatus.NO_APLICA)
+    return [w for w in items if w.status not in done and not w.answer]
+
+
+def no_aplica_rejected(item: WorkshopItem) -> bool:
+    """D12: el autor pidió que se lo pregunten igual."""
+    return NO_APLICA_RECHAZADO in item.asked
+
+
+def reopen(item: WorkshopItem) -> WorkshopItem:
+    """Vuelve a evaluarse en la próxima ronda. Si era «No va en tu historia», queda la
+    marca para que la IA no lo vuelva a descartar (D12)."""
+    asked = list(item.asked)
+    if item.status == CriterionStatus.NO_APLICA and NO_APLICA_RECHAZADO not in asked:
+        asked.append(NO_APLICA_RECHAZADO)
+    question = "" if item.status == CriterionStatus.NO_APLICA else item.question
+    return item.model_copy(
+        update={"status": CriterionStatus.FALTA, "answer": "", "question": question, "asked": asked}
+    )
 
 
 def merge_round(
@@ -84,6 +113,23 @@ def merge_round(
             continue
         if item.question and item.question not in asked:
             asked.append(item.question)
+        if ev.status == CriterionStatus.NO_APLICA and not no_aplica_rejected(item):
+            # D8 / D12: no se pregunta; el motivo queda en `question` para mostrarlo.
+            out.append(
+                item.model_copy(
+                    update={
+                        "status": CriterionStatus.NO_APLICA,
+                        "question": " ".join(ev.reason.split()),
+                        "options": [],
+                        "round": round_,
+                        "question_round": 0,
+                        "asked": asked,
+                    }
+                )
+            )
+            continue
+        if ev.status == CriterionStatus.NO_APLICA:
+            ev = Evaluation(ev.criterion, CriterionStatus.FALTA, ev.question, ev.options)
         if ev.status == CriterionStatus.CUMPLE:
             out.append(
                 item.model_copy(
@@ -123,17 +169,29 @@ def current_round(items: list[WorkshopItem]) -> int:
     return max((w.round for w in items), default=0)
 
 
-def finish(items: list[WorkshopItem], round_: int | None = None) -> Finish:
+def finish(
+    items: list[WorkshopItem], round_: int | None = None, form_criteria: tuple[str, ...] = ()
+) -> Finish:
     """Por qué terminó (o no) el taller, siempre visible para el usuario.
 
     Se calcula solo con lo guardado: una pregunta es «nueva» si se hizo en la
-    última ronda (`question_round`).
+    última ronda (`question_round`). Spec-670 D8: si varios criterios de la forma
+    (`form_criteria`) no van en la historia, la forma está mal elegida y eso se dice primero.
     """
     round_ = current_round(items) if round_ is None else round_
+    no_van = [
+        w for w in items if w.criterion in form_criteria and w.status == CriterionStatus.NO_APLICA
+    ]
+    if len(no_van) >= MAL_ELEGIDA:
+        return Finish("mal_elegida", message("workshop.mal_elegida", n=len(no_van)), 0)
     pending = [w for w in items if w.status in OPEN]
     questions = [w for w in pending if w.question]
     n = len(questions)
     new_questions = sum(1 for w in questions if w.question_round == round_)
+    if items and not to_evaluate(items):
+        # Todo respondido o decidido por el autor: la IA no tiene nada que mirar y
+        # «Preguntame lo que falta» no haría nada (la pantalla lo esconde).
+        return Finish("respondido", message("workshop.respondido"), 0)
     if not pending:
         return Finish("cumple", message("workshop.cumple"), 0)
     if round_ >= MAX_ROUNDS and n == 0:

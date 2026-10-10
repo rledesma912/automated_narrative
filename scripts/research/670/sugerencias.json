@@ -1,0 +1,40 @@
+{
+  "perfil": "anthropic-sonnet55",
+  "resultados": [
+    {
+      "historia": "el engaño del diablo",
+      "forma": "senuelo",
+      "motivo": "La mujer y el niño perdido parecen gente que necesita ayuda, Carlos y los otros van a la cueva por buena razón, y cuando llegan al fondo el niño se da vuelta y se le cae la máscara: era el diablo.",
+      "arco": "",
+      "segundos": 2.3
+    },
+    {
+      "historia": "El trabajo de Yadira",
+      "forma": "regla",
+      "motivo": "Las amigas de Ximena le advierten que no se meta con Yadira, ella igual se enamora de Gael, y eso despierta el trabajo de brujería que la persigue.",
+      "arco": "",
+      "segundos": 1.9
+    },
+    {
+      "historia": "los desconocidos",
+      "forma": "casa",
+      "motivo": "Los forasteros entran a la casa de Ingrid con permiso del padre, y poco a poco algo no cuadra: los pasos de pezuñas, los ruidos en las paredes, hasta que se ve lo que es el bebé en realidad.",
+      "arco": "",
+      "segundos": 2.4
+    },
+    {
+      "historia": "NO TE DETENGAS EN EL BOSQUE",
+      "forma": "lugar",
+      "motivo": "Leonardo queda varado por la avería justo en el tramo del bosque donde no hay que detenerse, y ahí las siluetas con astas se muestran y se acercan hasta que tiene que huir.",
+      "arco": "",
+      "segundos": 2.1
+    },
+    {
+      "historia": "La laguna oscura",
+      "forma": "asedio",
+      "motivo": "Nadie despierta a la criatura: algo de afuera la empuja a salir de la laguna, y la fábrica que mata a los peces sigue ahí, así que la familia de Tito queda expuesta a que vuelva a pasar.",
+      "arco": "",
+      "segundos": 2.2
+    }
+  ]
+}

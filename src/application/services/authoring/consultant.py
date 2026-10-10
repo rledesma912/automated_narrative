@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, create_model
 
-from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.authoring import catalog, context, molde, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.template_loader import TemplateLoader
 from src.domain.interfaces import LLMProvider
@@ -28,11 +28,13 @@ class WorkshopConsultant:
 
     async def analyze(self, story: Story) -> WorkshopRound:
         """Una ronda del taller: evalúa lo pendiente y devuelve el taller actualizado."""
-        items = workshop_rules.initial_items(story.direction, story.workshop)
+        criterios = molde.for_story(story).criterios  # Spec-670 D11: solo los del molde
+        items = workshop_rules.initial_items(story.direction, story.workshop, criterios)
         round_ = max((w.round for w in story.workshop), default=0) + 1
         pending = workshop_rules.to_evaluate(items)
+        forma = molde.for_story(story).forma.criterios
         if not pending:
-            return WorkshopRound(items, workshop_rules.finish(items, round_), 0.0)
+            return WorkshopRound(items, workshop_rules.finish(items, round_, forma), 0.0)
 
         story_view = story.model_copy(update={"workshop": items})
         output = _output_model([w.criterion for w in pending])
@@ -49,16 +51,19 @@ class WorkshopConsultant:
                 status=CriterionStatus(e.estado),
                 question=e.pregunta,
                 options=tuple(e.opciones),
+                reason=e.motivo,
             )
             for e in result.evaluaciones
         ]
         merged, _new = workshop_rules.merge_round(items, evaluations, round_)
-        return WorkshopRound(merged, workshop_rules.finish(merged, round_), elapsed)
+        return WorkshopRound(merged, workshop_rules.finish(merged, round_, forma), elapsed)
 
     def _prompt(self, story: Story, pending: list[WorkshopItem]) -> str:
+        # Spec-670 D12: si el autor pidió que se lo pregunten igual, se le dice a la IA.
+        igual = self.templates.fragment("asistente/consultor_preguntar_igual")
         criterios = "\n".join(
-            f"- {c.id}: {c.pregunta}"
-            for c in (catalog.criterion(w.criterion) for w in pending)
+            f"- {c.id}: {c.pregunta}" + (igual if workshop_rules.no_aplica_rejected(w) else "")
+            for w, c in ((w, catalog.criterion(w.criterion)) for w in pending)
             if c
         )
         return self.templates.load("authoring_consultant.md").format(
@@ -75,8 +80,9 @@ def _output_model(criteria: list[str]) -> type[BaseModel]:
     evaluation = create_model(
         "EvaluacionCriterio",
         criterio=(Literal[tuple(criteria)], ...),
-        estado=(Literal["cumple", "parcial", "falta"], ...),
+        estado=(Literal["cumple", "parcial", "falta", "no_aplica"], ...),
         pregunta=(str, ...),
         opciones=(list[str], ...),
+        motivo=(str, ...),  # Spec-670 D8: por qué no va (solo con «no_aplica»)
     )
     return create_model("RondaTaller", evaluaciones=(list[evaluation], ...))
