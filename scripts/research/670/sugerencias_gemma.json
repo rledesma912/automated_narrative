@@ -1,0 +1,40 @@
+{
+  "perfil": "hibrido-sonnet55",
+  "resultados": [
+    {
+      "historia": "el engaño del diablo",
+      "forma": "senuelo",
+      "motivo": "La mujer y el niño que piden ayuda a Carlos es un senuelo, porque los usan para que entren en la cueva y los pille la amenaza.",
+      "arco": "",
+      "segundos": 5.5
+    },
+    {
+      "historia": "El trabajo de Yadira",
+      "forma": "asedio",
+      "motivo": "Yadira, con la ayuda de su pariente, va acercándose a Ximena de a poco, como si estuviera empujando una amenaza hacia ella, y eso es lo que define esta historia.",
+      "arco": "",
+      "segundos": 3.0
+    },
+    {
+      "historia": "los desconocidos",
+      "forma": "casa",
+      "motivo": "La familia de Ingrid los recibe a los desconocidos en su casa, rompiendo una costumbre de la zona, y eso permite que la amenaza se manifieste en el lugar más seguro que tenían.",
+      "arco": "",
+      "segundos": 3.2
+    },
+    {
+      "historia": "NO TE DETENGAS EN EL BOSQUE",
+      "forma": "lugar",
+      "motivo": "La empresa de Leonardo tiene una regla clara sobre ese tramo de la ruta, y el bosque mismo parece ser el peligro, así que es un lugar que hay que evitar.",
+      "arco": "",
+      "segundos": 2.6
+    },
+    {
+      "historia": "La laguna oscura",
+      "forma": "asedio",
+      "motivo": "La familia de Tito se ve acosada por la criatura porque algo la saca de su laguna, y eso es un aviso de que algo malo está pasando.",
+      "arco": "",
+      "segundos": 2.3
+    }
+  ]
+}

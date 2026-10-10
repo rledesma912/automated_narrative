@@ -318,6 +318,11 @@ Cada slice cierra con tests en verde y dev mostrando el cambio. Dev sigue en tod
 - **Límite de la medición:** la idea ya es un asedio y sin respuestas la forma de siempre no fuerza una transgresión fuerte (Tito va a la orilla tras la advertencia): la diferencia entre formas está subestimada; con una idea más neutra sería mayor.
 - **Siguiente paso propuesto (spec aparte):** una lista de recursos gastados del género para el Planificador (como `voice_cliches.txt` para la Voz), medible con el mismo script.
 
+### Con gemma (perfil de prod, `hibrido-sonnet55`: Consultor local), antes del pase (2026-10-10)
+
+- Sugerir la forma: **4 de 5** (Yadira → asedio, el mismo error del primer intento de Claude); un motivo usa el id interno («es un senuelo»). La persona confirma la forma, así que alcanza (`sugerencias_gemma.json`).
+- «No va en tu historia» en la laguna con la forma de siempre: marca **1** (el secreto: «La criatura ataca a cualquiera, no a Tito en particular») y sigue preguntando la transgresión → no llega al aviso de forma mal elegida. Funciona, más tímido que Claude.
+
 ## 8. Pendiente para después (pedido del usuario, 2026-10-10)
 
 - **El selector de formas y giros no escala.** Hoy son tarjetas `.opcion-forge` (6 formas, 6 giros) y se ven bien porque son pocas; cuando el catálogo crezca (la idea es sumar formas con más historias), hay que cambiar el componente por algo más cómodo de elegir entre muchas (con búsqueda o agrupado, con la sugerida de la IA destacada arriba). Hacerlo con maqueta antes (memoria: UI con maquetas primero), en la spec que amplíe el catálogo.
