@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — UI (frontend; el Core no cambia)
-**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN (esperando OK)
+**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN ✅ (OK 2026-10-10) · TASKS (esperando OK)
 **Rama:** propia, desde `development` después del PR de la Spec-650 (decisión del usuario 2026-10-10)
 **Cambia:** Spec-630 B14 («siempre por la sala con `?escribir=1`») y B7 (borrar personajes).
 
@@ -132,3 +132,30 @@ Relevado en `feat/spec-660-ajustes-de-la-prueba` (desde `development` `86270d6`)
 3. **S3 — La sala solo muestra progreso.** Se van el panel, los modos y `startJob`; D2–D4; E2E y CLAUDE.md.
 
 Cada slice cierra con tests en verde y dev mostrando el cambio (URL para mirar).
+
+---
+
+## 5. TASKS (2026-10-10)
+
+### S1 — Borrar con tacho + diálogo con ícono y nota
+
+- **T1.1** `confirm_dialog.ejs`: los tres íconos (`aviso`, `escribir`, `borrar`) y una `nota-forge--info` oculta. `confirm-dialog.js`: `ask({ …, icon, note })`; muestra el ícono pedido (por defecto `aviso`) y la nota solo si viene; al cerrar deja todo como estaba. **Hecho cuando:** Vitest nuevo `confirm-dialog.test.ts` (ícono por defecto, `escribir`, `borrar`, nota sí/no, `hx-confirm` sin cambios) en verde.
+- **T1.2** `_acto.ejs`: la «×» de personajes y de lugares → `trash-2`, `title`/`aria-label` «Borrar … de la historia»; pista de «Quiénes están» con «Destildá a alguien para sacarlo de este acto.». **Hecho cuando:** `escaleta.view.test.ts` verifica el tacho y la pista; `gramatica-visual` y `no-hardcoded-colors` en verde.
+- **T1.3** `asistente.js` `borrar()`: títulos y textos del §4.2 con `icon: "borrar"`. **Hecho cuando:** E2E `escaleta-elenco-y-lugares` con los textos nuevos («de la historia», «hoy está en el acto 2», «No aparece en ningún acto»).
+- **T1.4** Fixtures `tests/fixtures/asistente/` con `UPDATE_FIXTURES=1` (diff revisado). Cierre: pytest, Vitest, Playwright y lint en verde; `make dev-status`; mirar en `https://storymaker.test/asistente/{id}/escaleta`.
+
+### S2 — Escribir desde el botón
+
+- **T2.1** Nuevo `public/js/escribir-relato.js` (UMD): click en `[data-escribir-relato]` → `forgeAntesDeEscribir?.()` → `ForgeConfirm.ask({ icon: "escribir", title, message con data-estimado, note si data-version-nueva })` → `POST /api/v1/stories/{id}/jobs` `{kind: "full_generation"}` → 202/409 con `job_id` → `location` a `/generar/stream/{id}`; si no, D5 (nota de error al lado, botón restaurado). Busy «Arrancando…» desde que se acepta (D6). Cargado en el `<head>` del layout. **Hecho cuando:** Vitest `escribir-relato.test.ts` (cancelar = sin POST; 202 y 409 navegan; 422/5xx/sin red = nota y sin navegar; nota de versión nueva solo con el atributo; espera `forgeAntesDeEscribir`).
+- **T2.2** «Los actos»: `escaleta.ejs` → `<button data-escribir-relato data-generation-trigger data-story-id data-estimado [data-version-nueva si completed]>`; `asistente.js` saca el handler de `data-generar` y define `window.forgeAntesDeEscribir = flushAll`.
+- **T2.3** «El relato»: `relatos.ejs` → `<button data-escribir-relato data-version-nueva …>`.
+- **T2.4** Sala en modo lectura: los tres botones (completed / failed / draft) → `[data-escribir-relato]` (D2: sale el `<form POST>`).
+- **T2.5** Tests de vista (`estimates.view`, `relatos.view`, `escaleta.view`) con los atributos nuevos. Cierre de slice como en S1; mirar «Los actos» y «El relato» en dev.
+
+### S3 — La sala solo muestra progreso
+
+- **T3.1** `stream.controller.ts` sin `regenerateMode` / `startMode`; `streaming-room.ejs` sin `#start-panel`; la vista «en vivo» solo con job activo; `?escribir=1` sin job = modo lectura (D4). **Hecho cuando:** `stream.controller.test.ts` lo cubre.
+- **T3.2** `streaming-room.js`: fuera `initiateGeneration`, `initiateRegeneration`, `startJob`, `showStarting`; `retryStream` según D3 (job vivo → se ata; si no, el diálogo de escribir).
+- **T3.3** `generarDesdeHistoria` redirige a la sala sin lanzar (D2). Test unitario del controlador.
+- **T3.4** E2E: `streaming-room`, `relatos`, `generation-guard`, `asistente`, `estimates`, `relato-corto` arrancan con botón → diálogo → aceptar; nuevos: cancelar no crea job, `?escribir=1` sin job muestra modo lectura, POST viejo no lanza.
+- **T3.5** CLAUDE.md (Galería / B14 → Spec-660), memoria, PR a `development`. Cierre: todo en verde y dev con el cambio.
