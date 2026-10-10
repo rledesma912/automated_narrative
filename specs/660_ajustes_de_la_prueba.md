@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — UI (frontend; el Core no cambia)
-**Estado:** SPECIFY (camino B elegido por el usuario 2026-10-10; faltan maquetas y OK)
-**Rama:** a definir (después de cerrar la Spec-650, o encima de su rama si las usuarias prueban todo junto)
+**Estado:** SPECIFY ✅ (2026-10-10: B1 camino B; B2 variante A, tacho en el acto; maquetas https://claude.ai/artifact/QcAzCxbF7bwrKuJmjhLa19) · PLAN pendiente
+**Rama:** propia, desde `development` después del PR de la Spec-650 (decisión del usuario 2026-10-10)
 **Cambia:** Spec-630 B14 («siempre por la sala con `?escribir=1`») y B7 (borrar personajes).
 
 ---
@@ -56,7 +56,7 @@
 - La «×» pasa a ser un **tacho** (`trash-2`) con la pista «Borrar de la historia».
 - El aviso dice lo que pasa: «¿Borrar a «Don Raúl» de la historia?» / «Desaparece de todos los actos (hoy está en el acto 1). Para sacarlo solo de este acto, destildalo.». Sin actos: «No aparece en ningún acto.»
 - Lo mismo para lugares (`data-borrar-lugar`), que tienen el mismo patrón.
-- (Alternativa a decidir con las maquetas: sacar el borrado de la tarjeta del acto y dejarlo en un solo lugar. Más cambio; solo si el tacho no alcanza.)
+- Decidido (2026-10-10): variante A, el tacho queda en la tarjeta del acto. La variante B (borrar solo desde una lista de personajes) se descartó.
 
 ---
 
@@ -76,4 +76,4 @@
 
 ## OPEN QUESTIONS
 
-- B2: ¿alcanza con el tacho y el texto, o el borrado se va de la tarjeta del acto? Se decide con las maquetas.
+- (ninguna: B2 resuelto con la variante A)
