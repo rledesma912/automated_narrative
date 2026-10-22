@@ -101,7 +101,7 @@ def _memory(n: int) -> NarrativeJournal | None:
         physical_emotional_state="Asustado, con las manos frías.",
         used_motifs=["olor a jazmín", "un silencio raro"],
         body_state="Un raspón en la mano izquierda.",
-        narrator_traits=["toma mate mientras maneja"],
+        narrator_traits=["silba mientras maneja"],
     )
 
 

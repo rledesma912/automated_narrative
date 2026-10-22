@@ -66,6 +66,21 @@ async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
     assert [e["id"] for e in data["effects"]][:2] == ["pavor", "susto"]
     assert data["criteria"][0]["nombre"] == "Qué quiere el protagonista"
+    # Spec-680 C1: la de siempre primero, sin los patrones (son del control).
+    assert [h["id"] for h in data["hablas"]] == ["rioplatense", "mexicano", "neutro", "espana"]
+    assert set(data["hablas"][0]) == {"id", "label", "detail"}
+
+
+async def test_habla_se_guarda_y_vuelve(client):
+    """Spec-680 C1: el autoguardado de «Tu idea» lleva el habla; una que no existe, 422."""
+    state = await _create(client)
+    story_id = state["story_id"]
+    put = await client.put(f"{API}/stories/{story_id}/direction", json=FORM | {"habla": "mexicano"})
+    assert put.status_code == 200, put.text
+    again = (await client.get(f"{API}/stories/{story_id}")).json()
+    assert again["direction"]["habla"] == "mexicano"
+    bad = await client.put(f"{API}/stories/{story_id}/direction", json=FORM | {"habla": "klingon"})
+    assert bad.status_code == 422
 
 
 async def test_crear_desde_la_direccion(client):
@@ -81,6 +96,7 @@ async def test_crear_desde_la_direccion(client):
         "form_other": "",
         "form_suggested": "",
         "form_reason": "",
+        "habla": "",  # Spec-680 C1: la de siempre
     }
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
     assert state["characters"] == [{"name": "José", "kind": "persona", "relation": "", "acts": []}]
@@ -353,7 +369,7 @@ async def test_generar_con_escaleta_usa_la_escaleta(client, monkeypatch):
     assert journal.used_motifs == ["un motivo de ejemplo"]
     # Spec-590: el cuerpo y los rasgos de quien narra se guardan y se leen de la DB.
     assert journal.body_state == "Un raspón en la mano izquierda."
-    assert journal.narrator_traits == ["toma mate amargo"]
+    assert journal.narrator_traits == ["silba cuando está nervioso"]
     assert journal.last_events.startswith("Acto 1: Pasó lo del acto.")
     assert (
         "Hecho 3.1 de ejemplo" in story.outline[2].events[0]
@@ -388,6 +404,12 @@ async def test_control_de_repeticion_del_relato(client):
         "comparisons": [],
         "comparison_count": 0,
         "too_literary": False,
+        "gestures": [],
+        "foreign": [],
+        "foreign_count": 0,
+        "triads": [],
+        "triad_count": 0,
+        "too_listy": False,
     }
     assert data["acts"][1]["repeated"] == ["«el olor dulce y putrefacto» (del acto 1)"]
     assert data["acts"][1]["cliches"] == ["me heló la sangre"]  # una vez, aunque haya variantes
@@ -647,3 +669,23 @@ async def test_la_sugerencia_no_pisa_la_forma_que_eligio_la_persona(client):
     await _run_job(client, sid, "suggest_form")
     d = (await client.get(f"{API}/stories/{sid}")).json()["direction"]
     assert (d["form"], d["form_suggested"]) == ("lugar", "asedio")
+
+
+async def test_control_de_gestos_y_de_otra_habla(client):
+    """Spec-680 C3: el mate que no trae el autor y el voseo en una historia mexicana."""
+    from src.domain.models import GeneratedNarrative
+    from src.infrastructure.database.repositories import SQLGeneratedNarrativeRepository
+
+    sid = (await _create(client, habla="mexicano"))["story_id"]
+    narrative = GeneratedNarrative(
+        story_template_id=uuid.UUID(sid),
+        title="R",
+        content="## Acto 1\n\nTodos saben a qué hora abrís la tienda. Me cebé un mate y salí.",
+    )
+    await SQLGeneratedNarrativeRepository().save(narrative)
+
+    act = (await client.get(f"/api/v1/generated-narratives/{narrative.id}/repetition")).json()[
+        "acts"
+    ][0]
+    assert act["gestures"] == [{"gesto": "tomar mate, cebar mate, el termo", "texto": "un mate"}]
+    assert (act["foreign"], act["foreign_count"]) == (["abrís"], 1)

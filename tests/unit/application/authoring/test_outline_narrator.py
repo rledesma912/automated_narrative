@@ -78,7 +78,10 @@ def test_prompt_de_la_voz_con_escaleta(story):
     )
     assert "Estado:" not in user
     # Spec-590 C: los rasgos que inventó la Voz vuelven para sostenerlos.
-    assert "ASÍ ES JOSÉ (mantenelo; podés sumar):\n- toma mate amargo\n- odia llegar tarde" in user
+    assert (
+        "ASÍ ES JOSÉ (no lo contradigas; no hace falta que aparezca en cada acto; podés sumar):\n- toma mate amargo\n- odia llegar tarde"
+        in user
+    )
     # Spec-590: la premisa, sin adelantar lo que no está en los eventos.
     assert (
         "LA HISTORIA, PARA QUE CONOZCAS A JOSÉ Y SU MUNDO (no cuentes nada de acá que no esté "
@@ -274,3 +277,24 @@ def test_la_premisa_llega_solo_con_su_primera_oracion(story):
         "Un camionero se queda varado en el bosque.\n" in user
     )
     assert "astas" not in user
+
+
+def test_avoid_avisa_gestos_otra_habla_y_tres():
+    """Spec-680 C3 y B: lo que marcó el control vuelve a la Voz al regenerar el acto."""
+    rep = ActRepetition(
+        number=2,
+        gestures=[("tomar mate, cebar mate, el termo", "un mate")],
+        foreign=["abrís", "la plata"],
+        foreign_count=3,
+        triads=["alto, flaco y pálido"],
+        triad_count=3,
+    )
+    text = OutlineNarrator(llm=None)._avoid(rep)
+    assert (
+        "- Usaste un gesto que ya se vio en muchos relatos (tomar mate, cebar mate, el termo: «un mate»)"
+        in text
+    )
+    assert "(por ejemplo: «abrís», «la plata»): usá las de quien narra" in text
+    assert "- Tenía 3 enumeraciones de a tres (por ejemplo: «alto, flaco y pálido»)" in text
+    dos = ActRepetition(number=2, triads=["a, b y c"], triad_count=2)
+    assert OutlineNarrator(llm=None)._avoid(dos) == ""

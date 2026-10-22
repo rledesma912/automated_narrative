@@ -213,6 +213,9 @@ class Direction(BaseModel):
     # autoguardado lo conserva (D13).
     form_suggested: str = ""
     form_reason: str = ""
+    # Spec-680 C1: cómo habla quien narra (id de `hablas` en `authoring_options.yaml`;
+    # "" = la de siempre, rioplatense). La elige la persona; la IA no la sugiere.
+    habla: str = ""
 
     @model_validator(mode="after")
     def _ending_fixed_when_written(self) -> "Direction":

@@ -35,6 +35,13 @@ class ActRepetition:
     # Spec-640: comparaciones de escritor (hasta 3 ejemplos y el total).
     comparisons: list[str] = field(default_factory=list)
     comparison_count: int = 0
+    # Spec-680: gestos gastados (nombre del gesto y el tramo donde aparece), palabras de
+    # otra habla (hasta 3 ejemplos y el total) y enumeraciones de a tres.
+    gestures: list[tuple[str, str]] = field(default_factory=list)
+    foreign: list[str] = field(default_factory=list)
+    foreign_count: int = 0
+    triads: list[str] = field(default_factory=list)
+    triad_count: int = 0
 
     @property
     def too_cut(self) -> bool:
@@ -46,6 +53,11 @@ class ActRepetition:
         """Spec-640 D2: una comparación por acto está bien; desde la segunda, se avisa."""
         return self.comparison_count > COMPARISONS_PER_ACT
 
+    @property
+    def too_listy(self) -> bool:
+        """Spec-680 D4: una o dos enumeraciones de a tres son naturales; desde la tercera, se avisa."""
+        return self.triad_count >= TRIADS_WARNING
+
     def has_findings(self) -> bool:
         return bool(
             self.repeated
@@ -54,6 +66,9 @@ class ActRepetition:
             or self.too_cut
             or self.dialogue
             or self.too_literary
+            or self.gestures
+            or self.foreign
+            or self.too_listy
         )
 
 
@@ -185,9 +200,53 @@ def comparisons(text: str) -> list[str]:
     return [m.group(0) for s in narration_sentences(narration) for m in _COMPARISON.finditer(s)]
 
 
+# ── Spec-680: enumerar de a tres («unas luces amarillas, chiquitas y fijas») ──
+# «A, B y C» dentro de una oración, cada ítem de 1 a 4 palabras y C hasta el final de su
+# tramo (si no, «…y pensé que seguramente el» contaría cortado). Un ítem con mayúscula es
+# un nombre propio («entre El Cruce y La Esperanza»), no una enumeración (D21).
+
+TRIADS_WARNING = 3
+_ITEM_WORDS = 4
+_LAST_TWO = re.compile(r"(\S+(?: \S+){0,3}) y (\S+(?: \S+){0,3})")
+_TRAILING = ' .!?…»”"'
+
+
+def triads(text: str) -> list[str]:
+    found = []
+    for sentence in narration_sentences(text):
+        parts = [p.strip() for p in re.split(r"[,;:]", sentence)]
+        for i in range(len(parts) - 1):
+            last = _LAST_TWO.fullmatch(parts[i + 1].strip(_TRAILING))
+            words = parts[i].split()
+            if not last or not words:
+                continue
+            first = " ".join(words[-_ITEM_WORDS:]) if len(words) > _ITEM_WORDS else parts[i]
+            if len(words) > _ITEM_WORDS and has_finite_verb(first):
+                continue  # el final de una oración larga no es el primer ítem
+            items = [first, last.group(1), last.group(2)]
+            if any(re.search(r"\b[A-ZÁÉÍÓÚÑ]", it) for it in items[1:]) or (
+                re.search(r"(?<!^)\b[A-ZÁÉÍÓÚÑ]", first)
+            ):
+                continue
+            found.append(f"{items[0]}, {items[1]} y {items[2]}")
+    return found
+
+
+def foreign_words(text: str, patterns) -> list[str]:
+    """Spec-680 C3: las palabras de otra habla (los `ajenas` del habla de la historia)."""
+    narration = "\n".join(ln for ln in text.splitlines() if not _DIALOGUE_LINE.match(ln))
+    return [m.group(0) for p in patterns for m in re.finditer(p, narration, re.I)]
+
+
 def check(
-    acts: list[str], cliches: list[str] | None = None, known: str | None = None
+    acts: list[str],
+    cliches: list[str] | None = None,
+    known: str | None = None,
+    foreign: tuple[str, ...] = (),
+    gestures=(),
 ) -> list[ActRepetition]:
+    """`foreign`: los patrones `ajenas` del habla de la historia; `gestures`: los gestos
+    gastados que no trae el autor (`recursos_gastados.gestos_a_evitar`), Spec-680."""
     expressions = cliches if cliches is not None else load_cliches()
     tokens = [_tokens(a) for a in acts]
     grams = [
@@ -228,6 +287,13 @@ def check(
         found_comparisons = comparisons(acts[n])
         rep.comparisons = found_comparisons[:_MAX_EXAMPLES]
         rep.comparison_count = len(found_comparisons)
+        rep.gestures = [(g.nombre, hit) for g in gestures if (hit := g.en(acts[n]))]
+        found_foreign = foreign_words(acts[n], foreign)
+        rep.foreign = list(dict.fromkeys(found_foreign))[:_MAX_EXAMPLES]
+        rep.foreign_count = len(found_foreign)
+        found_triads = triads(acts[n])
+        rep.triads = found_triads[:_MAX_EXAMPLES]
+        rep.triad_count = len(found_triads)
         result.append(rep)
     return result
 
@@ -279,6 +345,18 @@ def known_text(story) -> str:
     return " ".join(p for p in parts if p)
 
 
+def story_context(story) -> dict:
+    """Lo que el control necesita de la historia: lo del autor, el habla y los gestos."""
+    from src.application.services import recursos_gastados  # importa este módulo
+    from src.application.services.authoring import catalog
+
+    return {
+        "known": known_text(story),
+        "foreign": catalog.habla_de(story).ajenas,
+        "gestures": recursos_gastados.gestos_a_evitar(story),
+    }
+
+
 def last_version_findings(story) -> dict[int, ActRepetition]:
     """Lo que el control marca en la última prosa de cada acto (macro_beat)."""
     beats = sorted((b for b in story.beats if b.generated_act), key=lambda b: b.number)
@@ -288,5 +366,5 @@ def last_version_findings(story) -> dict[int, ActRepetition]:
     # la borra) → lo que marcó no corresponde a estos actos.
     if beats[-1].number > BeatSpecRepository().estructura(story.structure).num_actos:
         return {}
-    reps = check([b.generated_act for b in beats], known=known_text(story))
+    reps = check([b.generated_act for b in beats], **story_context(story))
     return {b.number: r for b, r in zip(beats, reps, strict=True) if r.has_findings()}

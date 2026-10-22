@@ -27,7 +27,9 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 | `{presentacion}` | `voz/presentacion` (con nombre de quien narra) o `voz/presentacion_sin_nombre` |
 | `{como_lo_cuenta}` | `config/authoring_options.yaml` (`telling.voice`) |
 | `{parentescos}` | `voz/parentescos` + una `voz/parentesco` por personaje (`voz/parentesco_sin_rol` si no tiene rol); vacío si no hay a quién nombrar |
-| `{guia_oficio}` | `../voice_craft.md` (con `voice_cliches.txt`; `voz/narrador_generico` si no hay nombre) |
+| `{guia_oficio}` | `../voice_craft.md` (con `voice_cliches.txt`; `voz/narrador_generico` si no hay nombre; `{habla}` y `{habla_voz}` del habla de la historia, Spec-680) |
+| `{habla}` | `prompt` del habla de la historia (`config/authoring_options.yaml`, `hablas`; Spec-680 C1) |
+| `{gestos_gastados}` | `voz/gestos_gastados` con los `gestos` de `config/recursos_gastados.yaml` que no trae el autor (Spec-680 C2); vacío si no queda ninguno |
 
 **User** — `outline_voice.md`, en este orden:
 
@@ -48,7 +50,7 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 | `{ya_paso}` | una `voz/ya_paso_acto` por acto anterior, o `voz/ya_paso_vacio` | siempre |
 | `{como_esta}` | `voz/como_esta` | la memoria trae estado o cuerpo |
 | `{asi_es}` | `voz/asi_es` + los rasgos | la memoria trae rasgos |
-| `{evitar}` | `voz/evitar/titulo` + `repetida`, `cliche`, `nombres`, `cortadas`, `dialogo`, `comparaciones` (Spec-640) | se regenera un acto y el control marcó algo |
+| `{evitar}` | `voz/evitar/titulo` + `repetida`, `cliche`, `nombres`, `cortadas`, `dialogo`, `comparaciones` (Spec-640), `gestos`, `ajenas`, `triadas` (Spec-680) | se regenera un acto y el control marcó algo |
 | `{ya_usado}` | los motivos usados, o `voz/ya_usado_vacio` | siempre |
 | `{comienzo}` | `voz/comienzo` (Spec-650: que no arranque siempre con «Mirá») | acto 1 |
 

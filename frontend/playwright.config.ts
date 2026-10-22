@@ -31,9 +31,20 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
+    // Firefox, no Chrome (pedido del usuario, Spec-680).
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: "firefox",
+      use: {
+        ...devices["Desktop Firefox"],
+        // Firefox no acepta el permiso `clipboard-read`: «Copiar» se prueba leyendo el
+        // portapapeles con estas preferencias.
+        launchOptions: {
+          firefoxUserPrefs: {
+            "dom.events.asyncClipboard.readText": true,
+            "dom.events.testing.asyncClipboard": true,
+          },
+        },
+      },
     },
   ],
   webServer: useHarness

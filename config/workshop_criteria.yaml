@@ -186,7 +186,7 @@ direccion:
 
   - id: objeto_cotidiano
     nombre: El objeto de todos los días
-    pregunta: "¿Qué objeto o costumbre común se vuelve raro en esta historia (el mate, la radio, el espejo del baño, el reloj de la cocina)?"
+    pregunta: "¿Qué objeto o costumbre común se vuelve raro en esta historia (la radio, el espejo del baño, el reloj de la cocina, el teléfono)?"
     por_que: "Lo que da más miedo es lo que usamos todos los días: después del cuento, quien escucha lo mira distinto."
     origen: "giro: lo cotidiano que se vuelve raro (unheimlich)"
 

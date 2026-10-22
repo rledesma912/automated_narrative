@@ -1,0 +1,1 @@
+- Gestos que ya se vieron en muchos relatos (no los uses; buscá otros): {gestos}.

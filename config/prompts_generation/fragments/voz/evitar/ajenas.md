@@ -1,0 +1,1 @@
+- Tenía palabras que no van en esta forma de hablar (por ejemplo: {ejemplos}): usá las de quien narra

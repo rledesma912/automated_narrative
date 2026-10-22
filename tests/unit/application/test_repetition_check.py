@@ -1,9 +1,15 @@
+import pytest
+
+from src.application.services import recursos_gastados
+from src.application.services.authoring import catalog
 from src.application.services.repetition_check import (
     check,
     comparisons,
     cut_sentences,
     dialogue_lines,
+    foreign_words,
     has_finite_verb,
+    triads,
 )
 
 CLICHES = ["me heló la sangre", "un silencio sepulcral"]
@@ -187,3 +193,59 @@ def test_aviso_de_comparaciones_desde_la_segunda():
         "como una cortina",
         "como si me lo hubieran pisado",
     ]
+
+
+# ── Spec-680: enumerar de a tres, otra habla y gestos gastados ─────────────
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "Había unas luces amarillas, chiquitas y fijas.",  # §1.2
+        "Me temblaban las manos, las piernas y la voz.",
+        "Era alto, flaco y pálido.",
+    ],
+)
+def test_tres_que_se_cuentan(texto):
+    assert len(triads(texto)) == 1
+
+
+@pytest.mark.parametrize(
+    "texto",
+    [
+        "Fuimos entre El Cruce y La Esperanza, despacio.",  # nombres propios (D21)
+        "Lo cambié por otro, le pedí disculpas y pensé que seguramente el viento lo tiró.",
+        "Doña Aurelia hacía limpias, conocía remedios para todo y tenía fama de saber cosas.",
+        "Me acerqué despacio y miré.",
+    ],
+)
+def test_lo_que_no_es_una_enumeracion_de_tres(texto):
+    assert triads(texto) == []
+
+
+def test_aviso_desde_la_tercera_del_acto():
+    """D4: una o dos son naturales en una anécdota."""
+    dos = "Era alto, flaco y pálido. Tenía frío, sueño y hambre."
+    tres = dos + " Vi luces, sombras y humo."
+    assert (check([dos])[0].triad_count, check([dos])[0].too_listy) == (2, False)
+    r = check([tres])[0]
+    assert (r.triad_count, r.too_listy, r.has_findings()) == (3, True, True)
+    assert len(r.triads) == 3
+
+
+def test_otra_habla_segun_la_de_la_historia():
+    text = "Todos saben a qué hora abrís la tienda y cuánta plata tenés. Nomás eso."
+    mexicano = catalog.habla("mexicano").ajenas
+    assert foreign_words(text, mexicano) == ["abrís", "tenés"]
+    r = check([text], foreign=mexicano)[0]
+    assert (r.foreign, r.foreign_count, r.has_findings()) == (["abrís", "tenés"], 2, True)
+    # En la de siempre no se marca nada (D14).
+    assert check([text], foreign=catalog.hablas()[0].ajenas)[0].foreign == []
+
+
+def test_gestos_gastados_solo_si_se_los_pasan():
+    text = "Me cebé un mate y salí a la ruta."
+    assert check([text])[0].gestures == []
+    r = check([text], gestures=recursos_gastados.gestos())[0]
+    assert r.gestures == [("tomar mate, cebar mate, el termo", "un mate")]
+    assert r.has_findings()

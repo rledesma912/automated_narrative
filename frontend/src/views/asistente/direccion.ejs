@@ -7,7 +7,7 @@
   const d = state ? state.direction : {
     title: '', genero: '', subgenero: '', premise: '', effect: '', effect_other: '', ending: '',
     ending_intentional: false, telling: '', protagonist_name: '', protagonist_role: '', narrator: '', threat: null,
-    form: '', ingredient: '', form_other: '', form_suggested: '', form_reason: '',
+    form: '', ingredient: '', form_other: '', form_suggested: '', form_reason: '', habla: '',
   };
   const t = d.threat || { name: '', nature: '', description: '', manifestations: '', limits: '', reveal_level: 'insinuada' };
   const genre = genres.find(g => g.id === d.genero);
@@ -20,6 +20,9 @@
   /* Spec-670: la clase de historia y el giro. Sin forma elegida, la de siempre (la primera). */
   const formas = options.forms || [];
   const giros = options.ingredients || [];
+  /* Spec-680 C1: cómo habla quien narra. Sin elegir (historias viejas), la de siempre. */
+  const hablas = options.hablas || [];
+  const habla = d.habla || (hablas[0] && hablas[0].id);
   const sugerida = formas.find(f => f.id === d.form_suggested);
   const uso = (state && state.ingredient_usage) || {};
   const estForma = (locals.estimateLabels && estimateLabels.suggest_form) || '';
@@ -246,6 +249,27 @@
         <% }) %>
       </div>
     </section>
+
+    <% if (hablas.length) { %>
+    <section class="bg-forge-surface border border-forge-border p-6" data-hablas>
+      <h3 class="font-serif text-xl mb-1">¿Cómo habla quien lo cuenta?</h3>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
+        Cambia las palabras del relato: «vos» o «tú», «la plata» o «el dinero». Las preguntas y los avisos de esta página no cambian.</p>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <% hablas.forEach(h => { %>
+          <label class="opcion-forge h-full">
+            <input type="radio" name="habla" value="<%= h.id %>" class="peer sr-only" <%= h.id === habla ? 'checked' : '' %>>
+            <span class="opcion-forge__caja h-full">
+              <span>
+                <span class="block font-semibold"><%= h.label %></span>
+                <span class="block text-sm text-forge-muted"><%= h.detail %></span>
+              </span>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
 
     <details class="bg-forge-surface border border-forge-border p-6 group" <%= d.threat ? 'open' : '' %>>
       <summary class="cursor-pointer list-none flex items-center justify-between">

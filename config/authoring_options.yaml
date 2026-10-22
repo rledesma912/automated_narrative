@@ -5,6 +5,12 @@
 # la escaleta: la recibe el Planificador y la controla el Verificador (no la Voz).
 # Spec-650: `planificador` es un texto (vale para todo largo) o uno por estructura
 # (`largo` / `corto`) cuando nombra actos.
+# Spec-680 C1: `hablas` = cómo habla quien narra. La primera es la de siempre (una historia
+# sin habla elegida, o con una que ya no existe, usa esa). `prompt` reemplaza a «español
+# rioplatense» en los prompts de la Voz, la Memoria y el Planificador; `voz` es una línea
+# más bajo LÉXICO de la guía de oficio (vacía en la de siempre: los prompts quedan como
+# antes); `ajenas` son patrones (regex, sin distinguir mayúsculas) de palabras que no van
+# en esa habla, para el control de repetición.
 # Spec-640: sin «Literario»: todas las formas de contarlo son de anécdota, como pide
 # la guía de oficio (`voice_craft.md`, «CONTALO COMO UNA ANÉCDOTA»).
 
@@ -39,7 +45,7 @@ como_lo_cuenta:
   - id: caso
     label: Como un caso entre amigos
     ejemplo: "«Mirá, yo no creía en nada de eso, pero esa noche…»"
-    voz: "Contalo como un caso que le contás a unos amigos: habla rioplatense coloquial, con las marcas orales de alguien que cuenta algo en una sobremesa, sin abusar, sin apurarte."
+    voz: "Contalo como un caso que le contás a unos amigos: habla coloquial, con las marcas orales de alguien que cuenta algo en una sobremesa, sin abusar, sin apurarte."
   - id: confesion
     label: Como una confesión
     ejemplo: "«Nunca se lo conté a nadie. Ni a mi mujer.»"
@@ -48,3 +54,39 @@ como_lo_cuenta:
     label: Como una crónica seca
     ejemplo: "«Eran las tres y diez. La terminal estaba vacía.»"
     voz: "Contalo como una crónica seca: hechos precisos, horas y lugares concretos, casi sin adjetivos ni comparaciones."
+
+hablas:
+  - id: rioplatense
+    label: Rioplatense
+    ayuda: "Como en Argentina y Uruguay: «vos», «la plata», «la vereda»."
+    prompt: español rioplatense
+    voz: ""
+    ajenas: []
+  - id: mexicano
+    label: De México
+    ayuda: "Como en México: «tú», «el dinero», «la banqueta»."
+    prompt: español de México
+    voz: "Hablás como alguien de México: tú y ustedes, nunca vos ni vosotros («abres», «compras», no «abrís», «comprás»). Nada de palabras del Río de la Plata («plata», «vereda», «che», «pibe», «laburo»)."
+    ajenas: &voseo_y_rioplatense
+      - "\\b(?!(?:estás|vas|das|más|jamás|además|quizás|nomás|papás|mamás|sofás|bebés|cafés|pies|atrás|detrás|demás|después|través|país|maíz|inglés|francés|portugués|japonés|interés|revés|cortés|estrés|compás|anís|tomás|andrés|inés|jesús)\\b)[a-záéíóúñ]{2,}(?:ás|és|ís)\\b"
+      - "\\b(?:vos|che|pibes?|pibas?|laburos?|laburar|boludos?|chabón|guita|quilombo|bondi)\\b"
+      - "\\b(?:la|mucha|poca|sin) plata\\b"
+      - "\\bveredas?\\b"
+      - "\\bmedia (?:nerviosa|dormida|asustada|rara|perdida)\\b"
+  - id: neutro
+    label: Neutro
+    ayuda: "Sin palabras de un país: se entiende en cualquier lado."
+    prompt: español neutro
+    voz: "Hablás un español neutro, sin palabras de un país: tú y ustedes, nunca vos ni vosotros («abres», no «abrís»), y palabras que se entienden en cualquier lado («el dinero», «la acera»)."
+    ajenas: *voseo_y_rioplatense
+  - id: espana
+    label: De España
+    ayuda: "Como en España: «tú», «vosotros», «el móvil»."
+    prompt: español de España
+    voz: "Hablás como alguien de España: tú y vosotros («abres», «vosotros sabéis»), nunca vos, y las palabras de allá («el móvil», «el coche», «conducir», «el dinero»). Nada de palabras de América («celular», «manejar», «carro», «plata»)."
+    ajenas:
+      - "\\b(?!(?:estás|vas|das|más|jamás|además|quizás|nomás|papás|mamás|sofás|bebés|cafés|pies|atrás|detrás|demás|después|través|país|maíz|inglés|francés|portugués|japonés|interés|revés|cortés|estrés|compás|anís|tomás|andrés|inés|jesús)\\b)[a-záéíóúñ]{2,}(?:ás|és|ís)\\b"
+      - "\\b(?:vos|che|pibes?|pibas?|laburos?|laburar|boludos?|chabón|guita|quilombo|bondi)\\b"
+      - "\\b(?:la|mucha|poca|sin) plata\\b"
+      - "\\bveredas?\\b"
+      - "\\b(?:celulares?|manej(?:ar|aba|é|ó|ando)|carros?)\\b"

@@ -7,7 +7,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel, model_validator
 
-from src.application.services.authoring import context, molde
+from src.application.services.authoring import catalog, context, molde
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
@@ -94,8 +94,10 @@ class OutlinePlanner:
 
     def system_prompt(self, story: Story) -> str:
         """Las reglas de siempre y, al final, las de la forma y el giro (Spec-670)."""
+        habla = catalog.habla_de(story).prompt  # Spec-680 C1
         base = self.templates.load("authoring_planner_system.md").format(
-            num_actos=self.prompt_builder.estructura(story).num_actos
+            num_actos=self.prompt_builder.estructura(story).num_actos,
+            habla=habla[:1].upper() + habla[1:],
         )
         reglas = [
             self.templates.fragment("asistente/planificador/regla_de_la_forma", regla=r)

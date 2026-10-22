@@ -17,6 +17,7 @@ import re
 
 from pydantic import BaseModel
 
+from src.application.services import recursos_gastados
 from src.application.services.authoring import catalog, context, molde, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
@@ -102,6 +103,8 @@ class OutlineNarrator:
         system = self.templates.load("outline_voice_system.md").format(
             presentacion=extras["presentacion"],
             como_lo_cuenta=voice,
+            habla=catalog.habla_de(story).prompt,
+            gestos_gastados=self._worn_gestures(story),
             parentescos=extras["parentescos"],
             guia_oficio=extras["guia_oficio"],
         )
@@ -148,6 +151,13 @@ class OutlineNarrator:
             max_palabras=high,
         )
         return system, user
+
+    def _worn_gestures(self, story: Story) -> str:
+        """Spec-680 C2: los gestos gastados que la Voz evita (sin los que trae el autor)."""
+        worn = recursos_gastados.gestos_a_evitar(story)
+        if not worn:
+            return ""
+        return self._line("voz/gestos_gastados", gestos="; ".join(g.nombre for g in worn))
 
     def _line(self, name: str, **data: object) -> str:
         """Un fragmento que ocupa su propia línea en el prompt."""
@@ -284,7 +294,9 @@ class OutlineNarrator:
             self.llm,
             role="journal",
             prompt=prompt,
-            system_prompt=self.templates.load("outline_journal_system.md"),
+            system_prompt=self.templates.load("outline_journal_system.md").format(
+                habla=_capitalized(catalog.habla_de(story).prompt)
+            ),
             output=Memoria,
             min_predict=900,
         )
@@ -329,6 +341,17 @@ class OutlineNarrator:
                 t.fragment(
                     "voz/evitar/comparaciones", cantidad=rep.comparison_count, ejemplos=ejemplos
                 )
+            )
+        # Spec-680: gestos gastados, palabras de otra habla y enumeraciones de a tres.
+        for gesto, texto in rep.gestures:
+            lines.append(t.fragment("voz/evitar/gestos", gesto=gesto, texto=texto))
+        if rep.foreign:
+            ejemplos = ", ".join(f"«{w}»" for w in rep.foreign)
+            lines.append(t.fragment("voz/evitar/ajenas", ejemplos=ejemplos))
+        if rep.too_listy:
+            ejemplos = ", ".join(f"«{s}»" for s in rep.triads)
+            lines.append(
+                t.fragment("voz/evitar/triadas", cantidad=rep.triad_count, ejemplos=ejemplos)
             )
         if not lines:
             return ""
@@ -400,6 +423,11 @@ class OutlineNarrator:
 
 
 _SENTENCE_END = re.compile(r"(?<=[.!?…])\s+(?=[¿¡«\"“(]?[A-ZÁÉÍÓÚÑ])")
+
+
+def _capitalized(text: str) -> str:
+    """«español rioplatense» → «Español rioplatense», al empezar una oración."""
+    return text[:1].upper() + text[1:]
 
 
 def _section(title: str, items: list[str]) -> str:

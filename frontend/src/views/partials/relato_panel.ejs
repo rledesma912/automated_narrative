@@ -96,7 +96,11 @@ function extractActNumber(title) {
       <% const cortadas = rep && rep.too_cut ? (rep.cut_count || 0) : 0; %>
       <% const dialogo = (rep && rep.dialogue) || 0; %>
       <% const comparaciones = rep && rep.too_literary ? (rep.comparison_count || 0) : 0; %>
-      <% const resumen = rep ? [rep.repeated.length ? `repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : '', cortadas ? `${cortadas} oraciones cortadas` : '', dialogo ? `tiene diálogo` : '', comparaciones ? `${comparaciones} comparaciones` : ''].filter(Boolean).join(' · ') : ''; %>
+      <%/* Spec-680: gestos gastados, palabras de otra forma de hablar y enumerar de a tres. */%>
+      <% const gestos = (rep && rep.gestures) || []; %>
+      <% const ajenas = (rep && rep.foreign_count) || 0; %>
+      <% const tres = rep && rep.too_listy ? (rep.triad_count || 0) : 0; %>
+      <% const resumen = rep ? [rep.repeated.length ? `repite ${rep.repeated.length} ${rep.repeated.length === 1 ? 'frase' : 'frases'} de actos anteriores` : '', rep.cliches.length ? `${rep.cliches.length} ${rep.cliches.length === 1 ? 'cliché' : 'clichés'}` : '', names.length ? `${names.length} ${names.length === 1 ? 'nombre inventado' : 'nombres inventados'}` : '', cortadas ? `${cortadas} oraciones cortadas` : '', dialogo ? `tiene diálogo` : '', comparaciones ? `${comparaciones} comparaciones` : '', gestos.length ? `${gestos.length} ${gestos.length === 1 ? 'gesto gastado' : 'gestos gastados'}` : '', ajenas ? `${ajenas} ${ajenas === 1 ? 'palabra' : 'palabras'} de otra forma de hablar` : '', tres ? `enumera de a tres ${tres} veces` : ''].filter(Boolean).join(' · ') : ''; %>
       <% if (resumen) { %>
         <%/* Spec-530 §8.3: control de repetición (no se copia ni va al .md). */%>
         <%/* Spec-550 H9: nota; lo que se toca es el link «Ver detalle», no la caja. */%>
@@ -114,6 +118,9 @@ function extractActNumber(title) {
             <% if (cortadas) { %><li>Oraciones cortadas: <%= cortadas %> de este acto (<%= rep.cut_pct %> %), por ejemplo <%= (rep.cut_sentences || []).map((s) => `«${s}»`).join(', ') %>. Si molestan, regenerá el acto.</li><% } %>
             <%/* Spec-640: suena a cuento escrito, no a anécdota. */%>
             <% if (comparaciones) { %><li data-aviso-comparaciones>Comparaciones: <%= comparaciones %> en este acto, por ejemplo <%= (rep.comparisons || []).map((s) => `«${s}…»`).join(', ') %>. Si suena muy a cuento, regenerá el acto.</li><% } %>
+            <% gestos.forEach((g) => { %><li data-aviso-gesto>Un gesto que ya se vio en muchos relatos: «<%= g.texto %>». Si no lo querés, regenerá el acto.</li><% }) %>
+            <% if (ajenas) { %><li data-aviso-ajenas>Palabras que no van con cómo habla quien lo cuenta: <%= (rep.foreign || []).map((s) => `«${s}»`).join(', ') %>. Si no las querés, regenerá el acto.</li><% } %>
+            <% if (tres) { %><li data-aviso-tres>Enumera de a tres: <%= tres %> veces en este acto, por ejemplo <%= (rep.triads || []).map((s) => `«${s}»`).join(', ') %>. Si suena repetido, regenerá el acto.</li><% } %>
             <% if (dialogo) { %><li>Diálogo: <%= dialogo %> <%= dialogo === 1 ? 'frase' : 'frases' %> con raya o entre comillas. Si no lo querés, regenerá el acto.</li><% } %>
           </ul>
         </details>
