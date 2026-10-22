@@ -7,7 +7,6 @@ from typing import ClassVar
 
 from pydantic import BaseModel, model_validator
 
-from src.application.services import recursos_gastados
 from src.application.services.authoring import catalog, context, molde
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.prompt_builder import PromptBuilder
@@ -118,26 +117,12 @@ class OutlinePlanner:
             borradores=self._drafts_block(story),
             problemas=self._problems_block(story),
             reglas=self._rules_block(story),
-            gastados=self._worn_block(story),
             efecto=self._arc_block(story) + context.effect_block(story, t),
             escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
             ultimo=self.prompt_builder.estructura(story).ultimo,
             num_actos=self.prompt_builder.estructura(story).num_actos,
             hechos_por_acto=self.prompt_builder.estructura(story).hechos_por_acto,
-        )
-
-    def _worn_block(self, story: Story) -> str:
-        """Spec-680 A: los recursos de manual, sin los que trae el autor (D19)."""
-        worn = recursos_gastados.sin_los_del_autor(
-            recursos_gastados.hechos(), recursos_gastados.author_text(story)
-        )
-        if not worn:
-            return ""
-        lines = "\n".join(f"- {r.nombre}" for r in worn)
-        return (
-            self.templates.fragment("asistente/planificador/recursos_gastados", recursos=lines)
-            + "\n\n"
         )
 
     def _arc_block(self, story: Story) -> str:

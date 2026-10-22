@@ -76,9 +76,9 @@ class OutlineVerifier:
                 continue
             per_act[w.acto] = per_act.get(w.acto, 0) + 1
             warnings.setdefault(w.acto, []).append(warning)
-        # Spec-680 A (D20): los recursos gastados, después de lo que rompe la historia.
-        for number, worn in worn_warnings(story, outline, dismissed).items():
-            warnings.setdefault(number, []).extend(worn)
+        # Spec-680 A (D20, S5): un recurso gastado por acto, aparte del tope de avisos (si
+        # no, con los actos llenos de avisos no se veía nunca).
+        worn = worn_warnings(story, outline, dismissed)
 
         decided = [cid for cid, _, _ in context.decisions(story)]
         # La ubicación que da la revisión (leyendo los hechos) manda sobre las etiquetas
@@ -94,6 +94,7 @@ class OutlineVerifier:
                 act.model_copy(
                     update={
                         "warnings": _dedup(warnings.get(act.number, []))[:MAX_WARNINGS_PER_ACT]
+                        + worn.get(act.number, [])[:1]
                         + [w for w in act.warnings if w.dismissed],
                         "decisions": used,
                     }

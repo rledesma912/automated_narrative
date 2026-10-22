@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — calidad (Planificador, Verificador, Voz, control de repetición)
-**Estado:** TASKS (esperando OK); SPECIFY y PLAN aprobados 2026-10-22
+**Estado:** IMPLEMENT terminado (2026-10-22); PR a `development`
 **Rama:** `feat/spec-680-recursos-gastados` (desde `development`, `1e52f06`; la SPECIFY de A y B salió de `404085f` y ya está en `development`)
 **Extiende:** Spec-470 (clichés de la Voz), Spec-530 §8.3 (control de repetición), Spec-590 (rasgos del narrador en la memoria), Spec-640 (anécdota, comparaciones), Spec-670 (moldes; su medición en §7).
 **Suma (2026-10-22):** la parte C, «el mate en todas las historias» (iba a ser la Spec-690; se resuelve acá porque es el mismo síntoma: lo de manual en vez de lo propio de la historia).
@@ -359,3 +359,9 @@ La misma oración de Yadira pasó de «todos saben a qué hora **abrís** la cor
 - **La historia no mide bien A:** la idea de «La laguna oscura» ya trae huellas, perros que ladran y una figura oscura; son del autor y se respetan (D19). La base de la 670 los contaba como «de manual».
 - **Gemma no evita la lista** y puede que la nombre de más (ojos y golpes, que están en la lista, aparecen más); con una corrida por molde no alcanza para afirmarlo, pero no hay mejora.
 - **El tope de 3 avisos tapa el aviso:** en «después», 8 de 9 actos llegan con 3 avisos o más (hechos de más para el largo, personajes que faltan); de 7 recursos ajenos al autor se vieron 3.
+
+### Después de S5 — decisión del usuario (2026-10-22)
+
+- **D25 — El Planificador no recibe la lista de recursos gastados.** Con gemma (el Planificador de prod) no los evitaba y quizás se los sugería (ojos y golpes, de la lista, subieron). Los prompts del Planificador vuelven a ser los de antes de S4 (snapshots iguales a `285e6af`). Si algún día el Planificador pasa a Claude, se puede volver a probar.
+- **D26 — Un aviso «gastado» por acto, aparte del tope de 3** (cambia D20): con los actos llenos de avisos no se veía nunca. Test con un acto de 3 avisos + 2 recursos: se ven 4 (el primer recurso).
+- Criterio 1 de §4 (bajar a la mitad los recursos en los hechos) queda **sin cumplir**: lo que se hace es mostrarlos siempre para que la persona decida.

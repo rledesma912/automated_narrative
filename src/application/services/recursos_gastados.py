@@ -1,7 +1,7 @@
 """Recursos gastados (Spec-680): lo que ya se vio en muchos relatos.
 
-Viven en `config/recursos_gastados.yaml`: los `hechos` de manual que evita el
-Planificador (A) y los `gestos` que evita la Voz (C2). Se detectan con patrones, no por
+Viven en `config/recursos_gastados.yaml`: los `hechos` de manual que avisa el
+Verificador (A) y los `gestos` que evita la Voz (C2). Se detectan con patrones, no por
 raíz (D18). Lo que trae el autor manda (D19): un recurso que aparece en lo suyo no se
 evita ni se marca en su historia.
 """

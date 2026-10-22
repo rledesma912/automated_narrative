@@ -441,13 +441,10 @@ def _con_idea(story, premisa):
     )
 
 
-def test_el_planificador_evita_los_recursos_gastados_salvo_los_del_autor(story):
-    prompt = OutlinePlanner(llm=None)._prompt(story)
-    assert "RECURSOS GASTADOS" in prompt and "- huellas enormes" in prompt
-    con_huellas = _con_idea(story, "José encuentra huellas en el barro del micro.")
-    prompt = OutlinePlanner(llm=None)._prompt(con_huellas)
-    assert "- huellas enormes" not in prompt
-    assert "- ojos que brillan" in prompt
+def test_el_planificador_no_recibe_la_lista_de_recursos_gastados(story):
+    """S5: con gemma la lista no los evitaba (y quizás se los sugería): solo avisa el
+    Verificador."""
+    assert "RECURSOS GASTADOS" not in OutlinePlanner(llm=None)._prompt(story)
 
 
 async def test_el_verificador_avisa_un_recurso_gastado_despues_de_la_ia(story):
@@ -484,3 +481,22 @@ async def test_un_recurso_gastado_del_autor_o_ignorado_no_avisa(story):
     llm = ScriptedLLM({"decisiones": [], "avisos": []})
     v = await OutlineVerifier(llm).verify(story, ignorado)
     assert [w.key for w in v.outline[0].warnings if not w.dismissed].count("gastado:huellas") == 0
+
+
+async def test_el_recurso_gastado_se_ve_aunque_el_acto_tenga_tres_avisos(story):
+    """S5: un aviso «gastado» por acto, aparte del tope (si no, no se veía nunca)."""
+    outline = [
+        ActOutline(
+            number=1,
+            events=["Hay huellas enormes y los perros del vecino ladran sin parar."],
+            change_from="a",
+            change_to="a",
+            on_stage=["X", "Y"],
+            seeds=["s"],
+        )
+    ]
+    llm = ScriptedLLM({"decisiones": [], "avisos": [{"acto": 1, "aviso": "del LLM"}]})
+    v = await OutlineVerifier(llm).verify(story, outline)
+    keys = [w.key for w in v.outline[0].warnings]
+    assert len(keys) == 4 and keys[-1] == "gastado:huellas"
+    assert "gastado:perros" not in keys  # uno por acto

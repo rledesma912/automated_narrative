@@ -1,7 +1,8 @@
 # Spec-680: lo que ya se vio en muchos relatos y la IA pone por reflejo.
 #
-# `hechos` (A): señales de manual que el Planificador evita y el Verificador avisa
-#   cuando aparecen en los hechos de un acto.
+# `hechos` (A): señales de manual que el Verificador avisa cuando aparecen en los hechos
+#   de un acto (uno por acto, aparte del tope de avisos). El Planificador no recibe la
+#   lista: con gemma no los evitaba (S5).
 # `gestos` (C2): costumbres que la Voz inventa para quien narra; las evita y el control
 #   de repetición avisa cuando aparecen en la prosa.
 #
