@@ -207,3 +207,37 @@ Repetir la medición con el servicio real (gratis, gemma) y anotarla; CLAUDE.md 
 4. **S4 — Medición y cierre.**
 
 Cada slice cierra con tests en verde y dev con el cambio.
+
+---
+
+## 10. TASKS (2026-10-22)
+
+Tests: `make test`, `cd frontend && npm test`, `npx playwright test` (Firefox), `make lint`. Todo gratis: el consultor de prod es gemma local.
+
+### S1 — Un solo lugar para el final (D14, D15)
+
+- **T1.1** `context.author_ending(story)`: la respuesta del criterio `final` (`cumple` o `intencional`, con texto, solo de los criterios del molde) o, si no hay, `Direction.ending`. **Hecho cuando:** tests con cada origen y sin final.
+- **T1.2** Leen `author_ending`: `planner.plan` (la decisión `final` en el último acto) y `_acts_block` (`ending_fixed`), `verifier.verify`, `outline_narrator._function`, `context.story_block`, `repetition_check.known_text`, `recursos_gastados.author_text`. **Hecho cuando:** todos los snapshots **idénticos** (sin `SNAPSHOT_UPDATE`).
+- **T1.3** `workshop_rules.initial_items`: copia `Direction.ending` solo si el criterio `final` no tiene respuesta (D14). **Hecho cuando:** test del bug: con `Direction.ending` = A y el criterio cambiado a B en «Preguntas», el Planificador y la Voz reciben B y una ronda nueva no lo pisa.
+- **T1.4** Cierre: tests y lint en verde; dev al día.
+
+### S2 — La IA saca el final de la idea (D1–D3, D11–D13, D16)
+
+- **T2.1** `authoring_final_system.md` y `authoring_final.md` con el prompt medido (variante 2); `final_de_la_idea.py` con `FinalDeLaIdea.ensure(story)`: no corre con el final decidido por la autora, con `·final_preguntar`, ni con `·de_la_idea` si el texto sigue en la idea (D12); si corre, `{cuenta_final, inicio}` → corte desde `inicio` (espacios normalizados) hasta el final de la idea → criterio `final` `intencional` + `·de_la_idea`; si `inicio` no está en la idea, nada. **Hecho cuando:** tests de cada caso con un LLM guionado; snapshot del prompt en `assistant_prompts`.
+- **T2.2** `mock_structured`: para el esquema nuevo, la última oración de la idea.
+- **T2.3** `consult_runner`, `plan_outline_runner` y `GenerateStoryUseCase._plan` corren `ensure` antes y guardan el criterio. **Hecho cuando:** tests de integración: `consult` y `plan_outline` con el mock dejan «Cómo termina» resuelto y marcado; con el final ya decidido, no se llama al LLM de más.
+- **T2.4** `workshop_rules.reopen` en `final` suma `·final_preguntar` (D13). **Hecho cuando:** test: reabrir y volver a consultar → el Consultor lo pregunta, no se saca de la idea.
+- **T2.5** `estimated_seconds` (D16). `medir_final.py` usa el servicio.
+- **T2.6** Cierre: tests y lint; dev: «Que la IA me pregunte» en una historia de la copia de prod (con gemma, gratis) y ver el final en «Preguntas».
+
+### S3 — La UI (A, D)
+
+- **T3.1** `direccion.ejs` y `asistente.js` sin «¿Cómo termina?»; ayuda de «¿De qué trata?» que invita a contar el final (D9); `_direction` conserva el `Direction.ending` guardado. **Hecho cuando:** test de API: el autoguardado sin `ending` no borra el de una historia vieja.
+- **T3.2** `_state`: `de_la_idea` por ítem; `_taller_contenido.ejs`: chip «De tu idea» y la pista en «Cómo termina». **Hecho cuando:** Vitest de las dos vistas; `sin-jerga` y `gramatica-visual` en verde; fixtures del asistente regenerados con el diff revisado.
+- **T3.3** E2E: el flujo completo sin el campo (el final sale de la idea con el mock) y «Cambiar» el final; `visual-snapshots` sin `ending` en el formulario.
+- **T3.4** Cierre: dev: «Tu idea» y «Preguntas» de «Los forasteros» (copia de prod).
+
+### S4 — Medición y cierre
+
+- **T4.1** `medir_final.py` con el servicio real sobre las 9 historias, 2 corridas (gemma, gratis). **Hecho cuando:** resultados en §11 contra el criterio 3 de §6.
+- **T4.2** CLAUDE.md (Spec-550 H1 → el final sale de la idea o de «Preguntas»; `author_ending`; job `consult`), memoria, PR a `development`.
