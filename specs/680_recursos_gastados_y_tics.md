@@ -314,3 +314,12 @@ Base rioplatense («No te detengas en el bosque», corto, `650/corto/`): **2 mat
 - Voz: los gestos chicos salen de quién es, su trabajo y el lugar, «no de las costumbres típicas de un país» (ejemplos: acomodar algo, mirar la hora); línea «Gestos que ya se vieron en muchos relatos (no los uses; buscá otros)», que no va si el mate está en lo del autor o en los actos; guía de oficio: no enumerar siempre de a tres (B); rasgos: «no lo contradigas; no hace falta que aparezca en cada acto».
 - Sin mate en `config/` ni `src/` fuera de la lista (criterio del giro, mock, datos de los snapshots).
 - Snapshots regenerados: el diff son exactamente esas cuatro líneas y el rasgo del mock. 1 013 pytest, 416 Vitest, lint en verde.
+
+### S3 — Detectar en la prosa (2026-10-22)
+
+- `repetition_check`: `gestures` (los gastados que no trae el autor), `foreign` / `foreign_count` (los `ajenas` del habla de la historia, solo en la narración) y `triads` / `triad_count` / `too_listy` (desde la tercera, D4). `story_context(story)` junta lo del autor, el habla y los gestos para el panel y para regenerar.
+- Tríadas (D21): «A, B y C» en una oración, ítems de 1 a 4 palabras, C hasta el final de su tramo, sin nombres propios. Con eso el «antes» de Yadira baja de 10 (el conteo de borrador cruzaba frases) a 1; los de la 650, 5 y 1. Quedan afuera tríadas de acciones largas («hacía limpias, conocía remedios para todo y tenía fama de saber cosas»): es a propósito, para no avisar de más.
+- Panel del relato y «Corregir el relato» (con «Buscar»): «Un gesto que ya se vio en muchos relatos», «Palabras que no van con cómo habla quien lo cuenta», «Enumera de a tres». Al regenerar, vuelven a la Voz (`voz/evitar/{gestos,ajenas,triadas}`).
+- `voice_metrics.py` / `evaluate_voice.py`: `gestos_gastados` (una vez por aparición), `otra_habla`, `de_a_tres_cada_1000`. Base: 600/híbrido 5 y 3 gestos; 650/corto 2 y 2; Yadira «antes» 5 palabras de otra habla, 0 gestos, 0,5 de a tres cada 1 000.
+- Dev (copia de prod): el panel de «El empleado del maletín» avisa «un mate» en el acto 1.
+- 1 026 pytest, 418 Vitest, lint en verde.

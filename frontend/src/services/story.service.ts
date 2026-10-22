@@ -33,6 +33,13 @@ export interface ActRepetition {
   comparisons?: string[];
   comparison_count?: number;
   too_literary?: boolean;
+  /** Spec-680: gestos gastados, palabras de otra forma de hablar y enumeraciones de a tres. */
+  gestures?: Array<{ gesto: string; texto: string }>;
+  foreign?: string[];
+  foreign_count?: number;
+  triads?: string[];
+  triad_count?: number;
+  too_listy?: boolean;
 }
 
 export interface Relato {

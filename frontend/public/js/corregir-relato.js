@@ -88,6 +88,10 @@
     if (rep.too_cut) (rep.cut_sentences || []).forEach((s) => out.push({ texto: `Oración cortada: «${s}»`, buscar: s }));
     // Spec-640: comparaciones de escritor (desde la segunda del acto).
     if (rep.too_literary) (rep.comparisons || []).forEach((s) => out.push({ texto: `Comparación: «${s}…»`, buscar: s }));
+    // Spec-680: gestos gastados, palabras de otra forma de hablar y enumerar de a tres.
+    (rep.gestures || []).forEach((g) => out.push({ texto: `Gesto que ya se vio en muchos relatos: «${g.texto}»`, buscar: g.texto }));
+    (rep.foreign || []).forEach((s) => out.push({ texto: `No va con cómo habla quien lo cuenta: «${s}»`, buscar: s }));
+    if (rep.too_listy) (rep.triads || []).forEach((s) => out.push({ texto: `De a tres: «${s}»`, buscar: s }));
     if (rep.dialogue) out.push({ texto: `Tiene diálogo: ${rep.dialogue} ${rep.dialogue === 1 ? "frase" : "frases"} con raya o entre comillas` });
     return out;
   }

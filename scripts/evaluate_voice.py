@@ -73,6 +73,9 @@ METRICS = (
     "palabras",
     "oraciones_cortadas_pct",
     "dialogo",
+    "gestos_gastados",  # Spec-680
+    "otra_habla",
+    "de_a_tres_cada_1000",
 )
 
 # US$ por millón de tokens (entrada, salida) de los proveedores pagos.
@@ -290,7 +293,10 @@ async def run(
                         text = await _generate(client, story, effect, input_path)
                         (out / f"{variant}_{i}.txt").write_text(text, encoding="utf-8")
                         metrics = evaluate(
-                            text, narrator_of(story), story.get("personajes_full") or []
+                            text,
+                            narrator_of(story),
+                            story.get("personajes_full") or [],
+                            (story.get("direction") or {}).get("habla", ""),  # Spec-680
                         )
                         meter = meter_box.get("meter")
                         if meter and meter.usage:
@@ -333,14 +339,16 @@ def print_table(report: dict) -> None:
         )
     print(
         "| Variante | Clichés | Parentescos mal | Narradora 3ra persona | Frases repetidas "
-        "| Palabras | Oraciones cortadas (%) | Diálogo |"
+        "| Palabras | Oraciones cortadas (%) | Diálogo | Gestos gastados | Otra habla "
+        "| De a tres (c/1000) |"
     )
-    print("|---|---|---|---|---|---|---|---|")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
     for v, m in report["promedios"].items():
         print(
             f"| {v} | {m['cliches']} | {m['parentescos_mal']} | {m['narrador_3ra_persona']} "
             f"| {m['frases_repetidas']} | {m['palabras']} | {m['oraciones_cortadas_pct']} "
-            f"| {m['dialogo']} |"
+            f"| {m['dialogo']} | {m['gestos_gastados']} | {m['otra_habla']} "
+            f"| {m['de_a_tres_cada_1000']} |"
         )
 
 

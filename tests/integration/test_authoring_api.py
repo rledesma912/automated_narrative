@@ -404,6 +404,12 @@ async def test_control_de_repeticion_del_relato(client):
         "comparisons": [],
         "comparison_count": 0,
         "too_literary": False,
+        "gestures": [],
+        "foreign": [],
+        "foreign_count": 0,
+        "triads": [],
+        "triad_count": 0,
+        "too_listy": False,
     }
     assert data["acts"][1]["repeated"] == ["«el olor dulce y putrefacto» (del acto 1)"]
     assert data["acts"][1]["cliches"] == ["me heló la sangre"]  # una vez, aunque haya variantes
@@ -663,3 +669,23 @@ async def test_la_sugerencia_no_pisa_la_forma_que_eligio_la_persona(client):
     await _run_job(client, sid, "suggest_form")
     d = (await client.get(f"{API}/stories/{sid}")).json()["direction"]
     assert (d["form"], d["form_suggested"]) == ("lugar", "asedio")
+
+
+async def test_control_de_gestos_y_de_otra_habla(client):
+    """Spec-680 C3: el mate que no trae el autor y el voseo en una historia mexicana."""
+    from src.domain.models import GeneratedNarrative
+    from src.infrastructure.database.repositories import SQLGeneratedNarrativeRepository
+
+    sid = (await _create(client, habla="mexicano"))["story_id"]
+    narrative = GeneratedNarrative(
+        story_template_id=uuid.UUID(sid),
+        title="R",
+        content="## Acto 1\n\nTodos saben a qué hora abrís la tienda. Me cebé un mate y salí.",
+    )
+    await SQLGeneratedNarrativeRepository().save(narrative)
+
+    act = (await client.get(f"/api/v1/generated-narratives/{narrative.id}/repetition")).json()[
+        "acts"
+    ][0]
+    assert act["gestures"] == [{"gesto": "tomar mate, cebar mate, el termo", "texto": "un mate"}]
+    assert (act["foreign"], act["foreign_count"]) == (["abrís"], 1)

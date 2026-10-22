@@ -50,7 +50,7 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 | `{ya_paso}` | una `voz/ya_paso_acto` por acto anterior, o `voz/ya_paso_vacio` | siempre |
 | `{como_esta}` | `voz/como_esta` | la memoria trae estado o cuerpo |
 | `{asi_es}` | `voz/asi_es` + los rasgos | la memoria trae rasgos |
-| `{evitar}` | `voz/evitar/titulo` + `repetida`, `cliche`, `nombres`, `cortadas`, `dialogo`, `comparaciones` (Spec-640) | se regenera un acto y el control marcó algo |
+| `{evitar}` | `voz/evitar/titulo` + `repetida`, `cliche`, `nombres`, `cortadas`, `dialogo`, `comparaciones` (Spec-640), `gestos`, `ajenas`, `triadas` (Spec-680) | se regenera un acto y el control marcó algo |
 | `{ya_usado}` | los motivos usados, o `voz/ya_usado_vacio` | siempre |
 | `{comienzo}` | `voz/comienzo` (Spec-650: que no arranque siempre con «Mirá») | acto 1 |
 

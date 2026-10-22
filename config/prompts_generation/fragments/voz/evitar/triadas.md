@@ -1,0 +1,1 @@
+- Tenía {cantidad} enumeraciones de a tres (por ejemplo: {ejemplos}): a veces una cosa, a veces dos

@@ -342,6 +342,17 @@ class OutlineNarrator:
                     "voz/evitar/comparaciones", cantidad=rep.comparison_count, ejemplos=ejemplos
                 )
             )
+        # Spec-680: gestos gastados, palabras de otra habla y enumeraciones de a tres.
+        for gesto, texto in rep.gestures:
+            lines.append(t.fragment("voz/evitar/gestos", gesto=gesto, texto=texto))
+        if rep.foreign:
+            ejemplos = ", ".join(f"«{w}»" for w in rep.foreign)
+            lines.append(t.fragment("voz/evitar/ajenas", ejemplos=ejemplos))
+        if rep.too_listy:
+            ejemplos = ", ".join(f"«{s}»" for s in rep.triads)
+            lines.append(
+                t.fragment("voz/evitar/triadas", cantidad=rep.triad_count, ejemplos=ejemplos)
+            )
         if not lines:
             return ""
         return t.fragment("voz/evitar/titulo") + "\n" + "\n".join(lines) + "\n\n"
