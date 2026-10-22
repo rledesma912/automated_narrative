@@ -60,5 +60,5 @@ gestos:
       - '\bmates?\s+(?:amargo|dulce|cocido|frío|caliente|lavado)s?\b'
       - '\bceb(?:ar|é|ó|aba|aban|ando|ado)\b'
       - '\btermos?\b'
-      - '\byerba\b'
+      # Sin «yerba» sola: «olía a yerba y a kerosene» describe un almacén, no un gesto (S5).
     por_que: "La IA se lo pone a cualquier narrador rioplatense (o no) como el gesto cotidiano por excelencia (§1.3)."

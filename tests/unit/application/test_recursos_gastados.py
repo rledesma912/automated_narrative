@@ -23,7 +23,6 @@ def test_el_archivo_carga_con_ids_unicos():
         "tomaba mate en la garita",
         "el termo estaba frío",
         "un mate amargo",
-        "la yerba",
     ],
 )
 def test_el_mate_se_detecta(texto):
@@ -31,7 +30,8 @@ def test_el_mate_se_detecta(texto):
 
 
 @pytest.mark.parametrize(
-    "texto", ["tenía miedo de que me mate", "lo mate a palos", "un color mate"]
+    "texto",
+    ["tenía miedo de que me mate", "lo mate a palos", "un color mate", "olía a yerba y a kerosene"],
 )
 def test_matar_no_es_el_mate(texto):
     """D18: por raíz, «mate» y «matar» serían lo mismo."""

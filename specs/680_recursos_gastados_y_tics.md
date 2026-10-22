@@ -331,3 +331,31 @@ Base rioplatense («No te detengas en el bosque», corto, `650/corto/`): **2 mat
 - `medir_moldes.py` suma `gastados` con la lista del YAML (y sigue contando `de_manual` para comparar con la 670). Base con la lista nueva sobre los actos de la 670 (Claude): regla 5, asedio 3, asedio + giro 4.
 - Dev (copia de prod): en las 9 historias reales, los recursos de manual que aparecen en los actos (la luz, los ojos, los golpes) **vienen todos de lo que escribió la autora**: ninguno se avisa. Es la prueba de que D19 hacía falta.
 - 1 029 pytest, lint en verde.
+
+### S5 — Medición «después» (2026-10-22, `hibrido-sonnet55`, US$ 0,31 reales)
+
+Material en `data/dev/research_680/` (fuera de git, D24).
+
+**C — el habla y el mate (criterio 5): cumplido.**
+
+| | Antes | Después |
+|---|---|---|
+| «El trabajo de Yadira» (mexicano), palabras de otra habla | 5 (1 relato: «abrís», «comprás», «la plata», «vereda», «media nerviosa») | **0 y 0** |
+| «El trabajo de Yadira», gestos gastados | 0 | 0 y 0 |
+| «No te detengas en el bosque» (corto, rioplatense), mate o termo | 2 y 2 (650) | **0 y 0** |
+
+La misma oración de Yadira pasó de «todos saben a qué hora **abrís** la cortina» a «todos saben a qué hora abre cada quien su cortina»; aparecen «dinero», «banqueta», «camión», «mamá». El único «diálogo» de Yadira es la cita del conjuro («Aquí no perteneces, ser inmundo»), que viene de la escaleta. En el bosque, el detector marcó «olía a yerba y a kerosene» (un almacén, no un gesto): se sacó «yerba» de la lista (caso de prueba que no marca).
+
+**B — de a tres (criterio 3): cumplido.** Yadira 0,85 cada 1 000 (antes 0,5, una corrida); bosque 1,8 y 1,6 (antes 4,5 y 0,8 en la 650): todos por debajo de 2 y ningún acto llega al aviso. Clichés 0, oraciones cortadas 1,5–2,5 %, sin diálogo inventado.
+
+**A — recursos gastados en los hechos (criterio 1): no cumplido con gemma.** «La laguna oscura», 3 moldes, una corrida cada uno, Planificador y Verificador en gemma (gratis), antes (`285e6af`) y después:
+
+| Molde | Hechos de manual (todos) | Que **no** trae el autor | Avisos «gastado» visibles |
+|---|---|---|---|
+| La de siempre | 3 → 5 | 1 → 2 (ojos, golpe) | 0 → 0 |
+| Asedio | 4 → 6 | 0 → 2 (ojos, golpe) | 0 → 1 |
+| Asedio + giro | 4 → 8 | 1 → 3 (ojos ×2, golpe) | 0 → 2 |
+
+- **La historia no mide bien A:** la idea de «La laguna oscura» ya trae huellas, perros que ladran y una figura oscura; son del autor y se respetan (D19). La base de la 670 los contaba como «de manual».
+- **Gemma no evita la lista** y puede que la nombre de más (ojos y golpes, que están en la lista, aparecen más); con una corrida por molde no alcanza para afirmarlo, pero no hay mejora.
+- **El tope de 3 avisos tapa el aviso:** en «después», 8 de 9 actos llegan con 3 avisos o más (hechos de más para el largo, personajes que faltan); de 7 recursos ajenos al autor se vieron 3.
