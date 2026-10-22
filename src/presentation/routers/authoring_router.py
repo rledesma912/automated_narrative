@@ -462,7 +462,8 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         premise=form.premise.strip(),
         effect=form.effect,
         effect_other=form.effect_other.strip(),
-        ending=form.ending.strip(),
+        # Spec-690: «Tu idea» ya no trae «¿Cómo termina?»: se conserva el guardado.
+        ending=form.ending.strip() or (existing.ending if existing else ""),
         ending_intentional=form.ending_intentional,
         telling=form.telling,
         form=form.form,
@@ -596,6 +597,8 @@ async def _state(story: Story) -> dict:
                     "nombre": c.nombre,
                     "por_que": c.por_que,
                     "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
+                    # Spec-690: el final que la IA sacó de «¿De qué trata?».
+                    "de_la_idea": workshop_rules.DE_LA_IDEA in w.asked,
                 }
                 for w, c in (
                     (by_id[c.id], c.for_story(context.protagonist(story)))

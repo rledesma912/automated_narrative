@@ -54,7 +54,7 @@ class WorkshopAction(BaseModel):
     """Lo que hace el autor con un criterio del taller."""
 
     action: Literal["answer", "decide", "intentional", "reopen"]
-    text: str = Field("", max_length=600)
+    text: str = Field("", max_length=2000)  # Spec-690: un final sacado de la idea es largo
 
 
 class ActForm(BaseModel):

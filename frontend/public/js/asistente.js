@@ -382,7 +382,6 @@
       premise: value(form, "premise"),
       effect: value(form, "effect"),
       effect_other: value(form, "effect_other"),
-      ending: value(form, "ending"),
       telling: value(form, "telling"),
       habla: value(form, "habla"), // Spec-680 C1
       // Spec-670: la clase de historia, el giro y, con «Otra», cómo la cuenta.

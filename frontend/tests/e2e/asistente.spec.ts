@@ -27,22 +27,30 @@ async function crearDesdeNuevo(page: Page, titulo: string, premisa = "José ve a
 }
 
 test("flujo completo: dirección → taller → escaleta → generar", async ({ page }) => {
-  const sid = await crearDesdeNuevo(page, "E2E asistente");
+  // Spec-690: el final va en «¿De qué trata?» (ya no hay «¿Cómo termina?»).
+  const sid = await crearDesdeNuevo(
+    page,
+    "E2E asistente",
+    "José ve a una mujer muerta en el espejo del micro. Al final le deja flores y descansa en paz.",
+  );
+  await expect(page.getByLabel("¿Cómo termina?")).toHaveCount(0);
   await page.getByText("Pavor creciente").click();
-  await page.getByLabel("¿Cómo termina?").fill("Le deja flores y descansa en paz.");
   await page.getByLabel("Protagonista").fill("José");
   await guardadoListo(page);
 
   // Lo guardado sobrevive a recargar.
   await page.reload();
-  await expect(page.getByLabel("¿Cómo termina?")).toHaveValue("Le deja flores y descansa en paz.");
+  await expect(page.getByLabel("¿De qué trata?")).toHaveValue(/Al final le deja flores/);
   await expect(page.getByRole("radio", { name: /Pavor creciente/ })).toBeChecked();
 
   // La IA solo con el comando explícito, con el modal.
   await page.getByRole("button", { name: /Que la IA me pregunte/ }).click();
   await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/taller$`));
   await expect(page.locator("[data-fin]")).toContainText(/Te quedan? \d+ preguntas?/);
-  await expect(page.locator('[data-pregunta="final"]')).toContainText(/a propósito/i);
+  // Spec-690: el final salió de la idea.
+  const final = page.locator('li[data-pregunta="final"]');
+  await expect(final).toContainText("De tu idea");
+  await expect(final).toContainText("Al final le deja flores y descansa en paz.");
 
   // Responder una pregunta y delegar otra.
   const meta = page.locator('[data-pregunta="meta"]');
@@ -309,4 +317,18 @@ test("cómo habla quien lo cuenta: arranca en la de siempre y lo elegido se guar
   await guardadoListo(page);
   await page.reload();
   await expect(page.getByRole("radio", { name: /De México/ })).toBeChecked();
+});
+
+test("el final sacado de la idea se cambia en «Preguntas» y queda decidido (Spec-690)", async ({ page }) => {
+  const sid = await crearDesdeNuevo(page, "E2E final", "Rosa cuida una casa de campo. Al final se va y no vuelve.");
+  await page.getByRole("button", { name: /Que la IA me pregunte/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/asistente/${sid}/taller$`));
+  const final = page.locator('li[data-pregunta="final"]');
+  await expect(final).toContainText("De tu idea");
+  await final.getByRole("button", { name: "Cambiar" }).click();
+  await final.locator("[data-texto-mia]").fill("Se va del pueblo y nunca más cuida casas ajenas.");
+  await final.getByRole("button", { name: "Guardar" }).click();
+  await expect(final).toContainText("Se va del pueblo y nunca más cuida casas ajenas.");
+  await expect(final).toContainText("A propósito");
+  await expect(final).not.toContainText("De tu idea");
 });

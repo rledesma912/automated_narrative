@@ -164,6 +164,7 @@ Relevado en `feat/spec-690-final-desde-la-idea` (`53951d1`). Principio: **un sol
 | D16 | El tiempo estimado de «Que la IA me pregunte» sube ~7 s con gemma. | `estimated_seconds.consult` y `plan_outline` +10 en los perfiles con el consultor en gemma (la mediana de los jobs reales corrige sola después, Spec-510). |
 | D17 | **(Salió en S2, probando en dev.)** El criterio «Cómo termina» pregunta por **la marca que deja** el final; en prod, las dos historias sin «¿Cómo termina?» lo tienen respondido con una opción del Consultor («Inquietud», «La duda sobre si fue real o un sueño.»). Contar eso como el final decidido haría que la Voz «cierre con el final del autor: Inquietud». | Final decidido = respuesta **a propósito** (`intencional`) del criterio: sacada de la idea, el `Direction.ending` viejo o un «Cambiar» sobre esos (que lo deja `intencional`, no `cumple`). Una respuesta común sigue siendo una decisión más (como hoy) y, si hay `Direction.ending`, manda ese. Reemplaza lo dicho en D4 sobre «Decidí vos». |
 | D18 | Las historias que ya tienen «Cómo termina» respondido con una opción. | No se les saca el final de la idea (la respuesta es de la autora y no se pisa); quedan como hoy. Las historias nuevas no llegan a esa pregunta: el final se saca de la idea antes de la primera ronda. |
+| D19 | **(Salió en S3.)** «Cambiar» tenía 600 caracteres como máximo (pantalla y API) y un final sacado de la idea puede ser más largo. | 2 000 en la pantalla y en `WorkshopAction.text`. |
 
 ### 9.2 S1 — Un solo lugar para el final (D14, D15), sin UI
 
@@ -263,3 +264,11 @@ Tests: `make test`, `cd frontend && npm test`, `npx playwright test` (Firefox), 
 - `estimated_seconds` +10 en `consult` y `plan_outline` (perfiles con el consultor en gemma, D16). `medir_final.py` usa el servicio real: mismo resultado que §1.3 (en «la cosa agachada» el corte arranca un poco más cerca del final).
 - Dev: en una historia de prueba (borrada después), «Que la IA me pregunte» con gemma dejó «Cómo termina» resuelto con «Rosa deja el trabajo esa misma semana y nunca más vuelve a cuidar casas ajenas.». Las 9 historias de la copia de prod ya tienen el final decidido o respondido: no cambian.
 - Snapshot del asistente: solo suma el prompt nuevo. 1 060 pytest, lint en verde.
+
+### S3 — La UI (2026-10-22)
+
+- «Tu idea» sin «¿Cómo termina?»; la ayuda de «¿De qué trata?»: «Contalo como se lo contarías a alguien, de punta a punta: qué pasa y cómo termina, si ya lo sabés.» (D9). El autoguardado ya no manda el final y el servidor conserva el de las historias viejas (test).
+- «Preguntas»: «Cómo termina» sacado de la idea con el chip «De tu idea» y la pista «Lo sacamos de tu idea. Si no es así, tocá «Cambiar» y dejalo como querés.»; al cambiarlo pasa a «A propósito». `_state` trae `de_la_idea` por ítem. «Cambiar» admite 2 000 caracteres (D19); el fixture del taller cambió solo en ese `maxlength`.
+- E2E (Firefox): el flujo completo cuenta el final en la idea y lo encuentra en «Preguntas»; uno nuevo cambia el final y lo ve decidido. Las capturas arman la historia con el final en la idea.
+- Dev: «Tu idea» de «Los forasteros» sin el campo y con la ayuda nueva.
+- 1 062 pytest, 421 Vitest, 80 E2E, lint en verde.

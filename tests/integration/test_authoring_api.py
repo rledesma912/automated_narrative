@@ -728,3 +728,21 @@ async def test_cambiar_el_final_sacado_de_la_idea_lo_deja_decidido(client):
     assert resp.status_code == 200
     final = await _final_item(client, sid)
     assert (final["status"], final["answer"]) == ("intencional", "La deja bajar y llora.")
+
+
+async def test_tu_idea_sin_el_campo_no_borra_el_final_viejo(client):
+    """S3: el autoguardado de «Tu idea» ya no trae `ending`; el de una historia vieja queda."""
+    sid = (await _create(client))["story_id"]  # FORM trae «Descansa en paz.»
+    sin_final = {k: v for k, v in FORM.items() if k not in ("ending", "ending_intentional")}
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**sin_final, "title": "Otra"})
+    assert resp.status_code == 200
+    assert resp.json()["direction"]["ending"] == "Descansa en paz."
+
+
+async def test_preguntas_marca_el_final_de_la_idea(client):
+    sid = (await _create(client, premise=IDEA_CON_FINAL, ending=""))["story_id"]
+    await _run_job(client, sid, "consult")
+    final = await _final_item(client, sid)
+    assert final["de_la_idea"] is True
+    otros = (await client.get(f"{API}/stories/{sid}")).json()["workshop"]["items"]
+    assert not any(w["de_la_idea"] for w in otros if w["criterion"] != "final")
