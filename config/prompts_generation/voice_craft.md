@@ -23,5 +23,5 @@ PRIMERA PERSONA:
 - Los EVENTOS vienen escritos en tercera persona. Contalos siempre desde vos, {narrador}: «{narrador} no se atreve» → «no me atrevo». Tu nombre no aparece en lo que narrás.
 
 LÉXICO:
-- Usá solo palabras que existan en el español rioplatense; si dudás de una palabra, elegí una más simple.
+- Usá solo palabras que existan en el {habla}; si dudás de una palabra, elegí una más simple.{habla_voz}
 - Nombrá objetos y animales como en el EVENTO: el caballo es «el caballo», no un apodo ni un sinónimo rebuscado.

@@ -301,3 +301,12 @@ test("lo que todavía no se cuenta tiene su acto de revelación", async ({ page 
   await page.reload();
   await expect(page.locator('form[data-number="1"] [name="reveal_act"]')).toHaveValue("4");
 });
+
+test("cómo habla quien lo cuenta: arranca en la de siempre y lo elegido se guarda (Spec-680 C1)", async ({ page }) => {
+  await crearDesdeNuevo(page, "E2E habla");
+  await expect(page.getByRole("radio", { name: /Rioplatense/ })).toBeChecked();
+  await page.getByText("De México", { exact: true }).click();
+  await guardadoListo(page);
+  await page.reload();
+  await expect(page.getByRole("radio", { name: /De México/ })).toBeChecked();
+});

@@ -102,6 +102,7 @@ class OutlineNarrator:
         system = self.templates.load("outline_voice_system.md").format(
             presentacion=extras["presentacion"],
             como_lo_cuenta=voice,
+            habla=catalog.habla_de(story).prompt,
             parentescos=extras["parentescos"],
             guia_oficio=extras["guia_oficio"],
         )
@@ -284,7 +285,9 @@ class OutlineNarrator:
             self.llm,
             role="journal",
             prompt=prompt,
-            system_prompt=self.templates.load("outline_journal_system.md"),
+            system_prompt=self.templates.load("outline_journal_system.md").format(
+                habla=_capitalized(catalog.habla_de(story).prompt)
+            ),
             output=Memoria,
             min_predict=900,
         )
@@ -400,6 +403,11 @@ class OutlineNarrator:
 
 
 _SENTENCE_END = re.compile(r"(?<=[.!?…])\s+(?=[¿¡«\"“(]?[A-ZÁÉÍÓÚÑ])")
+
+
+def _capitalized(text: str) -> str:
+    """«español rioplatense» → «Español rioplatense», al empezar una oración."""
+    return text[:1].upper() + text[1:]
 
 
 def _section(title: str, items: list[str]) -> str:

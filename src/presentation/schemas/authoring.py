@@ -34,6 +34,7 @@ class DirectionForm(BaseModel):
     form: str = ""
     ingredient: str = ""
     form_other: str = Field("", max_length=600)
+    habla: str = ""  # Spec-680 C1: cómo habla quien narra ("" = la de siempre)
     protagonist_name: str = Field("", max_length=60)
     protagonist_role: str = Field("", max_length=160)
     narrator: str = Field("", max_length=60)  # "" = el protagonista

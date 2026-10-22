@@ -61,6 +61,8 @@ async def get_options() -> dict:
     return {
         "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
+        # Spec-680 C1: cómo habla quien narra (para la UI, sin los patrones).
+        "hablas": [{"id": h.id, "label": h.label, "detail": h.ayuda} for h in catalog.hablas()],
         "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
         # Spec-670: las clases de historia y los giros («Tu idea»).
         "forms": [
@@ -450,6 +452,8 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         raise InvalidStoryInputError(message("api.forma_desconocida", forma=form.form))
     if form.ingredient and cat.giro(form.ingredient) is None:
         raise InvalidStoryInputError(message("api.giro_desconocido", giro=form.ingredient))
+    if form.habla and catalog.habla(form.habla) is None:
+        raise InvalidStoryInputError(message("api.habla_desconocida", habla=form.habla))
     return Direction(
         premise=form.premise.strip(),
         effect=form.effect,
@@ -460,6 +464,7 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         form=form.form,
         ingredient=form.ingredient,
         form_other=form.form_other.strip(),
+        habla=form.habla,
         form_suggested=existing.form_suggested if existing else "",
         form_reason=existing.form_reason if existing else "",
     )
@@ -527,6 +532,7 @@ def _form(story: Story) -> dict:
         "form_other": d.form_other,
         "form_suggested": d.form_suggested,
         "form_reason": d.form_reason,
+        "habla": d.habla,  # Spec-680 C1
         "protagonist_name": lead.get("name", ""),
         "protagonist_role": lead.get("role", ""),
         "narrator": (story.narrator_config or {}).get("storyteller_name", ""),

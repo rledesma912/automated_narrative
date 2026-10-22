@@ -66,6 +66,21 @@ async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
     assert [e["id"] for e in data["effects"]][:2] == ["pavor", "susto"]
     assert data["criteria"][0]["nombre"] == "Qué quiere el protagonista"
+    # Spec-680 C1: la de siempre primero, sin los patrones (son del control).
+    assert [h["id"] for h in data["hablas"]] == ["rioplatense", "mexicano", "neutro", "espana"]
+    assert set(data["hablas"][0]) == {"id", "label", "detail"}
+
+
+async def test_habla_se_guarda_y_vuelve(client):
+    """Spec-680 C1: el autoguardado de «Tu idea» lleva el habla; una que no existe, 422."""
+    state = await _create(client)
+    story_id = state["story_id"]
+    put = await client.put(f"{API}/stories/{story_id}/direction", json=FORM | {"habla": "mexicano"})
+    assert put.status_code == 200, put.text
+    again = (await client.get(f"{API}/stories/{story_id}")).json()
+    assert again["direction"]["habla"] == "mexicano"
+    bad = await client.put(f"{API}/stories/{story_id}/direction", json=FORM | {"habla": "klingon"})
+    assert bad.status_code == 422
 
 
 async def test_crear_desde_la_direccion(client):
@@ -81,6 +96,7 @@ async def test_crear_desde_la_direccion(client):
         "form_other": "",
         "form_suggested": "",
         "form_reason": "",
+        "habla": "",  # Spec-680 C1: la de siempre
     }
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
     assert state["characters"] == [{"name": "José", "kind": "persona", "relation": "", "acts": []}]

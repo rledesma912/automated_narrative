@@ -9,6 +9,7 @@ los servicios del asistente (`authoring/`).
 import logging
 from pathlib import Path
 
+from src.application.services.authoring import catalog
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.structure import DEFAULT_STRUCTURE, Estructura
 from src.application.services.template_loader import TemplateLoader
@@ -54,9 +55,13 @@ class PromptBuilder:
         cliches = "\n".join(f"  - «{c}»" for c in load_cliches())
         craft = self._loader.load(VOICE_CRAFT_FILE) or ""
         fragment = self._loader.fragment
+        habla = catalog.habla_de(story)  # Spec-680 C1
         return {
             "guia_oficio": craft.format(
-                cliches=cliches, narrador=narrator or fragment("voz/narrador_generico")
+                cliches=cliches,
+                narrador=narrator or fragment("voz/narrador_generico"),
+                habla=habla.prompt,
+                habla_voz=f"\n- {habla.voz}" if habla.voz else "",
             ).strip(),
             "parentescos": self._format_kinship(story, narrator),
             # «Sos Irene…» en vez de «Sos Primera persona en pasado. Narrador: Irene…».

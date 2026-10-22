@@ -35,6 +35,7 @@ _DIRECTION = {
     "ending": "El alma descansa en paz después de las flores.",
     "ending_intentional": True,
     "telling": "caso",
+    "habla": "mexicano",  # Spec-680 C1: viaja en el round-trip YAML
 }
 _WORKSHOP = [
     {
@@ -268,6 +269,7 @@ async def test_round_trip_yaml_conserva_la_autoria(monkeypatch, tmp_path):
     (path,) = sorted((tmp_path / "yaml").glob("*.yaml"))
     doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     assert doc["direction"]["effect"] == "pavor"
+    assert doc["direction"]["habla"] == "mexicano"
     assert doc["personajes_full"][2]["kind"] == "grupo"
     assert doc["storyteller_config"]["rules"][0]["applies_to_beat"] == 2
 
