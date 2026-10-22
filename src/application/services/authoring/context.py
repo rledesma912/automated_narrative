@@ -23,12 +23,14 @@ def objective(templates: TemplateLoader, story: Story) -> str:
 
 
 def author_ending(story: Story) -> str:
-    """Spec-690 D15: el final que decidió la autora, de un solo lugar. Es la respuesta del
-    criterio `final` de «Preguntas» (sacada de la idea, escrita o elegida); si no hay, el
-    «¿Cómo termina?» de las historias viejas (`Direction.ending`)."""
+    """Spec-690 D15: el final que decidió la autora, de un solo lugar. Es la respuesta
+    **a propósito** del criterio `final` de «Preguntas» (sacada de la idea, el «¿Cómo
+    termina?» viejo o un cambio de la autora sobre esos); si no hay, `Direction.ending`.
+
+    Una respuesta común del criterio («Inquietud», una opción del Consultor) no es el
+    final: la pregunta es por la marca que deja (D17), y queda como una decisión más."""
     item = next((w for w in _direction_items(story) if w.criterion == "final"), None)
-    decided = (CriterionStatus.CUMPLE, CriterionStatus.INTENCIONAL)
-    if item and item.answer.strip() and item.status in decided:
+    if item and item.answer.strip() and item.status == CriterionStatus.INTENCIONAL:
         return item.answer.strip()
     return story.direction.ending.strip() if story.direction else ""
 

@@ -16,6 +16,11 @@ def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
             "motivo": "Por cómo es tu idea.",
             "arco": "",
         }
+    if role == "consultor" and "cuenta_final" in schema.get("properties", {}):
+        # Spec-690: el final empieza en la última oración de la idea.
+        idea = prompt.split("LA IDEA:", 1)[-1].split("\n\nDevolvé:", 1)[0].strip()
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+", idea) if s.strip()]
+        return {"cuenta_final": bool(sentences), "inicio": sentences[-1] if sentences else ""}
     if role == "consultor":
         return {"evaluaciones": [_evaluation(i, c) for i, c in enumerate(_criteria(schema))]}
     if role == "planificador":

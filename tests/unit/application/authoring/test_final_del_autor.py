@@ -7,7 +7,7 @@ from src.application.services.authoring.planner import OutlinePlanner
 from src.domain.models import ActOutline, CriterionStatus, WorkshopItem, WorkshopLevel
 
 
-def _final(answer: str, status=CriterionStatus.CUMPLE, asked=()) -> WorkshopItem:
+def _final(answer: str, status=CriterionStatus.INTENCIONAL, asked=()) -> WorkshopItem:
     return WorkshopItem(
         criterion="final",
         level=WorkshopLevel.DIRECCION,
@@ -34,6 +34,16 @@ def test_el_final_viejo_de_tu_idea(story):
 def test_preguntas_manda_sobre_el_final_viejo(story):
     s = _with(story, ending="Descansa en paz.", item=_final("Le deja flores y se va."))
     assert context.author_ending(s) == "Le deja flores y se va."
+
+
+def test_una_opcion_del_consultor_no_es_el_final(story):
+    """D17: «Cómo termina» pregunta por la marca que deja; «Inquietud» no es qué pasa."""
+    s = _with(story, ending="Descansa en paz.", item=_final("Inquietud", CriterionStatus.CUMPLE))
+    assert context.author_ending(s) == "Descansa en paz."
+    sin_viejo = _with(story, item=_final("Inquietud", CriterionStatus.CUMPLE))
+    assert context.author_ending(sin_viejo) == ""
+    act = ActOutline(number=5, events=["José se despide."])
+    assert "Inquietud" not in OutlineNarrator(llm=None)._function(sin_viejo, act, {})
 
 
 def test_una_pregunta_sin_responder_no_es_un_final(story):

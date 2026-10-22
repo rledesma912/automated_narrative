@@ -97,9 +97,11 @@ def no_aplica_rejected(item: WorkshopItem) -> bool:
 def reopen(item: WorkshopItem) -> WorkshopItem:
     """Vuelve a evaluarse en la próxima ronda. Si era «No va en tu historia», queda la
     marca para que la IA no lo vuelva a descartar (D12)."""
-    asked = list(item.asked)
+    asked = [a for a in item.asked if a != DE_LA_IDEA]
     if item.status == CriterionStatus.NO_APLICA and NO_APLICA_RECHAZADO not in asked:
         asked.append(NO_APLICA_RECHAZADO)
+    if item.criterion == "final" and FINAL_PREGUNTAR not in asked:
+        asked.append(FINAL_PREGUNTAR)  # Spec-690 D13: ya no se saca de la idea
     question = "" if item.status == CriterionStatus.NO_APLICA else item.question
     return item.model_copy(
         update={"status": CriterionStatus.FALTA, "answer": "", "question": question, "asked": asked}
@@ -261,9 +263,12 @@ def mark_intentional(item: WorkshopItem, text: str = "") -> WorkshopItem:
 
 
 def _with_question(item: WorkshopItem) -> list[str]:
-    if item.question and item.question not in item.asked:
-        return [*item.asked, item.question]
-    return list(item.asked)
+    """`asked` con la pregunta actual. Spec-690: si la autora lo toca, deja de ser «sacado
+    de la idea» (es suyo y no se vuelve a sacar)."""
+    asked = [a for a in item.asked if a != DE_LA_IDEA]
+    if item.question and item.question not in asked:
+        return [*asked, item.question]
+    return asked
 
 
 def clean_options(options) -> list[str]:

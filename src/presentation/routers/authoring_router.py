@@ -24,6 +24,7 @@ from src.domain.exceptions import InvalidStoryInputError
 from src.domain.models import (
     ActOutline,
     CharacterKind,
+    CriterionStatus,
     Direction,
     Scenario,
     Story,
@@ -190,6 +191,9 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
     if body.action == "answer":
         if not body.text.strip():
             raise ValueError(message("api.respuesta_vacia"))
+        if item.criterion == "final" and item.status == CriterionStatus.INTENCIONAL:
+            # Spec-690 D17: cambiar el final decidido lo deja decidido (y suyo).
+            return workshop_rules.mark_intentional(item, body.text)
         return workshop_rules.answer(item, body.text)
     if body.action == "decide":
         return workshop_rules.decide_for_me(item)

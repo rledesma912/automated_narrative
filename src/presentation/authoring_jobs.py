@@ -8,7 +8,7 @@ resultado antes de publicar `done`.
 
 from uuid import UUID
 
-from src.application.services.authoring import form_suggester
+from src.application.services.authoring import final_de_la_idea, form_suggester
 from src.application.services.authoring.consultant import WorkshopConsultant
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
@@ -33,12 +33,21 @@ async def _load(story_id: UUID) -> Story:
     return story
 
 
+async def _with_ending(story: Story, llm) -> Story:
+    """Spec-690: si la idea cuenta cómo termina, el final queda resuelto en «Preguntas»."""
+    item = await final_de_la_idea.FinalDeLaIdea(llm).ensure(story)
+    if item is not None:
+        await SQLStoryRepository().save_workshop_items(story.id, [item])
+    return final_de_la_idea.apply(story, item)
+
+
 def consult_runner(story_id: UUID) -> JobRunner:
     def _run():
         async def _gen():
             yield stage_event(JobStage.CONSULTOR, None, None)
-            story = await _load(story_id)
-            result = await WorkshopConsultant(LLMFactory.get_provider()).analyze(story)
+            llm = LLMFactory.get_provider()
+            story = await _with_ending(await _load(story_id), llm)  # Spec-690
+            result = await WorkshopConsultant(llm).analyze(story)
             await SQLStoryRepository().save_workshop_items(story_id, result.items)
             yield _done(story_id, finish={"kind": result.finish.kind, "text": result.finish.text})
 
@@ -52,7 +61,7 @@ def plan_outline_runner(story_id: UUID) -> JobRunner:
         async def _gen():
             llm = LLMFactory.get_provider()
             yield stage_event(JobStage.PLANIFICADOR, None, None)
-            story = await _load(story_id)
+            story = await _with_ending(await _load(story_id), llm)  # Spec-690 D3
             acts, _ = await OutlinePlanner(llm).plan(story)
             yield stage_event(JobStage.VERIFICADOR, None, None)
             checked = await OutlineVerifier(llm).verify(story, acts)
