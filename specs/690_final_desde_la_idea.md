@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Tipo:** SDD — UI del asistente + Consultor (una llamada más) + de dónde leen el final el Planificador, el Verificador y la Voz
-**Estado:** PLAN (esperando OK); SPECIFY aprobado 2026-10-22
+**Estado:** TASKS (esperando OK); SPECIFY y PLAN aprobados 2026-10-22
 **Rama:** `feat/spec-690-final-desde-la-idea` (desde `development`, `53a967d`)
 **Extiende:** Spec-530 (asistente), Spec-550 H1 (escribir el final es decidirlo), Spec-670 (molde: el criterio `final` es de la base).
 
@@ -145,3 +145,65 @@ make dev-status
 ## 8. OPEN QUESTIONS
 
 Ninguna: resueltas en D9 y D10.
+
+---
+
+## 9. PLAN (2026-10-22)
+
+Relevado en `feat/spec-690-final-desde-la-idea` (`53951d1`). Principio: **un solo lugar para el final** y, para las historias que ya tienen su final, prompts **iguales a hoy**.
+
+### 9.1 Decisiones nuevas que salieron de la revisión
+
+| # | Riesgo encontrado | Decisión recomendada |
+|---|---|---|
+| D11 | **Cómo se guarda el final sacado de la idea** sin que el resto lo trate distinto. | Criterio `final` con estado `intencional` (como hoy con `Direction.ending`: el Consultor no lo evalúa y las decisiones lo listan como «decidido por el autor») y la marca `·de_la_idea` en `asked` (como `·no_aplica_rechazado`, D12 de la 670). Con `cumple` no sirve: `decisions_block` toma el último `asked` como la pregunta y mostraría la marca. |
+| D12 | **La idea cambia después de sacar el final.** | Si el final tiene la marca y su texto **ya no está** en la idea, se vuelve a sacar en la próxima ronda (o al armar los actos). Si sigue estando, no se toca. Sin guardar nada más. |
+| D13 | **«Que la IA lo vuelva a preguntar» en el final** lo vaciaría y la ronda siguiente lo volvería a sacar de la idea: el botón no haría nada. | `reopen` del final suma la marca `·final_preguntar`: ya no se saca de la idea; el Consultor lo pregunta. |
+| D14 | **El bug de §1.1:** `initial_items` pisa el final con `Direction.ending` en cada ronda. | Solo lo copia si el criterio **no tiene respuesta** (historias viejas). Lo que la autora cambió en «Preguntas» manda. |
+| D15 | Quién manda entre el criterio y `Direction.ending`. | `context.author_ending(story)`: la respuesta del criterio `final` (`cumple` o `intencional`, con texto); si no hay, `Direction.ending`. Lo usan el Planificador (`ending_fixed`, la decisión `final` en el último acto), el Verificador, la Voz (`_function`), `story_block` y «lo del autor» (Spec-680). Con el mismo texto, los prompts no cambian. |
+| D16 | El tiempo estimado de «Que la IA me pregunte» sube ~7 s con gemma. | `estimated_seconds.consult` y `plan_outline` +10 en los perfiles con el consultor en gemma (la mediana de los jobs reales corrige sola después, Spec-510). |
+
+### 9.2 S1 — Un solo lugar para el final (D14, D15), sin UI
+
+| Lugar | Cambio | Precaución |
+|---|---|---|
+| `context.py` | `author_ending(story)` (D15) | Test con cada origen |
+| `planner.py` (`plan`, `_acts_block`), `verifier.py:87`, `outline_narrator._function`, `context.story_block`, `repetition_check.known_text`, `recursos_gastados.author_text` | leen `author_ending` en vez de `Direction.ending` / `ending_intentional` | Snapshots **idénticos** (las historias de los tests traen el final en `Direction.ending`) |
+| `workshop_rules.initial_items` | copia `Direction.ending` solo si el criterio no tiene respuesta (D14) | Test del bug: cambiar el final en «Preguntas» → el Planificador y la Voz reciben el nuevo |
+
+### 9.3 S2 — La IA saca el final de la idea (B, D1–D3, D11–D13)
+
+| Lugar | Cambio |
+|---|---|
+| `config/prompts_generation/authoring_final{,_system}.md` (nuevos) | El prompt medido (variante 2): `{cuenta_final, inicio}` |
+| `src/application/services/authoring/final_de_la_idea.py` (nuevo) | `FinalDeLaIdea.ensure(story) -> list[WorkshopItem] | None`: no hace nada si el final ya está decidido por la autora o tiene `·final_preguntar`; si tiene `·de_la_idea` y sigue en la idea, tampoco (D12). Si no: llama, busca `inicio` en la idea (espacios normalizados) y corta hasta el final; si no lo encuentra, nada (nunca inventa) |
+| `authoring_jobs.consult_runner`, `plan_outline_runner`; `GenerateStoryUseCase._plan` | Corren `ensure` antes del Consultor / Planificador y guardan el criterio |
+| `workshop_rules.reopen` | En `final`, suma `·final_preguntar` (D13) |
+| `mock_structured.py` | Respuesta para el esquema nuevo: la última oración de la idea |
+| `llm_core_definitions.yaml` | D16 |
+| `scripts/research/690/medir_final.py` | Pasa a usar el servicio (mismo prompt de `config/`): la medición repite §1.3 con el código real |
+
+**Tests:** corte (textual, espacios, no encontrado), D12, D13, que no corra con el final decidido, `consult` y `plan_outline` con el mock dejan el final resuelto y marcado, snapshot del prompt nuevo en `assistant_prompts`.
+
+### 9.4 S3 — La UI
+
+| Lugar | Cambio |
+|---|---|
+| `direccion.ejs`, `asistente.js` | Sin «¿Cómo termina?»; la ayuda de «¿De qué trata?» invita a contar el final (D9) |
+| `authoring_router._direction` | Conserva el `Direction.ending` guardado (el formulario ya no lo trae) |
+| `_state` | Cada ítem trae `de_la_idea` |
+| `_taller_contenido.ejs` | «Cómo termina» con el chip «De tu idea» y una pista («Lo sacamos de tu idea. Si no es así, tocá «Cambiar».») |
+| Tests | Vitest de las dos vistas; E2E: el flujo completo sin el campo (el final sale de la idea con el mock) y «Cambiar» el final; fixtures del asistente (`UPDATE_FIXTURES=1`, diff revisado) |
+
+### 9.5 S4 — Cierre
+
+Repetir la medición con el servicio real (gratis, gemma) y anotarla; CLAUDE.md (Spec-550 H1 ahora: el final sale de la idea o de «Preguntas»); PR a `development`.
+
+### 9.6 Slices
+
+1. **S1 — Un solo lugar para el final** (arregla el bug; sin cambios visibles).
+2. **S2 — La IA saca el final de la idea.**
+3. **S3 — La UI** (sale el campo, la marca en «Preguntas»).
+4. **S4 — Medición y cierre.**
+
+Cada slice cierra con tests en verde y dev con el cambio.
