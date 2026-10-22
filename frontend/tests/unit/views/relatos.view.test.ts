@@ -211,6 +211,42 @@ describe("relato_panel — control de repetición (Spec-530 §8.3)", () => {
     expect(copyParts(html).join(" ")).not.toContain("Comparaciones");
   });
 
+  // Spec-680: gestos gastados, palabras de otra forma de hablar y enumerar de a tres.
+  it("avisa el mate, las palabras de otra forma de hablar y las enumeraciones de a tres", async () => {
+    const base = { repeated: [], cliches: [], cut_sentences: [], cut_count: 0, cut_pct: 0, too_cut: false, dialogue: 0 };
+    const html = await ejs.renderFile(panelPath, {
+      story: { id: "s-1" },
+      relato: {
+        id: "r-1",
+        content: CONTENT,
+        repetition: {
+          acts: [
+            { number: 1, ...base, triads: ["a, b y c", "d, e y f"], triad_count: 2, too_listy: false },
+            {
+              number: 2,
+              ...base,
+              gestures: [{ gesto: "tomar mate, cebar mate, el termo", texto: "un mate" }],
+              foreign: ["abrís", "la plata"],
+              foreign_count: 3,
+              triads: ["alto, flaco y pálido"],
+              triad_count: 3,
+              too_listy: true,
+            },
+          ],
+        },
+      },
+      isActive: true,
+      regenerating: null,
+      panelError: null,
+    });
+    expect(html.match(/data-repeticion/g)).toHaveLength(1); // dos de a tres no avisan
+    expect(html).toContain("1 gesto gastado · 3 palabras de otra forma de hablar · enumera de a tres 3 veces");
+    expect(html).toContain("Un gesto que ya se vio en muchos relatos: «un mate»");
+    expect(html).toContain("Palabras que no van con cómo habla quien lo cuenta: «abrís», «la plata»");
+    expect(html).toContain("Enumera de a tres: 3 veces en este acto, por ejemplo «alto, flaco y pálido»");
+    expect(copyParts(html).join(" ")).not.toContain("gesto");
+  });
+
   it("sin control de repetición (Core caído) el panel se ve como antes", async () => {
     const html = await renderPanel();
     expect(html).not.toContain("data-repeticion");

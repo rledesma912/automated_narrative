@@ -18,6 +18,8 @@ export interface AuthoringOption {
 export interface AuthoringOptions {
   effects: AuthoringOption[];
   tellings: AuthoringOption[];
+  /** Spec-680 C1: cómo habla quien narra (la primera es la de siempre). */
+  hablas?: AuthoringOption[];
   criteria: Array<{ id: string; nombre: string; pregunta: string; por_que: string }>;
   /** Spec-650: los largos posibles («¿Qué tan largo?»). */
   structures?: Array<{ id: string; label: string; acts: number }>;

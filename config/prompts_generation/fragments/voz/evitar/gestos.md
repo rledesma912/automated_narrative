@@ -1,0 +1,1 @@
+- Usaste un gesto que ya se vio en muchos relatos ({gesto}: «{texto}»): buscá otro, propio de quien narra y de este lugar

@@ -8,4 +8,4 @@ Reglas:
 - Cada hecho ocurre una sola vez en todo el cuento. No adelantes a un acto lo que pasa en el siguiente.
 - Lo que un acto guarda para después se revela en un acto posterior.
 - Lo que se siembra en un acto se retoma en otro.
-- Hechos concretos, en tercera persona y en orden. Español rioplatense, frases simples.
+- Hechos concretos, en tercera persona y en orden. {habla}, frases simples.

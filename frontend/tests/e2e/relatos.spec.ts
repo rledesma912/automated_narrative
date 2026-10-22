@@ -77,9 +77,8 @@ test.describe("Vista de Relatos", () => {
   // Spec-630 B15: las acciones de arriba son las de la pestaña elegida.
   test("cambiar de versión cambia las acciones de arriba y «Copiar» copia esa versión", async ({
     page,
-    context,
   }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    // El portapapeles lo habilitan las preferencias de Firefox (playwright.config.ts).
     const tabs = page.locator("[data-relato-tab]");
     if ((await tabs.count()) < 2) test.skip();
     const [id1, id2] = await Promise.all([0, 1].map((i) => tabs.nth(i).getAttribute("data-relato-tab")));
@@ -128,9 +127,8 @@ test.describe("Vista de Relatos", () => {
 
   test("Copiar Relato copia rótulos y prosa, sin el texto de los botones", async ({
     page,
-    context,
   }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    // El portapapeles lo habilitan las preferencias de Firefox (playwright.config.ts).
     const acciones = page.locator("[data-acciones-version]:not(.hidden)");
     await acciones.getByRole("button", { name: "Copiar Relato" }).click();
     await expect(acciones.getByRole("button", { name: /Copiado/ })).toBeVisible();

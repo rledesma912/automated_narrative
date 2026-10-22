@@ -104,3 +104,12 @@ def test_comparaciones_por_acto():
     m = evaluate(text, "Irene", CAST)
     assert m["comparaciones"] == 1
     assert m["comparaciones_detalle"] == ["como si le pesara y seguimos"]
+
+
+def test_metricas_de_la_spec_680():
+    """Gestos gastados (una vez por aparición), otra habla según la historia y de a tres."""
+    text = "Me cebé un mate frío. Saben a qué hora abrís. Era alto, flaco y pálido."
+    m = evaluate(text, "José", [], "mexicano")
+    assert (m["gestos_gastados"], m["gestos_gastados_detalle"]) == (1, ["cebé un mate frío"])
+    assert (m["otra_habla"], m["de_a_tres"]) == (1, 1)
+    assert evaluate(text, "José", [])["otra_habla"] == 0  # la de siempre no marca

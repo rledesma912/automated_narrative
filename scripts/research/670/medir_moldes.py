@@ -19,7 +19,9 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-# Imágenes de manual del género que ya se vieron en los relatos (§1.2, S1).
+# Imágenes de manual del género que ya se vieron en los relatos (§1.2, S1). Se siguen
+# contando así para comparar con la medición de la 670; la Spec-680 suma `gastados`,
+# con la lista de config/recursos_gastados.yaml (un hecho por recurso).
 DE_MANUAL = [
     "huella",
     "ojos",
@@ -39,6 +41,7 @@ DE_MANUAL = [
 
 async def main(src: Path, out: Path, moldes: list[str]) -> None:
     os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{Path(tempfile.mkdtemp()) / 'm.db'}"
+    from src.application.services import recursos_gastados
     from src.application.services.authoring import molde as molde_mod
     from src.application.services.authoring.planner import OutlinePlanner
     from src.application.services.authoring.verifier import OutlineVerifier
@@ -72,6 +75,9 @@ async def main(src: Path, out: Path, moldes: list[str]) -> None:
         hechos = [h for a in checked.outline for h in a.events]
         texto = " ".join(hechos).lower()
         manual = {w: len(re.findall(w, texto)) for w in DE_MANUAL if w in texto}
+        gastados = {
+            r.id: n for r in recursos_gastados.hechos() if (n := sum(1 for h in hechos if r.en(h)))
+        }
         actos = [
             {
                 "numero": a.number,
@@ -100,9 +106,14 @@ async def main(src: Path, out: Path, moldes: list[str]) -> None:
                 "hechos": len(hechos),
                 "de_manual": manual,
                 "total_de_manual": sum(manual.values()),
+                "gastados": gastados,  # Spec-680
+                "total_gastados": sum(gastados.values()),
             }
         )
-        print(f"{spec}: {len(hechos)} hechos, de manual {sum(manual.values())} {manual}")
+        print(
+            f"{spec}: {len(hechos)} hechos, de manual {sum(manual.values())} {manual}, "
+            f"gastados {sum(gastados.values())} {gastados}"
+        )
     (out / "resumen.json").write_text(
         json.dumps(
             {"perfil": settings.active_profile_name, "historia": src.name, "moldes": resumen},

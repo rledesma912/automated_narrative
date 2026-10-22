@@ -47,11 +47,14 @@ verifier:
   sin_revelacion: "El secreto de este acto no se descubre en ningún acto posterior: elegí en cuál se descubre."
   siembra: "«{siembra}» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?"
   siembras: "{siembras} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?"
+  # Spec-680 A: un recurso de manual en los hechos del acto (que no trajo el autor).
+  gastado: "«{texto}»: {recurso} ya se vio en muchos cuentos. ¿Hay una señal más propia de este lugar o de estos personajes?"
 
 api:
   # Spec-670: una forma o un giro que no está en config/moldes/.
   forma_desconocida: "No conozco la clase de historia «{forma}»."
   giro_desconocido: "No conozco el giro «{giro}»."
+  habla_desconocida: "No conozco esa forma de hablar («{habla}»)."
   # Spec-650 D11: regenerar un acto de una versión escrita con el otro largo.
   version_de_otro_largo: "Esta versión se escribió cuando la historia tenía otro largo: para regenerar actos, escribí la historia de nuevo."
   # Respuestas 409/422 que la UI muestra tal cual (el asistente lee el `detail`).

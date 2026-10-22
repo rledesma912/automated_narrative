@@ -153,7 +153,7 @@ async def get_narrative_repetition(
     parts = re.split(r"^## Acto \d+\s*$", narrative.content, flags=re.M)
     acts = [p.strip() for p in parts[1:]] if len(parts) > 1 else [narrative.content]
     story = await SQLStoryRepository().get_by_id(narrative.story_template_id)
-    known = _authoring_text(story) if story else None
+    context = repetition_check.story_context(story) if story else {}
     return {
         "acts": [
             {
@@ -169,8 +169,15 @@ async def get_narrative_repetition(
                 "comparisons": r.comparisons,  # Spec-640
                 "comparison_count": r.comparison_count,
                 "too_literary": r.too_literary,
+                # Spec-680: gestos gastados, palabras de otra habla y enumeraciones de a tres.
+                "gestures": [{"gesto": g, "texto": t} for g, t in r.gestures],
+                "foreign": r.foreign,
+                "foreign_count": r.foreign_count,
+                "triads": r.triads,
+                "triad_count": r.triad_count,
+                "too_listy": r.too_listy,
             }
-            for r in repetition_check.check(acts, known=known)
+            for r in repetition_check.check(acts, **context)
         ]
     }
 
@@ -212,10 +219,6 @@ async def update_narrative_act(
         "paragraphs": len(narrative_acts.paragraphs(text)),
         "words": len(text.split()),
     }
-
-
-def _authoring_text(story) -> str:
-    return repetition_check.known_text(story)
 
 
 @router.get("/generated-narratives/{narrative_id}/export.md")

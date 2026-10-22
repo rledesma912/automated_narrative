@@ -1,5 +1,6 @@
 """Criterios del taller y opciones de la Dirección (Spec-530), desde `config/`."""
 
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -99,6 +100,40 @@ def tellings() -> tuple[Option, ...]:
         Option(t["id"], t["label"], t.get("ejemplo", ""), t.get("voz", ""))
         for t in _options()["como_lo_cuenta"]
     )
+
+
+@dataclass(frozen=True)
+class Habla:
+    """Spec-680 C1: cómo habla quien narra."""
+
+    id: str
+    label: str
+    ayuda: str  # para la UI
+    prompt: str  # «español rioplatense»: lo que dicen la Voz, la Memoria y el Planificador
+    voz: str  # una línea más para la Voz (vacía en la de siempre)
+    ajenas: tuple[str, ...]  # patrones de palabras que no van en esta habla
+
+
+@lru_cache
+def hablas() -> tuple[Habla, ...]:
+    """La primera es la de siempre. Los patrones de `ajenas` se validan al cargar."""
+    out = []
+    for h in _options()["hablas"]:
+        patterns = tuple(h.get("ajenas") or ())
+        for pattern in patterns:
+            re.compile(pattern)  # un patrón roto falla al arrancar, no en un relato
+        out.append(Habla(h["id"], h["label"], h["ayuda"], h["prompt"], h["voz"], patterns))
+    return tuple(out)
+
+
+def habla(habla_id: str) -> Habla | None:
+    return next((h for h in hablas() if h.id == habla_id), None)
+
+
+def habla_de(story) -> Habla:
+    """La de la historia; sin habla, o con una que ya no existe, la de siempre."""
+    chosen = story.direction.habla if story.direction else ""
+    return habla(chosen) or hablas()[0]
 
 
 def label_of(options: tuple[Option, ...], option_id: str) -> str:

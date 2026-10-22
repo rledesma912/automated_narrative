@@ -96,9 +96,10 @@ test("«Ver progreso» lleva a la sala del job en curso", async ({ page }) => {
   await running(page).locator("[data-banner-link]").click();
 
   await expect(page).toHaveURL(new RegExp(`/generar/stream/${STORY_ID}$`));
-  expect(
-    await page.evaluate(() => (window as unknown as { ACTIVE_JOB_ID: string }).ACTIVE_JOB_ID),
-  ).toBe(jobId);
+  // Con hx-boost la URL cambia antes de que corra el script de la sala (en Firefox se nota).
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { ACTIVE_JOB_ID?: string }).ACTIVE_JOB_ID))
+    .toBe(jobId);
   await expect(banner(page)).toBeHidden(); // en la sala no se muestra
   await expect(page.locator("#status-line")).toHaveText("Tu relato está listo", {
     timeout: 30_000,

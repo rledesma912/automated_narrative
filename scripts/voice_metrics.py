@@ -6,11 +6,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.application.services import recursos_gastados  # noqa: E402
+from src.application.services.authoring import catalog  # noqa: E402
 from src.application.services.repetition_check import (  # noqa: E402
     comparisons,
     cut_sentences,
     dialogue_lines,
+    foreign_words,
     narration_sentences,
+    triads,
 )
 from src.application.services.voice_cliches import load_cliches  # noqa: E402
 
@@ -141,8 +145,27 @@ def cut_by_act(acts: list[str]) -> list[dict]:
     return rows
 
 
-def evaluate(text: str, narrator: str, cast: list[dict]) -> dict:
-    """Todas las métricas de un relato consolidado."""
+def worn_gestures(text: str) -> list[str]:
+    """Spec-680: cada aparición de un gesto gastado (el mate, el termo…), una sola vez
+    aunque la marquen dos patrones («un mate frío»)."""
+    spans = sorted(
+        m.span() for g in recursos_gastados.gestos() for p in g.detecta for m in p.finditer(text)
+    )
+    merged: list[list[int]] = []
+    for start, end in spans:
+        if merged and start <= merged[-1][1] + 1:  # «cebé un mate» es una sola
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return [text[a:b] for a, b in merged]
+
+
+def evaluate(text: str, narrator: str, cast: list[dict], habla: str = "") -> dict:
+    """Todas las métricas de un relato consolidado. `habla`: el id de la historia
+    (Spec-680; "" = la de siempre, que no marca palabras de otra habla)."""
+    ajenas = (catalog.habla(habla) or catalog.hablas()[0]).ajenas
+    found_triads = triads(text)
+    words = len(text.split())
     kin = wrong_kinship(text, narrator, cast)
     found = cliches(text)
     acts = cut_by_act(split_acts(text))
@@ -161,5 +184,13 @@ def evaluate(text: str, narrator: str, cast: list[dict]) -> dict:
         "dialogo": sum(a["dialogo"] for a in acts),
         "comparaciones": sum(a["comparaciones"] for a in acts),  # Spec-640
         "comparaciones_detalle": comparisons(text),
+        # Spec-680: gestos gastados, palabras de otra habla y enumeraciones de a tres.
+        "gestos_gastados": len(worn_gestures(text)),
+        "gestos_gastados_detalle": worn_gestures(text),
+        "otra_habla": len(foreign_words(text, ajenas)),
+        "otra_habla_detalle": foreign_words(text, ajenas),
+        "de_a_tres": len(found_triads),
+        "de_a_tres_cada_1000": round(1000 * len(found_triads) / words, 1) if words else 0,
+        "de_a_tres_detalle": found_triads,
         "por_acto": acts,
     }
