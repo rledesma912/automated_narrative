@@ -13,6 +13,9 @@
     intencional: { label: 'A propósito', chip: 'chip-forge' },
     no_aplica:   { label: 'No va en tu historia', chip: 'chip-forge chip-forge--no-va' },  /* Spec-670 D8 */
   };
+  /* Spec-690: el final que la IA sacó de «¿De qué trata?». */
+  const DE_TU_IDEA = { label: 'De tu idea', chip: 'chip-forge chip-forge--info' };
+  const chipDe = (i) => (i.de_la_idea ? DE_TU_IDEA : SEMAFORO[i.status]);
   const abiertas = w.items.filter(i => (i.status === 'falta' || i.status === 'parcial') && i.question);
   const noVan = w.items.filter(i => i.status === 'no_aplica');
   const resueltas = w.items.filter(i => !abiertas.includes(i) && !noVan.includes(i));
@@ -45,7 +48,7 @@
           <div data-grupo>
             <% if (GRUPOS.length > 1) { %><p class="text-[10px] uppercase tracking-widest text-forge-muted mb-1"><%= g.titulo %></p><% } %>
             <ul class="flex flex-wrap gap-2">
-              <% g.items.forEach(i => { const s = SEMAFORO[i.status]; %>
+              <% g.items.forEach(i => { const s = chipDe(i); %>
                 <li class="<%= s.chip %> chip-forge--md" title="<%= s.label %>: <%= i.por_que %>"><%= i.nombre %></li>
               <% }) %>
             </ul>
@@ -67,7 +70,7 @@
     <% if (abiertas.length) { %>
       <h3 class="font-serif text-xl mb-4">Te falta contarme</h3>
       <div class="space-y-6 mb-12">
-        <% abiertas.forEach(p => { const s = SEMAFORO[p.status]; %>
+        <% abiertas.forEach(p => { const s = chipDe(p); %>
           <article class="bg-forge-surface border border-forge-border p-6" data-pregunta="<%= p.criterion %>">
             <div class="flex items-center justify-between gap-4 mb-3">
               <span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span>
@@ -127,18 +130,18 @@
     <% if (resueltas.length) { %>
       <h3 class="font-serif text-xl mb-4">Ya lo tenés</h3>
       <ul class="space-y-3 mb-12">
-        <% resueltas.forEach(p => { const s = SEMAFORO[p.status]; %>
+        <% resueltas.forEach(p => { const s = chipDe(p); %>
           <li class="bg-forge-surface border border-forge-border px-5 py-4" data-pregunta="<%= p.criterion %>">
             <div class="flex items-start gap-4">
               <div class="flex-1">
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
                 <p><%= p.status === 'no_aplica' ? `La IA no te lo pregunta: ${p.question}` : p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
-                <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.por_que %></p>
+                <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.de_la_idea ? 'Lo sacamos de tu idea. Si no es así, tocá «Cambiar» y dejalo como querés.' : p.por_que %></p>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
             </div>
             <div class="hidden mt-4 pl-6" data-cambio>
-              <textarea data-texto-mia rows="2" maxlength="600" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= p.answer %></textarea>
+              <textarea data-texto-mia rows="2" maxlength="2000" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= p.answer %></textarea>
               <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
               <div class="flex flex-wrap gap-3">
                 <button type="button" class="btn-forge-sm" data-taller="answer">Guardar</button>

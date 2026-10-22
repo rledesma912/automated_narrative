@@ -101,11 +101,18 @@ class GenerateStoryUseCase:
         on_step_start: Callable[[str], None] | None,
     ) -> None:
         """La historia no tiene escaleta: se arma y se revisa antes de narrar."""
+        from src.application.services.authoring import final_de_la_idea
         from src.application.services.authoring.planner import OutlinePlanner
         from src.application.services.authoring.verifier import OutlineVerifier
 
         if on_stage:
             on_stage(JobStage.PLANIFICADOR, None)
+        # Spec-690 D3: si la idea cuenta cómo termina, el último acto cierra así.
+        ending = await final_de_la_idea.FinalDeLaIdea(self.llm).ensure(story)
+        if ending is not None:
+            story.workshop = final_de_la_idea.apply(story, ending).workshop
+            if self.story_repo is not None:
+                await self.story_repo.save_workshop_items(story.id, [ending])
         if on_step_start:
             on_step_start("📐  Armando la escaleta...")
         acts, _ = await OutlinePlanner(self.llm, prompt_builder=self.prompt_builder).plan(story)

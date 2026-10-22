@@ -20,6 +20,10 @@ OPEN = (CriterionStatus.FALTA, CriterionStatus.PARCIAL)
 # Spec-670 D12: el autor reabrió un «No va en tu historia»: en ese criterio la IA ya no
 # puede volver a decir que no va (si no, reabrir sería un ida y vuelta sin fin).
 NO_APLICA_RECHAZADO = "·no_aplica_rechazado"
+# Spec-690: el final que se sacó de la idea (D11) y el que la autora pidió que se lo
+# pregunten (D13: ya no se saca de la idea ni del «¿Cómo termina?» viejo).
+DE_LA_IDEA = "·de_la_idea"
+FINAL_PREGUNTAR = "·final_preguntar"
 MAL_ELEGIDA = 2  # D8: desde cuántos criterios de la forma que no van se avisa
 
 
@@ -52,7 +56,15 @@ def initial_items(
     items = []
     for c in criteria if criteria is not None else catalog.direction_criteria():
         item = by_id.get(c.id) or WorkshopItem(criterion=c.id, round=1)
-        if c.id == "final" and direction and direction.ending_intentional and direction.ending:
+        # Spec-690 D14: el final viejo de «Tu idea» entra solo si «Preguntas» no tiene uno
+        # (antes lo pisaba en cada ronda, aunque la autora lo hubiera cambiado ahí).
+        if (
+            c.id == "final"
+            and direction
+            and direction.ending
+            and not item.answer.strip()
+            and FINAL_PREGUNTAR not in item.asked
+        ):
             item = item.model_copy(
                 update={
                     "status": CriterionStatus.INTENCIONAL,
@@ -72,6 +84,11 @@ def to_evaluate(items: list[WorkshopItem]) -> list[WorkshopItem]:
     return [w for w in items if w.status not in done and not w.answer]
 
 
+def questions(item: WorkshopItem) -> list[str]:
+    """Las preguntas que ya se hicieron, sin las marcas (`·…`) que viajan en `asked`."""
+    return [a for a in item.asked if not a.startswith("·")]
+
+
 def no_aplica_rejected(item: WorkshopItem) -> bool:
     """D12: el autor pidió que se lo pregunten igual."""
     return NO_APLICA_RECHAZADO in item.asked
@@ -80,9 +97,11 @@ def no_aplica_rejected(item: WorkshopItem) -> bool:
 def reopen(item: WorkshopItem) -> WorkshopItem:
     """Vuelve a evaluarse en la próxima ronda. Si era «No va en tu historia», queda la
     marca para que la IA no lo vuelva a descartar (D12)."""
-    asked = list(item.asked)
+    asked = [a for a in item.asked if a != DE_LA_IDEA]
     if item.status == CriterionStatus.NO_APLICA and NO_APLICA_RECHAZADO not in asked:
         asked.append(NO_APLICA_RECHAZADO)
+    if item.criterion == "final" and FINAL_PREGUNTAR not in asked:
+        asked.append(FINAL_PREGUNTAR)  # Spec-690 D13: ya no se saca de la idea
     question = "" if item.status == CriterionStatus.NO_APLICA else item.question
     return item.model_copy(
         update={"status": CriterionStatus.FALTA, "answer": "", "question": question, "asked": asked}
@@ -244,9 +263,12 @@ def mark_intentional(item: WorkshopItem, text: str = "") -> WorkshopItem:
 
 
 def _with_question(item: WorkshopItem) -> list[str]:
-    if item.question and item.question not in item.asked:
-        return [*item.asked, item.question]
-    return list(item.asked)
+    """`asked` con la pregunta actual. Spec-690: si la autora lo toca, deja de ser «sacado
+    de la idea» (es suyo y no se vuelve a sacar)."""
+    asked = [a for a in item.asked if a != DE_LA_IDEA]
+    if item.question and item.question not in asked:
+        return [*asked, item.question]
+    return asked
 
 
 def clean_options(options) -> list[str]:

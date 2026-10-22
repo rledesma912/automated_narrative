@@ -85,7 +85,7 @@ class OutlinePlanner:
             a.model_copy(update={"synopsis": synopsis[a.number]}) if a.number in synopsis else a
             for a in acts
         ]
-        if story.direction and story.direction.ending_intentional and "final" in valid:
+        if context.author_ending(story) and "final" in valid:
             # El final decidido por el autor es, por definición, el del último acto.
             last = acts[-1]
             if "final" not in last.decisions:
@@ -135,7 +135,7 @@ class OutlinePlanner:
         )
 
     def _acts_block(self, story: Story) -> str:
-        ending_fixed = bool(story.direction and story.direction.ending_intentional)
+        ending_fixed = bool(context.author_ending(story))  # Spec-690 D15
         m = molde.for_story(story)
         # Spec-670 D15: cada forma dice qué se revela (en la de siempre, la historia secreta).
         decided = {cid for cid, _, _ in context.decisions(story)}

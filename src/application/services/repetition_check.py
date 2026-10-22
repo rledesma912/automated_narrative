@@ -339,8 +339,11 @@ def known_text(story) -> str:
     parts += [e.name + " " + e.description + " " + e.manifestations for e in story.entities]
     for act in story.outline:
         parts += [act.goal, act.scenario, *act.events, *act.on_stage]
+    from src.application.services.authoring.context import author_ending  # importa este
+
     if story.direction:
-        parts += [story.direction.premise, story.direction.ending]
+        parts.append(story.direction.premise)
+    parts.append(author_ending(story))  # Spec-690
     parts += [w.answer for w in story.workshop]
     return " ".join(p for p in parts if p)
 

@@ -84,7 +84,7 @@ class OutlineVerifier:
         # La ubicación que da la revisión (leyendo los hechos) manda sobre las etiquetas
         # del Planificador; lo que la revisión no menciona conserva su etiqueta.
         located = {u.decision: u.acto for u in result.decisiones if u.decision in decided}
-        if story.direction and story.direction.ending_intentional and "final" in decided:
+        if context.author_ending(story) and "final" in decided:
             located["final"] = max(numbers)  # el final del autor es el del último acto, siempre
         acts = []
         for act in outline:

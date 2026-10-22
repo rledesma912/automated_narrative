@@ -13,6 +13,7 @@ from pathlib import Path
 
 import yaml
 
+from src.application.services.authoring import context
 from src.application.services.repetition_check import known_text
 
 _FILE = Path(__file__).resolve().parents[3] / "config" / "recursos_gastados.yaml"
@@ -65,7 +66,8 @@ def author_text(story) -> str:
     parts += [r.content for r in story.typed_rules]
     if story.direction:
         d = story.direction
-        parts += [d.premise, d.ending, d.form_other]
+        parts += [d.premise, d.form_other]
+    parts.append(context.author_ending(story))  # Spec-690
     parts += [w.answer for w in story.workshop]
     return " ".join(p for p in parts if p)
 

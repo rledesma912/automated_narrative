@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 from src.application.services.authoring.consultant import WorkshopConsultant
+from src.application.services.authoring.final_de_la_idea import FinalDeLaIdea
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
 from src.domain.models import (
@@ -116,6 +117,10 @@ def _prompts() -> dict[str, str]:
         "consultor": WorkshopConsultant(llm=None)._prompt(story, pending),
         "planificador": OutlinePlanner(llm=None)._prompt(story),
         "verificador": OutlineVerifier(llm=None)._prompt(story, story.outline),
+        # Spec-690: sacar el final de la idea (system + prompt).
+        "final_de_la_idea": FinalDeLaIdea(llm=None).templates.load("authoring_final_system.md")
+        + "\n\n"
+        + FinalDeLaIdea(llm=None).prompt(story),
     }
 
 
@@ -131,6 +136,8 @@ def test_el_snapshot_cubre_todas_las_secciones():
     text = "\n".join(_prompts().values())
     for section in (
         "Estamos ayudando",
+        "solo la PRIMERA oración del final",  # Spec-690
+        "LA IDEA:\nJosé ve por el espejo",
         "Tipo de horror: sobrenatural / fantasmas",
         "Cómo termina: Descansa en paz. (DECIDIDO POR EL AUTOR",
         "Personajes: José (Chofer); Marta (pasajera de todas las noches)",
