@@ -7,8 +7,8 @@ from typing import ClassVar
 
 from pydantic import BaseModel, model_validator
 
-from src.application.services.authoring import catalog, context, molde
 from src.application.services import recursos_gastados
+from src.application.services.authoring import catalog, context, molde
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
