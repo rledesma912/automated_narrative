@@ -31,7 +31,7 @@ def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
             "hechos": "Pasó lo del acto.",
             "estado": "Sigue en la ruta.",
             "cuerpo": "Un raspón en la mano izquierda.",
-            "asi_es": ["toma mate amargo"],
+            "asi_es": ["silba cuando está nervioso"],
             "motivos_usados": ["un motivo de ejemplo"],
         }
     if role == "guion":

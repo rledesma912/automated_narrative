@@ -307,3 +307,10 @@ Base rioplatense («No te detengas en el bosque», corto, `650/corto/`): **2 mat
 - Voseo detectado por la tilde final de segunda persona con excepciones («nomás», «quizás», «después», «estás»…), probado con lo que se coló en S0.
 - UI: «¿Cómo habla quien lo cuenta?» en «Tu idea», la de siempre elegida en las historias viejas. Vitest (`hablas.view.test.ts`) y E2E (elegir «De México», recargar).
 - Tests: 994 pytest, 416 Vitest, 79 E2E (78 + el nuevo), lint en verde. Los E2E pasan a **Firefox** (pedido del usuario: no Chrome); en Ubuntu 26.04 se instala con `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 npx playwright install firefox` (Playwright todavía no soporta esa versión). «Copiar» se prueba con las preferencias de portapapeles de Firefox en vez del permiso `clipboard-read` (solo existe en Chrome). Suite completa en Firefox: 79 en verde.
+
+### S2 — Lo que la Voz evita (2026-10-22)
+
+- `config/recursos_gastados.yaml` (`hechos`: 7 de manual; `gestos`: el mate, con cebar, el termo y la yerba) y `recursos_gastados.py` (carga con validación, `author_text` sin los actos y `gestos_a_evitar` con ellos, D19). «que me mate», «lo mate» y «un color mate» no cuentan (D18, test).
+- Voz: los gestos chicos salen de quién es, su trabajo y el lugar, «no de las costumbres típicas de un país» (ejemplos: acomodar algo, mirar la hora); línea «Gestos que ya se vieron en muchos relatos (no los uses; buscá otros)», que no va si el mate está en lo del autor o en los actos; guía de oficio: no enumerar siempre de a tres (B); rasgos: «no lo contradigas; no hace falta que aparezca en cada acto».
+- Sin mate en `config/` ni `src/` fuera de la lista (criterio del giro, mock, datos de los snapshots).
+- Snapshots regenerados: el diff son exactamente esas cuatro líneas y el rasgo del mock. 1 013 pytest, 416 Vitest, lint en verde.

@@ -78,7 +78,10 @@ def test_prompt_de_la_voz_con_escaleta(story):
     )
     assert "Estado:" not in user
     # Spec-590 C: los rasgos que inventó la Voz vuelven para sostenerlos.
-    assert "ASÍ ES JOSÉ (mantenelo; podés sumar):\n- toma mate amargo\n- odia llegar tarde" in user
+    assert (
+        "ASÍ ES JOSÉ (no lo contradigas; no hace falta que aparezca en cada acto; podés sumar):\n- toma mate amargo\n- odia llegar tarde"
+        in user
+    )
     # Spec-590: la premisa, sin adelantar lo que no está en los eventos.
     assert (
         "LA HISTORIA, PARA QUE CONOZCAS A JOSÉ Y SU MUNDO (no cuentes nada de acá que no esté "

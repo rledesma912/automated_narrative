@@ -86,7 +86,7 @@ class TestNarrativeJournal:
         """Spec-590: una memoria con solo el cuerpo o los rasgos no está vacía."""
         assert NarrativeJournal().is_empty()
         assert not NarrativeJournal(body_state="Un corte en la mano").is_empty()
-        assert not NarrativeJournal(narrator_traits=["toma mate"]).is_empty()
+        assert not NarrativeJournal(narrator_traits=["silba al manejar"]).is_empty()
 
 
 class TestMacroBeatBehavior:

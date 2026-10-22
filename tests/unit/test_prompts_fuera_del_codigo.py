@@ -197,6 +197,9 @@ ARCHIVOS_PERMITIDOS = {
     "src/application/services/authoring/molde.py": (
         "validación de config/moldes/ (Spec-670): errores para quien edita el YAML, al arrancar"
     ),
+    "src/application/services/recursos_gastados.py": (
+        "validación de config/recursos_gastados.yaml (Spec-680): errores para quien edita el YAML"
+    ),
 }
 
 

@@ -1,0 +1,64 @@
+# Spec-680: lo que ya se vio en muchos relatos y la IA pone por reflejo.
+#
+# `hechos` (A): señales de manual que el Planificador evita y el Verificador avisa
+#   cuando aparecen en los hechos de un acto.
+# `gestos` (C2): costumbres que la Voz inventa para quien narra; las evita y el control
+#   de repetición avisa cuando aparecen en la prosa.
+#
+# Cada recurso: `id` (estable: es la clave del aviso, `gastado:<id>`), `nombre` (lo que
+# lee la IA y la persona), `detecta` (patrones regex, sin distinguir mayúsculas: no
+# raíces, porque «mate» y «matar» comparten raíz, D18) y `por_que` (para quien desarrolla).
+# Lo que trae el autor manda (D19): si un patrón aparece en lo que escribió, ese recurso
+# no se evita ni se marca en su historia.
+
+hechos:
+  - id: huellas
+    nombre: huellas enormes o raras en el barro o la tierra
+    detecta: ['\bhuellas?\b']
+    por_que: "La primera prueba de que «algo» pasó por ahí en medio relato de criaturas."
+  - id: perros
+    nombre: perros que ladran o aúllan sin parar, o que se callan de golpe
+    detecta:
+      - '\bperros?\b[^.]{0,40}\b(?:ladr|aull|call)\w*'
+      - '\b(?:ladr|aull)\w*[^.]{0,20}\bperros?\b'
+    por_que: "El aviso de los animales antes de que llegue la amenaza."
+  - id: sombra
+    nombre: una sombra o figura enorme u oscura que desaparece al acercarse
+    detecta:
+      - '\b(?:sombra|figura|silueta)s?\b[^.]{0,30}\b(?:enorme|oscura|negra|alta|desaparec\w*)'
+    por_que: "La forma vaga en la oscuridad que nunca se deja ver."
+  - id: ojos
+    nombre: ojos que brillan en la oscuridad
+    detecta:
+      - '\bojos?\b[^.]{0,30}\bbrill\w*'
+      - '\bbrill\w*[^.]{0,20}\bojos?\b'
+    por_que: "El brillo de unos ojos entre los árboles o debajo de la cama."
+  - id: golpes
+    nombre: golpes en la puerta en medio de la noche
+    detecta:
+      - '\b(?:golpe|golpea|golpean|golpeó|golpearon|golpecito)\w*\b[^.]{0,30}\b(?:puerta|ventana)\b'
+    por_que: "Alguien (o algo) llama de noche y no hay nadie."
+  - id: luz
+    nombre: la luz que parpadea
+    detecta:
+      - '\b(?:luz|luces|foco|focos|lámpara|lamparita)\b[^.]{0,30}\bparpade\w*'
+      - '\bparpade\w*[^.]{0,20}\b(?:luz|luces|foco|lámpara|lamparita)\b'
+    por_que: "La luz que tiembla cuando la amenaza está cerca."
+  - id: silencio_animales
+    nombre: los pájaros, los grillos o los animales que se callan de golpe
+    detecta:
+      - '\b(?:pájaros|grillos|animales|ranas|chicharras)\b[^.]{0,30}\bcall(?:aron|aban|ó|an)\b'
+      - '\bsilencio\b[^.]{0,30}\b(?:pájaros|grillos|animales|ranas|chicharras)\b'
+    por_que: "El silencio repentino del monte antes del susto."
+
+gestos:
+  - id: mate
+    nombre: tomar mate, cebar mate, el termo
+    detecta:
+      - '\b(?:un|el|otro|unos|los|del|al|mi|su|mis|sus)\s+mates?\b'
+      - '\btom\w*\s+(?:un\s+)?mates?\b'
+      - '\bmates?\s+(?:amargo|dulce|cocido|frío|caliente|lavado)s?\b'
+      - '\bceb(?:ar|é|ó|aba|aban|ando|ado)\b'
+      - '\btermos?\b'
+      - '\byerba\b'
+    por_que: "La IA se lo pone a cualquier narrador rioplatense (o no) como el gesto cotidiano por excelencia (§1.3)."

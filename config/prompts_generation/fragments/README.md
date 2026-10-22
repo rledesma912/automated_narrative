@@ -27,7 +27,9 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 | `{presentacion}` | `voz/presentacion` (con nombre de quien narra) o `voz/presentacion_sin_nombre` |
 | `{como_lo_cuenta}` | `config/authoring_options.yaml` (`telling.voice`) |
 | `{parentescos}` | `voz/parentescos` + una `voz/parentesco` por personaje (`voz/parentesco_sin_rol` si no tiene rol); vacío si no hay a quién nombrar |
-| `{guia_oficio}` | `../voice_craft.md` (con `voice_cliches.txt`; `voz/narrador_generico` si no hay nombre) |
+| `{guia_oficio}` | `../voice_craft.md` (con `voice_cliches.txt`; `voz/narrador_generico` si no hay nombre; `{habla}` y `{habla_voz}` del habla de la historia, Spec-680) |
+| `{habla}` | `prompt` del habla de la historia (`config/authoring_options.yaml`, `hablas`; Spec-680 C1) |
+| `{gestos_gastados}` | `voz/gestos_gastados` con los `gestos` de `config/recursos_gastados.yaml` que no trae el autor (Spec-680 C2); vacío si no queda ninguno |
 
 **User** — `outline_voice.md`, en este orden:
 
