@@ -275,3 +275,26 @@ Perfil de medición: el de prod, **`hibrido-sonnet55`** (D23). Rioplatense: en v
 
 - **T5.1** Yadira con `habla: mexicano` ×2 y `no_te_detengas_corto.yaml` ×2 (`--profile hibrido-sonnet55`), `medir_moldes.py` ×1 con el perfil activo (`hibrido-sonnet55`) (aviso de costo y OK en cada una). **Hecho cuando:** resultados en §7 contra los criterios 1, 3 y 5 de §4 y la base de S0 / §1.
 - **T5.2** CLAUDE.md (hablas en `authoring_options.yaml`, `recursos_gastados.yaml`, avisos nuevos del control, `Direction.habla`), memoria, PR a `development`.
+
+---
+
+## 7. Resultados
+
+### S0 — «Antes» (2026-10-22, `hibrido-sonnet55`, US$ 0,10 reales)
+
+«El trabajo de Yadira» (largo, su escaleta, código de hoy), 1 corrida, 2 162 palabras. Relato en `data/dev/research_680/antes/` (fuera de git, D24).
+
+| Qué | Resultado |
+|---|---|
+| Mate, termo | **0**: con la escaleta y la idea ancladas en México, la Voz no lo inventó. |
+| Léxico mexicano | Lo toma bien de la escaleta: tienda de abarrotes, veladoras, refrescos, papitas, limpias, doña Aurelia. |
+| Rioplatense que se cuela | **Voseo** en la narración («todos saben a qué hora **abrís** la cortina y qué **comprás**»), «la **plata**», «la **vereda**», «una risa **media** nerviosa». Pocos, pero suenan raros para una narradora mexicana: el «español rioplatense» del prompt sigue mandando en el trato y en las palabras de todos los días. |
+| Tríadas | 10 (4,6 cada 1 000 palabras), en línea con §1.2. |
+| Otras métricas | 0 clichés, 0 diálogo, 3 % de oraciones cortadas, 1 comparación. |
+
+Base rioplatense («No te detengas en el bosque», corto, `650/corto/`): **2 mates en cada relato**.
+
+**Qué cambia para el plan:**
+- En S0 el mate no apareció: el problema del mate se ve sobre todo en las historias rioplatenses (C2 y C3 siguen igual). En la historia mexicana lo que aparece es **el habla** (C1).
+- Para la detección (C3, D22): el voseo se reconoce por los verbos con tilde final de segunda persona (`abrís`, `comprás`, `tenés`), no solo por «vos». El detector usa una lista de excepciones (`más`, `después`, `atrás`, `detrás`, `demás`, `jamás`, `además`, `país`, `través`…). «Nomás» **no** va en `ajenas` del mexicano: también se dice allá.
+- Los patrones de tríadas de borrador cruzan cláusulas («lo cambié por otro, le pedí disculpas y pensé que…»): D21 los acota a ítems sin verbo conjugado (se reusa `has_finite_verb`) o separa las tríadas de acciones.
