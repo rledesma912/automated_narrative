@@ -30,6 +30,8 @@ cd frontend && npm test               # Vitest (unit + integración del proxy)
 cd frontend && npx playwright test    # E2E: levanta su propio Core (:8021, DB descartable
                                       # sembrada desde data/dev, LLM mock) + UI (:3021).
                                       # Con BASE_URL=... usa un frontend existente.
+                                      # Corre en Firefox (no Chrome). En Ubuntu 26.04:
+                                      # PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 npx playwright install firefox
 uv run python -m src generate --input <yaml>  # CLI completa
 make deploy-check  # valida el pase a prod sin tocar nada
 make deploy        # pase a prod (Spec-520): solo desde main limpio y al día, sin jobs en curso;
