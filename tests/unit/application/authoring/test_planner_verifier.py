@@ -430,3 +430,57 @@ def test_muchos_hechos_ignorado_no_vuelve(story):
     outline = [ActOutline(number=3, events=["a", "b", "c", "d"], bridge="Después.")]
     corto = story.model_copy(update={"structure": "corto"})
     assert not rule_warnings(corto, outline, {3: {"muchos_hechos"}}).get(3)
+
+
+# ── Spec-680 A: recursos gastados ───────────────────────────────────────────
+
+
+def _con_idea(story, premisa):
+    return story.model_copy(
+        update={"direction": story.direction.model_copy(update={"premise": premisa})}
+    )
+
+
+def test_el_planificador_evita_los_recursos_gastados_salvo_los_del_autor(story):
+    prompt = OutlinePlanner(llm=None)._prompt(story)
+    assert "RECURSOS GASTADOS" in prompt and "- huellas enormes" in prompt
+    con_huellas = _con_idea(story, "José encuentra huellas en el barro del micro.")
+    prompt = OutlinePlanner(llm=None)._prompt(con_huellas)
+    assert "- huellas enormes" not in prompt
+    assert "- ojos que brillan" in prompt
+
+
+async def test_el_verificador_avisa_un_recurso_gastado_despues_de_la_ia(story):
+    outline = [
+        ActOutline(number=1, events=["José ve huellas enormes junto al micro."], change_to="b"),
+        ActOutline(number=2, events=["Nada raro."], bridge="Sigue", change_to="c"),
+    ]
+    llm = ScriptedLLM({"decisiones": [], "avisos": [{"acto": 1, "aviso": "del LLM"}]})
+    v = await OutlineVerifier(llm).verify(story, outline)
+    keys = [w.key for w in v.outline[0].warnings]
+    assert keys[-1] == "gastado:huellas" and keys.index("gastado:huellas") > keys.index(
+        next(k for k in keys if k.startswith("ia:"))
+    )
+    text = v.outline[0].warnings[-1].text
+    assert text.startswith("«huellas»: huellas enormes o raras en el barro o la tierra ya se vio")
+    assert not [w for w in v.outline[1].warnings if w.key.startswith("gastado:")]
+
+
+async def test_un_recurso_gastado_del_autor_o_ignorado_no_avisa(story):
+    outline = [ActOutline(number=1, events=["José ve huellas enormes."], change_to="b")]
+    del_autor = _con_idea(story, "Unas huellas lo siguen desde la terminal.")
+    llm = ScriptedLLM({"decisiones": [], "avisos": []})
+    v = await OutlineVerifier(llm).verify(del_autor, outline)
+    assert "gastado:huellas" not in [w.key for w in v.outline[0].warnings]
+    ignorado = [
+        outline[0].model_copy(
+            update={
+                "warnings": [
+                    OutlineWarning(text="x", key="gastado:huellas", source="regla", dismissed=True)
+                ]
+            }
+        )
+    ]
+    llm = ScriptedLLM({"decisiones": [], "avisos": []})
+    v = await OutlineVerifier(llm).verify(story, ignorado)
+    assert [w.key for w in v.outline[0].warnings if not w.dismissed].count("gastado:huellas") == 0

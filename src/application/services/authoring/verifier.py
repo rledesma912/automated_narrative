@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
+from src.application.services import recursos_gastados
 from src.application.services.authoring import catalog, context, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
@@ -75,6 +76,9 @@ class OutlineVerifier:
                 continue
             per_act[w.acto] = per_act.get(w.acto, 0) + 1
             warnings.setdefault(w.acto, []).append(warning)
+        # Spec-680 A (D20): los recursos gastados, después de lo que rompe la historia.
+        for number, worn in worn_warnings(story, outline, dismissed).items():
+            warnings.setdefault(number, []).extend(worn)
 
         decided = [cid for cid, _, _ in context.decisions(story)]
         # La ubicación que da la revisión (leyendo los hechos) manda sobre las etiquetas
@@ -225,6 +229,29 @@ def rule_warnings(
         elif loose:
             names = ", ".join(f"«{s}»" for s in loose)
             add(act.number, key, message("verifier.siembras", siembras=names))
+    return out
+
+
+def worn_warnings(
+    story: Story, outline: list[ActOutline], dismissed: dict[int, set[str]] | None = None
+) -> dict[int, list[OutlineWarning]]:
+    """Spec-680 A: un aviso por recurso de manual en los hechos de un acto, salvo que lo
+    traiga el autor (D19: lo suyo, sin los actos). Clave estable `gastado:<id>`."""
+    dismissed = dismissed or {}
+    worn = recursos_gastados.sin_los_del_autor(
+        recursos_gastados.hechos(), recursos_gastados.author_text(story)
+    )
+    out: dict[int, list[OutlineWarning]] = {}
+    for act in outline:
+        events = " ".join(act.events)
+        for r in worn:
+            key = f"gastado:{r.id}"
+            if key in dismissed.get(act.number, set()) or not (hit := r.en(events)):
+                continue
+            text = message("verifier.gastado", recurso=r.nombre, texto=hit)
+            out.setdefault(act.number, []).append(
+                OutlineWarning(text=text, key=key, source="regla")
+            )
     return out
 
 
