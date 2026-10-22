@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Tipo:** SDD — UI del asistente + Consultor (una llamada más) + de dónde leen el final el Planificador, el Verificador y la Voz
-**Estado:** TASKS (esperando OK); SPECIFY y PLAN aprobados 2026-10-22
+**Estado:** IMPLEMENT terminado (2026-10-22); PR a `development`
 **Rama:** `feat/spec-690-final-desde-la-idea` (desde `development`, `53a967d`)
 **Extiende:** Spec-530 (asistente), Spec-550 H1 (escribir el final es decidirlo), Spec-670 (molde: el criterio `final` es de la base).
 
@@ -272,3 +272,11 @@ Tests: `make test`, `cd frontend && npm test`, `npx playwright test` (Firefox), 
 - E2E (Firefox): el flujo completo cuenta el final en la idea y lo encuentra en «Preguntas»; uno nuevo cambia el final y lo ve decidido. Las capturas arman la historia con el final en la idea.
 - Dev: «Tu idea» de «Los forasteros» sin el campo y con la ayuda nueva.
 - 1 062 pytest, 421 Vitest, 80 E2E, lint en verde.
+
+### S4 — Medición con el servicio real y cierre (2026-10-22, gemma, gratis)
+
+`scripts/research/690/medir_final.py`, las 9 historias de la copia de prod, 2 corridas (`data/dev/research_final/servicio_2.json`, fuera de git):
+
+- **¿La idea cuenta el final?** 9 de 9 en las dos corridas (criterio 3: cumplido).
+- **Dónde empieza:** igual que §1.3 en 6 de 7 (estable entre corridas). «la cosa agachada» sigue arrancando antes, y cambia de corrida a corrida («cuando llega a las carpas…», «el muchacho… mira la tierra blanda…»): se arregla con «Cambiar» (D10).
+- CLAUDE.md: el rol «Final» en la tabla, Spec-550 H1 → «contarlo es decidirlo» con `author_ending`, las marcas, la llamada de más al generar sin escaleta.
