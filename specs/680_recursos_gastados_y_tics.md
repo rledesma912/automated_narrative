@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — calidad (Planificador, Verificador, Voz, control de repetición)
-**Estado:** SPECIFY (esperando OK)
+**Estado:** PLAN (esperando OK); SPECIFY aprobado 2026-10-22
 **Rama:** `feat/spec-680-recursos-gastados` (desde `development`, `1e52f06`; la SPECIFY de A y B salió de `404085f` y ya está en `development`)
 **Extiende:** Spec-470 (clichés de la Voz), Spec-530 §8.3 (control de repetición), Spec-590 (rasgos del narrador en la memoria), Spec-640 (anécdota, comparaciones), Spec-670 (moldes; su medición en §7).
 **Suma (2026-10-22):** la parte C, «el mate en todas las historias» (iba a ser la Spec-690; se resuelve acá porque es el mismo síntoma: lo de manual en vez de lo propio de la historia).
@@ -150,3 +150,81 @@ Cuánto aparece: en prod, 1 de 6 relatos con mate (*El empleado del maletín*) y
 ## OPEN QUESTIONS
 
 - ¿La lista de recursos gastados la amplía el usuario (como la de clichés) o solo el desarrollo? Propuesta: un YAML editable por quien desarrolla; más adelante, si hace falta, desde la pantalla.
+
+---
+
+## 5. PLAN (2026-10-22)
+
+Relevado en `feat/spec-680-recursos-gastados` (`2f88bfa`). Principio, como en la 650 y la 670: **una sola fuente en `config/`** y la historia de siempre (rioplatense, sin nada nuevo elegido) con prompts **iguales a hoy** salvo las líneas que esta spec cambia a propósito.
+
+### 5.1 Decisiones nuevas que salieron de la revisión
+
+| # | Riesgo encontrado | Decisión recomendada |
+|---|---|---|
+| D17 | Un archivo y un validador nuevos solo para cuatro opciones de habla. | Las hablas van en `config/authoring_options.yaml` como sección `hablas:`, igual que `como_lo_cuenta` (`catalog.hablas()`, `Option` con `voice`; `ajenas` aparte). Mismo camino a la UI: `/authoring/options`. Reemplaza el `config/hablas.yaml` de C1. |
+| D18 | **«mate» se confunde con «matar».** El control de clichés compara raíces de 3 letras (`_same_root`): «mate» y «matar» serían lo mismo, y «que me mate» marcaría un gesto gastado. | Lo gastado (recursos, gestos y palabras de otra habla) se detecta con **patrones** (regex) escritos en el YAML: `\b(un|el|otro|unos|los) mates?\b`, `\btermo\b`, `\bceb(ar|é|ó|aba)\b`, `\bhuellas?\b`. Test con «que me mate» y «el mate». |
+| D19 | **¿Qué es «lo del autor»?** `known_text()` incluye la escaleta, pero en A la escaleta la escribió el Planificador: si se usa, las huellas que él inventó se perdonarían solas. | Dos textos: `author_text(story)` = idea, final, respuestas del taller, personajes, lugares, reglas y amenaza (**sin** la escaleta): es lo que exime en A. En la prosa (C3) exime `known_text()` (con la escaleta, que el autor confirmó): si un hecho dice «toma mate», la Voz puede contarlo. |
+| D20 | Los avisos de recursos gastados compiten con los demás en el tope de 3 visibles por acto. | Van con `source="regla"` y clave estable `gastado:<id>` (se ignoran como cualquier aviso, H10), **después** de los de estructura (`sin_hechos`, `sin_puente`, `elenco`…): primero lo que rompe, después lo de estilo. |
+| D21 | Falsos positivos de las tríadas (§1.2: «entre El Cruce y La Esperanza»). | Patrón «A, B y C» con ítems de hasta 4 palabras, **sin** ítems que empiecen con mayúscula a mitad de oración (nombres propios); aviso desde la tercera del acto (D4). Casos de prueba en un fixture compartido con `voice_metrics.py`. |
+| D22 | Qué escribe cada habla nueva. | `voz` por habla: **mexicano** = tú y ustedes, léxico de México; **neutro** = tú y ustedes, sin regionalismos marcados; **España** = tú y vosotros, léxico peninsular. `ajenas`: voseo y rioplatenses («vos», «sos», «mirá», «che», «pibe», «laburo»…) en las tres; en España, además, americanismos claros («celular», «manejar», «carro»…). **El contenido (los textos y las listas) te lo paso para leer antes de seguir**, como el catálogo de la 670. |
+| D23 | Medición sin gastar de más, **con todos los roles en Claude** (`--profile anthropic-sonnet55` / `LLM_PROFILE=anthropic-sonnet55`; decisión del usuario 2026-10-22: es el LLM que va a usar prod). | **Antes:** 1 corrida de «El trabajo de Yadira» con el código de hoy (muestra lo que vio tu hija); la base de B y del mate en «El monte prohibido» ya está medida (§1.2 y §1.3). **Después:** Yadira (largo, su escaleta, habla mexicana) ×2, «El monte prohibido» (corto) ×2, `medir_moldes.py` (A) ×1. El estimador da ~US$ 0,53 por relato en todo-Claude (contra 0,13 en el híbrido, que midió 0,09 reales en la 600): total estimado **US$ 2 a 3**; cada corrida, con aviso de costo y OK. Pasar prod a todo-Claude (`.env.prod`) no es parte de esta spec. |
+| D24 | El YAML de Yadira es una historia real de prod. | Se exporta a `data/dev/research_680/` (ignorado por git) y no se commitea; en `scripts/research/680/` van solo las métricas y los relatos medidos, si das el OK. |
+
+### 5.2 S1 — Cómo habla quien narra (C1)
+
+| Lugar | Cambio | Precaución |
+|---|---|---|
+| `authoring_options.yaml` | `hablas:` con `id`, `label`, `prompt` («español rioplatense»), `voz` (trato y léxico; **vacío en rioplatense**) y `ajenas` (patrones; vacío en rioplatense). `caso` pierde «rioplatense». | `caso` cambia una línea en todos los snapshots: diff revisado. |
+| `catalog.py` | `hablas()` y `habla_de(story)` (`""` o un id que no existe → la primera, D16 de la 670) | Test: un id viejo cae a rioplatense. |
+| `Direction` + `DirectionForm` + `_direction` / `_form` (`authoring_router.py`) | `habla: str = ""`; viaja en el formulario (la elige la persona) | El autoguardado rearma `Direction` entero (D13 de la 670): test de que se guarda y vuelve. |
+| `outline_voice_system.md`, `voice_craft.md` (LÉXICO), `outline_journal_system.md`, `authoring_planner_system.md` | «español rioplatense» → `{habla}` (el `prompt` del habla); en la Voz, la línea `voz` del habla bajo LÉXICO (no aparece en rioplatense) | Con rioplatense, esos cuatro textos quedan **idénticos**. |
+| `outline_narrator.py` (Voz y Memoria), `prompt_builder._voice_extras`, `planner.system_prompt` | Pasan el habla de la historia | Consultor, Verificador y FormSuggester no se tocan. |
+| `direccion.ejs` + `asistente.js` | «¿Cómo habla quien lo cuenta?», `.opcion-forge` compactas debajo de «¿Cómo lo cuenta?», la de siempre elegida | Guardianes `sin-jerga`, `gramatica-visual`; fixtures del asistente (`UPDATE_FIXTURES=1`, diff revisado). |
+| Export / import YAML | Viaja dentro de `direction` (el exportador ya la vuelca entera) | Test de ida y vuelta. |
+
+**Tests:** `voice_prompts_mexicano.json` (snapshot nuevo) con su test de secciones: dice «español de México», no dice «rioplatense» ni «sobremesa rioplatense»; el Consultor sigue en voseo con cualquier habla.
+
+### 5.3 S2 — Lo que la Voz evita (C2 + B en la guía)
+
+| Lugar | Cambio |
+|---|---|
+| `config/recursos_gastados.yaml` (nuevo) | Dos listas con la misma forma (`id`, `nombre`, `detecta`: patrones, `por_que`): `hechos` (A: huellas enormes, perros que ladran o se callan, sombra o figura que desaparece, ojos que brillan, golpes en la puerta, la luz que parpadea, el silencio de los animales) y `gestos` (C2: el mate, el termo y la yerba; se suman otros si la medición los muestra). Un cargador con validación (`recursos_gastados.py`, como `voice_cliches.py`). |
+| `outline_voice_system.md` | Los gestos chicos salen de quién es quien narra, su trabajo y el lugar de esta historia, no de las costumbres típicas de un país; ejemplos sin país. |
+| Fragmento `voz/gestos_gastados` | «GESTOS QUE YA SE VIERON EN MUCHOS RELATOS (no los uses salvo que estén en los EVENTOS): …», sin los que vengan del autor (D19, con escaleta). |
+| `voice_craft.md` | B: una línea, como la de las comparaciones: no describir ni enumerar siempre de a tres. |
+| `fragments/voz/asi_es.md` | «mantenelo» → «no lo contradigas; no hace falta que aparezca en cada acto» (D13). |
+| `workshop_criteria.yaml:189`, `mock_structured.py` | Ejemplos sin mate. |
+
+### 5.4 S3 — Detectar en la prosa (C3 + B)
+
+| Lugar | Cambio |
+|---|---|
+| `repetition_check.py` | `ActRepetition` suma `gestos` (los gastados que no vienen del autor), `ajenas` (hasta 3 ejemplos, según el habla de la historia) y `triadas` / `triad_count` (aviso desde la tercera, `too_listy`). `check()` recibe el habla y lo del autor. |
+| `narrative_router.py` (`/repetition`), `relato_panel.ejs`, `corregir-relato.js` | Los tres avisos nuevos, con «Buscar» en «Corregir el relato», como las comparaciones. |
+| `outline_narrator._avoid` + `fragments/voz/evitar/` | `gestos.md`, `ajenas.md`, `triadas.md`: al regenerar un acto, lo marcado vuelve a la Voz. |
+| `scripts/voice_metrics.py` | Métricas: mate y termo, palabras de otra habla, tríadas cada 1 000 palabras. |
+
+### 5.5 S4 — Recursos gastados en los hechos (A)
+
+| Lugar | Cambio |
+|---|---|
+| `authoring_planner.md` + fragmento `asistente/planificador/recursos_gastados` | «RECURSOS GASTADOS (no los uses como hechos; si hace falta una señal, buscá una propia de este lugar y estos personajes)», sin los que trae el autor (D19, sin escaleta). |
+| `verifier.rule_warnings` | Aviso `gastado:<id>` por acto cuando un hecho usa uno que no viene del autor (D20); texto en `core_messages.yaml` (`verifier.gastado`). |
+| `scripts/research/670/medir_moldes.py` | Lee la lista del YAML. |
+
+**Ojo:** hoy prod usa `hibrido-sonnet55`, donde el Planificador es **gemma**, que respeta peor las listas de prohibidos: por eso el aviso del Verificador es la red. La medición (D23) y el diseño apuntan a todo-Claude, que es lo que va a usar prod.
+
+### 5.6 S5 — Medición y cierre
+
+Medición D23 (con aviso de costo y OK en cada corrida). Resultados en §7. CLAUDE.md (hablas, recursos gastados, avisos nuevos del control), memoria, PR a `development`. Dev: `make dev-status` y la URL para validar en cada slice.
+
+### 5.7 Slices
+
+0. **S0 — Medición «antes»** de Yadira (1 corrida, ~US$ 0,09).
+1. **S1 — El habla.** Antes del código, te paso el contenido de las cuatro hablas para leer (D22).
+2. **S2 — Lo que la Voz evita** (gestos, tríadas en la guía, rasgos).
+3. **S3 — Detectar en la prosa** (gestos, otra habla, tríadas).
+4. **S4 — Recursos gastados en los hechos.**
+5. **S5 — Medición «después» y cierre.**
+
+Cada slice cierra con tests en verde y dev mostrando el cambio (la base de dev es la copia de prod: las 9 historias reales sirven para mirar).
