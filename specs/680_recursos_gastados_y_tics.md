@@ -167,7 +167,7 @@ Relevado en `feat/spec-680-recursos-gastados` (`2f88bfa`). Principio, como en la
 | D20 | Los avisos de recursos gastados compiten con los demás en el tope de 3 visibles por acto. | Van con `source="regla"` y clave estable `gastado:<id>` (se ignoran como cualquier aviso, H10), **después** de los de estructura (`sin_hechos`, `sin_puente`, `elenco`…): primero lo que rompe, después lo de estilo. |
 | D21 | Falsos positivos de las tríadas (§1.2: «entre El Cruce y La Esperanza»). | Patrón «A, B y C» con ítems de hasta 4 palabras, **sin** ítems que empiecen con mayúscula a mitad de oración (nombres propios); aviso desde la tercera del acto (D4). Casos de prueba en un fixture compartido con `voice_metrics.py`. |
 | D22 | Qué escribe cada habla nueva. | `voz` por habla: **mexicano** = tú y ustedes, léxico de México; **neutro** = tú y ustedes, sin regionalismos marcados; **España** = tú y vosotros, léxico peninsular. `ajenas`: voseo y rioplatenses («vos», «sos», «mirá», «che», «pibe», «laburo»…) en las tres; en España, además, americanismos claros («celular», «manejar», «carro»…). **El contenido (los textos y las listas) te lo paso para leer antes de seguir**, como el catálogo de la 670. |
-| D23 | Medición sin gastar de más, **con todos los roles en Claude** (`--profile anthropic-sonnet55` / `LLM_PROFILE=anthropic-sonnet55`; decisión del usuario 2026-10-22: es el LLM que va a usar prod). | **Antes:** 1 corrida de «El trabajo de Yadira» con el código de hoy (muestra lo que vio tu hija); la base de B y del mate en «El monte prohibido» ya está medida (§1.2 y §1.3). **Después:** Yadira (largo, su escaleta, habla mexicana) ×2, «El monte prohibido» (corto) ×2, `medir_moldes.py` (A) ×1. El estimador da ~US$ 0,53 por relato en todo-Claude (contra 0,13 en el híbrido, que midió 0,09 reales en la 600): total estimado **US$ 2 a 3**; cada corrida, con aviso de costo y OK. Pasar prod a todo-Claude (`.env.prod`) no es parte de esta spec. |
+| D23 | Medición sin gastar de más, **con el perfil de prod** (`hibrido-sonnet55`: la Voz en Claude, el resto en gemma; el usuario lo confirmó el 2026-10-22, prod sigue híbrido). | **Antes:** 1 corrida de «El trabajo de Yadira» con el código de hoy (muestra lo que vio tu hija); la base de B y del mate en «El monte prohibido» ya está medida (§1.2 y §1.3). **Después:** Yadira (largo, su escaleta, habla mexicana) ×2, «El monte prohibido» (corto) ×2, `medir_moldes.py` (A) ×1. El estimador da ~US$ 0,13 por relato (la 600 midió 0,09 reales): total estimado **US$ 0,50 a 0,70**; cada corrida, con aviso de costo y OK. |
 | D24 | El YAML de Yadira es una historia real de prod. | Se exporta a `data/dev/research_680/` (ignorado por git) y no se commitea; en `scripts/research/680/` van solo las métricas y los relatos medidos, si das el OK. |
 
 ### 5.2 S1 — Cómo habla quien narra (C1)
@@ -212,7 +212,7 @@ Relevado en `feat/spec-680-recursos-gastados` (`2f88bfa`). Principio, como en la
 | `verifier.rule_warnings` | Aviso `gastado:<id>` por acto cuando un hecho usa uno que no viene del autor (D20); texto en `core_messages.yaml` (`verifier.gastado`). |
 | `scripts/research/670/medir_moldes.py` | Lee la lista del YAML. |
 
-**Ojo:** hoy prod usa `hibrido-sonnet55`, donde el Planificador es **gemma**, que respeta peor las listas de prohibidos: por eso el aviso del Verificador es la red. La medición (D23) y el diseño apuntan a todo-Claude, que es lo que va a usar prod.
+**Ojo:** hoy prod usa `hibrido-sonnet55`, donde el Planificador es **gemma**, que respeta peor las listas de prohibidos: por eso el aviso del Verificador es la red. Prod sigue híbrido (D23), así que la medición de A muestra cuánto evita gemma y cuánto queda para el aviso.
 
 ### 5.6 S5 — Medición y cierre
 
@@ -233,12 +233,12 @@ Cada slice cierra con tests en verde y dev mostrando el cambio (la base de dev e
 
 ## 6. TASKS (2026-10-22)
 
-Perfil de medición: **todo-Claude** (`anthropic-sonnet55`, D23). Rioplatense: en vez de «El monte prohibido», `scripts/research/650/no_te_detengas_corto.yaml`, que ya tiene la base medida con el mismo código de la Voz (`650/corto/relato_{1,2}.txt`: 2 mates en cada uno). Tests: `make test`, `cd frontend && npm test`, `npx playwright test`, `make lint`.
+Perfil de medición: el de prod, **`hibrido-sonnet55`** (D23). Rioplatense: en vez de «El monte prohibido», `scripts/research/650/no_te_detengas_corto.yaml`, que ya tiene la base medida con el mismo código de la Voz (`650/corto/relato_{1,2}.txt`: 2 mates en cada uno). Tests: `make test`, `cd frontend && npm test`, `npx playwright test`, `make lint`.
 
 ### S0 — Medición «antes»
 
 - **T0.1** Exportar «El trabajo de Yadira» de la base local (copia de prod) a `data/dev/research_680/yadira.yaml` (`export-yaml`, D24). **Hecho cuando:** el YAML trae su dirección, su taller y sus 5 actos.
-- **T0.2** `evaluate_voice.py --profile anthropic-sonnet55 --input data/dev/research_680/yadira.yaml --runs 1 --label 680-antes --out data/dev/research_680/antes` (aviso de costo y OK). **Hecho cuando:** relato con métricas; se cuentan a mano voseo, mate y termo, y tríadas (las métricas nuevas todavía no existen).
+- **T0.2** `evaluate_voice.py --profile hibrido-sonnet55 --input data/dev/research_680/yadira.yaml --runs 1 --label 680-antes --out data/dev/research_680/antes` (aviso de costo y OK). **Hecho cuando:** relato con métricas; se cuentan a mano voseo, mate y termo, y tríadas (las métricas nuevas todavía no existen).
 
 ### S1 — El habla (C1)
 
@@ -273,5 +273,5 @@ Perfil de medición: **todo-Claude** (`anthropic-sonnet55`, D23). Rioplatense: e
 
 ### S5 — Medición «después» y cierre
 
-- **T5.1** Yadira con `habla: mexicano` ×2 y `no_te_detengas_corto.yaml` ×2 (`--profile anthropic-sonnet55`), `medir_moldes.py` ×1 con `LLM_PROFILE=anthropic-sonnet55` (aviso de costo y OK en cada una). **Hecho cuando:** resultados en §7 contra los criterios 1, 3 y 5 de §4 y la base de S0 / §1.
+- **T5.1** Yadira con `habla: mexicano` ×2 y `no_te_detengas_corto.yaml` ×2 (`--profile hibrido-sonnet55`), `medir_moldes.py` ×1 con el perfil activo (`hibrido-sonnet55`) (aviso de costo y OK en cada una). **Hecho cuando:** resultados en §7 contra los criterios 1, 3 y 5 de §4 y la base de S0 / §1.
 - **T5.2** CLAUDE.md (hablas en `authoring_options.yaml`, `recursos_gastados.yaml`, avisos nuevos del control, `Direction.habla`), memoria, PR a `development`.
