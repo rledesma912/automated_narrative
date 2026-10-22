@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-10
 **Tipo:** SDD — calidad (Planificador, Verificador, Voz, control de repetición)
-**Estado:** PLAN (esperando OK); SPECIFY aprobado 2026-10-22
+**Estado:** TASKS (esperando OK); SPECIFY y PLAN aprobados 2026-10-22
 **Rama:** `feat/spec-680-recursos-gastados` (desde `development`, `1e52f06`; la SPECIFY de A y B salió de `404085f` y ya está en `development`)
 **Extiende:** Spec-470 (clichés de la Voz), Spec-530 §8.3 (control de repetición), Spec-590 (rasgos del narrador en la memoria), Spec-640 (anécdota, comparaciones), Spec-670 (moldes; su medición en §7).
 **Suma (2026-10-22):** la parte C, «el mate en todas las historias» (iba a ser la Spec-690; se resuelve acá porque es el mismo síntoma: lo de manual en vez de lo propio de la historia).
@@ -228,3 +228,50 @@ Medición D23 (con aviso de costo y OK en cada corrida). Resultados en §7. CLAU
 5. **S5 — Medición «después» y cierre.**
 
 Cada slice cierra con tests en verde y dev mostrando el cambio (la base de dev es la copia de prod: las 9 historias reales sirven para mirar).
+
+---
+
+## 6. TASKS (2026-10-22)
+
+Perfil de medición: **todo-Claude** (`anthropic-sonnet55`, D23). Rioplatense: en vez de «El monte prohibido», `scripts/research/650/no_te_detengas_corto.yaml`, que ya tiene la base medida con el mismo código de la Voz (`650/corto/relato_{1,2}.txt`: 2 mates en cada uno). Tests: `make test`, `cd frontend && npm test`, `npx playwright test`, `make lint`.
+
+### S0 — Medición «antes»
+
+- **T0.1** Exportar «El trabajo de Yadira» de la base local (copia de prod) a `data/dev/research_680/yadira.yaml` (`export-yaml`, D24). **Hecho cuando:** el YAML trae su dirección, su taller y sus 5 actos.
+- **T0.2** `evaluate_voice.py --profile anthropic-sonnet55 --input data/dev/research_680/yadira.yaml --runs 1 --label 680-antes --out data/dev/research_680/antes` (aviso de costo y OK). **Hecho cuando:** relato con métricas; se cuentan a mano voseo, mate y termo, y tríadas (las métricas nuevas todavía no existen).
+
+### S1 — El habla (C1)
+
+- **T1.1** Redactar las cuatro hablas (`label`, `prompt`, `voz`, `ajenas`; D22) y pasártelas para leer (artifact, sin código). **Hecho cuando:** tu OK o tus cambios.
+- **T1.2** `authoring_options.yaml` → `hablas:`; `catalog.hablas()` / `habla_de(story)` con caída a la primera; `caso` sin «rioplatense». **Hecho cuando:** tests del catálogo (ids únicos, rioplatense primero, id viejo → rioplatense, cada `ajenas` compila como regex).
+- **T1.3** `Direction.habla`, `DirectionForm`, `_direction` / `_form`, `_state` y `/authoring/options` (`hablas`). **Hecho cuando:** test de que el autoguardado la guarda y vuelve, y round-trip YAML con `habla`.
+- **T1.4** `{habla}` en `outline_voice_system.md`, `voice_craft.md` (LÉXICO + línea `voz`), `outline_journal_system.md`, `authoring_planner_system.md`; el habla llega a `_voice_extras`, `voice_prompts`, `remember` y `planner.system_prompt`. **Hecho cuando:** con rioplatense, los snapshots cambian **solo** en la línea de `caso` (diff revisado y regenerados con `SNAPSHOT_UPDATE=1`); snapshot nuevo `voice_prompts_mexicano.json` con su test (dice el habla de México y no dice «rioplatense»); el Consultor y el Verificador siguen en voseo con habla mexicana.
+- **T1.5** UI: «¿Cómo habla quien lo cuenta?» en `direccion.ejs` + `asistente.js`. **Hecho cuando:** Vitest (vista y guardianes `sin-jerga`, `gramatica-visual`), fixtures del asistente con `UPDATE_FIXTURES=1` (diff revisado), E2E: elegir «mexicano», recargar, sigue elegida.
+- **T1.6** Cierre: tests y lint en verde; dev: elegir «mexicano» en «El trabajo de Yadira» (copia local) y ver el prompt de la Voz en `/debug`.
+
+### S2 — Lo que la Voz evita (C2 + B en la guía)
+
+- **T2.1** `config/recursos_gastados.yaml` (`hechos` y `gestos`, D18) y `recursos_gastados.py` (carga, validación, `vienen_del_autor(story, texto)` con los dos textos de D19: `author_text` nuevo y `known_text`). **Hecho cuando:** tests: «que me mate» no es un gesto, «el mate» sí; un recurso que está en la idea del autor no se cuenta.
+- **T2.2** `outline_voice_system.md` (gestos propios, ejemplos sin país), fragmento `voz/gestos_gastados` (sin los que vienen del autor), `voice_craft.md` (línea de las tríadas), `voz/asi_es.md` (D13). **Hecho cuando:** snapshots regenerados con el diff revisado; test: con «toma mate» en un hecho del acto, el mate no está en la lista de gestos de ese acto.
+- **T2.3** `workshop_criteria.yaml:189` y `mock_structured.py` sin mate. **Hecho cuando:** `grep` de «mate» en `config/` y `src/` solo encuentra la lista de gestos gastados.
+- **T2.4** Cierre: tests en verde; dev: escribir de nuevo un acto de una historia rioplatense y mirar el prompt en `/debug`.
+
+### S3 — Detectar en la prosa (C3 + B)
+
+- **T3.1** `repetition_check.py`: `gestos`, `ajenas` (con el habla de la historia), `triadas` / `triad_count` / `too_listy` (D21, aviso desde la tercera); `has_findings` las suma; `last_version_findings` pasa el habla y lo del autor. Fixture compartido `tests/fixtures/repeticion/triadas.json` (casos positivos y negativos de §1.2). **Hecho cuando:** tests con cada caso; el relato de la 650 marca sus 2 mates; voseo en rioplatense no avisa.
+- **T3.2** `narrative_router` (`/repetition`), `story.service.ts`, `relato_panel.ejs` y `corregir-relato.js` (con «Buscar»). **Hecho cuando:** Vitest de la vista con los tres avisos; guardianes en verde.
+- **T3.3** `_avoid` + `fragments/voz/evitar/{gestos,ajenas,triadas}.md`; `fragments/README.md`. **Hecho cuando:** snapshot de la Voz al regenerar con los tres avisos.
+- **T3.4** `voice_metrics.py`: mate y termo, palabras de otra habla, tríadas cada 1 000 palabras (con el mismo detector). **Hecho cuando:** medido sobre `650/corto/` y `600/hibrido/` da la base para comparar.
+- **T3.5** Cierre: dev: el panel de «El empleado del maletín» (copia local) avisa su mate.
+
+### S4 — Recursos gastados en los hechos (A)
+
+- **T4.1** Fragmento `asistente/planificador/recursos_gastados` en `authoring_planner.md` (sin los del autor, D19: sin escaleta). **Hecho cuando:** snapshot del asistente regenerado; test: con «huellas» en la idea, no aparecen en la lista.
+- **T4.2** `verifier.rule_warnings`: `gastado:<id>` después de los de estructura (D20); `verifier.gastado` en `core_messages.yaml`. **Hecho cuando:** tests: aviso con un hecho de manual, sin aviso si viene del autor, «Ignorar» lo deja ignorado al revisar de nuevo.
+- **T4.3** `scripts/research/670/medir_moldes.py` lee la lista del YAML.
+- **T4.4** Cierre: dev: «Revisar los actos» de «La laguna oscura» muestra el aviso de las huellas.
+
+### S5 — Medición «después» y cierre
+
+- **T5.1** Yadira con `habla: mexicano` ×2 y `no_te_detengas_corto.yaml` ×2 (`--profile anthropic-sonnet55`), `medir_moldes.py` ×1 con `LLM_PROFILE=anthropic-sonnet55` (aviso de costo y OK en cada una). **Hecho cuando:** resultados en §7 contra los criterios 1, 3 y 5 de §4 y la base de S0 / §1.
+- **T5.2** CLAUDE.md (hablas en `authoring_options.yaml`, `recursos_gastados.yaml`, avisos nuevos del control, `Direction.habla`), memoria, PR a `development`.
