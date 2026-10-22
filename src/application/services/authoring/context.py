@@ -7,7 +7,7 @@ Spec-620: el texto vive en `config/prompts_generation/fragments/asistente/`; las
 que arman texto reciben el `TemplateLoader` de quien las llama.
 """
 
-from src.application.services.authoring import catalog, molde
+from src.application.services.authoring import catalog, molde, workshop_rules
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
 from src.domain.models import CriterionStatus, Story, WorkshopItem, WorkshopLevel
@@ -20,6 +20,17 @@ def objective(templates: TemplateLoader, story: Story) -> str:
     return templates.fragment(
         "asistente/objetivo", num_actos=estructura.num_actos, palabras=estructura.palabras_total
     )
+
+
+def author_ending(story: Story) -> str:
+    """Spec-690 D15: el final que decidió la autora, de un solo lugar. Es la respuesta del
+    criterio `final` de «Preguntas» (sacada de la idea, escrita o elegida); si no hay, el
+    «¿Cómo termina?» de las historias viejas (`Direction.ending`)."""
+    item = next((w for w in _direction_items(story) if w.criterion == "final"), None)
+    decided = (CriterionStatus.CUMPLE, CriterionStatus.INTENCIONAL)
+    if item and item.answer.strip() and item.status in decided:
+        return item.answer.strip()
+    return story.direction.ending.strip() if story.direction else ""
 
 
 def protagonist(story: Story) -> str:
@@ -55,9 +66,9 @@ def story_block(story: Story, templates: TemplateLoader) -> str:
         if d.telling:
             telling = catalog.label_of(catalog.tellings(), d.telling)
             lines.append(t("asistente/historia/como_lo_cuenta", como=telling))
-        if d.ending:
-            fixed = t("asistente/historia/final_decidido") if d.ending_intentional else ""
-            lines.append(t("asistente/historia/como_termina", final=d.ending, decidido=fixed))
+        if ending := author_ending(story):  # Spec-690: decidido, venga de donde venga
+            fixed = t("asistente/historia/final_decidido")
+            lines.append(t("asistente/historia/como_termina", final=ending, decidido=fixed))
     cast = [p for p in story.personajes_full or [] if p.get("name")]
     if len(cast) > 1:
         people = "; ".join(_person(p) for p in cast)
@@ -97,13 +108,13 @@ def decisions_block(story: Story, templates: TemplateLoader) -> str:
             nombre += t("asistente/decisiones/va_en_acto", acto=c.acto)
         if item.status == CriterionStatus.INTENCIONAL:
             rows.append(t("asistente/decisiones/intencional", id=cid, nombre=nombre, texto=texto))
-        elif item.asked:
+        elif workshop_rules.questions(item):
             rows.append(
                 t(
                     "asistente/decisiones/con_pregunta",
                     id=cid,
                     nombre=nombre,
-                    pregunta=item.asked[-1],
+                    pregunta=workshop_rules.questions(item)[-1],
                     texto=texto,
                 )
             )

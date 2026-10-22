@@ -20,6 +20,10 @@ OPEN = (CriterionStatus.FALTA, CriterionStatus.PARCIAL)
 # Spec-670 D12: el autor reabrió un «No va en tu historia»: en ese criterio la IA ya no
 # puede volver a decir que no va (si no, reabrir sería un ida y vuelta sin fin).
 NO_APLICA_RECHAZADO = "·no_aplica_rechazado"
+# Spec-690: el final que se sacó de la idea (D11) y el que la autora pidió que se lo
+# pregunten (D13: ya no se saca de la idea ni del «¿Cómo termina?» viejo).
+DE_LA_IDEA = "·de_la_idea"
+FINAL_PREGUNTAR = "·final_preguntar"
 MAL_ELEGIDA = 2  # D8: desde cuántos criterios de la forma que no van se avisa
 
 
@@ -52,7 +56,15 @@ def initial_items(
     items = []
     for c in criteria if criteria is not None else catalog.direction_criteria():
         item = by_id.get(c.id) or WorkshopItem(criterion=c.id, round=1)
-        if c.id == "final" and direction and direction.ending_intentional and direction.ending:
+        # Spec-690 D14: el final viejo de «Tu idea» entra solo si «Preguntas» no tiene uno
+        # (antes lo pisaba en cada ronda, aunque la autora lo hubiera cambiado ahí).
+        if (
+            c.id == "final"
+            and direction
+            and direction.ending
+            and not item.answer.strip()
+            and FINAL_PREGUNTAR not in item.asked
+        ):
             item = item.model_copy(
                 update={
                     "status": CriterionStatus.INTENCIONAL,
@@ -70,6 +82,11 @@ def to_evaluate(items: list[WorkshopItem]) -> list[WorkshopItem]:
     (Spec-670 D8), ni lo que el autor ya respondió."""
     done = (CriterionStatus.INTENCIONAL, CriterionStatus.NO_APLICA)
     return [w for w in items if w.status not in done and not w.answer]
+
+
+def questions(item: WorkshopItem) -> list[str]:
+    """Las preguntas que ya se hicieron, sin las marcas (`·…`) que viajan en `asked`."""
+    return [a for a in item.asked if not a.startswith("·")]
 
 
 def no_aplica_rejected(item: WorkshopItem) -> bool:

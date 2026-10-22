@@ -241,3 +241,14 @@ Tests: `make test`, `cd frontend && npm test`, `npx playwright test` (Firefox), 
 
 - **T4.1** `medir_final.py` con el servicio real sobre las 9 historias, 2 corridas (gemma, gratis). **Hecho cuando:** resultados en §11 contra el criterio 3 de §6.
 - **T4.2** CLAUDE.md (Spec-550 H1 → el final sale de la idea o de «Preguntas»; `author_ending`; job `consult`), memoria, PR a `development`.
+
+---
+
+## 11. Resultados
+
+### S1 — Un solo lugar para el final (2026-10-22)
+
+- `context.author_ending(story)`: la respuesta del criterio `final` (`cumple` o `intencional`) o, si no hay, el `Direction.ending` viejo. Lo leen el Planificador (último acto y decisión `final`), el Verificador, la Voz, el bloque de la historia del asistente y «lo del autor» (Spec-680).
+- Bug de §1.1 arreglado: `initial_items` copia el final viejo solo si «Preguntas» no tiene uno (ni la marca `·final_preguntar`). Test: con «Descansa en paz.» en «Tu idea» y «Le deja flores y se va.» en «Preguntas», el Planificador y la Voz reciben el segundo y una ronda nueva no lo pisa.
+- Marcas `·de_la_idea` y `·final_preguntar` definidas; `workshop_rules.questions()` filtra las marcas de `asked` para que nunca lleguen a un prompt como si fueran preguntas (también protege la `·no_aplica_rechazado` de la 670).
+- Snapshots **sin cambios** (ninguno regenerado). 1 038 pytest, lint en verde.
