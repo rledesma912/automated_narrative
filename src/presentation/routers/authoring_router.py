@@ -24,6 +24,7 @@ from src.domain.exceptions import InvalidStoryInputError
 from src.domain.models import (
     ActOutline,
     CharacterKind,
+    CriterionStatus,
     Direction,
     Scenario,
     Story,
@@ -190,6 +191,9 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
     if body.action == "answer":
         if not body.text.strip():
             raise ValueError(message("api.respuesta_vacia"))
+        if item.criterion == "final" and item.status == CriterionStatus.INTENCIONAL:
+            # Spec-690 D17: cambiar el final decidido lo deja decidido (y suyo).
+            return workshop_rules.mark_intentional(item, body.text)
         return workshop_rules.answer(item, body.text)
     if body.action == "decide":
         return workshop_rules.decide_for_me(item)
@@ -458,7 +462,8 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         premise=form.premise.strip(),
         effect=form.effect,
         effect_other=form.effect_other.strip(),
-        ending=form.ending.strip(),
+        # Spec-690: «Tu idea» ya no trae «¿Cómo termina?»: se conserva el guardado.
+        ending=form.ending.strip() or (existing.ending if existing else ""),
         ending_intentional=form.ending_intentional,
         telling=form.telling,
         form=form.form,
@@ -592,6 +597,8 @@ async def _state(story: Story) -> dict:
                     "nombre": c.nombre,
                     "por_que": c.por_que,
                     "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
+                    # Spec-690: el final que la IA sacó de «¿De qué trata?».
+                    "de_la_idea": workshop_rules.DE_LA_IDEA in w.asked,
                 }
                 for w, c in (
                     (by_id[c.id], c.for_story(context.protagonist(story)))

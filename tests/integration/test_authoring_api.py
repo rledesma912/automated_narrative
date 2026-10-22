@@ -689,3 +689,60 @@ async def test_control_de_gestos_y_de_otra_habla(client):
     ][0]
     assert act["gestures"] == [{"gesto": "tomar mate, cebar mate, el termo", "texto": "un mate"}]
     assert (act["foreign"], act["foreign_count"]) == (["abrís"], 1)
+
+
+# ── Spec-690: el final sale de la idea ──────────────────────────────────────
+
+IDEA_CON_FINAL = "José ve por el espejo a una mujer que murió en su micro. Al final la deja bajar."
+
+
+async def _final_item(client, sid: str) -> dict:
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    return next(w for w in state["workshop"]["items"] if w["criterion"] == "final")
+
+
+@pytest.mark.parametrize("kind", ["consult", "plan_outline"])
+async def test_el_final_sale_de_la_idea(client, kind):
+    sid = (await _create(client, premise=IDEA_CON_FINAL, ending=""))["story_id"]
+    await _run_job(client, sid, kind)
+    final = await _final_item(client, sid)
+    assert (final["status"], final["answer"]) == ("intencional", "Al final la deja bajar.")
+
+
+async def test_con_el_final_viejo_no_se_saca_de_la_idea(client):
+    sid = (await _create(client, premise=IDEA_CON_FINAL))[
+        "story_id"
+    ]  # FORM trae «Descansa en paz.»
+    await _run_job(client, sid, "consult")
+    assert (await _final_item(client, sid))["answer"] == "Descansa en paz."
+
+
+async def test_cambiar_el_final_sacado_de_la_idea_lo_deja_decidido(client):
+    """D17: «Cambiar» en «Cómo termina» no lo vuelve una respuesta común."""
+    sid = (await _create(client, premise=IDEA_CON_FINAL, ending=""))["story_id"]
+    await _run_job(client, sid, "consult")
+    resp = await client.patch(
+        f"{API}/stories/{sid}/workshop/final",
+        json={"action": "answer", "text": "La deja bajar y llora."},
+    )
+    assert resp.status_code == 200
+    final = await _final_item(client, sid)
+    assert (final["status"], final["answer"]) == ("intencional", "La deja bajar y llora.")
+
+
+async def test_tu_idea_sin_el_campo_no_borra_el_final_viejo(client):
+    """S3: el autoguardado de «Tu idea» ya no trae `ending`; el de una historia vieja queda."""
+    sid = (await _create(client))["story_id"]  # FORM trae «Descansa en paz.»
+    sin_final = {k: v for k, v in FORM.items() if k not in ("ending", "ending_intentional")}
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**sin_final, "title": "Otra"})
+    assert resp.status_code == 200
+    assert resp.json()["direction"]["ending"] == "Descansa en paz."
+
+
+async def test_preguntas_marca_el_final_de_la_idea(client):
+    sid = (await _create(client, premise=IDEA_CON_FINAL, ending=""))["story_id"]
+    await _run_job(client, sid, "consult")
+    final = await _final_item(client, sid)
+    assert final["de_la_idea"] is True
+    otros = (await client.get(f"{API}/stories/{sid}")).json()["workshop"]["items"]
+    assert not any(w["de_la_idea"] for w in otros if w["criterion"] != "final")

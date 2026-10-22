@@ -45,10 +45,10 @@ test.describe("Capturas del tema", () => {
     const created = await page.request.post("/api/v1/authoring/stories", {
       data: {
         title: "Capturas: la pena del colectivo",
-        premise: "José, chofer de micros, ve por el espejo a una mujer que murió en su micro.",
+        // Spec-690: el final va en la idea (sale a «Preguntas» con la IA).
+        premise:
+          "José, chofer de micros, ve por el espejo a una mujer que murió en su micro. Le deja flores y el alma descansa en paz.",
         effect: "pavor",
-        ending: "Le deja flores y el alma descansa en paz.",
-        ending_intentional: true,
         telling: "caso",
         protagonist_name: "José",
         protagonist_role: "Chofer de micros de larga distancia",

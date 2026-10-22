@@ -103,7 +103,7 @@
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-1"><label for="a-premise">¿De qué trata?</label></h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Contalo como se lo contarías a alguien en dos o tres frases. No hace falta ordenarlo en actos: eso lo hacemos después.</p>
+        Contalo como se lo contarías a alguien, de punta a punta: qué pasa y cómo termina, si ya lo sabés. No hace falta ordenarlo en actos: eso lo hacemos después.</p>
       <textarea id="a-premise" name="premise" rows="4" maxlength="6000"
                 class="w-full [field-sizing:content] min-h-[6rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= d.premise %></textarea>
     </section>
@@ -198,14 +198,6 @@
       <input type="text" name="effect_other" maxlength="200" value="<%= d.effect_other %>" data-solo-si-efecto="otro"
              placeholder="Contá qué efecto buscás"
              class="<%= d.effect === 'otro' ? '' : 'hidden' %> mt-3 w-full bg-forge-bg border border-forge-border px-3 py-2">
-    </section>
-
-    <section class="bg-forge-surface border border-forge-border p-6">
-      <h3 class="font-serif text-xl mb-1"><label for="a-ending">¿Cómo termina?</label></h3>
-      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Si lo escribís, la IA lo respeta tal cual y cierra el último acto así. Si lo dejás vacío, lo propone ella.</p>
-      <textarea id="a-ending" name="ending" rows="2" maxlength="600"
-                class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent"><%= d.ending %></textarea>
     </section>
 
     <section class="bg-forge-surface border border-forge-border p-6">

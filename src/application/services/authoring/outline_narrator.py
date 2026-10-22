@@ -167,11 +167,11 @@ class OutlineNarrator:
         return name.upper() if name else self.templates.fragment("voz/protagonista")
 
     def _function(self, story: Story, act: ActOutline, info: dict) -> str:
-        d = story.direction
         last = self.prompt_builder.estructura(story).ultimo
-        if act.number == last and d and d.ending_intentional and d.ending:
+        ending = context.author_ending(story)  # Spec-690 D15
+        if act.number == last and ending:
             # El final del autor manda sobre la función genérica del acto (Spec-530 S2).
-            return self.templates.fragment("voz/final_del_autor", final=d.ending)
+            return self.templates.fragment("voz/final_del_autor", final=ending)
         # Spec-670: lo que pide el acto según la forma (la de siempre: el de la estructura).
         return molde.for_story(story).intencion(act.number, info.get("intent", ""))
 
