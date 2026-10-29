@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — escaleta (Planificador, Verificador, Voz) + tarjeta del acto
-**Estado:** TASKS (2026-10-29). Va después de la spec que pasa el Planificador a la nube (Spec-700 §12).
+**Estado:** IMPLEMENT (2026-10-29): S1 hecho.
 **Rama:** a crear desde `development`
 **Extiende:** Spec-530 (escaleta), Spec-630 B6/B7 (lugares de la historia), Spec-590 (lo que recibe la Voz).
 **Hermana:** Spec-700 (salió de la misma revisión del uso de Vale).
@@ -273,3 +273,18 @@ Las historias vuelven como borradores, como dice CLAUDE.md. Se anota en el PR; e
 
 - **T5.1** `medir_lugares.py` con el Planificador real (perfil activo), sobre las historias de la copia de prod, 2 corridas. **Hecho cuando:** los resultados están en §12 y se comparan con §9: compuestos, objetos como lugar, nombres de código, duplicados. Si el Planificador ya está en Claude, el costo estimado se pasa antes de correr.
 - **T5.2** CLAUDE.md (esquema, `places()`, la Voz), memoria y PR a `development`, con la nota del pase a prod (§10.7: export/import).
+
+---
+
+## 12. Resultados
+
+### S1 — Dominio, base y YAML (2026-10-29)
+
+- `ActOutline.event_places` (se ajusta al largo de `events` si trae lugares), `event_place(i)` (D2: vacío = el del anterior; el primero vacío = `scenario`) y `places()` (D8). Sale `needs_review` (D12).
+- `act_outline.event_places` en `init_db`; sale `needs_review`. El repositorio guarda y lee la lista.
+- Los lectores pasan a `places()`: la Voz (`_scenario`: sus lugares con descripción, unidos con «; »), el título del acto en el Verificador y el paquete del video (unidos con « · »), lo conocido del control de repetición y, en el router, los usos de un lugar, borrarlo (también de los hechos, que quedan con «el de antes») y las opciones de `_state`. Con escaletas viejas `places()` es `[scenario]`: **snapshots idénticos**.
+- `ActForm.event_places` opcional: los lugares van de a pares con los hechos (un hecho vacío se va con su lugar; un lugar vacío queda). Sin la lista, se conserva la guardada si los hechos no cambiaron de largo.
+- YAML: `export-yaml` lleva `event_places` (sale con `model_dump`); un YAML viejo con `needs_review` se importa igual. Hay tests de ida y vuelta y de un YAML viejo.
+- **Ensayo del pase a prod** sobre una copia de la base de dev (copia de prod del 2026-10-29): `export-yaml --all` con el código de `development` → base nueva → `import-yaml` con el código nuevo. Volvieron 16 historias, 58 actos, 135 respuestas y 45 personajes (los mismos números).
+- **Dev:** se sumó la columna a mano a `data/dev/stories.db` (backup en `data/dev/backup/`, sin script en el repo), para no perder los relatos de la copia.
+- 1 107 pytest, 435 Vitest y 88 E2E (Firefox), en verde.

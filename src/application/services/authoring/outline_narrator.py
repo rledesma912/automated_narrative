@@ -197,10 +197,10 @@ class OutlineNarrator:
         return [m for m in memory.used_motifs if not required(m)]
 
     def _scenario(self, story: Story, act: ActOutline) -> str:
-        known = next((s for s in story.scenarios if s.name == act.scenario), None)
-        if known and known.description:
-            return f"{known.name}: {known.description}"
-        return act.scenario or self.templates.fragment("voz/escenario_vacio")
+        """Dónde pasa el acto: sus lugares (Spec-710 D8), con la descripción si la tienen."""
+        described = {s.name: s.description for s in story.scenarios if s.description}
+        places = [f"{p}: {described[p]}" if p in described else p for p in act.places()]
+        return "; ".join(places) or self.templates.fragment("voz/escenario_vacio")
 
     def _threat(self, story: Story, act: ActOutline) -> str:
         if not story.entities:

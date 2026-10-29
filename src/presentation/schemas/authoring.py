@@ -63,6 +63,9 @@ class ActForm(BaseModel):
     bridge: str = Field("", max_length=300)  # «Cómo llega acá» (Spec-560 A1)
     goal: str = Field("", max_length=300)
     events: list[str] = Field(default_factory=list, max_length=8)
+    # Spec-710 D1: el lugar de cada hecho, en el mismo orden ("" = el del anterior). Sin la
+    # lista (una pestaña vieja), se conserva la guardada si los hechos no cambiaron de largo.
+    event_places: list[str] | None = Field(None, max_length=8)
     change_from: str = Field("", max_length=200)
     change_to: str = Field("", max_length=200)
     scenario: str = Field("", max_length=120)

@@ -243,6 +243,7 @@ async def init_db() -> None:
     """)
     # Spec-530: escaleta (entrada de cada acto; `macro_beat` es la salida generada).
     # Escenario y personajes en escena van por nombre: se reescriben con ids nuevos.
+    # Spec-710: `event_places` (el lugar de cada hecho) reemplaza a `needs_review`.
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS act_outline (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -259,7 +260,7 @@ async def init_db() -> None:
             payoffs TEXT DEFAULT '[]',
             decisions TEXT DEFAULT '[]',
             warnings TEXT DEFAULT '[]',
-            needs_review INTEGER NOT NULL DEFAULT 0,
+            event_places TEXT DEFAULT '[]',
             draft INTEGER NOT NULL DEFAULT 0,
             synopsis TEXT DEFAULT '',
             bridge TEXT DEFAULT '',

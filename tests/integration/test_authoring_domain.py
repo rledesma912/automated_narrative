@@ -193,12 +193,13 @@ async def test_el_taller_actualiza_el_criterio_sin_duplicarlo(repo):
 async def test_save_act_actualiza_un_acto_y_save_outline_reemplaza_todo(repo):
     story = await _create(repo)
 
-    await repo.save_act(story.id, ActOutline(number=3, events=["Nuevo hecho"], needs_review=True))
+    act = ActOutline(number=3, events=["Nuevo hecho", "Otro"], event_places=["La tienda", ""])
+    await repo.save_act(story.id, act)
     outline = await repo.get_outline(story.id)
     assert len(outline) == 5
-    assert (outline[2].events, outline[2].needs_review, outline[2].goal) == (
-        ["Nuevo hecho"],
-        True,
+    assert (outline[2].events, outline[2].event_places, outline[2].goal) == (
+        ["Nuevo hecho", "Otro"],
+        ["La tienda", ""],  # Spec-710 D1: se guarda y se lee
         "",
     )
 

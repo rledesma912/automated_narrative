@@ -330,7 +330,10 @@ class ActOutline(BaseModel):
     payoffs: list[str] = Field(default_factory=list)
     decisions: list[str] = Field(default_factory=list)
     warnings: list[OutlineWarning] = Field(default_factory=list)
-    needs_review: bool = False
+    # Spec-710 D1: el lugar de cada hecho, en el mismo orden que `events` ("" = el del hecho
+    # anterior; el primero vacío = `scenario`, D2). Vacía en las escaletas viejas: ahí vale
+    # `scenario` para todo el acto. Lo que lee `events` como texto no cambia.
+    event_places: list[str] = Field(default_factory=list)
     # Spec-570 D2: acto importado de un YAML viejo (solo su sinopsis). Una escaleta de
     # borradores se planifica igual que una vacía; el Planificador los usa de guía.
     draft: bool = False
@@ -343,6 +346,28 @@ class ActOutline(BaseModel):
     def _plain_texts(cls, value):
         # Un texto suelto es un aviso de la IA (también lo que guardaba la Spec-530).
         return [OutlineWarning.from_ai(w) if isinstance(w, str) else w for w in value or []]
+
+    @model_validator(mode="after")
+    def _places_like_events(self) -> "ActOutline":
+        # D1: mismo largo que los hechos (si hay lugares): recortada o completada con "".
+        if self.event_places:
+            n = len(self.events)
+            self.event_places = (self.event_places + [""] * n)[:n]
+        return self
+
+    def event_place(self, index: int) -> str:
+        """D2: el lugar del hecho `index`, con los vacíos resueltos hacia atrás."""
+        for place in reversed(self.event_places[: index + 1]):
+            if place.strip():
+                return place.strip()
+        return self.scenario.strip()
+
+    def places(self) -> list[str]:
+        """Spec-710 D8: los lugares del acto en orden y sin repetir (los de los hechos o, si
+        no hay, el `scenario` de siempre). Todo lo que necesita «dónde pasa» lee esto."""
+        if not any(p.strip() for p in self.event_places):
+            return [self.scenario.strip()] if self.scenario.strip() else []
+        return list(dict.fromkeys(p for i in range(len(self.events)) if (p := self.event_place(i))))
 
     def visible_warnings(self) -> list[OutlineWarning]:
         return [w for w in self.warnings if not w.dismissed]

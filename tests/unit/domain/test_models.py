@@ -268,3 +268,48 @@ class TestDirectionFinal:
 
         assert Direction(ending="  ", ending_intentional=True).ending_intentional is False
         assert Direction().ending_intentional is False
+
+
+# ── Spec-710: el lugar de cada hecho ────────────────────────────────────────
+
+
+def test_lugares_del_acto_por_hecho_en_orden_y_sin_repetir():
+    from src.domain.models import ActOutline
+
+    act = ActOutline(
+        number=2,
+        events=["a", "b", "c", "d"],
+        event_places=["La tienda", "", "La calle", "La tienda"],
+        scenario="Viejo",
+    )
+    assert [act.event_place(i) for i in range(4)] == [
+        "La tienda",
+        "La tienda",
+        "La calle",
+        "La tienda",
+    ]
+    assert act.places() == ["La tienda", "La calle"]
+
+
+def test_sin_lugares_por_hecho_vale_el_escenario_de_siempre():
+    """D2/D3: las escaletas viejas no cambian."""
+    from src.domain.models import ActOutline
+
+    assert ActOutline(number=1, events=["a"], scenario="La ruta").places() == ["La ruta"]
+    assert ActOutline(number=1, events=["a"]).places() == []
+    # El primero vacío toma el escenario del acto.
+    act = ActOutline(
+        number=1, events=["a", "b"], event_places=["", "La garita"], scenario="La ruta"
+    )
+    assert act.places() == ["La ruta", "La garita"]
+
+
+def test_los_lugares_siguen_el_largo_de_los_hechos():
+    from src.domain.models import ActOutline
+
+    assert ActOutline(number=1, events=["a", "b", "c"], event_places=["X"]).event_places == [
+        "X",
+        "",
+        "",
+    ]
+    assert ActOutline(number=1, events=["a"], event_places=["X", "Y"]).event_places == ["X"]

@@ -225,7 +225,8 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
     if not _estructuras().estructura(story.structure).tiene(number):
         raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     previous = next((a for a in story.outline if a.number == number), None)
-    fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
+    fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules", "event_places"}).items()}
+    fields["event_places"] = _event_places(form, previous, fields["events"])
     on_stage = {elenco.clave(n) for n in fields.get("on_stage", [])}
     act = ActOutline(
         number=number,
@@ -398,7 +399,7 @@ async def add_scenario(story_id: str, body: ScenarioForm) -> dict:
     repo = SQLStoryRepository()
     existing = _find(story.scenarios, name, key=lambda s: s.name)
     if existing is None:
-        used = _find([a.scenario for a in story.outline if a.scenario], name, key=lambda n: n)
+        used = _find([p for a in story.outline for p in a.places()], name, key=lambda n: n)
         name = used or name  # un lugar que ya usaba algún acto entra con su nombre
         story.scenarios = [
             *story.scenarios,
@@ -419,7 +420,7 @@ async def remove_scenario(story_id: str, body: NameForm) -> dict:
     """Spec-630 B7: borra un lugar de la historia y lo saca de los actos que lo usan."""
     story = await _editable(story_id)
     in_story = [s for s in story.scenarios if _same(s.name, body.name)]
-    in_acts = [a for a in story.outline if a.scenario and _same(a.scenario, body.name)]
+    in_acts = [a for a in story.outline if any(_same(p, body.name) for p in a.places())]
     if not in_story and not in_acts:
         raise HTTPException(
             status_code=404, detail=message("api.lugar_inexistente", nombre=body.name)
@@ -431,8 +432,12 @@ async def remove_scenario(story_id: str, body: NameForm) -> dict:
             for i, s in enumerate(s for s in story.scenarios if s not in in_story)
         ]
         await repo.update_inputs(story)
-    for act in in_acts:
-        await repo.save_act(story.id, act.model_copy(update={"scenario": ""}))
+    for act in in_acts:  # Spec-710: también en los hechos (quedan con «el de antes»)
+        update = {
+            "scenario": "" if _same(act.scenario, body.name) else act.scenario,
+            "event_places": ["" if _same(p, body.name) else p for p in act.event_places],
+        }
+        await repo.save_act(story.id, act.model_copy(update=update))
     return await _state(await _story(story_id))
 
 
@@ -709,11 +714,12 @@ async def _state(story: Story) -> dict:
         "scenarios": [
             {
                 "name": name,
-                "acts": [a.number for a in story.outline if a.scenario and _same(a.scenario, name)],
+                "acts": [
+                    a.number for a in story.outline if any(_same(p, name) for p in a.places())
+                ],
             }
             for name in dict.fromkeys(
-                [s.name for s in story.scenarios]
-                + [a.scenario for a in story.outline if a.scenario]
+                [s.name for s in story.scenarios] + [p for a in story.outline for p in a.places()]
             )
         ],
         "active_job": await job_manager.payload(active) if active else None,
@@ -726,6 +732,16 @@ def _grupo(m: molde.Molde, criterion: str) -> str:
     if m.giro and criterion in m.giro.criterios:
         return "giro"
     return "forma" if criterion in m.forma.criterios else "base"
+
+
+def _event_places(form: ActForm, previous: ActOutline | None, events: list[str]) -> list[str]:
+    """Spec-710 D1: los lugares van de a pares con los hechos (un hecho vacío se va con su
+    lugar; un lugar vacío queda: es «el del anterior»). Sin la lista, la guardada."""
+    if form.event_places is None:
+        kept = previous.event_places if previous else []
+        return kept if len(kept) == len(events) else []
+    pairs = zip(form.events, form.event_places + [""] * len(form.events), strict=False)
+    return [" ".join(p.split()) for e, p in pairs if e.strip()]
 
 
 def _clean(value):

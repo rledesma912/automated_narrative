@@ -132,9 +132,9 @@ class OutlineVerifier:
             t(
                 "asistente/verificador/acto/titulo_con_escenario",
                 numero=a.number,
-                escenario=a.scenario,
+                escenario=" · ".join(a.places()),  # Spec-710 D8
             )
-            if a.scenario
+            if a.places()
             else t("asistente/verificador/acto/titulo", numero=a.number)
         ]
         if a.bridge:
