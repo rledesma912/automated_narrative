@@ -25,3 +25,4 @@ Para cada acto devolvé:
 - "siembra": como máximo 2 detalles importantes que se plantan acá y que SÍ se retoman en un acto posterior (puede ser vacío; no pongas detalles de ambiente).
 - "retoma": detalles sembrados antes que acá se retoman (puede ser vacío).
 - "decisiones": los ids de las decisiones del autor que este acto usa.
+{personajes_nuevos}

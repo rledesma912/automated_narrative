@@ -192,3 +192,17 @@ Cada slice cierra con tests en verde y dev con el cambio.
 - **T4.1** `authoring_verifier.md` sin el punto de las personas fuera del elenco. **Hecho cuando:** el snapshot del Verificador se regenera a propósito y el diff es solo esa línea.
 - **T4.2** `scripts/research/730/medir_propuestos.py` (Sonnet, 3 largas + 1 corta, tope US$ 0,50; corre con OK). **Hecho cuando:** los resultados están en §11 y el usuario leyó los propuestos.
 - **T4.3** CLAUDE.md, memoria y PR. **Hecho cuando:** suites completas en verde, `make dev-status` en verde y el PR abierto.
+
+---
+
+## 11. Resultados
+
+### S1 — El Planificador propone (2026-10-29)
+
+- `personajes_nuevos_max` por estructura (largo 2, corto 1), validado al cargar (`Estructura`).
+- `Escaleta.personajes_nuevos` (opcional: si gemma no la devuelve, anda igual) y el fragmento `asistente/planificador/personajes_nuevos`, al final del prompt del Planificador. Si el tope es 0, no se pide.
+- `elenco.propuestos` (los que valen: con quién es y para qué, que no son de la historia ni de la autora, que aparecen en algún acto, hasta el tope) y `elenco.con_nota` (la nota `propuesto:` en el primer acto). `OutlinePlanner.plan` deja `self.propuestos` (D10).
+- `verifier.propuesto` en `core_messages.yaml`.
+- **Desvío de T1.3:** el mock propone recién en S2. Con el propuesto en el mock, una integración falla hasta que S2 lo suma a los personajes; S1 se prueba con un LLM guionado.
+- Snapshots del asistente, de los moldes y del pipeline: cambian solo en el pedido nuevo.
+- 1 100 pytest y 432 Vitest, en verde. La UI no cambia en S1.

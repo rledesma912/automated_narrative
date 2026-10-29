@@ -5,10 +5,10 @@ import re
 from functools import cache
 from typing import ClassVar
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from src.application.services import recursos_gastados
-from src.application.services.authoring import catalog, context, molde
+from src.application.services.authoring import catalog, context, elenco, molde
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
@@ -35,8 +35,17 @@ class ActoPlan(BaseModel):
     decisiones: list[str]
 
 
+class PersonajeNuevo(BaseModel):
+    """Spec-730: una persona que suma la IA, con quién es y para qué."""
+
+    nombre: str
+    quien_es: str
+    para_que: str
+
+
 class Escaleta(BaseModel):
     actos: list[ActoPlan]
+    personajes_nuevos: list[PersonajeNuevo] = Field(default_factory=list)  # Spec-730
     NUM_ACTOS: ClassVar[int] = 0  # lo fija `escaleta_model` según la estructura
 
     @model_validator(mode="after")
@@ -67,6 +76,7 @@ class OutlinePlanner:
         self.llm = llm
         self.templates = templates or TemplateLoader()
         self.prompt_builder = prompt_builder or PromptBuilder()
+        self.propuestos: list[elenco.Propuesto] = []  # Spec-730: después de `plan`
 
     async def plan(self, story: Story) -> tuple[list[ActOutline], float]:
         """Arma la escaleta completa (reemplaza la anterior)."""
@@ -91,7 +101,10 @@ class OutlinePlanner:
             last = acts[-1]
             if "final" not in last.decisions:
                 acts[-1] = last.model_copy(update={"decisions": [*last.decisions, "final"]})
-        return acts, elapsed
+        # Spec-730 (D10): los personajes que sumó la IA con un para qué, y su nota.
+        maximo = self.prompt_builder.estructura(story).personajes_nuevos_max
+        self.propuestos = elenco.propuestos(story, acts, result.personajes_nuevos, maximo)
+        return elenco.con_nota(acts, self.propuestos), elapsed
 
     def system_prompt(self, story: Story) -> str:
         """Las reglas de siempre y, al final, las de la forma y el giro (Spec-670)."""
@@ -125,6 +138,16 @@ class OutlinePlanner:
             ultimo=self.prompt_builder.estructura(story).ultimo,
             num_actos=self.prompt_builder.estructura(story).num_actos,
             hechos_por_acto=self.prompt_builder.estructura(story).hechos_por_acto,
+            personajes_nuevos=self._new_cast_block(story),
+        )
+
+    def _new_cast_block(self, story: Story) -> str:
+        """Spec-730: cuántos personajes puede sumar la IA (ninguno: no se pide)."""
+        maximo = self.prompt_builder.estructura(story).personajes_nuevos_max
+        if not maximo:
+            return ""
+        return "\n" + self.templates.fragment(
+            "asistente/planificador/personajes_nuevos", max=maximo
         )
 
     def _worn_block(self, story: Story) -> str:

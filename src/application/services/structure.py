@@ -18,6 +18,7 @@ class Estructura:
     revela_secreto: int
     palabras_total: str = ""  # para el objetivo del asistente («unas N palabras»)
     hechos_por_acto: str = ""  # lo que pide el Planificador para cada acto
+    personajes_nuevos_max: int = 0  # Spec-730 D11: cuántos personajes puede proponer la IA
     # D10: {estructura de origen: {acto de allá: acto de acá}} para reubicar las reglas.
     reubicar_desde: dict[str, dict[int, int]] = field(default_factory=dict)
 
@@ -73,6 +74,9 @@ def validate(estructura_id: str, data: dict, exposures: dict) -> Estructura:
     for key in ("palabras_total", "hechos_por_acto"):  # van a los prompts del asistente
         if not data.get(key):
             raise ValueError(f"{where}: falta {key}")
+    nuevos = data.get("personajes_nuevos_max", 0)
+    if not isinstance(nuevos, int) or isinstance(nuevos, bool) or nuevos < 0:
+        raise ValueError(f"{where}: personajes_nuevos_max tiene que ser un entero ≥ 0")
     revela = data.get("revela_secreto")
     if not isinstance(revela, int) or not 1 <= revela <= len(actos):
         raise ValueError(f"{where}: revela_secreto tiene que ser un acto de la estructura")
@@ -83,6 +87,7 @@ def validate(estructura_id: str, data: dict, exposures: dict) -> Estructura:
         revela_secreto=revela,
         palabras_total=str(data.get("palabras_total", "")),
         hechos_por_acto=str(data.get("hechos_por_acto", "")),
+        personajes_nuevos_max=nuevos,
         reubicar_desde={
             src: {int(k): int(v) for k, v in table.items()}
             for src, table in (data.get("reubicar_desde") or {}).items()

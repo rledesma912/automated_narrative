@@ -503,3 +503,61 @@ async def test_el_recurso_gastado_se_ve_aunque_el_acto_tenga_tres_avisos(story):
     keys = [w.key for w in v.outline[0].warnings]
     assert len(keys) == 4 and keys[-1] == "gastado:huellas"
     assert "gastado:perros" not in keys  # uno por acto
+
+
+# ── Spec-730: los personajes que propone la IA ──────────────────────────────
+
+
+def _nuevo(nombre, quien_es="el sereno de la terminal", para_que="le advierte que no pare."):
+    return {"nombre": nombre, "quien_es": quien_es, "para_que": para_que}
+
+
+async def test_propone_con_para_que_hasta_el_tope_y_deja_la_nota(story):
+    actos = [
+        _acto(1),
+        _acto(2, en_escena=["José", "Don Ramón (el sereno)"]),
+        _acto(3, en_escena=["José", "Tito", "Beto", "Lucía"]),
+        _acto(4, en_escena=["José", "Don Ramón"]),
+        _acto(5),
+    ]
+    nuevos = [
+        _nuevo("Lucía", para_que=""),  # sin para qué: aviso de siempre
+        _nuevo("Pedro"),  # no aparece en ningún acto (D13)
+        _nuevo("Don Ramón"),
+        _nuevo("Tito", "el hijo del dueño", "le roba la linterna"),
+        _nuevo("Beto"),  # pasa el tope del largo (2)
+    ]
+    planner = OutlinePlanner(ScriptedLLM({"actos": actos, "personajes_nuevos": nuevos}))
+
+    acts, _ = await planner.plan(story)
+
+    assert [(p.nombre, p.acto) for p in planner.propuestos] == [("Don Ramón", 2), ("Tito", 3)]
+    nota = acts[1].warnings[0]
+    assert nota.key == "propuesto:don ramon" and nota.source == "regla"
+    assert (
+        nota.text == "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no pare."
+    )
+    assert [w.key for w in acts[2].warnings] == ["propuesto:tito"]
+    assert not acts[3].warnings  # la nota va solo en el primer acto donde aparece
+    prompt = planner.llm.calls[0]["prompt"]
+    assert '"personajes_nuevos"' in prompt and "Como mucho 2." in prompt
+
+
+async def test_no_propone_lo_que_ya_es_de_la_historia_ni_mas_de_uno_en_el_corto(story):
+    cast = [*story.personajes_full, {"name": "Marta", "role": "pasajera"}]
+    story = story.model_copy(update={"structure": "corto", "personajes_full": cast})
+    actos = [_acto(1), _acto(2, en_escena=["José", "Marta", "Tito", "Beto"]), _acto(3)]
+    nuevos = [_nuevo("Marta"), _nuevo("José"), _nuevo("Tito"), _nuevo("Beto")]
+    planner = OutlinePlanner(ScriptedLLM({"actos": actos, "personajes_nuevos": nuevos}))
+
+    await planner.plan(story)
+
+    assert [p.nombre for p in planner.propuestos] == ["Tito"]
+    assert "Como mucho 1." in planner.llm.calls[0]["prompt"]
+
+
+async def test_sin_personajes_nuevos_en_la_respuesta_anda_igual(story):
+    """gemma puede no devolver la lista: es opcional."""
+    planner = OutlinePlanner(ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]}))
+    acts, _ = await planner.plan(story)
+    assert planner.propuestos == [] and not any(a.warnings for a in acts)
