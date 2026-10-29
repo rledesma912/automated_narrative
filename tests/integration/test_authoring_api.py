@@ -1095,6 +1095,10 @@ async def test_el_lugar_de_cada_hecho_va_con_su_hecho(client):
     # Sin la lista (una pestaña vieja) se conserva si los hechos no cambiaron de largo.
     state = (await client.put(f"{API}/stories/{sid}/outline/1", json={"events": ["A", "B"]})).json()
     assert state["outline"]["acts"][0]["event_places"] == ["La tienda", ""]
+    # Cambiar el lugar del acto (el radio) pone todo el acto en ese lugar.
+    body = {"events": ["A", "B"], "scenario": "La garita"}
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json=body)).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La garita", ""]
     state = (await client.put(f"{API}/stories/{sid}/outline/1", json={"events": ["A"]})).json()
     assert state["outline"]["acts"][0]["event_places"] == []
 

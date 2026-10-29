@@ -410,8 +410,12 @@ async def add_scenario(story_id: str, body: ScenarioForm) -> dict:
         name = existing.name
     if body.act is not None:
         act = _act(story, body.act)
-        if act.scenario != name:
-            await repo.save_act(story.id, act.model_copy(update={"scenario": name}))
+        if act.places() != [name]:
+            # Spec-710: todo el acto en ese lugar (el primer hecho; los demás, «el de antes»).
+            update = {"scenario": name}
+            if act.event_places:
+                update["event_places"] = [name] + [""] * (len(act.events) - 1)
+            await repo.save_act(story.id, act.model_copy(update=update))
     return await _state(await _story(story_id))
 
 
@@ -739,6 +743,13 @@ def _event_places(form: ActForm, previous: ActOutline | None, events: list[str])
     lugar; un lugar vacío queda: es «el del anterior»). Sin la lista, la guardada."""
     if form.event_places is None:
         kept = previous.event_places if previous else []
+        changed = "scenario" in form.model_fields_set and _clean(form.scenario) != (
+            previous.scenario if previous else ""
+        )
+        if kept and changed and events:
+            # El radio de «Dónde pasa» (escaletas viejas, y hasta que cada hecho tenga su
+            # lugar en la tarjeta): todo el acto en ese lugar.
+            return [_clean(form.scenario)] + [""] * (len(events) - 1)
         return kept if len(kept) == len(events) else []
     pairs = zip(form.events, form.event_places + [""] * len(form.events), strict=False)
     return [" ".join(p.split()) for e, p in pairs if e.strip()]

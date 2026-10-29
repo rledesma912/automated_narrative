@@ -19,14 +19,20 @@ from src.messages import message
 ROLE = "planificador"
 
 
+class Hecho(BaseModel):
+    """Spec-710: un hecho con el lugar donde pasa."""
+
+    texto: str
+    lugar: str
+
+
 class ActoPlan(BaseModel):
     numero: int
     como_llega: str  # Spec-560 A1: "" en el acto 1
     objetivo: str
-    hechos: list[str]
+    hechos: list[Hecho]  # Spec-710: cada uno con su lugar (sale «escenario» del acto)
     cambio_de: str
     cambio_a: str
-    escenario: str
     en_escena: list[str]
     se_guarda: str
     se_revela_en: int  # Spec-560 A4: acto que revela lo guardado (0 si no se guarda nada)
@@ -53,7 +59,7 @@ class Escaleta(BaseModel):
         numbers = sorted(a.numero for a in self.actos)
         if numbers != list(range(1, self.NUM_ACTOS + 1)):
             raise ValueError(message("job.escaleta_sin_actos", actos=numbers, total=self.NUM_ACTOS))
-        empty = [a.numero for a in self.actos if not [h for h in a.hechos if h.strip()]]
+        empty = [a.numero for a in self.actos if not [h for h in a.hechos if h.texto.strip()]]
         if empty:
             raise ValueError(message("job.escaleta_sin_hechos", actos=empty))
         return self
@@ -251,19 +257,31 @@ def _scenario_name(name: str) -> str:
     return re.sub(r"\s*\([^)]*\)\s*$", "", " ".join(name.split())) or name.strip()
 
 
+def _lugar(name: str) -> str:
+    """Spec-710 D9: el lugar como lo diría una persona: «casa_susana» → «Casa susana»; de un
+    compuesto («Cocina / living», «La casa, el patio») queda el primero."""
+    name = " ".join(name.replace("_", " ").split())
+    name = re.split(r"\s*/\s*|,\s*|\s+y\s+", name, maxsplit=1)[0]
+    name = _scenario_name(name)
+    return name[:1].upper() + name[1:]
+
+
 def _clean(items: list[str]) -> list[str]:
     return [" ".join(i.split()) for i in items if i and i.strip()]
 
 
 def _to_outline(a: ActoPlan, valid_decisions: set[str], last: int) -> ActOutline:
+    hechos = [h for h in a.hechos if h.texto.strip()]
     return ActOutline(
         number=a.numero,
         bridge="" if a.numero == 1 else " ".join(a.como_llega.split()),
         goal=a.objetivo.strip(),
-        events=_clean(a.hechos),
+        events=[" ".join(h.texto.split()) for h in hechos],
+        event_places=[_lugar(h.lugar) for h in hechos],
         change_from=a.cambio_de.strip(),
         change_to=a.cambio_a.strip(),
-        scenario=_scenario_name(a.escenario),
+        # D3: en las escaletas nuevas, el lugar del acto es el de su primer hecho.
+        scenario=_lugar(hechos[0].lugar) if hechos else "",
         on_stage=list(dict.fromkeys(_scenario_name(n) for n in _clean(a.en_escena))),
         held_back=a.se_guarda.strip(),
         reveal_act=a.se_revela_en

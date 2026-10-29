@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — escaleta (Planificador, Verificador, Voz) + tarjeta del acto
-**Estado:** IMPLEMENT (2026-10-29): S1 hecho.
+**Estado:** IMPLEMENT (2026-10-29): S1 y S2 hechos.
 **Rama:** a crear desde `development`
 **Extiende:** Spec-530 (escaleta), Spec-630 B6/B7 (lugares de la historia), Spec-590 (lo que recibe la Voz).
 **Hermana:** Spec-700 (salió de la misma revisión del uso de Vale).
@@ -288,3 +288,12 @@ Las historias vuelven como borradores, como dice CLAUDE.md. Se anota en el PR; e
 - **Ensayo del pase a prod** sobre una copia de la base de dev (copia de prod del 2026-10-29): `export-yaml --all` con el código de `development` → base nueva → `import-yaml` con el código nuevo. Volvieron 16 historias, 58 actos, 135 respuestas y 45 personajes (los mismos números).
 - **Dev:** se sumó la columna a mano a `data/dev/stories.db` (backup en `data/dev/backup/`, sin script en el repo), para no perder los relatos de la copia.
 - 1 107 pytest, 435 Vitest y 88 E2E (Firefox), en verde.
+
+### S2 — El Planificador (2026-10-29)
+
+- `ActoPlan.hechos` es una lista de `{texto, lugar}`; sale `escenario`. El prompt pide el lugar de cada hecho con la regla de D9 (dónde se está, no una cosa del lugar; uno solo, corto, con espacios; si sigue donde el anterior, el mismo nombre) y dice «si un hecho ocurre en otro lugar» en vez de «un acto».
+- `_lugar()` (D9): «_» → espacio, primera letra en mayúscula, de un compuesto («/», «,», « y ») queda el primero, sin la aclaración entre paréntesis. Un hecho vacío se va con su lugar. `scenario` del acto = el lugar del primer hecho (D3).
+- D10: `lugares.py` (`nuevos`, `con_lugares`). `plan_outline` y `full_generation` sin escaleta suman los lugares de los hechos a `story.scenarios`.
+- **Mientras la tarjeta tenga el radio de «Dónde pasa»** (hasta S4): elegir un lugar para el acto (`…/scenarios` con `act`, o cambiar el radio en el autoguardado sin mandar `event_places`) pone todo el acto en ese lugar: el primer hecho con ese lugar y los demás con «el de antes».
+- Snapshots: cambia solo el prompt del Planificador; lo que recibe la Voz queda igual (en el mock todos los hechos pasan en el mismo lugar).
+- 1 112 pytest, 435 Vitest y 88 E2E (Firefox), en verde. En una corrida falló un E2E de lugares, que mostró el caso del radio (ya resuelto), y en otra el de cancelar en la sala, intermitente como en la 720.

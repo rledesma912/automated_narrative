@@ -101,7 +101,7 @@ class GenerateStoryUseCase:
         on_step_start: Callable[[str], None] | None,
     ) -> None:
         """La historia no tiene escaleta: se arma y se revisa antes de narrar."""
-        from src.application.services.authoring import context, elenco, final_de_la_idea
+        from src.application.services.authoring import context, elenco, final_de_la_idea, lugares
         from src.application.services.authoring.planner import OutlinePlanner
         from src.application.services.authoring.verifier import OutlineVerifier
 
@@ -121,9 +121,12 @@ class GenerateStoryUseCase:
         # Spec-730: también los que propuso la IA con un para qué.
         nuevos = planner.propuestos
         cast = elenco.personajes_de_la_autora(story, acts) + [p.nombre for p in nuevos]
-        if cast:
+        # Spec-710 D10: los lugares de los hechos pasan a ser lugares de la historia.
+        places = lugares.nuevos(story, acts)
+        if cast or places:
             roles = {p.nombre: p.quien_es for p in nuevos}
             story.personajes_full = elenco.con_personajes(story, cast, roles).personajes_full
+            story.scenarios = lugares.con_lugares(story, places).scenarios
             if self.story_repo is not None:
                 await self.story_repo.update_inputs(story)
         if on_stage:

@@ -14,6 +14,7 @@ from src.application.services.authoring import (
     elenco,
     final_de_la_idea,
     form_suggester,
+    lugares,
     revisor,
 )
 from src.application.services.authoring.consultant import WorkshopConsultant
@@ -70,6 +71,16 @@ async def _hecho_local(story_id: UUID, llm, *, actos: bool) -> None:
     marked = context.con_hecho_local(story, getattr(llm, "respaldos", set()), actos=actos)
     if marked.direction != story.direction:
         await SQLStoryRepository().update_direction(story_id, marked.direction)
+
+
+async def _with_places(story: Story, acts) -> Story:
+    """Spec-710 D10: los lugares de los hechos se suman a los de la historia."""
+    names = lugares.nuevos(story, acts)
+    if not names:
+        return story
+    story = lugares.con_lugares(story, names)
+    await SQLStoryRepository().update_inputs(story)
+    return story
 
 
 async def _with_cast(story: Story, acts, propuestos=()) -> Story:
@@ -129,6 +140,7 @@ def plan_outline_runner(story_id: UUID) -> JobRunner:
             planner = OutlinePlanner(llm)
             acts, _ = await planner.plan(story)
             story = await _with_cast(story, acts, planner.propuestos)  # Spec-730
+            story = await _with_places(story, acts)  # Spec-710 D10
             yield stage_event(JobStage.VERIFICADOR, None, None)
             checked = await OutlineVerifier(llm).verify(story, acts)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
