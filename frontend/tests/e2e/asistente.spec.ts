@@ -72,7 +72,7 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
 
   const acto2 = page.locator('form[data-number="2"]');
   await expect(acto2).toContainText("El encuentro del acto 2 repite el del acto 1.");
-  await acto2.getByRole("button", { name: "Ignorar" }).click();
+  await acto2.locator('[data-ignorar^="ia:"]').click();
   await expect(page.locator('form[data-number="2"] .nota-forge--warning').filter({ hasText: "repite el del acto 1" })).toHaveCount(0);
 
   const acto1 = page.locator('form[data-number="1"]');

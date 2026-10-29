@@ -172,13 +172,21 @@ def next_id(cast: list[dict]) -> str:
     return f"P{max(nums, default=0) + 1}"
 
 
-def con_personajes(story: Story, names: list[str]) -> Story:
-    """La historia con esos personajes sumados (persona, sin parentesco: D21)."""
+def con_personajes(story: Story, names: list[str], roles: dict[str, str] | None = None) -> Story:
+    """La historia con esos personajes sumados (persona, sin parentesco: D21). Spec-730: los
+    que propuso la IA llevan quién es como `role` (la Voz lo recibe)."""
     if not names:
         return story
+    roles = roles or {}
     cast = list(story.personajes_full or [])
     for name in names:
         cast.append(
-            {"id": next_id(cast), "name": name, "role": "", "kind": "persona", "relation": ""}
+            {
+                "id": next_id(cast),
+                "name": name,
+                "role": roles.get(name, ""),
+                "kind": "persona",
+                "relation": "",
+            }
         )
     return story.model_copy(update={"personajes_full": cast})

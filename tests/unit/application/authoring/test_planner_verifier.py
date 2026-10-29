@@ -561,3 +561,27 @@ async def test_sin_personajes_nuevos_en_la_respuesta_anda_igual(story):
     planner = OutlinePlanner(ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]}))
     acts, _ = await planner.plan(story)
     assert planner.propuestos == [] and not any(a.warnings for a in acts)
+
+
+async def test_revisar_conserva_la_nota_y_rearmar_no_la_toma_como_problema(story):
+    """Spec-730 D8 y D9."""
+    nota = OutlineWarning(text="La IA sumó a «Tito»…", key="propuesto:tito", source="regla")
+    outline = [
+        ActOutline(
+            number=n,
+            events=[f"hecho {n}"],
+            on_stage=["José"],
+            change_from="a",
+            change_to="b",
+            bridge="" if n == 1 else "Sigue.",
+            warnings=[nota] if n == 2 else [],
+        )
+        for n in range(1, 6)
+    ]
+    checked = await OutlineVerifier(ScriptedLLM({"decisiones": [], "avisos": []})).verify(
+        story, outline
+    )
+    assert nota in checked.outline[1].warnings
+
+    rearmar = story.model_copy(update={"outline": checked.outline})
+    assert "La IA sumó" not in OutlinePlanner(llm=None)._prompt(rearmar)

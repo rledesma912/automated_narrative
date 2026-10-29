@@ -231,13 +231,14 @@ class OutlinePlanner:
 
     def _problems_block(self, story: Story) -> str:
         """Spec-560 A6: al rearmar, los avisos visibles de la escaleta anterior (no los
-        ignorados)."""
+        ignorados). Spec-730 D9: la nota de un personaje que sumó la IA no es un problema."""
         t = self.templates.fragment
         lines = [
             t("asistente/aviso_de_acto", numero=a.number, aviso=w.text)
             for a in sorted(story.outline, key=lambda a: a.number)
             if not a.draft
             for w in a.visible_warnings()
+            if not w.key.startswith("propuesto:")
         ]
         if not lines:
             return ""

@@ -115,11 +115,15 @@ class GenerateStoryUseCase:
                 await self.story_repo.save_workshop_items(story.id, [ending])
         if on_step_start:
             on_step_start("📐  Armando la escaleta...")
-        acts, _ = await OutlinePlanner(self.llm, prompt_builder=self.prompt_builder).plan(story)
-        # Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar.
-        cast = elenco.personajes_de_la_autora(story, acts)
+        planner = OutlinePlanner(self.llm, prompt_builder=self.prompt_builder)
+        acts, _ = await planner.plan(story)
+        # Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar;
+        # Spec-730: también los que propuso la IA con un para qué.
+        nuevos = planner.propuestos
+        cast = elenco.personajes_de_la_autora(story, acts) + [p.nombre for p in nuevos]
         if cast:
-            story.personajes_full = elenco.con_personajes(story, cast).personajes_full
+            roles = {p.nombre: p.quien_es for p in nuevos}
+            story.personajes_full = elenco.con_personajes(story, cast, roles).personajes_full
             if self.story_repo is not None:
                 await self.story_repo.update_inputs(story)
         if on_stage:

@@ -101,7 +101,9 @@ async def test_crear_desde_la_direccion(client):
         "habla": "",  # Spec-680 C1: la de siempre
     }
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
-    assert state["characters"] == [{"name": "José", "kind": "persona", "relation": "", "acts": []}]
+    assert state["characters"] == [
+        {"name": "José", "kind": "persona", "relation": "", "role": "Chofer de micros", "acts": []}
+    ]
     story = (await client.get(f"/api/v1/stories/{state['story_id']}")).json()
     assert story["protagonista"] == "José: Chofer de micros"
     assert story["sinopsis"] == FORM["premise"]
@@ -193,9 +195,13 @@ async def test_escaleta_y_revision(client):
     acts = state["outline"]["acts"]
     assert [a["number"] for a in acts] == [1, 2, 3, 4, 5]
     assert [w["text"] for w in acts[1]["warnings"]] == [
-        "El encuentro del acto 2 repite el del acto 1."
+        "El encuentro del acto 2 repite el del acto 1.",
+        # Spec-730: el mock suma a alguien con un para qué; la nota va aparte del tope.
+        "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no se detenga.",
     ]
     assert acts[1]["warnings"][0]["source"] == "ia" and not acts[1]["warnings"][0]["dismissed"]
+    ramon = next(c for c in state["characters"] if c["name"] == "Don Ramón")
+    assert ramon["role"] == "el sereno de la terminal"
     assert "Escenario de ejemplo" in [s["name"] for s in state["scenarios"]]
     state = await _run_job(client, sid, "verify_outline")
     assert state["outline"]["acts"][1]["warnings"]
@@ -282,7 +288,7 @@ async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
     ).json()
     await client.post(f"{API}/stories/{sid}/characters", json={"name": "el sereno"})  # no duplica
     state = (await client.get(f"{API}/stories/{sid}")).json()
-    assert [c["name"] for c in state["characters"]] == ["José", "El sereno"]
+    assert [c["name"] for c in state["characters"]] == ["José", "Don Ramón", "El sereno"]
 
     warning = state["outline"]["acts"][1]["warnings"][0]
     state = (
@@ -290,12 +296,23 @@ async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
             f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": warning["key"]}
         )
     ).json()
-    assert [w["dismissed"] for w in state["outline"]["acts"][1]["warnings"]] == [True]
+    assert [(w["key"][:10], w["dismissed"]) for w in state["outline"]["acts"][1]["warnings"]] == [
+        (warning["key"][:10], True),
+        ("propuesto:", False),  # Spec-730: la nota del personaje que sumó la IA
+    ]
 
     # Spec-550 H10: revisar de nuevo no lo trae de vuelta (el mock repite el mismo aviso).
     state = await _run_job(client, sid, "verify_outline")
     visibles = [w for w in state["outline"]["acts"][1]["warnings"] if not w["dismissed"]]
     assert warning["text"] not in [w["text"] for w in visibles]
+    # Spec-730 D8: revisar conserva la nota; cerrada («Entendido»), no vuelve.
+    assert "propuesto:don ramon" in [w["key"] for w in visibles]
+    await client.post(
+        f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": "propuesto:don ramon"}
+    )
+    state = await _run_job(client, sid, "verify_outline")
+    visibles = [w for w in state["outline"]["acts"][1]["warnings"] if not w["dismissed"]]
+    assert "propuesto:don ramon" not in [w["key"] for w in visibles]
 
     # «Volver a mostrar».
     state = (
@@ -779,7 +796,7 @@ async def test_los_personajes_de_la_idea_se_suman_solos(client):
 
     state = await _run_job(client, sid, "verify_outline")
 
-    assert [c["name"] for c in state["characters"]] == ["José", "Marta"]
+    assert [c["name"] for c in state["characters"]] == ["José", "Don Ramón", "Marta"]
     assert set(_elenco(state, 2)) == {"elenco:el sereno"}  # Marta no se pregunta
     sereno = _elenco(state, 3)["elenco:el sereno"]
     assert sereno["subject"] == "El sereno" and sereno["similar"] == ""
@@ -821,7 +838,7 @@ async def test_es_uno_de_la_lista_escrito_distinto(client):
     assert acts[1]["on_stage"] == ["José", "Amigas de José"]
     assert acts[2]["on_stage"] == ["Amigas de José"]  # sin repetir
     assert not _elenco(state, 2) and not _elenco(state, 3)
-    assert [c["name"] for c in state["characters"]] == ["José", "Amigas de José"]
+    assert [c["name"] for c in state["characters"]] == ["José", "Don Ramón", "Amigas de José"]
     resp = await client.post(
         f"{API}/stories/{sid}/characters/same", json={"name": "X", "same_as": "Nadie"}
     )

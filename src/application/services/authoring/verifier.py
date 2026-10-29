@@ -95,6 +95,7 @@ class OutlineVerifier:
                     update={
                         "warnings": _dedup(warnings.get(act.number, []))[:MAX_WARNINGS_PER_ACT]
                         + worn.get(act.number, [])[:1]
+                        + [w for w in act.warnings if _propuesto(w) and not w.dismissed]
                         + [w for w in act.warnings if w.dismissed],
                         "decisions": used,
                     }
@@ -263,6 +264,12 @@ def worn_warnings(
                 OutlineWarning(text=text, key=key, source="regla")
             )
     return out
+
+
+def _propuesto(w: OutlineWarning) -> bool:
+    """Spec-730 D8: la nota de un personaje que sumó la IA la pone el Planificador; revisar
+    la conserva (aparte del tope de avisos)."""
+    return w.key.startswith("propuesto:")
 
 
 def cast_names(story: Story) -> list[str]:

@@ -694,6 +694,7 @@ async def _state(story: Story) -> dict:
                 "name": p.get("name", ""),
                 "kind": p.get("kind", "persona"),
                 "relation": p.get("relation", ""),
+                "role": p.get("role", ""),  # Spec-730: quién es (los que sumó la IA)
                 # Spec-630 B7: en qué actos está (lo dice la confirmación de borrar).
                 "acts": [
                     a.number

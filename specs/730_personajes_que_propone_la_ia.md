@@ -206,3 +206,10 @@ Cada slice cierra con tests en verde y dev con el cambio.
 - **Desvío de T1.3:** el mock propone recién en S2. Con el propuesto en el mock, una integración falla hasta que S2 lo suma a los personajes; S1 se prueba con un LLM guionado.
 - Snapshots del asistente, de los moldes y del pipeline: cambian solo en el pedido nuevo.
 - 1 100 pytest y 432 Vitest, en verde. La UI no cambia en S1.
+
+### S2 — Se suman solos y la nota sobrevive (2026-10-29)
+
+- `elenco.con_personajes` con `role` por nombre. `_with_cast` (`plan_outline`) y `GenerateStoryUseCase._plan` suman los propuestos con quién es, además de los de la autora. `_state.characters` trae `role`.
+- `verify` conserva los `propuesto:` sin cerrar, aparte del tope (D8); cerrada, la nota queda como ignorada y no vuelve. `_problems_block` saltea las notas al rearmar (D9).
+- El mock propone a «Don Ramón, el sereno de la terminal» en el acto 2. Por eso el snapshot del pipeline lo muestra entre los personajes y en escena, con su quién es (la Voz lo recibe). Se ajustaron 4 integraciones y un E2E (el «Ignorar» del aviso de la IA).
+- 1 102 pytest, 432 Vitest y 87 E2E (Firefox), en verde.
