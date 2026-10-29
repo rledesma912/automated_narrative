@@ -34,14 +34,29 @@ class LLMFactory:
             return LLMFactory._single(provider)
 
         by_role = {role: settings.role_provider(role) for role in LLM_ROLES}
-        providers = set(by_role.values())
+        # Spec-720 D6: el respaldo de un rol (otro proveedor) también entra en el ruteo.
+        respaldo = {
+            role: cfg
+            for role in LLM_ROLES
+            if isinstance(cfg := settings.role_config(role).get("respaldo"), dict)
+        }
+        providers = set(by_role.values()) | {
+            cfg.get("provider") or settings.llm_provider for cfg in respaldo.values()
+        }
         if len(providers) <= 1:
             return LLMFactory._single(providers.pop() if providers else settings.llm_provider)
 
         adapters = {p: LLMFactory._single(p) for p in sorted(providers)}
         default = adapters.get(settings.llm_provider) or next(iter(adapters.values()))
         logger.info(f"[FACTORY] Perfil mixto por rol: {by_role}")
-        return RoleRoutingAdapter({r: adapters[p] for r, p in by_role.items()}, default=default)
+        return RoleRoutingAdapter(
+            {r: adapters[p] for r, p in by_role.items()},
+            default=default,
+            respaldo={
+                r: (adapters[cfg.get("provider") or settings.llm_provider], cfg)
+                for r, cfg in respaldo.items()
+            },
+        )
 
     @staticmethod
     def _single(selected_provider: str) -> LLMProvider:

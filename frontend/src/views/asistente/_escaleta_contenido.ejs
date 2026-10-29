@@ -37,6 +37,26 @@
         <button type="button" class="nota-forge__accion" data-idea-revisada="actos">Dejarlo así</button>
       </div>
     <% } %>
+    <% const local = state.hecho_local || {}; %>
+    <% if (local.actos || local.revision) { %>
+      <%/* Spec-720 D7: la IA de la nube no atendió y lo hizo la de la compu (respaldo). Se va al
+           rearmar o revisar con la nube, o con «Dejarlo así». */%>
+      <div class="nota-forge nota-forge--info mb-8 max-w-3xl" data-hecho-local="<%= local.actos ? 'actos' : 'revision' %>">
+        <i data-lucide="cloud-off" class="nota-forge__icono"></i>
+        <% if (local.actos) { %>
+          <p class="flex-1">Estos actos los armó la IA de tu compu porque la de la nube no respondió. Cuando vuelva, podés armarlos de nuevo.</p>
+          <button type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
+                  data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos y después los revisa."
+                  data-confirmar="La IA arma los actos de nuevo. Lo que les cambiaste a mano a los actos se reemplaza."
+                  data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo">Armar los actos de nuevo</button>
+        <% } else { %>
+          <p class="flex-1">La revisión la hizo la IA de tu compu porque la de la nube no respondió. Cuando vuelva, podés revisar de nuevo.</p>
+          <button type="button" class="nota-forge__accion" data-analizar="verify_outline" data-titulo="Revisando los actos…"
+                  data-detalle="La IA busca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren.">Revisar de nuevo</button>
+        <% } %>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="local">Dejarlo así</button>
+      </div>
+    <% } %>
     <section class="grid md:grid-cols-2 gap-4 mb-10" data-resumen-actos>
       <div class="bg-forge-surface border border-forge-border p-5">
         <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que respondiste · <%= integradas %> de <%= decisions.length %> en los actos</h3>

@@ -504,7 +504,7 @@
 
   /** Spec-700 D16: «Dejarlo así». Sella la idea en ese paso (sin IA) y la nota se va. */
   async function ideaRevisada(btn) {
-    const nota = btn.closest("[data-idea-cambio]");
+    const nota = btn.closest("[data-idea-cambio], [data-hecho-local]");
     try {
       await flushAll();
       await api("POST", `/authoring/stories/${page.storyId}/idea-revisada`, { paso: btn.dataset.ideaRevisada });

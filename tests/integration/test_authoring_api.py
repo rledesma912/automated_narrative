@@ -1016,3 +1016,42 @@ async def test_sin_cambiar_la_idea_no_se_revisa(client, monkeypatch):
     state = await _run_job(client, sid, "consult")
     assert "revisiones" not in _Contando.pedidos
     assert not any(i["no_coincide"] for i in _items(state).values())
+
+
+# ── Spec-720 D7: lo que hizo la IA de la compu porque la nube no atendió ────
+
+
+class _ConRespaldo(MockLLMAdapter):
+    """El mock, como si la nube no hubiera atendido y respondiera el respaldo."""
+
+    def __init__(self, respaldos: set[str]):
+        super().__init__()
+        self.respaldos = set(respaldos)
+
+
+async def test_actos_armados_por_el_respaldo_quedan_marcados(client, monkeypatch):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    ambos = _ConRespaldo({"planificador", "verificador"})
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: ambos))
+    state = await _run_job(client, sid, "plan_outline")
+    assert state["hecho_local"] == {"actos": True, "revision": True}
+
+    # Revisar con la nube saca solo la marca de la revisión.
+    nube = _ConRespaldo(set())
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: nube))
+    state = await _run_job(client, sid, "verify_outline")
+    assert state["hecho_local"] == {"actos": True, "revision": False}
+
+    # El autoguardado de «Tu idea» la conserva; «Dejarlo así» la saca.
+    state = (await client.put(f"{API}/stories/{sid}/direction", json=FORM)).json()
+    assert state["hecho_local"]["actos"] is True
+    state = (await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "local"})).json()
+    assert state["hecho_local"] == {"actos": False, "revision": False}
+
+
+async def test_actos_armados_con_la_nube_no_quedan_marcados(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    state = await _run_job(client, sid, "plan_outline")  # el mock, sin respaldos
+    assert state["hecho_local"] == {"actos": False, "revision": False}

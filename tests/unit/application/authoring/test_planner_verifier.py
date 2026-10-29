@@ -441,10 +441,13 @@ def _con_idea(story, premisa):
     )
 
 
-def test_el_planificador_no_recibe_la_lista_de_recursos_gastados(story):
-    """S5: con gemma la lista no los evitaba (y quizás se los sugería): solo avisa el
-    Verificador."""
-    assert "RECURSOS GASTADOS" not in OutlinePlanner(llm=None)._prompt(story)
+def test_el_planificador_recibe_la_lista_sin_lo_que_trae_el_autor(story):
+    """Spec-720 D9: con el Planificador en Claude vuelve la lista (con gemma no los evitaba,
+    680 D25). Lo que trae el autor no se lista (D19); el Verificador sigue avisando."""
+    prompt = OutlinePlanner(llm=None)._prompt(story)
+    assert "RECURSOS GASTADOS" in prompt and "- la luz que parpadea" in prompt
+    con_luz = _con_idea(story, "En la casa, la luz parpadea cada noche.")
+    assert "- la luz que parpadea" not in OutlinePlanner(llm=None)._prompt(con_luz)
 
 
 async def test_el_verificador_avisa_un_recurso_gastado_despues_de_la_ia(story):

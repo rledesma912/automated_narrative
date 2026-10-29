@@ -63,6 +63,15 @@ async def _idea_leida(story: Story, paso: str) -> None:
         await SQLStoryRepository().update_direction(story.id, story.direction)
 
 
+async def _hecho_local(story_id: UUID, llm, *, actos: bool) -> None:
+    """Spec-720 D7: si respondió la IA de la compu (respaldo), «Los actos» lo dicen; si
+    respondió la nube, la marca se va. Relee la historia: el job ya selló la idea."""
+    story = await _load(story_id)
+    marked = context.con_hecho_local(story, getattr(llm, "respaldos", set()), actos=actos)
+    if marked.direction != story.direction:
+        await SQLStoryRepository().update_direction(story_id, marked.direction)
+
+
 async def _with_cast(story: Story, acts) -> Story:
     """Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar
     (así la regla de los personajes no pregunta por ellos)."""
@@ -122,6 +131,7 @@ def plan_outline_runner(story_id: UUID) -> JobRunner:
             checked = await OutlineVerifier(llm).verify(story, acts)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
             await _idea_leida(story, "actos")  # Spec-700 D12
+            await _hecho_local(story_id, llm, actos=True)  # Spec-720 D7
             yield _done(story_id, missing_decisions=checked.missing_decisions)
 
         return _gen()
@@ -135,8 +145,10 @@ def verify_outline_runner(story_id: UUID) -> JobRunner:
             yield stage_event(JobStage.VERIFICADOR, None, None)
             story = await _load(story_id)
             story = await _with_cast(story, story.outline)
-            checked = await OutlineVerifier(LLMFactory.get_provider()).verify(story, story.outline)
+            llm = LLMFactory.get_provider()
+            checked = await OutlineVerifier(llm).verify(story, story.outline)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
+            await _hecho_local(story_id, llm, actos=False)  # Spec-720 D7
             yield _done(story_id, missing_decisions=checked.missing_decisions)
 
         return _gen()

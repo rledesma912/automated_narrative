@@ -12,6 +12,8 @@ E2E_API_PORT (default 8021).
 
 Spec-700 D25/D26: el Revisor corre como en un perfil con el rol; si la idea dice
 «SIN CRÉDITO», la API «no atiende» y queda la nota con lo que cambió.
+Spec-720 D7: con «NUBE CAÍDA» en la historia, el Planificador y el Verificador
+responden «desde el respaldo» (como si la nube no hubiera atendido).
 """
 
 import asyncio
@@ -41,8 +43,15 @@ settings.database_url = os.environ["DATABASE_URL"]
 
 
 class SlowMockLLM(MockLLMAdapter):
+    def __init__(self):
+        super().__init__()
+        self.respaldos: set[str] = set()
+
     async def generate(self, prompt, *args, **kwargs):
         await asyncio.sleep(delay)
+        role = kwargs.get("role")
+        if role in ("planificador", "verificador") and "NUBE CAÍDA" in prompt:
+            self.respaldos.add(role)
         if kwargs.get("role") == "revisor" and "SIN CRÉDITO" in prompt:
             raise LLMUnavailableError("credito", "La IA de la nube no atiende.")
         return await super().generate(prompt, *args, **kwargs)

@@ -145,6 +145,39 @@ describe("taller: lo que cambió sin revisar", () => {
   });
 });
 
+// Spec-720 D7: lo hizo la IA de la compu porque la de la nube no respondió.
+describe("los actos: hechos por la IA de la compu", () => {
+  const render = (hecho_local: unknown) =>
+    ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, hecho_local },
+      pasoActual: "escaleta",
+    });
+  const nota = (html: string) =>
+    (html.match(/<div[^>]*data-hecho-local="[^"]*"[^>]*>[\s\S]*?Dejarlo así<\/button>/) || [""])[0];
+
+  it("actos: nota de información con armar de nuevo (con confirmación) y «Dejarlo así»", async () => {
+    const n = nota(await render({ actos: true, revision: true }));
+    expect(n).toContain('data-hecho-local="actos"');
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("Estos actos los armó la IA de tu compu porque la de la nube no respondió.");
+    expect(n).toMatch(/data-analizar="plan_outline"[^>]*data-confirmar="[^"]*se reemplaza\."/);
+    expect(n).toMatch(/data-idea-revisada="local">Dejarlo así</);
+  });
+
+  it("solo la revisión: ofrece revisar de nuevo", async () => {
+    const n = nota(await render({ actos: false, revision: true }));
+    expect(n).toContain('data-hecho-local="revision"');
+    expect(n).toContain("La revisión la hizo la IA de tu compu");
+    expect(n).toMatch(/data-analizar="verify_outline"[^>]*>Revisar de nuevo</);
+  });
+
+  it("con la nube (o sin dato) no hay nota", async () => {
+    expect(await render({ actos: false, revision: false })).not.toContain("data-hecho-local");
+    expect(await render(undefined)).not.toContain("data-hecho-local");
+  });
+});
+
 // Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
 describe("taller: ya no coincide", () => {
   it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {

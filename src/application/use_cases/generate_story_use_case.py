@@ -132,5 +132,8 @@ class GenerateStoryUseCase:
             await self.story_repo.save_outline(story.id, checked.outline)
             if story.direction is not None:  # Spec-700 D12: «Los actos» leyeron esta idea
                 story.direction = context.con_idea_leida(story, "actos").direction
+                # Spec-720 D7: si los armó la IA de la compu, «Los actos» lo dicen.
+                respaldos = getattr(self.llm, "respaldos", set())
+                story.direction = context.con_hecho_local(story, respaldos, actos=True).direction
                 await self.story_repo.update_direction(story.id, story.direction)
         logger.info("[DIRECTOR] Escaleta armada para «%s» (%d actos)", story.title, len(acts))

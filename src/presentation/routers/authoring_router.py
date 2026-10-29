@@ -380,6 +380,8 @@ async def idea_revisada(story_id: str, body: IdeaRevisadaForm) -> dict:
     story = await _editable(story_id)
     if body.paso == "respuestas":
         story = revisor.revisadas(story)
+    elif body.paso == "local":  # Spec-720 D7: «Dejarlo así» de lo que hizo la IA de la compu
+        story = context.sin_hecho_local(story)
     else:
         story = context.con_idea_leida(story, body.paso)
     if story.direction is not None:
@@ -520,6 +522,8 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         idea_preguntas=existing.idea_preguntas if existing else "",  # Spec-700 D12
         idea_actos=existing.idea_actos if existing else "",
         idea_sin_revisar=existing.idea_sin_revisar if existing else "",  # Spec-700 D26
+        actos_locales=existing.actos_locales if existing else False,  # Spec-720 D7
+        revision_local=existing.revision_local if existing else False,
     )
 
 
@@ -632,6 +636,7 @@ async def _state(story: Story) -> dict:
         # Spec-700 D12: si cambió la idea desde que la leyeron «Preguntas» y «Los actos».
         "idea_cambio": context.idea_cambio(story),
         "idea_sin_revisar": revisor.pendiente(story),  # Spec-700 D27
+        "hecho_local": context.hecho_local(story),  # Spec-720 D7
         # Spec-650: el largo y sus actos (la UI arma las tarjetas y los nombres con esto).
         "structure": story.structure,
         "structure_acts": [
