@@ -64,6 +64,7 @@ export interface AuthoringState {
   structure_acts: ActoDeLaEstructura[];
   direction: Record<string, unknown> & { title: string };
   idea_cambio?: { preguntas: boolean; actos: boolean }; // Spec-700 D12
+  idea_sin_revisar?: { sacado: string[]; agregado: string[] } | null; // Spec-700 D27
   workshop: {
     round: number;
     max_rounds: number;

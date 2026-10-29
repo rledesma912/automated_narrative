@@ -7,7 +7,9 @@ from collections.abc import AsyncIterator
 import httpx
 import pytest
 
+from src.application.services.authoring import revisor
 from src.config import settings
+from src.domain.exceptions import LLMUnavailableError
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.adapters import MockLLMAdapter
 from src.infrastructure.database.connection import init_db
@@ -912,17 +914,24 @@ def _items(state) -> dict[str, dict]:
     return {i["criterion"]: i for i in state["workshop"]["items"]}
 
 
-async def test_con_la_idea_cambiada_marca_lo_que_ya_no_coincide(client, monkeypatch):
+async def _todo_respondido_y_otra_idea(client) -> str:
+    """El caso de Vale: todo respondido y después cambia la idea."""
     sid = (await _create(client))["story_id"]
     await _run_job(client, sid, "consult")
     for item in _items((await client.get(f"{API}/stories/{sid}")).json()).values():
-        if not item["answer"]:  # todo respondido: el caso de Vale
+        if not item["answer"]:
             await client.patch(
                 f"{API}/stories/{sid}/workshop/{item['criterion']}",
                 json={"action": "answer", "text": "Lo que respondí."},
             )
     otra = {**FORM, "premise": FORM["premise"] + " Al final, José deja de manejar."}
     await client.put(f"{API}/stories/{sid}/direction", json=otra)
+    return sid
+
+
+async def test_con_la_idea_cambiada_marca_lo_que_ya_no_coincide(client, monkeypatch):
+    sid = await _todo_respondido_y_otra_idea(client)
+    monkeypatch.setattr(revisor, "con_ia", lambda: True)  # D25: un perfil con el rol
 
     _Contando.pedidos = []
     monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
@@ -940,6 +949,63 @@ async def test_con_la_idea_cambiada_marca_lo_que_ya_no_coincide(client, monkeypa
         await client.patch(f"{API}/stories/{sid}/workshop/{criterio}", json={"action": "keep"})
     ).json()
     assert _items(state)[criterio]["no_coincide"] == "" and _items(state)[criterio]["answer"]
+    assert state["idea_sin_revisar"] is None
+
+
+# ── Spec-700 D26/D27: sin el rol o sin la IA, la nota con lo que cambió ─────
+
+
+async def test_sin_el_rol_queda_la_nota_con_lo_que_cambio(client, monkeypatch):
+    sid = await _todo_respondido_y_otra_idea(client)
+    monkeypatch.setattr(revisor, "con_ia", lambda: False)  # el perfil local
+    _Contando.pedidos = []
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
+
+    state = await _run_job(client, sid, "consult")
+
+    assert "revisiones" not in _Contando.pedidos
+    assert not any(i["no_coincide"] for i in _items(state).values())
+    assert state["idea_sin_revisar"] == {
+        "sacado": [],
+        "agregado": ["Al final, José deja de manejar."],
+    }
+    assert state["idea_cambio"]["preguntas"] is False
+
+    state = (
+        await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "respuestas"})
+    ).json()
+    assert state["idea_sin_revisar"] is None
+
+
+class _SinCredito(MockLLMAdapter):
+    """La API no atiende al Revisor; el resto, el mock de siempre."""
+
+    async def generate(self, prompt, **kwargs):
+        if kwargs.get("role") == "revisor":
+            raise LLMUnavailableError("credito", "Te quedaste sin crédito.")
+        return await super().generate(prompt, **kwargs)
+
+
+async def test_si_la_ia_no_responde_la_ronda_sigue_con_la_nota(client, monkeypatch):
+    sid = await _todo_respondido_y_otra_idea(client)
+    monkeypatch.setattr(revisor, "con_ia", lambda: True)
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _SinCredito()))
+
+    state = await _run_job(client, sid, "consult")  # termina bien
+
+    assert state["idea_sin_revisar"]["agregado"] == ["Al final, José deja de manejar."]
+    # Otro cambio sin revisar: la nota muestra todo desde la última revisión (la más vieja).
+    otra = {**FORM, "premise": FORM["premise"] + " Al final, José deja de manejar. Y se muda."}
+    await client.put(f"{API}/stories/{sid}/direction", json=otra)
+    state = await _run_job(client, sid, "consult")
+    assert state["idea_sin_revisar"]["agregado"] == [
+        "Al final, José deja de manejar.",
+        "Y se muda.",
+    ]
+    # Si la idea vuelve a ser la de antes, no hay nada que mostrar.
+    await client.put(f"{API}/stories/{sid}/direction", json=FORM)
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["idea_sin_revisar"] is None
 
 
 async def test_sin_cambiar_la_idea_no_se_revisa(client, monkeypatch):

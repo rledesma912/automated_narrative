@@ -98,9 +98,10 @@ class NameForm(BaseModel):
 
 
 class IdeaRevisadaForm(BaseModel):
-    """Spec-700 D16: en qué paso se deja la idea como está."""
+    """Spec-700 D16: en qué paso se deja la idea como está; D27: `respuestas` = la autora
+    ya revisó lo que cambió y la IA no pudo revisar."""
 
-    paso: Literal["preguntas", "actos"]
+    paso: Literal["preguntas", "actos", "respuestas"]
 
 
 class SameCharacterForm(BaseModel):

@@ -50,6 +50,30 @@
         <button type="button" class="nota-forge__accion" data-idea-revisada="preguntas">Dejarlo así</button>
       </div>
     <% } %>
+    <% const sinRevisar = state.idea_sin_revisar; %>
+    <% if (sinRevisar) { %>
+      <%/* Spec-700 D27: la IA no pudo revisar las respuestas contra la idea nueva (sin el rol o sin la API).
+           Qué cambió, oración por oración, sin IA; «Listo, ya las revisé» saca la nota. */%>
+      <div class="nota-forge nota-forge--info mb-8" data-idea-cambio="respuestas">
+        <i data-lucide="file-pen-line" class="nota-forge__icono"></i>
+        <div class="flex-1">
+          <p>Cambiaste tu idea y la IA no pudo fijarse si tus respuestas siguen yendo. Mirá qué cambió y, si alguna ya no va, tocá «Cambiar» en esa respuesta.</p>
+          <% if (sinRevisar.sacado.length) { %>
+            <p class="text-xs uppercase tracking-widest text-forge-muted mt-3 mb-1">Ya no dice</p>
+            <ul class="space-y-1 text-sm" data-sacado>
+              <% sinRevisar.sacado.forEach(o => { %><li class="text-forge-muted line-through"><%= o %></li><% }) %>
+            </ul>
+          <% } %>
+          <% if (sinRevisar.agregado.length) { %>
+            <p class="text-xs uppercase tracking-widest text-forge-muted mt-3 mb-1">Ahora dice</p>
+            <ul class="space-y-1 text-sm" data-agregado>
+              <% sinRevisar.agregado.forEach(o => { %><li class="font-medium"><%= o %></li><% }) %>
+            </ul>
+          <% } %>
+        </div>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="respuestas">Listo, ya las revisé</button>
+      </div>
+    <% } %>
     <section class="bg-forge-surface border border-forge-border p-6 mb-8">
       <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-2">Cómo viene tu historia</h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>Unas preguntas son de toda historia; otras, de la clase de historia que elegiste en «Tu idea», y una del giro si elegiste uno. Son 10 como mucho y ninguna es obligatoria.</p>

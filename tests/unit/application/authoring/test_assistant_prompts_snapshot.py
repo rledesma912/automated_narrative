@@ -75,6 +75,8 @@ def _story() -> Story:
             ending="Descansa en paz.",
             ending_intentional=True,
             telling="caso",
+            # Spec-700 S4: la idea que leyó «Preguntas» (el Revisor recibe qué cambió).
+            idea_preguntas="José ve por el espejo a un hombre que murió en su micro.",
         ),
         workshop=[
             WorkshopItem(
@@ -145,6 +147,8 @@ def test_el_snapshot_cubre_todas_las_secciones():
         "Estamos ayudando",
         "solo la PRIMERA oración del final",  # Spec-690
         "LA IDEA NUEVA:\nJosé ve por el espejo",  # Spec-700
+        "Se sacó:\n- José ve por el espejo a un hombre que murió en su micro.",
+        "Se agregó o se cambió:\n- José ve por el espejo a una mujer que murió en su micro.",
         "- [meta] Qué quiere José. Pregunta: «¿Qué quiere José esa noche?» → Respuesta: Terminar",
         "- [historia_secreta] ",
         "LA IDEA:\nJosé ve por el espejo",

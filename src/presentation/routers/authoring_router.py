@@ -12,7 +12,14 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 
 from src.application.dto import StoryCreateDTO
-from src.application.services.authoring import catalog, context, elenco, molde, workshop_rules
+from src.application.services.authoring import (
+    catalog,
+    context,
+    elenco,
+    molde,
+    revisor,
+    workshop_rules,
+)
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.use_cases.create_story import (
     CreateStoryUseCase,
@@ -368,8 +375,13 @@ async def remove_character(story_id: str, body: NameForm) -> dict:
 @router.post("/stories/{story_id}/idea-revisada")
 async def idea_revisada(story_id: str, body: IdeaRevisadaForm) -> dict:
     """Spec-700 D16: «Dejarlo así». La idea cambió y la autora no quiere que la IA la vuelva
-    a leer: se sella la idea actual en ese paso, sin IA."""
-    story = context.con_idea_leida(await _editable(story_id), body.paso)
+    a leer: se sella la idea actual en ese paso, sin IA. D27: «Listo, ya las revisé» saca la
+    nota de lo que cambió."""
+    story = await _editable(story_id)
+    if body.paso == "respuestas":
+        story = revisor.revisadas(story)
+    else:
+        story = context.con_idea_leida(story, body.paso)
     if story.direction is not None:
         await SQLStoryRepository().update_direction(story.id, story.direction)
     return await _state(await _story(story_id))
@@ -507,6 +519,7 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         form_reason=existing.form_reason if existing else "",
         idea_preguntas=existing.idea_preguntas if existing else "",  # Spec-700 D12
         idea_actos=existing.idea_actos if existing else "",
+        idea_sin_revisar=existing.idea_sin_revisar if existing else "",  # Spec-700 D26
     )
 
 
@@ -618,6 +631,7 @@ async def _state(story: Story) -> dict:
         "direction": _form(story),
         # Spec-700 D12: si cambió la idea desde que la leyeron «Preguntas» y «Los actos».
         "idea_cambio": context.idea_cambio(story),
+        "idea_sin_revisar": revisor.pendiente(story),  # Spec-700 D27
         # Spec-650: el largo y sus actos (la UI arma las tarjetas y los nombres con esto).
         "structure": story.structure,
         "structure_acts": [

@@ -34,6 +34,8 @@ LLM_ROLES = (
     "verificador",
     # Spec-610: el paquete para el video.
     "guion",
+    # Spec-700 D25: revisa lo respondido cuando cambió la idea (solo si el perfil lo declara).
+    "revisor",
 )
 # Los roles del asistente que un perfil no declara heredan la config del director.
 _ROLE_FALLBACK = {"consultor": "director", "planificador": "director", "verificador": "director"}
@@ -145,6 +147,10 @@ class Settings(BaseSettings):
         if role not in roles and role in _ROLE_FALLBACK:
             return roles.get(_ROLE_FALLBACK[role], {})
         return roles.get(role, {})
+
+    def has_role(self, role: str) -> bool:
+        """¿El perfil activo declara este rol? (Spec-700 D25: sin `revisor`, no revisa)."""
+        return role in self.llm_role_config
 
     def role_provider(self, role: str) -> str:
         """Proveedor de un rol (Spec-480): `roles.<rol>.provider` o el del perfil."""

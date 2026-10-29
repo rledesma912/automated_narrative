@@ -118,7 +118,8 @@ class TokenMeter:
 
 
 # Spec-610: `guion` arma el paquete para el video, no participa de generar un relato.
-_FUERA_DEL_RELATO = {"guion"}
+# Spec-700: `revisor` corre en «Preguntas» (solo si cambió la idea), tampoco.
+_FUERA_DEL_RELATO = {"guion", "revisor"}
 
 
 def paid_roles() -> list[str]:

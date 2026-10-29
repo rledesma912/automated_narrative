@@ -86,3 +86,22 @@ test("«Preguntas»: volver a leer marca lo que ya no va y «Está bien así» l
   await marcada.getByRole("button", { name: "Está bien así" }).click();
   await expect(page.locator("[data-no-coincide]")).toHaveCount(0);
 });
+
+// Spec-700 D26/D27: si la IA de la nube no atiende, queda la nota con lo que cambió (sin IA).
+test("«Preguntas»: sin la IA, la nota muestra qué cambió y «Listo, ya las revisé» la saca", async ({ page, request }) => {
+  const state = await (await request.get(`${API}/authoring/stories/${sid}`)).json();
+  await request.put(`${API}/authoring/stories/${sid}/direction`, {
+    data: { ...state.direction, premise: `${state.direction.premise} SIN CRÉDITO.` },
+  });
+
+  await page.goto(`/asistente/${sid}/taller`);
+  await page.locator('[data-idea-cambio="preguntas"]').getByRole("button", { name: "Que la IA la vuelva a leer" }).click();
+  const nota = page.locator('[data-idea-cambio="respuestas"]');
+  await expect(nota).toBeVisible({ timeout: 20_000 });
+  await expect(nota).toContainText("la IA no pudo fijarse si tus respuestas siguen yendo");
+  await expect(nota.locator("[data-agregado] li")).toHaveText(["SIN CRÉDITO."]);
+  await nota.getByRole("button", { name: "Listo, ya las revisé" }).click();
+  await expect(nota).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('[data-idea-cambio="respuestas"]')).toHaveCount(0);
+});

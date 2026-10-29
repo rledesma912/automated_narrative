@@ -213,6 +213,25 @@ Relevado en `development` (`8e06077`). Principio: **sin IA donde alcance una reg
 - `scripts/research/700/medir_revisor.py` (gemma, gratis): historias de la copia de prod con la idea cambiada a mano, en dos grupos. Unas con un cambio que contradice una respuesta (por ejemplo, en Yadira, «Ximena se queda en el pueblo» contra la respuesta de «Qué hace después»). Otras con un cambio que no contradice nada (reescribir una oración). Mide si marca lo que debe y si marca de más.
 - CLAUDE.md, memoria, PR a `development`.
 
+### 9.5.1 S4 — Lo que cambió después de medir (2026-10-29)
+
+La medición con gemma no llegó al umbral, ni con la idea vieja y la nueva (v1) ni con la cita de lo que cambió (v2). Con el mismo prompt, Sonnet 5.5 marcó 12 de 12 y nada de más (§11, S4). Decisiones del usuario:
+
+- **D25.** El Revisor tiene su propio rol, `revisor`, declarado en los perfiles que lo corren en Claude (`hibrido-sonnet55` y `anthropic-sonnet55`: Sonnet 5.5, sin pensar). Un perfil que no lo declara (el local, todo gemma) **no** revisa con IA: gemma marcaba de más y no veía lo obvio.
+- **D26.** Si el perfil no declara `revisor` o la llamada falla (sin crédito, clave vencida, sin red, respuesta inválida), la ronda **no** falla y no cae a gemma. Queda una marca programática: `Direction.idea_sin_revisar` = la idea que había leído «Preguntas» antes del cambio. Si ya había una, se conserva la más vieja: la nota muestra todo lo que cambió desde la última revisión. El Consultor sigue como siempre.
+- **D27.** «Preguntas» muestra una nota de información (no de aviso), arriba de las preguntas: «Cambiaste tu idea y la IA no pudo fijarse si tus respuestas siguen yendo. Esto es lo que cambió:», con lo que se sacó tachado y en gris y lo que se agregó resaltado, oración por oración (`context.lo_que_cambio`, sin IA). Botón «Listo, ya las revisé» (`POST …/idea-revisada {paso: "respuestas"}`), que borra la marca. Si la idea volvió a ser la de antes, no hay nota.
+- **D28.** Una revisión con IA que sale bien después no borra la marca. Revisó solo el último cambio, no el que quedó sin revisar; la nota se va cuando la autora dice que ya revisó.
+
+| Lugar | Cambio |
+|---|---|
+| `src/config.py` | `revisor` en `LLM_ROLES`; `settings.has_role(role)` |
+| `config/llm_core_definitions.yaml` | `roles.revisor` en `hibrido-sonnet55` (con `provider: anthropic`) y `anthropic-sonnet55` |
+| `revisor.py` | `ROLE = "revisor"`; `con_ia()`; `sin_revisar(story)` (la marca de D26) |
+| `consult_runner` | IA si `con_ia()`; si no, o si la llamada falla, `sin_revisar` y sigue |
+| `Direction`, `_direction` | `idea_sin_revisar` (el autoguardado la conserva) |
+| `_state`, `IdeaRevisadaForm` | `idea_sin_revisar: {sacado, agregado}` o `null`; paso `respuestas` |
+| `_taller_contenido.ejs`, `asistente.js` | La nota de D27 |
+
 ### 9.6 Slices
 
 1. **S1 — Los personajes de la autora** (sin IA; resuelve el ruido que vio Vale).
@@ -261,6 +280,8 @@ Tests: `make test`, `make lint`, `cd frontend && npm test`, `npx playwright test
 ### S4 — Medición y cierre
 
 - **T4.1** `scripts/research/700/medir_revisor.py` sobre la copia de prod: por historia, una idea cambiada que contradice una respuesta conocida y otra reescrita sin contradecir nada; 2 corridas con gemma. **Hecho cuando:** resultados en §11. Contradicciones marcadas: al menos 4 de 5. Marcas de más con la idea reescrita: como mucho 1 de 5. Si no se llega, se ajusta el prompt o se discute antes de cerrar.
+- **T4.3** (D25, D26) Rol `revisor`; `con_ia()`; `sin_revisar`; `consult_runner` con los dos caminos y la falla de la API. **Hecho cuando:** tests con el perfil sin `revisor` (nota, sin llamada al Revisor), con un LLM que falla con `LLMUnavailableError` (la ronda termina bien, con la marca) y con IA (como en S3).
+- **T4.4** (D27, D28) `idea_sin_revisar` en `_state`, paso `respuestas` y la nota en «Preguntas». **Hecho cuando:** Vitest del parcial; E2E con el mock (perfil sin `revisor`): cambiar la idea → «Que la IA la vuelva a leer» → la nota con lo que se sacó y lo que se agregó → «Listo, ya las revisé» la saca y no vuelve al recargar.
 - **T4.2** CLAUDE.md (tabla de roles: el Revisor; avisos de personajes; sellos de la idea), memoria, PR a `development`.
 
 ---
@@ -312,3 +333,33 @@ Tests: `make test`, `make lint`, `cd frontend && npm test`, `npx playwright test
 - **Desvío de T3.5:** no se sumaron 10 s a `estimated_seconds.consult`. El revisor corre solo con la idea cambiada; subir la estimación de todas las rondas la empeora en el caso común, y la mediana de los jobs reales se ajusta sola (Spec-510).
 - Dev, «Prueba 700» con gemma: la idea nueva termina con «Rosa deja el trabajo y nunca más cuida casas». «Qué hace Rosa después» («Se queda en la casa y la sigue cuidando todo el año…») quedó marcada con «Ahora Rosa se asusta y deja el trabajo.». «Qué quiere Rosa» (juntar plata para estudiar) no se marcó. El job tardó 117 s, con el final sacado de la idea nueva.
 - 1 085 pytest, 426 Vitest, 85 E2E (Firefox), lint en verde.
+
+### S4 — Medición y cierre (2026-10-29)
+
+**Medición del Revisor** (`scripts/research/700/medir_revisor.py`, salida en `data/dev/research_700/`, fuera de git). Seis historias de la copia de prod; a cada una se le cambió la idea a mano de dos maneras: «contradice» (choca con una respuesta conocida) y «reescrita» (suma algo que no contradice nada). Dos corridas por variante: 12 de cada una.
+
+| | gemma v1 (idea vieja y nueva) | gemma v2 (lo que cambió + cita) | Sonnet 5.5 (v2) | Umbral |
+|---|---|---|---|---|
+| Contradicciones marcadas | 7 / 12 | 5 / 12 | **12 / 12** | ≥ 10 / 12 |
+| Marcas de más con la idea reescrita | 10 / 12 | 3 / 12 | **0 / 12** | ≤ 2 / 12 |
+| Segundos por revisión | ~60 | ~60 | 2–6 | — |
+
+- gemma tiene dos fallas. **Marca de más:** un solo cambio en Yadira («se queda en el pueblo») marcó 5 respuestas, 3 sin relación; «Es invierno» marcó el final del bosque y un gato marcó «Qué puede perder». **No ve lo obvio:** «no se duerme ni un minuto» contra «quedarse dormido» (Paraná), «sin ninguna venda» contra «tiene un vendaje» (maletín), «ya entregó toda la carga» contra «entregar un cargamento urgente» (bosque): 0 de 2 cada uno.
+- Sonnet marca a veces una respuesta más de la esperada, casi siempre con razón: «Porque quiere pedir ayuda» contra «sin animarse a pedir ayuda». La única dudosa: en Yadira marcó «Qué descubre» con un motivo que en realidad corresponde a «Cómo termina».
+- v2 queda como diseño del prompt: el sello guarda el **texto** de la idea (ya no un hash), el Revisor recibe qué oraciones se sacaron y se agregaron (`context.lo_que_cambio`) y solo marca si cita una oración que de verdad cambió (`_cita`).
+
+**Lo que se construyó después de medir (D25–D28):**
+- Rol `revisor` (`LLM_ROLES`, `settings.has_role`), declarado en `hibrido-sonnet55` (con `provider: anthropic`) y `anthropic-sonnet55`. El perfil local no lo declara. `/config/active-profile` muestra el consultor y, si está, el revisor. `evaluate_voice.py` no lo cuenta en el costo de un relato.
+- `consult_runner._revisar`: con el rol, Sonnet; si falla (`LLMUnavailableError`, `LLMResponseError`, `LLMStructuredOutputError`) o no hay rol, `revisor.sin_revisar` guarda `Direction.idea_sin_revisar` (la más vieja) y la ronda sigue con el Consultor. Sin respuestas que revisar no queda marca.
+- `_state.idea_sin_revisar` = `{sacado, agregado}` o `null` (nada si la idea volvió a la de antes). `POST …/idea-revisada {paso: "respuestas"}` la borra.
+- «Preguntas»: nota de información con «Ya no dice» (tachado, gris) y «Ahora dice», y «Listo, ya las revisé». Va arriba de «Cómo viene tu historia».
+- El arnés E2E corre el Revisor como un perfil con el rol; una idea con «SIN CRÉDITO» simula que la API no atiende.
+- 1 089 pytest, 429 Vitest, 86 E2E (Firefox), lint en verde. Snapshots sin cambios en S4 después del de v2 (solo `revisor`).
+- Dev: «Prueba 700» quedó con una nota pendiente sembrada a mano, para ver cómo se ve.
+
+
+---
+
+## 12. Evolutivo: el próximo paso (2026-10-29)
+
+Lo dejó el usuario como siguiente trabajo, con su propia spec: **el Planificador y el Verificador en Claude**. Es donde más falla gemma: lugares que son objetos y lugares duplicados (Spec-710 §9), recursos gastados que no evita (Spec-680 S5) y avisos de más. Plan sugerido: medirlo como el Revisor (las historias de la copia de prod, gemma contra Sonnet 5.5 con el perfil `anthropic-sonnet55`, contando defectos), con el costo estimado antes de correr llamadas pagas. Se cruza con la Spec-710: conviene medir el lugar por hecho con los dos modelos.

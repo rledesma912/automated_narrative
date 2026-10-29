@@ -6,6 +6,7 @@ Cada runner relee la historia al arrancar (lo guardado manda) y persiste su
 resultado antes de publicar `done`.
 """
 
+import logging
 from uuid import UUID
 
 from src.application.services.authoring import (
@@ -20,12 +21,19 @@ from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
 from src.application.services.job_manager import JobRunner
 from src.application.services.streaming_service import stage_event
+from src.domain.exceptions import (
+    LLMResponseError,
+    LLMStructuredOutputError,
+    LLMUnavailableError,
+)
 from src.domain.jobs import Job, JobKind, JobStage
 from src.domain.models import Story
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.database.repositories import SQLStoryRepository
 from src.infrastructure.factories import LLMFactory
 from src.presentation.runtime import job_manager
+
+logger = logging.getLogger(__name__)
 
 
 def _done(story_id: UUID, **data) -> StreamEvent:
@@ -66,6 +74,24 @@ async def _with_cast(story: Story, acts) -> Story:
     return story
 
 
+async def _revisar(story: Story, llm) -> Story:
+    """Spec-700 A3: la idea cambió; antes de preguntar, qué respuestas ya no van. Sin el rol
+    o si la IA no responde, la ronda sigue y queda qué cambió para mostrarlo (D26)."""
+    if revisor.con_ia():
+        try:
+            marked = await revisor.RevisorDeRespuestas(llm).revisar(story)
+        except (LLMUnavailableError, LLMResponseError, LLMStructuredOutputError) as e:
+            logger.warning("[REVISOR] sin revisión, queda la nota: %s", e)
+        else:
+            if marked:
+                await SQLStoryRepository().save_workshop_items(story.id, marked)
+            return revisor.apply(story, marked)
+    pending = revisor.sin_revisar(story)
+    if pending is not story:
+        await SQLStoryRepository().update_direction(story.id, pending.direction)
+    return pending
+
+
 def consult_runner(story_id: UUID) -> JobRunner:
     def _run():
         async def _gen():
@@ -73,11 +99,7 @@ def consult_runner(story_id: UUID) -> JobRunner:
             llm = LLMFactory.get_provider()
             story = await _with_ending(await _load(story_id), llm)  # Spec-690
             if context.idea_cambio(story)["preguntas"]:
-                # Spec-700 A3: la idea cambió; antes de preguntar, qué respuestas ya no van.
-                marked = await revisor.RevisorDeRespuestas(llm).revisar(story)
-                if marked:
-                    await SQLStoryRepository().save_workshop_items(story_id, marked)
-                    story = revisor.apply(story, marked)
+                story = await _revisar(story, llm)  # Spec-700 A3
             result = await WorkshopConsultant(llm).analyze(story)
             await SQLStoryRepository().save_workshop_items(story_id, result.items)
             await _idea_leida(story, "preguntas")  # Spec-700 D12

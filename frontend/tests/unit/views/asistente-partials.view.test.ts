@@ -114,6 +114,37 @@ describe("la idea cambió", () => {
   });
 });
 
+// Spec-700 D27: la IA no pudo revisar las respuestas; qué cambió, sin IA.
+describe("taller: lo que cambió sin revisar", () => {
+  const render = (idea_sin_revisar: unknown) =>
+    ejs.renderFile(path.join(VIEWS, "asistente", "taller.ejs"), {
+      ...locals,
+      state: { ...state, idea_sin_revisar },
+      pasoActual: "taller",
+    });
+  const nota = (html: string) =>
+    (html.match(/<div[^>]*data-idea-cambio="respuestas"[^>]*>[\s\S]*?Listo, ya las revisé<\/button>/) || [""])[0];
+
+  it("nota de información con lo que se sacó tachado, lo que se agregó y «Listo, ya las revisé»", async () => {
+    const n = nota(await render({ sacado: ["Ximena se va del pueblo."], agregado: ["Ximena se queda.", "Enfrenta a Yadira."] }));
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("la IA no pudo fijarse si tus respuestas siguen yendo");
+    expect(n).toMatch(/Ya no dice[\s\S]*<li class="[^"]*line-through[^"]*">Ximena se va del pueblo\.<\/li>/);
+    expect(n).toMatch(/Ahora dice[\s\S]*>Ximena se queda\.<\/li>[\s\S]*>Enfrenta a Yadira\.<\/li>/);
+    expect(n).toMatch(/data-idea-revisada="respuestas">Listo, ya las revisé</);
+  });
+
+  it("solo lo que hay: sin oraciones sacadas no dice «Ya no dice»", async () => {
+    const n = nota(await render({ sacado: [], agregado: ["Y se muda."] }));
+    expect(n).not.toContain("Ya no dice");
+    expect(n).toContain("Ahora dice");
+  });
+
+  it("sin nada pendiente no hay nota", async () => {
+    expect(await render(null)).not.toContain('data-idea-cambio="respuestas"');
+  });
+});
+
 // Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
 describe("taller: ya no coincide", () => {
   it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {
