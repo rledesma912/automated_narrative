@@ -216,6 +216,14 @@ class Direction(BaseModel):
     # Spec-680 C1: cómo habla quien narra (id de `hablas` en `authoring_options.yaml`;
     # "" = la de siempre, rioplatense). La elige la persona; la IA no la sugiere.
     habla: str = ""
+    # Spec-700 D12: la idea («¿De qué trata?») que leyó la IA en «Preguntas» y en «Los actos»
+    # ("" = no se sabe). El texto, no un hash: el Revisor recibe qué cambió (S4). No vienen
+    # del formulario: el autoguardado los conserva.
+    idea_preguntas: str = ""
+    idea_actos: str = ""
+    # Spec-700 D26: la idea de antes del cambio que la IA no pudo revisar ("" = nada
+    # pendiente). «Preguntas» muestra qué cambió hasta que la autora dice que ya revisó.
+    idea_sin_revisar: str = ""
 
     @model_validator(mode="after")
     def _ending_fixed_when_written(self) -> "Direction":
@@ -273,6 +281,10 @@ class OutlineWarning(BaseModel):
     key: str = ""
     source: Literal["regla", "ia"] = "ia"
     dismissed: bool = False
+    # Spec-700 D23: en los de personajes (`elenco:`), el nombre tal cual y, si se parece
+    # a uno de la lista («Amigos» / «Amigas de Ximena»), ese otro.
+    subject: str = ""
+    similar: str = ""
 
     def keys(self) -> set[str]:
         return {k for k in self.key.split("|") if k}

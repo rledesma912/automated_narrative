@@ -21,6 +21,23 @@ def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
         idea = prompt.split("LA IDEA:", 1)[-1].split("\n\nDevolvé:", 1)[0].strip()
         sentences = [s for s in re.split(r"(?<=[.!?])\s+", idea) if s.strip()]
         return {"cuenta_final": bool(sentences), "inicio": sentences[-1] if sentences else ""}
+    if role == "revisor":
+        # Spec-700: la primera respuesta ya no coincide con la idea nueva; las demás, sí.
+        # Cita la primera oración que se agregó o cambió (si no, el Revisor no marca).
+        revision = schema.get("$defs", {}).get("RevisionRespuesta", {})
+        agregado = prompt.split("Se agregó o se cambió:\n", 1)[-1].split("\n", 1)[0]
+        cambio = agregado.removeprefix("- ").strip()
+        return {
+            "revisiones": [
+                {
+                    "criterio": c,
+                    "coincide": i > 0,
+                    "cambio": "" if i else cambio,
+                    "motivo": "" if i else "Ahora tu idea dice otra cosa.",
+                }
+                for i, c in enumerate(_choices(revision.get("properties", {}).get("criterio", {})))
+            ]
+        }
     if role == "consultor":
         return {"evaluaciones": [_evaluation(i, c) for i, c in enumerate(_criteria(schema))]}
     if role == "planificador":
@@ -97,7 +114,12 @@ def _video_script(prompt: str) -> dict:
 
 def _criteria(schema: dict) -> list[str]:
     evaluation = schema.get("$defs", {}).get("EvaluacionCriterio", {})
-    return evaluation.get("properties", {}).get("criterio", {}).get("enum", [])
+    return _choices(evaluation.get("properties", {}).get("criterio", {}))
+
+
+def _choices(prop: dict) -> list[str]:
+    """Los valores de un `Literal`: con uno solo, Pydantic lo escribe como `const`."""
+    return prop.get("enum") or ([prop["const"]] if "const" in prop else [])
 
 
 def _evaluation(i: int, criterion: str) -> dict:

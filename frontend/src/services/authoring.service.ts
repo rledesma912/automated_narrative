@@ -51,7 +51,7 @@ export interface Act {
   bridge: string; // Spec-560 A1: «Cómo llega acá»
   reveal_act: number; // Spec-560 A4: en qué acto se revela lo que todavía no se cuenta
   /** Spec-550 H10: aviso de la revisión, con clave de tema y si el autor lo ignoró. */
-  warnings: { text: string; key: string; source: "regla" | "ia"; dismissed: boolean }[];
+  warnings: { text: string; key: string; source: "regla" | "ia"; dismissed: boolean; subject?: string; similar?: string }[];
   rules: string[];
   needs_review: boolean;
 }
@@ -63,6 +63,8 @@ export interface AuthoringState {
   structure: string;
   structure_acts: ActoDeLaEstructura[];
   direction: Record<string, unknown> & { title: string };
+  idea_cambio?: { preguntas: boolean; actos: boolean }; // Spec-700 D12
+  idea_sin_revisar?: { sacado: string[]; agregado: string[] } | null; // Spec-700 D27
   workshop: {
     round: number;
     max_rounds: number;

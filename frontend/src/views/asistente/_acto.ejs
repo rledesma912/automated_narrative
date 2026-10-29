@@ -11,7 +11,12 @@
   const def = actosDelLargo.find(x => x.number === a.number) || { name: '', intensity: '' };
   const totalActos = actosDelLargo.length;
   const TIPOS = { persona: 'Con nombre', sin_nombre: 'Sin nombre', grupo: 'Grupo' };
-  const PERSONAJE_FUERA = /^«(.+?)» aparece en este acto pero no está entre los personajes/;
+  /* Spec-700 D23: el aviso de personajes trae el nombre (`subject`) y, si se parece a uno de
+     la lista, ese otro (`similar`). Los guardados antes no traen `subject`: se lee del texto viejo. */
+  const PERSONAJE_FUERA_VIEJO = /^«(.+?)» aparece en este acto pero no está entre los personajes/;
+  const fueraDeLaLista = (w) => w.key.startsWith('elenco:')
+    ? (w.subject || (w.text.match(PERSONAJE_FUERA_VIEJO) || [])[1] || '')
+    : '';
   const field = 'bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent';
   /* Spec-630 B7: «×» chico al lado de cada lugar y personaje (fuera de la opción, para no elegirla sin querer). */
   // Spec-660 B2: el tacho borra de toda la historia (la casilla o el radio cambian solo este acto).
@@ -33,11 +38,12 @@
             <% if (visibles(a).length) { %>
               <%/* Spec-550 H9: cada aviso es una nota; sus acciones, links. */%>
               <div class="mx-6 mt-4 space-y-2">
-                <% visibles(a).forEach(w => { const fuera = w.text.match(PERSONAJE_FUERA); %>
+                <% visibles(a).forEach(w => { const fuera = fueraDeLaLista(w); %>
                   <div class="nota-forge nota-forge--warning" data-aviso-clave="<%= w.key %>">
                     <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
                     <p class="flex-1"><%= w.text %></p>
-                    <% if (fuera) { %><button type="button" class="nota-forge__accion" data-sumar-personaje="<%= fuera[1] %>" data-aviso="<%= w.key %>">Sumarlo a los personajes</button><% } %>
+                    <% if (fuera && w.similar) { %><button type="button" class="nota-forge__accion" data-mismo-personaje="<%= fuera %>" data-es="<%= w.similar %>">Sí, es «<%= w.similar %>»</button><% } %>
+                    <% if (fuera) { %><button type="button" class="nota-forge__accion" data-sumar-personaje="<%= fuera %>">Sumarlo a los personajes</button><% } %>
                     <button type="button" class="nota-forge__accion" data-ignorar="<%= w.key %>">Ignorar</button>
                   </div>
                 <% }) %>

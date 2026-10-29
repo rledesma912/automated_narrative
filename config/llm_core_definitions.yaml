@@ -135,6 +135,13 @@ profiles:
         num_predict: 6000
         thinking: adaptive
         effort: low
+      # Spec-700 D25: el Revisor en Sonnet 5.5 (con gemma marcaba de más y no veía lo
+      # obvio). Una llamada corta, solo si cambió la idea; si falla, queda la nota (D26).
+      revisor:
+        provider: anthropic
+        model: claude-sonnet-5-5
+        num_predict: 3000
+        thinking: between_tools
 
   # Todo en Claude Sonnet 5.5 (Spec-480; Spec-600). NO está activo: sirve para comparar y
   # como palanca si hiciera falta mover otro rol (p. ej. el Planificador).
@@ -169,6 +176,10 @@ profiles:
       verificador:
         model: claude-sonnet-5-5
         num_predict: 2000
+        thinking: between_tools
+      revisor:
+        model: claude-sonnet-5-5
+        num_predict: 3000
         thinking: between_tools
       # Spec-610 (D3): el paquete para el video en Sonnet 5.5, una llamada (~US$ 0,05).
       # Piensa poco, como la Voz: la intro y el outro de la calabaza son escritura.

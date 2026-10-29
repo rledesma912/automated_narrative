@@ -181,7 +181,9 @@ async def get_story_full(story_id: str):
 async def get_active_profile():
     """Devuelve el perfil LLM activo y su configuración de roles."""
     roles = {}
-    for role in ("planificador", "verificador", "voz", "journal", "guion"):
+    for role in ("consultor", "planificador", "verificador", "voz", "journal", "guion", "revisor"):
+        if role == "revisor" and not settings.has_role(role):
+            continue  # Spec-700 D25: sin el rol no hay Revisor (queda la nota)
         cfg = settings.role_config(role)
         roles[role] = {
             "provider": settings.role_provider(role),

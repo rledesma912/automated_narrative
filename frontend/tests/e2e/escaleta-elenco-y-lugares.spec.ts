@@ -33,10 +33,14 @@ test.beforeAll(async ({ request }) => {
   await job(request, "plan_outline");
   // Alguien que está en el acto 2 pero no en el elenco: la revisión lo avisa (regla `elenco:`).
   const state = await (await request.get(`${API}/authoring/stories/${sid}`)).json();
-  const a2 = state.outline.acts[1];
-  await request.put(`${API}/authoring/stories/${sid}/outline/2`, {
-    data: { ...a2, on_stage: [...a2.on_stage, "El sereno"] },
-  });
+  // Spec-700: también en el acto 4 (sumarlo lo resuelve en los dos) y uno parecido a uno de la lista.
+  await request.post(`${API}/authoring/stories/${sid}/characters`, { data: { name: "Amigas de José" } });
+  for (const [n, extra] of [[2, ["El sereno"]], [4, ["El sereno"]], [3, ["Amigos de José"]]] as const) {
+    const a = state.outline.acts[n - 1];
+    await request.put(`${API}/authoring/stories/${sid}/outline/${n}`, {
+      data: { ...a, on_stage: [...a.on_stage, ...extra] },
+    });
+  }
   await job(request, "verify_outline");
 });
 
@@ -47,10 +51,23 @@ test("«Sumarlo a los personajes» lo marca en el acto y el aviso se va (no qued
   await aviso.getByRole("button", { name: "Sumarlo a los personajes" }).click();
 
   await expect(aviso).toHaveCount(0);
+  // Spec-700 B3: el mismo aviso del acto 4 también se resolvió.
+  await expect(acto(page, 4).locator(".nota-forge--warning", { hasText: "«El sereno»" })).toHaveCount(0);
   await expect(acto(page, 2).getByRole("checkbox", { name: /El sereno/ })).toBeChecked();
   await expect(acto(page, 1).getByRole("checkbox", { name: /El sereno/ })).not.toBeChecked();
   const ignorados = acto(page, 2).locator("[data-ignorados]");
   if (await ignorados.count()) await expect(ignorados).not.toContainText("El sereno");
+});
+
+test("«Sí, es…» usa el de la lista en vez de sumar otro (Spec-700 B4)", async ({ page }) => {
+  await page.goto(`/asistente/${sid}/escaleta`);
+  const aviso = acto(page, 3).locator(".nota-forge--warning", { hasText: "«Amigos de José»" });
+  await expect(aviso).toContainText("¿Es «Amigas de José»?");
+  await aviso.getByRole("button", { name: "Sí, es «Amigas de José»" }).click();
+
+  await expect(aviso).toHaveCount(0);
+  await expect(acto(page, 3).getByRole("checkbox", { name: /Amigas de José/ })).toBeChecked();
+  await expect(acto(page, 3).getByRole("checkbox", { name: /Amigos de José/ })).toHaveCount(0);
 });
 
 test("se suman varios lugares seguidos, aparecen en todos los actos y se elige otro", async ({ page }) => {
@@ -90,9 +107,9 @@ test("borrar un lugar, un personaje y una regla", async ({ page }) => {
   await dialogo(page).getByRole("button", { name: "Borrar de la historia" }).click();
   await expect(page.getByRole("radio", { name: "La ruta vieja" })).toHaveCount(0);
 
-  await acto(page, 4).getByRole("button", { name: "Borrar a «El sereno» de la historia" }).click();
-  // Spec-660 B2: dice que es de toda la historia (desde el acto 4 se borra aunque esté en el 2).
-  await expect(dialogo(page)).toContainText("Desaparece de todos los actos (hoy está en el acto 2).");
+  await acto(page, 5).getByRole("button", { name: "Borrar a «El sereno» de la historia" }).click();
+  // Spec-660 B2: dice que es de toda la historia (desde el acto 5 se borra aunque esté en el 2 y el 4).
+  await expect(dialogo(page)).toContainText("Desaparece de todos los actos (hoy está en los actos 2 y 4).");
   await expect(dialogo(page)).toContainText("destildalo en ese acto");
   await dialogo(page).getByRole("button", { name: "Borrar de la historia" }).click();
   await expect(page.getByRole("checkbox", { name: /El sereno/ })).toHaveCount(0);

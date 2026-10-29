@@ -188,10 +188,7 @@
       const drafts = tallerDrafts(box);
       box.replaceChildren(frag);
       restoreTallerDrafts(box, drafts, skip);
-      // Respondida la última pregunta, «Preguntame lo que falta» ya no haría nada.
-      const fin = $("[data-fin]", box);
-      const preguntar = $("[data-preguntar-falta]");
-      if (fin && preguntar) preguntar.classList.toggle("hidden", fin.dataset.fin === "respondido");
+      togglePreguntar();
     }
     if (mostrar && $(mostrar)) $(mostrar).classList.remove("hidden");
     icons();
@@ -493,6 +490,30 @@
     if (!ok) return;
     const n = Number(form.dataset.number);
     return run(() => api("POST", `/authoring/stories/${page.storyId}/${coleccion}/remove`, { name }), enActo(n, { todos: true }));
+  }
+
+  /** Respondida la última pregunta, «Preguntame lo que falta» ya no haría nada; salvo que
+   *  haya cambiado la idea (Spec-700 A2): ahí la IA la vuelve a leer. */
+  function togglePreguntar() {
+    const fin = $("[data-preguntas-contenido] [data-fin]");
+    const preguntar = $("[data-preguntar-falta]");
+    if (!fin || !preguntar) return;
+    const cambio = $('[data-idea-cambio="preguntas"]');
+    preguntar.classList.toggle("hidden", fin.dataset.fin === "respondido" && !cambio);
+  }
+
+  /** Spec-700 D16: «Dejarlo así». Sella la idea en ese paso (sin IA) y la nota se va. */
+  async function ideaRevisada(btn) {
+    const nota = btn.closest("[data-idea-cambio]");
+    try {
+      await flushAll();
+      await api("POST", `/authoring/stories/${page.storyId}/idea-revisada`, { paso: btn.dataset.ideaRevisada });
+    } catch (err) {
+      if (err.status === 409) return attachToActiveJob();
+      return status("error", err.message);
+    }
+    if (nota) nota.remove();
+    togglePreguntar();
   }
 
   /** Cómo se actualiza «Los actos» después de una acción en el acto `n`. */
@@ -797,6 +818,7 @@
 
     if (t.closest("[data-guardado-cerrar]")) return hideToast();
     if (t.matches("[data-analizar]")) return analyze(t);
+    if (t.matches("[data-idea-revisada]")) return ideaRevisada(t);
     if (t.matches("[data-sorprendeme]")) return sorprendeme(t);
     if (t.matches("[data-taller]")) return tallerAction(t);
     if (t.matches("[data-cambiar]")) {
@@ -847,11 +869,14 @@
     }
     if (t.matches("[data-sumar-personaje]") && form) {
       const n = form.dataset.number;
-      // Spec-630 B2: un clic; queda en «Quiénes están» del acto y el aviso se resuelve (no se ignora).
-      return run(async () => {
-        await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "persona", act: Number(n) });
-        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/resolve`, { key: t.dataset.aviso });
-      }, enActo(n, { todos: true }));
+      // Spec-630 B2: un clic; queda en «Quiénes están» del acto. Spec-700 B3: sumarlo resuelve
+      // su aviso en todos los actos (no se ignora).
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "persona", act: Number(n) }), enActo(n, { todos: true }));
+    }
+    if (t.matches("[data-mismo-personaje]") && form) {
+      // Spec-700 B4: es uno de la lista escrito distinto: se usa ese en todos los actos.
+      const n = form.dataset.number;
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/characters/same`, { name: t.dataset.mismoPersonaje, same_as: t.dataset.es }), enActo(n, { todos: true }));
     }
     if (t.matches("[data-ignorar]") && form) {
       const n = form.dataset.number;

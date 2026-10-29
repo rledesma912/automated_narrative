@@ -40,6 +40,40 @@
       </button>
     </section>
   <% } else { %>
+    <% if (state.idea_cambio && state.idea_cambio.preguntas) { %>
+      <%/* Spec-700 A2: la idea cambió después de estas preguntas; «Dejarlo así» la sella sin IA (D16). */%>
+      <div class="nota-forge nota-forge--warning mb-8" data-idea-cambio="preguntas">
+        <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+        <p class="flex-1">Cambiaste tu idea después de estas preguntas. La IA la puede volver a leer y preguntarte lo que haga falta.</p>
+        <button type="button" class="nota-forge__accion" data-analizar="consult" data-titulo="Leyendo tu idea nueva…"
+                data-detalle="La IA vuelve a leer tu idea y pregunta lo que haga falta.">Que la IA la vuelva a leer</button>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="preguntas">Dejarlo así</button>
+      </div>
+    <% } %>
+    <% const sinRevisar = state.idea_sin_revisar; %>
+    <% if (sinRevisar) { %>
+      <%/* Spec-700 D27: la IA no pudo revisar las respuestas contra la idea nueva (sin el rol o sin la API).
+           Qué cambió, oración por oración, sin IA; «Listo, ya las revisé» saca la nota. */%>
+      <div class="nota-forge nota-forge--info mb-8" data-idea-cambio="respuestas">
+        <i data-lucide="file-pen-line" class="nota-forge__icono"></i>
+        <div class="flex-1">
+          <p>Cambiaste tu idea y la IA no pudo fijarse si tus respuestas siguen yendo. Mirá qué cambió y, si alguna ya no va, tocá «Cambiar» en esa respuesta.</p>
+          <% if (sinRevisar.sacado.length) { %>
+            <p class="text-xs uppercase tracking-widest text-forge-muted mt-3 mb-1">Ya no dice</p>
+            <ul class="space-y-1 text-sm" data-sacado>
+              <% sinRevisar.sacado.forEach(o => { %><li class="text-forge-muted line-through"><%= o %></li><% }) %>
+            </ul>
+          <% } %>
+          <% if (sinRevisar.agregado.length) { %>
+            <p class="text-xs uppercase tracking-widest text-forge-muted mt-3 mb-1">Ahora dice</p>
+            <ul class="space-y-1 text-sm" data-agregado>
+              <% sinRevisar.agregado.forEach(o => { %><li class="font-medium"><%= o %></li><% }) %>
+            </ul>
+          <% } %>
+        </div>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="respuestas">Listo, ya las revisé</button>
+      </div>
+    <% } %>
     <section class="bg-forge-surface border border-forge-border p-6 mb-8">
       <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-2">Cómo viene tu historia</h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>Unas preguntas son de toda historia; otras, de la clase de historia que elegiste en «Tu idea», y una del giro si elegiste uno. Son 10 como mucho y ninguna es obligatoria.</p>
@@ -137,6 +171,14 @@
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
                 <p><%= p.status === 'no_aplica' ? `La IA no te lo pregunta: ${p.question}` : p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
                 <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.de_la_idea ? 'Lo sacamos de tu idea. Si no es así, tocá «Cambiar» y dejalo como querés.' : p.por_que %></p>
+                <% if (p.no_coincide) { %>
+                  <%/* Spec-700 A3: la IA marca, no pisa. «Cambiar» la reescribe; «Está bien así» la deja. */%>
+                  <div class="nota-forge nota-forge--warning mt-3" data-no-coincide>
+                    <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+                    <p class="flex-1">Esto ya no va con tu idea nueva: <%= p.no_coincide %></p>
+                    <button type="button" class="nota-forge__accion" data-taller="keep">Está bien así</button>
+                  </div>
+                <% } %>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
             </div>
