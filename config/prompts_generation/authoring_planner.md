@@ -6,7 +6,7 @@ LA HISTORIA:
 DECISIONES DEL AUTOR (integralas todas):
 {decisiones}
 
-{efecto}{borradores}{problemas}{reglas}ESCENARIOS YA DEFINIDOS: {escenarios}
+{efecto}{borradores}{problemas}{reglas}{gastados}ESCENARIOS YA DEFINIDOS: {escenarios}
 Si un acto ocurre en otro lugar, poné un nombre nuevo, corto y descriptivo. Si vuelve a un lugar que ya nombraste, usá EXACTAMENTE el mismo nombre (sin agregados como «de nuevo» o «regreso»).
 
 LOS {num_actos} ACTOS:
@@ -25,3 +25,4 @@ Para cada acto devolvé:
 - "siembra": como máximo 2 detalles importantes que se plantan acá y que SÍ se retoman en un acto posterior (puede ser vacío; no pongas detalles de ambiente).
 - "retoma": detalles sembrados antes que acá se retoman (puede ser vacío).
 - "decisiones": los ids de las decisiones del autor que este acto usa.
+{personajes_nuevos}

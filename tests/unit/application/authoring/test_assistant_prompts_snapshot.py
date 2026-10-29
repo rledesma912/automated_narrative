@@ -173,6 +173,12 @@ def test_el_snapshot_cubre_todas_las_secciones():
         "REGLAS QUE PUSO EL AUTOR PARA CADA ACTO",
         "- Acto 2: Marta solo aparece en el espejo",
         "PRIMERO, si un acto tiene «Reglas de este acto»",
+        # Spec-720 D9: con el Planificador en Claude vuelve la lista (680 D25 la había sacado)
+        "RECURSOS GASTADOS (ya se vieron en muchos cuentos",
+        "- ojos que brillan en la oscuridad",
+        # Spec-730: la IA puede sumar personajes con un para qué
+        'devolvé "personajes_nuevos"',
+        "Como mucho 2.",
         "ACTO 2\n",
         "Cómo llega: Pasaron dos horas",
         "Quiere: Que el micro llegue",

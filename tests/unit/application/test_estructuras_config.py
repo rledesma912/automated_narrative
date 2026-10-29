@@ -43,3 +43,9 @@ def test_el_final_y_la_historia_secreta_caen_en_su_acto():
     for sid in REPO.structure_ids:
         estructura = REPO.estructura(sid)
         assert catalog.criterion("final", sid).acto == estructura.ultimo
+
+
+def test_personajes_que_puede_proponer_la_ia():
+    """Spec-730 D1: 2 en el largo, 1 en el corto."""
+    assert REPO.estructura("largo").personajes_nuevos_max == 2
+    assert REPO.estructura("corto").personajes_nuevos_max == 1

@@ -75,6 +75,32 @@ def con_idea_leida(story: Story, paso: str) -> Story:
     return story.model_copy(update={"direction": story.direction.model_copy(update=update)})
 
 
+def con_hecho_local(story: Story, respaldos: set[str], *, actos: bool) -> Story:
+    """Spec-720 D7: qué hizo la IA de la compu porque la de la nube no atendió (los roles
+    de `respaldos`). Armar los actos sella las dos marcas; revisar, solo la de la revisión.
+    Sin dirección no se sella (como `con_idea_leida`)."""
+    if story.direction is None:
+        return story
+    update = {"revision_local": "verificador" in respaldos}
+    if actos:
+        update["actos_locales"] = "planificador" in respaldos
+    return story.model_copy(update={"direction": story.direction.model_copy(update=update)})
+
+
+def hecho_local(story: Story) -> dict[str, bool]:
+    """Spec-720 D7: para la nota de «Los actos»."""
+    d = story.direction
+    return {"actos": bool(d and d.actos_locales), "revision": bool(d and d.revision_local)}
+
+
+def sin_hecho_local(story: Story) -> Story:
+    """Spec-720 D7: «Dejarlo así»."""
+    if story.direction is None:
+        return story
+    update = {"actos_locales": False, "revision_local": False}
+    return story.model_copy(update={"direction": story.direction.model_copy(update=update)})
+
+
 def _oraciones(text: str) -> list[str]:
     return [o.strip() for o in re.split(r"(?<=[.!?…])\s+|\n+", text) if o.strip()]
 

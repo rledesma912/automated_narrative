@@ -63,13 +63,23 @@ async def _idea_leida(story: Story, paso: str) -> None:
         await SQLStoryRepository().update_direction(story.id, story.direction)
 
 
-async def _with_cast(story: Story, acts) -> Story:
+async def _hecho_local(story_id: UUID, llm, *, actos: bool) -> None:
+    """Spec-720 D7: si respondió la IA de la compu (respaldo), «Los actos» lo dicen; si
+    respondió la nube, la marca se va. Relee la historia: el job ya selló la idea."""
+    story = await _load(story_id)
+    marked = context.con_hecho_local(story, getattr(llm, "respaldos", set()), actos=actos)
+    if marked.direction != story.direction:
+        await SQLStoryRepository().update_direction(story_id, marked.direction)
+
+
+async def _with_cast(story: Story, acts, propuestos=()) -> Story:
     """Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar
-    (así la regla de los personajes no pregunta por ellos)."""
-    names = elenco.personajes_de_la_autora(story, acts)
+    (así la regla de los personajes no pregunta por ellos). Spec-730: también los que
+    propuso la IA con un para qué, con quién es como `role`."""
+    names = elenco.personajes_de_la_autora(story, acts) + [p.nombre for p in propuestos]
     if not names:
         return story
-    story = elenco.con_personajes(story, names)
+    story = elenco.con_personajes(story, names, {p.nombre: p.quien_es for p in propuestos})
     await SQLStoryRepository().update_inputs(story)
     return story
 
@@ -116,12 +126,14 @@ def plan_outline_runner(story_id: UUID) -> JobRunner:
             llm = LLMFactory.get_provider()
             yield stage_event(JobStage.PLANIFICADOR, None, None)
             story = await _with_ending(await _load(story_id), llm)  # Spec-690 D3
-            acts, _ = await OutlinePlanner(llm).plan(story)
-            story = await _with_cast(story, acts)
+            planner = OutlinePlanner(llm)
+            acts, _ = await planner.plan(story)
+            story = await _with_cast(story, acts, planner.propuestos)  # Spec-730
             yield stage_event(JobStage.VERIFICADOR, None, None)
             checked = await OutlineVerifier(llm).verify(story, acts)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
             await _idea_leida(story, "actos")  # Spec-700 D12
+            await _hecho_local(story_id, llm, actos=True)  # Spec-720 D7
             yield _done(story_id, missing_decisions=checked.missing_decisions)
 
         return _gen()
@@ -135,8 +147,10 @@ def verify_outline_runner(story_id: UUID) -> JobRunner:
             yield stage_event(JobStage.VERIFICADOR, None, None)
             story = await _load(story_id)
             story = await _with_cast(story, story.outline)
-            checked = await OutlineVerifier(LLMFactory.get_provider()).verify(story, story.outline)
+            llm = LLMFactory.get_provider()
+            checked = await OutlineVerifier(llm).verify(story, story.outline)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
+            await _hecho_local(story_id, llm, actos=False)  # Spec-720 D7
             yield _done(story_id, missing_decisions=checked.missing_decisions)
 
         return _gen()

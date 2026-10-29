@@ -101,7 +101,7 @@ class IdeaRevisadaForm(BaseModel):
     """Spec-700 D16: en qué paso se deja la idea como está; D27: `respuestas` = la autora
     ya revisó lo que cambió y la IA no pudo revisar."""
 
-    paso: Literal["preguntas", "actos", "respuestas"]
+    paso: Literal["preguntas", "actos", "respuestas", "local"]  # local: Spec-720 D7
 
 
 class SameCharacterForm(BaseModel):

@@ -81,7 +81,7 @@ Contexto común (`context.py`), que reciben los tres roles:
 (`asistente/planificador/borradores` + `borrador`), `{problemas}`
 (`asistente/planificador/problemas` + una `asistente/aviso_de_acto` por aviso visible),
 `{reglas}` (Spec-630: `asistente/planificador/reglas` + una `regla` por regla anclada a un acto;
-vacío si no hay), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
+vacío si no hay), `{gastados}` (Spec-720 D9: `asistente/planificador/recursos_gastados` con los `hechos` de `config/recursos_gastados.yaml` que no trae el autor; vacío si no queda ninguno), `{personajes_nuevos}` (Spec-730: al final, `asistente/planificador/personajes_nuevos` con `{max}` = `personajes_nuevos_max` de la estructura; vacío si es 0), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
 `asistente/planificador/acto` por acto; `final_del_autor` cambia la intención del último acto,
 Spec-670: la intención sale del molde (`molde.py`) y en el acto `revela_secreto` se suma el `revela.texto` de la forma (en la de siempre, la historia secreta); `hechos` cuando el acto
 dice cuántos hechos lleva). Spec-650: `{num_actos}`, `{ultimo}` y `{hechos_por_acto}` salen de

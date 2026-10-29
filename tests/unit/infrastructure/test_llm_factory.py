@@ -97,6 +97,39 @@ class TestPerfilMixto:
         # Los roles locales comparten un único adapter de Ollama.
         assert router.adapter_for("director") is local and router.adapter_for(None) is local
 
+    def test_el_respaldo_de_un_rol_entra_en_el_ruteo(self, monkeypatch):
+        """Spec-720 D6: todo en Claude, con el Planificador de respaldo en gemma."""
+        import src.config as config
+        from src.infrastructure.adapters import RoleRoutingAdapter
+
+        monkeypatch.setattr(
+            config,
+            "_profile",
+            {
+                "provider": "anthropic",
+                "ollama": {"host": "http://localhost:11434"},
+                "roles": {
+                    "director": {"model": "claude-sonnet-5-5"},
+                    "planificador": {
+                        "model": "claude-sonnet-5-5",
+                        "respaldo": {"provider": "ollama", "model": "gemma3:12b"},
+                    },
+                },
+            },
+        )
+        with (
+            patch("src.infrastructure.adapters.anthropic_adapter.settings") as adapter_settings,
+            patch("src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"),
+        ):
+            adapter_settings.anthropic_api_key = "test-key"
+            adapter_settings.anthropic_model = "claude-sonnet-5-5"
+            router = LLMFactory.get_provider()
+
+        assert isinstance(router, RoleRoutingAdapter)
+        assert isinstance(router.adapter_for("planificador"), AnthropicAdapter)
+        adapter, cfg = router._respaldo["planificador"]
+        assert isinstance(adapter, OllamaAdapter) and cfg["model"] == "gemma3:12b"
+
     def test_provider_explicito_ignora_el_ruteo(self, monkeypatch):
         self._profile(monkeypatch, "anthropic")
         assert isinstance(LLMFactory.get_provider(provider="ollama"), OllamaAdapter)

@@ -4,7 +4,9 @@
 <%
   /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. */
   const visibles = (a) => a.warnings.filter(w => !w.dismissed);
-  const ignorados = (a) => a.warnings.filter(w => w.dismissed);
+  /* Spec-730 D12: la nota de un personaje que sumó la IA se cierra con «Entendido» y no es un aviso ignorado. */
+  const esPropuesto = (w) => w.key.startsWith('propuesto:');
+  const ignorados = (a) => a.warnings.filter(w => w.dismissed && !esPropuesto(w));
   const narrador = state.direction.narrator || state.direction.protagonist_name;
   /* Spec-650: nombre, tensión y cantidad de actos según el largo de la historia (los da el Core). */
   const actosDelLargo = state.structure_acts;
@@ -39,6 +41,14 @@
               <%/* Spec-550 H9: cada aviso es una nota; sus acciones, links. */%>
               <div class="mx-6 mt-4 space-y-2">
                 <% visibles(a).forEach(w => { const fuera = fueraDeLaLista(w); %>
+                  <% if (esPropuesto(w)) { %>
+                    <div class="nota-forge nota-forge--info" data-aviso-clave="<%= w.key %>" data-propuesto>
+                      <i data-lucide="user-plus" class="nota-forge__icono"></i>
+                      <p class="flex-1"><%= w.text %></p>
+                      <button type="button" class="nota-forge__accion" data-ignorar="<%= w.key %>">Entendido</button>
+                    </div>
+                    <% return; %>
+                  <% } %>
                   <div class="nota-forge nota-forge--warning" data-aviso-clave="<%= w.key %>">
                     <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
                     <p class="flex-1"><%= w.text %></p>

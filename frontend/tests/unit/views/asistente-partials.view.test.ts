@@ -145,6 +145,78 @@ describe("taller: lo que cambió sin revisar", () => {
   });
 });
 
+// Spec-720 D7: lo hizo la IA de la compu porque la de la nube no respondió.
+describe("los actos: hechos por la IA de la compu", () => {
+  const render = (hecho_local: unknown) =>
+    ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, hecho_local },
+      pasoActual: "escaleta",
+    });
+  const nota = (html: string) =>
+    (html.match(/<div[^>]*data-hecho-local="[^"]*"[^>]*>[\s\S]*?Dejarlo así<\/button>/) || [""])[0];
+
+  it("actos: nota de información con armar de nuevo (con confirmación) y «Dejarlo así»", async () => {
+    const n = nota(await render({ actos: true, revision: true }));
+    expect(n).toContain('data-hecho-local="actos"');
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("Estos actos los armó la IA de tu compu porque la de la nube no respondió.");
+    expect(n).toMatch(/data-analizar="plan_outline"[^>]*data-confirmar="[^"]*se reemplaza\."/);
+    expect(n).toMatch(/data-idea-revisada="local">Dejarlo así</);
+  });
+
+  it("solo la revisión: ofrece revisar de nuevo", async () => {
+    const n = nota(await render({ actos: false, revision: true }));
+    expect(n).toContain('data-hecho-local="revision"');
+    expect(n).toContain("La revisión la hizo la IA de tu compu");
+    expect(n).toMatch(/data-analizar="verify_outline"[^>]*>Revisar de nuevo</);
+  });
+
+  it("con la nube (o sin dato) no hay nota", async () => {
+    expect(await render({ actos: false, revision: false })).not.toContain("data-hecho-local");
+    expect(await render(undefined)).not.toContain("data-hecho-local");
+  });
+});
+
+// Spec-730 D12: la nota de un personaje que sumó la IA.
+describe("acto: personaje que sumó la IA", () => {
+  const nota = { text: "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no pare.", key: "propuesto:don ramon", source: "regla", dismissed: false };
+  const render = (warnings: unknown[]) => {
+    const acts = state.outline.acts.map((a: { number: number }) => (a.number === 2 ? { ...a, warnings } : a));
+    return ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+  };
+
+  it("nota de información con «Entendido», sin «Ignorar» ni «Sumarlo»", async () => {
+    const html = await render([nota]);
+    const n = html.match(/<div[^>]*data-propuesto[^>]*>[\s\S]*?<\/div>/)![0];
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("La IA sumó a «Don Ramón», el sereno de la terminal");
+    expect(n).toMatch(/data-ignorar="propuesto:don ramon">Entendido</);
+    expect(n).not.toContain("Ignorar");
+    expect(n).not.toContain("data-sumar-personaje");
+  });
+
+  it("cerrada, no aparece ni entre los avisos ignorados", async () => {
+    const html = (await render([{ ...nota, dismissed: true }])).replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(html).not.toContain("data-propuesto");
+    expect(html).not.toContain("Don Ramón», el sereno");
+  });
+
+  it("no cuenta como aviso en el resumen", async () => {
+    const acts = state.outline.acts.map((a: { number: number }) => ({ ...a, warnings: a.number === 2 ? [nota] : [] }));
+    const html = await ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+    expect(html).toContain("Nada para marcar");
+  });
+});
+
 // Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
 describe("taller: ya no coincide", () => {
   it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {

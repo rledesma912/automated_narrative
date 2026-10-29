@@ -224,6 +224,10 @@ class Direction(BaseModel):
     # Spec-700 D26: la idea de antes del cambio que la IA no pudo revisar ("" = nada
     # pendiente). «Preguntas» muestra qué cambió hasta que la autora dice que ya revisó.
     idea_sin_revisar: str = ""
+    # Spec-720 D7: los actos (o su revisión) los hizo la IA de la compu porque la de la
+    # nube no atendió. «Los actos» lo dicen hasta que se rearman con la nube o «Dejarlo así».
+    actos_locales: bool = False
+    revision_local: bool = False
 
     @model_validator(mode="after")
     def _ending_fixed_when_written(self) -> "Direction":

@@ -89,7 +89,7 @@ profiles:
     anthropic: { model: claude-sonnet-5-5 }
     # Spec-510: valores iniciales sin medir (la Voz en Claude tarda menos; la Memoria
     # sigue local). Con historial manda la mediana.
-    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 30, suggest_form: 10, plan_outline: 70, verify_outline: 15, video_script: 60 }
+    estimated_seconds: { full_generation: 180, regenerate_voz: 25, consult: 30, suggest_form: 10, plan_outline: 45, verify_outline: 15, video_script: 60 }
     roles:
       director:
         model: gemma3:12b
@@ -115,18 +115,32 @@ profiles:
         num_ctx: 8192
         num_predict: 1500
         stop: []
+      # Spec-720: el Planificador y el Verificador en Sonnet 5.5, sin pensar (pensar no
+      # mejoró en la medición, §11). Si la nube no atiende, responde gemma (`respaldo`,
+      # la config de antes tal cual) y «Los actos» lo dicen. Medido: ~20 s el Planificador
+      # (hasta 3 850 tokens de salida, por eso 6000) y ~8 s el Verificador; ~US$ 0,055.
       planificador:
-        model: gemma3:12b
-        temperature: 0.4
-        num_ctx: 8192
-        num_predict: 2500
-        stop: []
+        provider: anthropic
+        model: claude-sonnet-5-5
+        num_predict: 6000
+        thinking: between_tools
+        respaldo:
+          provider: ollama
+          model: gemma3:12b
+          temperature: 0.4
+          num_ctx: 8192
+          num_predict: 2500
       verificador:
-        model: gemma3:12b
-        temperature: 0.2
-        num_ctx: 8192
-        num_predict: 1200
-        stop: []
+        provider: anthropic
+        model: claude-sonnet-5-5
+        num_predict: 2000
+        thinking: between_tools
+        respaldo:
+          provider: ollama
+          model: gemma3:12b
+          temperature: 0.2
+          num_ctx: 8192
+          num_predict: 1200
       # Spec-610 (D3): el paquete para el video en Sonnet 5.5, una llamada (~US$ 0,05).
       # Piensa poco, como la Voz: la intro y el outro de la calabaza son escritura.
       guion:

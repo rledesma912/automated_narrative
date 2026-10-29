@@ -7,11 +7,13 @@ con «la tienda de su mamá»). Lo demás lo inventó la IA y sigue avisándose.
 """
 
 import re
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 from src.application.services import recursos_gastados
 from src.application.services.authoring import context, workshop_rules
-from src.domain.models import ActOutline, Story
+from src.domain.models import ActOutline, OutlineWarning, Story
+from src.messages import message
 
 PARECIDO = 0.8  # «Amigos» / «Amigas» (0,83) sí; «Amigas» / «Mamá» (de Ximena) no
 
@@ -89,6 +91,77 @@ def personajes_de_la_autora(story: Story, acts: list[ActOutline]) -> list[str]:
     return out
 
 
+@dataclass(frozen=True)
+class Propuesto:
+    """Spec-730: un personaje que sumó la IA, con quién es y para qué (empuja la trama)."""
+
+    nombre: str
+    quien_es: str
+    para_que: str
+    acto: int  # el primero donde aparece (ahí va la nota)
+
+
+def clave_propuesto(name: str) -> str:
+    return f"propuesto:{workshop_rules.normalize(bare(name))}"
+
+
+def propuestos(story: Story, acts: list[ActOutline], pedidos, maximo: int) -> list[Propuesto]:
+    """Los que propuso el Planificador que valen: con quién es y para qué, que no son de la
+    historia ni de la autora, que aparecen en algún «Quiénes están» (D13), hasta `maximo`
+    (D1). El resto queda como un nombre cualquiera (el aviso `elenco:` de siempre)."""
+    known = {workshop_rules.normalize(p.get("name", "")) for p in story.personajes_full or []}
+    known.add(workshop_rules.normalize(context.narrator(story)))
+    known |= {workshop_rules.normalize(e.name) for e in story.entities if e.name}
+    text = recursos_gastados.author_text(story)
+    out: list[Propuesto] = []
+    for p in pedidos:
+        name = bare(p.nombre)
+        key = workshop_rules.normalize(name)
+        if len(out) >= maximo:
+            break
+        if not (key and p.quien_es.strip() and p.para_que.strip()) or key in known:
+            continue
+        if de_la_autora(story, name, text):
+            continue  # ya entra sola (Spec-700 D22)
+        first = next(
+            (
+                a.number
+                for a in sorted(acts, key=lambda a: a.number)
+                if key in {workshop_rules.normalize(bare(n)) for n in a.on_stage}
+            ),
+            None,
+        )
+        if first is None:
+            continue
+        known.add(key)
+        out.append(Propuesto(name, " ".join(p.quien_es.split()), _frase(p.para_que), first))
+    return out
+
+
+def _frase(text: str) -> str:
+    return " ".join(text.split()).rstrip(".")
+
+
+def con_nota(acts: list[ActOutline], nuevos: list[Propuesto]) -> list[ActOutline]:
+    """Los actos con la nota de cada propuesto en el primero donde aparece."""
+    by_act: dict[int, list[OutlineWarning]] = {}
+    for p in nuevos:
+        text = message(
+            "verifier.propuesto", nombre=p.nombre, quien_es=p.quien_es, para_que=p.para_que
+        )
+        by_act.setdefault(p.acto, []).append(
+            OutlineWarning(
+                text=text, key=clave_propuesto(p.nombre), source="regla", subject=p.nombre
+            )
+        )
+    return [
+        a.model_copy(update={"warnings": [*a.warnings, *by_act[a.number]]})
+        if a.number in by_act
+        else a
+        for a in acts
+    ]
+
+
 def next_id(cast: list[dict]) -> str:
     """P<n> que no choque con ninguno (al borrar un personaje, `len + 1` repetiría un id)."""
     nums = [
@@ -99,13 +172,21 @@ def next_id(cast: list[dict]) -> str:
     return f"P{max(nums, default=0) + 1}"
 
 
-def con_personajes(story: Story, names: list[str]) -> Story:
-    """La historia con esos personajes sumados (persona, sin parentesco: D21)."""
+def con_personajes(story: Story, names: list[str], roles: dict[str, str] | None = None) -> Story:
+    """La historia con esos personajes sumados (persona, sin parentesco: D21). Spec-730: los
+    que propuso la IA llevan quién es como `role` (la Voz lo recibe)."""
     if not names:
         return story
+    roles = roles or {}
     cast = list(story.personajes_full or [])
     for name in names:
         cast.append(
-            {"id": next_id(cast), "name": name, "role": "", "kind": "persona", "relation": ""}
+            {
+                "id": next_id(cast),
+                "name": name,
+                "role": roles.get(name, ""),
+                "kind": "persona",
+                "relation": "",
+            }
         )
     return story.model_copy(update={"personajes_full": cast})

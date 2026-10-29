@@ -60,7 +60,11 @@ def _hybrid(monkeypatch):
     import src.config as config
     from tests.integration.test_hybrid_profile import hybrid_profile
 
-    monkeypatch.setitem(config._llm_core["profiles"], HYBRID, hybrid_profile())
+    # Solo la Voz en Claude (Spec-480): la escaleta, en gemma (el respaldo de la 720).
+    profile = hybrid_profile()
+    for role in ("planificador", "verificador"):
+        profile["roles"][role] = profile["roles"][role]["respaldo"]
+    monkeypatch.setitem(config._llm_core["profiles"], HYBRID, profile)
 
 
 def _fakes(monkeypatch):
