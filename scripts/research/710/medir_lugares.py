@@ -1,15 +1,19 @@
-"""Spec-710 D6: ¿gemma da un lugar por hecho, sin lugares compuestos?
+"""Spec-710: ¿el Planificador da un lugar por hecho, sin compuestos, cosas ni nombres de código?
 
-Corre el Planificador real (`OutlinePlanner`, prompts de `config/`) con el rol
-`planificador` del perfil híbrido (gemma3:12b, gratis) sobre las historias de la copia
-local de prod, con una variante: cada hecho trae su lugar (`{texto, lugar}`) y el acto ya
-no trae «escenario». No toca la base ni `config/`: la variante vive en este script.
+S5: corre el Planificador real (`OutlinePlanner`, prompts de `config/`) con el perfil
+activo (`hibrido-sonnet55`: desde la Spec-720, Sonnet 5.5) sobre historias de la copia
+de prod. Anota el lugar tal cual lo devolvió la IA (antes de `_lugar()`) y el que queda.
+(La medición de §9, con gemma y una variante del prompt que vivía acá, quedó en
+`data/dev/research_710/gemma_2.json`.)
 
-    uv run python scripts/research/710/medir_lugares.py <salida.json> [corridas] [titulo...]
+No toca la base. Sin `--yes` solo estima; `--tope` corta lo pago.
+
+    uv run python scripts/research/710/medir_lugares.py <salida.json> [--yes] [--tope 0.6]
 
 La salida va a data/dev/research_710/ (fuera de git: son historias reales).
 """
 
+import argparse
 import asyncio
 import json
 import os
@@ -18,119 +22,97 @@ import sys
 import time
 from pathlib import Path
 
-from pydantic import BaseModel, model_validator
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 os.environ.setdefault("LLM_PROFILE", "hibrido-sonnet55")
 
-from src.application.services.authoring.planner import ROLE, ActoPlan, OutlinePlanner  # noqa: E402
-from src.application.services.authoring.structured_llm import generate_structured  # noqa: E402
+from scripts.evaluate_voice import TokenMeter  # noqa: E402
+from src.application.services.authoring import planner  # noqa: E402
+from src.application.services.authoring.planner import OutlinePlanner  # noqa: E402
 from src.infrastructure.database.repositories import SQLStoryRepository  # noqa: E402
 from src.infrastructure.factories import LLMFactory  # noqa: E402
 
-HECHOS_VIEJO = '- "hechos": {n} concretos y en orden, con acciones del protagonista.'
-HECHOS_NUEVO = (
-    '- "hechos": {n} concretos y en orden, con acciones del protagonista. Cada hecho es '
-    '{{"texto": …, "lugar": …}}: "lugar" es DÓNDE pasa ese hecho, UN solo lugar, corto '
-    "(sin comas, barras ni «y»). Si el hecho pasa donde el anterior, repetí el mismo nombre."
-)
-ESCENARIO = '- "escenario": dónde ocurre.\n'
-COMPUESTO = re.compile(r",|/| - | y |\be\b", re.I)
+HISTORIAS = [
+    "El trabajo de Yadira",
+    "Los forasteros",
+    "el engaño del diablo",
+    "No es tu culpa",
+    "El último cliente",
+    "La criatura del río Paraná",
+]
+ESTIMADO = 0.05  # por historia, solo el Planificador (Spec-720 §11: ~0,04–0,05)
+COMPUESTO = re.compile(r",|/| - | y ", re.I)
 
 
-class Hecho(BaseModel):
-    texto: str
-    lugar: str
+async def main(args) -> None:
+    out = Path(args.salida)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Costo estimado: US$ {ESTIMADO * len(HISTORIAS):.2f} (tope US$ {args.tope:.2f})")
+    if not args.yes:
+        print("Sin --yes no se corre nada pago.")
+        return
 
+    crudos: list[str] = []
+    original = planner._lugar
 
-class ActoLugares(ActoPlan):
-    hechos: list[Hecho]  # type: ignore[assignment]
-    escenario: str = ""
+    def anotar(name: str) -> str:
+        crudos.append(name)
+        return original(name)
 
+    planner._lugar = anotar
 
-def escaleta_lugares(num_actos: int) -> type[BaseModel]:
-    class Escaleta(BaseModel):
-        actos: list[ActoLugares]
-
-        @model_validator(mode="after")
-        def _completa(self):
-            if sorted(a.numero for a in self.actos) != list(range(1, num_actos + 1)):
-                raise ValueError(f"faltan actos: {[a.numero for a in self.actos]}")
-            if any(not a.hechos for a in self.actos):
-                raise ValueError("acto sin hechos")
-            return self
-
-    return Escaleta
-
-
-class PlannerLugares(OutlinePlanner):
-    def _prompt(self, story) -> str:
-        n = self.prompt_builder.estructura(story).hechos_por_acto
-        prompt = super()._prompt(story)
-        viejo = HECHOS_VIEJO.format(n=n)
-        assert viejo in prompt and ESCENARIO in prompt, "el prompt del Planificador cambió"
-        return prompt.replace(viejo, HECHOS_NUEVO.format(n=n)).replace(ESCENARIO, "")
-
-    async def plan_lugares(self, story):
-        estructura = self.prompt_builder.estructura(story)
-        return await generate_structured(
-            self.llm,
-            role=ROLE,
-            prompt=self._prompt(story),
-            system_prompt=self.system_prompt(story),
-            output=escaleta_lugares(estructura.num_actos),
-        )
-
-
-async def main(out: Path, runs: int, titles: list[str]) -> None:
     repo = SQLStoryRepository()
-    llm = LLMFactory.get_provider()
-    planner = PlannerLugares(llm)
-    rows = []
-    for summary in await repo.list_all():
-        story = await repo.get_by_id(summary.id)
-        if titles and story.title not in titles:
-            continue
-        for run in range(1, runs + 1):
-            start = time.monotonic()
-            try:
-                result, _ = await planner.plan_lugares(story)
-                actos = [
+    by_title = {s.title: s for s in await repo.list_all()}
+    rows, gastado = [], 0.0
+    for title in HISTORIAS:
+        if gastado + ESTIMADO > args.tope:
+            print(f"Tope: US$ {gastado:.3f}; corto antes de {title}")
+            break
+        crudos.clear()
+        llm = TokenMeter(LLMFactory.get_provider())
+        story = await repo.get_by_id(by_title[title].id)
+        start = time.monotonic()
+        acts, _ = await OutlinePlanner(llm).plan(story)
+        costo = llm.cost_usd()
+        gastado += costo
+        hechos = [(a.number, e, a.event_places[i]) for a in acts for i, e in enumerate(a.events)]
+        # `_lugar` se llama por hecho y una vez más por el escenario del acto (el primero).
+        raw = [c for c in crudos]
+        rows.append(
+            {
+                "historia": title,
+                "hechos": len(hechos),
+                "sin_lugar": sum(1 for _, _, p in hechos if not p),
+                "crudos": list(dict.fromkeys(raw)),
+                "compuestos": sorted({r for r in raw if COMPUESTO.search(r)}),
+                "codigo": sorted({r for r in raw if "_" in r}),
+                "lugares": list(dict.fromkeys(p for a in acts for p in a.places())),
+                "actos": [
                     {
-                        "numero": a.numero,
-                        "hechos": [{"texto": h.texto, "lugar": h.lugar} for h in a.hechos],
+                        "numero": a.number,
+                        "hechos": [[e, a.event_place(i)] for i, e in enumerate(a.events)],
                     }
-                    for a in sorted(result.actos, key=lambda a: a.numero)
-                ]
-                error = ""
-            except Exception as e:  # noqa: BLE001 — se mide, no se corrige
-                actos, error = [], f"{type(e).__name__}: {e}"[:300]
-            hechos = [h for a in actos for h in a["hechos"]]
-            vacios = sum(1 for h in hechos if not h["lugar"].strip())
-            compuestos = [h["lugar"] for h in hechos if COMPUESTO.search(h["lugar"])]
-            rows.append(
-                {
-                    "historia": story.title,
-                    "corrida": run,
-                    "segundos": round(time.monotonic() - start, 1),
-                    "error": error,
-                    "hechos": len(hechos),
-                    "sin_lugar": vacios,
-                    "compuestos": compuestos,
-                    "lugares": list(dict.fromkeys(h["lugar"] for h in hechos)),
-                    "actos": actos,
-                }
-            )
-            print(
-                f"{story.title[:28]:28} #{run} hechos={len(hechos)} sin_lugar={vacios} "
-                f"compuestos={len(compuestos)} lugares={len(rows[-1]['lugares'])} {error}",
-                flush=True,
-            )
-            out.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-    close = getattr(llm, "close", None)
-    if close:
-        await close()
+                    for a in acts
+                ],
+                "segundos": round(time.monotonic() - start, 1),
+                "costo_usd": round(costo, 4),
+            }
+        )
+        r = rows[-1]
+        print(
+            f"{title[:28]:28} hechos={r['hechos']} sin_lugar={r['sin_lugar']} "
+            f"compuestos={len(r['compuestos'])} codigo={len(r['codigo'])} "
+            f"lugares={len(r['lugares'])} {r['segundos']}s US$ {costo:.3f}",
+            flush=True,
+        )
+        print(f"    {' · '.join(r['lugares'])}")
+        out.write_text(json.dumps(rows, ensure_ascii=False, indent=2), "utf-8")
+        await llm.close()
+    print(f"Gastado: US$ {gastado:.3f}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main(Path(sys.argv[1]), int(sys.argv[2]) if len(sys.argv) > 2 else 2, sys.argv[3:]))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("salida")
+    parser.add_argument("--yes", action="store_true")
+    parser.add_argument("--tope", type=float, default=0.6)
+    asyncio.run(main(parser.parse_args()))

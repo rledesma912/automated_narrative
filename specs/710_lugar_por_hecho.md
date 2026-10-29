@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — escaleta (Planificador, Verificador, Voz) + tarjeta del acto
-**Estado:** IMPLEMENT (2026-10-29): S1 a S4 hechos; falta S5 (medición y cierre).
+**Estado:** IMPLEMENT terminado (2026-10-29): S1–S5 hechos; falta el PR.
 **Rama:** a crear desde `development`
 **Extiende:** Spec-530 (escaleta), Spec-630 B6/B7 (lugares de la historia), Spec-590 (lo que recibe la Voz).
 **Hermana:** Spec-700 (salió de la misma revisión del uso de Vale).
@@ -315,3 +315,21 @@ Las historias vuelven como borradores, como dice CLAUDE.md. Se anota en el PR; e
 - Una lista de lugares toda vacía es lo mismo que no tener lugares por hecho (`ActOutline`): la tarjeta vuelve al radio.
 - Tests: Vitest de los dos modos; E2E nuevo `lugar-por-hecho.spec.ts` («+ Lugar nuevo…» en un hecho; agregar, subir y quitar hechos sin desordenar los lugares; borrar). Los dos E2E del radio arman sus actos sin lugar por hecho, como una escaleta vieja. Fixture del asistente: solo estructura (el envoltorio del hecho y `data-hechos`).
 - 1 116 pytest, 437 Vitest y 91 E2E (Firefox), en verde. En una corrida falló el E2E intermitente de cancelar en la sala; la siguiente pasó completa.
+
+### S5 — Medición y cierre (2026-10-29)
+
+`scripts/research/710/medir_lugares.py` ahora corre el Planificador real con el perfil de dev (Sonnet 5.5 desde la 720). Copia de prod del 2026-10-29, 6 historias, 1 corrida. Anota el lugar tal cual lo devolvió la IA, antes de `_lugar()`. Salida en `data/dev/research_710/sonnet.json`. Costo real **US$ 0,208** (estimado 0,30, tope 0,60).
+
+| Métrica | gemma (§9, variante del prompt) | Sonnet 5.5 (el código de la 710) |
+|---|---|---|
+| Hechos con lugar | 305 de 305 | **106 de 106** |
+| Lugares compuestos | 2 de 305 | **0** |
+| Nombres de código («casa_susana») | 13 lugares en una historia | **0** |
+| Cosas como lugar | «Puerta», «Ventana», «Pared», «fogata» | 1 dudosa: «La puerta de entrada» (Los forasteros), un lugar donde se está |
+| Mismo lugar con dos nombres | 3 pares | 1 par probable: «La casa» / «La casa de Ingrid» (Los forasteros) |
+| Lugares por historia | 5 (mediana, de 3 a 13) | 3 a 10 |
+| Segundos por armado (solo el Planificador) | ~300 | 11–24 |
+
+- Los lugares acompañan a los hechos: «La tienda de abarrotes · La plaza del pueblo · … · La terminal de camiones · La carretera» en Yadira; «La boca de la cueva · Los túneles de la cueva · La caverna» en el engaño del diablo.
+- `_lugar()` no tuvo nada que limpiar con Sonnet; queda como red para el perfil local (gemma).
+- El aviso `lugar:` (D7) sigue fuera del alcance: no se vio el error.
