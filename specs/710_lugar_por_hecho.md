@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — escaleta (Planificador, Verificador, Voz) + tarjeta del acto
-**Estado:** IMPLEMENT (2026-10-29): S1 y S2 hechos.
+**Estado:** IMPLEMENT (2026-10-29): S1 a S3 hechos.
 **Rama:** a crear desde `development`
 **Extiende:** Spec-530 (escaleta), Spec-630 B6/B7 (lugares de la historia), Spec-590 (lo que recibe la Voz).
 **Hermana:** Spec-700 (salió de la misma revisión del uso de Vale).
@@ -297,3 +297,12 @@ Las historias vuelven como borradores, como dice CLAUDE.md. Se anota en el PR; e
 - **Mientras la tarjeta tenga el radio de «Dónde pasa»** (hasta S4): elegir un lugar para el acto (`…/scenarios` con `act`, o cambiar el radio en el autoguardado sin mandar `event_places`) pone todo el acto en ese lugar: el primer hecho con ese lugar y los demás con «el de antes».
 - Snapshots: cambia solo el prompt del Planificador; lo que recibe la Voz queda igual (en el mock todos los hechos pasan en el mismo lugar).
 - 1 112 pytest, 435 Vitest y 88 E2E (Firefox), en verde. En una corrida falló un E2E de lugares, que mostró el caso del radio (ya resuelto), y en otra el de cancelar en la sala, intermitente como en la 720.
+
+### S3 — Lo que reciben las IA (2026-10-29)
+
+- `ActOutline.events_with_place()`: cada hecho con su lugar solo donde cambia (D4); vacío en las escaletas viejas.
+- La Voz: `voz/hecho_en` («- En la terminal: …», con el artículo en minúscula, `lugares.en_lugar`) y «DÓNDE» con los lugares del acto y su descripción (desde S1).
+- El Verificador: título del acto con los lugares unidos con « · » (desde S1) y `asistente/verificador/acto/hecho_en` donde cambia el lugar.
+- El video: los lugares del acto con « · » (desde S1; D14).
+- Snapshot nuevo `voice_prompts_lugares.json` (un acto con dos lugares y uno descripto), con su test de sección. `voice_prompts.json` y el del video, **idénticos**. Los del pipeline suman «En Escenario de ejemplo:» en el primer hecho de cada acto (la escaleta sale del mock, que ya trae lugares).
+- 1 115 pytest, 435 Vitest y 88 E2E (Firefox), en verde.

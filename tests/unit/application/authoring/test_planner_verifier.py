@@ -613,3 +613,17 @@ def test_el_prompt_pide_el_lugar_de_cada_hecho_y_no_el_escenario_del_acto(story)
     prompt = OutlinePlanner(llm=None)._prompt(story)
     assert '{"texto": …, "lugar": …}' in prompt and "no una cosa del lugar" in prompt
     assert '"escenario"' not in prompt
+
+
+def test_el_verificador_lee_el_lugar_de_cada_hecho():
+    """Spec-710 D11: título con los lugares del acto; «En <lugar>:» donde cambia."""
+    act = ActOutline(
+        number=2,
+        events=["Abre la tienda", "Cuenta la plata", "Sale a la calle"],
+        event_places=["La tienda", "", "La calle"],
+    )
+    text = OutlineVerifier(ScriptedLLM())._act_text(act)
+    assert "La tienda · La calle" in text.splitlines()[0]
+    assert (
+        "- En la tienda: Abre la tienda\n- Cuenta la plata\n- En la calle: Sale a la calle" in text
+    )

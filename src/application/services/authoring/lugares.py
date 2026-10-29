@@ -34,3 +34,14 @@ def con_lugares(story: Story, names: list[str]) -> Story:
         for i, name in enumerate(names)
     ]
     return story.model_copy(update={"scenarios": [*story.scenarios, *added]})
+
+
+_ARTICULOS = {"el", "la", "los", "las", "un", "una", "unos", "unas"}
+
+
+def en_lugar(name: str) -> str:
+    """Para «En <lugar>:» (D11): «La tienda» → «la tienda»; un nombre propio queda igual."""
+    first, _, rest = name.partition(" ")
+    if first.lower() in _ARTICULOS and rest:
+        return f"{first.lower()} {rest}"
+    return name

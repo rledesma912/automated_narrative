@@ -157,3 +157,13 @@ def test_mas_videos_que_momentos_en_el_corto_no_carga(copia):
     )
     with pytest.raises(ValidationError, match="videos"):
         load_video_config(copia)
+
+
+def test_el_contexto_del_video_lleva_los_lugares_del_acto():
+    """Spec-710 D14: el paquete recibe los lugares del acto unidos con « · »."""
+    from src.application.services.video.prompts import VideoScriptPrompts
+    from src.domain.models import ActOutline, Story
+
+    act = ActOutline(number=1, events=["a", "b"], event_places=["La tienda", "La calle"])
+    story = Story(title="t", protagonista="Rosa", relator="Rosa", sinopsis="Algo.", outline=[act])
+    assert "La tienda · La calle" in VideoScriptPrompts(video_config())._context(story, 1)

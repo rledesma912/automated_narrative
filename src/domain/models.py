@@ -369,6 +369,18 @@ class ActOutline(BaseModel):
             return [self.scenario.strip()] if self.scenario.strip() else []
         return list(dict.fromkeys(p for i in range(len(self.events)) if (p := self.event_place(i))))
 
+    def events_with_place(self) -> list[tuple[str, str]]:
+        """Spec-710 D4/D11: cada hecho con su lugar solo donde cambia ("" si sigue en el
+        mismo, o si la escaleta es vieja y no tiene lugares por hecho)."""
+        if not any(p.strip() for p in self.event_places):
+            return [("", e) for e in self.events]
+        out, last = [], ""
+        for i, event in enumerate(self.events):
+            place = self.event_place(i)
+            out.append((place if place != last else "", event))
+            last = place
+        return out
+
     def visible_warnings(self) -> list[OutlineWarning]:
         return [w for w in self.warnings if not w.dismissed]
 

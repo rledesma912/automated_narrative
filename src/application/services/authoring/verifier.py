@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from src.application.services import recursos_gastados
 from src.application.services.authoring import catalog, context, elenco, workshop_rules
+from src.application.services.authoring.lugares import en_lugar
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
@@ -145,7 +146,12 @@ class OutlineVerifier:
         # veían las reglas sin IA: elenco y `sin_cambio`).
         if a.on_stage:
             lines.append(t("asistente/verificador/acto/en_escena", nombres=", ".join(a.on_stage)))
-        lines += [f"- {e}" for e in a.events]
+        lines += [  # Spec-710: cada hecho con su lugar donde cambia
+            t("asistente/verificador/acto/hecho_en", lugar=en_lugar(place), hecho=event)
+            if place
+            else f"- {event}"
+            for place, event in a.events_with_place()
+        ]
         if a.change_from or a.change_to:
             lines.append(t("asistente/verificador/acto/cambia", de=a.change_from, a=a.change_to))
         if rules:
