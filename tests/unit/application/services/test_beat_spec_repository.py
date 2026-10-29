@@ -154,6 +154,12 @@ class TestEstructuras:
         with pytest.raises(ValueError, match="revela_secreto"):
             BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
 
+    def test_personajes_nuevos_max_invalido_es_error(self, tmp_path):
+        """Spec-730 D11."""
+        corto = {**self._corto(), "personajes_nuevos_max": -1}
+        with pytest.raises(ValueError, match="personajes_nuevos_max"):
+            BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
+
     def test_exposicion_desconocida_es_error(self, tmp_path):
         corto = self._corto()
         corto["actos"][0]["entity_exposure"] = {"nunca": "no_existe"}

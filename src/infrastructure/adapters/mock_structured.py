@@ -42,7 +42,17 @@ def mock_structured(role: str | None, schema: dict, prompt: str = "") -> dict:
         return {"evaluaciones": [_evaluation(i, c) for i, c in enumerate(_criteria(schema))]}
     if role == "planificador":
         total = _planned_acts(prompt)
-        return {"actos": [_act(n, total) for n in range(1, total + 1)]}
+        return {
+            "actos": [_act(n, total) for n in range(1, total + 1)],
+            # Spec-730: la IA suma a alguien con un para qué (aparece en el acto 2).
+            "personajes_nuevos": [
+                {
+                    "nombre": "Don Ramón",
+                    "quien_es": "el sereno de la terminal",
+                    "para_que": "le advierte que no se detenga",
+                }
+            ],
+        }
     if role == "verificador":
         return {
             "decisiones": [],
@@ -159,11 +169,14 @@ def _act(n: int, total: int) -> dict:
         "numero": n,
         "como_llega": "" if n == 1 else f"Esa misma noche, después del acto {n - 1}, sigue",
         "objetivo": f"Objetivo del acto {n}",
-        "hechos": [f"Hecho {n}.1 de ejemplo", f"Hecho {n}.2 de ejemplo"],
+        # Spec-710: cada hecho con su lugar (el segundo, donde el primero).
+        "hechos": [
+            {"texto": f"Hecho {n}.1 de ejemplo", "lugar": "Escenario de ejemplo"},
+            {"texto": f"Hecho {n}.2 de ejemplo", "lugar": "Escenario de ejemplo"},
+        ],
         "cambio_de": f"Estado al empezar el acto {n}",
         "cambio_a": f"Estado al terminar el acto {n}",
-        "escenario": "Escenario de ejemplo",
-        "en_escena": [],
+        "en_escena": ["Don Ramón"] if n == 2 else [],
         "se_guarda": "" if n == total else f"Algo que se revela después del acto {n}",
         "se_revela_en": 0 if n == total else n + 1,
         "siembra": [],

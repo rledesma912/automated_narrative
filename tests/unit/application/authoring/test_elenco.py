@@ -115,3 +115,9 @@ def test_el_aviso_trae_el_nombre_y_el_parecido(story):
     amigos = warnings["elenco:amigos de ximena"]
     assert (amigos.subject, amigos.similar) == ("Amigos de Ximena", "Amigas de Ximena")
     assert amigos.text.endswith("¿Es «Amigas de Ximena»?")
+
+
+def test_con_personajes_los_propuestos_llevan_quien_es(story):
+    """Spec-730: la IA los sumó con quién es; la Voz lo recibe como `role`."""
+    out = elenco.con_personajes(story, ["Don Ramón"], {"Don Ramón": "el sereno de la terminal"})
+    assert out.personajes_full[-1]["role"] == "el sereno de la terminal"

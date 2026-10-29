@@ -13,10 +13,9 @@ def _acto(n, **kw):
         "numero": n,
         "como_llega": "" if n == 1 else "Esa noche sigue",
         "objetivo": f"quiere {n}",
-        "hechos": [f"hecho {n}"],
+        "hechos": [{"texto": f"hecho {n}", "lugar": "La ruta"}],
         "cambio_de": "a",
         "cambio_a": "b",
-        "escenario": "La ruta",
         "en_escena": ["José"],
         "se_guarda": "",
         "se_revela_en": 0,
@@ -179,7 +178,10 @@ async def test_escenarios_sin_agregados_y_secreto_en_el_acto_4(story):
     llm = ScriptedLLM(
         {
             "actos": [
-                _acto(n, escenario="Ruta 36 (regreso)" if n == 2 else "Ruta 36")
+                _acto(
+                    n,
+                    hechos=[{"texto": "a", "lugar": "Ruta 36 (regreso)" if n == 2 else "Ruta 36"}],
+                )
                 for n in range(1, 6)
             ]
         }
@@ -441,10 +443,13 @@ def _con_idea(story, premisa):
     )
 
 
-def test_el_planificador_no_recibe_la_lista_de_recursos_gastados(story):
-    """S5: con gemma la lista no los evitaba (y quizás se los sugería): solo avisa el
-    Verificador."""
-    assert "RECURSOS GASTADOS" not in OutlinePlanner(llm=None)._prompt(story)
+def test_el_planificador_recibe_la_lista_sin_lo_que_trae_el_autor(story):
+    """Spec-720 D9: con el Planificador en Claude vuelve la lista (con gemma no los evitaba,
+    680 D25). Lo que trae el autor no se lista (D19); el Verificador sigue avisando."""
+    prompt = OutlinePlanner(llm=None)._prompt(story)
+    assert "RECURSOS GASTADOS" in prompt and "- la luz que parpadea" in prompt
+    con_luz = _con_idea(story, "En la casa, la luz parpadea cada noche.")
+    assert "- la luz que parpadea" not in OutlinePlanner(llm=None)._prompt(con_luz)
 
 
 async def test_el_verificador_avisa_un_recurso_gastado_despues_de_la_ia(story):
@@ -500,3 +505,125 @@ async def test_el_recurso_gastado_se_ve_aunque_el_acto_tenga_tres_avisos(story):
     keys = [w.key for w in v.outline[0].warnings]
     assert len(keys) == 4 and keys[-1] == "gastado:huellas"
     assert "gastado:perros" not in keys  # uno por acto
+
+
+# ── Spec-730: los personajes que propone la IA ──────────────────────────────
+
+
+def _nuevo(nombre, quien_es="el sereno de la terminal", para_que="le advierte que no pare."):
+    return {"nombre": nombre, "quien_es": quien_es, "para_que": para_que}
+
+
+async def test_propone_con_para_que_hasta_el_tope_y_deja_la_nota(story):
+    actos = [
+        _acto(1),
+        _acto(2, en_escena=["José", "Don Ramón (el sereno)"]),
+        _acto(3, en_escena=["José", "Tito", "Beto", "Lucía"]),
+        _acto(4, en_escena=["José", "Don Ramón"]),
+        _acto(5),
+    ]
+    nuevos = [
+        _nuevo("Lucía", para_que=""),  # sin para qué: aviso de siempre
+        _nuevo("Pedro"),  # no aparece en ningún acto (D13)
+        _nuevo("Don Ramón"),
+        _nuevo("Tito", "el hijo del dueño", "le roba la linterna"),
+        _nuevo("Beto"),  # pasa el tope del largo (2)
+    ]
+    planner = OutlinePlanner(ScriptedLLM({"actos": actos, "personajes_nuevos": nuevos}))
+
+    acts, _ = await planner.plan(story)
+
+    assert [(p.nombre, p.acto) for p in planner.propuestos] == [("Don Ramón", 2), ("Tito", 3)]
+    nota = acts[1].warnings[0]
+    assert nota.key == "propuesto:don ramon" and nota.source == "regla"
+    assert (
+        nota.text == "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no pare."
+    )
+    assert [w.key for w in acts[2].warnings] == ["propuesto:tito"]
+    assert not acts[3].warnings  # la nota va solo en el primer acto donde aparece
+    prompt = planner.llm.calls[0]["prompt"]
+    assert '"personajes_nuevos"' in prompt and "Como mucho 2." in prompt
+
+
+async def test_no_propone_lo_que_ya_es_de_la_historia_ni_mas_de_uno_en_el_corto(story):
+    cast = [*story.personajes_full, {"name": "Marta", "role": "pasajera"}]
+    story = story.model_copy(update={"structure": "corto", "personajes_full": cast})
+    actos = [_acto(1), _acto(2, en_escena=["José", "Marta", "Tito", "Beto"]), _acto(3)]
+    nuevos = [_nuevo("Marta"), _nuevo("José"), _nuevo("Tito"), _nuevo("Beto")]
+    planner = OutlinePlanner(ScriptedLLM({"actos": actos, "personajes_nuevos": nuevos}))
+
+    await planner.plan(story)
+
+    assert [p.nombre for p in planner.propuestos] == ["Tito"]
+    assert "Como mucho 1." in planner.llm.calls[0]["prompt"]
+
+
+async def test_sin_personajes_nuevos_en_la_respuesta_anda_igual(story):
+    """gemma puede no devolver la lista: es opcional."""
+    planner = OutlinePlanner(ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]}))
+    acts, _ = await planner.plan(story)
+    assert planner.propuestos == [] and not any(a.warnings for a in acts)
+
+
+async def test_revisar_conserva_la_nota_y_rearmar_no_la_toma_como_problema(story):
+    """Spec-730 D8 y D9."""
+    nota = OutlineWarning(text="La IA sumó a «Tito»…", key="propuesto:tito", source="regla")
+    outline = [
+        ActOutline(
+            number=n,
+            events=[f"hecho {n}"],
+            on_stage=["José"],
+            change_from="a",
+            change_to="b",
+            bridge="" if n == 1 else "Sigue.",
+            warnings=[nota] if n == 2 else [],
+        )
+        for n in range(1, 6)
+    ]
+    checked = await OutlineVerifier(ScriptedLLM({"decisiones": [], "avisos": []})).verify(
+        story, outline
+    )
+    assert nota in checked.outline[1].warnings
+
+    rearmar = story.model_copy(update={"outline": checked.outline})
+    assert "La IA sumó" not in OutlinePlanner(llm=None)._prompt(rearmar)
+
+
+# ── Spec-710: el lugar de cada hecho ────────────────────────────────────────
+
+
+async def test_cada_hecho_trae_su_lugar_limpio(story):
+    hechos = [
+        {"texto": "Entra a la casa", "lugar": "casa_susana"},
+        {"texto": "Se esconde", "lugar": "Cocina / living"},
+        {"texto": "Escucha pasos", "lugar": ""},
+        {"texto": "", "lugar": "Pared"},  # hecho vacío: se va con su lugar
+        {"texto": "Sale al patio", "lugar": "el patio, el galpón"},
+    ]
+    actos = [_acto(n, hechos=hechos) if n == 1 else _acto(n) for n in range(1, 6)]
+    acts, _ = await OutlinePlanner(ScriptedLLM({"actos": actos})).plan(story)
+
+    assert acts[0].events == ["Entra a la casa", "Se esconde", "Escucha pasos", "Sale al patio"]
+    assert acts[0].event_places == ["Casa susana", "Cocina", "", "El patio"]
+    assert acts[0].scenario == "Casa susana"  # D3: el del primer hecho
+    assert acts[0].places() == ["Casa susana", "Cocina", "El patio"]
+
+
+def test_el_prompt_pide_el_lugar_de_cada_hecho_y_no_el_escenario_del_acto(story):
+    prompt = OutlinePlanner(llm=None)._prompt(story)
+    assert '{"texto": …, "lugar": …}' in prompt and "no una cosa del lugar" in prompt
+    assert '"escenario"' not in prompt
+
+
+def test_el_verificador_lee_el_lugar_de_cada_hecho():
+    """Spec-710 D11: título con los lugares del acto; «En <lugar>:» donde cambia."""
+    act = ActOutline(
+        number=2,
+        events=["Abre la tienda", "Cuenta la plata", "Sale a la calle"],
+        event_places=["La tienda", "", "La calle"],
+    )
+    text = OutlineVerifier(ScriptedLLM())._act_text(act)
+    assert "La tienda · La calle" in text.splitlines()[0]
+    assert (
+        "- En la tienda: Abre la tienda\n- Cuenta la plata\n- En la calle: Sale a la calle" in text
+    )

@@ -7,8 +7,9 @@
   const acts = state.outline.acts;
   const decisions = state.outline.decisions;
   const integradas = decisions.filter(d => d.integrada).length;
-  /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. */
-  const avisos = acts.reduce((n, a) => n + a.warnings.filter(w => !w.dismissed).length, 0);
+  /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. Spec-730: la nota
+     de un personaje que sumó la IA no es un aviso. */
+  const avisos = acts.reduce((n, a) => n + a.warnings.filter(w => !w.dismissed && !w.key.startsWith('propuesto:')).length, 0);
   const est = locals.estimateLabels || {};
   /* Spec-650: cuántos actos tiene, en palabras («tres» o «cinco»). */
   const cuantosActos = ({ 3: 'tres', 5: 'cinco' })[state.structure_acts.length] || String(state.structure_acts.length);
@@ -35,6 +36,26 @@
                 data-confirmar="La IA arma los actos de nuevo con tu idea nueva. Lo que les cambiaste a mano a los actos se reemplaza."
                 data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo">Armar los actos de nuevo</button>
         <button type="button" class="nota-forge__accion" data-idea-revisada="actos">Dejarlo así</button>
+      </div>
+    <% } %>
+    <% const local = state.hecho_local || {}; %>
+    <% if (local.actos || local.revision) { %>
+      <%/* Spec-720 D7: la IA de la nube no atendió y lo hizo la de la compu (respaldo). Se va al
+           rearmar o revisar con la nube, o con «Dejarlo así». */%>
+      <div class="nota-forge nota-forge--info mb-8 max-w-3xl" data-hecho-local="<%= local.actos ? 'actos' : 'revision' %>">
+        <i data-lucide="cloud-off" class="nota-forge__icono"></i>
+        <% if (local.actos) { %>
+          <p class="flex-1">Estos actos los armó la IA de tu compu porque la de la nube no respondió. Cuando vuelva, podés armarlos de nuevo.</p>
+          <button type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
+                  data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos y después los revisa."
+                  data-confirmar="La IA arma los actos de nuevo. Lo que les cambiaste a mano a los actos se reemplaza."
+                  data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo">Armar los actos de nuevo</button>
+        <% } else { %>
+          <p class="flex-1">La revisión la hizo la IA de tu compu porque la de la nube no respondió. Cuando vuelva, podés revisar de nuevo.</p>
+          <button type="button" class="nota-forge__accion" data-analizar="verify_outline" data-titulo="Revisando los actos…"
+                  data-detalle="La IA busca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren.">Revisar de nuevo</button>
+        <% } %>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="local">Dejarlo así</button>
       </div>
     <% } %>
     <section class="grid md:grid-cols-2 gap-4 mb-10" data-resumen-actos>

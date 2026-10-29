@@ -101,7 +101,9 @@ async def test_crear_desde_la_direccion(client):
         "habla": "",  # Spec-680 C1: la de siempre
     }
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
-    assert state["characters"] == [{"name": "José", "kind": "persona", "relation": "", "acts": []}]
+    assert state["characters"] == [
+        {"name": "José", "kind": "persona", "relation": "", "role": "Chofer de micros", "acts": []}
+    ]
     story = (await client.get(f"/api/v1/stories/{state['story_id']}")).json()
     assert story["protagonista"] == "José: Chofer de micros"
     assert story["sinopsis"] == FORM["premise"]
@@ -193,9 +195,13 @@ async def test_escaleta_y_revision(client):
     acts = state["outline"]["acts"]
     assert [a["number"] for a in acts] == [1, 2, 3, 4, 5]
     assert [w["text"] for w in acts[1]["warnings"]] == [
-        "El encuentro del acto 2 repite el del acto 1."
+        "El encuentro del acto 2 repite el del acto 1.",
+        # Spec-730: el mock suma a alguien con un para qué; la nota va aparte del tope.
+        "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no se detenga.",
     ]
     assert acts[1]["warnings"][0]["source"] == "ia" and not acts[1]["warnings"][0]["dismissed"]
+    ramon = next(c for c in state["characters"] if c["name"] == "Don Ramón")
+    assert ramon["role"] == "el sereno de la terminal"
     assert "Escenario de ejemplo" in [s["name"] for s in state["scenarios"]]
     state = await _run_job(client, sid, "verify_outline")
     assert state["outline"]["acts"][1]["warnings"]
@@ -282,7 +288,7 @@ async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
     ).json()
     await client.post(f"{API}/stories/{sid}/characters", json={"name": "el sereno"})  # no duplica
     state = (await client.get(f"{API}/stories/{sid}")).json()
-    assert [c["name"] for c in state["characters"]] == ["José", "El sereno"]
+    assert [c["name"] for c in state["characters"]] == ["José", "Don Ramón", "El sereno"]
 
     warning = state["outline"]["acts"][1]["warnings"][0]
     state = (
@@ -290,12 +296,23 @@ async def test_reglas_personajes_y_avisos_desde_la_escaleta(client):
             f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": warning["key"]}
         )
     ).json()
-    assert [w["dismissed"] for w in state["outline"]["acts"][1]["warnings"]] == [True]
+    assert [(w["key"][:10], w["dismissed"]) for w in state["outline"]["acts"][1]["warnings"]] == [
+        (warning["key"][:10], True),
+        ("propuesto:", False),  # Spec-730: la nota del personaje que sumó la IA
+    ]
 
     # Spec-550 H10: revisar de nuevo no lo trae de vuelta (el mock repite el mismo aviso).
     state = await _run_job(client, sid, "verify_outline")
     visibles = [w for w in state["outline"]["acts"][1]["warnings"] if not w["dismissed"]]
     assert warning["text"] not in [w["text"] for w in visibles]
+    # Spec-730 D8: revisar conserva la nota; cerrada («Entendido»), no vuelve.
+    assert "propuesto:don ramon" in [w["key"] for w in visibles]
+    await client.post(
+        f"{API}/stories/{sid}/outline/2/warnings/dismiss", json={"key": "propuesto:don ramon"}
+    )
+    state = await _run_job(client, sid, "verify_outline")
+    visibles = [w for w in state["outline"]["acts"][1]["warnings"] if not w["dismissed"]]
+    assert "propuesto:don ramon" not in [w["key"] for w in visibles]
 
     # «Volver a mostrar».
     state = (
@@ -779,7 +796,7 @@ async def test_los_personajes_de_la_idea_se_suman_solos(client):
 
     state = await _run_job(client, sid, "verify_outline")
 
-    assert [c["name"] for c in state["characters"]] == ["José", "Marta"]
+    assert [c["name"] for c in state["characters"]] == ["José", "Don Ramón", "Marta"]
     assert set(_elenco(state, 2)) == {"elenco:el sereno"}  # Marta no se pregunta
     sereno = _elenco(state, 3)["elenco:el sereno"]
     assert sereno["subject"] == "El sereno" and sereno["similar"] == ""
@@ -821,7 +838,7 @@ async def test_es_uno_de_la_lista_escrito_distinto(client):
     assert acts[1]["on_stage"] == ["José", "Amigas de José"]
     assert acts[2]["on_stage"] == ["Amigas de José"]  # sin repetir
     assert not _elenco(state, 2) and not _elenco(state, 3)
-    assert [c["name"] for c in state["characters"]] == ["José", "Amigas de José"]
+    assert [c["name"] for c in state["characters"]] == ["José", "Don Ramón", "Amigas de José"]
     resp = await client.post(
         f"{API}/stories/{sid}/characters/same", json={"name": "X", "same_as": "Nadie"}
     )
@@ -1016,3 +1033,94 @@ async def test_sin_cambiar_la_idea_no_se_revisa(client, monkeypatch):
     state = await _run_job(client, sid, "consult")
     assert "revisiones" not in _Contando.pedidos
     assert not any(i["no_coincide"] for i in _items(state).values())
+
+
+# ── Spec-720 D7: lo que hizo la IA de la compu porque la nube no atendió ────
+
+
+class _ConRespaldo(MockLLMAdapter):
+    """El mock, como si la nube no hubiera atendido y respondiera el respaldo."""
+
+    def __init__(self, respaldos: set[str]):
+        super().__init__()
+        self.respaldos = set(respaldos)
+
+
+async def test_actos_armados_por_el_respaldo_quedan_marcados(client, monkeypatch):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    ambos = _ConRespaldo({"planificador", "verificador"})
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: ambos))
+    state = await _run_job(client, sid, "plan_outline")
+    assert state["hecho_local"] == {"actos": True, "revision": True}
+
+    # Revisar con la nube saca solo la marca de la revisión.
+    nube = _ConRespaldo(set())
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: nube))
+    state = await _run_job(client, sid, "verify_outline")
+    assert state["hecho_local"] == {"actos": True, "revision": False}
+
+    # El autoguardado de «Tu idea» la conserva; «Dejarlo así» la saca.
+    state = (await client.put(f"{API}/stories/{sid}/direction", json=FORM)).json()
+    assert state["hecho_local"]["actos"] is True
+    state = (await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "local"})).json()
+    assert state["hecho_local"] == {"actos": False, "revision": False}
+
+
+async def test_actos_armados_con_la_nube_no_quedan_marcados(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    state = await _run_job(client, sid, "plan_outline")  # el mock, sin respaldos
+    assert state["hecho_local"] == {"actos": False, "revision": False}
+
+
+# ── Spec-710: el lugar de cada hecho ────────────────────────────────────────
+
+
+async def test_el_lugar_de_cada_hecho_va_con_su_hecho(client):
+    sid = (await _create(client))["story_id"]
+    act = {
+        "events": ["Abre la tienda", "", "Cruza la calle"],
+        "event_places": ["La tienda", "X", ""],
+    }
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json=act)).json()
+    acto = state["outline"]["acts"][0]
+    # El hecho vacío se va con su lugar; el lugar vacío queda («el de antes»).
+    assert (acto["events"], acto["event_places"]) == (
+        ["Abre la tienda", "Cruza la calle"],
+        ["La tienda", ""],
+    )
+    assert [s["name"] for s in state["scenarios"]] == ["La tienda"]
+
+    # Sin la lista (una pestaña vieja) se conserva si los hechos no cambiaron de largo.
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json={"events": ["A", "B"]})).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La tienda", ""]
+    # Cambiar el lugar del acto (el radio) pone todo el acto en ese lugar.
+    body = {"events": ["A", "B"], "scenario": "La garita"}
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json=body)).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La garita", ""]
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json={"events": ["A"]})).json()
+    assert state["outline"]["acts"][0]["event_places"] == []
+
+
+async def test_borrar_un_lugar_lo_saca_de_los_hechos(client):
+    sid = (await _create(client))["story_id"]
+    act = {"events": ["a", "b"], "event_places": ["La tienda", "La calle"]}
+    await client.put(f"{API}/stories/{sid}/outline/2", json=act)
+    state = (
+        await client.post(f"{API}/stories/{sid}/scenarios/remove", json={"name": "La tienda"})
+    ).json()
+    acto = next(a for a in state["outline"]["acts"] if a["number"] == 2)
+    assert acto["event_places"] == ["", "La calle"]
+
+
+async def test_mas_lugar_desde_un_hecho_lo_elige_en_ese_hecho(client):
+    """Spec-710 D13: el «+ Lugar» del selector de un hecho."""
+    sid = (await _create(client))["story_id"]
+    act = {"events": ["a", "b", "c"], "event_places": ["La tienda", "", ""]}
+    await client.put(f"{API}/stories/{sid}/outline/1", json=act)
+    body = {"name": "La calle", "act": 1, "event": 2}
+    state = (await client.post(f"{API}/stories/{sid}/scenarios", json=body)).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La tienda", "", "La calle"]
+    lugares = {s["name"]: (s["acts"], s["hechos"]) for s in state["scenarios"]}
+    assert lugares == {"La tienda": ([1], 2), "La calle": ([1], 1)}

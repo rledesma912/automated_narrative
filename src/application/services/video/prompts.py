@@ -72,7 +72,7 @@ class VideoScriptPrompts:
     def _context(self, story: Story, number: int) -> str:
         fragment = self.templates.fragment
         act = next((a for a in story.outline if a.number == number), None)
-        place = (act.scenario if act else "") or fragment("video/lugar_vacio")
+        place = (" · ".join(act.places()) if act else "") or fragment("video/lugar_vacio")
         threat = ""
         if story.entities:
             main = min(story.entities, key=lambda e: e.order_index)

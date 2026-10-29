@@ -119,6 +119,7 @@ class TokenMeter:
 
 # Spec-610: `guion` arma el paquete para el video, no participa de generar un relato.
 # Spec-700: `revisor` corre en «Preguntas» (solo si cambió la idea), tampoco.
+# Spec-720 D8: Planificador y Verificador sí cuentan: la historia por defecto no trae escaleta.
 _FUERA_DEL_RELATO = {"guion", "revisor"}
 
 

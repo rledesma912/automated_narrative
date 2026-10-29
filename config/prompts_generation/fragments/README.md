@@ -42,7 +42,8 @@ Los mensajes que ve una persona (no el LLM) van en `config/core_messages.yaml`.
 | `{meta}` | `voz/objetivo` | el acto tiene objetivo |
 | `{puente}` | `voz/puente` | actos desde el 2 con «cómo llega acá» |
 | `{final_anterior}` | `voz/final_anterior` (último párrafo del acto anterior) | hay acto anterior |
-| `{escenario}` | el escenario, o `voz/escenario_vacio` | siempre |
+| `{hechos}` | un hecho por línea; Spec-710: `voz/hecho_en` («- En {lugar}: …») donde cambia el lugar | siempre |
+| `{escenario}` | los lugares del acto (`places()`, con la descripción si la tienen, unidos con «; »), o `voz/escenario_vacio` | siempre |
 | `{reglas}` | `voz/reglas` + las reglas del acto | hay reglas |
 | `{cambio}` | `voz/cambio` | el acto dice cómo termina |
 | `{no_revelar}` | `voz/no_revelar` | hay algo que todavía no se cuenta |
@@ -81,7 +82,7 @@ Contexto común (`context.py`), que reciben los tres roles:
 (`asistente/planificador/borradores` + `borrador`), `{problemas}`
 (`asistente/planificador/problemas` + una `asistente/aviso_de_acto` por aviso visible),
 `{reglas}` (Spec-630: `asistente/planificador/reglas` + una `regla` por regla anclada a un acto;
-vacío si no hay), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
+vacío si no hay), `{gastados}` (Spec-720 D9: `asistente/planificador/recursos_gastados` con los `hechos` de `config/recursos_gastados.yaml` que no trae el autor; vacío si no queda ninguno), `{personajes_nuevos}` (Spec-730: al final, `asistente/planificador/personajes_nuevos` con `{max}` = `personajes_nuevos_max` de la estructura; vacío si es 0), `{escenarios}` (o `asistente/planificador/escenarios_vacio`) y `{actos}` (una
 `asistente/planificador/acto` por acto; `final_del_autor` cambia la intención del último acto,
 Spec-670: la intención sale del molde (`molde.py`) y en el acto `revela_secreto` se suma el `revela.texto` de la forma (en la de siempre, la historia secreta); `hechos` cuando el acto
 dice cuántos hechos lleva). Spec-650: `{num_actos}`, `{ultimo}` y `{hechos_por_acto}` salen de
@@ -92,7 +93,7 @@ empieza con `asistente/planificador/arco`, cómo contó el autor su historia), y
 
 **Verificador** — `authoring_verifier.md`: además `{elenco}` (o
 `asistente/verificador/elenco_vacio`), `{escaleta}` (por acto, `asistente/verificador/acto/*`:
-`titulo` o `titulo_con_escenario`, `como_llega`, `quiere`, `en_escena`, los hechos, `cambia`,
+`titulo` o `titulo_con_escenario` (los lugares del acto con « · »), `como_llega`, `quiere`, `en_escena`, los hechos (con `hecho_en` donde cambia el lugar, Spec-710), `cambia`,
 `reglas` —las tres de la Spec-630, solo si el acto tiene el dato—, `no_se_cuenta` + `se_revela`,
 `usa`) y `{descartados}` (una `asistente/aviso_de_acto` por aviso ignorado, o
 `asistente/verificador/descartados_vacio`).
@@ -106,7 +107,7 @@ empieza con `asistente/planificador/arco`, cómo contó el autor su historia), y
 | Hueco | Sale de |
 |---|---|
 | `{relato}` | por acto, `video/acto` (`numero`, `nombre` = `label` de `llm_beats_definition.yaml`) con una `video/parrafo` por párrafo (`[n] texto`, numerado dentro del acto) |
-| `{actos}` | por acto, `video/acto_contexto`: el escenario de la escaleta (o `video/lugar_vacio`) y, si hay amenaza, `video/amenaza` con la `guide` de su exposición en ese acto |
+| `{actos}` | por acto, `video/acto_contexto`: los lugares del acto con « · » (Spec-710; o `video/lugar_vacio`) y, si hay amenaza, `video/amenaza` con la `guide` de su exposición en ese acto |
 | `{calabaza}` | `video/calabaza` con la ficha, la intro, la forma del outro (`video/paso`) y los outros de ejemplo (`video/ejemplo`) |
 | `{pantalla}` | `video/pantalla` con las palabras prohibidas de `config/video/biblia_visual.yaml` |
 | `{reintento}` | vacío, o `video/reintento` con una `video/problema` por cada problema del chequeo (`video/problemas/*`: `bloques_cobertura`, `momentos_cobertura`, `faltan`, `repetidos`, `no_existe`, `acto_inexistente`, `enfasis`, `momentos_cantidad`, `prohibida`, `outro_cierre`, `largo_intro`, `largo_outro`) |

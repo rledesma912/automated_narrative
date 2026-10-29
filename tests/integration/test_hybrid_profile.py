@@ -5,6 +5,7 @@ cliente simulado con los tipos del SDK.
 """
 
 import copy
+import json
 import uuid
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
@@ -17,12 +18,13 @@ import yaml
 import src.config as config
 from src.config import _resolve_active_profile, settings
 from src.infrastructure.adapters import AnthropicAdapter
+from src.infrastructure.adapters.mock_structured import mock_structured
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.factories import LLMFactory
 from src.main import app
 from src.presentation.runtime import job_manager
 from tests.integration.test_pipeline_prompts_snapshot import STORY
-from tests.support.fake_anthropic import FakeAnthropic, message
+from tests.support.fake_anthropic import FakeAnthropic, FakeMessages, message
 from tests.support.recording_llm import RecordingLLM
 
 HYBRID = "hibrido-sonnet55"
@@ -61,11 +63,12 @@ def test_perfiles_el_local_activo_el_hibrido_y_uno_de_claude():
     assert resolved["roles"]["voz"]["model"] == "claude-sonnet-5-5"
 
 
-def test_el_hibrido_solo_manda_la_voz_el_guion_y_el_revisor_a_claude():
+def test_el_hibrido_manda_a_claude_la_voz_el_guion_el_revisor_y_los_actos():
     """Spec-600: los roles locales del híbrido son los de gemma, tal cual.
 
     Spec-610 (D3): el paquete para el video (`guion`) también va a Claude.
     Spec-700 (D25): el Revisor también; el perfil local no lo declara (queda la nota).
+    Spec-720: el Planificador y el Verificador también, con gemma de respaldo (D2).
     """
     hybrid = CORE["profiles"][HYBRID]
     local = CORE["profiles"]["ollama-gemma3-12b"]
@@ -80,8 +83,15 @@ def test_el_hibrido_solo_manda_la_voz_el_guion_y_el_revisor_a_claude():
     assert hybrid["roles"]["guion"]["provider"] == "anthropic"
     assert hybrid["roles"]["revisor"]["provider"] == "anthropic"
     assert "revisor" not in local["roles"]
+    nube = ("voz", "guion", "revisor", "planificador", "verificador")
+    for role in ("planificador", "verificador"):
+        cfg = hybrid["roles"][role]
+        assert (cfg["provider"], cfg["model"]) == ("anthropic", "claude-sonnet-5-5")
+        # El respaldo es la config de gemma del perfil local, tal cual (sin `stop` vacío).
+        gemma = {k: v for k, v in local["roles"][role].items() if k != "stop"}
+        assert cfg["respaldo"] == {"provider": "ollama", **gemma}, role
     for role, cfg in hybrid["roles"].items():
-        if role not in ("voz", "guion", "revisor"):
+        if role not in nube:
             assert cfg == local["roles"][role], role
 
 
@@ -133,10 +143,24 @@ async def test_active_profile_muestra_el_proveedor_de_cada_rol(client):
 # ── T2.3 ─────────────────────────────────────────────────────────────────────
 
 
+class _NubeConActos(FakeMessages):
+    """Claude: los actos (salida estructurada, Spec-720) con el mock, y la prosa."""
+
+    async def create(self, **kwargs):
+        self.calls.append(kwargs)
+        fmt = (kwargs.get("output_config") or {}).get("format")
+        if not fmt:
+            return message("Prosa de Claude para el acto.", input_tokens=3000)
+        schema = fmt["schema"]
+        role = "planificador" if "actos" in schema.get("properties", {}) else "verificador"
+        return message(json.dumps(mock_structured(role, schema, kwargs["messages"][0]["content"])))
+
+
 @pytest.mark.usefixtures("hybrid")
-async def test_pipeline_completo_la_voz_va_a_claude_y_el_resto_a_ollama(client, monkeypatch):
+async def test_pipeline_completo_la_voz_y_los_actos_van_a_claude(client, monkeypatch):
     local = RecordingLLM()
-    fake = FakeAnthropic([message("Prosa de Claude para el acto.", input_tokens=3000)])
+    fake = FakeAnthropic()
+    fake.messages = _NubeConActos([])
     adapters = {"ollama": local, "anthropic": AnthropicAdapter(client=fake)}
     monkeypatch.setattr(LLMFactory, "_single", staticmethod(lambda p: adapters[p]))
 
@@ -147,9 +171,15 @@ async def test_pipeline_completo_la_voz_va_a_claude_y_el_resto_a_ollama(client, 
     done = (await client.get(f"/api/v1/jobs/{job['job_id']}")).json()
 
     assert done["status"] == "done", done
+    # Spec-720: armar y revisar la escaleta fue a Claude, sin pensar.
+    actos = [c for c in fake.messages.calls if "format" in (c.get("output_config") or {})]
+    assert len(actos) == 2 and all(
+        "thinking" not in c or c["thinking"] != {"type": "adaptive"} for c in actos
+    )
     # Las 5 llamadas de la Voz fueron a Claude, con el prompt de la escaleta (Spec-530).
-    assert len(fake.messages.calls) == 5
-    request = fake.messages.calls[0]
+    voz = [c for c in fake.messages.calls if c not in actos]
+    assert len(voz) == 5
+    request = voz[0]
     assert request["model"] == "claude-sonnet-5-5"
     assert request["thinking"] == {"type": "adaptive"}
     assert request["output_config"] == {"effort": "low"}
@@ -157,7 +187,7 @@ async def test_pipeline_completo_la_voz_va_a_claude_y_el_resto_a_ollama(client, 
     assert "OFICIO DE HORROR" in request["system"]
     assert request["messages"][0]["content"].startswith("ACTO 1 DE 5")
     # El resto, al modelo local; ninguna llamada de la Voz ahí.
-    assert {c["role"] for c in local.calls} == {"planificador", "verificador", "journal"}
+    assert {c["role"] for c in local.calls} == {"journal"}
     narrative = (await client.get(f"/api/v1/generated-narratives/{done['narrative_id']}")).json()
     assert narrative["content"].count("Prosa de Claude para el acto.") == 5
 
@@ -186,3 +216,5 @@ async def test_sin_credito_el_job_falla_con_un_mensaje_claro(client, monkeypatch
     assert failed["status"] == "failed"
     assert failed["error"].startswith("La IA que escribe el relato se quedó sin crédito.")
     assert "voz" not in {c["role"] for c in local.calls}  # no cayó al modelo local
+    # Spec-720 D6: la escaleta sí cae a gemma (su respaldo), con la config local.
+    assert {"planificador", "verificador"} <= {c["role"] for c in local.calls}

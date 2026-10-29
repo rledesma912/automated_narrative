@@ -153,9 +153,12 @@ def test_payload_de_prueba_es_json_valido():
 # ── Vista de autoría de la ficha (Spec-440 §8) ──────────────────
 
 
-def _assert_authoring(sc: dict) -> None:
+def _assert_authoring(sc: dict, extra_places: tuple = ()) -> None:
     assert sc["atmosphere"] == {"genre": "folk_horror", "subgenre": "rural"}
-    assert [(x["name"], x["description"]) for x in sc["scenarios"]] == [("El micro", "moderno")]
+    assert [(x["name"], x["description"]) for x in sc["scenarios"]] == [
+        ("El micro", "moderno"),
+        *extra_places,
+    ]
     assert [r["text"] for r in sc["rules"]] == ["El micro trae casos paranormales"]
     assert [sc["actos"][f"act_{n}"]["text"] for n in range(1, 6)] == [
         f"Acto {n}: algo pasa." for n in range(1, 6)
@@ -177,4 +180,5 @@ async def test_la_vista_de_autoria_sobrevive_a_una_generacion(client):
 
     story = (await client.get(f"/api/v1/stories/{story_id}")).json()
 
-    _assert_authoring(story["storyteller_config"])
+    # Spec-710 D10: el lugar de los hechos que armó el Planificador queda en la historia.
+    _assert_authoring(story["storyteller_config"], (("Escenario de ejemplo", ""),))

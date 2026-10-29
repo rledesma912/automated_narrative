@@ -63,6 +63,9 @@ class ActForm(BaseModel):
     bridge: str = Field("", max_length=300)  # «Cómo llega acá» (Spec-560 A1)
     goal: str = Field("", max_length=300)
     events: list[str] = Field(default_factory=list, max_length=8)
+    # Spec-710 D1: el lugar de cada hecho, en el mismo orden ("" = el del anterior). Sin la
+    # lista (una pestaña vieja), se conserva la guardada si los hechos no cambiaron de largo.
+    event_places: list[str] | None = Field(None, max_length=8)
     change_from: str = Field("", max_length=200)
     change_to: str = Field("", max_length=200)
     scenario: str = Field("", max_length=120)
@@ -89,6 +92,7 @@ class ScenarioForm(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=120)
     act: int | None = Field(None, ge=1, le=5)
+    event: int | None = Field(None, ge=0)  # Spec-710 D13: con `act`, el lugar de ese hecho
 
 
 class NameForm(BaseModel):
@@ -101,7 +105,7 @@ class IdeaRevisadaForm(BaseModel):
     """Spec-700 D16: en qué paso se deja la idea como está; D27: `respuestas` = la autora
     ya revisó lo que cambió y la IA no pudo revisar."""
 
-    paso: Literal["preguntas", "actos", "respuestas"]
+    paso: Literal["preguntas", "actos", "respuestas", "local"]  # local: Spec-720 D7
 
 
 class SameCharacterForm(BaseModel):

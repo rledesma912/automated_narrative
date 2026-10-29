@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from src.application.services import recursos_gastados
 from src.application.services.authoring import catalog, context, molde, workshop_rules
+from src.application.services.authoring.lugares import en_lugar
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.manifestations import manifestations_for_act
@@ -129,7 +130,7 @@ class OutlineNarrator:
             if act.goal
             else "",
             narrador=narrator,
-            hechos="\n".join(f"- {e}" for e in act.events),
+            hechos=self._events(act),
             escenario=self._scenario(story, act),
             en_escena=", ".join(p["name"] for p in scene.personajes_full) or narrator,
             reglas=_section(
@@ -196,11 +197,20 @@ class OutlineNarrator:
 
         return [m for m in memory.used_motifs if not required(m)]
 
+    def _events(self, act: ActOutline) -> str:
+        """Los hechos, con «En <lugar>:» donde cambia el lugar (Spec-710 D11)."""
+        return "\n".join(
+            self.templates.fragment("voz/hecho_en", lugar=en_lugar(place), hecho=event)
+            if place
+            else f"- {event}"
+            for place, event in act.events_with_place()
+        )
+
     def _scenario(self, story: Story, act: ActOutline) -> str:
-        known = next((s for s in story.scenarios if s.name == act.scenario), None)
-        if known and known.description:
-            return f"{known.name}: {known.description}"
-        return act.scenario or self.templates.fragment("voz/escenario_vacio")
+        """Dónde pasa el acto: sus lugares (Spec-710 D8), con la descripción si la tienen."""
+        described = {s.name: s.description for s in story.scenarios if s.description}
+        places = [f"{p}: {described[p]}" if p in described else p for p in act.places()]
+        return "; ".join(places) or self.templates.fragment("voz/escenario_vacio")
 
     def _threat(self, story: Story, act: ActOutline) -> str:
         if not story.entities:

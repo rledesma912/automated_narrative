@@ -605,7 +605,7 @@ class SQLStoryRepository:
 
         await conn.execute(
             "INSERT INTO act_outline (story_id, number, goal, events, change_from, change_to, "
-            "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, needs_review, "
+            "scenario, on_stage, held_back, seeds, payoffs, decisions, warnings, event_places, "
             "draft, synopsis, bridge, reveal_act) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT (story_id, number) DO UPDATE SET goal = excluded.goal, "
@@ -614,7 +614,7 @@ class SQLStoryRepository:
             "on_stage = excluded.on_stage, held_back = excluded.held_back, "
             "seeds = excluded.seeds, payoffs = excluded.payoffs, "
             "decisions = excluded.decisions, warnings = excluded.warnings, "
-            "needs_review = excluded.needs_review, draft = excluded.draft, "
+            "event_places = excluded.event_places, draft = excluded.draft, "
             "synopsis = excluded.synopsis, bridge = excluded.bridge, "
             "reveal_act = excluded.reveal_act",
             (
@@ -631,7 +631,7 @@ class SQLStoryRepository:
                 js(act.payoffs),
                 js(act.decisions),
                 js([w.model_dump() for w in act.warnings]),
-                int(act.needs_review),
+                js(act.event_places),
                 int(act.draft),
                 act.synopsis,
                 act.bridge,
@@ -643,7 +643,7 @@ class SQLStoryRepository:
         cursor = await conn.execute(
             "SELECT * FROM act_outline WHERE story_id = ? ORDER BY number", (story_id,)
         )
-        lists = ("events", "on_stage", "seeds", "payoffs", "decisions", "warnings")
+        lists = ("events", "on_stage", "seeds", "payoffs", "decisions", "warnings", "event_places")
         return [
             ActOutline(
                 number=r["number"],
@@ -652,7 +652,6 @@ class SQLStoryRepository:
                 change_to=r["change_to"] or "",
                 scenario=r["scenario"] or "",
                 held_back=r["held_back"] or "",
-                needs_review=bool(r["needs_review"]),
                 draft=bool(r["draft"]),
                 synopsis=r["synopsis"] or "",
                 bridge=r["bridge"] or "",

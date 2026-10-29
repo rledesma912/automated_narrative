@@ -145,6 +145,112 @@ describe("taller: lo que cambió sin revisar", () => {
   });
 });
 
+// Spec-720 D7: lo hizo la IA de la compu porque la de la nube no respondió.
+describe("los actos: hechos por la IA de la compu", () => {
+  const render = (hecho_local: unknown) =>
+    ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, hecho_local },
+      pasoActual: "escaleta",
+    });
+  const nota = (html: string) =>
+    (html.match(/<div[^>]*data-hecho-local="[^"]*"[^>]*>[\s\S]*?Dejarlo así<\/button>/) || [""])[0];
+
+  it("actos: nota de información con armar de nuevo (con confirmación) y «Dejarlo así»", async () => {
+    const n = nota(await render({ actos: true, revision: true }));
+    expect(n).toContain('data-hecho-local="actos"');
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("Estos actos los armó la IA de tu compu porque la de la nube no respondió.");
+    expect(n).toMatch(/data-analizar="plan_outline"[^>]*data-confirmar="[^"]*se reemplaza\."/);
+    expect(n).toMatch(/data-idea-revisada="local">Dejarlo así</);
+  });
+
+  it("solo la revisión: ofrece revisar de nuevo", async () => {
+    const n = nota(await render({ actos: false, revision: true }));
+    expect(n).toContain('data-hecho-local="revision"');
+    expect(n).toContain("La revisión la hizo la IA de tu compu");
+    expect(n).toMatch(/data-analizar="verify_outline"[^>]*>Revisar de nuevo</);
+  });
+
+  it("con la nube (o sin dato) no hay nota", async () => {
+    expect(await render({ actos: false, revision: false })).not.toContain("data-hecho-local");
+    expect(await render(undefined)).not.toContain("data-hecho-local");
+  });
+});
+
+// Spec-730 D12: la nota de un personaje que sumó la IA.
+describe("acto: personaje que sumó la IA", () => {
+  const nota = { text: "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no pare.", key: "propuesto:don ramon", source: "regla", dismissed: false };
+  const render = (warnings: unknown[]) => {
+    const acts = state.outline.acts.map((a: { number: number }) => (a.number === 2 ? { ...a, warnings } : a));
+    return ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+  };
+
+  it("nota de información con «Entendido», sin «Ignorar» ni «Sumarlo»", async () => {
+    const html = await render([nota]);
+    const n = html.match(/<div[^>]*data-propuesto[^>]*>[\s\S]*?<\/div>/)![0];
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("La IA sumó a «Don Ramón», el sereno de la terminal");
+    expect(n).toMatch(/data-ignorar="propuesto:don ramon">Entendido</);
+    expect(n).not.toContain("Ignorar");
+    expect(n).not.toContain("data-sumar-personaje");
+  });
+
+  it("cerrada, no aparece ni entre los avisos ignorados", async () => {
+    const html = (await render([{ ...nota, dismissed: true }])).replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(html).not.toContain("data-propuesto");
+    expect(html).not.toContain("Don Ramón», el sereno");
+  });
+
+  it("no cuenta como aviso en el resumen", async () => {
+    const acts = state.outline.acts.map((a: { number: number }) => ({ ...a, warnings: a.number === 2 ? [nota] : [] }));
+    const html = await ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+    expect(html).toContain("Nada para marcar");
+  });
+});
+
+// Spec-710 D13: el lugar de cada hecho en la tarjeta del acto.
+describe("acto: lugar por hecho", () => {
+  const render = (act2: Record<string, unknown>, scenarios = [{ name: "La tienda", acts: [2], hechos: 2 }, { name: "La calle", acts: [2], hechos: 1 }]) => {
+    const acts = state.outline.acts.map((a: { number: number }) => (a.number === 2 ? { ...a, ...act2 } : a));
+    return ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, scenarios, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+  };
+  const tarjeta = (html: string) => html.match(/<form[^>]*data-number="2"[\s\S]*?<\/form>/)![0];
+
+  it("cada hecho trae su selector; «Dónde pasa» es un resumen sin radios", async () => {
+    const t = tarjeta(await render({ events: ["Abre", "Cuenta", "Sale"], event_places: ["La tienda", "", "La calle"], scenario: "La tienda" }));
+    expect(t).toContain("data-por-hecho");
+    const selects = t.match(/<select name="event_places"[\s\S]*?<\/select>/g)!;
+    expect(selects).toHaveLength(3);
+    expect(selects[0]).toMatch(/<option value="La tienda" selected>La tienda<\/option>/);
+    expect(selects[1]).toMatch(/<option value="" selected>Donde el anterior<\/option>/);
+    expect(selects[2]).toMatch(/<option value="La calle" selected>/);
+    expect(selects[0]).toContain('<option value="__nuevo__">+ Lugar nuevo…</option>');
+    expect(t).toMatch(/data-lugares-del-acto>La tienda · La calle</);
+    expect(t).not.toContain('name="scenario"');
+    expect(t).toMatch(/data-borrar-lugar="La tienda" data-usos="2" data-hechos="2"/);
+  });
+
+  it("una escaleta vieja sigue con el radio y sin selectores", async () => {
+    const t = tarjeta(await render({ events: ["Abre"], event_places: [], scenario: "La tienda" }));
+    expect(t).not.toContain("data-por-hecho");
+    expect(t).not.toContain('name="event_places"');
+    expect(t).toMatch(/<input type="radio" name="scenario" value="La tienda"[^>]*checked/);
+  });
+});
+
 // Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
 describe("taller: ya no coincide", () => {
   it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {

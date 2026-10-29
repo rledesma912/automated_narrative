@@ -35,10 +35,13 @@ test.beforeAll(async ({ request }) => {
   const state = await (await request.get(`${API}/authoring/stories/${sid}`)).json();
   // Spec-700: también en el acto 4 (sumarlo lo resuelve en los dos) y uno parecido a uno de la lista.
   await request.post(`${API}/authoring/stories/${sid}/characters`, { data: { name: "Amigas de José" } });
-  for (const [n, extra] of [[2, ["El sereno"]], [4, ["El sereno"]], [3, ["Amigos de José"]]] as const) {
+  // Spec-710: sin lugar por hecho, como una escaleta de antes (acá se prueba el radio de
+  // «Dónde pasa»; el selector de cada hecho está en lugar-por-hecho.spec.ts).
+  const extras: Record<number, string[]> = { 2: ["El sereno"], 4: ["El sereno"], 3: ["Amigos de José"] };
+  for (const n of [1, 2, 3, 4, 5]) {
     const a = state.outline.acts[n - 1];
     await request.put(`${API}/authoring/stories/${sid}/outline/${n}`, {
-      data: { ...a, on_stage: [...a.on_stage, ...extra] },
+      data: { ...a, on_stage: [...a.on_stage, ...(extras[n] || [])], event_places: [] },
     });
   }
   await job(request, "verify_outline");

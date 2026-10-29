@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from src.application.services import recursos_gastados
 from src.application.services.authoring import catalog, context, elenco, workshop_rules
+from src.application.services.authoring.lugares import en_lugar
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
@@ -95,6 +96,7 @@ class OutlineVerifier:
                     update={
                         "warnings": _dedup(warnings.get(act.number, []))[:MAX_WARNINGS_PER_ACT]
                         + worn.get(act.number, [])[:1]
+                        + [w for w in act.warnings if _propuesto(w) and not w.dismissed]
                         + [w for w in act.warnings if w.dismissed],
                         "decisions": used,
                     }
@@ -131,9 +133,9 @@ class OutlineVerifier:
             t(
                 "asistente/verificador/acto/titulo_con_escenario",
                 numero=a.number,
-                escenario=a.scenario,
+                escenario=" · ".join(a.places()),  # Spec-710 D8
             )
-            if a.scenario
+            if a.places()
             else t("asistente/verificador/acto/titulo", numero=a.number)
         ]
         if a.bridge:
@@ -144,7 +146,12 @@ class OutlineVerifier:
         # veían las reglas sin IA: elenco y `sin_cambio`).
         if a.on_stage:
             lines.append(t("asistente/verificador/acto/en_escena", nombres=", ".join(a.on_stage)))
-        lines += [f"- {e}" for e in a.events]
+        lines += [  # Spec-710: cada hecho con su lugar donde cambia
+            t("asistente/verificador/acto/hecho_en", lugar=en_lugar(place), hecho=event)
+            if place
+            else f"- {event}"
+            for place, event in a.events_with_place()
+        ]
         if a.change_from or a.change_to:
             lines.append(t("asistente/verificador/acto/cambia", de=a.change_from, a=a.change_to))
         if rules:
@@ -263,6 +270,12 @@ def worn_warnings(
                 OutlineWarning(text=text, key=key, source="regla")
             )
     return out
+
+
+def _propuesto(w: OutlineWarning) -> bool:
+    """Spec-730 D8: la nota de un personaje que sumó la IA la pone el Planificador; revisar
+    la conserva (aparte del tope de avisos)."""
+    return w.key.startswith("propuesto:")
 
 
 def cast_names(story: Story) -> list[str]:

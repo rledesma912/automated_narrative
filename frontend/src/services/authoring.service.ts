@@ -53,7 +53,7 @@ export interface Act {
   /** Spec-550 H10: aviso de la revisión, con clave de tema y si el autor lo ignoró. */
   warnings: { text: string; key: string; source: "regla" | "ia"; dismissed: boolean; subject?: string; similar?: string }[];
   rules: string[];
-  needs_review: boolean;
+  event_places: string[]; // Spec-710 D1: el lugar de cada hecho ("" = el del anterior)
 }
 
 export interface AuthoringState {
@@ -65,6 +65,7 @@ export interface AuthoringState {
   direction: Record<string, unknown> & { title: string };
   idea_cambio?: { preguntas: boolean; actos: boolean }; // Spec-700 D12
   idea_sin_revisar?: { sacado: string[]; agregado: string[] } | null; // Spec-700 D27
+  hecho_local?: { actos: boolean; revision: boolean }; // Spec-720 D7
   workshop: {
     round: number;
     max_rounds: number;
