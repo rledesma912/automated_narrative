@@ -72,3 +72,44 @@ describe("taller: preguntar lo que falta", () => {
     expect(await boton("respondido")).toMatch(/class="[^"]*\bhidden\b/);
   });
 });
+
+// Spec-700 A2/A5: la idea cambió después de las preguntas o de armar los actos.
+describe("la idea cambió", () => {
+  const render = (paso: string, idea_cambio: { preguntas: boolean; actos: boolean }, finish = "abierto") =>
+    ejs.renderFile(path.join(VIEWS, "asistente", `${paso}.ejs`), {
+      ...locals,
+      state: { ...state, idea_cambio, workshop: { ...state.workshop, finish: { kind: finish, text: "…" } } },
+      pasoActual: paso,
+    });
+  const nota = (html: string, paso: string) =>
+    (html.match(new RegExp(`<div[^>]*data-idea-cambio="${paso}"[^>]*>[\\s\\S]*?</div>`)) || [""])[0];
+
+  it("«Preguntas»: nota con volver a leer y «Dejarlo así»; el botón de la barra aparece aunque esté todo respondido", async () => {
+    const html = await render("taller", { preguntas: true, actos: false }, "respondido");
+    const n = nota(html, "preguntas");
+    expect(n).toContain("Cambiaste tu idea después de estas preguntas.");
+    expect(n).toMatch(/data-analizar="consult"[^>]*>Que la IA la vuelva a leer</);
+    expect(n).toMatch(/data-idea-revisada="preguntas">Dejarlo así</);
+    const boton = html.match(/<button[^>]*data-preguntar-falta[^>]*>/)![0];
+    expect(boton).not.toMatch(/class="[^"]*\bhidden\b/);
+  });
+
+  it("«Los actos»: armar de nuevo siempre pide confirmar", async () => {
+    const html = await render("escaleta", { preguntas: false, actos: true });
+    const n = nota(html, "actos");
+    expect(n).toContain("Cambiaste tu idea después de armar los actos.");
+    const armar = n.match(/<button[^>]*data-analizar="plan_outline"[^>]*>/)![0];
+    expect(armar).toMatch(/data-confirmar="[^"]*se reemplaza\."/);
+    expect(armar).toContain('data-confirmar-titulo="¿Armar los actos de nuevo?"');
+    expect(n).toMatch(/data-idea-revisada="actos">Dejarlo así</);
+  });
+
+  it("sin cambio (o sin saberlo) no hay notas", async () => {
+    for (const paso of ["taller", "escaleta"]) {
+      const html = await render(paso, { preguntas: false, actos: false });
+      expect(html).not.toContain("data-idea-cambio");
+    }
+    const sinDato = await ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), { ...locals, pasoActual: "escaleta" });
+    expect(sinDato).not.toContain("data-idea-cambio");
+  });
+});

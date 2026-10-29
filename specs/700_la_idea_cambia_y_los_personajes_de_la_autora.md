@@ -287,3 +287,13 @@ Tests: `make test`, `make lint`, `cd frontend && npm test`, `npx playwright test
 - Tarjeta del acto: sin la regex sobre el texto nuevo; lee `subject` (y el texto viejo como respaldo para los avisos guardados antes, como los de prod). «Sí, es «Y»» antes de «Sumarlo». El fixture cambió solo en el `data-aviso` que ya no hace falta.
 - Dev, «El trabajo de Yadira» (copia de prod, gemma): «Revisar los actos» sumó solo a **Doña Aurelia** (sale de una respuesta de Vale) y no quedó **ningún** aviso de personajes. «Perro de Ximena» y «Amigos de Ximena» ya no están en «Quiénes están» de la escaleta actual; esos avisos eran de una versión anterior. Los avisos que quedan son de siembras y de la IA.
 - 1 073 pytest, 422 Vitest, 81 E2E (Firefox), lint en verde. Snapshots sin cambios.
+
+### S2 — Se nota que cambió la idea (2026-10-28)
+
+- `Direction.idea_preguntas` / `idea_actos`: el hash de 12 caracteres de «¿De qué trata?» o de la sinopsis, normalizado. Una coma o una mayúscula no cuentan como cambio.
+- `context.idea_hash`, `idea_cambio` (sin sello no hay aviso; «Los actos» solo con actos armados) y `con_idea_leida`. Una historia sin dirección no se sella: no se le inventa una dirección.
+- Ponen su sello al terminar bien: `consult` («preguntas»), `plan_outline` y `full_generation` sin escaleta («actos»). El autoguardado de «Tu idea» los conserva.
+- `POST …/idea-revisada {paso}` («Dejarlo así», D16), con 409 si hay un job activo. `_state.idea_cambio`.
+- «Preguntas»: nota con «Que la IA la vuelva a leer» y «Dejarlo así». «Preguntame lo que falta» se ve con la idea cambiada aunque todo esté respondido (también al actualizar sin recargar).
+- «Los actos»: nota con «Armar los actos de nuevo», que siempre pide confirmar y avisa que reemplaza lo editado, y «Dejarlo así».
+- 1 079 pytest, 425 Vitest, 84 E2E (Firefox), lint en verde. Fixtures del asistente sin cambios.

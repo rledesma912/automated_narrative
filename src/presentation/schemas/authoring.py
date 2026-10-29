@@ -97,6 +97,12 @@ class NameForm(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
 
 
+class IdeaRevisadaForm(BaseModel):
+    """Spec-700 D16: en qué paso se deja la idea como está."""
+
+    paso: Literal["preguntas", "actos"]
+
+
 class SameCharacterForm(BaseModel):
     """Spec-700 B4: «Amigos de Ximena» es «Amigas de Ximena», que ya está en la lista."""
 

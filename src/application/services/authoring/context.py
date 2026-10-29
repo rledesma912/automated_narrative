@@ -7,6 +7,8 @@ Spec-620: el texto vive en `config/prompts_generation/fragments/asistente/`; las
 que arman texto reciben el `TemplateLoader` de quien las llama.
 """
 
+import hashlib
+
 from src.application.services.authoring import catalog, molde, workshop_rules
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
@@ -33,6 +35,36 @@ def author_ending(story: Story) -> str:
     if item and item.answer.strip() and item.status == CriterionStatus.INTENCIONAL:
         return item.answer.strip()
     return story.direction.ending.strip() if story.direction else ""
+
+
+def idea_hash(story: Story) -> str:
+    """Spec-700 D13: la idea que lee la IA, como hash corto. Solo «¿De qué trata?» (o la
+    sinopsis en las importadas, como `story_block`); mayúsculas, signos y espacios no
+    cuentan: retocar una coma no es cambiar la idea."""
+    d = story.direction
+    idea = " ".join(
+        workshop_rules.normalize((d.premise if d and d.premise else story.sinopsis)).split()
+    )
+    return hashlib.sha1(idea.encode()).hexdigest()[:12] if idea else ""
+
+
+def idea_cambio(story: Story) -> dict[str, bool]:
+    """D12/D14: ¿cambió la idea desde que la leyeron «Preguntas» y «Los actos»? Sin sello no
+    se sabe, y no se avisa (las historias de antes de la 700). «Los actos», solo si hay."""
+    d = story.direction
+    now = idea_hash(story)
+    preguntas = bool(d and d.idea_preguntas and d.idea_preguntas != now)
+    actos = bool(d and d.idea_actos and d.idea_actos != now and story.outline)
+    return {"preguntas": preguntas, "actos": actos}
+
+
+def con_idea_leida(story: Story, paso: str) -> Story:
+    """La historia con el sello de la idea actual en `paso` («preguntas» o «actos»). Sin
+    dirección (importada, sin abrir «Tu idea») no se sella: no se le inventa una."""
+    if story.direction is None:
+        return story
+    update = {f"idea_{paso}": idea_hash(story)}
+    return story.model_copy(update={"direction": story.direction.model_copy(update=update)})
 
 
 def protagonist(story: Story) -> str:

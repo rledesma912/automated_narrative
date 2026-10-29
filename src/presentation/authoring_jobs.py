@@ -8,7 +8,7 @@ resultado antes de publicar `done`.
 
 from uuid import UUID
 
-from src.application.services.authoring import elenco, final_de_la_idea, form_suggester
+from src.application.services.authoring import context, elenco, final_de_la_idea, form_suggester
 from src.application.services.authoring.consultant import WorkshopConsultant
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
@@ -41,6 +41,14 @@ async def _with_ending(story: Story, llm) -> Story:
     return final_de_la_idea.apply(story, item)
 
 
+async def _idea_leida(story: Story, paso: str) -> None:
+    """Spec-700 D12: la idea que leyó la IA queda sellada en ese paso (al terminar bien).
+    Con la historia del arranque del job: mientras corre, «Tu idea» no se puede guardar."""
+    if story.direction is not None:
+        story = context.con_idea_leida(story, paso)
+        await SQLStoryRepository().update_direction(story.id, story.direction)
+
+
 async def _with_cast(story: Story, acts) -> Story:
     """Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar
     (así la regla de los personajes no pregunta por ellos)."""
@@ -60,6 +68,7 @@ def consult_runner(story_id: UUID) -> JobRunner:
             story = await _with_ending(await _load(story_id), llm)  # Spec-690
             result = await WorkshopConsultant(llm).analyze(story)
             await SQLStoryRepository().save_workshop_items(story_id, result.items)
+            await _idea_leida(story, "preguntas")  # Spec-700 D12
             yield _done(story_id, finish={"kind": result.finish.kind, "text": result.finish.text})
 
         return _gen()
@@ -78,6 +87,7 @@ def plan_outline_runner(story_id: UUID) -> JobRunner:
             yield stage_event(JobStage.VERIFICADOR, None, None)
             checked = await OutlineVerifier(llm).verify(story, acts)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
+            await _idea_leida(story, "actos")  # Spec-700 D12
             yield _done(story_id, missing_decisions=checked.missing_decisions)
 
         return _gen()

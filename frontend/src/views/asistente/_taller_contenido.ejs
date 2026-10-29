@@ -40,6 +40,16 @@
       </button>
     </section>
   <% } else { %>
+    <% if (state.idea_cambio && state.idea_cambio.preguntas) { %>
+      <%/* Spec-700 A2: la idea cambió después de estas preguntas; «Dejarlo así» la sella sin IA (D16). */%>
+      <div class="nota-forge nota-forge--warning mb-8" data-idea-cambio="preguntas">
+        <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+        <p class="flex-1">Cambiaste tu idea después de estas preguntas. La IA la puede volver a leer y preguntarte lo que haga falta.</p>
+        <button type="button" class="nota-forge__accion" data-analizar="consult" data-titulo="Leyendo tu idea nueva…"
+                data-detalle="La IA vuelve a leer tu idea y pregunta lo que haga falta.">Que la IA la vuelva a leer</button>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="preguntas">Dejarlo así</button>
+      </div>
+    <% } %>
     <section class="bg-forge-surface border border-forge-border p-6 mb-8">
       <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-2">Cómo viene tu historia</h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>Unas preguntas son de toda historia; otras, de la clase de historia que elegiste en «Tu idea», y una del giro si elegiste uno. Son 10 como mucho y ninguna es obligatoria.</p>

@@ -101,7 +101,7 @@ class GenerateStoryUseCase:
         on_step_start: Callable[[str], None] | None,
     ) -> None:
         """La historia no tiene escaleta: se arma y se revisa antes de narrar."""
-        from src.application.services.authoring import elenco, final_de_la_idea
+        from src.application.services.authoring import context, elenco, final_de_la_idea
         from src.application.services.authoring.planner import OutlinePlanner
         from src.application.services.authoring.verifier import OutlineVerifier
 
@@ -130,4 +130,7 @@ class GenerateStoryUseCase:
         story.outline = checked.outline
         if self.story_repo is not None:
             await self.story_repo.save_outline(story.id, checked.outline)
+            if story.direction is not None:  # Spec-700 D12: «Los actos» leyeron esta idea
+                story.direction = context.con_idea_leida(story, "actos").direction
+                await self.story_repo.update_direction(story.id, story.direction)
         logger.info("[DIRECTOR] Escaleta armada para «%s» (%d actos)", story.title, len(acts))

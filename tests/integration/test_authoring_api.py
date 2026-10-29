@@ -242,6 +242,8 @@ async def test_con_la_ia_trabajando_no_se_puede_guardar(client, monkeypatch):
         ("characters/remove", {"name": "José"}),
         ("scenarios", {"name": "El galpón"}),
         ("scenarios/remove", {"name": "El galpón"}),
+        ("characters/same", {"name": "X", "same_as": "José"}),  # Spec-700
+        ("idea-revisada", {"paso": "actos"}),
     ]:
         assert (await client.post(f"{API}/stories/{sid}/{path}", json=body)).status_code == 409
     block.set()
@@ -843,3 +845,50 @@ async def test_sacar_el_nombre_del_acto_o_borrarlo_resuelve_el_aviso(client):
         await client.post(f"{API}/stories/{sid}/characters/remove", json={"name": "El cura"})
     ).json()
     assert not _elenco(state, 3) and state["outline"]["acts"][2]["on_stage"] == []
+
+
+# ── Spec-700 A: se nota que cambió la idea ──────────────────────────────────
+
+
+async def _direction(client, sid: str) -> dict:
+    return (await client.get(f"/api/v1/stories/{sid}")).json()
+
+
+async def test_cambiar_la_idea_se_nota_en_preguntas_y_en_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}  # sin sellos: no se sabe
+
+    await _run_job(client, sid, "consult")
+    state = await _run_job(client, sid, "plan_outline")
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}
+
+    # Retocar signos y mayúsculas no es cambiar la idea; el autoguardado conserva los sellos.
+    retoque = "josé ve, por el espejo, a una mujer que murió en su micro"
+    state = (
+        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": retoque})
+    ).json()
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}
+
+    otra = FORM["premise"] + " Al final, José deja de manejar de noche."
+    state = (
+        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": otra})
+    ).json()
+    assert state["idea_cambio"] == {"preguntas": True, "actos": True}
+
+    # «Dejarlo así» en «Los actos» no toca «Preguntas»; volver a preguntar sella «Preguntas».
+    state = (await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "actos"})).json()
+    assert state["idea_cambio"] == {"preguntas": True, "actos": False}
+    state = await _run_job(client, sid, "consult")
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}
+    resp = await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "otro"})
+    assert resp.status_code == 422
+
+
+async def test_sin_actos_no_avisa_en_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "actos"})
+    otra = {**FORM, "premise": "Otra idea completamente distinta."}
+    state = (await client.put(f"{API}/stories/{sid}/direction", json=otra)).json()
+    assert state["idea_cambio"] == {"preguntas": True, "actos": False}

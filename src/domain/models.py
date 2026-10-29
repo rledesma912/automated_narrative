@@ -216,6 +216,10 @@ class Direction(BaseModel):
     # Spec-680 C1: cómo habla quien narra (id de `hablas` en `authoring_options.yaml`;
     # "" = la de siempre, rioplatense). La elige la persona; la IA no la sugiere.
     habla: str = ""
+    # Spec-700 D12: qué idea leyó la IA en «Preguntas» y en «Los actos» (hash corto de
+    # «¿De qué trata?»; "" = no se sabe). No vienen del formulario: el autoguardado los conserva.
+    idea_preguntas: str = ""
+    idea_actos: str = ""
 
     @model_validator(mode="after")
     def _ending_fixed_when_written(self) -> "Direction":
