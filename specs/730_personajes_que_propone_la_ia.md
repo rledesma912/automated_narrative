@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-29
 **Tipo:** SDD: Planificador, Verificador y «Los actos» (avisos de personajes)
-**Estado:** TASKS (2026-10-29). Falta el OK para pasar a IMPLEMENT.
+**Estado:** IMPLEMENT terminado (2026-10-29): S1–S4 hechos; falta el PR.
 **Rama:** a crear desde `feat/spec-720-actos-en-la-nube` (la 720 todavía no entró a `development`)
 **Extiende:** Spec-700 B (personajes de la autora), Spec-720 (el Planificador en Claude), Spec-630 B2/B7 (personajes por acto), Spec-530 §445 (nombres inventados en la prosa).
 
@@ -219,3 +219,20 @@ Cada slice cierra con tests en verde y dev con el cambio.
 - `_acto.ejs`: la nota `propuesto:` es de información (ícono `user-plus`) con «Entendido» (el mismo `…/warnings/dismiss`); cerrada, no va en la lista de avisos ignorados. El resumen de «Los actos» no la cuenta como aviso.
 - Vitest: la nota, cerrada, y el resumen. E2E nuevo (`personajes-propuestos.spec.ts`): la nota en el acto 2, el personaje tildado, «Entendido» la cierra y no vuelve ni al recargar ni al revisar.
 - 435 Vitest y 88 E2E (Firefox), en verde. Fixtures del asistente sin cambios.
+
+### S4 — Sin el aviso duplicado, medición y cierre (2026-10-29)
+
+- `authoring_verifier.md` y su sistema: sale «personas fuera del elenco» (lo cubre la regla). Los snapshots cambian solo en esa línea.
+- **Medición** (`scripts/research/730/medir_propuestos.py`, Sonnet 5.5 con el perfil de dev, copia de prod del 2026-10-29, 1 corrida; salida en `data/dev/research_730/`). Costo real **US$ 0,242** (estimado 0,24, tope 0,50).
+
+| Historia | Lo que pidió sumar la IA | ¿Entró como propuesto? | Avisos `elenco:` | Duplicados del Verificador |
+|---|---|---|---|---|
+| El trabajo de Yadira (largo) | Doña Aurelia («la tía de Yadira, que hace limpias y trabajos»: «es quien hace el trabajo contra Ximena») | No: es de la autora (sale de una respuesta) y entra sola por la 700 | 0 | 0 |
+| Los forasteros (largo) | — | — | 0 | 0 |
+| el engaño del diablo (largo) | — | — | 0 | 0 |
+| El último cliente (corto) | Padre de Lautaro («el dueño del almacén…»: «despierta con el grito y sale con la linterna») | No: es de la autora (el final dice «despertó a su padre») y entra sola | 1 («El doble de Lautaro», sin para qué) | 0 |
+
+- **Sonnet es conservador:** en estas 4 historias no inventó a nadie nuevo de verdad. Las dos veces que pidió sumar a alguien, era gente que la autora ya había nombrado, y el filtro (`de_la_autora`) los deja pasar por el camino de la 700. Todo lo pedido trae quién es y para qué, respeta el tope y ningún grupo sin nombre salió con nombres inventados («Amigas de Ximena», «Hermanos»).
+- **El aviso duplicado del Verificador desapareció** (0 en 4; en la 720 hubo 2 en 6).
+- «El doble de Lautaro» sigue con el aviso de siempre: Sonnet no lo trató como alguien que suma, sino como parte de la idea (es casi la amenaza). Queda como está.
+- Lo que hace la feature cuando la IA sí propone (sumarlo con quién es, la nota, «Entendido») está probado con el mock en integración y E2E; en el uso real se va a ver cuando una historia lo pida.
