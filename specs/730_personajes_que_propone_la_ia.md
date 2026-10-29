@@ -213,3 +213,9 @@ Cada slice cierra con tests en verde y dev con el cambio.
 - `verify` conserva los `propuesto:` sin cerrar, aparte del tope (D8); cerrada, la nota queda como ignorada y no vuelve. `_problems_block` saltea las notas al rearmar (D9).
 - El mock propone a «Don Ramón, el sereno de la terminal» en el acto 2. Por eso el snapshot del pipeline lo muestra entre los personajes y en escena, con su quién es (la Voz lo recibe). Se ajustaron 4 integraciones y un E2E (el «Ignorar» del aviso de la IA).
 - 1 102 pytest, 432 Vitest y 87 E2E (Firefox), en verde.
+
+### S3 — La nota en «Los actos» (2026-10-29)
+
+- `_acto.ejs`: la nota `propuesto:` es de información (ícono `user-plus`) con «Entendido» (el mismo `…/warnings/dismiss`); cerrada, no va en la lista de avisos ignorados. El resumen de «Los actos» no la cuenta como aviso.
+- Vitest: la nota, cerrada, y el resumen. E2E nuevo (`personajes-propuestos.spec.ts`): la nota en el acto 2, el personaje tildado, «Entendido» la cierra y no vuelve ni al recargar ni al revisar.
+- 435 Vitest y 88 E2E (Firefox), en verde. Fixtures del asistente sin cambios.

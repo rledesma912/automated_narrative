@@ -178,6 +178,45 @@ describe("los actos: hechos por la IA de la compu", () => {
   });
 });
 
+// Spec-730 D12: la nota de un personaje que sumó la IA.
+describe("acto: personaje que sumó la IA", () => {
+  const nota = { text: "La IA sumó a «Don Ramón», el sereno de la terminal: le advierte que no pare.", key: "propuesto:don ramon", source: "regla", dismissed: false };
+  const render = (warnings: unknown[]) => {
+    const acts = state.outline.acts.map((a: { number: number }) => (a.number === 2 ? { ...a, warnings } : a));
+    return ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+  };
+
+  it("nota de información con «Entendido», sin «Ignorar» ni «Sumarlo»", async () => {
+    const html = await render([nota]);
+    const n = html.match(/<div[^>]*data-propuesto[^>]*>[\s\S]*?<\/div>/)![0];
+    expect(n).toContain("nota-forge--info");
+    expect(n).toContain("La IA sumó a «Don Ramón», el sereno de la terminal");
+    expect(n).toMatch(/data-ignorar="propuesto:don ramon">Entendido</);
+    expect(n).not.toContain("Ignorar");
+    expect(n).not.toContain("data-sumar-personaje");
+  });
+
+  it("cerrada, no aparece ni entre los avisos ignorados", async () => {
+    const html = (await render([{ ...nota, dismissed: true }])).replace(/<script[\s\S]*?<\/script>/g, "");
+    expect(html).not.toContain("data-propuesto");
+    expect(html).not.toContain("Don Ramón», el sereno");
+  });
+
+  it("no cuenta como aviso en el resumen", async () => {
+    const acts = state.outline.acts.map((a: { number: number }) => ({ ...a, warnings: a.number === 2 ? [nota] : [] }));
+    const html = await ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+    expect(html).toContain("Nada para marcar");
+  });
+});
+
 // Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
 describe("taller: ya no coincide", () => {
   it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {

@@ -7,8 +7,9 @@
   const acts = state.outline.acts;
   const decisions = state.outline.decisions;
   const integradas = decisions.filter(d => d.integrada).length;
-  /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. */
-  const avisos = acts.reduce((n, a) => n + a.warnings.filter(w => !w.dismissed).length, 0);
+  /* Spec-550 H10: cada aviso tiene clave y estado; los ignorados no cuentan. Spec-730: la nota
+     de un personaje que sumó la IA no es un aviso. */
+  const avisos = acts.reduce((n, a) => n + a.warnings.filter(w => !w.dismissed && !w.key.startsWith('propuesto:')).length, 0);
   const est = locals.estimateLabels || {};
   /* Spec-650: cuántos actos tiene, en palabras («tres» o «cinco»). */
   const cuantosActos = ({ 3: 'tres', 5: 'cinco' })[state.structure_acts.length] || String(state.structure_acts.length);
