@@ -7,7 +7,9 @@ from collections.abc import AsyncIterator
 import httpx
 import pytest
 
+from src.application.services.authoring import revisor
 from src.config import settings
+from src.domain.exceptions import LLMUnavailableError
 from src.domain.streaming import StreamEvent, StreamEventType
 from src.infrastructure.adapters import MockLLMAdapter
 from src.infrastructure.database.connection import init_db
@@ -242,6 +244,8 @@ async def test_con_la_ia_trabajando_no_se_puede_guardar(client, monkeypatch):
         ("characters/remove", {"name": "José"}),
         ("scenarios", {"name": "El galpón"}),
         ("scenarios/remove", {"name": "El galpón"}),
+        ("characters/same", {"name": "X", "same_as": "José"}),  # Spec-700
+        ("idea-revisada", {"paso": "actos"}),
     ]:
         assert (await client.post(f"{API}/stories/{sid}/{path}", json=body)).status_code == 409
     block.set()
@@ -746,3 +750,269 @@ async def test_preguntas_marca_el_final_de_la_idea(client):
     assert final["de_la_idea"] is True
     otros = (await client.get(f"{API}/stories/{sid}")).json()["workshop"]["items"]
     assert not any(w["de_la_idea"] for w in otros if w["criterion"] != "final")
+
+
+# ── Spec-700 B: los personajes de la autora ─────────────────────────────────
+
+
+async def _con_quienes_estan(client, sid: str, por_acto: dict[int, list[str]]) -> None:
+    for n, names in por_acto.items():
+        resp = await client.put(
+            f"{API}/stories/{sid}/outline/{n}", json={"events": ["Pasa algo"], "on_stage": names}
+        )
+        assert resp.status_code == 200, resp.text
+
+
+def _elenco(state, n: int) -> dict[str, dict]:
+    return {
+        w["key"]: w
+        for w in state["outline"]["acts"][n - 1]["warnings"]
+        if w["key"].startswith("elenco:")
+    }
+
+
+async def test_los_personajes_de_la_idea_se_suman_solos(client):
+    premise = "José maneja de noche; Marta, la de la boletería, le avisa de la mujer del espejo."
+    sid = (await _create(client, premise=premise))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await _con_quienes_estan(client, sid, {2: ["José", "Marta", "El sereno"], 3: ["El sereno"]})
+
+    state = await _run_job(client, sid, "verify_outline")
+
+    assert [c["name"] for c in state["characters"]] == ["José", "Marta"]
+    assert set(_elenco(state, 2)) == {"elenco:el sereno"}  # Marta no se pregunta
+    sereno = _elenco(state, 3)["elenco:el sereno"]
+    assert sereno["subject"] == "El sereno" and sereno["similar"] == ""
+    assert sereno["text"].startswith("La IA puso a «El sereno»")
+
+
+async def test_sumar_un_personaje_resuelve_su_aviso_en_todos_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await _con_quienes_estan(client, sid, {2: ["José", "El sereno"], 4: ["El sereno"]})
+    state = await _run_job(client, sid, "verify_outline")
+    assert "elenco:el sereno" in _elenco(state, 4)
+
+    state = (
+        await client.post(f"{API}/stories/{sid}/characters", json={"name": "El sereno", "act": 2})
+    ).json()
+
+    assert not _elenco(state, 2) and not _elenco(state, 4)
+
+
+async def test_es_uno_de_la_lista_escrito_distinto(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "Amigas de José"})
+    await _con_quienes_estan(
+        client, sid, {2: ["José", "Amigos de José"], 3: ["Amigos de José", "Amigas de José"]}
+    )
+    state = await _run_job(client, sid, "verify_outline")
+    assert _elenco(state, 2)["elenco:amigos de jose"]["similar"] == "Amigas de José"
+
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/characters/same",
+            json={"name": "amigos de josé", "same_as": "Amigas de José"},
+        )
+    ).json()
+
+    acts = state["outline"]["acts"]
+    assert acts[1]["on_stage"] == ["José", "Amigas de José"]
+    assert acts[2]["on_stage"] == ["Amigas de José"]  # sin repetir
+    assert not _elenco(state, 2) and not _elenco(state, 3)
+    assert [c["name"] for c in state["characters"]] == ["José", "Amigas de José"]
+    resp = await client.post(
+        f"{API}/stories/{sid}/characters/same", json={"name": "X", "same_as": "Nadie"}
+    )
+    assert resp.status_code == 404
+
+
+async def test_sacar_el_nombre_del_acto_o_borrarlo_resuelve_el_aviso(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await _con_quienes_estan(client, sid, {2: ["José", "El sereno", "El cura"], 3: ["El cura"]})
+    await _run_job(client, sid, "verify_outline")
+
+    state = (
+        await client.put(
+            f"{API}/stories/{sid}/outline/2", json={"events": ["Pasa algo"], "on_stage": ["José"]}
+        )
+    ).json()
+    assert not _elenco(state, 2)
+    assert "elenco:el cura" in _elenco(state, 3)  # el otro acto no cambia
+
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "El cura"})
+    state = (
+        await client.post(f"{API}/stories/{sid}/characters/remove", json={"name": "El cura"})
+    ).json()
+    assert not _elenco(state, 3) and state["outline"]["acts"][2]["on_stage"] == []
+
+
+# ── Spec-700 A: se nota que cambió la idea ──────────────────────────────────
+
+
+async def _direction(client, sid: str) -> dict:
+    return (await client.get(f"/api/v1/stories/{sid}")).json()
+
+
+async def test_cambiar_la_idea_se_nota_en_preguntas_y_en_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}  # sin sellos: no se sabe
+
+    await _run_job(client, sid, "consult")
+    state = await _run_job(client, sid, "plan_outline")
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}
+
+    # Retocar signos y mayúsculas no es cambiar la idea; el autoguardado conserva los sellos.
+    retoque = "josé ve, por el espejo, a una mujer que murió en su micro"
+    state = (
+        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": retoque})
+    ).json()
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}
+
+    otra = FORM["premise"] + " Al final, José deja de manejar de noche."
+    state = (
+        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": otra})
+    ).json()
+    assert state["idea_cambio"] == {"preguntas": True, "actos": True}
+
+    # «Dejarlo así» en «Los actos» no toca «Preguntas»; volver a preguntar sella «Preguntas».
+    state = (await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "actos"})).json()
+    assert state["idea_cambio"] == {"preguntas": True, "actos": False}
+    state = await _run_job(client, sid, "consult")
+    assert state["idea_cambio"] == {"preguntas": False, "actos": False}
+    resp = await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "otro"})
+    assert resp.status_code == 422
+
+
+async def test_sin_actos_no_avisa_en_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "actos"})
+    otra = {**FORM, "premise": "Otra idea completamente distinta."}
+    state = (await client.put(f"{API}/stories/{sid}/direction", json=otra)).json()
+    assert state["idea_cambio"] == {"preguntas": True, "actos": False}
+
+
+# ── Spec-700 A3: la IA revisa lo respondido ─────────────────────────────────
+
+
+class _Contando(MockLLMAdapter):
+    """El mock de siempre, anotando qué esquema pidió cada llamada."""
+
+    pedidos: list[str] = []
+
+    async def generate(self, prompt, **kwargs):
+        schema = kwargs.get("response_schema") or {}
+        _Contando.pedidos.append(",".join(sorted(schema.get("properties", {}))))
+        return await super().generate(prompt, **kwargs)
+
+
+def _items(state) -> dict[str, dict]:
+    return {i["criterion"]: i for i in state["workshop"]["items"]}
+
+
+async def _todo_respondido_y_otra_idea(client) -> str:
+    """El caso de Vale: todo respondido y después cambia la idea."""
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    for item in _items((await client.get(f"{API}/stories/{sid}")).json()).values():
+        if not item["answer"]:
+            await client.patch(
+                f"{API}/stories/{sid}/workshop/{item['criterion']}",
+                json={"action": "answer", "text": "Lo que respondí."},
+            )
+    otra = {**FORM, "premise": FORM["premise"] + " Al final, José deja de manejar."}
+    await client.put(f"{API}/stories/{sid}/direction", json=otra)
+    return sid
+
+
+async def test_con_la_idea_cambiada_marca_lo_que_ya_no_coincide(client, monkeypatch):
+    sid = await _todo_respondido_y_otra_idea(client)
+    monkeypatch.setattr(revisor, "con_ia", lambda: True)  # D25: un perfil con el rol
+
+    _Contando.pedidos = []
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
+    state = await _run_job(client, sid, "consult")
+
+    # Una sola llamada: el revisor. El Consultor no tenía nada que evaluar.
+    assert _Contando.pedidos == ["revisiones"]
+    marcadas = {c: i for c, i in _items(state).items() if i["no_coincide"]}
+    assert len(marcadas) == 1  # el mock marca la primera
+    ((criterio, item),) = marcadas.items()
+    assert item["no_coincide"] == "Ahora tu idea dice otra cosa." and item["answer"]
+    assert state["idea_cambio"]["preguntas"] is False
+
+    state = (
+        await client.patch(f"{API}/stories/{sid}/workshop/{criterio}", json={"action": "keep"})
+    ).json()
+    assert _items(state)[criterio]["no_coincide"] == "" and _items(state)[criterio]["answer"]
+    assert state["idea_sin_revisar"] is None
+
+
+# ── Spec-700 D26/D27: sin el rol o sin la IA, la nota con lo que cambió ─────
+
+
+async def test_sin_el_rol_queda_la_nota_con_lo_que_cambio(client, monkeypatch):
+    sid = await _todo_respondido_y_otra_idea(client)
+    monkeypatch.setattr(revisor, "con_ia", lambda: False)  # el perfil local
+    _Contando.pedidos = []
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
+
+    state = await _run_job(client, sid, "consult")
+
+    assert "revisiones" not in _Contando.pedidos
+    assert not any(i["no_coincide"] for i in _items(state).values())
+    assert state["idea_sin_revisar"] == {
+        "sacado": [],
+        "agregado": ["Al final, José deja de manejar."],
+    }
+    assert state["idea_cambio"]["preguntas"] is False
+
+    state = (
+        await client.post(f"{API}/stories/{sid}/idea-revisada", json={"paso": "respuestas"})
+    ).json()
+    assert state["idea_sin_revisar"] is None
+
+
+class _SinCredito(MockLLMAdapter):
+    """La API no atiende al Revisor; el resto, el mock de siempre."""
+
+    async def generate(self, prompt, **kwargs):
+        if kwargs.get("role") == "revisor":
+            raise LLMUnavailableError("credito", "Te quedaste sin crédito.")
+        return await super().generate(prompt, **kwargs)
+
+
+async def test_si_la_ia_no_responde_la_ronda_sigue_con_la_nota(client, monkeypatch):
+    sid = await _todo_respondido_y_otra_idea(client)
+    monkeypatch.setattr(revisor, "con_ia", lambda: True)
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _SinCredito()))
+
+    state = await _run_job(client, sid, "consult")  # termina bien
+
+    assert state["idea_sin_revisar"]["agregado"] == ["Al final, José deja de manejar."]
+    # Otro cambio sin revisar: la nota muestra todo desde la última revisión (la más vieja).
+    otra = {**FORM, "premise": FORM["premise"] + " Al final, José deja de manejar. Y se muda."}
+    await client.put(f"{API}/stories/{sid}/direction", json=otra)
+    state = await _run_job(client, sid, "consult")
+    assert state["idea_sin_revisar"]["agregado"] == [
+        "Al final, José deja de manejar.",
+        "Y se muda.",
+    ]
+    # Si la idea vuelve a ser la de antes, no hay nada que mostrar.
+    await client.put(f"{API}/stories/{sid}/direction", json=FORM)
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["idea_sin_revisar"] is None
+
+
+async def test_sin_cambiar_la_idea_no_se_revisa(client, monkeypatch):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    _Contando.pedidos = []
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
+    state = await _run_job(client, sid, "consult")
+    assert "revisiones" not in _Contando.pedidos
+    assert not any(i["no_coincide"] for i in _items(state).values())

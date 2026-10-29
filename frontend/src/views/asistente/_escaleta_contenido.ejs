@@ -24,6 +24,19 @@
       </button>
     </section>
   <% } else { %>
+    <% if (state.idea_cambio && state.idea_cambio.actos) { %>
+      <%/* Spec-700 A5: la idea cambió después de armar los actos. Armar de nuevo siempre pide
+           confirmar (reemplaza lo editado); «Dejarlo así» la sella sin IA (D16). */%>
+      <div class="nota-forge nota-forge--warning mb-8 max-w-3xl" data-idea-cambio="actos">
+        <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+        <p class="flex-1">Cambiaste tu idea después de armar los actos. Si querés que los actos cuenten la idea nueva, la IA los puede armar de nuevo.</p>
+        <button type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
+                data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos con tu idea nueva y después los revisa."
+                data-confirmar="La IA arma los actos de nuevo con tu idea nueva. Lo que les cambiaste a mano a los actos se reemplaza."
+                data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo">Armar los actos de nuevo</button>
+        <button type="button" class="nota-forge__accion" data-idea-revisada="actos">Dejarlo así</button>
+      </div>
+    <% } %>
     <section class="grid md:grid-cols-2 gap-4 mb-10" data-resumen-actos>
       <div class="bg-forge-surface border border-forge-border p-5">
         <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-3">Lo que respondiste · <%= integradas %> de <%= decisions.length %> en los actos</h3>

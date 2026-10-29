@@ -7,6 +7,9 @@ Spec-620: el texto vive en `config/prompts_generation/fragments/asistente/`; las
 que arman texto reciben el `TemplateLoader` de quien las llama.
 """
 
+import difflib
+import re
+
 from src.application.services.authoring import catalog, molde, workshop_rules
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
@@ -33,6 +36,59 @@ def author_ending(story: Story) -> str:
     if item and item.answer.strip() and item.status == CriterionStatus.INTENCIONAL:
         return item.answer.strip()
     return story.direction.ending.strip() if story.direction else ""
+
+
+def idea(story: Story) -> str:
+    """La idea que lee la IA: «¿De qué trata?» o, en las importadas, la sinopsis (como
+    `story_block`)."""
+    d = story.direction
+    return (d.premise if d and d.premise else story.sinopsis).strip()
+
+
+def _misma(a: str, b: str) -> bool:
+    """Spec-700 D13: mayúsculas, signos y espacios no cuentan (retocar una coma no es
+    cambiar la idea)."""
+
+    def norm(text: str) -> str:
+        return " ".join(workshop_rules.normalize(text).split())
+
+    return norm(a) == norm(b)
+
+
+def idea_cambio(story: Story) -> dict[str, bool]:
+    """D12/D14: ¿cambió la idea desde que la leyeron «Preguntas» y «Los actos»? Sin sello no
+    se sabe, y no se avisa (las historias de antes de la 700). «Los actos», solo si hay."""
+    d = story.direction
+    now = idea(story)
+    preguntas = bool(d and d.idea_preguntas and not _misma(d.idea_preguntas, now))
+    actos = bool(d and d.idea_actos and not _misma(d.idea_actos, now) and story.outline)
+    return {"preguntas": preguntas, "actos": actos}
+
+
+def con_idea_leida(story: Story, paso: str) -> Story:
+    """La historia con la idea actual guardada como leída en `paso` («preguntas» o
+    «actos»). Sin dirección (importada, sin abrir «Tu idea») no se sella: no se le
+    inventa una."""
+    if story.direction is None:
+        return story
+    update = {f"idea_{paso}": idea(story)}
+    return story.model_copy(update={"direction": story.direction.model_copy(update=update)})
+
+
+def _oraciones(text: str) -> list[str]:
+    return [o.strip() for o in re.split(r"(?<=[.!?…])\s+|\n+", text) if o.strip()]
+
+
+def lo_que_cambio(antes: str, ahora: str) -> tuple[list[str], list[str]]:
+    """Spec-700 S4: las oraciones que se sacaron y las que se agregaron (o cambiaron)."""
+    a, b = _oraciones(antes), _oraciones(ahora)
+    sacado, agregado = [], []
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op in ("replace", "delete"):
+            sacado += a[i1:i2]
+        if op in ("replace", "insert"):
+            agregado += b[j1:j2]
+    return sacado, agregado
 
 
 def protagonist(story: Story) -> str:

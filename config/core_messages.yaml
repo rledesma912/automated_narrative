@@ -43,7 +43,9 @@ verifier:
   sin_cambio: "El acto termina igual que empieza: ¿qué le cambia a {protagonista}?"
   # Spec-650: en el relato corto cada acto tiene un tope de hechos (la Voz escribe un párrafo por hecho).
   muchos_hechos: "Este acto tiene {cantidad} hechos y en un relato corto entran {maximo}: ¿cuáles juntamos o sacamos?"
-  elenco: "«{nombre}» aparece en este acto pero no está entre los personajes: ¿lo sumamos?"
+  # Spec-700 B5: dice para qué sirve. Los que nombró la autora ya no llegan acá (se suman solos).
+  elenco: "La IA puso a «{nombre}» en este acto y no está entre tus personajes. Si lo sumás, el relato lo va a nombrar siempre igual; si no va, sacalo del acto."
+  elenco_parecido: "La IA puso a «{nombre}» en este acto y no está entre tus personajes. ¿Es «{parecido}»?"
   sin_revelacion: "El secreto de este acto no se descubre en ningún acto posterior: elegí en cuál se descubre."
   siembra: "«{siembra}» aparece acá y no vuelve en ningún acto posterior: ¿lo retomamos?"
   siembras: "{siembras} aparecen acá y no vuelven en ningún acto posterior: ¿los retomamos?"

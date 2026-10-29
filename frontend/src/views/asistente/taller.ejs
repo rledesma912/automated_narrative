@@ -17,8 +17,9 @@
     <% if (analizado) { %>
       <div class="flex flex-wrap items-center gap-3">
         <%/* Con todo respondido o decidido la IA no tiene nada que mirar: el botón no se ofrece
-             (asistente.js lo vuelve a esconder o mostrar al actualizar «Preguntas» sin recargar). */%>
-        <button type="button" class="btn-forge-outline-sm<%= w.finish.kind === 'respondido' ? ' hidden' : '' %>" data-preguntar-falta
+             (asistente.js lo vuelve a esconder o mostrar al actualizar «Preguntas» sin recargar).
+             Spec-700 A2: con la idea cambiada, sí (la IA vuelve a leerla). */%>
+        <button type="button" class="btn-forge-outline-sm<%= w.finish.kind === 'respondido' && !(state.idea_cambio && state.idea_cambio.preguntas) ? ' hidden' : '' %>" data-preguntar-falta
                 data-analizar="consult" data-titulo="Leyendo tus respuestas…"
                 data-detalle="La IA vuelve a leer tu historia con lo que respondiste y pregunta solo lo que siga faltando.">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Preguntame lo que falta<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>

@@ -82,7 +82,7 @@ def test_reglas_sin_llm(story):
     warnings = rule_warnings(story, outline)
     text = " ".join(w.text for w in warnings[1])
     assert "termina igual que empieza" in text
-    assert "«El sereno» aparece en este acto" in text
+    assert "La IA puso a «El sereno» en este acto" in text
     assert "La mujer" not in text  # la amenaza no es elenco
     assert "«El ramo» aparece acá" in text
     assert "no pasa nada todavía" in " ".join(w.text for w in warnings[2])

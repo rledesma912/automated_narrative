@@ -12,7 +12,14 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 
 from src.application.dto import StoryCreateDTO
-from src.application.services.authoring import catalog, context, molde, workshop_rules
+from src.application.services.authoring import (
+    catalog,
+    context,
+    elenco,
+    molde,
+    revisor,
+    workshop_rules,
+)
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.use_cases.create_story import (
     CreateStoryUseCase,
@@ -43,7 +50,9 @@ from src.presentation.schemas.authoring import (
     ActForm,
     CharacterForm,
     DirectionForm,
+    IdeaRevisadaForm,
     NameForm,
+    SameCharacterForm,
     ScenarioForm,
     StructureForm,
     WarningDismiss,
@@ -199,6 +208,8 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
         return workshop_rules.decide_for_me(item)
     if body.action == "intentional":
         return workshop_rules.mark_intentional(item, body.text)
+    if body.action == "keep":  # Spec-700 D18: «Está bien así»
+        return workshop_rules.keep(item)
     # reopen: vuelve a evaluarse en la próxima ronda (Spec-670 D12: si «no iba», con marca).
     return workshop_rules.reopen(item)
 
@@ -215,10 +226,16 @@ async def update_act(story_id: str, number: int, form: ActForm) -> dict:
         raise HTTPException(status_code=404, detail=f"Acto inexistente: {number}")
     previous = next((a for a in story.outline if a.number == number), None)
     fields = {k: _clean(v) for k, v in form.model_dump(exclude={"rules"}).items()}
+    on_stage = {elenco.clave(n) for n in fields.get("on_stage", [])}
     act = ActOutline(
         number=number,
         **fields,
-        warnings=previous.warnings if previous else [],
+        # Spec-700 B3: el aviso de un personaje que ya no está en el acto queda resuelto.
+        warnings=[
+            w
+            for w in (previous.warnings if previous else [])
+            if not w.key.startswith("elenco:") or w.key in on_stage
+        ],
         draft=previous.draft if previous else False,  # un borrador importado sigue siéndolo
         synopsis=previous.synopsis if previous else "",
     )
@@ -290,7 +307,7 @@ async def add_character(story_id: str, body: CharacterForm) -> dict:
         story.personajes_full = [
             *story.personajes_full,
             {
-                "id": _next_character_id(story.personajes_full),
+                "id": elenco.next_id(story.personajes_full),
                 "name": name,
                 "role": "",
                 "kind": body.kind,
@@ -300,12 +317,34 @@ async def add_character(story_id: str, body: CharacterForm) -> dict:
         await repo.update_inputs(story)
     else:
         name = existing["name"]
-    if body.act is not None:
-        act = _act(story, body.act)
-        if not any(_same(n, name) for n in act.on_stage):
-            await repo.save_act(
-                story.id, act.model_copy(update={"on_stage": [*act.on_stage, name]})
-            )
+    # Spec-700 B3: sumarlo resuelve su aviso en todos los actos, no solo en este.
+    for act in story.outline:
+        updated = elenco.sin_aviso(act, name)
+        if act.number == body.act and not any(_same(n, name) for n in act.on_stage):
+            updated = updated.model_copy(update={"on_stage": [*act.on_stage, name]})
+        if updated != act:
+            await repo.save_act(story.id, updated)
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/characters/same")
+async def same_character(story_id: str, body: SameCharacterForm) -> dict:
+    """Spec-700 B4: un nombre de «Quiénes están» es uno de la lista escrito distinto: se
+    reemplaza en todos los actos y su aviso queda resuelto."""
+    story = await _editable(story_id)
+    target = _find(story.personajes_full or [], body.same_as, key=lambda p: p.get("name", ""))
+    if target is None:
+        raise HTTPException(
+            status_code=404, detail=message("api.personaje_inexistente", nombre=body.same_as)
+        )
+    repo = SQLStoryRepository()
+    for act in story.outline:
+        names = [target["name"] if _same(n, body.name) else n for n in act.on_stage]
+        updated = elenco.sin_aviso(act, body.name).model_copy(
+            update={"on_stage": list(dict.fromkeys(names))}
+        )
+        if updated != act:
+            await repo.save_act(story.id, updated)
     return await _state(await _story(story_id))
 
 
@@ -327,8 +366,24 @@ async def remove_character(story_id: str, body: NameForm) -> dict:
     await repo.update_inputs(story)
     for act in story.outline:
         on_stage = [n for n in act.on_stage if not _same(n, existing["name"])]
-        if on_stage != act.on_stage:
-            await repo.save_act(story.id, act.model_copy(update={"on_stage": on_stage}))
+        updated = elenco.sin_aviso(act, existing["name"]).model_copy(update={"on_stage": on_stage})
+        if updated != act:
+            await repo.save_act(story.id, updated)
+    return await _state(await _story(story_id))
+
+
+@router.post("/stories/{story_id}/idea-revisada")
+async def idea_revisada(story_id: str, body: IdeaRevisadaForm) -> dict:
+    """Spec-700 D16: «Dejarlo así». La idea cambió y la autora no quiere que la IA la vuelva
+    a leer: se sella la idea actual en ese paso, sin IA. D27: «Listo, ya las revisé» saca la
+    nota de lo que cambió."""
+    story = await _editable(story_id)
+    if body.paso == "respuestas":
+        story = revisor.revisadas(story)
+    else:
+        story = context.con_idea_leida(story, body.paso)
+    if story.direction is not None:
+        await SQLStoryRepository().update_direction(story.id, story.direction)
     return await _state(await _story(story_id))
 
 
@@ -394,16 +449,6 @@ def _same(a: str, b: str) -> bool:
 
 def _find(items, name: str, key):
     return next((x for x in items if _same(key(x), name)), None)
-
-
-def _next_character_id(cast: list[dict]) -> str:
-    """P<n> que no choque con ninguno (al borrar un personaje, `len + 1` repetiría un id)."""
-    nums = [
-        int(p["id"][1:])
-        for p in cast
-        if str(p.get("id", "")).startswith("P") and p["id"][1:].isdigit()
-    ]
-    return f"P{max(nums, default=0) + 1}"
 
 
 def _estructuras() -> BeatSpecRepository:
@@ -472,6 +517,9 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         habla=form.habla,
         form_suggested=existing.form_suggested if existing else "",
         form_reason=existing.form_reason if existing else "",
+        idea_preguntas=existing.idea_preguntas if existing else "",  # Spec-700 D12
+        idea_actos=existing.idea_actos if existing else "",
+        idea_sin_revisar=existing.idea_sin_revisar if existing else "",  # Spec-700 D26
     )
 
 
@@ -581,6 +629,9 @@ async def _state(story: Story) -> dict:
         "story_id": str(story.id),
         "status": story.status.value,
         "direction": _form(story),
+        # Spec-700 D12: si cambió la idea desde que la leyeron «Preguntas» y «Los actos».
+        "idea_cambio": context.idea_cambio(story),
+        "idea_sin_revisar": revisor.pendiente(story),  # Spec-700 D27
         # Spec-650: el largo y sus actos (la UI arma las tarjetas y los nombres con esto).
         "structure": story.structure,
         "structure_acts": [
@@ -599,6 +650,8 @@ async def _state(story: Story) -> dict:
                     "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
                     # Spec-690: el final que la IA sacó de «¿De qué trata?».
                     "de_la_idea": workshop_rules.DE_LA_IDEA in w.asked,
+                    # Spec-700 D18: por qué ya no coincide con la idea nueva («» si coincide).
+                    "no_coincide": workshop_rules.no_coincide(w),
                 }
                 for w, c in (
                     (by_id[c.id], c.for_story(context.protagonist(story)))

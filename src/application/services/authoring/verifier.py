@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from src.application.services import recursos_gastados
-from src.application.services.authoring import catalog, context, workshop_rules
+from src.application.services.authoring import catalog, context, elenco, workshop_rules
 from src.application.services.authoring.structured_llm import generate_structured
 from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.template_loader import TemplateLoader
@@ -184,9 +184,11 @@ def rule_warnings(
     estructura = BeatSpecRepository().estructura(story.structure)  # Spec-650
     last = estructura.ultimo
 
-    def add(n: int, key: str, text: str) -> None:
+    def add(n: int, key: str, text: str, **extra: str) -> None:
         if key not in dismissed.get(n, set()):
-            out.setdefault(n, []).append(OutlineWarning(text=text, key=key, source="regla"))
+            out.setdefault(n, []).append(
+                OutlineWarning(text=text, key=key, source="regla", **extra)
+            )
 
     cast = {workshop_rules.normalize(n) for n in cast_names(story)}
     threats = {workshop_rules.normalize(e.name) for e in story.entities if e.name}
@@ -210,10 +212,17 @@ def rule_warnings(
         for name in act.on_stage:
             key = workshop_rules.normalize(name.split("(")[0])
             if key and key not in cast and key not in threats:
+                subject = elenco.bare(name)
+                # Spec-700 B4: si se parece a uno de la lista, se propone ese.
+                like = elenco.parecido(subject, cast_names(story))
                 add(
                     act.number,
-                    f"elenco:{key}",
-                    message("verifier.elenco", nombre=name),
+                    elenco.clave(name),
+                    message("verifier.elenco_parecido", nombre=subject, parecido=like)
+                    if like
+                    else message("verifier.elenco", nombre=subject),
+                    subject=subject,
+                    similar=like,
                 )
         if act.held_back.strip() and not act.number < act.reveal_act <= last:
             add(act.number, "sin_revelacion", message("verifier.sin_revelacion"))

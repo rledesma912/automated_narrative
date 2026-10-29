@@ -48,9 +48,28 @@ describe("tarjeta del acto", () => {
     expect(html).not.toMatch(/<input[^>]*data-lugar-nombre[^>]*\bname=/);
   });
 
-  it("«Sumarlo a los personajes» lleva el nombre y la clave del aviso (B2)", async () => {
-    const html = await acto(1);
-    expect(html).toMatch(/data-sumar-personaje="Tío Rubén" data-aviso="elenco:tio ruben"/);
+  it("«Sumarlo a los personajes» lleva el nombre, también en un aviso guardado antes de la 700 (B2)", async () => {
+    const html = await acto(1); // el aviso del fixture tiene el texto viejo y no trae `subject`
+    expect(html).toContain('data-sumar-personaje="Tío Rubén">Sumarlo a los personajes');
+    expect(html).not.toContain("data-mismo-personaje");
+  });
+
+  // Spec-700 D23/B4: el nombre viene en `subject`; con `similar`, «Sí, es «…»» antes de sumarlo.
+  it("con un parecido en la lista, ofrece usar ese (Spec-700 B4)", async () => {
+    const a = structuredClone(state.outline.acts.find((x: { number: number }) => x.number === 1));
+    a.warnings = [{
+      text: "La IA puso a «Amigos de Susana» en este acto y no está entre tus personajes. ¿Es «Amigas de Susana»?",
+      key: "elenco:amigos de susana", source: "regla", dismissed: false,
+      subject: "Amigos de Susana", similar: "Amigas de Susana",
+    }, {
+      text: "Este aviso no es de personajes y nombra «Algo» aparece en este acto pero no está entre los personajes",
+      key: "sin_cambio", source: "regla", dismissed: false,
+    }];
+    const html = await ejs.renderFile(view, { state, a });
+    expect(html).toMatch(
+      /data-mismo-personaje="Amigos de Susana" data-es="Amigas de Susana">Sí, es «Amigas de Susana»<\/button>\s*<button[^>]*data-sumar-personaje="Amigos de Susana">/,
+    );
+    expect(html.match(/data-sumar-personaje=/g)).toHaveLength(1); // solo los de `elenco:`
   });
 
   // Spec-630 B9: «Qué cambia» con el nombre, pista y rótulos visibles.

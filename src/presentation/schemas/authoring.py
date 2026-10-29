@@ -53,7 +53,7 @@ class StructureForm(BaseModel):
 class WorkshopAction(BaseModel):
     """Lo que hace el autor con un criterio del taller."""
 
-    action: Literal["answer", "decide", "intentional", "reopen"]
+    action: Literal["answer", "decide", "intentional", "reopen", "keep"]  # keep: Spec-700 D18
     text: str = Field("", max_length=2000)  # Spec-690: un final sacado de la idea es largo
 
 
@@ -95,6 +95,20 @@ class NameForm(BaseModel):
     """Spec-630 B7: qué lugar o personaje se borra (por nombre: los actos los guardan así)."""
 
     name: str = Field(..., min_length=1, max_length=120)
+
+
+class IdeaRevisadaForm(BaseModel):
+    """Spec-700 D16: en qué paso se deja la idea como está; D27: `respuestas` = la autora
+    ya revisó lo que cambió y la IA no pudo revisar."""
+
+    paso: Literal["preguntas", "actos", "respuestas"]
+
+
+class SameCharacterForm(BaseModel):
+    """Spec-700 B4: «Amigos de Ximena» es «Amigas de Ximena», que ya está en la lista."""
+
+    name: str = Field(..., min_length=1, max_length=120)
+    same_as: str = Field(..., min_length=1, max_length=120)
 
 
 class WarningDismiss(BaseModel):

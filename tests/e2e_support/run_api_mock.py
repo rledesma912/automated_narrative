@@ -9,6 +9,9 @@ Levanta `src.main:app` con:
 
 Variables: E2E_DB (destino), E2E_LLM_DELAY (segundos, default 0.15),
 E2E_API_PORT (default 8021).
+
+Spec-700 D25/D26: el Revisor corre como en un perfil con el rol; si la idea dice
+«SIN CRÉDITO», la API «no atiende» y queda la nota con lo que cambió.
 """
 
 import asyncio
@@ -28,7 +31,9 @@ subprocess.run(
 )
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_path}"
 
+from src.application.services.authoring import revisor  # noqa: E402
 from src.config import settings  # noqa: E402 — después de fijar DATABASE_URL
+from src.domain.exceptions import LLMUnavailableError  # noqa: E402
 from src.infrastructure.adapters.mock_llm_adapter import MockLLMAdapter  # noqa: E402
 from src.infrastructure.factories import LLMFactory  # noqa: E402
 
@@ -36,9 +41,14 @@ settings.database_url = os.environ["DATABASE_URL"]
 
 
 class SlowMockLLM(MockLLMAdapter):
-    async def generate(self, *args, **kwargs):
+    async def generate(self, prompt, *args, **kwargs):
         await asyncio.sleep(delay)
-        return await super().generate(*args, **kwargs)
+        if kwargs.get("role") == "revisor" and "SIN CRÉDITO" in prompt:
+            raise LLMUnavailableError("credito", "La IA de la nube no atiende.")
+        return await super().generate(prompt, *args, **kwargs)
+
+
+revisor.con_ia = lambda: True
 
 
 LLMFactory.get_provider = staticmethod(lambda *_a, **_k: SlowMockLLM())
