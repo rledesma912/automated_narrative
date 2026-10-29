@@ -101,7 +101,7 @@ class GenerateStoryUseCase:
         on_step_start: Callable[[str], None] | None,
     ) -> None:
         """La historia no tiene escaleta: se arma y se revisa antes de narrar."""
-        from src.application.services.authoring import final_de_la_idea
+        from src.application.services.authoring import elenco, final_de_la_idea
         from src.application.services.authoring.planner import OutlinePlanner
         from src.application.services.authoring.verifier import OutlineVerifier
 
@@ -116,6 +116,12 @@ class GenerateStoryUseCase:
         if on_step_start:
             on_step_start("📐  Armando la escaleta...")
         acts, _ = await OutlinePlanner(self.llm, prompt_builder=self.prompt_builder).plan(story)
+        # Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar.
+        cast = elenco.personajes_de_la_autora(story, acts)
+        if cast:
+            story.personajes_full = elenco.con_personajes(story, cast).personajes_full
+            if self.story_repo is not None:
+                await self.story_repo.update_inputs(story)
         if on_stage:
             on_stage(JobStage.VERIFICADOR, None)
         if on_step_start:

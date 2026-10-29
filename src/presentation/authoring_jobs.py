@@ -8,7 +8,7 @@ resultado antes de publicar `done`.
 
 from uuid import UUID
 
-from src.application.services.authoring import final_de_la_idea, form_suggester
+from src.application.services.authoring import elenco, final_de_la_idea, form_suggester
 from src.application.services.authoring.consultant import WorkshopConsultant
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
@@ -41,6 +41,17 @@ async def _with_ending(story: Story, llm) -> Story:
     return final_de_la_idea.apply(story, item)
 
 
+async def _with_cast(story: Story, acts) -> Story:
+    """Spec-700 D22: los personajes que nombró la autora se suman solos antes de revisar
+    (así la regla de los personajes no pregunta por ellos)."""
+    names = elenco.personajes_de_la_autora(story, acts)
+    if not names:
+        return story
+    story = elenco.con_personajes(story, names)
+    await SQLStoryRepository().update_inputs(story)
+    return story
+
+
 def consult_runner(story_id: UUID) -> JobRunner:
     def _run():
         async def _gen():
@@ -63,6 +74,7 @@ def plan_outline_runner(story_id: UUID) -> JobRunner:
             yield stage_event(JobStage.PLANIFICADOR, None, None)
             story = await _with_ending(await _load(story_id), llm)  # Spec-690 D3
             acts, _ = await OutlinePlanner(llm).plan(story)
+            story = await _with_cast(story, acts)
             yield stage_event(JobStage.VERIFICADOR, None, None)
             checked = await OutlineVerifier(llm).verify(story, acts)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
@@ -78,6 +90,7 @@ def verify_outline_runner(story_id: UUID) -> JobRunner:
         async def _gen():
             yield stage_event(JobStage.VERIFICADOR, None, None)
             story = await _load(story_id)
+            story = await _with_cast(story, story.outline)
             checked = await OutlineVerifier(LLMFactory.get_provider()).verify(story, story.outline)
             await SQLStoryRepository().save_outline(story_id, checked.outline)
             yield _done(story_id, missing_decisions=checked.missing_decisions)

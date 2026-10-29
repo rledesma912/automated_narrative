@@ -847,11 +847,14 @@
     }
     if (t.matches("[data-sumar-personaje]") && form) {
       const n = form.dataset.number;
-      // Spec-630 B2: un clic; queda en «Quiénes están» del acto y el aviso se resuelve (no se ignora).
-      return run(async () => {
-        await api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "persona", act: Number(n) });
-        await api("POST", `/authoring/stories/${page.storyId}/outline/${n}/warnings/resolve`, { key: t.dataset.aviso });
-      }, enActo(n, { todos: true }));
+      // Spec-630 B2: un clic; queda en «Quiénes están» del acto. Spec-700 B3: sumarlo resuelve
+      // su aviso en todos los actos (no se ignora).
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/characters`, { name: t.dataset.sumarPersonaje, kind: "persona", act: Number(n) }), enActo(n, { todos: true }));
+    }
+    if (t.matches("[data-mismo-personaje]") && form) {
+      // Spec-700 B4: es uno de la lista escrito distinto: se usa ese en todos los actos.
+      const n = form.dataset.number;
+      return run(() => api("POST", `/authoring/stories/${page.storyId}/characters/same`, { name: t.dataset.mismoPersonaje, same_as: t.dataset.es }), enActo(n, { todos: true }));
     }
     if (t.matches("[data-ignorar]") && form) {
       const n = form.dataset.number;

@@ -273,6 +273,10 @@ class OutlineWarning(BaseModel):
     key: str = ""
     source: Literal["regla", "ia"] = "ia"
     dismissed: bool = False
+    # Spec-700 D23: en los de personajes (`elenco:`), el nombre tal cual y, si se parece
+    # a uno de la lista («Amigos» / «Amigas de Ximena»), ese otro.
+    subject: str = ""
+    similar: str = ""
 
     def keys(self) -> set[str]:
         return {k for k in self.key.split("|") if k}

@@ -97,6 +97,13 @@ class NameForm(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
 
 
+class SameCharacterForm(BaseModel):
+    """Spec-700 B4: «Amigos de Ximena» es «Amigas de Ximena», que ya está en la lista."""
+
+    name: str = Field(..., min_length=1, max_length=120)
+    same_as: str = Field(..., min_length=1, max_length=120)
+
+
 class WarningDismiss(BaseModel):
     """Spec-550 H10: el aviso se identifica por su clave (tema), no por el texto."""
 

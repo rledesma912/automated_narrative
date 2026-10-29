@@ -746,3 +746,100 @@ async def test_preguntas_marca_el_final_de_la_idea(client):
     assert final["de_la_idea"] is True
     otros = (await client.get(f"{API}/stories/{sid}")).json()["workshop"]["items"]
     assert not any(w["de_la_idea"] for w in otros if w["criterion"] != "final")
+
+
+# ── Spec-700 B: los personajes de la autora ─────────────────────────────────
+
+
+async def _con_quienes_estan(client, sid: str, por_acto: dict[int, list[str]]) -> None:
+    for n, names in por_acto.items():
+        resp = await client.put(
+            f"{API}/stories/{sid}/outline/{n}", json={"events": ["Pasa algo"], "on_stage": names}
+        )
+        assert resp.status_code == 200, resp.text
+
+
+def _elenco(state, n: int) -> dict[str, dict]:
+    return {
+        w["key"]: w
+        for w in state["outline"]["acts"][n - 1]["warnings"]
+        if w["key"].startswith("elenco:")
+    }
+
+
+async def test_los_personajes_de_la_idea_se_suman_solos(client):
+    premise = "José maneja de noche; Marta, la de la boletería, le avisa de la mujer del espejo."
+    sid = (await _create(client, premise=premise))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await _con_quienes_estan(client, sid, {2: ["José", "Marta", "El sereno"], 3: ["El sereno"]})
+
+    state = await _run_job(client, sid, "verify_outline")
+
+    assert [c["name"] for c in state["characters"]] == ["José", "Marta"]
+    assert set(_elenco(state, 2)) == {"elenco:el sereno"}  # Marta no se pregunta
+    sereno = _elenco(state, 3)["elenco:el sereno"]
+    assert sereno["subject"] == "El sereno" and sereno["similar"] == ""
+    assert sereno["text"].startswith("La IA puso a «El sereno»")
+
+
+async def test_sumar_un_personaje_resuelve_su_aviso_en_todos_los_actos(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await _con_quienes_estan(client, sid, {2: ["José", "El sereno"], 4: ["El sereno"]})
+    state = await _run_job(client, sid, "verify_outline")
+    assert "elenco:el sereno" in _elenco(state, 4)
+
+    state = (
+        await client.post(f"{API}/stories/{sid}/characters", json={"name": "El sereno", "act": 2})
+    ).json()
+
+    assert not _elenco(state, 2) and not _elenco(state, 4)
+
+
+async def test_es_uno_de_la_lista_escrito_distinto(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "Amigas de José"})
+    await _con_quienes_estan(
+        client, sid, {2: ["José", "Amigos de José"], 3: ["Amigos de José", "Amigas de José"]}
+    )
+    state = await _run_job(client, sid, "verify_outline")
+    assert _elenco(state, 2)["elenco:amigos de jose"]["similar"] == "Amigas de José"
+
+    state = (
+        await client.post(
+            f"{API}/stories/{sid}/characters/same",
+            json={"name": "amigos de josé", "same_as": "Amigas de José"},
+        )
+    ).json()
+
+    acts = state["outline"]["acts"]
+    assert acts[1]["on_stage"] == ["José", "Amigas de José"]
+    assert acts[2]["on_stage"] == ["Amigas de José"]  # sin repetir
+    assert not _elenco(state, 2) and not _elenco(state, 3)
+    assert [c["name"] for c in state["characters"]] == ["José", "Amigas de José"]
+    resp = await client.post(
+        f"{API}/stories/{sid}/characters/same", json={"name": "X", "same_as": "Nadie"}
+    )
+    assert resp.status_code == 404
+
+
+async def test_sacar_el_nombre_del_acto_o_borrarlo_resuelve_el_aviso(client):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "plan_outline")
+    await _con_quienes_estan(client, sid, {2: ["José", "El sereno", "El cura"], 3: ["El cura"]})
+    await _run_job(client, sid, "verify_outline")
+
+    state = (
+        await client.put(
+            f"{API}/stories/{sid}/outline/2", json={"events": ["Pasa algo"], "on_stage": ["José"]}
+        )
+    ).json()
+    assert not _elenco(state, 2)
+    assert "elenco:el cura" in _elenco(state, 3)  # el otro acto no cambia
+
+    await client.post(f"{API}/stories/{sid}/characters", json={"name": "El cura"})
+    state = (
+        await client.post(f"{API}/stories/{sid}/characters/remove", json={"name": "El cura"})
+    ).json()
+    assert not _elenco(state, 3) and state["outline"]["acts"][2]["on_stage"] == []
