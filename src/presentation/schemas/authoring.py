@@ -92,6 +92,7 @@ class ScenarioForm(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=120)
     act: int | None = Field(None, ge=1, le=5)
+    event: int | None = Field(None, ge=0)  # Spec-710 D13: con `act`, el lugar de ese hecho
 
 
 class NameForm(BaseModel):

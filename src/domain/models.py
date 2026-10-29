@@ -350,7 +350,10 @@ class ActOutline(BaseModel):
     @model_validator(mode="after")
     def _places_like_events(self) -> "ActOutline":
         # D1: mismo largo que los hechos (si hay lugares): recortada o completada con "".
-        if self.event_places:
+        # Todos vacíos es lo mismo que no tener lugares por hecho (vale `scenario`).
+        if not any(p.strip() for p in self.event_places):
+            self.event_places = []
+        else:
             n = len(self.events)
             self.event_places = (self.event_places + [""] * n)[:n]
         return self

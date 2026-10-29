@@ -407,12 +407,26 @@
       .filter(Boolean);
   }
 
+  /** Spec-710 D13: los hechos con el lugar de cada uno, en el mismo orden (el Core los
+   *  empareja y descarta los hechos vacíos con su lugar). Sin selectores, como siempre. */
+  function eventsPayload(form) {
+    if (!form.hasAttribute("data-por-hecho")) return { events: texts(form, "events") };
+    const items = $$('[data-lista="events"] [data-item]', form);
+    return {
+      events: items.map((li) => $('[name="events"]', li).value.trim()),
+      event_places: items.map((li) => {
+        const select = $('[name="event_places"]', li);
+        return select && select.value !== "__nuevo__" ? select.value : "";
+      }),
+    };
+  }
+
   function actPayload(form) {
     const keep = JSON.parse(form.elements.namedItem("keep").value || "{}");
     return {
       bridge: value(form, "bridge") || "",
       goal: value(form, "goal"),
-      events: texts(form, "events"),
+      ...eventsPayload(form),
       change_from: value(form, "change_from"),
       change_to: value(form, "change_to"),
       // Spec-630 B6: el lugar se elige siempre con la opción (los nuevos se suman antes, aparte).
@@ -457,7 +471,17 @@
       name === "events"
         ? '<button type="button" class="mt-2 text-forge-muted hover:text-forge-accent" data-subir title="Subir"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>'
         : "";
-    li.innerHTML = `${upBtn}<textarea name="${name}" rows="1" maxlength="400" class="flex-1 [field-sizing:content] resize-none bg-forge-bg border border-forge-border px-3 py-2"></textarea><button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>`;
+    li.innerHTML = `${upBtn}<div class="flex-1 min-w-0"><textarea name="${name}" rows="1" maxlength="400" class="w-full [field-sizing:content] resize-none bg-forge-bg border border-forge-border px-3 py-2"></textarea></div><button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>`;
+    // Spec-710 D13: un hecho nuevo trae su lugar, debajo («Donde el anterior»).
+    const modelo = name === "events" && $("[data-lugar-de-hecho]", form);
+    if (modelo) {
+      const lugar = modelo.cloneNode(true);
+      const select = $("select", lugar);
+      select.value = "";
+      select.dataset.antes = "";
+      if (select.options[0]) select.options[0].textContent = "Donde el anterior";
+      $("div", li).append(lugar);
+    }
     list.append(li);
     icons();
     $("textarea", li).focus();
@@ -472,7 +496,14 @@
     if (!name) return input.focus();
     const n = Number(form.dataset.number);
     const acto = `[data-acto="${n}"]`;
-    return run(() => api("POST", `/authoring/stories/${page.storyId}/scenarios`, { name, act: n }), {
+    // Spec-710 D13: desde el selector de un hecho, queda elegido en ese hecho; con lugar por
+    // hecho y sin hecho, solo se suma a la historia (no pisa los lugares del acto).
+    const hecho = form.dataset.lugarParaHecho;
+    delete form.dataset.lugarParaHecho;
+    const body = hecho !== undefined
+      ? { name, act: n, event: Number(hecho) }
+      : form.hasAttribute("data-por-hecho") ? { name } : { name, act: n };
+    return run(() => flushAll().then(() => api("POST", `/authoring/stories/${page.storyId}/scenarios`, body)), {
       ...enActo(n, { todos: true }),
       mostrar: `${acto} [data-lugar-form]`,
       foco: `${acto} [data-lugar-nombre]`,
@@ -483,8 +514,11 @@
    *  diciendo en qué actos está hoy y cómo se cambia un solo acto (`soloUnActo`). */
   async function borrar(form, btn, coleccion, name, { titulo, label, soloUnActo }) {
     const usos = (btn.dataset.usos || "").split(",").filter(Boolean);
+    // Spec-710 D13: un lugar dice también en cuántos hechos pasa (quedan «donde el anterior»).
+    const hechos = Number(btn.dataset.hechos || 0);
+    const enHechos = hechos ? `, en ${hechos === 1 ? "1 hecho" : `${hechos} hechos`}` : "";
     const message = usos.length
-      ? `Desaparece de todos los actos (hoy está en ${usos.length === 1 ? "el acto" : "los actos"} ${usos.join(", ").replace(/, (\d)$/, " y $1")}). ${soloUnActo}`
+      ? `Desaparece de todos los actos (hoy está en ${usos.length === 1 ? "el acto" : "los actos"} ${usos.join(", ").replace(/, (\d)$/, " y $1")}${enHechos}). ${soloUnActo}`
       : "No aparece en ningún acto.";
     const ok = await window.ForgeConfirm.ask({ title: titulo, message, confirmLabel: label, icon: "borrar" });
     if (!ok) return;
@@ -807,6 +841,16 @@
     }
     if (e.target.name === "form") onFormChange(form, e.target.value);
     if (e.target.matches("[data-p-tipo]")) return; // del formulario de personaje, no del acto
+    if (e.target.matches("[data-lugar-hecho]") && e.target.value === "__nuevo__") {
+      // Spec-710 D13: «+ Lugar nuevo…» abre el campo y el lugar queda para este hecho.
+      const items = $$('[data-lista="events"] [data-item]', form);
+      form.dataset.lugarParaHecho = String(items.indexOf(e.target.closest("[data-item]")));
+      e.target.value = e.target.dataset.antes || "";
+      $("[data-lugar-form]", form).classList.remove("hidden");
+      $("[data-lugar-nombre]", form).focus();
+      return;
+    }
+    if (e.target.matches("[data-lugar-hecho]")) e.target.dataset.antes = e.target.value;
     schedule(form);
   });
 

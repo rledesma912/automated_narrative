@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — escaleta (Planificador, Verificador, Voz) + tarjeta del acto
-**Estado:** IMPLEMENT (2026-10-29): S1 a S3 hechos.
+**Estado:** IMPLEMENT (2026-10-29): S1 a S4 hechos; falta S5 (medición y cierre).
 **Rama:** a crear desde `development`
 **Extiende:** Spec-530 (escaleta), Spec-630 B6/B7 (lugares de la historia), Spec-590 (lo que recibe la Voz).
 **Hermana:** Spec-700 (salió de la misma revisión del uso de Vale).
@@ -306,3 +306,12 @@ Las historias vuelven como borradores, como dice CLAUDE.md. Se anota en el PR; e
 - El video: los lugares del acto con « · » (desde S1; D14).
 - Snapshot nuevo `voice_prompts_lugares.json` (un acto con dos lugares y uno descripto), con su test de sección. `voice_prompts.json` y el del video, **idénticos**. Los del pipeline suman «En Escenario de ejemplo:» en el primer hecho de cada acto (la escaleta sale del mock, que ya trae lugares).
 - 1 115 pytest, 435 Vitest y 88 E2E (Firefox), en verde.
+
+### S4 — La tarjeta del acto (2026-10-29)
+
+- `_acto.ejs`, con lugar por hecho (`data-por-hecho`): **debajo** de cada hecho, un selector compacto con un ícono de ubicación («Donde el anterior», los lugares de la historia, «+ Lugar nuevo…»). Al lado del hecho, en Firefox, el texto quedaba cortado (`field-sizing` no tiene soporte), así que se movió abajo después de la captura. «Dónde pasa» pasa a ser un resumen («La casa · El patio») con los lugares de la historia y su tacho, sin radios. Las escaletas viejas siguen con el radio.
+- `asistente.js`: el autoguardado manda `events` y `event_places` alineados. Un hecho nuevo trae su selector; subir o quitar un hecho lleva su lugar. «+ Lugar nuevo…» abre el campo y el lugar queda en ese hecho (`…/scenarios` con `act` y `event`); con lugar por hecho y sin hecho, solo se suma a la historia.
+- Borrar un lugar: la confirmación dice en cuántos hechos pasa («hoy está en el acto 1, en 1 hecho»; `_state.scenarios[].hechos`); esos hechos quedan «donde el anterior».
+- Una lista de lugares toda vacía es lo mismo que no tener lugares por hecho (`ActOutline`): la tarjeta vuelve al radio.
+- Tests: Vitest de los dos modos; E2E nuevo `lugar-por-hecho.spec.ts` («+ Lugar nuevo…» en un hecho; agregar, subir y quitar hechos sin desordenar los lugares; borrar). Los dos E2E del radio arman sus actos sin lugar por hecho, como una escaleta vieja. Fixture del asistente: solo estructura (el envoltorio del hecho y `data-hechos`).
+- 1 116 pytest, 437 Vitest y 91 E2E (Firefox), en verde. En una corrida falló el E2E intermitente de cancelar en la sala; la siguiente pasó completa.

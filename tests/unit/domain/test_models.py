@@ -313,3 +313,5 @@ def test_los_lugares_siguen_el_largo_de_los_hechos():
         "",
     ]
     assert ActOutline(number=1, events=["a"], event_places=["X", "Y"]).event_places == ["X"]
+    # Todos vacíos = sin lugares por hecho (la tarjeta vuelve al radio).
+    assert ActOutline(number=1, events=["a", "b"], event_places=["", ""]).event_places == []

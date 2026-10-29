@@ -23,6 +23,11 @@ test.beforeAll(async ({ request }) => {
   });
   sid = (await created.json()).story_id;
   await job(request, "plan_outline");
+  // Spec-710: sin lugar por hecho, como una escaleta de antes (acá se prueba el radio).
+  const state = await (await request.get(`${API}/authoring/stories/${sid}`)).json();
+  for (const a of state.outline.acts) {
+    await request.put(`${API}/authoring/stories/${sid}/outline/${a.number}`, { data: { ...a, event_places: [] } });
+  }
   await request.post(`${API}/authoring/stories/${sid}/characters`, { data: { name: "Marta", kind: "persona" } });
   await request.post(`${API}/authoring/stories/${sid}/scenarios`, { data: { name: "La terminal" } });
 });

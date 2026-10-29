@@ -408,7 +408,14 @@ async def add_scenario(story_id: str, body: ScenarioForm) -> dict:
         await repo.update_inputs(story)
     else:
         name = existing.name
-    if body.act is not None:
+    if body.act is not None and body.event is not None:
+        # Spec-710 D13: el «+ Lugar» del selector de un hecho: queda elegido en ese hecho.
+        act = _act(story, body.act)
+        if body.event < len(act.events):
+            places = list(act.event_places) or [""] * len(act.events)
+            places[body.event] = name
+            await repo.save_act(story.id, act.model_copy(update={"event_places": places}))
+    elif body.act is not None:
         act = _act(story, body.act)
         if act.places() != [name]:
             # Spec-710: todo el acto en ese lugar (el primer hecho; los demás, «el de antes»).
@@ -721,6 +728,13 @@ async def _state(story: Story) -> dict:
                 "acts": [
                     a.number for a in story.outline if any(_same(p, name) for p in a.places())
                 ],
+                # Spec-710 D13: en cuántos hechos pasa (lo dice la confirmación de borrar).
+                "hechos": sum(
+                    _same(a.event_place(i), name)
+                    for a in story.outline
+                    if a.event_places
+                    for i in range(len(a.events))
+                ),
             }
             for name in dict.fromkeys(
                 [s.name for s in story.scenarios] + [p for a in story.outline for p in a.places()]
