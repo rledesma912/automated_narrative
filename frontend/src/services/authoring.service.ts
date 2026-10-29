@@ -53,7 +53,7 @@ export interface Act {
   /** Spec-550 H10: aviso de la revisión, con clave de tema y si el autor lo ignoró. */
   warnings: { text: string; key: string; source: "regla" | "ia"; dismissed: boolean; subject?: string; similar?: string }[];
   rules: string[];
-  needs_review: boolean;
+  event_places: string[]; // Spec-710 D1: el lugar de cada hecho ("" = el del anterior)
 }
 
 export interface AuthoringState {

@@ -168,3 +168,57 @@ def test_el_comienzo_libre_va_solo_en_el_acto_1():
     assert "CÓMO EMPEZAR" in prompts[0]["user"]
     assert all("CÓMO EMPEZAR" not in p["user"] for p in prompts[1:])
     assert all("«mirá»" not in p["system"].lower() for p in prompts)
+
+
+# ── Spec-710: un acto con el lugar de cada hecho ────────────────────────────
+
+SNAPSHOT_LUGARES = SNAPSHOT.with_name("voice_prompts_lugares.json")
+
+
+def _prompt_con_lugares() -> dict[str, str]:
+    from src.domain.models import Scenario
+
+    story = _story()
+    act = ActOutline(
+        number=2,
+        bridge="Pasó media hora desde el acto 1.",
+        goal="Llegar a la terminal",
+        events=[
+            "José baja a tomar un café.",
+            "Paga y vuelve.",
+            "Arranca el micro.",
+            "Mira el espejo.",
+        ],
+        event_places=["La terminal", "", "El micro", ""],
+        scenario="La terminal",
+        on_stage=["José", "Marta"],
+    )
+    story.outline = [act if a.number == 2 else a for a in story.outline]
+    story.scenarios = [
+        Scenario(
+            story_id=STORY_ID,
+            order_index=0,
+            name="El micro",
+            description="viejo, con olor a gasoil",
+        )
+    ]
+    system, user = OutlineNarrator(llm=None).voice_prompts(
+        story, act, _memory(2), "Primer párrafo."
+    )
+    return {"acto": 2, "system": system, "user": user}
+
+
+def test_prompt_de_la_voz_con_lugares_por_hecho():
+    prompt = _prompt_con_lugares()
+    if os.environ.get("SNAPSHOT_UPDATE"):
+        SNAPSHOT_LUGARES.write_text(
+            json.dumps(prompt, ensure_ascii=False, indent=2) + "\n", "utf-8"
+        )
+    assert prompt == json.loads(SNAPSHOT_LUGARES.read_text("utf-8"))
+    # D11: «En <lugar>:» solo donde cambia; «Dónde» con la lista y la descripción.
+    user = prompt["user"]
+    assert (
+        "- En la terminal: José baja a tomar un café.\n- Paga y vuelve.\n- En el micro: Arranca"
+        in user
+    )
+    assert "La terminal; El micro: viejo, con olor a gasoil" in user

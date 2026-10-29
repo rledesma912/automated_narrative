@@ -179,6 +179,9 @@ def test_el_snapshot_cubre_todas_las_secciones():
         # Spec-730: la IA puede sumar personajes con un para qué
         'devolvé "personajes_nuevos"',
         "Como mucho 2.",
+        # Spec-710: cada hecho con su lugar
+        'Cada hecho es {"texto": …, "lugar": …}',
+        "Si un hecho ocurre en otro lugar",
         "ACTO 2\n",
         "Cómo llega: Pasaron dos horas",
         "Quiere: Que el micro llegue",

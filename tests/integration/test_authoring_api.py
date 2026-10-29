@@ -1072,3 +1072,55 @@ async def test_actos_armados_con_la_nube_no_quedan_marcados(client):
     await _run_job(client, sid, "consult")
     state = await _run_job(client, sid, "plan_outline")  # el mock, sin respaldos
     assert state["hecho_local"] == {"actos": False, "revision": False}
+
+
+# ── Spec-710: el lugar de cada hecho ────────────────────────────────────────
+
+
+async def test_el_lugar_de_cada_hecho_va_con_su_hecho(client):
+    sid = (await _create(client))["story_id"]
+    act = {
+        "events": ["Abre la tienda", "", "Cruza la calle"],
+        "event_places": ["La tienda", "X", ""],
+    }
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json=act)).json()
+    acto = state["outline"]["acts"][0]
+    # El hecho vacío se va con su lugar; el lugar vacío queda («el de antes»).
+    assert (acto["events"], acto["event_places"]) == (
+        ["Abre la tienda", "Cruza la calle"],
+        ["La tienda", ""],
+    )
+    assert [s["name"] for s in state["scenarios"]] == ["La tienda"]
+
+    # Sin la lista (una pestaña vieja) se conserva si los hechos no cambiaron de largo.
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json={"events": ["A", "B"]})).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La tienda", ""]
+    # Cambiar el lugar del acto (el radio) pone todo el acto en ese lugar.
+    body = {"events": ["A", "B"], "scenario": "La garita"}
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json=body)).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La garita", ""]
+    state = (await client.put(f"{API}/stories/{sid}/outline/1", json={"events": ["A"]})).json()
+    assert state["outline"]["acts"][0]["event_places"] == []
+
+
+async def test_borrar_un_lugar_lo_saca_de_los_hechos(client):
+    sid = (await _create(client))["story_id"]
+    act = {"events": ["a", "b"], "event_places": ["La tienda", "La calle"]}
+    await client.put(f"{API}/stories/{sid}/outline/2", json=act)
+    state = (
+        await client.post(f"{API}/stories/{sid}/scenarios/remove", json={"name": "La tienda"})
+    ).json()
+    acto = next(a for a in state["outline"]["acts"] if a["number"] == 2)
+    assert acto["event_places"] == ["", "La calle"]
+
+
+async def test_mas_lugar_desde_un_hecho_lo_elige_en_ese_hecho(client):
+    """Spec-710 D13: el «+ Lugar» del selector de un hecho."""
+    sid = (await _create(client))["story_id"]
+    act = {"events": ["a", "b", "c"], "event_places": ["La tienda", "", ""]}
+    await client.put(f"{API}/stories/{sid}/outline/1", json=act)
+    body = {"name": "La calle", "act": 1, "event": 2}
+    state = (await client.post(f"{API}/stories/{sid}/scenarios", json=body)).json()
+    assert state["outline"]["acts"][0]["event_places"] == ["La tienda", "", "La calle"]
+    lugares = {s["name"]: (s["acts"], s["hechos"]) for s in state["scenarios"]}
+    assert lugares == {"La tienda": ([1], 2), "La calle": ([1], 1)}

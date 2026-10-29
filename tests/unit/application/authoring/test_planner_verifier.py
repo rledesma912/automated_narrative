@@ -13,10 +13,9 @@ def _acto(n, **kw):
         "numero": n,
         "como_llega": "" if n == 1 else "Esa noche sigue",
         "objetivo": f"quiere {n}",
-        "hechos": [f"hecho {n}"],
+        "hechos": [{"texto": f"hecho {n}", "lugar": "La ruta"}],
         "cambio_de": "a",
         "cambio_a": "b",
-        "escenario": "La ruta",
         "en_escena": ["José"],
         "se_guarda": "",
         "se_revela_en": 0,
@@ -179,7 +178,10 @@ async def test_escenarios_sin_agregados_y_secreto_en_el_acto_4(story):
     llm = ScriptedLLM(
         {
             "actos": [
-                _acto(n, escenario="Ruta 36 (regreso)" if n == 2 else "Ruta 36")
+                _acto(
+                    n,
+                    hechos=[{"texto": "a", "lugar": "Ruta 36 (regreso)" if n == 2 else "Ruta 36"}],
+                )
                 for n in range(1, 6)
             ]
         }
@@ -585,3 +587,43 @@ async def test_revisar_conserva_la_nota_y_rearmar_no_la_toma_como_problema(story
 
     rearmar = story.model_copy(update={"outline": checked.outline})
     assert "La IA sumó" not in OutlinePlanner(llm=None)._prompt(rearmar)
+
+
+# ── Spec-710: el lugar de cada hecho ────────────────────────────────────────
+
+
+async def test_cada_hecho_trae_su_lugar_limpio(story):
+    hechos = [
+        {"texto": "Entra a la casa", "lugar": "casa_susana"},
+        {"texto": "Se esconde", "lugar": "Cocina / living"},
+        {"texto": "Escucha pasos", "lugar": ""},
+        {"texto": "", "lugar": "Pared"},  # hecho vacío: se va con su lugar
+        {"texto": "Sale al patio", "lugar": "el patio, el galpón"},
+    ]
+    actos = [_acto(n, hechos=hechos) if n == 1 else _acto(n) for n in range(1, 6)]
+    acts, _ = await OutlinePlanner(ScriptedLLM({"actos": actos})).plan(story)
+
+    assert acts[0].events == ["Entra a la casa", "Se esconde", "Escucha pasos", "Sale al patio"]
+    assert acts[0].event_places == ["Casa susana", "Cocina", "", "El patio"]
+    assert acts[0].scenario == "Casa susana"  # D3: el del primer hecho
+    assert acts[0].places() == ["Casa susana", "Cocina", "El patio"]
+
+
+def test_el_prompt_pide_el_lugar_de_cada_hecho_y_no_el_escenario_del_acto(story):
+    prompt = OutlinePlanner(llm=None)._prompt(story)
+    assert '{"texto": …, "lugar": …}' in prompt and "no una cosa del lugar" in prompt
+    assert '"escenario"' not in prompt
+
+
+def test_el_verificador_lee_el_lugar_de_cada_hecho():
+    """Spec-710 D11: título con los lugares del acto; «En <lugar>:» donde cambia."""
+    act = ActOutline(
+        number=2,
+        events=["Abre la tienda", "Cuenta la plata", "Sale a la calle"],
+        event_places=["La tienda", "", "La calle"],
+    )
+    text = OutlineVerifier(ScriptedLLM())._act_text(act)
+    assert "La tienda · La calle" in text.splitlines()[0]
+    assert (
+        "- En la tienda: Abre la tienda\n- Cuenta la plata\n- En la calle: Sale a la calle" in text
+    )

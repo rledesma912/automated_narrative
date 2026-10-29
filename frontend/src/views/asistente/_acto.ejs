@@ -23,6 +23,12 @@
   /* Spec-630 B7: «×» chico al lado de cada lugar y personaje (fuera de la opción, para no elegirla sin querer). */
   // Spec-660 B2: el tacho borra de toda la historia (la casilla o el radio cambian solo este acto).
   const borrar = 'text-forge-muted hover:text-forge-error p-0.5';
+  /* Spec-710 D13: con lugar por hecho, un selector al lado de cada hecho y «Dónde pasa» como
+     resumen; las escaletas viejas (sin `event_places`) siguen con el radio. */
+  const porHecho = (a.event_places || []).length > 0;
+  const lugarDe = (i) => { for (let j = i; j >= 0; j--) if ((a.event_places[j] || '').trim()) return a.event_places[j].trim(); return a.scenario || ''; };
+  const lugaresDelActo = porHecho ? [...new Set(a.events.map((_, i) => lugarDe(i)).filter(Boolean))] : [];
+  const opcionesLugar = [...new Set([...state.scenarios.map(e => e.name), ...(a.event_places || []).filter(Boolean)])];
 %>
         <%/* data-acto: la tarjeta que se reemplaza al actualizar; tabindex: recibe el foco si el control tocado desaparece. */%>
         <li class="grid grid-cols-[3rem_1fr] gap-4 focus:outline-none" data-acto="<%= a.number %>" tabindex="-1">
@@ -31,7 +37,7 @@
             <span class="flex-1 w-px bg-forge-border mt-2"></span>
           </div>
 
-          <form class="bg-forge-surface border border-forge-border" data-autosave="act" data-number="<%= a.number %>" onsubmit="return false" novalidate>
+          <form class="bg-forge-surface border border-forge-border" data-autosave="act" data-number="<%= a.number %>" <%= porHecho ? 'data-por-hecho' : '' %> onsubmit="return false" novalidate>
             <header class="flex flex-wrap items-baseline justify-between gap-2 px-6 pt-5 pb-3 border-b border-forge-border">
               <h3 class="font-serif text-2xl">Acto <%= a.number %> · <%= def.name %></h3>
               <span class="text-xs uppercase tracking-widest text-forge-muted">tensión <%= def.intensity %></span>
@@ -89,10 +95,23 @@
 
                 <p class="text-xs uppercase tracking-widest text-forge-muted mb-2">Qué pasa</p>
                 <ol class="space-y-2 mb-3" data-lista="events">
-                  <% a.events.forEach(h => { %>
+                  <% a.events.forEach((h, i) => { %>
                     <li class="group flex items-start gap-2" data-item>
                       <button type="button" class="mt-2 text-forge-muted hover:text-forge-accent" data-subir title="Subir"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
-                      <textarea name="events" rows="1" maxlength="400" class="flex-1 [field-sizing:content] resize-none <%= field %>"><%= h %></textarea>
+                      <div class="flex-1 min-w-0">
+                        <textarea name="events" rows="1" maxlength="400" class="w-full [field-sizing:content] resize-none <%= field %>"><%= h %></textarea>
+                        <% if (porHecho) { const elegido = (a.event_places[i] || '').trim(); %>
+                          <%/* Spec-710 D13: debajo del hecho, para que el texto conserve todo el ancho. */%>
+                          <label class="mt-1 flex items-center gap-1 text-xs text-forge-muted" data-lugar-de-hecho>
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                            <select name="event_places" aria-label="Dónde pasa este hecho" class="bg-transparent border-0 border-b border-forge-border py-0.5 pr-6 text-xs text-forge-text focus:outline-none focus:border-forge-accent" data-lugar-hecho data-antes="<%= elegido %>">
+                              <option value="" <%= elegido ? '' : 'selected' %>><%= i === 0 ? (a.scenario ? a.scenario : 'Sin lugar') : 'Donde el anterior' %></option>
+                              <% opcionesLugar.forEach(n => { %><option value="<%= n %>" <%= n === elegido ? 'selected' : '' %>><%= n %></option><% }) %>
+                              <option value="__nuevo__">+ Lugar nuevo…</option>
+                            </select>
+                          </label>
+                        <% } %>
+                      </div>
                       <button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>
                     </li>
                   <% }) %>
@@ -118,14 +137,22 @@
               <aside class="space-y-5 text-sm lg:border-l lg:border-forge-border lg:pl-10">
                 <fieldset>
                   <legend class="text-xs uppercase tracking-widest text-forge-muted mb-2">Dónde pasa</legend>
+                  <% if (porHecho) { %>
+                    <p class="mb-2" data-lugares-del-acto><%= lugaresDelActo.length ? lugaresDelActo.join(' · ') : 'Todavía sin lugar' %></p>
+                    <p class="pista-forge text-xs mb-2"><i data-lucide="lightbulb"></i>Cada hecho dice dónde pasa, debajo. Estos son los lugares de la historia:</p>
+                  <% } %>
                   <div class="flex flex-wrap gap-2">
                     <% state.scenarios.forEach(e => { %>
                       <span class="inline-flex items-center gap-0.5" data-lugar="<%= e.name %>">
+                        <% if (porHecho) { %>
+                          <span class="text-sm px-2 py-0.5 border border-forge-border rounded-full"><%= e.name %></span>
+                        <% } else { %>
                         <label class="opcion-forge opcion-forge--compacta">
                           <input type="radio" name="scenario" value="<%= e.name %>" class="peer sr-only" <%= e.name === a.scenario ? 'checked' : '' %>>
                           <span class="opcion-forge__caja"><%= e.name %></span>
                         </label>
-                        <button type="button" class="<%= borrar %>" data-borrar-lugar="<%= e.name %>" data-usos="<%= e.acts.join(',') %>"
+                        <% } %>
+                        <button type="button" class="<%= borrar %>" data-borrar-lugar="<%= e.name %>" data-usos="<%= e.acts.join(',') %>" data-hechos="<%= e.hechos || 0 %>"
                                 title="Borrar de la historia" aria-label="Borrar el lugar «<%= e.name %>» de la historia"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                       </span>
                     <% }) %>

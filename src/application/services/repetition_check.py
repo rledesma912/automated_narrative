@@ -338,7 +338,7 @@ def known_text(story) -> str:
     parts += [s.name + " " + s.description for s in story.scenarios]
     parts += [e.name + " " + e.description + " " + e.manifestations for e in story.entities]
     for act in story.outline:
-        parts += [act.goal, act.scenario, *act.events, *act.on_stage]
+        parts += [act.goal, *act.places(), *act.events, *act.on_stage]
     from src.application.services.authoring.context import author_ending  # importa este
 
     if story.direction:

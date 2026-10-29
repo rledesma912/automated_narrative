@@ -172,3 +172,40 @@ async def test_un_archivo_invalido_no_frena_a_los_demas(tmp_path):
     assert [s.title for s in await SQLStoryRepository().list_all()] == [
         "Historia body_horror/contagio"
     ]
+
+
+# ── Spec-710: el lugar de cada hecho viaja en el YAML ───────────────────────
+
+
+async def test_round_trip_conserva_el_lugar_de_cada_hecho(monkeypatch, tmp_path):
+    from src.domain.models import ActOutline
+
+    _use_db(monkeypatch, tmp_path / "old.db")
+    await init_db()
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        sid = (await client.post("/api/v1/stories?action=save", json=_PAYLOAD)).json()["id"]
+    act = ActOutline(number=1, events=["a", "b"], event_places=["La tienda", ""], goal="x")
+    await SQLStoryRepository().save_outline(sid, [act])
+
+    await commands._export_all_yaml_async(tmp_path / "yaml")
+    _use_db(monkeypatch, tmp_path / "new.db")
+    files = sorted((tmp_path / "yaml").glob("*.yaml"))
+    assert await commands._import_yaml_async(files, drop_invalid_subgenre=False) == 0
+
+    repo = SQLStoryRepository()
+    (summary,) = await repo.list_all()
+    outline = (await repo.get_by_id(summary.id)).outline
+    assert outline[0].event_places == ["La tienda", ""]
+
+
+@pytest.mark.usefixtures("empty_db")
+async def test_un_yaml_viejo_con_needs_review_entra_igual():
+    """Spec-710 D12: `needs_review` ya no existe; los YAML que lo traen se importan igual."""
+    viejo = Path("scripts/research/640/el_engano_del_diablo.yaml")
+    assert "needs_review" in viejo.read_text(encoding="utf-8")
+    assert await commands._import_yaml_async([viejo], drop_invalid_subgenre=False) == 0
+    (summary,) = await SQLStoryRepository().list_all()
+    story = await SQLStoryRepository().get_by_id(summary.id)
+    assert story.outline and all(a.event_places == [] for a in story.outline)

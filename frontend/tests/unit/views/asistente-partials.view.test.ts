@@ -217,6 +217,40 @@ describe("acto: personaje que sumó la IA", () => {
   });
 });
 
+// Spec-710 D13: el lugar de cada hecho en la tarjeta del acto.
+describe("acto: lugar por hecho", () => {
+  const render = (act2: Record<string, unknown>, scenarios = [{ name: "La tienda", acts: [2], hechos: 2 }, { name: "La calle", acts: [2], hechos: 1 }]) => {
+    const acts = state.outline.acts.map((a: { number: number }) => (a.number === 2 ? { ...a, ...act2 } : a));
+    return ejs.renderFile(path.join(VIEWS, "asistente", "escaleta.ejs"), {
+      ...locals,
+      state: { ...state, scenarios, outline: { ...state.outline, acts } },
+      pasoActual: "escaleta",
+    });
+  };
+  const tarjeta = (html: string) => html.match(/<form[^>]*data-number="2"[\s\S]*?<\/form>/)![0];
+
+  it("cada hecho trae su selector; «Dónde pasa» es un resumen sin radios", async () => {
+    const t = tarjeta(await render({ events: ["Abre", "Cuenta", "Sale"], event_places: ["La tienda", "", "La calle"], scenario: "La tienda" }));
+    expect(t).toContain("data-por-hecho");
+    const selects = t.match(/<select name="event_places"[\s\S]*?<\/select>/g)!;
+    expect(selects).toHaveLength(3);
+    expect(selects[0]).toMatch(/<option value="La tienda" selected>La tienda<\/option>/);
+    expect(selects[1]).toMatch(/<option value="" selected>Donde el anterior<\/option>/);
+    expect(selects[2]).toMatch(/<option value="La calle" selected>/);
+    expect(selects[0]).toContain('<option value="__nuevo__">+ Lugar nuevo…</option>');
+    expect(t).toMatch(/data-lugares-del-acto>La tienda · La calle</);
+    expect(t).not.toContain('name="scenario"');
+    expect(t).toMatch(/data-borrar-lugar="La tienda" data-usos="2" data-hechos="2"/);
+  });
+
+  it("una escaleta vieja sigue con el radio y sin selectores", async () => {
+    const t = tarjeta(await render({ events: ["Abre"], event_places: [], scenario: "La tienda" }));
+    expect(t).not.toContain("data-por-hecho");
+    expect(t).not.toContain('name="event_places"');
+    expect(t).toMatch(/<input type="radio" name="scenario" value="La tienda"[^>]*checked/);
+  });
+});
+
 // Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
 describe("taller: ya no coincide", () => {
   it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {
