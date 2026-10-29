@@ -201,6 +201,8 @@ def _apply(item: WorkshopItem, body: WorkshopAction) -> WorkshopItem:
         return workshop_rules.decide_for_me(item)
     if body.action == "intentional":
         return workshop_rules.mark_intentional(item, body.text)
+    if body.action == "keep":  # Spec-700 D18: «Está bien así»
+        return workshop_rules.keep(item)
     # reopen: vuelve a evaluarse en la próxima ronda (Spec-670 D12: si «no iba», con marca).
     return workshop_rules.reopen(item)
 
@@ -634,6 +636,8 @@ async def _state(story: Story) -> dict:
                     "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
                     # Spec-690: el final que la IA sacó de «¿De qué trata?».
                     "de_la_idea": workshop_rules.DE_LA_IDEA in w.asked,
+                    # Spec-700 D18: por qué ya no coincide con la idea nueva («» si coincide).
+                    "no_coincide": workshop_rules.no_coincide(w),
                 }
                 for w, c in (
                     (by_id[c.id], c.for_story(context.protagonist(story)))

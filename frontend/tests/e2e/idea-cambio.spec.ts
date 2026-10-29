@@ -66,3 +66,23 @@ test("«Preguntas»: la nota ofrece que la IA la vuelva a leer", async ({ page }
   await nota.getByRole("button", { name: "Dejarlo así" }).click();
   await expect(nota).toHaveCount(0);
 });
+
+// Spec-700 A3: con la idea cambiada, la IA marca la respuesta que ya no va (el mock marca la primera).
+test("«Preguntas»: volver a leer marca lo que ya no va y «Está bien así» lo desmarca", async ({ page, request }) => {
+  const state = await (await request.get(`${API}/authoring/stories/${sid}`)).json();
+  const abierta = state.workshop.items.find((i: { answer: string; question: string }) => !i.answer && i.question);
+  await request.patch(`${API}/authoring/stories/${sid}/workshop/${abierta.criterion}`, {
+    data: { action: "answer", text: "Lo que respondí antes." },
+  });
+  await request.put(`${API}/authoring/stories/${sid}/direction`, {
+    data: { ...state.direction, premise: `${state.direction.premise} Y nunca vuelve.` },
+  });
+
+  await page.goto(`/asistente/${sid}/taller`);
+  await page.locator('[data-idea-cambio="preguntas"]').getByRole("button", { name: "Que la IA la vuelva a leer" }).click();
+  const marcada = page.locator("[data-no-coincide]");
+  await expect(marcada).toHaveCount(1, { timeout: 20_000 });
+  await expect(marcada).toContainText("Esto ya no va con tu idea nueva:");
+  await marcada.getByRole("button", { name: "Está bien así" }).click();
+  await expect(page.locator("[data-no-coincide]")).toHaveCount(0);
+});

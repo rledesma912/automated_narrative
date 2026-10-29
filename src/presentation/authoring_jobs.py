@@ -8,7 +8,13 @@ resultado antes de publicar `done`.
 
 from uuid import UUID
 
-from src.application.services.authoring import context, elenco, final_de_la_idea, form_suggester
+from src.application.services.authoring import (
+    context,
+    elenco,
+    final_de_la_idea,
+    form_suggester,
+    revisor,
+)
 from src.application.services.authoring.consultant import WorkshopConsultant
 from src.application.services.authoring.planner import OutlinePlanner
 from src.application.services.authoring.verifier import OutlineVerifier
@@ -66,6 +72,12 @@ def consult_runner(story_id: UUID) -> JobRunner:
             yield stage_event(JobStage.CONSULTOR, None, None)
             llm = LLMFactory.get_provider()
             story = await _with_ending(await _load(story_id), llm)  # Spec-690
+            if context.idea_cambio(story)["preguntas"]:
+                # Spec-700 A3: la idea cambió; antes de preguntar, qué respuestas ya no van.
+                marked = await revisor.RevisorDeRespuestas(llm).revisar(story)
+                if marked:
+                    await SQLStoryRepository().save_workshop_items(story_id, marked)
+                    story = revisor.apply(story, marked)
             result = await WorkshopConsultant(llm).analyze(story)
             await SQLStoryRepository().save_workshop_items(story_id, result.items)
             await _idea_leida(story, "preguntas")  # Spec-700 D12

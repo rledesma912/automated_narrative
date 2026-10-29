@@ -297,3 +297,18 @@ Tests: `make test`, `make lint`, `cd frontend && npm test`, `npx playwright test
 - «Preguntas»: nota con «Que la IA la vuelva a leer» y «Dejarlo así». «Preguntame lo que falta» se ve con la idea cambiada aunque todo esté respondido (también al actualizar sin recargar).
 - «Los actos»: nota con «Armar los actos de nuevo», que siempre pide confirmar y avisa que reemplaza lo editado, y «Dejarlo así».
 - 1 079 pytest, 425 Vitest, 84 E2E (Firefox), lint en verde. Fixtures del asistente sin cambios.
+
+### S3 — La IA revisa lo respondido (2026-10-28)
+
+- `revisor.py`:
+  - `a_revisar` (D19): las respuestas `cumple` del molde y el final decidido que no salió de la idea.
+  - `RevisorDeRespuestas.revisar`, rol `consultor`, con el esquema `{criterio, coincide, motivo}` limitado a esos criterios. Marca `·no_coincide:<motivo>` y desmarca lo que ahora coincide. Sin motivo no marca. Sin respuestas no llama a la IA.
+  - Prompt en `authoring_revisor{,_system}.md`, que reusa los fragmentos `asistente/decisiones/*`.
+- `workshop_rules`: `NO_COINCIDE`, `no_coincide`, `mark_no_coincide` y `keep`. Responder, «Es así a propósito», «Que la IA lo vuelva a preguntar» y «Está bien así» quitan la marca.
+- `consult`: con la idea cambiada, el revisor corre antes del Consultor. En el caso de Vale (todo respondido) hay **una sola** llamada: el Consultor no tiene nada que evaluar.
+- La acción `keep` del taller y `no_coincide` por ítem en `_state`. «Ya lo tenés» muestra la nota «Esto ya no va con tu idea nueva: …» con «Está bien así»; «Cambiar» sigue al lado.
+- Snapshot del asistente: suma solo `revisor`. La historia del snapshot ahora trae la marca en `meta` y los demás prompts quedaron **idénticos**: la marca no se filtra.
+- El mock lee los valores de un `Literal` también como `const`. Con un solo criterio Pydantic no escribe `enum`, y el mock devolvía una lista vacía (lo mostró el E2E).
+- **Desvío de T3.5:** no se sumaron 10 s a `estimated_seconds.consult`. El revisor corre solo con la idea cambiada; subir la estimación de todas las rondas la empeora en el caso común, y la mediana de los jobs reales se ajusta sola (Spec-510).
+- Dev, «Prueba 700» con gemma: la idea nueva termina con «Rosa deja el trabajo y nunca más cuida casas». «Qué hace Rosa después» («Se queda en la casa y la sigue cuidando todo el año…») quedó marcada con «Ahora Rosa se asusta y deja el trabajo.». «Qué quiere Rosa» (juntar plata para estudiar) no se marcó. El job tardó 117 s, con el final sacado de la idea nueva.
+- 1 085 pytest, 426 Vitest, 85 E2E (Firefox), lint en verde.

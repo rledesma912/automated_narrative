@@ -17,6 +17,7 @@ from pathlib import Path
 from src.application.services.authoring.consultant import WorkshopConsultant
 from src.application.services.authoring.final_de_la_idea import FinalDeLaIdea
 from src.application.services.authoring.planner import OutlinePlanner
+from src.application.services.authoring.revisor import RevisorDeRespuestas, a_revisar
 from src.application.services.authoring.verifier import OutlineVerifier
 from src.domain.models import (
     ActOutline,
@@ -79,7 +80,9 @@ def _story() -> Story:
             WorkshopItem(
                 criterion="meta",
                 status=CriterionStatus.CUMPLE,
-                asked=["¿Qué quiere José esa noche?"],
+                # Spec-700 D18: la marca de «ya no coincide» no llega a ningún prompt
+                # (los snapshots de antes no cambian con ella).
+                asked=["¿Qué quiere José esa noche?", "·no_coincide:Ahora tu idea dice otra cosa."],
                 answer="Terminar el recorrido y volver a su casa.",
             ),
             WorkshopItem(
@@ -121,6 +124,10 @@ def _prompts() -> dict[str, str]:
         "final_de_la_idea": FinalDeLaIdea(llm=None).templates.load("authoring_final_system.md")
         + "\n\n"
         + FinalDeLaIdea(llm=None).prompt(story),
+        # Spec-700 A3: con la idea cambiada, qué respuestas ya no coinciden (system + prompt).
+        "revisor": RevisorDeRespuestas(llm=None).templates.load("authoring_revisor_system.md")
+        + "\n\n"
+        + RevisorDeRespuestas(llm=None).prompt(story, a_revisar(story)),
     }
 
 
@@ -137,6 +144,9 @@ def test_el_snapshot_cubre_todas_las_secciones():
     for section in (
         "Estamos ayudando",
         "solo la PRIMERA oración del final",  # Spec-690
+        "LA IDEA NUEVA:\nJosé ve por el espejo",  # Spec-700
+        "- [meta] Qué quiere José. Pregunta: «¿Qué quiere José esa noche?» → Respuesta: Terminar",
+        "- [historia_secreta] ",
         "LA IDEA:\nJosé ve por el espejo",
         "Tipo de horror: sobrenatural / fantasmas",
         "Cómo termina: Descansa en paz. (DECIDIDO POR EL AUTOR",

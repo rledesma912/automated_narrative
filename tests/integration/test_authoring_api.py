@@ -892,3 +892,61 @@ async def test_sin_actos_no_avisa_en_los_actos(client):
     otra = {**FORM, "premise": "Otra idea completamente distinta."}
     state = (await client.put(f"{API}/stories/{sid}/direction", json=otra)).json()
     assert state["idea_cambio"] == {"preguntas": True, "actos": False}
+
+
+# ── Spec-700 A3: la IA revisa lo respondido ─────────────────────────────────
+
+
+class _Contando(MockLLMAdapter):
+    """El mock de siempre, anotando qué esquema pidió cada llamada."""
+
+    pedidos: list[str] = []
+
+    async def generate(self, prompt, **kwargs):
+        schema = kwargs.get("response_schema") or {}
+        _Contando.pedidos.append(",".join(sorted(schema.get("properties", {}))))
+        return await super().generate(prompt, **kwargs)
+
+
+def _items(state) -> dict[str, dict]:
+    return {i["criterion"]: i for i in state["workshop"]["items"]}
+
+
+async def test_con_la_idea_cambiada_marca_lo_que_ya_no_coincide(client, monkeypatch):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    for item in _items((await client.get(f"{API}/stories/{sid}")).json()).values():
+        if not item["answer"]:  # todo respondido: el caso de Vale
+            await client.patch(
+                f"{API}/stories/{sid}/workshop/{item['criterion']}",
+                json={"action": "answer", "text": "Lo que respondí."},
+            )
+    otra = {**FORM, "premise": FORM["premise"] + " Al final, José deja de manejar."}
+    await client.put(f"{API}/stories/{sid}/direction", json=otra)
+
+    _Contando.pedidos = []
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
+    state = await _run_job(client, sid, "consult")
+
+    # Una sola llamada: el revisor. El Consultor no tenía nada que evaluar.
+    assert _Contando.pedidos == ["revisiones"]
+    marcadas = {c: i for c, i in _items(state).items() if i["no_coincide"]}
+    assert len(marcadas) == 1  # el mock marca la primera
+    ((criterio, item),) = marcadas.items()
+    assert item["no_coincide"] == "Ahora tu idea dice otra cosa." and item["answer"]
+    assert state["idea_cambio"]["preguntas"] is False
+
+    state = (
+        await client.patch(f"{API}/stories/{sid}/workshop/{criterio}", json={"action": "keep"})
+    ).json()
+    assert _items(state)[criterio]["no_coincide"] == "" and _items(state)[criterio]["answer"]
+
+
+async def test_sin_cambiar_la_idea_no_se_revisa(client, monkeypatch):
+    sid = (await _create(client))["story_id"]
+    await _run_job(client, sid, "consult")
+    _Contando.pedidos = []
+    monkeypatch.setattr(LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: _Contando()))
+    state = await _run_job(client, sid, "consult")
+    assert "revisiones" not in _Contando.pedidos
+    assert not any(i["no_coincide"] for i in _items(state).values())

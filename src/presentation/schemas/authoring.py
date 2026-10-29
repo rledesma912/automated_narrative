@@ -53,7 +53,7 @@ class StructureForm(BaseModel):
 class WorkshopAction(BaseModel):
     """Lo que hace el autor con un criterio del taller."""
 
-    action: Literal["answer", "decide", "intentional", "reopen"]
+    action: Literal["answer", "decide", "intentional", "reopen", "keep"]  # keep: Spec-700 D18
     text: str = Field("", max_length=2000)  # Spec-690: un final sacado de la idea es largo
 
 

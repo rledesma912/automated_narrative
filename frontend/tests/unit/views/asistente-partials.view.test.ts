@@ -113,3 +113,25 @@ describe("la idea cambió", () => {
     expect(sinDato).not.toContain("data-idea-cambio");
   });
 });
+
+// Spec-700 A3: una respuesta que ya no va con la idea nueva se marca, no se pisa.
+describe("taller: ya no coincide", () => {
+  it("la respuesta sigue, con la nota del motivo y «Está bien así»", async () => {
+    const items = state.workshop.items.map((i: { status: string; answer: string }, n: number) =>
+      n === state.workshop.items.findIndex((x: { status: string; answer: string }) => x.status === "cumple" && x.answer)
+        ? { ...i, no_coincide: "Ahora tu idea dice que se queda." }
+        : i,
+    );
+    const html = await ejs.renderFile(path.join(VIEWS, "asistente", "taller.ejs"), {
+      ...locals,
+      state: { ...state, workshop: { ...state.workshop, items } },
+      pasoActual: "taller",
+    });
+    const nota = html.match(/<div[^>]*data-no-coincide[^>]*>[\s\S]*?<\/div>/g)!;
+    expect(nota).toHaveLength(1);
+    expect(nota[0]).toContain("Esto ya no va con tu idea nueva: Ahora tu idea dice que se queda.");
+    expect(nota[0]).toMatch(/data-taller="keep">Está bien así</);
+    const li = html.match(/<li[^>]*data-pregunta="[^"]*"[^>]*>(?:(?!<\/li>)[\s\S])*data-no-coincide[\s\S]*?<\/li>/)![0];
+    expect(li).toContain("data-cambiar");
+  });
+});

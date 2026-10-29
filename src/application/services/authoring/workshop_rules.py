@@ -24,6 +24,9 @@ NO_APLICA_RECHAZADO = "·no_aplica_rechazado"
 # pregunten (D13: ya no se saca de la idea ni del «¿Cómo termina?» viejo).
 DE_LA_IDEA = "·de_la_idea"
 FINAL_PREGUNTAR = "·final_preguntar"
+# Spec-700 D18: la respuesta ya no coincide con la idea nueva; el motivo viaja en la marca
+# («·no_coincide:Ahora tu idea dice…»). La respuesta no se toca.
+NO_COINCIDE = "·no_coincide:"
 MAL_ELEGIDA = 2  # D8: desde cuántos criterios de la forma que no van se avisa
 
 
@@ -94,10 +97,29 @@ def no_aplica_rejected(item: WorkshopItem) -> bool:
     return NO_APLICA_RECHAZADO in item.asked
 
 
+def no_coincide(item: WorkshopItem) -> str:
+    """D18: por qué la respuesta ya no coincide con la idea («» si coincide)."""
+    return next((a[len(NO_COINCIDE) :] for a in item.asked if a.startswith(NO_COINCIDE)), "")
+
+
+def mark_no_coincide(item: WorkshopItem, motivo: str) -> WorkshopItem:
+    asked = [*_sin_no_coincide(item.asked), NO_COINCIDE + " ".join(motivo.split())]
+    return item.model_copy(update={"asked": asked})
+
+
+def keep(item: WorkshopItem) -> WorkshopItem:
+    """«Está bien así»: la respuesta sigue como está y ya no se marca."""
+    return item.model_copy(update={"asked": _sin_no_coincide(item.asked)})
+
+
+def _sin_no_coincide(asked: list[str]) -> list[str]:
+    return [a for a in asked if not a.startswith(NO_COINCIDE)]
+
+
 def reopen(item: WorkshopItem) -> WorkshopItem:
     """Vuelve a evaluarse en la próxima ronda. Si era «No va en tu historia», queda la
     marca para que la IA no lo vuelva a descartar (D12)."""
-    asked = [a for a in item.asked if a != DE_LA_IDEA]
+    asked = [a for a in _sin_no_coincide(item.asked) if a != DE_LA_IDEA]
     if item.status == CriterionStatus.NO_APLICA and NO_APLICA_RECHAZADO not in asked:
         asked.append(NO_APLICA_RECHAZADO)
     if item.criterion == "final" and FINAL_PREGUNTAR not in asked:
@@ -264,8 +286,8 @@ def mark_intentional(item: WorkshopItem, text: str = "") -> WorkshopItem:
 
 def _with_question(item: WorkshopItem) -> list[str]:
     """`asked` con la pregunta actual. Spec-690: si la autora lo toca, deja de ser «sacado
-    de la idea» (es suyo y no se vuelve a sacar)."""
-    asked = [a for a in item.asked if a != DE_LA_IDEA]
+    de la idea» (es suyo y no se vuelve a sacar). Spec-700 D18: ni «ya no coincide»."""
+    asked = [a for a in _sin_no_coincide(item.asked) if a != DE_LA_IDEA]
     if item.question and item.question not in asked:
         return [*asked, item.question]
     return asked

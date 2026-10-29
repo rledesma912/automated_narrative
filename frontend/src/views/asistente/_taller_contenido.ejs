@@ -147,6 +147,14 @@
                 <p class="flex flex-wrap items-center gap-2 mb-1"><span class="text-xs uppercase tracking-widest text-forge-muted"><%= p.nombre %></span><span class="<%= s.chip %>"><%= s.label %></span></p>
                 <p><%= p.status === 'no_aplica' ? `La IA no te lo pregunta: ${p.question}` : p.answer || (p.status === 'cumple' ? 'Ya está en tu historia.' : p.status === 'intencional' ? 'Lo dejaste así a propósito: la IA no lo va a preguntar.' : 'Sin pregunta por ahora.') %></p>
                 <p class="pista-forge mt-2"><i data-lucide="lightbulb"></i><%= p.de_la_idea ? 'Lo sacamos de tu idea. Si no es así, tocá «Cambiar» y dejalo como querés.' : p.por_que %></p>
+                <% if (p.no_coincide) { %>
+                  <%/* Spec-700 A3: la IA marca, no pisa. «Cambiar» la reescribe; «Está bien así» la deja. */%>
+                  <div class="nota-forge nota-forge--warning mt-3" data-no-coincide>
+                    <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
+                    <p class="flex-1">Esto ya no va con tu idea nueva: <%= p.no_coincide %></p>
+                    <button type="button" class="nota-forge__accion" data-taller="keep">Está bien así</button>
+                  </div>
+                <% } %>
               </div>
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
             </div>
