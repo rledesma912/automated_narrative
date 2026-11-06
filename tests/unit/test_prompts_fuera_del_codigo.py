@@ -106,6 +106,18 @@ PERMITIDOS: dict[tuple[str, str], str] = {
         "respuesta truncada (max_tokens={…})",
     ): "motivo técnico de LLMResponseError",
     (
+        "src/infrastructure/adapters/freellmapi_adapter.py",
+        "respuesta truncada (max_tokens={…})",
+    ): "motivo técnico de LLMResponseError",
+    (
+        "src/infrastructure/adapters/freellmapi_adapter.py",
+        "respuesta sin el formato esperado",
+    ): "motivo técnico de LLMResponseError",
+    (
+        "src/infrastructure/adapters/freellmapi_adapter.py",
+        "FREELLMAPI_API_KEY no configurada. Agrégala al .env o export",
+    ): "error de configuración al arrancar (para quien administra)",
+    (
         "src/infrastructure/adapters/gemini_cli_adapter.py",
         "Comando no encontrado: {…}",
     ): "error técnico del adapter (proveedor no usado)",

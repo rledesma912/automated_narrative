@@ -203,6 +203,51 @@ profiles:
         thinking: adaptive
         effort: low
 
+  # Spec-740: todo en FreeLLMAPI, el gateway local de capas gratuitas. Los modelos los eligen
+  # dos cadenas del gateway: `narrativa` (la Voz) y `estructura` (lo que devuelve JSON; sin
+  # `gpt-oss-120b`, que no cumplió el esquema del Planificador). Sin respaldo (D3). El
+  # `num_predict` cuenta contra la cuota por minuto: pedir de más hace saltar de modelo.
+  freellmapi-libre:
+    provider: freellmapi
+    freellmapi: { max_espera_s: 120 }
+    # Sin `reasoning_effort`: es un valor por pedido y cada modelo reacciona distinto (a
+    # `qwen3.8-27b` lo hace pasarse del tope; Spec-740 §8).
+    # Spec-510: sin medir; manda el historial.
+    estimated_seconds: { full_generation: 120, regenerate_voz: 15, consult: 20, suggest_form: 10, plan_outline: 30, verify_outline: 20, video_script: 60 }
+    roles:
+      director:
+        model: auto:estructura
+        temperature: 0.4
+        num_predict: 2000
+      voz:
+        model: auto:narrativa
+        temperature: 0.7
+        num_predict: 2000
+      journal:
+        model: auto:estructura
+        temperature: 0.3
+        num_predict: 1000
+      consultor:
+        model: auto:estructura
+        temperature: 0.3
+        num_predict: 3000
+      planificador:
+        model: auto:estructura
+        temperature: 0.4
+        num_predict: 4000
+      verificador:
+        model: auto:estructura
+        temperature: 0.2
+        num_predict: 2000
+      guion:
+        model: auto:estructura
+        temperature: 0.4
+        num_predict: 6000
+      revisor:
+        model: auto:estructura
+        temperature: 0.2
+        num_predict: 3000
+
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
 
 response_filters:

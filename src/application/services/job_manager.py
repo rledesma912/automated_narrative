@@ -27,6 +27,7 @@ from src.application.services.event_bus import GLOBAL_CHANNEL, EventBus, job_cha
 from src.application.services.job_duration_estimator import JobDurationEstimator
 from src.application.services.structure import DEFAULT_STRUCTURE
 from src.config import settings
+from src.domain import llm_context
 from src.domain.jobs import (
     Job,
     JobKind,
@@ -194,6 +195,7 @@ class JobManager:
 
     async def _run(self, job: Job, story: Story, run: JobRunner, regenerate: bool) -> None:
         channel = job_channel(job.id)
+        llm_context.enter_job(job.id, story.id)  # Spec-740
         status, error, narrative_id = JobStatus.FAILED, message("job.sin_resultado"), None
         try:
             job.started_at = await self._jobs.mark_running(job.id)

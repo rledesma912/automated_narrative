@@ -33,6 +33,7 @@ class LLMResponse:
         elapsed_s: float = 0.0,
         input_tokens: int | None = None,
         output_tokens: int | None = None,
+        model: str | None = None,
     ):
         self.text = text
         self.context = context
@@ -41,6 +42,8 @@ class LLMResponse:
         # Spec-480: uso informado por proveedores pagos (para medir costo). None = no informado.
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
+        # Spec-740: el modelo que respondió de verdad, si el proveedor lo informa.
+        self.model = model
 
 
 @runtime_checkable

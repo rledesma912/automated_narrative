@@ -113,6 +113,10 @@ class Settings(BaseSettings):
 
     # Secretos (siguen en .env)
     anthropic_api_key: str = ""
+    freellmapi_api_key: str = ""
+
+    # Spec-740: el gateway de capas gratuitas (por nginx, en dev y en prod).
+    freellmapi_url: str = "http://freellmapi.test"
 
     # Database
     database_url: str = "sqlite+aiosqlite:///data/dev/stories.db"

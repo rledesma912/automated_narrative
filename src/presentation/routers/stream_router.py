@@ -4,6 +4,7 @@ import logging
 from uuid import UUID
 
 import aiosqlite
+import httpx
 from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
@@ -79,6 +80,21 @@ async def stream_generation(story_id: str, last_event_id: str | None = Header(No
 # ── Hito 4a: /health mejorado ─────────────────────────────────────────────────
 
 
+async def _freellmapi_check() -> str:
+    """Spec-740 A6: el gateway y la clave, con un pedido que no gasta cuota."""
+    if not settings.freellmapi_api_key:
+        return "missing key"
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(
+                f"{settings.freellmapi_url}/v1/models",
+                headers={"Authorization": f"Bearer {settings.freellmapi_api_key}"},
+            )
+    except httpx.HTTPError as exc:
+        return f"error: {type(exc).__name__}"
+    return "ok" if r.status_code == 200 else f"http {r.status_code}"
+
+
 @router.get("/health")
 async def health_check():
     """Verifica conectividad con SQLite y el proveedor LLM activo."""
@@ -105,8 +121,6 @@ async def health_check():
     checks["providers"] = providers
 
     if "ollama" in providers:
-        import httpx
-
         host = settings.ollama_host
         try:
             async with httpx.AsyncClient(timeout=3) as client:
@@ -119,12 +133,16 @@ async def health_check():
         # settings lee el .env: os.getenv no ve la clave si solo está ahí.
         checks["anthropic_key"] = "present" if settings.anthropic_api_key else "missing"
 
+    if "freellmapi" in providers:
+        checks["freellmapi"] = await _freellmapi_check()
+
     if "gemini" in providers:
         checks["gemini"] = "cli-based (no ping available)"
 
     provider_ok = {
         "ollama": checks.get("ollama") == "ok",
         "anthropic": checks.get("anthropic_key") == "present",
+        "freellmapi": checks.get("freellmapi") == "ok",
     }
     healthy = checks.get("sqlite") == "ok" and all(provider_ok.get(p, True) for p in providers)
 

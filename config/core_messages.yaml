@@ -128,6 +128,9 @@ llm:
   saturada: "La IA que escribe el relato está saturada. Probá de nuevo en unos minutos."
   sin_conexion: "No se pudo hablar con la IA que escribe el relato (sin conexión). Revisá internet y probá de nuevo."
   error: "La IA que escribe el relato respondió con un error. Probá de nuevo más tarde."
+  # Spec-740: el gateway de capas gratuitas se quedó sin modelos o sin cuota del mes.
+  sin_modelos: "La IA que escribe el relato no tiene modelos disponibles ahora. Avisá a quien administra el sitio."
+  sin_cuota_hoy: "Por hoy se terminó lo gratis de la IA que escribe el relato. Probá de nuevo mañana; lo que ya armaste queda guardado."
 
 stage:
   # Etapa de un trabajo en curso (Spec-460): banda de generación, sala y modal.

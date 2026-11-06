@@ -52,7 +52,12 @@ def hybrid(monkeypatch):
 
 def test_perfiles_el_local_activo_el_hibrido_y_uno_de_claude():
     assert CORE["active_profile"] == "ollama-gemma3-12b"
-    assert set(CORE["profiles"]) == {"ollama-gemma3-12b", HYBRID, "anthropic-sonnet55"}
+    assert set(CORE["profiles"]) == {
+        "ollama-gemma3-12b",
+        HYBRID,
+        "anthropic-sonnet55",
+        "freellmapi-libre",  # Spec-740
+    }
     claude = CORE["profiles"]["anthropic-sonnet55"]
     assert claude["provider"] == "anthropic"
     for role, cfg in claude["roles"].items():
