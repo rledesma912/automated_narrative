@@ -24,6 +24,16 @@ function mapBeatTitle(title) {
   return title;
 }
 
+// Spec-740 C2: «actos 1 a 3», «actos 4 y 5», «acto 2», «actos 1, 3 y 5».
+function actosTexto(actos) {
+  if (actos.length === 1) return `acto ${actos[0]}`;
+  const seguidos = actos.every((a, i) => i === 0 || a === actos[i - 1] + 1);
+  if (seguidos && actos.length > 2) return `actos ${actos[0]} a ${actos[actos.length - 1]}`;
+  return `actos ${actos.slice(0, -1).join(', ')} y ${actos[actos.length - 1]}`;
+}
+const ia = relato.ia && relato.ia.modelos && relato.ia.modelos.length ? relato.ia : null;
+const variosModelos = !!ia && ia.modelos.length > 1;
+
 function extractActNumber(title) {
   const match = title.match(/(\d+)/);
   return match ? match[1] : '';
@@ -58,6 +68,28 @@ function extractActNumber(title) {
       <span>Esta versión se escribió cuando la historia tenía otro largo: se puede leer, corregir y descargar, pero para regenerar un acto hay que escribir la historia de nuevo.</span>
     </p>
   <% } %>
+  <% if (ia) { %>
+    <%/* Spec-740 C2/C3: qué IA escribió esta versión (no se copia ni va al .md). */%>
+    <div class="mb-6 text-sm text-forge-muted" data-ia-relato>
+      <p>
+        <i data-lucide="sparkles" class="inline w-4 h-4 align-text-bottom"></i>
+        <% if (!variosModelos) { %>
+          Lo escribió <strong class="text-forge-text"><%= ia.modelos[0].nombre %></strong>.
+        <% } else { %>
+          Lo escribieron
+          <% ia.modelos.forEach((m, i) => { %><%= i === 0 ? '' : (i === ia.modelos.length - 1 ? ' y ' : ', ') %><strong class="text-forge-text"><%= m.nombre %></strong> (<%= actosTexto(m.actos) %>)<% }) %>.
+        <% } %>
+      </p>
+      <% if (ia.resto && ia.resto.length) { %>
+        <details class="mt-1" data-ia-detalle>
+          <summary class="cursor-pointer w-fit">Ver qué IA hizo cada cosa</summary>
+          <ul class="mt-1 ml-5 list-disc">
+            <% ia.resto.forEach((r) => { %><li><%= r.tarea %>: <%= r.nombre %></li><% }) %>
+          </ul>
+        </details>
+      <% } %>
+    </div>
+  <% } %>
   <div id="relato-content-<%= relato.id %>" class="text-forge-text">
     <% if (preamble) { %>
       <div class="prose-forge whitespace-pre-wrap" data-copy-part><%= preamble %></div>
@@ -65,7 +97,12 @@ function extractActNumber(title) {
     <% for (let i = 1; i < sections.length; i += 2) { %>
       <% const actNumber = extractActNumber(sections[i]); %>
       <div class="flex items-center justify-between gap-3 <%= i === 1 && !preamble ? 'mt-0' : 'mt-10' %> mb-4">
-        <h3 class="heading-forge-lg !text-2xl !text-forge-accent !mt-0 !mb-0" data-copy-part><%= mapBeatTitle(sections[i]) %></h3>
+        <div class="flex items-baseline gap-3 flex-wrap">
+          <h3 class="heading-forge-lg !text-2xl !text-forge-accent !mt-0 !mb-0" data-copy-part><%= mapBeatTitle(sections[i]) %></h3>
+          <% if (variosModelos && ia.por_acto[actNumber]) { %>
+            <span class="text-xs text-forge-muted" data-ia-acto="<%= actNumber %>"><%= ia.por_acto[actNumber] %></span>
+          <% } %>
+        </div>
         <% if (actNumber && !relato.otroLargo) { %>
           <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %>
             type="button"

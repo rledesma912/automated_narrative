@@ -399,6 +399,7 @@ T1.1 a T1.9 hechas; ver §8 y el commit.
 
 ### S6: Lo que ven las chicas
 
+- ✅ S6 hecha (2026-11-06): `config/modelos_ia.yaml` (nombres y tareas), `ia_del_relato.resumen` (por acto la última Voz; el resto, el último modelo de cada tarea del relato y del asistente), `GET /generated-narratives/{id}/ia`, la línea «Lo escribió…» con marca por acto si hay más de un modelo y «Ver qué IA hizo cada cosa» plegado; nada se copia ni va al `.md`. El arnés E2E escribe con `RegistroLLM`. Suites: 1217 pytest, 454 Vitest, 92 E2E (6 saltados, los de siempre).
 - **T6.1** `config/modelos_ia.yaml` y el servicio del resumen. **Hecho cuando:** los tests cubren uno, varios, sin dato, id desconocido y con prefijo o `:free`.
 - **T6.2** `GET /generated-narratives/{id}/ia`. **Hecho cuando:** los tests cubren con datos, viejo (vacío) e inexistente (404).
 - **T6.3** El front suma `ia` tolerando un error del Core, y `relato_panel.ejs` muestra la línea, la marca por acto y el plegado. **Hecho cuando:** pasan el Vitest y los guardianes de vistas.

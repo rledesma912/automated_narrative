@@ -275,3 +275,36 @@ async def test_init_db_crea_la_tabla_sobre_una_base_existente():
     finally:
         await conn.close()
     assert {"story_id", "job_id", "narrative_id", "profile", "role", "act", "via"} <= columnas
+
+
+# ── Spec-740 C1: GET /generated-narratives/{id}/ia ─────────────────────────
+
+
+async def test_la_api_dice_que_ia_escribio_el_relato(client):
+    story_id = (await client.post("/api/v1/stories?action=save", json=_WIZARD_PAYLOAD)).json()["id"]
+    job = await _job(client, story_id, {})
+    body = (await client.get(f"/api/v1/generated-narratives/{job['narrative_id']}/ia")).json()
+
+    actos = list(range(1, job["total_beats"] + 1))
+    assert body["modelos"] == [{"nombre": "IA de prueba", "actos": actos}]
+    assert set(body["por_acto"]) == {str(a) for a in actos}
+    assert {"tarea": "La memoria de cada acto", "nombre": "IA de prueba"} in body["resto"]
+
+
+async def test_un_relato_sin_registro_no_dice_nada(client):
+    from src.domain.models import GeneratedNarrative
+    from src.infrastructure.database.repositories import SQLGeneratedNarrativeRepository
+
+    story_id = (await client.post("/api/v1/stories?action=save", json=_WIZARD_PAYLOAD)).json()["id"]
+    viejo = await SQLGeneratedNarrativeRepository().save(
+        GeneratedNarrative(
+            story_template_id=uuid.UUID(story_id), title="Viejo", content="## Acto 1\n\nX."
+        )
+    )
+    body = (await client.get(f"/api/v1/generated-narratives/{viejo.id}/ia")).json()
+    assert body == {"modelos": [], "por_acto": {}, "resto": []}
+
+
+async def test_la_ia_de_un_relato_que_no_existe_es_404(client):
+    resp = await client.get(f"/api/v1/generated-narratives/{uuid.uuid4()}/ia")
+    assert resp.status_code == 404

@@ -65,7 +65,10 @@ class SlowMockLLM(MockLLMAdapter):
 revisor.con_ia = lambda: True
 
 
-LLMFactory.get_provider = staticmethod(lambda *_a, **_k: SlowMockLLM())
+from src.infrastructure.adapters.registro_llm import RegistroLLM  # noqa: E402
+
+# Spec-740 B: con el registro, como la factory real («Lo escribió …» en «El relato»).
+LLMFactory.get_provider = staticmethod(lambda *_a, **_k: RegistroLLM(SlowMockLLM()))
 
 if __name__ == "__main__":
     uvicorn.run("src.main:app", host="127.0.0.1", port=port, log_level="warning")

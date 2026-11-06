@@ -7,9 +7,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
 
-from src.application.services import narrative_acts, repetition_check
+from src.application.services import ia_del_relato, narrative_acts, repetition_check
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
-from src.infrastructure.database.repositories import SQLJobRepository, SQLStoryRepository
+from src.infrastructure.database.repositories import (
+    SQLJobRepository,
+    SQLLLMCallRepository,
+    SQLStoryRepository,
+)
 from src.messages import message
 from src.presentation.schemas.request import ActTextUpdateRequest
 from src.presentation.schemas.response import GeneratedNarrativeResponse
@@ -131,6 +135,29 @@ async def get_narrative_text(
         raise HTTPException(status_code=404, detail="Narrativa no encontrada")
 
     return JSONResponse(content={"text": narrative.content})
+
+
+@router.get("/generated-narratives/{narrative_id}/ia")
+async def get_narrative_ia(
+    narrative_id: str,
+    use_case: GenerateNarrativesUseCase = Depends(_narrative_use_case),
+):
+    """Spec-740 C1: qué IA escribió esta versión (por acto) y el resto del trabajo."""
+    try:
+        nid = UUID(narrative_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID de narrativa inválido")
+    narrative = await use_case.get_by_id(nid)
+    if not narrative:
+        raise HTTPException(status_code=404, detail="Narrativa no encontrada")
+    calls = SQLLLMCallRepository()
+    del_relato = await calls.for_narrative(nid)
+    de_la_historia = [
+        c
+        for c in await calls.for_story(narrative.story_template_id)
+        if c.narrative_id is None  # el asistente: preguntas, armar y revisar los actos
+    ]
+    return ia_del_relato.resumen(del_relato, de_la_historia)
 
 
 @router.get("/generated-narratives/{narrative_id}/repetition")
