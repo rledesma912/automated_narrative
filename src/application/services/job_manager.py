@@ -78,11 +78,13 @@ class JobManager:
         story_repo,
         channel_ttl: float = CHANNEL_TTL_SECONDS,
         estimator: JobDurationEstimator | None = None,
+        llm_calls=None,
     ) -> None:
         self._bus = bus
         self._jobs = job_repo
         self._estimator = estimator or JobDurationEstimator(job_repo)
         self._stories = story_repo
+        self._llm_calls = llm_calls  # Spec-740 B: las llamadas del job, con su relato
         self._channel_ttl = channel_ttl
         self._tasks: dict[UUID, asyncio.Task] = {}
         self._cancel_reasons: dict[UUID, str] = {}
@@ -269,6 +271,11 @@ class JobManager:
         except Exception:  # noqa: BLE001 — el evento global sale igual
             logger.exception("[JOB] No se pudo persistir el final del job %s", job.id)
             job.finished_at = now_argentina()
+        if parsed_narrative_id and self._llm_calls is not None:
+            try:
+                await self._llm_calls.link_narrative(job.id, parsed_narrative_id)
+            except Exception:  # noqa: BLE001 — B4: el registro nunca corta el cierre
+                logger.exception("[JOB] No se pudieron enlazar las llamadas del job %s", job.id)
         job.status, job.error, job.narrative_id = status, error, parsed_narrative_id
         self._publish_global(
             StreamEventType.JOB_DONE if status == JobStatus.DONE else StreamEventType.JOB_FAILED,

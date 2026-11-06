@@ -35,3 +35,25 @@ def set_act(act: int | None) -> None:
     context = _current.get()
     if context is not None:
         _current.set(replace(context, act=act))
+
+
+@dataclass(frozen=True)
+class LLMCall:
+    """Una llamada a la IA dentro de un job, con quién respondió de verdad (Spec-740 B2)."""
+
+    story_id: UUID
+    job_id: UUID
+    role: str | None
+    act: int | None
+    profile: str | None
+    provider: str | None
+    model: str | None
+    via: str | None = None
+    fallback_attempts: int = 0
+    fallback_trail: str | None = None
+    respaldo: bool = False
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    elapsed_s: float | None = None
+    narrative_id: UUID | None = None
+    created_at: str | None = None

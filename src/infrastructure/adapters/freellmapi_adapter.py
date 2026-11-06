@@ -232,8 +232,7 @@ class FreeLLMAPIAdapter:
         finish = choice.get("finish_reason")
         answered_by = body.get("model")
         usage = body.get("usage") or {}
-        # En WARNING: la API no muestra INFO y, hasta el registro (Spec-740 S2), este es el
-        # único rastro de quién respondió.
+        # Quién respondió queda en `llm_call` (Spec-740 S5); esta línea es para el log.
         logger.warning(
             "[FREELLMAPI] rol=%s pedido=%s via=%s finish=%s saltos=%s trail=%s esperó=%.0fs "
             "in=%s out=%s elapsed=%.1fs",
@@ -264,6 +263,10 @@ class FreeLLMAPIAdapter:
             input_tokens=usage.get("prompt_tokens"),
             output_tokens=usage.get("completion_tokens"),
             model=answered_by,
+            provider="freellmapi",
+            via=response.headers.get("X-Routed-Via"),
+            fallback_attempts=int(response.headers.get("X-Fallback-Attempts") or 0),
+            fallback_trail=response.headers.get("X-Fallback-Trail"),
         )
 
     async def close(self) -> None:

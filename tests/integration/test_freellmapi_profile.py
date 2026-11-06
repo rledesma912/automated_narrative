@@ -65,7 +65,7 @@ def test_el_perfil_carga_con_todos_sus_roles():
 
 @pytest.mark.usefixtures("perfil")
 def test_la_factory_devuelve_el_adapter():
-    assert isinstance(LLMFactory.get_provider(), FreeLLMAPIAdapter)
+    assert isinstance(LLMFactory.get_provider().inner, FreeLLMAPIAdapter)
 
 
 @pytest.mark.usefixtures("perfil")
@@ -74,7 +74,7 @@ def test_en_un_perfil_mixto_la_factory_rutea_por_rol(monkeypatch):
     profile["roles"]["journal"] = {"provider": "ollama", "model": "gemma3:12b"}
     monkeypatch.setattr(config, "_profile", profile)
 
-    llm = LLMFactory.get_provider()
+    llm = LLMFactory.get_provider().inner
 
     assert isinstance(llm, RoleRoutingAdapter)
     assert isinstance(llm.adapter_for("voz"), FreeLLMAPIAdapter)

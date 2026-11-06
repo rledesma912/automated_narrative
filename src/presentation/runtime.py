@@ -6,7 +6,13 @@ infraestructura. Un solo proceso uvicorn (Spec-460 ASSUMPTIONS §1).
 
 from src.application.services.event_bus import EventBus
 from src.application.services.job_manager import JobManager
-from src.infrastructure.database.repositories import SQLJobRepository, SQLStoryRepository
+from src.infrastructure.database.repositories import (
+    SQLJobRepository,
+    SQLLLMCallRepository,
+    SQLStoryRepository,
+)
 
 event_bus = EventBus()
-job_manager = JobManager(event_bus, SQLJobRepository(), SQLStoryRepository())
+job_manager = JobManager(
+    event_bus, SQLJobRepository(), SQLStoryRepository(), llm_calls=SQLLLMCallRepository()
+)

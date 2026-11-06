@@ -384,6 +384,7 @@ T1.1 a T1.9 hechas; ver §8 y el commit.
 
 ### S5: El registro
 
+- ✅ S5 hecha (2026-11-06): `LLMResponse` con `provider`, `via`, `fallback_*` y `respaldo`; tabla `llm_call` (con `profile`); `RegistroLLM` envuelve todo adapter en `LLMFactory.get_provider()` (los tests de tipo miran `.inner`); el acto en el contexto (`execute_full`, regenerar); `JobManager._finish` enlaza las llamadas al relato. En dev, la fila del Planificador coincide con el log del gateway (modelo, ruta, tokens, perfil).
 - **T5.1** `LLMResponse` con los campos restantes; cada adapter los llena; `RoleRoutingAdapter` marca `respaldo`. **Hecho cuando:** hay un test por adapter.
 - **T5.2** Tabla `llm_call` (con `profile`) y su repositorio. **Hecho cuando:** `init_db()` la crea sobre una base existente y los tests cubren alta, enlace, consultas y borrado en cascada.
 - **T5.3** `RegistroLLM` en la factory, con `respaldos` por delegación. **Hecho cuando:** los tests cubren anotar con contexto, solo delegar sin él, falla de la DB que no rompe el job y reintentos de `generate_structured`.

@@ -6,6 +6,7 @@ from src.infrastructure.database.repositories.generated_narrative_repository imp
 )
 from src.infrastructure.database.repositories.genre_repository import SQLGenreRepository
 from src.infrastructure.database.repositories.job_repository import SQLJobRepository
+from src.infrastructure.database.repositories.llm_call_repository import SQLLLMCallRepository
 from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
 from src.infrastructure.database.repositories.video_script_repository import (
     SQLVideoScriptRepository,
@@ -16,6 +17,7 @@ __all__ = [
     "SQLBeatRepository",
     "SQLGeneratedNarrativeRepository",
     "SQLJobRepository",
+    "SQLLLMCallRepository",
     "SQLGenreRepository",
     "SQLVideoScriptRepository",
 ]

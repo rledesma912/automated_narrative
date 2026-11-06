@@ -143,7 +143,7 @@ async def test_la_factory_arma_el_adapter_del_perfil_del_job(perfiles):
 
     async def job(profile: str):
         config.use_profile(profile)
-        return LLMFactory.get_provider()
+        return LLMFactory.get_provider().inner
 
     corto = await asyncio.create_task(job(CORTO))
     largo = await asyncio.create_task(job(LARGO))

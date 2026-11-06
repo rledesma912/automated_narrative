@@ -49,7 +49,9 @@ class RoleRoutingAdapter:
             )
             self.respaldos.add(role)
             local = {k: cfg.get(k) for k in _DEL_RESPALDO if cfg.get(k) is not None}
-            return await adapter.generate(prompt, role=role, **{**kwargs, **local})
+            response = await adapter.generate(prompt, role=role, **{**kwargs, **local})
+            response.respaldo = True  # Spec-740 B: queda anotado en el registro
+            return response
 
     async def close(self) -> None:
         """Cierra cada adapter una sola vez (varios roles pueden compartir uno)."""

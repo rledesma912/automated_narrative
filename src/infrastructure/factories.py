@@ -12,6 +12,7 @@ from src.infrastructure.adapters import (
     OllamaAdapter,
     RoleRoutingAdapter,
 )
+from src.infrastructure.adapters.registro_llm import RegistroLLM
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,10 @@ class LLMFactory:
         Anthropic y el resto en Ollama), devuelve un `RoleRoutingAdapter` con un adapter
         por proveedor. Con un solo proveedor, el adapter de siempre.
         """
+        return RegistroLLM(LLMFactory._build(use_mock, provider))  # Spec-740 B3
+
+    @staticmethod
+    def _build(use_mock: bool, provider: str | None) -> LLMProvider:
         if use_mock:
             logger.info("[FACTORY] Usando proveedor Mock (Simulado)")
             return MockLLMAdapter()
