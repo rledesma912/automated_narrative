@@ -2,6 +2,7 @@
 
 import logging
 import os
+from contextvars import ContextVar
 from pathlib import Path
 
 import yaml
@@ -92,6 +93,48 @@ def _resolve_active_profile(core: dict, env_override: str | None) -> tuple[str, 
 _llm_core: dict = _load_llm_core()
 _active_profile_name, _profile = _resolve_active_profile(_llm_core, os.getenv("LLM_PROFILE"))
 
+# ── Spec-740 Parte D: un perfil por largo ────────────────────────────────────
+# `LLM_PROFILE_<LARGO>` (p. ej. `LLM_PROFILE_LARGO`): vacío = el de siempre; `off` = ese
+# largo no se escribe; el nombre de un perfil = ese perfil para los jobs de sus historias.
+_STRUCTURE_ENV = "LLM_PROFILE_"
+_OFF = "off"
+
+# El perfil del job en curso. Cada job es una tarea propia (JobManager), así que dos jobs
+# no se lo pisan; fuera de un job, el de siempre.
+_job_profile: ContextVar[str | None] = ContextVar("llm_profile", default=None)
+
+
+def _structure_env(structure: str) -> str:
+    return f"{_STRUCTURE_ENV}{structure.upper()}"
+
+
+def check_structure_profiles() -> None:
+    """Un `LLM_PROFILE_<LARGO>` con un perfil que no existe no arranca: no cae en silencio
+    a otro perfil (y a otro proveedor)."""
+    profiles = _llm_core.get("profiles", {})
+    for key, value in os.environ.items():
+        if not key.startswith(_STRUCTURE_ENV):
+            continue
+        name = value.strip()
+        if name and name.lower() != _OFF and name not in profiles:
+            raise ValueError(f"{key}={name}: ese perfil no existe en {_LLM_CORE_FILE}")
+
+
+def use_profile(name: str | None) -> None:
+    """Las lecturas de config de la tarea actual (y de las que lance) usan este perfil."""
+    _job_profile.set(name)
+
+
+def _current() -> tuple[str, dict]:
+    """El perfil del job en curso o, fuera de un job, el de siempre."""
+    name = _job_profile.get()
+    if name and name != _active_profile_name:
+        return name, _llm_core.get("profiles", {}).get(name, {})
+    return _active_profile_name, _profile
+
+
+check_structure_profiles()
+
 
 class Settings(BaseSettings):
     """Global settings.
@@ -132,17 +175,17 @@ class Settings(BaseSettings):
     @property
     def active_profile_name(self) -> str:
         """Nombre del perfil actualmente activo."""
-        return _active_profile_name
+        return _current()[0]
 
     @property
     def llm_provider(self) -> str:
         """Provider del perfil activo."""
-        return _profile.get("provider", "ollama")
+        return _current()[1].get("provider", "ollama")
 
     @property
     def llm_role_config(self) -> dict[str, dict]:
         """Dict completo de roles del perfil activo."""
-        return _profile.get("roles", {})
+        return _current()[1].get("roles", {})
 
     def role_config(self, role: str) -> dict:
         """Config de un rol del perfil activo; los del asistente sin declarar heredan
@@ -167,14 +210,25 @@ class Settings(BaseSettings):
 
     def estimated_seconds(self, kind: str) -> int:
         """Duración inicial estimada de un job del perfil activo (Spec-510)."""
-        value = (_profile.get("estimated_seconds") or {}).get(kind)
+        value = (_current()[1].get("estimated_seconds") or {}).get(kind)
         if isinstance(value, int | float) and not isinstance(value, bool) and value > 0:
             return int(value)
         return DEFAULT_ESTIMATED_SECONDS[kind]
 
     def active_profile_config(self) -> dict:
         """Bloque completo del perfil activo (provider, prompt_variant, roles, etc.)."""
-        return _profile
+        return _current()[1]
+
+    def profile_for(self, structure: str) -> str | None:
+        """Spec-740 D1: el perfil de las historias de este largo; None = deshabilitado."""
+        value = os.getenv(_structure_env(structure), "").strip()
+        if not value:
+            return _active_profile_name
+        return None if value.lower() == _OFF else value
+
+    def structure_enabled(self, structure: str) -> bool:
+        """¿Se puede trabajar con IA en las historias de este largo? (Spec-740 D3)."""
+        return self.profile_for(structure) is not None
 
     @property
     def llm_response_filter_config(self) -> dict:
@@ -189,19 +243,19 @@ class Settings(BaseSettings):
         env_host = os.getenv("OLLAMA_HOST")
         if env_host:
             return env_host
-        return _profile.get("ollama", {}).get("host", "http://localhost:11434")
+        return _current()[1].get("ollama", {}).get("host", "http://localhost:11434")
 
     @property
     def gemini_cli_command(self) -> str:
-        return _profile.get("gemini", {}).get("cli_command", "gemini")
+        return _current()[1].get("gemini", {}).get("cli_command", "gemini")
 
     @property
     def gemini_model_name(self) -> str:
-        return _profile.get("gemini", {}).get("model", "gemini-1.5-pro-latest")
+        return _current()[1].get("gemini", {}).get("model", "gemini-1.5-pro-latest")
 
     @property
     def anthropic_model(self) -> str:
-        return _profile.get("anthropic", {}).get("model", "claude-sonnet-4-6")
+        return _current()[1].get("anthropic", {}).get("model", "claude-sonnet-4-6")
 
     @property
     def api_host_port(self) -> tuple[str, int]:

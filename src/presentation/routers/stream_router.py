@@ -8,7 +8,8 @@ import httpx
 from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from src.config import settings
+from src.application.services.beat_spec_repository import BeatSpecRepository
+from src.config import settings, use_profile
 from src.infrastructure.database.repositories import (
     SQLBeatRepository,
     SQLJobRepository,
@@ -80,6 +81,23 @@ async def stream_generation(story_id: str, last_event_id: str | None = Header(No
 # ── Hito 4a: /health mejorado ─────────────────────────────────────────────────
 
 
+def _profiles_by_structure() -> dict[str, str | None]:
+    """Spec-740 D4: el perfil de cada largo (None = deshabilitado)."""
+    return {sid: settings.profile_for(sid) for sid in BeatSpecRepository().structure_ids}
+
+
+def _providers_of(profile_names: set[str]) -> set[str]:
+    """Proveedores que usan los roles de estos perfiles."""
+    providers: set[str] = set()
+    for name in profile_names:
+        use_profile(name)
+        try:
+            providers |= settings.llm_providers
+        finally:
+            use_profile(None)
+    return providers
+
+
 async def _freellmapi_check() -> str:
     """Spec-740 A6: el gateway y la clave, con un pedido que no gasta cuota."""
     if not settings.freellmapi_api_key:
@@ -115,8 +133,10 @@ async def health_check():
     except Exception as exc:
         checks["sqlite"] = f"error: {exc}"
 
-    # Proveedores LLM en uso (Spec-480: cada rol puede tener el suyo).
-    providers = sorted(settings.llm_providers)
+    # Proveedores LLM en uso (Spec-480: cada rol puede tener el suyo), de todos los
+    # perfiles que pueden correr (Spec-740 D4: uno por largo).
+    profiles = _profiles_by_structure()
+    providers = sorted(_providers_of({p for p in profiles.values() if p}))
     checks["provider"] = settings.llm_provider  # el del perfil (compatibilidad)
     checks["providers"] = providers
 
@@ -150,6 +170,7 @@ async def health_check():
         "status": "healthy" if healthy else "degraded",
         "checks": checks,
         "active_profile": settings.active_profile_name,
+        "profiles": profiles,
     }
 
 
@@ -213,4 +234,5 @@ async def get_active_profile():
         "active_profile": settings.active_profile_name,
         "provider": settings.llm_provider,
         "roles": roles,
+        "profiles": _profiles_by_structure(),  # Spec-740 D4
     }

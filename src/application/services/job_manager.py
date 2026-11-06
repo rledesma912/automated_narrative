@@ -26,7 +26,7 @@ from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.event_bus import GLOBAL_CHANNEL, EventBus, job_channel
 from src.application.services.job_duration_estimator import JobDurationEstimator
 from src.application.services.structure import DEFAULT_STRUCTURE
-from src.config import settings
+from src.config import settings, use_profile
 from src.domain import llm_context
 from src.domain.jobs import (
     Job,
@@ -60,6 +60,14 @@ class JobAlreadyActiveError(Exception):
     def __init__(self, job_id: UUID | None) -> None:
         super().__init__(message("job.ya_activo", job=job_id))
         self.job_id = job_id
+
+
+class StructureDisabledError(Exception):
+    """Spec-740 D3: el largo de la historia está deshabilitado (`LLM_PROFILE_<LARGO>=off`)."""
+
+    def __init__(self, structure: str) -> None:
+        super().__init__(message(f"job.{structure}_deshabilitado"))
+        self.structure = structure
 
 
 class JobManager:
@@ -102,6 +110,8 @@ class JobManager:
             JobAlreadyActiveError: la historia ya tiene un job activo.
         """
         structure = getattr(story, "structure", DEFAULT_STRUCTURE)  # dobles de prueba sin el campo
+        if not settings.structure_enabled(structure):
+            raise StructureDisabledError(structure)
         params = {
             **(params or {}),
             "structure": structure,  # Spec-650: la estimación se separa por largo
@@ -130,7 +140,7 @@ class JobManager:
     async def estimates(self, structure: str = DEFAULT_STRUCTURE) -> dict[str, dict]:
         """Duración estimada de cada tipo de job con el perfil activo (Spec-510), para
         una historia de ese largo (Spec-650)."""
-        profile = settings.active_profile_name
+        profile = settings.profile_for(structure) or settings.active_profile_name
         return {
             kind.value: (await self._estimator.estimate(kind, profile, structure)).as_dict()
             for kind in JobKind
@@ -141,7 +151,7 @@ class JobManager:
 
         Una falla del estimador no impide lanzar el job: queda sin estimación.
         """
-        profile = settings.active_profile_name
+        profile = settings.profile_for(structure)  # Spec-740 D2: el del largo de la historia
         try:
             estimate = await self._estimator.estimate(kind, profile, structure)
         except Exception:  # noqa: BLE001
@@ -195,6 +205,7 @@ class JobManager:
 
     async def _run(self, job: Job, story: Story, run: JobRunner, regenerate: bool) -> None:
         channel = job_channel(job.id)
+        use_profile(job.params.get("profile"))  # Spec-740 D2: el perfil de su largo
         llm_context.enter_job(job.id, story.id)  # Spec-740
         status, error, narrative_id = JobStatus.FAILED, message("job.sin_resultado"), None
         try:

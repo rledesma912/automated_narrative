@@ -8,8 +8,9 @@ from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
 from src.application.services.event_bus import job_channel
-from src.application.services.job_manager import JobAlreadyActiveError
+from src.application.services.job_manager import JobAlreadyActiveError, StructureDisabledError
 from src.application.services.narrative_acts import same_structure
+from src.config import settings
 from src.domain.jobs import Job, JobKind, JobStatus
 from src.domain.models import StructureId
 from src.domain.streaming import StreamEvent, StreamEventType
@@ -50,6 +51,11 @@ def _to_response(job: Job) -> JobResponse:
     )
 
 
+def _structure_disabled(exc: StructureDisabledError) -> JSONResponse:
+    """Spec-740 D3: no hay un job en curso, así que sin `job_id` ni `X-Job-Id`."""
+    return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+
 def _already_active(job_id: UUID | None) -> JSONResponse:
     return JSONResponse(
         status_code=409,
@@ -85,6 +91,9 @@ async def create_job(story_id: str, request: JobCreateRequest):
     active = await SQLJobRepository().get_active_for_story(story.id)
     if active is not None:
         return _already_active(active.id)
+    if not settings.structure_enabled(story.structure):
+        # Spec-740 D3: antes que las validaciones, el motivo de fondo (el largo no se escribe).
+        return _structure_disabled(StructureDisabledError(story.structure))
     try:
         if request.kind == JobKind.VIDEO_SCRIPT:
             await _validate_video_script(story, request)
@@ -99,6 +108,8 @@ async def create_job(story_id: str, request: JobCreateRequest):
             job = await submit_full_generation(story)
     except JobAlreadyActiveError as exc:
         return _already_active(exc.job_id)
+    except StructureDisabledError as exc:
+        return _structure_disabled(exc)
     return _to_response(job)
 
 

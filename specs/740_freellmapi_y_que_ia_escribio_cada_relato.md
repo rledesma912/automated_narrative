@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-11-05
 **Tipo:** SDD: proveedores LLM (adapter + perfil), registro de llamadas, «El relato» (UI)
-**Estado:** TASKS escritas (§10, 2026-11-05), esperando el OK del usuario para pasar a IMPLEMENT.
-**Rama:** a crear desde `development`, `feat/spec-740-freellmapi`
+**Estado:** S1 hecho (af75ffe). **Enfoque cambiado el 2026-11-06** (§0): FreeLLMAPI para el relato corto. Plan y tareas reescritos (§9, §10), con OK del usuario (2026-11-06). En S2.
+**Rama:** `feat/spec-740-freellmapi` (desde `origin/development`)
 **Extiende:** Spec-480 (proveedor por rol), Spec-530 (salida estructurada), Spec-600 D3 (la Voz sin respaldo), Spec-620 (mensajes fuera del código), Spec-720 D6 (`respaldo`, `respaldos`).
 
 ---
@@ -19,12 +19,23 @@
 
 ---
 
+## §0. Cambio de enfoque (2026-11-06)
+
+Lo pidió el usuario después de T1.9 (§8): FreeLLMAPI le sirve sobre todo al **relato corto**. No porque escriba mejor, sino porque se expone menos a los límites gratis: 8 llamadas contra 12, ~18 000 tokens contra ~30 000, y en la prueba un solo modelo sin esperas, contra tres modelos y dos esperas en el largo. Además, el corto es lo que más se usa (prod: 11 historias cortas y 5 largas).
+
+Decisiones del usuario: el **largo va con Sonnet** (perfil con Claude), y **mientras no haya crédito queda deshabilitado** (D6). La medición es **solo de cortos** (D7).
+
 ## OBJECTIVE
 
-1. Que un rol pueda declarar `provider: freellmapi` en un perfil, igual que hoy declara `anthropic`.
+1. Que el **relato corto** se escriba con FreeLLMAPI (perfil `freellmapi-libre`, S1), y el **largo** con otro perfil, Sonnet, o que quede **deshabilitado** con una nota clara mientras no haya crédito.
 2. Que cada llamada a una IA deje registrado qué modelo respondió **de verdad**, y que cada versión de un relato lo muestre.
 
-**Éxito:** un relato escrito por FreeLLMAPI dice en «El relato» con qué modelos se escribió (también si cambió a mitad de camino); uno escrito con Sonnet dice Sonnet; los viejos no dicen nada; y hay una medición que permite decidir qué roles, si alguno, pasan a FreeLLMAPI.
+**Éxito:**
+- Un corto sale completo con FreeLLMAPI.
+- Con el largo deshabilitado, nadie puede lanzar IA sobre una historia larga y la pantalla dice por qué, sin jerga.
+- Al volver el crédito, alcanza con cambiar una variable para que el largo vuelva con Sonnet.
+- Cada versión dice qué IA la escribió; los relatos viejos no dicen nada.
+- La medición de cortos dice cuántos entran por día y si la lectura a ciegas los acepta.
 
 ---
 
@@ -91,20 +102,23 @@ Verificado en el código de **la versión instalada** (`server/dist` del contene
 - **C4. Nombres.** Se muestra el id del modelo con un nombre lindo si está en `config/`; si no, el id tal cual. Un modelo nuevo nunca rompe la pantalla.
 - **C5. Textos** en `core_messages.yaml` o en las vistas según corresponda (Spec-620), y pasan `sin-jerga.view.test.ts`. «Fallback» no se ve; si hace falta decirlo: «el primero no estaba disponible».
 
+- **C6. El largo deshabilitado (D6).** En «Tu idea», «¿Qué tan largo?» muestra el largo apagado con una nota de información: «Por ahora solo se pueden escribir relatos cortos». Una historia larga que ya existe muestra la misma nota arriba, en la barra del asistente, y sus botones de IA (preguntas, armar, revisar, escribir, regenerar, guion) no se pueden tocar. La nota ofrece pasarla a corto con el cambio de largo que ya existe (Spec-650: borra los actos, con confirmación). Leer, corregir a mano y descargar siguen andando.
+
+---
+
+## 4b. Parte D: un perfil por largo (D6)
+
+- **D1. Configuración.** `LLM_PROFILE` sigue siendo el perfil de siempre: el del corto y el de lo que no tiene historia. `LLM_PROFILE_LARGO` (nuevo, en `.env`) es el del largo: vacío = el mismo que `LLM_PROFILE` (nada cambia para quien no lo usa); `off` = largo deshabilitado; el nombre de un perfil = ese perfil. Se cambia sin deploy: está en `.env.prod`, fuera de la imagen, y alcanza con reiniciar la API.
+- **D2. Cada job usa el perfil de su historia.** El `ContextVar` de S1 (`llm_context`) suma el perfil: `JobManager` lo fija según `story.structure` y todo lo que lee la config del perfil (`settings.role_config`, proveedores, tiempos estimados, el tope de espera) la toma de ahí. Así, adapters, factory y casos de uso no cambian. Fuera de un job, el perfil de siempre.
+- **D3. Con el largo `off`.** `POST /stories/{id}/jobs` sobre una historia larga responde 409 con un mensaje coloquial (`core_messages.yaml`), igual que «hay un trabajo en curso». Crear una historia larga o pasar a largo (`PUT …/structure`) también se rechazan. `/authoring/options` devuelve cada largo con `disponible` y su nota, que es lo que lee la pantalla.
+- **D4. `/health` y `/config/active-profile`** muestran los dos perfiles; `/health` verifica los proveedores de ambos (un largo `off` no verifica nada).
+- **D5. Lo que no cambia.** El job ya guarda `profile` en `params` (Spec-510), así que las estimaciones de tiempo se separan solas por perfil. El registro (Parte B) anota el proveedor y el modelo de cada llamada, venga del perfil que venga.
+
 ---
 
 ## 5. Slices y verificación
 
-| Slice | Qué | Cómo se valida |
-|---|---|---|
-| **S0** | Hecho (2026-11-05). Sonda real con modelos habilitados, prosa, esquema real del Planificador, errores y un relato en serie | Resultado en §8 |
-| **S1** | A1–A6 | Tests con `httpx.MockTransport`: headers, esquema, cada error, `length`, `content_filter`. `test_prompts_fuera_del_codigo` en verde |
-| **S2** | B1–B7 | Tests: cada adapter informa, fallback/respaldo, regenerar un acto, falla de registro, sin datos en prompts (snapshots sin cambios) |
-| **S3** | C1–C5 | Vitest de vistas y E2E en Firefox. `storymaker.test`: un relato de un solo modelo, uno de varios y uno viejo |
-| **S4** | Medición con la cadena `auto:narrativa`: `evaluate_voice.py --profile freellmapi-libre --runs 2` contra los relatos de Sonnet ya medidos, a distintas horas para ver la baja del día, y el armado de los actos (Planificador, Verificador, Revisor) con las historias de la Spec-720. Métricas de siempre + modelos usados + llamadas con fallback + esperas + fallas. Sin crédito no se corre Sonnet: se compara con la evidencia guardada | Tabla en §8 y decisión del usuario por rol |
-| **S5** | Si la medición lo justifica: activar en `.env` o `.env.prod`. **Solo con OK del usuario**, con `make deploy` | `make deploy-check` y un relato de prueba |
-
-Cierre de cada checkpoint (Spec-540 §2.5): tests en verde, `make dev-status` en verde y la URL para mirar. La Parte B y la C no dependen de FreeLLMAPI: pueden desplegarse aunque S4 diga que ningún rol pasa.
+Ver §9 (plan) y §10 (tareas). Cierre de cada checkpoint (Spec-540 §2.5): tests en verde, `make dev-status` en verde y la URL para mirar. La Parte B, la C y la D no dependen de FreeLLMAPI: sirven con cualquier proveedor.
 
 ---
 
@@ -119,6 +133,8 @@ Tomadas por el usuario el 2026-11-05.
 | D3 | Si se agota toda la cadena | **El job falla con el mensaje coloquial**, sin caer a otro proveedor (como Spec-600 D3), después de las esperas de A8. Lo escrito no se pierde | Un acto en otra IA, sin que nadie lo decida, cambia la voz |
 | D4 | Qué se ve | **§4:** línea por versión, por acto si cambió, el resto plegado | Responde la pregunta sin llenar la pantalla |
 | D5 | Privacidad y términos | **Aceptados los proveedores ya habilitados:** Google, Groq y OpenRouter. Sumar otro requiere volver a preguntar | Las historias salen a esos terceros, cuyas capas gratis pueden usar los datos según sus términos |
+| D6 | Qué pasa con el largo (2026-11-06) | **Con Sonnet; sin crédito, deshabilitado** (Parte D, C6). Opción descartada: el largo también gratis con aviso | El largo es más frágil con cuotas gratis y en la prueba mezcló tres modelos (el error del sulki) |
+| D7 | Qué se mide (2026-11-06) | **Solo cortos.** Primero 2 cortos más para confirmar T1.9; después capacidad por día y lectura a ciegas | Es el uso real y lo que va a correr en FreeLLMAPI |
 
 ---
 
@@ -220,135 +236,141 @@ Con la cuota del día renovada, sin pruebas sueltas antes.
 - En la cadena `estructura` aparece `gemini-2.5-flash` (`model_not_found`): está en el panel aunque no fue acordado. Hay que sacarlo.
 - **Capacidad por día: sin medir el techo.** El 2026-11-05 la cadena se agotó tras ~125 000 tokens en Groq y ~125 000 en Google, casi todo en pruebas. Con ~18 000 por corto y ~30 000 por largo, eso daría del orden de 8 a 13 relatos por día. Es una estimación: los límites son por modelo, por minuto y por día, y no se conocen.
 
-*(S4: pendiente.)*
+### S3, primeros cortos (2026-11-06, tarde; cortos seguidos, minutos entre uno y otro)
+
+| # | Hora | Resultado | Por dónde | Detalle |
+|---|---|---|---|---|
+| 1 | 14:15 | ✅ 22 s | todo `gemini-3.1-flash-lite` | el de T1.9 |
+| 2 | 14:27 | ✅ 195 s | todo Groq (`qwen3.8-27b`, `gpt-oss-120b`) | 3 esperas de ~91 s |
+| 3 | 14:32 | ❌ Planificador | Groq | 413 `context_too_large` de `qwen3.8-27b`; Google en cooldown, una sola ruta |
+| 4 | 14:45 | ❌ Voz del acto 3 | Groq | el mismo 413; antes, 1 espera de 91 s |
+
+- **Google (`gemini-3.1-flash-lite`) respondió ~18 llamadas desde las 14:15 y después no volvió en toda la tarde** (429 sin hora). Parece un tope diario chico: alcanza para ~2 cortos.
+- **Groq** sostiene solo con esperas de ~90 s y rechaza con 413 cuando se juntan pedidos en el mismo minuto (el panel mostró «OTPM: Limit 1000» para `qwen3.8-27b`). `gpt-oss-120b` gasta 1200+ tokens por acto por el razonamiento.
+- **Sesgo de esta medición:** los cortos fueron seguidos. Las chicas escriben 2 o 3 por día, espaciados: los límites por minuto pesan menos, los diarios igual. Falta medir espaciado.
+- **2 de 4 completos.** Con 3 por día como criterio, todavía no alcanza para afirmar nada.
+
+*(S3: sigue. S4: pendiente.)*
 
 ---
 
-## 9. PLAN (2026-11-05)
+## 9. PLAN (reescrito el 2026-11-06, enfoque en el corto)
 
-**Rama:** `feat/spec-740-freellmapi` desde `development`. Orden: primero lo que destraba escribir sin Anthropic (S1), después lo que pidieron las chicas (S2, S3), y la medición al final (S4).
+**Rama:** `feat/spec-740-freellmapi`. Orden: lo que destraba prod primero (S2 a S4: el corto en FreeLLMAPI y el largo controlado), después lo que pidieron las chicas (S5, S6), la medición en paralelo (S3) y prod al final (S7). Un commit por slice.
 
-### S1. El proveedor
+### S1. El proveedor: hecho (af75ffe, 2026-11-06)
 
-| Qué | Dónde |
-|---|---|
-| `FreeLLMAPIAdapter` con `httpx.AsyncClient` inyectable: mapeo de `response_schema`, headers fijos (`X-FreeLLM-Cache: off`, `X-FreeLLM-Compress: off`), `X-Session-Id`, `max_tokens` desde `num_predict` | `src/infrastructure/adapters/freellmapi_adapter.py` (nuevo) |
-| Errores: 401/403 `clave`, 429 y 5xx `saturada`, red `sin_conexion`, 503 `no_providers_configured` `sin_modelos`, 413 y 404 `error`. `length` → `LLMResponseError`; `content_filter` → `LLMRefusalError`; texto vacío → `LLMResponseError` | Mismo adapter |
-| A8: con 429 `rate_limit_exceeded` y `retryAtMs`, `asyncio.sleep` hasta esa hora y reintenta; tope 120 s por llamada, configurable en el perfil. `quota_exceeded` no espera. La espera se cancela con el job | Mismo adapter |
-| `freellmapi_url` y `freellmapi_api_key` en `Settings` (`extra="ignore"` ya los tolera); rama en `LLMFactory._single`; export | `src/config.py`, `src/infrastructure/factories.py`, `adapters/__init__.py` |
-| Contexto del job en un `ContextVar` (`job_id`, `story_id`, `act`): lo fija `JobManager._run`; sin contexto (CLI, tests) el adapter no manda sesión. S2 lo reutiliza | `src/domain/llm_context.py` (nuevo), `src/application/services/job_manager.py` |
-| `/health` con `GET /v1/models` y timeout corto; `provider_ok` incluye el proveedor | `src/presentation/routers/stream_router.py` |
-| A5: `ResponseNormalizer` recibe el modelo que respondió, no el configurado. Hoy `normalize(..., model_name=model)` usa el del YAML | `src/application/use_cases/voz_use_case.py` |
-| Perfil `freellmapi-libre`: Voz en `auto:narrativa`; Memoria, Consultor, Planificador, Verificador, Revisor y Guion en `auto:estructura`; `num_predict` por rol y `estimated_seconds` provisorios | `config/llm_core_definitions.yaml` |
-| Mensaje `llm.sin_modelos`; revisar que los `llm.*` no digan algo falso con otro proveedor | `config/core_messages.yaml` |
-| `extra_hosts: freellmapi.test:host-gateway`; `FREELLMAPI_URL` y clave en `.env` y `.env.prod` (el usuario, `.env.prod`) | `docker-compose.yml`, `docker-compose.dev.yml` |
+Adapter, esperas de A8 (429 con o sin hora, 502 por cuota), perfil `freellmapi-libre`, `/health`, red de los contenedores, filtros por el modelo que respondió. Un corto y un largo completos en dev (§8).
 
-**Tests:** `tests/unit/test_freellmapi_adapter.py` con `httpx.MockTransport` (headers, esquema, cada error, `length`, `content_filter`, espera con reloj falso, tope, sin sesión fuera de un job), factory con perfil mixto, `/health`, `test_prompts_fuera_del_codigo`, snapshots sin cambios.
-**Checkpoint:** `make test`, `make lint`, `make dev-up` para tomar `extra_hosts`, y `make dev-status`. Con `LLM_PROFILE=freellmapi-libre` en `.env` (pide OK, ver §7), un relato completo de «El monte prohibido» en `https://storymaker.test`.
-
-### S2. El registro
+### S2. Un perfil por largo (Parte D)
 
 | Qué | Dónde |
 |---|---|
-| `LLMResponse` suma `provider`, `model`, `via`, `fallback_attempts`, `fallback_trail`, `respaldo`; todos con valor por defecto | `src/domain/interfaces.py` |
-| Cada adapter los llena. Ollama, Anthropic y Gemini con su nombre y el modelo usado; `RoleRoutingAdapter` marca `respaldo=True` | `src/infrastructure/adapters/` |
-| Tabla `llm_call` con FK a `story` y a `generated_narrative`, ambas `ON DELETE CASCADE`, e índices por `narrative_id` y `story_id` | `src/infrastructure/database/connection.py` |
-| `SQLLLMCallRepository`: `add`, `link_narrative(job_id, narrative_id)`, consultas de versión e historia | `src/infrastructure/database/repositories/` |
-| `RegistroLLM`: envoltorio de `LLMProvider`. Sin contexto de job solo delega; con contexto anota después de cada `generate` exitoso; si anotar falla, loguea y sigue (B4). Expone `respaldos` por delegación: lo leen `authoring_jobs.py:71` y `generate_story_use_case.py:143` | `src/infrastructure/adapters/registro_llm.py` (nuevo), `LLMFactory.get_provider` |
-| El acto en el contexto: `execute_full` lo fija en cada vuelta, y `RegenerateBeatVozUseCase.execute` para el suyo | `src/application/use_cases/` |
-| Enlazar al relato en `JobManager._finish`, con el `narrative_id` del evento `done` (los dos tipos de job ya lo mandan) | `src/application/services/job_manager.py` |
+| `LLM_PROFILE_LARGO` (vacío / `off` / perfil), resuelto al arrancar con la misma precedencia que `LLM_PROFILE`; un perfil que no existe falla al arrancar (no cae en silencio a otro) | `src/config.py` |
+| El perfil en el contexto: `settings` lee el perfil del contexto cuando lo hay (roles, proveedores, tiempos, bloque `freellmapi`) | `src/config.py`, `src/domain/llm_context.py` |
+| `JobManager` fija el perfil según `story.structure` (con `params.profile` correcto) y rechaza con 409 un job de una historia larga con el largo `off` | `src/application/services/job_manager.py` |
+| `LLMFactory.get_provider()` arma el adapter del perfil del contexto | `src/infrastructure/factories.py` |
+| `/authoring/options` con `disponible` y nota por largo; crear o pasar a largo con `off` → 422 | `src/presentation/routers/authoring_router.py` |
+| `/health` y `/config/active-profile` con los dos perfiles | `src/presentation/routers/stream_router.py` |
+| Mensajes `job.largo_deshabilitado` y `historia_nueva.largo_deshabilitado` (o donde corresponda en `core_messages.yaml`) | `config/core_messages.yaml` |
 
-**Por qué un envoltorio y no el protocolo:** así ninguno de los ~10 lugares que llaman a `generate` cambia, ni los prompts (los snapshots lo prueban). Un `generate` del mock no anota nada si no hay job.
+**Tests:** perfil por largo (vacío, `off`, otro perfil, perfil inexistente), dos jobs a la vez (uno corto y uno largo) sin pisarse el perfil, 409 de cada tipo de job sobre una historia larga con `off`, `options`, `health`. Snapshots de prompts sin cambios.
+**Checkpoint:** en dev, `LLM_PROFILE_LARGO=off`: un corto se escribe; sobre la historia larga, la API rechaza el job con el mensaje.
 
-**Tests:** los de B1–B7: reintentos de `generate_structured` (se anotan todos), respaldo, regenerar un acto (B5), falla de la DB sin romper el job (B4), borrar relato o historia (B7), `respaldos` visible a través del envoltorio.
-**Checkpoint:** `make test`, y consulta de `llm_call` tras un relato en dev. **La tabla nueva no necesita `make dev-db`.**
-
-### S3. Lo que ven las chicas
+### S3. Medición de cortos (D7, en paralelo; sin código del sistema)
 
 | Qué | Dónde |
 |---|---|
-| `GET /generated-narratives/{id}/ia`: `{resumen, por_acto, resto}` con nombres para mostrar, vacío si no hay datos (B6) | `src/presentation/routers/narrative_router.py`, servicio de aplicación |
-| `config/modelos_ia.yaml`: substring → nombre lindo. Sin coincidencia, el id sin prefijo ni `:free` (C4) | `config/`, test de un id desconocido |
-| Sumar `ia` al relato, como `repetition`, tolerando un error del Core | `frontend/src/services/story.service.ts` |
-| Línea por versión, marca por acto solo con más de un modelo, y «Ver qué IA hizo cada cosa» plegado | `frontend/src/views/partials/relato_panel.ejs` |
+| 2 cortos más, cada uno con armado de los actos, para confirmar T1.9 (en curso el 2026-11-06) | §8 |
+| Capacidad por día: cortos seguidos, con espera, hasta que la cadena informe la cuota del día, en un día sin otras pruebas. Tokens, modelos, saltos, esperas y fallas por relato | `scripts/research/740/`, §8 |
+| Lectura a ciegas: 2 o 3 cortos de FreeLLMAPI junto a cortos de Sonnet ya guardados de la misma historia o parecida. Vale o las chicas, sin saber cuál es cuál | El usuario, §8 |
+| `evaluate_voice.py` reporta modelos por acto, saltos y esperas (sirve para todo lo anterior) | `scripts/evaluate_voice.py` |
 
-**Tests:** Vitest de vista (uno, varios, sin dato), `sin-jerga`, `gramatica-visual`, `no-hardcoded-colors`; E2E en Firefox con el mock. Regenerar la referencia de HTML solo si cambia a propósito.
-**Checkpoint:** `https://storymaker.test`: un relato de S1 y uno viejo sin línea.
+**Criterio:** con el corto en FreeLLMAPI, se esperan al menos **3 cortos por día** (las chicas escriben 2 o 3 en un día normal, dato del usuario del 2026-11-06), sin un error que corte el job, y la lectura a ciegas los acepta. Si no, se dice y el usuario decide.
 
-### S4. La medición
+### S4. La pantalla del largo deshabilitado (C6)
 
 | Qué | Dónde |
 |---|---|
-| `evaluate_voice.py` reporta modelos por acto, saltos y esperas. Sin cambios en el cálculo de costo: `freellmapi` no está en `PAID_PROVIDERS` | `scripts/evaluate_voice.py` |
-| Corridas en tres horarios (mañana, tarde, noche), con los tres modos del acuerdo: cadena normal, rotación (por script) y un modelo con esperas | `scripts/research/740/` |
-| `evaluate_workshop.py` para Consultor, Planificador y Verificador; una corrida de Revisor y Guion | Mismo directorio |
-| Comparar contra la evidencia guardada de Sonnet (Spec-600, 700, 720). No se corre Sonnet: no hay crédito | §8 |
-| Lectura a ciegas de los tres modos por Vale o las chicas | Con el usuario |
+| «¿Qué tan largo?» con el largo apagado y la nota | `frontend/src/views/asistente/direccion.ejs`, `frontend/src/services/authoring.service.ts` |
+| Nota en la barra del asistente de una historia larga, con «Pasarla a corto» (el cambio de largo que ya existe, con confirmación) | `frontend/src/views/asistente/_cabecera.ejs` (o el partial de la barra) |
+| Botones de IA y de escribir de esa historia, apagados (y el 409 de la API como red de seguridad, que ya muestra el modal) | vistas del asistente, `relato_acciones.ejs`, `public/js/escribir-relato.js` |
 
-**Criterio para pasar un rol:** ningún error de los que ya bloquearon a gemma: para Revisor, el umbral de la Spec-700 §11; para Planificador y Verificador, el de la Spec-720 §11. Para la Voz manda la lectura a ciegas. Si un rol no llega, queda dicho y el usuario decide.
+**Tests:** Vitest de vista (corto disponible, largo `off`, historia larga), `sin-jerga`, `gramatica-visual`; E2E en Firefox con el mock y `LLM_PROFILE_LARGO=off`.
+**Checkpoint:** en `https://storymaker.test`, crear un relato nuevo (solo corto) y abrir una historia larga existente.
 
-### S5. Prod (solo con OK)
+### S5. El registro (Parte B, sin cambios de fondo)
 
-`FREELLMAPI_URL`, clave y `LLM_PROFILE` en `.env.prod`, PR a `development` y a `main`, `make deploy-check`, `make deploy`, un relato de prueba. La tabla se crea sola y la Parte B y C pueden ir antes, por sí solas. Prod sigue frenado hasta acá o hasta que haya crédito.
+Igual que el plan anterior: `LLMResponse` con `provider`, `via`, `fallback_*` y `respaldo`; tabla `llm_call`; envoltorio `RegistroLLM` en la factory; acto en el contexto; enlace al relato en `_finish`. El perfil del contexto también se anota (columna `profile`).
+
+### S6. Lo que ven las chicas (Parte C1–C5)
+
+Igual que el plan anterior: `GET /generated-narratives/{id}/ia`, `config/modelos_ia.yaml`, la línea «Lo escribió…» por versión, por acto si cambió, y el resto plegado.
+
+### S7. Prod (solo con OK)
+
+`.env.prod`: `LLM_PROFILE=freellmapi-libre`, `LLM_PROFILE_LARGO=off` (o `hibrido-sonnet55` si hay crédito), `FREELLMAPI_URL` y la clave. PR a `development` y `main`, `make deploy-check`, `make deploy`, un corto de prueba. El gateway tiene que estar levantado en esta máquina: si se cae, prod no escribe (lo dice `/health`).
 
 ### Riesgos
 
 | Riesgo | Qué hacemos |
 |---|---|
-| Los modelos gratis no alcanzan en Planificador o Revisor (como gemma) | S4 lo mide antes de prod. El Revisor tiene su nota sin IA si el perfil no lo declara |
-| Guion: prompt largo, 1 llamada y mucho JSON. Es el que más puede chocar con el tope de una capa gratis | Probarlo temprano en S4; si no da, sin Guion hasta recargar |
-| El orden de la cadena no es estricto (§8) | El registro lo muestra; no depende de que el orden sea exacto |
-| El gateway cambia sin aviso (imagen `latest`, capas gratis) | Tests sin red; todo pasa por el adapter; fijar la imagen a `v0.16.19` es decisión del usuario |
-| Una recarga de uvicorn corta un job de dev | Ya conocido (Spec-540): no editar `src/` durante una corrida |
+| La cuota diaria no alcanza para el uso real | S3 lo mide antes de prod; el mensaje `sin_cuota_hoy` ya dice qué pasa |
+| El perfil por contexto se escapa a una llamada fuera de un job (CLI, scripts) | Fuera de un job manda `LLM_PROFILE`, como hoy; los scripts pasan `--profile` |
+| Historias largas existentes en prod (5) quedan sin poder escribirse | La nota ofrece pasarlas a corto; vuelven solas cuando haya crédito |
+| El Planificador y el Revisor en modelos gratis (los roles que gemma no pudo) | El armado del corto entra en S3; si falla, se dice |
 
 ### Docs al cerrar
 
-`CLAUDE.md` (proveedor, perfil, tabla: 17 tablas, endpoint), `.env.example` si existe.
+`CLAUDE.md` (FreeLLMAPI, perfil por largo, `LLM_PROFILE_LARGO`, tabla `llm_call`, endpoint), `.env.example` si existe.
 
 ---
 
-## 10. TASKS (2026-11-05)
+## 10. TASKS (reescritas el 2026-11-06)
 
-Acordado con el usuario: activar `freellmapi-libre` en dev al cerrar S1 (probando con «El monte prohibido»), medir los tres modos en S4 y un commit por slice en `feat/spec-740-freellmapi`. Prod solo con OK aparte (S5).
+### S1: hecho (af75ffe)
 
-### S1: El proveedor
+T1.1 a T1.9 hechas; ver §8 y el commit.
 
-- **T1.1** Rama desde `development`; la spec entra en el primer commit. **Hecho cuando:** la rama existe y `git status` solo muestra lo de esta spec.
-- **T1.2** `src/domain/llm_context.py` (`ContextVar` con `job_id`, `story_id`, `act`) y `JobManager._run` lo fija. **Hecho cuando:** un test muestra que dos jobs simultáneos no se pisan el contexto y que fuera de un job está vacío.
-- **T1.3** `FreeLLMAPIAdapter`, llamada feliz: mensajes, `max_tokens` desde `num_predict`, `response_format`, los dos headers fijos, `X-Session-Id` con contexto, tiempos y tokens. **Hecho cuando:** pasan los tests con `httpx.MockTransport`, incluida la llamada sin sesión fuera de un job.
-- **T1.4** Errores (401/403, 413, 404, 429, 5xx, `no_providers_configured`, red) y cortes (`length`, `content_filter`, vacío), con `llm.sin_modelos` y los `llm.*` revisados. **Hecho cuando:** hay un test por caso con la excepción y la causa esperadas, y pasa `test_prompts_fuera_del_codigo`.
-- **T1.5** A8: espera por `retryAtMs` con tope de 120 s configurable; `quota_exceeded` no espera; cancelable. **Hecho cuando:** los tests con reloj falso cubren esperar y responder, pasar el tope, sin `retryAtMs`, `quota_exceeded` y cancelar durante la espera.
-- **T1.6** `Settings`, `LLMFactory._single`, export, `/health` con `GET /v1/models`. **Hecho cuando:** los tests cubren la factory (sola y en perfil mixto) y `/health` con el gateway arriba, abajo y sin clave.
-- **T1.7** A5: `LLMResponse.model` opcional, lo llena el adapter, y `VozUseCase` lo pasa a `normalize` (o el configurado si no viene). **Hecho cuando:** un test con `model_overrides` aplica el filtro al modelo que respondió con `auto:narrativa` pedido, y los snapshots no cambian.
-- **T1.8** Perfil `freellmapi-libre` y `extra_hosts` en los dos compose. **Hecho cuando:** un test carga el perfil con todos sus roles y `make dev-up` llega al gateway desde `narrative-api-dev`.
-- **T1.9** ✅ (2026-11-06, §8) Activar en `.env` y escribir «El monte prohibido» en dev. **Hecho cuando:** `make test`, `make lint` y `make dev-status` están en verde, el relato completo está en `https://storymaker.test`, y en §8 quedan los modelos usados, los saltos, las esperas y si el problema de `gemini-3.1-flash-lite` se repite.
+### S2: Un perfil por largo
 
-### S2: El registro
+- ✅ S2 hecha (2026-11-06): con `LLM_PROFILE_LARGO=off` en dev, la API rechaza con 409 todo trabajo sobre una historia larga, antes que las validaciones. El corto de prueba arrancó con su perfil y falló por cuota (§8).
+- **T2.1** `LLM_PROFILE_LARGO` en config (vacío, `off`, perfil; perfil inexistente falla al arrancar). **Hecho cuando:** pasan los tests de resolución de los cuatro casos.
+- **T2.2** El perfil en el contexto y `settings` leyéndolo (roles, proveedores, tiempos, bloque del proveedor). **Hecho cuando:** un test muestra dos tareas con perfiles distintos leyendo cada una su config, y fuera de contexto el de siempre.
+- **T2.3** `JobManager` fija el perfil por `story.structure` y rechaza los jobs de una historia larga con `off` (409, mensaje coloquial). `params.profile` es el usado. **Hecho cuando:** hay un test por tipo de job y uno de un corto y un largo simultáneos.
+- **T2.4** Factory desde el perfil del contexto. **Hecho cuando:** con un largo en otro proveedor, el job del largo usa ese adapter (test con el mock de Anthropic).
+- **T2.5** `/authoring/options` con `disponible`; crear o pasar a largo con `off` → 422; `/health` y `/config/active-profile` con los dos perfiles. **Hecho cuando:** pasan los tests de cada endpoint.
+- **T2.6** Checkpoint en dev con `LLM_PROFILE_LARGO=off`. **Hecho cuando:** `make test`, `make lint` y `make dev-status` están en verde; un corto se escribe y el job sobre la historia larga se rechaza con el mensaje.
 
-- **T2.1** `LLMResponse` con los campos restantes (`provider`, `via`, `fallback_attempts`, `fallback_trail`, `respaldo`) y cada adapter los llena. **Hecho cuando:** hay un test por adapter y uno de `RoleRoutingAdapter` que marca `respaldo`.
-- **T2.2** Tabla `llm_call` y `SQLLLMCallRepository`. **Hecho cuando:** `init_db()` la crea sobre una base existente sin tocar lo demás, y los tests cubren `add`, `link_narrative`, las consultas y el borrado en cascada.
-- **T2.3** `RegistroLLM` en `LLMFactory.get_provider`, con `respaldos` por delegación. **Hecho cuando:** los tests cubren anotar con contexto, solo delegar sin él, falla de la DB que no rompe el job, reintentos de `generate_structured` y `respaldos` a través del envoltorio.
-- **T2.4** El acto en el contexto (`execute_full`, `RegenerateBeatVozUseCase`) y el enlace en `JobManager._finish`. **Hecho cuando:** una integración con el mock deja una fila por llamada con su rol, acto y relato, y regenerar un acto hace que la versión muestre el modelo nuevo solo en ese acto.
-- **T2.5** Comprobar en dev. **Hecho cuando:** tras un relato real, `llm_call` coincide con lo que dicen los logs del gateway, y los snapshots de prompts siguen sin cambios.
+### S3: Medición de cortos
 
-### S3: Lo que ven las chicas
+- **T3.1** 2 cortos más con armado (en curso). **Hecho cuando:** §8 tiene sus tokens, modelos, esperas y fallas.
+- **T3.2** `evaluate_voice.py` con modelos, saltos y esperas. **Hecho cuando:** corre con `--mock` y el reporte los trae.
+- **T3.3** Capacidad por día, en un día sin otras pruebas. **Hecho cuando:** §8 dice cuántos cortos entraron y qué los cortó.
+- **T3.4** Lectura a ciegas. **Hecho cuando:** la respuesta de Vale o las chicas está en §8.
 
-- **T3.1** `config/modelos_ia.yaml` y el servicio que arma `{resumen, por_acto, resto}`. **Hecho cuando:** los tests cubren un modelo, varios, sin dato, un id desconocido y uno con prefijo y `:free`.
-- **T3.2** `GET /generated-narratives/{id}/ia`. **Hecho cuando:** los tests cubren un relato con datos, uno viejo (vacío, no error) y uno inexistente (404).
-- **T3.3** `story.service.ts` suma `ia`, tolerando un error del Core. **Hecho cuando:** el Vitest muestra que el relato se ve igual aunque falle esa consulta.
-- **T3.4** `relato_panel.ejs`: la línea, la marca por acto y «Ver qué IA hizo cada cosa». **Hecho cuando:** pasan el Vitest de vista (uno, varios, sin dato), `sin-jerga`, `gramatica-visual` y `no-hardcoded-colors`.
-- **T3.5** E2E en Firefox con el mock. **Hecho cuando:** está en verde, y en `https://storymaker.test` el relato de S1 muestra sus modelos y uno viejo no muestra la línea. Los fixtures se regeneran solo con el diff revisado.
+### S4: La pantalla del largo deshabilitado
 
-### S4: La medición
+- **T4.1** «¿Qué tan largo?» con el largo apagado y la nota. **Hecho cuando:** pasa el Vitest con el largo disponible y con `off`.
+- **T4.2** Nota en la barra de una historia larga con «Pasarla a corto», y botones de IA apagados. **Hecho cuando:** pasan el Vitest, `sin-jerga` y `gramatica-visual`.
+- **T4.3** E2E en Firefox con `LLM_PROFILE_LARGO=off`. **Hecho cuando:** está en verde y en `https://storymaker.test` se ve como se describe en C6.
 
-- **T4.1** `evaluate_voice.py` reporta modelos por acto, saltos y esperas. **Hecho cuando:** corre con `--mock` y el reporte trae esos datos.
-- **T4.2** Script de los tres modos en `scripts/research/740/` (cadena normal, rotación, un modelo con esperas). **Hecho cuando:** genera las tres versiones de «El monte prohibido» con el pipeline real, en dev o en una DB temporal, sin tocar el sistema.
-- **T4.3** Corridas en tres horarios. **Hecho cuando:** en §8 está la tabla con métricas, modelos, saltos, esperas y fallas por modo y horario.
-- **T4.4** Consultor, Planificador y Verificador con `evaluate_workshop.py`; Revisor y Guion, una corrida cada uno. El Guion primero. **Hecho cuando:** en §8 cada rol está comparado con el umbral de las Spec-700 y 720, o dice qué falta para compararlo.
-- **T4.5** Lectura a ciegas por Vale o las chicas: el usuario se las pasa sin decir cuál es cuál. **Hecho cuando:** su respuesta está en §8.
-- **T4.6** Decisión del usuario por rol, y ajuste del perfil. **Hecho cuando:** el perfil refleja la decisión y §8 la explica.
+### S5: El registro
 
-### S5: Cierre y prod
+- **T5.1** `LLMResponse` con los campos restantes; cada adapter los llena; `RoleRoutingAdapter` marca `respaldo`. **Hecho cuando:** hay un test por adapter.
+- **T5.2** Tabla `llm_call` (con `profile`) y su repositorio. **Hecho cuando:** `init_db()` la crea sobre una base existente y los tests cubren alta, enlace, consultas y borrado en cascada.
+- **T5.3** `RegistroLLM` en la factory, con `respaldos` por delegación. **Hecho cuando:** los tests cubren anotar con contexto, solo delegar sin él, falla de la DB que no rompe el job y reintentos de `generate_structured`.
+- **T5.4** El acto en el contexto y el enlace al relato en `_finish`. **Hecho cuando:** una integración con el mock deja una fila por llamada con rol, acto y relato, y regenerar un acto cambia solo ese acto.
+- **T5.5** Comprobar en dev. **Hecho cuando:** tras un corto real, `llm_call` coincide con el log del gateway.
 
-- **T5.1** `CLAUDE.md`, memoria y PR a `development`. **Hecho cuando:** las suites completas (`make test`, Vitest, E2E) y `make dev-status` están en verde, y el PR está abierto.
-- **T5.2** Pase a prod **solo con OK del usuario**: variables en `.env.prod`, `make deploy-check`, `make deploy`, y un relato de prueba. **Hecho cuando:** el relato en `https://storymaker.prd` muestra sus modelos y los relatos viejos siguen intactos.
+### S6: Lo que ven las chicas
+
+- **T6.1** `config/modelos_ia.yaml` y el servicio del resumen. **Hecho cuando:** los tests cubren uno, varios, sin dato, id desconocido y con prefijo o `:free`.
+- **T6.2** `GET /generated-narratives/{id}/ia`. **Hecho cuando:** los tests cubren con datos, viejo (vacío) e inexistente (404).
+- **T6.3** El front suma `ia` tolerando un error del Core, y `relato_panel.ejs` muestra la línea, la marca por acto y el plegado. **Hecho cuando:** pasan el Vitest y los guardianes de vistas.
+- **T6.4** E2E en Firefox. **Hecho cuando:** en `https://storymaker.test` un corto nuevo muestra sus modelos y uno viejo no muestra la línea.
+
+### S7: Cierre y prod
+
+- **T7.1** `CLAUDE.md`, memoria y PR a `development`. **Hecho cuando:** las suites completas y `make dev-status` están en verde y el PR está abierto.
+- **T7.2** Pase a prod **solo con OK del usuario** (§9 S7). **Hecho cuando:** un corto en `https://storymaker.prd` sale completo y muestra sus modelos, y una historia larga muestra la nota.
