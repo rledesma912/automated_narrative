@@ -379,3 +379,19 @@ async def test_el_largo_off_va_antes_que_las_validaciones(perfiles, api):
     resp = await api.post(f"/api/v1/stories/{largo['story_id']}/jobs", json={"kind": "consult"})
     assert resp.status_code == 409
     assert resp.json()["detail"] == message("job.largo_deshabilitado")
+
+
+async def test_el_estado_y_la_historia_dicen_si_hay_ia(perfiles, api):
+    from src.messages import message
+
+    perfiles(None)
+    largo = await _create(api, "largo")
+    corto = await _create(api, "corto")
+    assert largo["ia_disponible"] is True
+
+    perfiles("off")
+    state = (await api.get(f"{API}/stories/{largo['story_id']}")).json()
+    assert (state["ia_disponible"], state["ia_nota"]) == (False, message("job.largo_deshabilitado"))
+    story = (await api.get(f"/api/v1/stories/{largo['story_id']}")).json()
+    assert (story["ia_disponible"], story["ia_nota"]) == (False, message("job.largo_deshabilitado"))
+    assert (await api.get(f"/api/v1/stories/{corto['story_id']}")).json()["ia_disponible"] is True

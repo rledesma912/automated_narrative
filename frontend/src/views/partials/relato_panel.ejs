@@ -67,7 +67,7 @@ function extractActNumber(title) {
       <div class="flex items-center justify-between gap-3 <%= i === 1 && !preamble ? 'mt-0' : 'mt-10' %> mb-4">
         <h3 class="heading-forge-lg !text-2xl !text-forge-accent !mt-0 !mb-0" data-copy-part><%= mapBeatTitle(sections[i]) %></h3>
         <% if (actNumber && !relato.otroLargo) { %>
-          <button
+          <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %>
             type="button"
             class="btn-forge-outline !text-xs !py-1 !px-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
             <%= regen ? 'disabled' : '' %>

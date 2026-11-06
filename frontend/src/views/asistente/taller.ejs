@@ -19,12 +19,12 @@
         <%/* Con todo respondido o decidido la IA no tiene nada que mirar: el botón no se ofrece
              (asistente.js lo vuelve a esconder o mostrar al actualizar «Preguntas» sin recargar).
              Spec-700 A2: con la idea cambiada, sí (la IA vuelve a leerla). */%>
-        <button type="button" class="btn-forge-outline-sm<%= w.finish.kind === 'respondido' && !(state.idea_cambio && state.idea_cambio.preguntas) ? ' hidden' : '' %>" data-preguntar-falta
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-outline-sm<%= w.finish.kind === 'respondido' && !(state.idea_cambio && state.idea_cambio.preguntas) ? ' hidden' : '' %>" data-preguntar-falta
                 data-analizar="consult" data-titulo="Leyendo tus respuestas…"
                 data-detalle="La IA vuelve a leer tu historia con lo que respondiste y pregunta solo lo que siga faltando.">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Preguntame lo que falta<% if (est.consult) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.consult %></span><% } %>
         </button>
-        <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
                 data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos con lo que respondiste y después los revisa."
                 data-destino="escaleta"
                 <%- state.outline.acts.length ? 'data-confirmar="Ya armaste los actos: armarlos de nuevo reemplaza los que tenés, con lo que les cambiaste." data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo"' : '' %>>

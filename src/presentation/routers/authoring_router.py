@@ -104,6 +104,13 @@ async def get_options() -> dict:
 # ── Dirección ──────────────────────────────────────────────────────────────
 
 
+def ia_de(structure: str) -> dict:
+    """Spec-740 C6: si se puede trabajar con IA en una historia de este largo, y la nota."""
+    if settings.structure_enabled(structure):
+        return {"ia_disponible": True, "ia_nota": None}
+    return {"ia_disponible": False, "ia_nota": message(f"job.{structure}_deshabilitado")}
+
+
 def _structure_enabled_or_422(structure: str) -> None:
     """Spec-740 D3: no se crea ni se pasa una historia a un largo deshabilitado."""
     if not settings.structure_enabled(structure):
@@ -665,6 +672,7 @@ async def _state(story: Story) -> dict:
     active = await SQLJobRepository().get_active_for_story(story.id)
     return {
         "story_id": str(story.id),
+        **ia_de(story.structure),  # Spec-740 C6: el largo puede estar deshabilitado
         "status": story.status.value,
         "direction": _form(story),
         # Spec-700 D12: si cambió la idea desde que la leyeron «Preguntas» y «Los actos».

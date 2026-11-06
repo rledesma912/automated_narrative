@@ -116,6 +116,15 @@ Verificado en el código de **la versión instalada** (`server/dist` del contene
 
 ---
 
+## 4c. Parte E: un tope de relatos por día (D8)
+
+- **E1. Qué cuenta.** Escribir un relato completo (`full_generation`) con un perfil que declara el tope (`limite_relatos_por_dia` en el perfil; `freellmapi-libre` lo declara, los de Claude no). Cuentan los que terminaron bien o están corriendo **hoy** (día de Argentina); los que fallaron no cuentan. Preguntas, armar o revisar los actos y regenerar un acto no cuentan: son pocas llamadas y bloquearlos frena el trabajo en «Los actos».
+- **E2. Es de todo el sitio, no por persona.** La cuota del gateway es una sola. **También la comparten dev y prod:** las pruebas en dev gastan la misma cuota que usan las chicas. Por eso dev no cuenta para el tope de prod, pero sí gasta.
+- **E3. Al llegar al tope.** `POST …/jobs` (`full_generation`) responde 409 con un mensaje coloquial («Hoy ya se escribieron N relatos. Mañana se puede escribir otro; lo que armaste queda guardado.»). Los botones de escribir se ven apagados con esa nota, y antes del tope dicen cuántos quedan hoy («Hoy podés escribir 1 relato más»).
+- **E4. El número sale de S3**, con los cortos espaciados. Se cambia en el perfil, sin tocar código.
+
+---
+
 ## 5. Slices y verificación
 
 Ver §9 (plan) y §10 (tareas). Cierre de cada checkpoint (Spec-540 §2.5): tests en verde, `make dev-status` en verde y la URL para mirar. La Parte B, la C y la D no dependen de FreeLLMAPI: sirven con cualquier proveedor.
@@ -134,6 +143,7 @@ Tomadas por el usuario el 2026-11-05.
 | D4 | Qué se ve | **§4:** línea por versión, por acto si cambió, el resto plegado | Responde la pregunta sin llenar la pantalla |
 | D5 | Privacidad y términos | **Aceptados los proveedores ya habilitados:** Google, Groq y OpenRouter. Sumar otro requiere volver a preguntar | Las historias salen a esos terceros, cuyas capas gratis pueden usar los datos según sus términos |
 | D6 | Qué pasa con el largo (2026-11-06) | **Con Sonnet; sin crédito, deshabilitado** (Parte D, C6). Opción descartada: el largo también gratis con aviso | El largo es más frágil con cuotas gratis y en la prueba mezcló tres modelos (el error del sulki) |
+| D8 | Límite diario (2026-11-06) | **Sí: con FreeLLMAPI, un tope de relatos por día (1 o 2), con el número que sostenga S3** (Parte E) | Mejor un relato menos que uno que se corta a la mitad gastando la cuota. Ojo: las chicas escriben 2 o 3 por día |
 | D7 | Qué se mide (2026-11-06) | **Solo cortos.** Primero 2 cortos más para confirmar T1.9; después capacidad por día y lectura a ciegas | Es el uso real y lo que va a correr en FreeLLMAPI |
 
 ---
@@ -299,6 +309,16 @@ Adapter, esperas de A8 (429 con o sin hora, 502 por cuota), perfil `freellmapi-l
 **Tests:** Vitest de vista (corto disponible, largo `off`, historia larga), `sin-jerga`, `gramatica-visual`; E2E en Firefox con el mock y `LLM_PROFILE_LARGO=off`.
 **Checkpoint:** en `https://storymaker.test`, crear un relato nuevo (solo corto) y abrir una historia larga existente.
 
+### S4b. El tope diario (Parte E), después de S3
+
+| Qué | Dónde |
+|---|---|
+| `limite_relatos_por_dia` en el perfil y la cuenta de hoy (jobs `full_generation` `done` o activos con ese perfil, día de Argentina) | `config/llm_core_definitions.yaml`, `SQLJobRepository`, `JobManager` |
+| 409 al pasar el tope, con su mensaje; `GET /jobs/estimates` (o un endpoint chico) devuelve cuántos quedan hoy | `job_manager.py`, `job_router.py`, `core_messages.yaml` |
+| Botones de escribir con la nota («Hoy podés escribir N más» / apagado al tope) | `escribir-relato.js`, vistas de «Los actos», «El relato» y la sala |
+
+**Tests:** la cuenta (hecho, corriendo, fallado, ayer, otro perfil, otro tipo de job), el 409, la nota en la vista con 0, 1 y el tope.
+
 ### S5. El registro (Parte B, sin cambios de fondo)
 
 Igual que el plan anterior: `LLMResponse` con `provider`, `via`, `fallback_*` y `respaldo`; tabla `llm_call`; envoltorio `RegistroLLM` en la factory; acto en el contexto; enlace al relato en `_finish`. El perfil del contexto también se anota (columna `profile`).
@@ -351,9 +371,16 @@ T1.1 a T1.9 hechas; ver §8 y el commit.
 
 ### S4: La pantalla del largo deshabilitado
 
+- ✅ S4 hecha (2026-11-06). El Core informa `ia_disponible`/`ia_nota` en el estado del asistente y en `GET /stories/{id}`; la nota va en la barra de los cuatro pasos y en corregir, video y la sala; los botones de IA vienen `disabled` con `data-ia-apagada`, y `public/js/ia-apagada.js` corta el clic aunque otro script los vuelva a habilitar; pasar a corto recarga la página. E2E: `E2E_LLM_PROFILE_LARGO=off npx playwright test largo-apagado` (la siembra del arnés corre sin esa variable). La suite completa pasó con una falla intermitente en `asistente-sin-recargar` (aislado, 12 de 12; también sin estos cambios).
 - **T4.1** «¿Qué tan largo?» con el largo apagado y la nota. **Hecho cuando:** pasa el Vitest con el largo disponible y con `off`.
 - **T4.2** Nota en la barra de una historia larga con «Pasarla a corto», y botones de IA apagados. **Hecho cuando:** pasan el Vitest, `sin-jerga` y `gramatica-visual`.
 - **T4.3** E2E en Firefox con `LLM_PROFILE_LARGO=off`. **Hecho cuando:** está en verde y en `https://storymaker.test` se ve como se describe en C6.
+
+### S4b: El tope diario (con el número de S3)
+
+- **T4b.1** `limite_relatos_por_dia` y la cuenta de hoy. **Hecho cuando:** los tests cubren los casos de E1.
+- **T4b.2** 409 al tope y cuántos quedan en la API. **Hecho cuando:** pasan los tests de la API.
+- **T4b.3** La nota en los botones de escribir. **Hecho cuando:** pasan el Vitest (0, 1, tope), `sin-jerga` y un E2E con tope 1 en el mock.
 
 ### S5: El registro
 

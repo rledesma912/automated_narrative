@@ -31,7 +31,7 @@ const off = 'opacity-40 cursor-not-allowed';
       Para el video
     </a>
   <% } else { %>
-    <button type="button" class="btn-forge-outline-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" <%= regen ? 'disabled' : '' %>
+    <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-outline-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" <%= regen ? 'disabled' : '' %>
             data-armar-guion="<%= relato.id %>" data-story-id="<%= story.id %>"
             data-detalle="<%= guionEstimate ? `Tarda ${guionEstimate}. ` : '' %>La IA reparte el relato en bloques para leer, escribe lo que dice la calabaza y arma lo que va en pantalla. El relato no cambia.">
       <i data-lucide="clapperboard" class="w-4 h-4"></i>

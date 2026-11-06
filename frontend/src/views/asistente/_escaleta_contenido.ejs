@@ -19,7 +19,7 @@
       <i data-lucide="list-ordered" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
       <p class="font-serif text-xl mb-2">Todavía no armaste los actos</p>
       <p class="text-forge-muted mb-6">La IA reparte tu historia en <%= cuantosActos %> actos con lo que respondiste en las preguntas, y después los revisa. Tarda <%= est.plan_outline || 'alrededor de un minuto' %>.</p>
-      <button type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
+      <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm" data-analizar="plan_outline" data-titulo="Armando los actos…"
               data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos con lo que respondiste y después los revisa.">
         <i data-lucide="list-ordered" class="w-4 h-4"></i> Armar los actos
       </button>
@@ -31,7 +31,7 @@
       <div class="nota-forge nota-forge--warning mb-8 max-w-3xl" data-idea-cambio="actos">
         <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
         <p class="flex-1">Cambiaste tu idea después de armar los actos. Si querés que los actos cuenten la idea nueva, la IA los puede armar de nuevo.</p>
-        <button type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
                 data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos con tu idea nueva y después los revisa."
                 data-confirmar="La IA arma los actos de nuevo con tu idea nueva. Lo que les cambiaste a mano a los actos se reemplaza."
                 data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo">Armar los actos de nuevo</button>
@@ -46,13 +46,13 @@
         <i data-lucide="cloud-off" class="nota-forge__icono"></i>
         <% if (local.actos) { %>
           <p class="flex-1">Estos actos los armó la IA de tu compu porque la de la nube no respondió. Cuando vuelva, podés armarlos de nuevo.</p>
-          <button type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
+          <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="nota-forge__accion" data-analizar="plan_outline" data-titulo="Armando los actos…"
                   data-detalle="La IA reparte tu historia en <%= cuantosActos %> actos y después los revisa."
                   data-confirmar="La IA arma los actos de nuevo. Lo que les cambiaste a mano a los actos se reemplaza."
                   data-confirmar-titulo="¿Armar los actos de nuevo?" data-confirmar-label="Armar de nuevo">Armar los actos de nuevo</button>
         <% } else { %>
           <p class="flex-1">La revisión la hizo la IA de tu compu porque la de la nube no respondió. Cuando vuelva, podés revisar de nuevo.</p>
-          <button type="button" class="nota-forge__accion" data-analizar="verify_outline" data-titulo="Revisando los actos…"
+          <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="nota-forge__accion" data-analizar="verify_outline" data-titulo="Revisando los actos…"
                   data-detalle="La IA busca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren.">Revisar de nuevo</button>
         <% } %>
         <button type="button" class="nota-forge__accion" data-idea-revisada="local">Dejarlo así</button>

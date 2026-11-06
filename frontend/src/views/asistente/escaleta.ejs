@@ -16,12 +16,12 @@
     <%- include('_cabecera') %>
     <% if (acts.length) { %>
       <div class="flex flex-wrap items-center gap-3">
-        <button type="button" class="btn-forge-outline-sm" data-analizar="verify_outline" data-titulo="Revisando los actos…"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-outline-sm" data-analizar="verify_outline" data-titulo="Revisando los actos…"
                 data-detalle="La IA busca respuestas tuyas que quedaron afuera, cosas repetidas o fuera de lugar y secretos que nunca se descubren.">
           <i data-lucide="search-check" class="w-4 h-4"></i> Que la IA lo revise<% if (est.verify_outline) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= est.verify_outline %></span><% } %>
         </button>
         <%/* Spec-660 B1: pregunta acá (escribir-relato.js) y va a la sala ya escribiendo. */%>
-        <button type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= state.story_id %>"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= state.story_id %>"
                 data-estimado="<%= est.full_generation || '' %>"<% if (state.status === 'completed') { %> data-version-nueva<% } %>>
           <i data-lucide="feather" class="w-4 h-4"></i> Escribir el relato<% if (est.full_generation) { %> <span class="normal-case tracking-normal">· <%= est.full_generation %></span><% } %>
         </button>

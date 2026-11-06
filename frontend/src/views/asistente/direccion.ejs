@@ -15,8 +15,10 @@
   const est = (locals.estimateLabels && estimateLabels.consult) || '';
   /* Spec-650: el largo no viaja con el guardado automático (D9): se manda al crear y se
      cambia aparte, con confirmación si ya hay actos (public/js/asistente.js). */
-  const largo = state ? state.structure : 'largo';
   const largos = options.structures || [];
+  /* Spec-740 C6: una historia nueva arranca en el primer largo disponible. */
+  const primerLargo = (largos.find(l => l.disponible !== false) || largos[0] || { id: 'largo' }).id;
+  const largo = state ? state.structure : primerLargo;
   /* Spec-670: la clase de historia y el giro. Sin forma elegida, la de siempre (la primera). */
   const formas = options.forms || [];
   const giros = options.ingredients || [];
@@ -35,7 +37,7 @@
   <%/* Barra fija arriba de todo: guardado automático + acciones del paso. */%>
   <div class="asistente-barra">
     <%- include('_cabecera') %>
-    <button type="button" class="btn-forge-sm"
+    <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm"
             data-analizar="consult"
             data-titulo="Leyendo tu historia…"
             data-detalle="La IA lee tu idea para ver qué le falta y qué preguntarte."
@@ -80,14 +82,14 @@
     </section>
 
     <% if (largos.length) { %>
-    <section class="bg-forge-surface border border-forge-border p-6" data-largo-opciones>
+    <section id="largo" class="bg-forge-surface border border-forge-border p-6" data-largo-opciones>
       <h3 class="font-serif text-xl mb-1">¿Qué tan largo?</h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
         Es lo que dura leído en voz alta. El corto cuenta lo mismo en menos actos.</p>
       <div class="grid sm:grid-cols-2 gap-3">
         <% largos.forEach(l => { const [nombre, ...resto] = l.label.split(' · '); %>
           <label class="opcion-forge h-full">
-            <input type="radio" name="structure" value="<%= l.id %>" class="peer sr-only" <%= l.id === largo ? 'checked' : '' %>>
+            <input type="radio" name="structure" value="<%= l.id %>" class="peer sr-only" <%= l.id === largo ? 'checked' : '' %> <%= l.disponible === false ? 'disabled' : '' %>>
             <span class="opcion-forge__caja h-full">
               <span>
                 <span class="block font-semibold"><%= nombre %></span>
@@ -97,6 +99,9 @@
           </label>
         <% }) %>
       </div>
+      <% largos.filter(l => l.disponible === false && l.nota).forEach(l => { %>
+        <p class="pista-forge mt-3" data-largo-nota="<%= l.id %>"><i data-lucide="info"></i> <%= l.nota %></p>
+      <% }) %>
     </section>
     <% } %>
 
@@ -117,7 +122,7 @@
         Si no sabés cuál es, que la IA te sugiera una leyendo tu idea; si no es ninguna, elegí «Otra» y contala con tus palabras.
         La podés cambiar cuando quieras: lo que ya respondiste no se pierde.</p>
       <div class="flex flex-wrap items-center gap-3 mb-4">
-        <button type="button" class="btn-forge-outline-sm" data-analizar="suggest_form" data-titulo="Leyendo tu idea…"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-outline-sm" data-analizar="suggest_form" data-titulo="Leyendo tu idea…"
                 data-detalle="La IA busca qué clase de historia es." <%= state ? '' : 'disabled' %>>
           <i data-lucide="sparkles" class="w-4 h-4"></i> Que la IA lo sugiera<% if (estForma) { %> <span class="normal-case tracking-normal text-forge-muted">· <%= estForma %></span><% } %>
         </button>
