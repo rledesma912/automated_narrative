@@ -238,7 +238,8 @@ profiles:
       verificador:
         model: auto:estructura
         temperature: 0.2
-        num_predict: 2000
+        # Spec-740 S3: escribe 13–170 tokens; con 2000, Groq rechazaba el pedido por grande.
+        num_predict: 1000
       guion:
         model: auto:estructura
         temperature: 0.4

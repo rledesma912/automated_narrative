@@ -260,6 +260,12 @@ Con la cuota del día renovada, sin pruebas sueltas antes.
 - **Sesgo de esta medición:** los cortos fueron seguidos. Las chicas escriben 2 o 3 por día, espaciados: los límites por minuto pesan menos, los diarios igual. Falta medir espaciado.
 - **2 de 4 completos.** Con 3 por día como criterio, todavía no alcanza para afirmar nada.
 
+| 5 | 15:04 | ❌ Verificador | Groq | 413 de `qwen3.8-27b` tras esperar 91 s (Google sigue sin volver) |
+
+- **El patrón de los 3 fallos:** con el cupo diario de Google agotado, `auto:estructura` queda con `qwen3.8-27b` solo, y Groq rechaza el pedido por grande (`num_predict` alto contra su límite de salida por minuto). Lo que escribe cada rol en estas pruebas: Verificador 13–170 tokens, Memoria 213–327, Planificador del corto 1084–1260, Voz 352–787 (`gpt-oss-120b`: 684–1562 con razonamiento).
+- **Ajuste aplicado:** Verificador `num_predict` 2000 → 1000.
+- **Candidato a sumar** (prueba de las 15:10): `gemini-3.5-flash-lite` (Google, con su propio cupo diario) dio el JSON válido del Planificador (1527 tokens) y prosa natural, aunque corta (240 palabras, 317 tokens). `gemma-4-31b-it` no respondió (502, 429).
+
 *(S3: sigue. S4: pendiente.)*
 
 ---
