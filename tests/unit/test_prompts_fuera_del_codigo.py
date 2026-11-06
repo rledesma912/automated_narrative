@@ -118,6 +118,14 @@ PERMITIDOS: dict[tuple[str, str], str] = {
         "FREELLMAPI_API_KEY no configurada. Agrégala al .env o export",
     ): "error de configuración al arrancar (para quien administra)",
     (
+        "src/infrastructure/adapters/openai_adapter.py",
+        "OPENAI_API_KEY no configurada. Agrégala al .env o exporta la",
+    ): "error de configuración al arrancar (para quien administra)",
+    (
+        "src/infrastructure/adapters/openai_adapter.py",
+        "respuesta truncada (max_completion_tokens={…})",
+    ): "motivo técnico de LLMResponseError",
+    (
         "src/infrastructure/adapters/gemini_cli_adapter.py",
         "Comando no encontrado: {…}",
     ): "error técnico del adapter (proveedor no usado)",

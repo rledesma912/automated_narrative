@@ -10,6 +10,7 @@ from src.infrastructure.adapters import (
     GeminiCLIAdapter,
     MockLLMAdapter,
     OllamaAdapter,
+    OpenAIAdapter,
     RoleRoutingAdapter,
 )
 from src.infrastructure.adapters.registro_llm import RegistroLLM
@@ -79,6 +80,10 @@ class LLMFactory:
         if selected_provider == "freellmapi":
             logger.info(f"[FACTORY] Instanciando proveedor FreeLLMAPI ({settings.freellmapi_url})")
             return FreeLLMAPIAdapter()
+
+        if selected_provider == "openai":  # Spec-740 Parte F
+            logger.info(f"[FACTORY] Instanciando proveedor OpenAI ({settings.openai_model})")
+            return OpenAIAdapter()
 
         ollama_model = settings.role_config("voz").get("model", "mistral:latest")
         logger.info(f"[FACTORY] Instanciando proveedor Ollama ({ollama_model})")

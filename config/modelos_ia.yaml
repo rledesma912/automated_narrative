@@ -9,6 +9,9 @@ modelos:
   - { contiene: gemini-3.5-flash, nombre: Gemini 3.5 Flash }
   - { contiene: qwen3.8-27b, nombre: Qwen 3.8 }
   - { contiene: gpt-oss-120b, nombre: GPT-OSS 120B }
+  # Spec-740 Parte F: los de OpenAI (el modelo se elige en T8.6; sumar ahí el que se use).
+  - { contiene: gpt-5-mini, nombre: GPT-5 mini }
+  - { contiene: gpt-5-nano, nombre: GPT-5 nano }
   - { contiene: gemma3:12b, nombre: Gemma 3 (en la compu) }
   - { contiene: mock, nombre: IA de prueba }
 

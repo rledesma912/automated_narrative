@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-05
 **Tipo:** SDD: proveedores LLM (adapter + perfil), registro de llamadas, «El relato» (UI)
-**Estado:** S1 hecho (af75ffe). **Enfoque cambiado el 2026-11-06** (§0): FreeLLMAPI para el relato corto. Plan y tareas reescritos (§9, §10), con OK del usuario (2026-11-06). En S2.
+**Estado:** S1 hecho (af75ffe). **Enfoque cambiado el 2026-11-06** (§0): FreeLLMAPI para el relato corto. Plan y tareas reescritos (§9, §10), con OK del usuario (2026-11-06). Hechas S1, S2, S4, S5 y S6; S3 midiendo. **Parte F (OpenAI, D9) sumada el 2026-11-06**; S8 hecha salvo T8.6 (con clave).
 **Rama:** `feat/spec-740-freellmapi` (desde `origin/development`)
 **Extiende:** Spec-480 (proveedor por rol), Spec-530 (salida estructurada), Spec-600 D3 (la Voz sin respaldo), Spec-620 (mensajes fuera del código), Spec-720 D6 (`respaldo`, `respaldos`).
 
@@ -125,6 +125,19 @@ Verificado en el código de **la versión instalada** (`server/dist` del contene
 
 ---
 
+## 4d. Parte F: la API de OpenAI como alternativa paga a Claude (D9)
+
+Lo pidió el usuario el 2026-11-06: comprar la API de GPT en lugar de recargar Claude. Esta parte deja **el sistema listo para usarla**; elegir el modelo y activarla en un perfil es aparte (F6).
+
+- **F1. Un adapter propio, a semejanza del de Claude, no del de FreeLLMAPI.** Aunque OpenAI y FreeLLMAPI hablan el mismo formato (`/v1/chat/completions`), OpenAI se **comporta** como Anthropic: es pago, responde el modelo que se pidió y, si no atiende, hay que avisarlo enseguida. Nada de la lógica del gateway (esperar el cupo con A8, saltos de cadena, `X-FreeLLM-*`, `X-Session-Id`, `X-Routed-Via`) va en este adapter. `OpenAIAdapter` (`src/infrastructure/adapters/openai_adapter.py`) usa el SDK oficial (`openai`, `AsyncOpenAI`), igual que `AnthropicAdapter` usa `anthropic`.
+- **F2. Config por rol** (en el perfil, como Anthropic): `model`, `num_predict` → `max_completion_tokens` (los modelos que razonan rechazan `max_tokens`), `temperature` solo si el modelo la acepta (lista por substring, como `AnthropicAdapter`) y `reasoning_effort` si el rol lo declara. Clave: `OPENAI_API_KEY` en `.env` / `.env.prod`; nunca se imprime ni se commitea.
+- **F3. Errores como Claude (Spec-600 D3).** Un error de servicio → `LLMUnavailableError` con las mismas causas y los mismos mensajes de `core_messages.yaml` (`llm.credito`, `clave`, `saturada`, `sin_conexion`, `error`; ya dicen «la IA que escribe el relato», sin marca), **sin reintentos propios ni espera** (el SDK sale con `max_retries=0`). Sin saldo: 429 `insufficient_quota` → `credito` (no `saturada`, aunque sea 429). `refusal` en el mensaje o `finish_reason: content_filter` → `LLMRefusalError`; `finish_reason: length` → `LLMResponseError` (respuesta truncada); vacío → error.
+- **F4. Salida estructurada.** `response_format: {type: json_schema, json_schema: {name, strict: true, schema}}` con el esquema traducido por `openai_json_schema()`: el modo estricto pide `additionalProperties: false` y **todos** los campos en `required` (los opcionales pasan a admitir `null`) y no acepta algunas restricciones; quien llama valida igual con Pydantic, como hoy.
+- **F5. El registro y «Lo escribió…» no cambian.** El adapter llena `provider="openai"`, `model` (el que informa la respuesta) y los tokens; `RegistroLLM` lo anota y `config/modelos_ia.yaml` suma los nombres de los modelos de GPT que se usen. La factory suma la rama `"openai"` en `_single`; `/health` la verifica con una llamada barata (listar modelos).
+- **F6. Lo que queda fuera de esta parte.** Qué modelo y para qué roles (un perfil nuevo, p. ej. `hibrido-gpt`) se decide **después de comparar precios actuales** contra Sonnet (~US$ 0,09 el largo, ~0,15 todo el relato con armado) y de una medición de prosa con «El monte prohibido» (los prompts de la Voz y del Planificador se ajustaron con Sonnet). Activarlo en dev o prod: **preguntar antes** (D5: es un proveedor nuevo y las historias salen a OpenAI).
+
+---
+
 ## 5. Slices y verificación
 
 Ver §9 (plan) y §10 (tareas). Cierre de cada checkpoint (Spec-540 §2.5): tests en verde, `make dev-status` en verde y la URL para mirar. La Parte B, la C y la D no dependen de FreeLLMAPI: sirven con cualquier proveedor.
@@ -145,6 +158,7 @@ Tomadas por el usuario el 2026-11-05.
 | D6 | Qué pasa con el largo (2026-11-06) | **Con Sonnet; sin crédito, deshabilitado** (Parte D, C6). Opción descartada: el largo también gratis con aviso | El largo es más frágil con cuotas gratis y en la prueba mezcló tres modelos (el error del sulki) |
 | D8 | Límite diario (2026-11-06) | **Sí: con FreeLLMAPI, un tope de relatos por día (1 o 2), con el número que sostenga S3** (Parte E) | Mejor un relato menos que uno que se corta a la mitad gastando la cuota. Ojo: las chicas escriben 2 o 3 por día |
 | D7 | Qué se mide (2026-11-06) | **Solo cortos.** Primero 2 cortos más para confirmar T1.9; después capacidad por día y lectura a ciegas | Es el uso real y lo que va a correr en FreeLLMAPI |
+| D9 | La API de OpenAI (2026-11-06) | **Sí, como parte nueva (F):** un `OpenAIAdapter` propio, hecho como el de Claude. El modelo, el perfil y la activación se deciden después, con precios y una medición | Pago como Claude: falla enseguida y responde el modelo pedido. Juntarlo con FreeLLMAPI metería las esperas del gateway en un proveedor pago |
 
 ---
 
@@ -333,6 +347,17 @@ Igual que el plan anterior: `LLMResponse` con `provider`, `via`, `fallback_*` y 
 
 Igual que el plan anterior: `GET /generated-narratives/{id}/ia`, `config/modelos_ia.yaml`, la línea «Lo escribió…» por versión, por acto si cambió, y el resto plegado.
 
+### S8. El adapter de OpenAI (Parte F), independiente del resto
+
+| Qué | Dónde |
+|---|---|
+| `OpenAIAdapter` (SDK `openai`, `max_retries=0`), `openai_json_schema()`, causas de error | `src/infrastructure/adapters/openai_adapter.py`, `pyproject.toml` (+ `make dev-rebuild`) |
+| `openai_api_key` en settings; rama `"openai"` en la factory; `/health` | `src/config.py`, `factories.py`, `stream_router.py` |
+| Nombres de los modelos de GPT | `config/modelos_ia.yaml` |
+| Fake del SDK con sus tipos reales, sin llamadas | `tests/support/fake_openai.py`, `tests/unit/test_openai_adapter.py` |
+
+**Sin perfil activo ni llamadas reales** en esta slice. La prueba con la API (una llamada chica y después un corto) va recién cuando el usuario tenga la clave y dé el OK.
+
 ### S7. Prod (solo con OK)
 
 `.env.prod`: `LLM_PROFILE=freellmapi-libre`, `LLM_PROFILE_LARGO=off` (o `hibrido-sonnet55` si hay crédito), `FREELLMAPI_URL` y la clave. PR a `development` y `main`, `make deploy-check`, `make deploy`, un corto de prueba. El gateway tiene que estar levantado en esta máquina: si se cae, prod no escribe (lo dice `/health`).
@@ -404,6 +429,16 @@ T1.1 a T1.9 hechas; ver §8 y el commit.
 - **T6.2** `GET /generated-narratives/{id}/ia`. **Hecho cuando:** los tests cubren con datos, viejo (vacío) e inexistente (404).
 - **T6.3** El front suma `ia` tolerando un error del Core, y `relato_panel.ejs` muestra la línea, la marca por acto y el plegado. **Hecho cuando:** pasan el Vitest y los guardianes de vistas.
 - **T6.4** E2E en Firefox. **Hecho cuando:** en `https://storymaker.test` un corto nuevo muestra sus modelos y uno viejo no muestra la línea.
+
+### S8: El adapter de OpenAI
+
+- ✅ T8.1 a T8.5 hechas (2026-11-06): `OpenAIAdapter` con el SDK `openai` 3.46 (`max_retries=0`); los modelos que razonan (`gpt-5`, `o1`, `o3`, `o4`) van sin `temperature` y con piso de 16 000 tokens salvo `reasoning_effort` `none`/`minimal`; `openai_json_schema()` pone todos los campos en `required` y los opcionales admiten `null`, que `drop_added_nulls()` saca de la respuesta antes de que valide Pydantic (los esquemas reales de los 8 usos, del Consultor al Guion, van y vuelven con el mock). Factory, `openai_api_key`/`openai_model`, `/health` (`GET /v1/models`) y los nombres GPT-5 mini y nano. Suites: 1266 pytest; dev reconstruido (`make dev-rebuild`) y en verde, sin perfil de OpenAI activo. Falta T8.6 (clave, modelo, precios).
+- **T8.1** `OpenAIAdapter` con el pedido por rol (F2). **Hecho cuando:** los tests cubren `max_completion_tokens`, `temperature` según el modelo, `reasoning_effort` y que no va ningún header del gateway.
+- **T8.2** Errores y respuestas (F3). **Hecho cuando:** hay un test por causa (`insufficient_quota` → `credito`, 401 → `clave`, 429 y 5xx → `saturada`, sin red → `sin_conexion`), por `refusal`, `content_filter`, `length` y vacío, y ninguno reintenta.
+- **T8.3** `openai_json_schema()` y `generate_structured` (F4). **Hecho cuando:** los esquemas de los roles (Planificador, Verificador, Consultor, Memoria, Guion) pasan por la traducción y el fake valida el modo estricto.
+- **T8.4** Factory, settings, `/health` y `modelos_ia.yaml` (F5). **Hecho cuando:** un perfil de prueba con `provider: openai` arma el adapter envuelto en `RegistroLLM`, `/health` lo verifica con el fake y el resumen muestra el nombre de GPT.
+- **T8.5** Checkpoint. **Hecho cuando:** `make test`, `make lint` y `make dev-status` están en verde, sin activar el perfil.
+- **T8.6** (con clave y OK) Precios, perfil y un corto de prueba en dev. **Hecho cuando:** §8 tiene costo, tiempo y la prosa del corto comparada con la de Sonnet.
 
 ### S7: Cierre y prod
 

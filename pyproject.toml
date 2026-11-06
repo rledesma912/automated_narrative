@@ -17,6 +17,7 @@ dependencies = [
     "anthropic>=0.40.0",
     "sse-starlette>=3.4.1",
     "weasyprint>=63",
+    "openai>=1.60",
 ]
 
 [dependency-groups]

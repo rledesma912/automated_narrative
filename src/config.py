@@ -157,6 +157,7 @@ class Settings(BaseSettings):
     # Secretos (siguen en .env)
     anthropic_api_key: str = ""
     freellmapi_api_key: str = ""
+    openai_api_key: str = ""  # Spec-740 Parte F
 
     # Spec-740: el gateway de capas gratuitas (por nginx, en dev y en prod).
     freellmapi_url: str = "http://freellmapi.test"
@@ -256,6 +257,11 @@ class Settings(BaseSettings):
     @property
     def anthropic_model(self) -> str:
         return _current()[1].get("anthropic", {}).get("model", "claude-sonnet-4-6")
+
+    @property
+    def openai_model(self) -> str:
+        """Spec-740 F2: el modelo por defecto del bloque `openai:` del perfil."""
+        return _current()[1].get("openai", {}).get("model", "gpt-5-mini")
 
     @property
     def api_host_port(self) -> tuple[str, int]:

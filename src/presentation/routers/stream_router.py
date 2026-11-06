@@ -113,6 +113,24 @@ async def _freellmapi_check() -> str:
     return "ok" if r.status_code == 200 else f"http {r.status_code}"
 
 
+OPENAI_MODELS_URL = "https://api.openai.com/v1/models"
+
+
+async def _openai_check() -> str:
+    """Spec-740 F5: la clave de OpenAI, con un pedido que no gasta (listar modelos)."""
+    if not settings.openai_api_key:
+        return "missing key"
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(
+                OPENAI_MODELS_URL,
+                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+            )
+    except httpx.HTTPError as exc:
+        return f"error: {type(exc).__name__}"
+    return "ok" if r.status_code == 200 else f"http {r.status_code}"
+
+
 @router.get("/health")
 async def health_check():
     """Verifica conectividad con SQLite y el proveedor LLM activo."""
@@ -156,6 +174,9 @@ async def health_check():
     if "freellmapi" in providers:
         checks["freellmapi"] = await _freellmapi_check()
 
+    if "openai" in providers:
+        checks["openai"] = await _openai_check()
+
     if "gemini" in providers:
         checks["gemini"] = "cli-based (no ping available)"
 
@@ -163,6 +184,7 @@ async def health_check():
         "ollama": checks.get("ollama") == "ok",
         "anthropic": checks.get("anthropic_key") == "present",
         "freellmapi": checks.get("freellmapi") == "ok",
+        "openai": checks.get("openai") == "ok",
     }
     healthy = checks.get("sqlite") == "ok" and all(provider_ok.get(p, True) for p in providers)
 
