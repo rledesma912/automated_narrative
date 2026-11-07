@@ -57,6 +57,7 @@ def test_perfiles_el_local_activo_el_hibrido_y_uno_de_claude():
         HYBRID,
         "anthropic-sonnet55",
         "freellmapi-libre",  # Spec-740
+        "openai-sol",  # Spec-740 Parte F
     }
     claude = CORE["profiles"]["anthropic-sonnet55"]
     assert claude["provider"] == "anthropic"

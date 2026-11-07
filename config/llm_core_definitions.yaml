@@ -249,6 +249,49 @@ profiles:
         temperature: 0.2
         num_predict: 3000
 
+  # Spec-740 Parte F: todo en GPT-5.6 Sol (API de OpenAI, paga). Como `hibrido-sonnet55`:
+  # la Voz y el Guion razonan poco (`low`; con razonamiento el adapter reserva 16 000
+  # tokens, porque sale del mismo tope); los roles que devuelven JSON, sin razonar (`none`).
+  # Sin `respaldo`: si la API no atiende, el job falla con el mensaje (Spec-600 D3).
+  openai-sol:
+    provider: openai
+    openai: { model: gpt-5.6-sol }
+    # Spec-510: sin medir; manda el historial.
+    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 25, suggest_form: 10, plan_outline: 40, verify_outline: 15, video_script: 60 }
+    roles:
+      director:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 2000
+      voz:
+        model: gpt-5.6-sol
+        reasoning_effort: low
+        num_predict: 2500
+      journal:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 1500
+      consultor:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 3000
+      planificador:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 6000
+      verificador:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 2000
+      guion:
+        model: gpt-5.6-sol
+        reasoning_effort: low
+        num_predict: 6000
+      revisor:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 3000
+
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
 
 response_filters:

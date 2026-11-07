@@ -131,3 +131,25 @@ async def test_health_sin_clave(monkeypatch, client):
 )
 def test_el_nombre_que_ven_las_chicas(model, nombre):
     assert nombre_del_modelo(model) == nombre
+
+
+def test_el_perfil_de_sol_carga_con_todos_sus_roles():
+    """Spec-740 F6: todo en GPT-5.6 Sol; la Voz y el Guion razonan poco, el JSON sin razonar."""
+    from pathlib import Path
+
+    import yaml
+
+    from src.config import LLM_ROLES, _resolve_active_profile
+
+    core = yaml.safe_load(
+        (Path(__file__).parents[2] / "config" / "llm_core_definitions.yaml").read_text("utf-8")
+    )
+    _, profile = _resolve_active_profile(core, env_override="openai-sol")
+    assert profile["provider"] == "openai"
+    assert set(LLM_ROLES) <= set(profile["roles"])
+    for role, cfg in profile["roles"].items():
+        assert cfg["model"] == "gpt-5.6-sol", role
+        assert "temperature" not in cfg  # los que razonan no la aceptan
+        assert not cfg.get("respaldo")  # Spec-600 D3
+        assert cfg["reasoning_effort"] == ("low" if role in ("voz", "guion") else "none"), role
+    assert nombre_del_modelo("gpt-5.6-sol") == "GPT-5.6 Sol"
