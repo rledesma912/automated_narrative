@@ -27,6 +27,7 @@ from src.application.use_cases.create_story import (
     ensure_valid_entities,
     ensure_valid_genre,
 )
+from src.config import settings
 from src.domain.exceptions import InvalidStoryInputError
 from src.domain.models import (
     ActOutline,
@@ -85,7 +86,16 @@ async def get_options() -> dict:
         ],
         # Spec-650: largos posibles («¿Qué tan largo?»).
         "structures": [
-            {"id": e.id, "label": e.label, "acts": e.num_actos}
+            {
+                "id": e.id,
+                "label": e.label,
+                "acts": e.num_actos,
+                # Spec-740 D3/C6: un largo deshabilitado se ve apagado, con su nota.
+                "disponible": settings.structure_enabled(e.id),
+                "nota": None
+                if settings.structure_enabled(e.id)
+                else message(f"job.{e.id}_deshabilitado"),
+            }
             for e in (_estructuras().estructura(sid) for sid in _estructuras().structure_ids)
         ],
     }
@@ -94,9 +104,23 @@ async def get_options() -> dict:
 # ── Dirección ──────────────────────────────────────────────────────────────
 
 
+def ia_de(structure: str) -> dict:
+    """Spec-740 C6: si se puede trabajar con IA en una historia de este largo, y la nota."""
+    if settings.structure_enabled(structure):
+        return {"ia_disponible": True, "ia_nota": None}
+    return {"ia_disponible": False, "ia_nota": message(f"job.{structure}_deshabilitado")}
+
+
+def _structure_enabled_or_422(structure: str) -> None:
+    """Spec-740 D3: no se crea ni se pasa una historia a un largo deshabilitado."""
+    if not settings.structure_enabled(structure):
+        raise HTTPException(status_code=422, detail=message(f"job.{structure}_deshabilitado"))
+
+
 @router.post("/stories", status_code=201)
 async def create_authoring_story(form: DirectionForm) -> dict:
     """Crea el borrador desde la Dirección (primer guardado de «Nuevo relato»)."""
+    _structure_enabled_or_422(form.structure)
     repo = SQLStoryRepository()
     dto = StoryCreateDTO(
         **_story_fields(form, existing=None),
@@ -147,6 +171,7 @@ async def change_structure(story_id: str, body: StructureForm) -> dict:
     story = await _editable(story_id)
     if body.structure == story.structure:
         return await _state(story)
+    _structure_enabled_or_422(body.structure)  # pasar a corto sí se puede (C6)
     old = _estructuras().estructura(story.structure)
     new = _estructuras().estructura(body.structure)
     rules = [
@@ -647,6 +672,7 @@ async def _state(story: Story) -> dict:
     active = await SQLJobRepository().get_active_for_story(story.id)
     return {
         "story_id": str(story.id),
+        **ia_de(story.structure),  # Spec-740 C6: el largo puede estar deshabilitado
         "status": story.status.value,
         "direction": _form(story),
         # Spec-700 D12: si cambió la idea desde que la leyeron «Preguntas» y «Los actos».

@@ -9,7 +9,7 @@ from src.infrastructure.database.repositories import SQLBeatRepository, SQLStory
 class TestCLIContainer:
     def test_llm_con_mock(self):
         container = CLIContainer(use_mock=True)
-        assert isinstance(container.llm, MockLLMAdapter)
+        assert isinstance(container.llm.inner, MockLLMAdapter)  # Spec-740: con su registro
 
     def test_llm_cached(self):
         container = CLIContainer(use_mock=True)

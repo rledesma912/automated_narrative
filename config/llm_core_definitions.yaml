@@ -203,6 +203,95 @@ profiles:
         thinking: adaptive
         effort: low
 
+  # Spec-740: todo en FreeLLMAPI, el gateway local de capas gratuitas. Los modelos los eligen
+  # dos cadenas del gateway: `narrativa` (la Voz) y `estructura` (lo que devuelve JSON; sin
+  # `gpt-oss-120b`, que no cumplió el esquema del Planificador). Sin respaldo (D3). El
+  # `num_predict` cuenta contra la cuota por minuto: pedir de más hace saltar de modelo.
+  freellmapi-libre:
+    provider: freellmapi
+    freellmapi: { max_espera_s: 120 }
+    # Sin `reasoning_effort`: es un valor por pedido y cada modelo reacciona distinto (a
+    # `qwen3.8-27b` lo hace pasarse del tope; Spec-740 §8).
+    # Spec-510: sin medir; manda el historial.
+    estimated_seconds: { full_generation: 120, regenerate_voz: 15, consult: 20, suggest_form: 10, plan_outline: 30, verify_outline: 20, video_script: 60 }
+    roles:
+      director:
+        model: auto:estructura
+        temperature: 0.4
+        num_predict: 2000
+      voz:
+        model: auto:narrativa
+        temperature: 0.7
+        num_predict: 2000
+      journal:
+        model: auto:estructura
+        temperature: 0.3
+        num_predict: 1000
+      consultor:
+        model: auto:estructura
+        temperature: 0.3
+        num_predict: 3000
+      planificador:
+        model: auto:estructura
+        temperature: 0.4
+        num_predict: 4000
+      verificador:
+        model: auto:estructura
+        temperature: 0.2
+        # Spec-740 S3: escribe 13–170 tokens; con 2000, Groq rechazaba el pedido por grande.
+        num_predict: 1000
+      guion:
+        model: auto:estructura
+        temperature: 0.4
+        num_predict: 6000
+      revisor:
+        model: auto:estructura
+        temperature: 0.2
+        num_predict: 3000
+
+  # Spec-740 Parte F: todo en GPT-5.6 Sol (API de OpenAI, paga). Como `hibrido-sonnet55`:
+  # la Voz y el Guion razonan poco (`low`; con razonamiento el adapter reserva 16 000
+  # tokens, porque sale del mismo tope); los roles que devuelven JSON, sin razonar (`none`).
+  # Sin `respaldo`: si la API no atiende, el job falla con el mensaje (Spec-600 D3).
+  openai-sol:
+    provider: openai
+    openai: { model: gpt-5.6-sol }
+    # Spec-510: sin medir; manda el historial.
+    estimated_seconds: { full_generation: 150, regenerate_voz: 20, consult: 25, suggest_form: 10, plan_outline: 40, verify_outline: 15, video_script: 60 }
+    roles:
+      director:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 2000
+      voz:
+        model: gpt-5.6-sol
+        reasoning_effort: low
+        num_predict: 2500
+      journal:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 1500
+      consultor:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 3000
+      planificador:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 6000
+      verificador:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 2000
+      guion:
+        model: gpt-5.6-sol
+        reasoning_effort: low
+        num_predict: 6000
+      revisor:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 3000
+
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
 
 response_filters:

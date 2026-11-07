@@ -73,6 +73,7 @@
        class="flex items-center gap-2 text-sm text-forge-muted hover:text-forge-text transition-colors">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Mis historias
     </a>
+    <%- include('partials/ia_apagada', { x: story ? Object.assign({}, story, { story_id: story.id }) : null }) %>
     <% if (story) { %>
       <%/* Spec-630 B12: la ficha se fue; se vuelve a «Los actos». */%>
       <a href="<%= rutas.editarHref(storyId) %>" class="btn-forge-outline">
@@ -82,12 +83,12 @@
            el fallido ya no lanza con un POST sin confirmar. */%>
       <% const estimado = (locals.estimateLabels && locals.estimateLabels.full_generation) || ''; %>
       <% if (storyStatus !== 'draft') { %>
-        <button type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= storyId %>"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= storyId %>"
                 data-estimado="<%= estimado %>"<% if (storyStatus === 'completed') { %> data-version-nueva<% } %>>
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar historia
         </button>
       <% } else if (storyStatus === 'draft') { %>
-        <button type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= storyId %>"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm" data-escribir-relato data-generation-trigger data-story-id="<%= storyId %>"
                 data-estimado="<%= estimado %>">
           <i data-lucide="feather" class="w-4 h-4"></i> Escribir el relato
         </button>

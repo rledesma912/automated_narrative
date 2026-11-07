@@ -37,7 +37,9 @@ class VozUseCase:
         response = await self.retry_generator.generate_with_retry(
             prompt=prompt, system_prompt=system_prompt, model=model, temperature=temp
         )
-        clean_text = self.normalizer.normalize(response.text, model_name=model)
+        # Spec-740 A5: los filtros van por el modelo que respondió (con una cadena, el
+        # configurado no dice nada).
+        clean_text = self.normalizer.normalize(response.text, model_name=response.model or model)
         macro_beat.system_prompt = system_prompt
         macro_beat.user_prompt = prompt
         macro_beat.generated_act = clean_text

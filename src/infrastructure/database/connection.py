@@ -299,6 +299,36 @@ async def init_db() -> None:
         ON generation_job(story_id) WHERE status IN ('queued', 'running')
     """)
 
+    # Spec-740 Parte B: cada llamada a la IA de un job, con quién respondió de verdad. Tabla
+    # nueva: aparece sola al arrancar (sin ALTER). Se borra con la historia o el relato.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS llm_call (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            story_id TEXT NOT NULL,
+            job_id TEXT NOT NULL,
+            narrative_id TEXT,
+            profile TEXT,
+            role TEXT,
+            act INTEGER,
+            provider TEXT,
+            model TEXT,
+            via TEXT,
+            fallback_attempts INTEGER NOT NULL DEFAULT 0,
+            fallback_trail TEXT,
+            respaldo INTEGER NOT NULL DEFAULT 0,
+            input_tokens INTEGER,
+            output_tokens INTEGER,
+            elapsed_s REAL,
+            created_at TEXT,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE,
+            FOREIGN KEY (narrative_id) REFERENCES generated_narrative(id) ON DELETE CASCADE
+        )
+    """)
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_llm_call_narrative ON llm_call(narrative_id)"
+    )
+    await conn.execute("CREATE INDEX IF NOT EXISTS idx_llm_call_job ON llm_call(job_id)")
+
     # Spec-610: el paquete para el video, uno por variante del relato.
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS video_script (

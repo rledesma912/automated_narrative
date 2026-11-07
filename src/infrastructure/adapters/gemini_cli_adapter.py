@@ -66,7 +66,7 @@ class GeminiCLIAdapter:
                 logger.warning("[GEMINI-CLI] La respuesta obtenida está vacía.")
 
             # Importante: Retornamos el valor calculado envuelto en LLMResponse
-            return LLMResponse(text=response_text)
+            return LLMResponse(text=response_text, provider="gemini", model=model_to_use)
 
         except FileNotFoundError:
             logger.error(

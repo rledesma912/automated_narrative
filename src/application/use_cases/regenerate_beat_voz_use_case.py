@@ -12,6 +12,7 @@ from src.application.services.authoring.outline_narrator import OutlineNarrator
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.use_cases.generate_narratives_use_case import GenerateNarrativesUseCase
 from src.application.use_cases.voz_use_case import VozUseCase
+from src.domain import llm_context
 from src.domain.exceptions import StoryNotFoundError
 from src.domain.interfaces import LLMProvider
 from src.domain.models import ActText, GeneratedNarrative
@@ -73,6 +74,7 @@ class RegenerateBeatVozUseCase:
             findings.get(beat_number),
         )
         logger.debug(f"[REGEN-VOZ] beat={beat_number} story={story_id} narrative={narrative_id}")
+        llm_context.set_act(beat_number)  # Spec-740 B5: la Voz y la Memoria de este acto
         beat, _elapsed = await self.voz.narrate_with_prompts(beat, system_prompt, user_prompt)
         beat.stale = False
         await self.beat_repo.update(beat, story_id)
