@@ -5,11 +5,12 @@ sin historial suficiente, el valor inicial del perfil
 (`settings.estimated_seconds`).
 
 Spec-650: el relato completo tarda según su largo; su mediana se calcula aparte por
-estructura (jobs viejos sin `structure` en `params` = medio, Spec-750). Sin historial del corto,
-el valor inicial es el del perfil (`full_generation_corto`) o el del largo en proporción
-a la cantidad de actos.
+estructura (jobs viejos sin `structure` en `params` = medio, Spec-750). Sin historial de
+otro largo, el valor inicial es el del perfil (`full_generation_corto`, `…_largo`) o el de
+la media en proporción a las palabras del relato (Spec-750; antes, a los actos).
 """
 
+import re
 from dataclasses import dataclass
 from statistics import median
 from typing import Protocol
@@ -76,8 +77,15 @@ def _default(kind: JobKind, structure: str) -> int:
     )
     if isinstance(own, int | float) and not isinstance(own, bool) and own > 0:
         return int(own)
+    # Spec-750: en proporción al texto que lleva (`palabras_total`), no a la cantidad de
+    # actos: la media y la larga tienen los mismos actos y la larga tarda más del doble.
     repo = BeatSpecRepository()
-    return round(base * repo.estructura(structure).num_actos / repo.estructura().num_actos)
+    return round(base * _words(repo.estructura(structure)) / _words(repo.estructura()))
+
+
+def _words(estructura) -> int:
+    """`palabras_total` («2.500») como número."""
+    return int(re.sub(r"\D", "", estructura.palabras_total) or 1)
 
 
 def _duration(job: Job) -> float | None:

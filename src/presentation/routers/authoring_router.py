@@ -21,6 +21,7 @@ from src.application.services.authoring import (
     workshop_rules,
 )
 from src.application.services.beat_spec_repository import BeatSpecRepository
+from src.application.services.structure import DEFAULT_STRUCTURE
 from src.application.use_cases.create_story import (
     CreateStoryUseCase,
     build_entities,
@@ -90,6 +91,9 @@ async def get_options() -> dict:
                 "id": e.id,
                 "label": e.label,
                 "acts": e.num_actos,
+                # Spec-750: la historia nueva arranca en la de siempre (la media), no en la
+                # primera de la lista (el corto).
+                "por_defecto": e.id == DEFAULT_STRUCTURE,
                 # Spec-740 D3/C6: un largo deshabilitado se ve apagado, con su nota.
                 "disponible": settings.structure_enabled(e.id),
                 "nota": None

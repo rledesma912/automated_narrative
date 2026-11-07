@@ -90,3 +90,27 @@ async def test_por_tipo_de_job():
 async def test_as_dict():
     estimate = await _estimate([])
     assert estimate.as_dict() == {"seconds": 230, "source": "default", "samples": 0}
+
+
+# ── Spec-750: sin historial, la larga tarda según cuánto texto lleva ─────────
+
+
+async def test_sin_historial_la_larga_tarda_como_el_texto_que_lleva():
+    est = JobDurationEstimator(FakeJobs([]))
+    media = (await est.estimate(JobKind.FULL_GENERATION, PROFILE, "medio")).seconds
+    larga = (await est.estimate(JobKind.FULL_GENERATION, PROFILE, "largo")).seconds
+    corto = (await est.estimate(JobKind.FULL_GENERATION, PROFILE, "corto")).seconds
+    assert larga == round(media * 5250 / 2500)  # palabras_total de cada largo
+    assert corto < media < larga
+    # Lo que no depende del largo, igual.
+    consult = (await est.estimate(JobKind.CONSULT, PROFILE, "largo")).seconds
+    assert consult == (await est.estimate(JobKind.CONSULT, PROFILE, "medio")).seconds
+
+
+async def test_la_larga_no_usa_el_historial_de_la_media():
+    media = [_job(200), _job(210), _job(220)]
+    for j in media:
+        j.params["structure"] = "medio"
+    est = JobDurationEstimator(FakeJobs(media))
+    assert (await est.estimate(JobKind.FULL_GENERATION, PROFILE, "medio")).source == "history"
+    assert (await est.estimate(JobKind.FULL_GENERATION, PROFILE, "largo")).source == "default"

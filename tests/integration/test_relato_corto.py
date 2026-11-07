@@ -68,10 +68,11 @@ async def _narrative(client, narrative_id: str) -> str:
 
 async def test_las_opciones_traen_los_tres_largos(client):
     data = (await client.get(f"{API}/options")).json()
-    assert [(s["id"], s["acts"]) for s in data["structures"]] == [
-        ("medio", 5),
-        ("corto", 3),
-        ("largo", 5),
+    # Spec-750: en el orden de la pantalla; la historia nueva arranca en la media.
+    assert [(s["id"], s["acts"], s["por_defecto"]) for s in data["structures"]] == [
+        ("corto", 3, False),
+        ("medio", 5, True),
+        ("largo", 5, False),
     ]
 
 

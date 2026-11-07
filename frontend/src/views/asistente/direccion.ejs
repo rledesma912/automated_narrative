@@ -16,8 +16,10 @@
   /* Spec-650: el largo no viaja con el guardado automático (D9): se manda al crear y se
      cambia aparte, con confirmación si ya hay actos (public/js/asistente.js). */
   const largos = options.structures || [];
-  /* Spec-740 C6: una historia nueva arranca en el primer largo disponible. */
-  const primerLargo = (largos.find(l => l.disponible !== false) || largos[0] || { id: 'medio' }).id;
+  /* Spec-740 C6 / Spec-750: una historia nueva arranca en la media (`por_defecto`) o, si
+     está apagada, en el primer largo disponible. */
+  const disponibles = largos.filter(l => l.disponible !== false);
+  const primerLargo = (disponibles.find(l => l.por_defecto) || disponibles[0] || largos[0] || { id: 'medio' }).id;
   const largo = state ? state.structure : primerLargo;
   /* Spec-670: la clase de historia y el giro. Sin forma elegida, la de siempre (la primera). */
   const formas = options.forms || [];
@@ -85,8 +87,8 @@
     <section id="largo" class="bg-forge-surface border border-forge-border p-6" data-largo-opciones>
       <h3 class="font-serif text-xl mb-1">¿Qué tan largo?</h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Es lo que dura leído en voz alta. El corto cuenta lo mismo en menos actos.</p>
-      <div class="grid sm:grid-cols-2 gap-3">
+        Es lo que dura leído en voz alta. El corto cuenta lo mismo en menos actos; la larga tiene los mismos actos que la media, con más cosas en cada uno.</p>
+      <div class="grid sm:grid-cols-3 gap-3">
         <% largos.forEach(l => { const [nombre, ...resto] = l.label.split(' · '); %>
           <label class="opcion-forge h-full">
             <input type="radio" name="structure" value="<%= l.id %>" class="peer sr-only" <%= l.id === largo ? 'checked' : '' %> <%= l.disponible === false ? 'disabled' : '' %>>

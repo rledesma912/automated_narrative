@@ -7,9 +7,9 @@
 <% if (ia.ia_disponible === false) { %>
   <div class="nota-forge nota-forge--info" role="status" data-ia-apagada-nota>
     <i data-lucide="info" class="nota-forge__icono"></i>
-    <p class="flex-1"><%= ia.ia_nota %> Esta historia es larga: podés leerla y corregirla a mano.</p>
+    <p class="flex-1"><%= ia.ia_nota %> Podés leer y corregir esta historia a mano, o pasarla a otro largo.</p>
     <% if (ia.story_id) { %>
-      <a class="nota-forge__accion" href="/asistente/<%= ia.story_id %>/direccion#largo">Pasarla a corto</a>
+      <a class="nota-forge__accion" href="/asistente/<%= ia.story_id %>/direccion#largo">Cambiar el largo</a>
     <% } %>
   </div>
 <% } %>

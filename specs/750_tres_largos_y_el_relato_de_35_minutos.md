@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 a S4 hechos.
+**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 a S5 hechos; falta S6 (medición, con OK).
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
@@ -290,11 +290,11 @@ Cada tarea dice cómo se verifica. ✅ = hecha.
 
 ### S5. La pantalla
 
-- **T5.1 «Tu idea».** Tres opciones desde la config. Orden Corto · Media · Larga (hoy sale Media primero, por el orden del YAML; la historia nueva sigue arrancando en la Media). La nota de un largo apagado (`job.<largo>_deshabilitado`): hoy la de la media dice «solo se pueden escribir relatos cortos», que con tres largos ya no es cierto; una por largo. Verifica: test de vista y E2E.
-- **T5.2 Chips.** «Larga» en la galería y en «El relato». Verifica: tests de vista; `sin-jerga` y `gramatica-visual`.
-- **T5.3 Tiempo estimado.** El valor inicial de la larga y `BY_STRUCTURE` con `largo`. Verifica: test de `JobDurationEstimator`.
-- **T5.4 E2E en Firefox.** Crear una Larga, armar los actos con el mock y ver el chip.
-- **T5.5 Checkpoint.** Recorrido en `https://storymaker.test`; `CLAUDE.md` con los tres largos. Commit.
+- ✅ **T5.1 «Tu idea».** Hecho: `estructuras` en orden corto, medio, largo; `por_defecto` en `/authoring/options`; tres columnas; mensajes `job.{corto,medio,largo}_deshabilitado` y la nota con «Cambiar el largo» (antes «Pasarla a corto»). Tres opciones desde la config. Orden Corto · Media · Larga (hoy sale Media primero, por el orden del YAML; la historia nueva sigue arrancando en la Media). La nota de un largo apagado (`job.<largo>_deshabilitado`): hoy la de la media dice «solo se pueden escribir relatos cortos», que con tres largos ya no es cierto; una por largo. Verifica: test de vista y E2E.
+- ✅ **T5.2 Chips.** «Larga» en la galería y en «El relato». Verifica: tests de vista; `sin-jerga` y `gramatica-visual`.
+- ✅ **T5.3 Tiempo estimado.** Sin historial, el valor inicial de un largo es el de la media en proporción a `palabras_total` (antes, a la cantidad de actos: la larga habría dado lo mismo que la media); el corto pasa de ×0,6 a ×0,42. El valor inicial de la larga y `BY_STRUCTURE` con `largo`. Verifica: test de `JobDurationEstimator`.
+- ✅ **T5.4 E2E en Firefox.** Crear una Larga, armar los actos con el mock y ver el chip.
+- ✅ **T5.5 Checkpoint.** Recorrido en `https://storymaker.test`; `CLAUDE.md` con los tres largos. Commit.
 
 ### S6. Medición (solo con OK)
 
