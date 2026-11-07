@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 a S5 hechos; falta S6 (medición, con OK).
+**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 a S5 hechos. S6 (medición) no se corre: el usuario no la aprobó (2026-11-07). Las palabras y hechos por acto quedan como en §3 hasta ver relatos largos reales; D5 sigue abierta.
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
