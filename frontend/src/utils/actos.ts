@@ -84,8 +84,12 @@ export function splitActs(content: string): ActoDelRelato[] {
 /**
  * Spec-650 D11: la versión se escribió con otro largo que el de la historia ahora. Se lee,
  * se corrige y se descarga, pero no se regenera por actos (el Core lo rechaza).
+ * Spec-750: la media y la larga tienen los mismos actos: cuenta el largo guardado de la versión
+ * (`delaVersion`, lo manda el Core); sin él, la cantidad de actos.
  */
-export function deOtroLargo(content: string, estructura: string | undefined): boolean {
+export function deOtroLargo(content: string, estructura: string | undefined, delaVersion?: string): boolean {
   const cantidad = splitActs(content).length;
-  return cantidad > 0 && cantidad !== actosDe(estructura).length;
+  if (cantidad === 0) return false;
+  if (delaVersion) return delaVersion !== (estructura || "medio");
+  return cantidad !== actosDe(estructura).length;
 }

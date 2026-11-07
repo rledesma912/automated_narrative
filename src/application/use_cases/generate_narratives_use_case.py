@@ -60,6 +60,7 @@ class GenerateNarrativesUseCase:
             title=title or self._default_title(story),
             content=full_content,
             status=StoryStatus.COMPLETED,
+            structure=story.structure,  # Spec-750: la versión guarda su largo
         )
         return await self.narrative_repo.save(narrative)
 

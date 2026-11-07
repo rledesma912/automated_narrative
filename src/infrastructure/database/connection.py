@@ -199,9 +199,14 @@ async def init_db() -> None:
             content TEXT NOT NULL,
             status TEXT DEFAULT 'completed',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            -- Spec-750: el largo con que se escribió (NULL en las viejas: se deduce)
+            structure TEXT,
             FOREIGN KEY (story_template_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
+    # Spec-750: las bases de antes no tienen la columna (ALTER sin reconstruir).
+    if "structure" not in await _columns(conn, "generated_narrative"):
+        await conn.execute("ALTER TABLE generated_narrative ADD COLUMN structure TEXT")
 
     # Spec-530: taller del asistente. Una fila por criterio y nivel, con la pregunta
     # vigente, la respuesta y las preguntas de rondas anteriores (`asked`).
@@ -350,6 +355,11 @@ _STORY_TABLE = """
         FOREIGN KEY (genero, subgenero) REFERENCES subgenre(genre_id, id)
     )
 """
+
+
+async def _columns(conn: aiosqlite.Connection, table: str) -> set[str]:
+    return {r[1] for r in await (await conn.execute(f"PRAGMA table_info({table})")).fetchall()}
+
 
 _OLD_STRUCTURE_CHECK = "CHECK (structure IN ('largo', 'corto'))"
 

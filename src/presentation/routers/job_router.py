@@ -141,7 +141,7 @@ async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:
     # Spec-650 D11: una versión escrita con el otro largo no se regenera por actos (la
     # escaleta de ahora no se corresponde con su prosa). Va antes que «acto sin narrar»:
     # cambiar el largo borra la prosa de la última generación y ese aviso no diría por qué.
-    if mine and not same_structure(story, narrative.content):
+    if mine and not same_structure(story, narrative):
         # 422, no 409: en el front un 409 es «la IA ya está trabajando» (Spec-460).
         raise HTTPException(status_code=422, detail=message("api.version_de_otro_largo"))
     beat = next((b for b in story.beats if b.number == request.beat), None)

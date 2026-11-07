@@ -55,6 +55,8 @@ class GeneratedNarrativeResponse(BaseModel):
     content: str
     status: str
     created_at: datetime
+    # Spec-750: el largo de la versión (guardado o, en las viejas, por cuántos actos tiene).
+    structure: str = "medio"
 
     model_config = ConfigDict(from_attributes=True)
 

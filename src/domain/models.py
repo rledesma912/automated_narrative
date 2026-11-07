@@ -176,6 +176,9 @@ class GeneratedNarrative(BaseModel):
     content: str
     status: StoryStatus = StoryStatus.COMPLETED
     created_at: datetime = Field(default_factory=now_argentina)
+    # Spec-750: el largo de la historia cuando se escribió. None en las versiones de antes
+    # (se deduce de cuántos actos tiene: `narrative_acts.structure_of`).
+    structure: str | None = None
 
 
 # ── Spec-530: asistente de autoría ───────────────────────────────────────────

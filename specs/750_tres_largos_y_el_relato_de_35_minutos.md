@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 y S2 hechos.
+**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1, S2 y S3 hechos.
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
@@ -268,16 +268,16 @@ Cada tarea dice cómo se verifica. ✅ = hecha.
 
 ### S3. Cada versión guarda su largo
 
-- **T3.1 Tests (rojo primero).**
+- ✅ **T3.1 Tests (rojo primero).**
   - La versión nueva guarda su largo y la API lo devuelve.
   - La vieja (`NULL`) se deduce: 3 actos = `corto`, 5 = `medio`.
   - Regenerar un acto de una versión Media en una historia Larga → `version_de_otro_largo`.
   - El video de una larga usa 30–38 min y 20–28 momentos.
-- **T3.2 Base y repo.** La columna con `ALTER TABLE` idempotente en `init_db()`, `GeneratedNarrative.structure` y el UPSERT de `save()`.
-- **T3.3 Guardar y leer.** `consolidate_and_save()` guarda el largo y `largo_de_la_version()` lo lee. Lo usan `video_router`, `narrative_acts` y la respuesta de las versiones.
-- **T3.4 Video.** `lectura.yaml` y `biblia_visual.yaml` con `largo`, y un caso compartido nuevo en `tests/fixtures/video/` (Vitest y pytest).
-- **T3.5 Front.** `actos.ts` toma el largo de la versión y cuenta los actos solo de respaldo (`actos.test.ts`).
-- **T3.6 Checkpoint.** En dev, «Para el video» de una versión vieja se ve igual. Commit.
+- ✅ **T3.2 Base y repo.** La columna con `ALTER TABLE` idempotente en `init_db()`, `GeneratedNarrative.structure` y el UPSERT de `save()`.
+- ✅ **T3.3 Guardar y leer.** Helpers en `narrative_acts`: `structure_of(narrative)`, `split_narrative` (los actos con su largo, para el video) y `structure_by_count` (las viejas). `same_structure(story, narrative)` compara el largo guardado además de los actos. `/video/lectura?estructura=` manda sobre `?actos=`. El mock del paquete reparte los momentos que pide el prompt («entre N y M»). `consolidate_and_save()` guarda el largo y `largo_de_la_version()` lo lee. Lo usan `video_router`, `narrative_acts` y la respuesta de las versiones.
+- ✅ **T3.4 Video.** `lectura.yaml` y `biblia_visual.yaml` con `largo`, y un caso compartido nuevo en `tests/fixtures/video/` (Vitest y pytest).
+- ✅ **T3.5 Front.** `actos.ts` toma el largo de la versión y cuenta los actos solo de respaldo (`actos.test.ts`).
+- ✅ **T3.6 Checkpoint.** En dev, «Para el video» de una versión vieja se ve igual. Commit.
 
 ### S4. Repetición por palabras
 
