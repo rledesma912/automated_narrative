@@ -24,8 +24,8 @@ class BeatSpecRepository:
     `must`/`must_not` = fijos + la variante del nivel (o `default` sin nivel, que
     reproduce el texto de antes de Spec-450).
 
-    Spec-650: el YAML trae varias `estructuras` (largo, corto…); cada consulta dice
-    de cuál (por defecto, la larga de siempre).
+    Spec-650: el YAML trae varias `estructuras` (corto, medio, largo); cada consulta dice
+    de cuál (por defecto, la media: la de siempre).
     """
 
     _REVEAL_KEYS = ("must", "must_not")
@@ -54,7 +54,7 @@ class BeatSpecRepository:
         return list(self._structures)
 
     def estructura(self, structure: str = DEFAULT_STRUCTURE) -> Estructura:
-        """La estructura pedida. Una desconocida es un error, nunca la larga en silencio."""
+        """La estructura pedida. Una desconocida es un error, nunca la de siempre en silencio."""
         if structure not in self._structures:
             raise KeyError(f"Estructura desconocida: {structure!r}")
         return self._structures[structure]

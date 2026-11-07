@@ -41,7 +41,7 @@ class DirectionForm(BaseModel):
     threat: ThreatForm | None = None  # sin naturaleza = sin amenaza
     # Spec-650 D9: solo al crear (POST). El autoguardado (PUT) la ignora: el largo se
     # cambia únicamente con PUT …/structure, que confirma y rearma.
-    structure: StructureId = "largo"
+    structure: StructureId = "medio"
 
 
 class StructureForm(BaseModel):

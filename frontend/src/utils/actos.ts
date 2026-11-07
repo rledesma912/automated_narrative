@@ -3,12 +3,12 @@
  * `src/application/services/narrative_acts.py`: preámbulo opcional y un
  * `## Acto N` por acto, con los párrafos separados por una línea en blanco.
  *
- * Spec-650: hay dos largos. Esta es la única fuente de los nombres de los actos en
+ * Spec-650/750: hay varios largos (corto, medio). Esta es la única fuente de los nombres de los actos en
  * el front (la imagen de la UI no trae `config/`); un test los compara con
  * `nombre_ui` e `intensity` de `config/llm_beats_definition.yaml`.
  */
 
-export type Estructura = "largo" | "corto";
+export type Estructura = "medio" | "corto";
 
 export interface ActoDeLaEstructura {
   number: number;
@@ -17,7 +17,7 @@ export interface ActoDeLaEstructura {
 }
 
 export const ESTRUCTURAS: Record<Estructura, ActoDeLaEstructura[]> = {
-  largo: [
+  medio: [
     { number: 1, name: "Cómo empieza", intensity: "baja" },
     { number: 2, name: "Se complica", intensity: "media" },
     { number: 3, name: "El peor momento", intensity: "alta" },
@@ -31,9 +31,9 @@ export const ESTRUCTURAS: Record<Estructura, ActoDeLaEstructura[]> = {
   ],
 };
 
-/** Los actos de un largo (uno desconocido es el largo de siempre). */
+/** Los actos de un largo (uno desconocido es el de siempre, la media). */
 export function actosDe(estructura: string | undefined): ActoDeLaEstructura[] {
-  return ESTRUCTURAS[estructura as Estructura] ?? ESTRUCTURAS.largo;
+  return ESTRUCTURAS[estructura as Estructura] ?? ESTRUCTURAS.medio;
 }
 
 /**
@@ -45,11 +45,11 @@ export function estructuraPorCantidad(cantidad: number): Estructura | null {
   return found ?? null;
 }
 
-/** Spec-650: un estado del asistente sin el largo (Core viejo, dobles de prueba) es largo. */
+/** Spec-650: un estado del asistente sin el largo (Core viejo, dobles de prueba) es la media. */
 export function conLargo<T extends { structure?: string; structure_acts?: ActoDeLaEstructura[] }>(
   state: T,
 ): T & { structure: string; structure_acts: ActoDeLaEstructura[] } {
-  const structure = state.structure || "largo";
+  const structure = state.structure || "medio";
   const acts = state.structure_acts?.length ? state.structure_acts : actosDe(structure);
   return { ...state, structure, structure_acts: acts };
 }
@@ -67,7 +67,7 @@ export function splitActs(content: string): ActoDelRelato[] {
     raw.push({ number: Number(parts[i]), text: (parts[i + 1] || "").trim() });
   }
   // Una cantidad que no es de ningún largo (no debería pasar) conserva los nombres de siempre.
-  const nombres = ESTRUCTURAS[estructuraPorCantidad(raw.length) ?? "largo"];
+  const nombres = ESTRUCTURAS[estructuraPorCantidad(raw.length) ?? "medio"];
   return raw.map((a) => ({
     ...a,
     name: nombres.find((n) => n.number === a.number)?.name ?? `Acto ${a.number}`,

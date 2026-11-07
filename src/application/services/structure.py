@@ -7,7 +7,7 @@ pregunta a la estructura de la historia.
 
 from dataclasses import dataclass, field
 
-DEFAULT_STRUCTURE = "largo"
+DEFAULT_STRUCTURE = "medio"  # Spec-750: la de 5 actos y ~15 min
 
 
 @dataclass(frozen=True)

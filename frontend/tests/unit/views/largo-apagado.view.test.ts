@@ -11,7 +11,7 @@ const estado = JSON.parse(
 const NOTA = "Por ahora solo se pueden escribir relatos cortos.";
 const apagada = { ia_disponible: false, ia_nota: NOTA };
 const LARGOS = [
-  { id: "largo", label: "Largo · 5 actos · unos 15 minutos", acts: 5, disponible: false, nota: NOTA },
+  { id: "medio", label: "Media · 5 actos · unos 15 minutos", acts: 5, disponible: false, nota: NOTA },
   { id: "corto", label: "Corto · 3 actos · unos 7 minutos", acts: 3, disponible: true, nota: null },
 ];
 const options = { effects: [], tellings: [], criteria: [], structures: LARGOS, forms: [], ingredients: [], hablas: [] };
@@ -34,16 +34,16 @@ const botonesDeIa = (html: string) =>
 describe("el largo deshabilitado (Spec-740 C6)", () => {
   it("«¿Qué tan largo?» muestra el largo apagado con la nota, y una historia nueva arranca en corto", async () => {
     const html = await asistente("direccion", null);
-    expect(html).toMatch(/<input type="radio" name="structure" value="largo"[^>]*disabled/);
+    expect(html).toMatch(/<input type="radio" name="structure" value="medio"[^>]*disabled/);
     expect(html).toMatch(/<input type="radio" name="structure" value="corto"[^>]*checked/);
     expect(html).not.toMatch(/<input type="radio" name="structure" value="corto"[^>]*disabled/);
-    expect(html).toContain(`data-largo-nota="largo"`);
+    expect(html).toContain(`data-largo-nota="medio"`);
     expect(html).toContain(NOTA);
   });
 
   for (const paso of ["direccion", "taller", "escaleta"]) {
     it(`en «${paso}», una historia larga muestra la nota y sus botones de IA no se pueden tocar`, async () => {
-      const html = await asistente(paso, { ...estado, structure: "largo", ...apagada });
+      const html = await asistente(paso, { ...estado, structure: "medio", ...apagada });
       expect(html).toContain("data-ia-apagada-nota");
       expect(html).toContain(`href="/asistente/${estado.story_id}/direccion#largo">Pasarla a corto`);
       const botones = botonesDeIa(html);
@@ -58,7 +58,7 @@ describe("el largo deshabilitado (Spec-740 C6)", () => {
   }
 
   it("en «El relato», la nota y los botones de regenerar y guion apagados", async () => {
-    const story = { id: "s-1", title: "La casa", status: "completed", structure: "largo", ...apagada };
+    const story = { id: "s-1", title: "La casa", status: "completed", structure: "medio", ...apagada };
     const html = await ejs.renderFile(path.join(VIEWS, "relatos.ejs"), {
       story,
       relatos: [{ id: "r-1", title: "V", content: "## Acto 1\n\nProsa.", created_at: "2026-11-06T10:00:00.000Z" }],

@@ -24,7 +24,7 @@ describe("splitActs", () => {
     expect(splitActs(content).map((a) => a.name)).toEqual(["Cómo empieza", "Qué pasa", "Cómo termina"]);
   });
 
-  it("Spec-650: un relato de 5 actos lleva los nombres del largo", () => {
+  it("Spec-650: un relato de 5 actos lleva los nombres de la media", () => {
     const content = [1, 2, 3, 4, 5].map((n) => `## Acto ${n}\n\nTexto ${n}.`).join("\n\n");
     expect(splitActs(content).map((a) => a.name)).toEqual([
       "Cómo empieza",
@@ -38,14 +38,14 @@ describe("splitActs", () => {
 
 describe("Spec-650: estructuras", () => {
   it("el largo por cantidad de actos", () => {
-    expect(estructuraPorCantidad(5)).toBe("largo");
+    expect(estructuraPorCantidad(5)).toBe("medio");
     expect(estructuraPorCantidad(3)).toBe("corto");
     expect(estructuraPorCantidad(4)).toBeNull();
   });
 
   it("un largo desconocido es el de siempre", () => {
-    expect(actosDe(undefined)).toBe(ESTRUCTURAS.largo);
-    expect(actosDe("mediano")).toBe(ESTRUCTURAS.largo);
+    expect(actosDe(undefined)).toBe(ESTRUCTURAS.medio);
+    expect(actosDe("mediano")).toBe(ESTRUCTURAS.medio);
     expect(actosDe("corto")).toBe(ESTRUCTURAS.corto);
   });
 

@@ -144,9 +144,9 @@ stage:
   guionista: "Armando el guion para el video…"
 
 job:
-  # Spec-740 D3: con `LLM_PROFILE_LARGO=off` (sin crédito para la IA del relato largo).
-  # También es la nota de «¿Qué tan largo?» y de las historias largas (C6).
-  largo_deshabilitado: "Por ahora solo se pueden escribir relatos cortos."
+  # Spec-740 D3: con `LLM_PROFILE_MEDIO=off` (sin crédito para la IA de la media).
+  # También es la nota de «¿Qué tan largo?» y de las historias de ese largo (C6).
+  medio_deshabilitado: "Por ahora solo se pueden escribir relatos cortos."
   # Por qué terminó mal un trabajo (job.error), cuando no lo dice el pipeline.
   cancelada: "cancelada por el usuario"
   interrumpida: "interrumpida por reinicio"

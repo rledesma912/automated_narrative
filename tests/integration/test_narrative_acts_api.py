@@ -128,7 +128,7 @@ async def test_la_web_lee_el_ritmo_de_lectura(client):
     assert resp.json() == {
         "palabras_por_minuto": 150,
         "episodio_minutos": {"desde": 12, "hasta": 17},
-        "estructura": "largo",
+        "estructura": "medio",
     }
 
 
@@ -140,4 +140,4 @@ async def test_el_episodio_del_relato_corto_dura_menos(client):
     largo = (await client.get("/api/v1/video/lectura?actos=5")).json()
     assert largo["episodio_minutos"] == {"desde": 12, "hasta": 17}
     raro = (await client.get("/api/v1/video/lectura?actos=4")).json()
-    assert raro["estructura"] == "largo"
+    assert raro["estructura"] == "medio"

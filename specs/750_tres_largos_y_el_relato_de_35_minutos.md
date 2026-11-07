@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** TASKS (SPECIFY y PLAN aprobados el 2026-11-06). Falta el OK para IMPLEMENT. Sin código.
+**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 hecho.
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
@@ -238,20 +238,20 @@ Cada tarea dice cómo se verifica. ✅ = hecha.
 
 ### S1. `largo` → `medio`
 
-- **T1.1 Test de la reconstrucción (rojo primero).** `tests/integration/test_tres_largos_db.py`: una base con el esquema viejo (CHECK `largo|corto`), con una historia de cada largo y filas en todas las tablas hijas (personajes, reglas, actos, escaleta, taller, entidades, journal, relatos, paquete de video, `llm_call`, jobs). Después de `init_db()`:
+- ✅ **T1.1 Test de la reconstrucción (rojo primero).** `tests/integration/test_tres_largos_db.py`: una base con el esquema viejo (CHECK `largo|corto`), con una historia de cada largo y filas en todas las tablas hijas (personajes, reglas, actos, escaleta, taller, entidades, journal, relatos, paquete de video, `llm_call`, jobs). Después de `init_db()`:
   - Mismos conteos por tabla.
   - `largo` pasa a `medio` y `corto` queda igual.
   - Los `params` de los jobs dicen `medio`.
   - `foreign_key_check` vacío.
   - Una segunda corrida no cambia nada.
   - Una base nueva ya nace con el CHECK de tres valores.
-- **T1.2 `init_db()`.** Detecta el CHECK viejo en `sqlite_master` y reconstruye `story` con las FK apagadas fuera de la transacción. Vuelve a crear sus índices y actualiza `generation_job.params`. Verifica: T1.1 en verde.
-- **T1.3 Dominio, API y YAML.** `StructureId`, `DEFAULT_STRUCTURE = "medio"`, los defaults de los esquemas, el router y el orquestador, la lectura en `story_repository`, el exportador (omite `medio`) y el importador (sin la clave = `medio`; `estructura: largo` = larga). Verifica: tests de ida y vuelta del YAML con `medio` y `corto`.
-- **T1.4 Config.** `largo` pasa a `medio` en `llm_beats_definition.yaml` (label «Media · 5 actos · unos 15 minutos»), `moldes/formas.yaml`, `authoring_options.yaml`, `workshop_criteria.yaml` y `video/*.yaml`. `LLM_PROFILE_MEDIO` en el comentario de `.env` y en `CLAUDE.md`. Verifica: el validador de la config al arrancar.
-- **T1.5 Front.** `Estructura` en `actos.ts`, `asistente.js` y `direccion.ejs`; fixtures del asistente (`UPDATE_FIXTURES=1`); E2E `relato-corto` y `largo-apagado`. Verifica: `npm test`.
-- **T1.6 Tests existentes.** El renombre en los 22 archivos, a mano y sin `sed` a ciegas: en `timing.py` y `tiempos.js` «largo» es el estado del episodio y no se toca. Snapshots solo si cambia el id, con `SNAPSHOT_UPDATE=1` y revisando el diff. Verifica: `make test` en verde.
-- **T1.7 Copia de prod.** `init_db()` sobre una copia de `data/prod/stories.db` en el scratchpad: conteos antes y después iguales y 5 historias en `medio`. Verifica: la salida del script.
-- **T1.8 Checkpoint.**
+- ✅ **T1.2 `init_db()`.** Detecta el CHECK viejo en `sqlite_master` y reconstruye `story` con las FK apagadas fuera de la transacción. Vuelve a crear sus índices y actualiza `generation_job.params`. Verifica: T1.1 en verde.
+- ✅ **T1.3 Dominio, API y YAML.** `StructureId` (en S1, `corto|medio`: el test que compara el dominio con el YAML exige que la larga entre junto con su config, en S2), `DEFAULT_STRUCTURE = "medio"`, los defaults de los esquemas, el router y el orquestador, la lectura en `story_repository`, el exportador (omite `medio`) y el importador (sin la clave = `medio`; `estructura: largo` = larga). Verifica: tests de ida y vuelta del YAML con `medio` y `corto`.
+- ✅ **T1.4 Config.** `largo` pasa a `medio` en `llm_beats_definition.yaml` (label «Media · 5 actos · unos 15 minutos»), `moldes/formas.yaml`, `authoring_options.yaml`, `workshop_criteria.yaml` y `video/*.yaml`. `LLM_PROFILE_MEDIO` en el comentario de `.env` y en `CLAUDE.md`. Verifica: el validador de la config al arrancar.
+- ✅ **T1.5 Front.** `Estructura` en `actos.ts`, `asistente.js` y `direccion.ejs`; fixtures del asistente (`UPDATE_FIXTURES=1`); E2E `relato-corto` y `largo-apagado`. Verifica: `npm test`.
+- ✅ **T1.6 Tests existentes.** El renombre en los 22 archivos, a mano y sin `sed` a ciegas: en `timing.py` y `tiempos.js` «largo» es el estado del episodio y no se toca. Snapshots solo si cambia el id, con `SNAPSHOT_UPDATE=1` y revisando el diff. Verifica: `make test` en verde.
+- ✅ **T1.7 Copia de prod.** Hecho (2026-11-06): 16 historias (11 corto, 5 → medio), 7 jobs → medio, los 17 conteos iguales, `foreign_key_check` vacío, `integrity_check` ok. `init_db()` sobre una copia de `data/prod/stories.db` en el scratchpad: conteos antes y después iguales y 5 historias en `medio`. Verifica: la salida del script.
+- ✅ **T1.8 Checkpoint.** Nota: dev se reconstruyó solo al recargar uvicorn, antes del respaldo previsto; quedó bien (23 historias: 17 corto, 6 medio; FK ok).
   1. Respaldar `data/dev/stories.db`.
   2. Abrir dev: `make dev-status` en verde.
   3. Ver que las historias de 5 actos digan «Media» y que «Tu idea» ofrezca Corto y Media.
@@ -290,7 +290,7 @@ Cada tarea dice cómo se verifica. ✅ = hecha.
 
 ### S5. La pantalla
 
-- **T5.1 «Tu idea».** Tres opciones desde la config. Verifica: test de vista y E2E.
+- **T5.1 «Tu idea».** Tres opciones desde la config. Orden Corto · Media · Larga (hoy sale Media primero, por el orden del YAML; la historia nueva sigue arrancando en la Media). La nota de un largo apagado (`job.<largo>_deshabilitado`): hoy la de la media dice «solo se pueden escribir relatos cortos», que con tres largos ya no es cierto; una por largo. Verifica: test de vista y E2E.
 - **T5.2 Chips.** «Larga» en la galería y en «El relato». Verifica: tests de vista; `sin-jerga` y `gramatica-visual`.
 - **T5.3 Tiempo estimado.** El valor inicial de la larga y `BY_STRUCTURE` con `largo`. Verifica: test de `JobDurationEstimator`.
 - **T5.4 E2E en Firefox.** Crear una Larga, armar los actos con el mock y ver el chip.

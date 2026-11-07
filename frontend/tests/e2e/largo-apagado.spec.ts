@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Spec-740 C6: con el largo deshabilitado (`LLM_PROFILE_LARGO=off`, sin crédito para la IA
+ * Spec-740 C6: con el largo deshabilitado (`LLM_PROFILE_MEDIO=off`, sin crédito para la IA
  * del largo) solo se escriben cortos. Corre con el arnés en ese modo:
- *   E2E_LLM_PROFILE_LARGO=off npx playwright test largo-apagado
+ *   E2E_LLM_PROFILE_MEDIO=off npx playwright test largo-apagado
  */
 test.describe.configure({ mode: "serial" });
 test.skip(
-  !!process.env.BASE_URL || process.env.E2E_LLM_PROFILE_LARGO !== "off",
-  "Solo con el arnés y E2E_LLM_PROFILE_LARGO=off",
+  !!process.env.BASE_URL || process.env.E2E_LLM_PROFILE_MEDIO !== "off",
+  "Solo con el arnés y E2E_LLM_PROFILE_MEDIO=off",
 );
 
 const NOTA = "Por ahora solo se pueden escribir relatos cortos.";
@@ -16,14 +16,14 @@ let largo = "";
 
 test("un relato nuevo solo puede ser corto", async ({ page }) => {
   await page.goto("/nuevo");
-  await expect(page.getByRole("radio", { name: /Largo/ })).toBeDisabled();
+  await expect(page.getByRole("radio", { name: /Media/ })).toBeDisabled();
   await expect(page.getByRole("radio", { name: /Corto/ })).toBeChecked();
-  await expect(page.locator("[data-largo-nota='largo']")).toContainText(NOTA);
+  await expect(page.locator("[data-largo-nota='medio']")).toContainText(NOTA);
 });
 
 test("una historia larga avisa y sus botones de IA no hacen nada", async ({ page, request }) => {
   const stories = await (await request.get("/api/v1/stories")).json();
-  largo = stories.find((s: { structure: string }) => s.structure === "largo").id;
+  largo = stories.find((s: { structure: string }) => s.structure === "medio").id;
 
   await page.goto(`/asistente/${largo}/taller`);
   const nota = page.locator(".asistente-barra [data-ia-apagada-nota]");

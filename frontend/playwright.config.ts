@@ -60,8 +60,8 @@ export default defineConfig({
             E2E_LLM_DELAY: "0.15",
             E2E_API_PORT: String(API_PORT),
             PYTHONPATH: REPO_ROOT,
-            // Spec-740 C6: `E2E_LLM_PROFILE_LARGO=off` corre el arnés con el largo deshabilitado.
-            LLM_PROFILE_LARGO: process.env.E2E_LLM_PROFILE_LARGO ?? "",
+            // Spec-740 C6: `E2E_LLM_PROFILE_MEDIO=off` corre el arnés con el largo deshabilitado.
+            LLM_PROFILE_MEDIO: process.env.E2E_LLM_PROFILE_MEDIO ?? "",
           },
         },
         {

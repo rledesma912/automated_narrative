@@ -168,7 +168,7 @@ async def get_active_job(story_id: str):
 # Declarada antes de /jobs/{job_id}: si no, "estimates" se toma como un id.
 @router.get("/jobs/estimates")
 async def get_estimates(
-    structure: StructureId = "largo", story_id: str | None = None
+    structure: StructureId = "medio", story_id: str | None = None
 ) -> dict[str, dict]:
     """Duración estimada de cada tipo de job con el perfil activo (Spec-510), para una
     historia de ese largo (Spec-650: `?structure=corto`, o `?story_id=` y el largo sale

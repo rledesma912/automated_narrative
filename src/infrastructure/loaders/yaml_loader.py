@@ -177,7 +177,8 @@ def _characters(raw: list[dict]) -> list[dict]:
 def _authoring_fields(data: dict) -> dict:
     """Dirección, taller y escaleta del asistente (Spec-530); ausentes en YAML viejos."""
     return {
-        "structure": data.get("estructura") or "largo",  # Spec-650: sin la clave = largo
+        # Spec-650/750: sin la clave = medio (5 actos, ~15 min): nunca se exportó `estructura: largo`.
+        "structure": data.get("estructura") or "medio",
         "direction": data.get("direction") or None,
         "workshop": list(data.get("workshop") or []),
         "outline": list(data.get("outline") or []),

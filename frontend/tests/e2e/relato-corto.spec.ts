@@ -86,7 +86,7 @@ test("S4: corregir y armar el guion del corto usan su largo (6–8 min)", async 
 
 test("cambiar el largo pide confirmación; cancelar no cambia nada", async ({ page, request }) => {
   await page.goto(`/asistente/${sid}/direccion`);
-  await page.getByText("Largo", { exact: true }).click();
+  await page.getByText("Media", { exact: true }).click();
   await expect(dialogo(page)).toContainText("Los actos que armaste se borran");
   await dialogo(page).getByRole("button", { name: "Cancelar" }).click();
   await expect(page.getByRole("radio", { name: /Corto/ })).toBeChecked();
@@ -94,11 +94,11 @@ test("cambiar el largo pide confirmación; cancelar no cambia nada", async ({ pa
   expect(story.structure).toBe("corto");
   expect(story.outline.acts).toHaveLength(3);
 
-  await page.getByText("Largo", { exact: true }).click();
+  await page.getByText("Media", { exact: true }).click();
   await dialogo(page).getByRole("button", { name: "Cambiar el largo" }).click();
   await guardadoListo(page);
   story = await (await request.get(`/api/v1/authoring/stories/${sid}`)).json();
-  expect(story.structure).toBe("largo");
+  expect(story.structure).toBe("medio");
   expect(story.outline.acts).toHaveLength(0);
 
   // Los actos se arman de nuevo, ahora cinco.
@@ -119,7 +119,7 @@ test("elegir «Corto» después de crear la historia (sin actos) no pide confirm
   await expect(page).toHaveURL(/\/asistente\/[0-9a-f-]{36}\/direccion$/);
   await guardadoListo(page);
   const id = page.url().split("/")[4];
-  expect((await (await request.get(`/api/v1/authoring/stories/${id}`)).json()).structure).toBe("largo");
+  expect((await (await request.get(`/api/v1/authoring/stories/${id}`)).json()).structure).toBe("medio");
 
   await page.getByText("Corto", { exact: true }).click();
   await guardadoListo(page);

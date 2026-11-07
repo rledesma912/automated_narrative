@@ -17,7 +17,7 @@
      cambia aparte, con confirmación si ya hay actos (public/js/asistente.js). */
   const largos = options.structures || [];
   /* Spec-740 C6: una historia nueva arranca en el primer largo disponible. */
-  const primerLargo = (largos.find(l => l.disponible !== false) || largos[0] || { id: 'largo' }).id;
+  const primerLargo = (largos.find(l => l.disponible !== false) || largos[0] || { id: 'medio' }).id;
   const largo = state ? state.structure : primerLargo;
   /* Spec-670: la clase de historia y el giro. Sin forma elegida, la de siempre (la primera). */
   const formas = options.forms || [];

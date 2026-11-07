@@ -5,7 +5,7 @@ sin historial suficiente, el valor inicial del perfil
 (`settings.estimated_seconds`).
 
 Spec-650: el relato completo tarda según su largo; su mediana se calcula aparte por
-estructura (jobs viejos sin `structure` en `params` = largo). Sin historial del corto,
+estructura (jobs viejos sin `structure` en `params` = medio, Spec-750). Sin historial del corto,
 el valor inicial es el del perfil (`full_generation_corto`) o el del largo en proporción
 a la cantidad de actos.
 """

@@ -391,7 +391,7 @@ class ActOutline(BaseModel):
         return {k for w in self.warnings if w.dismissed for k in w.keys()}
 
 
-StructureId = Literal["largo", "corto"]  # Spec-650: largo = 5 actos, corto = 3
+StructureId = Literal["corto", "medio"]  # Spec-650/750: corto 3 actos, medio 5
 
 
 class Story(BaseModel):
@@ -418,7 +418,7 @@ class Story(BaseModel):
 
     # Spec-650: estructura del relato (id de `estructuras` en llm_beats_definition.yaml;
     # un test verifica que estos valores y los del YAML son los mismos).
-    structure: StructureId = "largo"
+    structure: StructureId = "medio"
 
     # Spec-530: asistente de autoría (vacíos en las historias del wizard).
     direction: Optional[Direction] = None

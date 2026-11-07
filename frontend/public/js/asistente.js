@@ -302,7 +302,7 @@
       return;
     }
     // Spec-650: el largo va solo al crear; después se cambia con cambiarLargo().
-    const state = await api("POST", "/authoring/stories", { ...payload, structure: value(form, "structure") || "largo" });
+    const state = await api("POST", "/authoring/stories", { ...payload, structure: value(form, "structure") || "medio" });
     page.storyId = state.story_id;
     page.root.dataset.largo = state.structure;
     page.root.dataset.storyId = state.story_id;
@@ -311,7 +311,7 @@
     const pista = $("[data-pista-titulo]");
     if (pista) pista.remove();
     // Si eligió otro largo mientras se creaba, se aplica ahora (todavía no hay actos).
-    const elegido = value(form, "structure") || "largo";
+    const elegido = value(form, "structure") || "medio";
     if (elegido !== state.structure) {
       await api("PUT", `/authoring/stories/${state.story_id}/structure`, { structure: elegido });
       page.root.dataset.largo = elegido;
@@ -323,7 +323,7 @@
    * borran (son del otro largo): se pregunta antes. Cancelar deja el largo de antes.
    */
   async function cambiarLargo(input) {
-    const antes = page.root.dataset.largo || "largo";
+    const antes = page.root.dataset.largo || "medio";
     const volver = () => {
       const prev = $(`input[name="structure"][value="${antes}"]`, page.root);
       if (prev) prev.checked = true;

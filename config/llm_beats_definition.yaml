@@ -56,8 +56,9 @@ beats_spec:
   # la cantidad de actos, sus nombres y su función salen de acá, nunca de una constante.
   # `revela_secreto`: el acto donde se revela la historia secreta del taller.
   estructuras:
-    largo:
-      label: "Largo · 5 actos · unos 15 minutos"
+    # Spec-750: la de 5 actos y ~15 min se llamaba `largo`; ahora `largo` es la de ~35 min.
+    medio:
+      label: "Media · 5 actos · unos 15 minutos"
       palabras_total: "2.500"  # lo que dice el objetivo del asistente (texto de siempre)
       hechos_por_acto: "de 3 a 5 hechos"  # lo que pide el Planificador para cada acto
       personajes_nuevos_max: 2  # Spec-730 D1: personajes que puede proponer la IA (con un para qué)
@@ -208,7 +209,7 @@ beats_spec:
       personajes_nuevos_max: 1  # Spec-730 D1
       revela_secreto: 2
       reubicar_desde:
-        largo: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
+        medio: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
       actos:
 
         - id: 1
@@ -246,7 +247,7 @@ beats_spec:
           label: "Desenlace"
           nombre_ui: "Cómo termina"
           palabras: [190, 240]
-          hechos: "2 o 3"  # absorbe el «qué hace después» del largo (la salida) y el cierre
+          hechos: "2 o 3"  # absorbe el «qué hace después» de la media (la salida) y el cierre
           hechos_max: 3  # más que esto → aviso en «Los actos» (Verificador)
           intent: "salir o alejarse del peligro sin una resolución fácil y cerrar con brevedad emocional: una marca que queda y la sensación de que el horror no terminó"
           intensity: baja

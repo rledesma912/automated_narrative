@@ -10,11 +10,11 @@ from src.application.services.beat_spec_repository import BeatSpecRepository
 
 def _write_yaml(tmp_path: Path, beats: list[dict], **extra) -> Path:
     textos = {"palabras_total": "2.500", "hechos_por_acto": "de 3 a 5 hechos"}
-    largo = {"label": "Largo", "revela_secreto": 4, "actos": beats, **textos}
+    medio = {"label": "Media", "revela_secreto": 4, "actos": beats, **textos}
     if "corto" in extra:  # D10: tablas de reubicación entre las dos
-        largo["reubicar_desde"] = {"corto": {1: 1, 2: 3, 3: 5}}
-        extra["corto"].setdefault("reubicar_desde", {"largo": {1: 1, 2: 2, 3: 2, 4: 3, 5: 3}})
-    data = {"beats_spec": {"estructuras": {"largo": largo, **extra}}}
+        medio["reubicar_desde"] = {"corto": {1: 1, 2: 3, 3: 5}}
+        extra["corto"].setdefault("reubicar_desde", {"medio": {1: 1, 2: 2, 3: 2, 4: 3, 5: 3}})
+    data = {"beats_spec": {"estructuras": {"medio": medio, **extra}}}
     f = tmp_path / "beats.yaml"
     f.write_text(yaml.dump(data, allow_unicode=True), encoding="utf-8")
     return f
@@ -85,7 +85,7 @@ FIVE_BEATS = [
 
 
 class TestBeatSpecRepositoryLoad:
-    def test_cinco_actos_en_la_larga(self, tmp_path):
+    def test_cinco_actos_en_la_media(self, tmp_path):
         repo = BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS))
         assert repo.estructura().num_actos == 5
         assert repo.estructura().ultimo == 5
@@ -108,7 +108,7 @@ class TestBeatSpecRepositoryLoad:
     def test_yaml_sin_estructura_larga_es_error(self, tmp_path):
         f = tmp_path / "bad.yaml"
         f.write_text(yaml.dump({"otro": "valor"}), encoding="utf-8")
-        with pytest.raises(ValueError, match="largo"):
+        with pytest.raises(ValueError, match="medio"):
             BeatSpecRepository(f)
 
 
@@ -128,9 +128,9 @@ class TestEstructuras:
         assert corto.tiene(3) and not corto.tiene(4) and not corto.tiene(0)
         assert repo.get_by_id(3, structure="corto")["name"] == "climax"
         assert repo.get_by_id(4, structure="corto") == {}
-        assert set(repo.structure_ids) == {"largo", "corto"}
+        assert set(repo.structure_ids) == {"medio", "corto"}
 
-    def test_estructura_desconocida_es_error_no_la_larga(self, tmp_path):
+    def test_estructura_desconocida_es_error_no_la_media(self, tmp_path):
         repo = BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS))
         with pytest.raises(KeyError):
             repo.estructura("mediano")
@@ -168,18 +168,18 @@ class TestEstructuras:
 
     def test_reubicar_entre_estructuras(self, tmp_path):
         repo = BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=self._corto()))
-        largo, corto = repo.estructura("largo"), repo.estructura("corto")
-        assert [corto.reubicar(n, largo) for n in range(1, 6)] == [1, 2, 2, 3, 3]
-        assert [largo.reubicar(n, corto) for n in range(1, 4)] == [1, 3, 5]
-        assert largo.reubicar(4, largo) == 4
+        medio, corto = repo.estructura("medio"), repo.estructura("corto")
+        assert [corto.reubicar(n, medio) for n in range(1, 6)] == [1, 2, 2, 3, 3]
+        assert [medio.reubicar(n, corto) for n in range(1, 4)] == [1, 3, 5]
+        assert medio.reubicar(4, medio) == 4
 
     def test_tabla_de_reubicacion_incompleta_es_error(self, tmp_path):
-        corto = {**self._corto(), "reubicar_desde": {"largo": {1: 1, 2: 2, 3: 3}}}
+        corto = {**self._corto(), "reubicar_desde": {"medio": {1: 1, 2: 2, 3: 3}}}
         with pytest.raises(ValueError, match="reubicar_desde"):
             BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
 
     def test_reubicar_a_un_acto_que_no_existe_es_error(self, tmp_path):
-        corto = {**self._corto(), "reubicar_desde": {"largo": {1: 1, 2: 2, 3: 2, 4: 3, 5: 4}}}
+        corto = {**self._corto(), "reubicar_desde": {"medio": {1: 1, 2: 2, 3: 2, 4: 3, 5: 4}}}
         with pytest.raises(ValueError, match="no existe"):
             BeatSpecRepository(_write_yaml(tmp_path, FIVE_BEATS, corto=corto))
 
@@ -205,9 +205,9 @@ class TestEstructuras:
 
     def test_el_yaml_real_carga_y_la_larga_tiene_cinco(self):
         repo = BeatSpecRepository()
-        largo = repo.estructura()
-        assert largo.num_actos == 5 and largo.revela_secreto == 4
-        assert [a["nombre_ui"] for a in largo.actos] == [
+        medio = repo.estructura()
+        assert medio.num_actos == 5 and medio.revela_secreto == 4
+        assert [a["nombre_ui"] for a in medio.actos] == [
             "Cómo empieza",
             "Se complica",
             "El peor momento",
