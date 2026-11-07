@@ -30,6 +30,7 @@ from src.infrastructure.database.repositories import (
 )
 from src.infrastructure.exporters import YamlStoryExporter
 from src.messages import message
+from src.presentation.routers.authoring_router import ia_de
 from src.presentation.schemas.request import StoryCreateRequest
 from src.presentation.schemas.response import StoryResponse
 
@@ -342,4 +343,5 @@ async def get_story(
         storyteller_config=YamlStoryExporter().authoring_config(story),
         personajes_full=story.personajes_full,
         stale_acts=[b.number for b in story.beats if b.stale],
+        **ia_de(story.structure),  # Spec-740 C6
     )

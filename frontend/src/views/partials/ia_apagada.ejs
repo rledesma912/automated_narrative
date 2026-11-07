@@ -1,0 +1,15 @@
+<%/*
+  Spec-740 C6: la historia es de un largo deshabilitado (sin crédito para la IA del largo).
+  Entrada: x = el estado del asistente o la historia (con ia_disponible, ia_nota y, para
+  ofrecer el cambio de largo, story_id). No muestra nada si hay IA.
+*/%>
+<% const ia = locals.x || {}; %>
+<% if (ia.ia_disponible === false) { %>
+  <div class="nota-forge nota-forge--info" role="status" data-ia-apagada-nota>
+    <i data-lucide="info" class="nota-forge__icono"></i>
+    <p class="flex-1"><%= ia.ia_nota %> Esta historia es larga: podés leerla y corregirla a mano.</p>
+    <% if (ia.story_id) { %>
+      <a class="nota-forge__accion" href="/asistente/<%= ia.story_id %>/direccion#largo">Pasarla a corto</a>
+    <% } %>
+  </div>
+<% } %>

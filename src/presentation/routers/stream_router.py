@@ -4,10 +4,12 @@ import logging
 from uuid import UUID
 
 import aiosqlite
+import httpx
 from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from src.config import settings
+from src.application.services.beat_spec_repository import BeatSpecRepository
+from src.config import settings, use_profile
 from src.infrastructure.database.repositories import (
     SQLBeatRepository,
     SQLJobRepository,
@@ -79,6 +81,56 @@ async def stream_generation(story_id: str, last_event_id: str | None = Header(No
 # ── Hito 4a: /health mejorado ─────────────────────────────────────────────────
 
 
+def _profiles_by_structure() -> dict[str, str | None]:
+    """Spec-740 D4: el perfil de cada largo (None = deshabilitado)."""
+    return {sid: settings.profile_for(sid) for sid in BeatSpecRepository().structure_ids}
+
+
+def _providers_of(profile_names: set[str]) -> set[str]:
+    """Proveedores que usan los roles de estos perfiles."""
+    providers: set[str] = set()
+    for name in profile_names:
+        use_profile(name)
+        try:
+            providers |= settings.llm_providers
+        finally:
+            use_profile(None)
+    return providers
+
+
+async def _freellmapi_check() -> str:
+    """Spec-740 A6: el gateway y la clave, con un pedido que no gasta cuota."""
+    if not settings.freellmapi_api_key:
+        return "missing key"
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(
+                f"{settings.freellmapi_url}/v1/models",
+                headers={"Authorization": f"Bearer {settings.freellmapi_api_key}"},
+            )
+    except httpx.HTTPError as exc:
+        return f"error: {type(exc).__name__}"
+    return "ok" if r.status_code == 200 else f"http {r.status_code}"
+
+
+OPENAI_MODELS_URL = "https://api.openai.com/v1/models"
+
+
+async def _openai_check() -> str:
+    """Spec-740 F5: la clave de OpenAI, con un pedido que no gasta (listar modelos)."""
+    if not settings.openai_api_key:
+        return "missing key"
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(
+                OPENAI_MODELS_URL,
+                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+            )
+    except httpx.HTTPError as exc:
+        return f"error: {type(exc).__name__}"
+    return "ok" if r.status_code == 200 else f"http {r.status_code}"
+
+
 @router.get("/health")
 async def health_check():
     """Verifica conectividad con SQLite y el proveedor LLM activo."""
@@ -99,14 +151,14 @@ async def health_check():
     except Exception as exc:
         checks["sqlite"] = f"error: {exc}"
 
-    # Proveedores LLM en uso (Spec-480: cada rol puede tener el suyo).
-    providers = sorted(settings.llm_providers)
+    # Proveedores LLM en uso (Spec-480: cada rol puede tener el suyo), de todos los
+    # perfiles que pueden correr (Spec-740 D4: uno por largo).
+    profiles = _profiles_by_structure()
+    providers = sorted(_providers_of({p for p in profiles.values() if p}))
     checks["provider"] = settings.llm_provider  # el del perfil (compatibilidad)
     checks["providers"] = providers
 
     if "ollama" in providers:
-        import httpx
-
         host = settings.ollama_host
         try:
             async with httpx.AsyncClient(timeout=3) as client:
@@ -119,12 +171,20 @@ async def health_check():
         # settings lee el .env: os.getenv no ve la clave si solo está ahí.
         checks["anthropic_key"] = "present" if settings.anthropic_api_key else "missing"
 
+    if "freellmapi" in providers:
+        checks["freellmapi"] = await _freellmapi_check()
+
+    if "openai" in providers:
+        checks["openai"] = await _openai_check()
+
     if "gemini" in providers:
         checks["gemini"] = "cli-based (no ping available)"
 
     provider_ok = {
         "ollama": checks.get("ollama") == "ok",
         "anthropic": checks.get("anthropic_key") == "present",
+        "freellmapi": checks.get("freellmapi") == "ok",
+        "openai": checks.get("openai") == "ok",
     }
     healthy = checks.get("sqlite") == "ok" and all(provider_ok.get(p, True) for p in providers)
 
@@ -132,6 +192,7 @@ async def health_check():
         "status": "healthy" if healthy else "degraded",
         "checks": checks,
         "active_profile": settings.active_profile_name,
+        "profiles": profiles,
     }
 
 
@@ -195,4 +256,5 @@ async def get_active_profile():
         "active_profile": settings.active_profile_name,
         "provider": settings.llm_provider,
         "roles": roles,
+        "profiles": _profiles_by_structure(),  # Spec-740 D4
     }

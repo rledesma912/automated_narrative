@@ -19,6 +19,7 @@ services:
       # así prod cambia solo con `make deploy` desde main, no al cambiar de rama.
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      - "freellmapi.test:host-gateway"  # Spec-740: el gateway, por nginx
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8010/api/v1/health')\" 2>/dev/null || exit 1"]
       interval: 30s

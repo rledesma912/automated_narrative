@@ -35,6 +35,7 @@ services:
       - ./frontend/public/output_stories:/app/frontend/public/output_stories
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      - "freellmapi.test:host-gateway"  # Spec-740: el gateway, por nginx
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8040/api/v1/health')\" 2>/dev/null || exit 1"]
       interval: 15s

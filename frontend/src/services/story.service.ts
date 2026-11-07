@@ -53,14 +53,22 @@ export interface Relato {
   repetition?: { acts: ActRepetition[] } | null;
   /** Spec-610: si la variante ya tiene su paquete para el video. */
   hasVideoScript?: boolean;
+  /** Spec-740 C1: qué IA la escribió (null si el Core no respondió; vacío en las viejas). */
+  ia?: IaDelRelato | null;
   /** Spec-630 B21: sin guion propio, la versión más nueva que sí lo tiene. */
   guionEn?: { id: string; fecha: string } | null;
   /** Spec-650 D11: la versión es de cuando la historia tenía otro largo (no se regenera por actos). */
   otroLargo?: boolean;
 }
 
+export interface IaDelRelato {
+  modelos: Array<{ nombre: string; actos: number[] }>;
+  por_acto: Record<string, string>;
+  resto: Array<{ tarea: string; nombre: string }>;
+}
+
 async function withRepetition(relato: Relato): Promise<Relato> {
-  const [repetition, script] = await Promise.all([
+  const [repetition, script, ia] = await Promise.all([
     axios
       .get<{ acts: ActRepetition[] }>(`${CORE_API_URL}/api/v1/generated-narratives/${relato.id}/repetition`, {
         timeout: 3000,
@@ -68,8 +76,12 @@ async function withRepetition(relato: Relato): Promise<Relato> {
       .then((r) => r.data)
       .catch(() => null),
     getVideoScript(relato.id),
+    axios
+      .get<IaDelRelato>(`${CORE_API_URL}/api/v1/generated-narratives/${relato.id}/ia`, { timeout: 3000 })
+      .then((r) => r.data)
+      .catch(() => null),
   ]);
-  return { ...relato, repetition, hasVideoScript: script !== null };
+  return { ...relato, repetition, hasVideoScript: script !== null, ia };
 }
 
 /**

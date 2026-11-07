@@ -85,7 +85,12 @@ class OllamaAdapter:
         logger.debug(f"[OLLAMA] ===RESPONSE_START===\n{content}\n===RESPONSE_END===")
         logger.debug(f"[OLLAMA] elapsed={elapsed:.2f}s, len={len(content)}")
 
-        return LLMResponse(text=content, elapsed_s=elapsed)
+        return LLMResponse(
+            text=content,
+            elapsed_s=elapsed,
+            provider="ollama",
+            model=data.get("model") or model_name,
+        )
 
     async def close(self) -> None:
         """Close connection (no-op for Ollama)."""

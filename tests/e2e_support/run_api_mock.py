@@ -8,7 +8,7 @@ Levanta `src.main:app` con:
   (`E2E_LLM_DELAY`) para que el avance en vivo sea observable.
 
 Variables: E2E_DB (destino), E2E_LLM_DELAY (segundos, default 0.15),
-E2E_API_PORT (default 8021).
+E2E_API_PORT (default 8021), LLM_PROFILE_LARGO (Spec-740: solo para el Core, no la siembra).
 
 Spec-700 D25/D26: el Revisor corre como en un perfil con el rol; si la idea dice
 «SIN CRÉDITO», la API «no atiende» y queda la nota con lo que cambió.
@@ -28,8 +28,13 @@ db_path = Path(os.environ["E2E_DB"])
 delay = float(os.environ.get("E2E_LLM_DELAY", "0.15"))
 port = int(os.environ.get("E2E_API_PORT", "8021"))
 
+# Spec-740 C6: la siembra escribe historias largas con el mock; el largo deshabilitado
+# (`LLM_PROFILE_LARGO=off`) es solo para el Core que prueban los E2E.
+seed_env = {k: v for k, v in os.environ.items() if k != "LLM_PROFILE_LARGO"}
 subprocess.run(
-    [sys.executable, str(Path(__file__).with_name("seed_e2e_db.py")), str(db_path)], check=True
+    [sys.executable, str(Path(__file__).with_name("seed_e2e_db.py")), str(db_path)],
+    check=True,
+    env=seed_env,
 )
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_path}"
 
@@ -60,7 +65,10 @@ class SlowMockLLM(MockLLMAdapter):
 revisor.con_ia = lambda: True
 
 
-LLMFactory.get_provider = staticmethod(lambda *_a, **_k: SlowMockLLM())
+from src.infrastructure.adapters.registro_llm import RegistroLLM  # noqa: E402
+
+# Spec-740 B: con el registro, como la factory real («Lo escribió …» en «El relato»).
+LLMFactory.get_provider = staticmethod(lambda *_a, **_k: RegistroLLM(SlowMockLLM()))
 
 if __name__ == "__main__":
     uvicorn.run("src.main:app", host="127.0.0.1", port=port, log_level="warning")

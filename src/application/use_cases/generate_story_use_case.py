@@ -12,6 +12,7 @@ from typing import Callable
 from src.application.services import PromptBuilder, repetition_check
 from src.application.services.debug_collector import DebugCollector, NullDebugCollector
 from src.application.use_cases.voz_use_case import VozUseCase
+from src.domain import llm_context
 from src.domain.interfaces import LLMProvider
 from src.domain.jobs import JobStage
 from src.domain.models import ActText, NarrativeJournal, Story
@@ -73,6 +74,7 @@ class GenerateStoryUseCase:
         # Spec-560 A6: si ya hubo un relato, cada acto recibe lo que el control le marcó.
         findings = repetition_check.last_version_findings(story)
         for act in acts:
+            llm_context.set_act(act.number)  # Spec-740 B: la Voz y la Memoria de este acto
             macro_beat = ActText(number=act.number)
             system_prompt, user_prompt = narrator.voice_prompts(
                 story, act, journal, previous_text, findings.get(act.number)

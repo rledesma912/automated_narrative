@@ -26,7 +26,8 @@ from src.application.services.beat_spec_repository import BeatSpecRepository
 from src.application.services.event_bus import GLOBAL_CHANNEL, EventBus, job_channel
 from src.application.services.job_duration_estimator import JobDurationEstimator
 from src.application.services.structure import DEFAULT_STRUCTURE
-from src.config import settings
+from src.config import settings, use_profile
+from src.domain import llm_context
 from src.domain.jobs import (
     Job,
     JobKind,
@@ -61,6 +62,14 @@ class JobAlreadyActiveError(Exception):
         self.job_id = job_id
 
 
+class StructureDisabledError(Exception):
+    """Spec-740 D3: el largo de la historia está deshabilitado (`LLM_PROFILE_<LARGO>=off`)."""
+
+    def __init__(self, structure: str) -> None:
+        super().__init__(message(f"job.{structure}_deshabilitado"))
+        self.structure = structure
+
+
 class JobManager:
     def __init__(
         self,
@@ -69,11 +78,13 @@ class JobManager:
         story_repo,
         channel_ttl: float = CHANNEL_TTL_SECONDS,
         estimator: JobDurationEstimator | None = None,
+        llm_calls=None,
     ) -> None:
         self._bus = bus
         self._jobs = job_repo
         self._estimator = estimator or JobDurationEstimator(job_repo)
         self._stories = story_repo
+        self._llm_calls = llm_calls  # Spec-740 B: las llamadas del job, con su relato
         self._channel_ttl = channel_ttl
         self._tasks: dict[UUID, asyncio.Task] = {}
         self._cancel_reasons: dict[UUID, str] = {}
@@ -101,6 +112,8 @@ class JobManager:
             JobAlreadyActiveError: la historia ya tiene un job activo.
         """
         structure = getattr(story, "structure", DEFAULT_STRUCTURE)  # dobles de prueba sin el campo
+        if not settings.structure_enabled(structure):
+            raise StructureDisabledError(structure)
         params = {
             **(params or {}),
             "structure": structure,  # Spec-650: la estimación se separa por largo
@@ -129,7 +142,7 @@ class JobManager:
     async def estimates(self, structure: str = DEFAULT_STRUCTURE) -> dict[str, dict]:
         """Duración estimada de cada tipo de job con el perfil activo (Spec-510), para
         una historia de ese largo (Spec-650)."""
-        profile = settings.active_profile_name
+        profile = settings.profile_for(structure) or settings.active_profile_name
         return {
             kind.value: (await self._estimator.estimate(kind, profile, structure)).as_dict()
             for kind in JobKind
@@ -140,7 +153,7 @@ class JobManager:
 
         Una falla del estimador no impide lanzar el job: queda sin estimación.
         """
-        profile = settings.active_profile_name
+        profile = settings.profile_for(structure)  # Spec-740 D2: el del largo de la historia
         try:
             estimate = await self._estimator.estimate(kind, profile, structure)
         except Exception:  # noqa: BLE001
@@ -194,6 +207,8 @@ class JobManager:
 
     async def _run(self, job: Job, story: Story, run: JobRunner, regenerate: bool) -> None:
         channel = job_channel(job.id)
+        use_profile(job.params.get("profile"))  # Spec-740 D2: el perfil de su largo
+        llm_context.enter_job(job.id, story.id)  # Spec-740
         status, error, narrative_id = JobStatus.FAILED, message("job.sin_resultado"), None
         try:
             job.started_at = await self._jobs.mark_running(job.id)
@@ -256,6 +271,11 @@ class JobManager:
         except Exception:  # noqa: BLE001 — el evento global sale igual
             logger.exception("[JOB] No se pudo persistir el final del job %s", job.id)
             job.finished_at = now_argentina()
+        if parsed_narrative_id and self._llm_calls is not None:
+            try:
+                await self._llm_calls.link_narrative(job.id, parsed_narrative_id)
+            except Exception:  # noqa: BLE001 — B4: el registro nunca corta el cierre
+                logger.exception("[JOB] No se pudieron enlazar las llamadas del job %s", job.id)
         job.status, job.error, job.narrative_id = status, error, parsed_narrative_id
         self._publish_global(
             StreamEventType.JOB_DONE if status == JobStatus.DONE else StreamEventType.JOB_FAILED,

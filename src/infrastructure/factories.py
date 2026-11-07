@@ -6,11 +6,14 @@ from src.config import LLM_ROLES, settings
 from src.domain.interfaces import LLMProvider
 from src.infrastructure.adapters import (
     AnthropicAdapter,
+    FreeLLMAPIAdapter,
     GeminiCLIAdapter,
     MockLLMAdapter,
     OllamaAdapter,
+    OpenAIAdapter,
     RoleRoutingAdapter,
 )
+from src.infrastructure.adapters.registro_llm import RegistroLLM
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,10 @@ class LLMFactory:
         Anthropic y el resto en Ollama), devuelve un `RoleRoutingAdapter` con un adapter
         por proveedor. Con un solo proveedor, el adapter de siempre.
         """
+        return RegistroLLM(LLMFactory._build(use_mock, provider))  # Spec-740 B3
+
+    @staticmethod
+    def _build(use_mock: bool, provider: str | None) -> LLMProvider:
         if use_mock:
             logger.info("[FACTORY] Usando proveedor Mock (Simulado)")
             return MockLLMAdapter()
@@ -69,6 +76,14 @@ class LLMFactory:
         if selected_provider == "anthropic":
             logger.info(f"[FACTORY] Instanciando proveedor Anthropic ({settings.anthropic_model})")
             return AnthropicAdapter()
+
+        if selected_provider == "freellmapi":
+            logger.info(f"[FACTORY] Instanciando proveedor FreeLLMAPI ({settings.freellmapi_url})")
+            return FreeLLMAPIAdapter()
+
+        if selected_provider == "openai":  # Spec-740 Parte F
+            logger.info(f"[FACTORY] Instanciando proveedor OpenAI ({settings.openai_model})")
+            return OpenAIAdapter()
 
         ollama_model = settings.role_config("voz").get("model", "mistral:latest")
         logger.info(f"[FACTORY] Instanciando proveedor Ollama ({ollama_model})")

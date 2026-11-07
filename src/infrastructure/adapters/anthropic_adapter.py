@@ -204,6 +204,8 @@ class AnthropicAdapter:
             elapsed_s=elapsed,
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
+            provider="anthropic",
+            model=getattr(response, "model", None) or request["model"],
         )
 
     async def close(self) -> None:

@@ -33,6 +33,11 @@ class LLMResponse:
         elapsed_s: float = 0.0,
         input_tokens: int | None = None,
         output_tokens: int | None = None,
+        model: str | None = None,
+        provider: str | None = None,
+        via: str | None = None,
+        fallback_attempts: int = 0,
+        fallback_trail: str | None = None,
     ):
         self.text = text
         self.context = context
@@ -41,6 +46,14 @@ class LLMResponse:
         # Spec-480: uso informado por proveedores pagos (para medir costo). None = no informado.
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
+        # Spec-740: quién respondió de verdad (el proveedor, su modelo y, en un gateway, la
+        # ruta y los saltos), y si fue el respaldo del rol (lo marca RoleRoutingAdapter).
+        self.model = model
+        self.provider = provider
+        self.via = via
+        self.fallback_attempts = fallback_attempts
+        self.fallback_trail = fallback_trail
+        self.respaldo = False
 
 
 @runtime_checkable

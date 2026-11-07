@@ -10,6 +10,7 @@
 const estimate = locals.estimateLabels ? (locals.estimateLabels.video_script || '') : '';
 %>
 <div class="max-w-6xl mx-auto flex flex-col gap-6" data-video data-story-id="<%= story.id %>" data-narrative-id="<%= relato.id %>">
+  <%- include('../partials/ia_apagada', { x: Object.assign({}, story, { story_id: story.id }) }) %>
   <div class="flex flex-col gap-2">
     <a href="/historia/<%= story.id %>/relatos" class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2 w-fit">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a los relatos
@@ -18,7 +19,7 @@ const estimate = locals.estimateLabels ? (locals.estimateLabels.video_script || 
       <h2 class="heading-forge-lg">Para el video</h2>
       <div class="flex flex-wrap gap-2">
         <a href="/historia/<%= story.id %>/relatos/<%= relato.id %>/corregir" class="btn-forge-outline-sm"><i data-lucide="pencil" class="w-4 h-4"></i> Corregir el relato</a>
-        <button type="button" class="btn-forge-outline-sm" data-rearmar
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-outline-sm" data-rearmar
                 data-detalle="<%= estimate ? `Tarda ${estimate}. ` : '' %>La IA arma todo de nuevo desde el relato como está ahora. Lo que corregiste acá (cómo se lee, lo remarcado, la calabaza, los prompts) se pierde.">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i> Armar de nuevo
         </button>

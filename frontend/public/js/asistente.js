@@ -351,6 +351,8 @@
       const state = await api("PUT", `/authoring/stories/${page.storyId}/structure`, { structure: input.value });
       page.root.dataset.largo = state.structure;
       status("ok", "Guardado");
+      // Spec-740 C6: pasar a un largo con IA saca la nota y prende los botones de la página.
+      if (state.ia_disponible && $("[data-ia-apagada-nota]")) window.location.reload();
     } catch (err) {
       volver();
       if (err.status === 409) {

@@ -34,7 +34,7 @@
       <i data-lucide="sparkles" class="w-10 h-10 text-forge-accent mx-auto mb-4"></i>
       <p class="font-serif text-xl mb-2">Todavía no hay preguntas</p>
       <p class="text-forge-muted mb-6">La IA la lee y te pregunta lo que le falta. Tarda <%= est.consult || 'unos segundos' %>.</p>
-      <button type="button" class="btn-forge-sm" data-analizar="consult" data-titulo="Leyendo tu historia…"
+      <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-sm" data-analizar="consult" data-titulo="Leyendo tu historia…"
               data-detalle="La IA lee tu idea para ver qué le falta y qué preguntarte.">
         <i data-lucide="sparkles" class="w-4 h-4"></i> Que la IA me pregunte
       </button>
@@ -45,7 +45,7 @@
       <div class="nota-forge nota-forge--warning mb-8" data-idea-cambio="preguntas">
         <i data-lucide="alert-triangle" class="nota-forge__icono"></i>
         <p class="flex-1">Cambiaste tu idea después de estas preguntas. La IA la puede volver a leer y preguntarte lo que haga falta.</p>
-        <button type="button" class="nota-forge__accion" data-analizar="consult" data-titulo="Leyendo tu idea nueva…"
+        <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="nota-forge__accion" data-analizar="consult" data-titulo="Leyendo tu idea nueva…"
                 data-detalle="La IA vuelve a leer tu idea y pregunta lo que haga falta.">Que la IA la vuelva a leer</button>
         <button type="button" class="nota-forge__accion" data-idea-revisada="preguntas">Dejarlo así</button>
       </div>

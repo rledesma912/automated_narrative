@@ -9,6 +9,7 @@
 const estimate = locals.estimateLabels ? locals.estimateLabels.regenerate_voz : '';
 %>
 <div class="max-w-6xl mx-auto flex flex-col gap-6" data-corregir data-story-id="<%= story.id %>" data-narrative-id="<%= relato.id %>">
+  <%- include('../partials/ia_apagada', { x: Object.assign({}, story, { story_id: story.id }) }) %>
   <div class="flex flex-col gap-2">
     <a href="/historia/<%= story.id %>/relatos" class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2 w-fit">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a los relatos
@@ -72,7 +73,7 @@ const estimate = locals.estimateLabels ? locals.estimateLabels.regenerate_voz : 
             <%/* Spec-650 D11: versión del otro largo; el Core no la regenera por actos. */%>
             <p class="pista-forge" data-otro-largo><i data-lucide="info"></i>Esta versión se escribió cuando la historia tenía otro largo: se puede leer, corregir y descargar, pero para regenerar un acto hay que escribir la historia de nuevo.</p>
           <% } else { %>
-          <button type="button" class="btn-forge-outline-sm w-fit" data-regenerar="<%= acto.number %>"
+          <button <%- (((locals.state || locals.story || {}).ia_disponible === false) ? 'data-ia-apagada disabled' : '') %> type="button" class="btn-forge-outline-sm w-fit" data-regenerar="<%= acto.number %>"
                   data-confirmar-titulo="¿Regenerar el acto <%= acto.number %>?"
                   data-detalle="<%= estimate ? `Tarda ${estimate}. ` : '' %>La IA lo escribe de nuevo y se pierde lo que corregiste en este acto.">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerar el acto

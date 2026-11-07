@@ -13,26 +13,26 @@ from src.infrastructure.factories import LLMFactory
 
 class TestLLMFactory:
     def test_use_mock_retorna_mock_adapter(self):
-        result = LLMFactory.get_provider(use_mock=True)
+        result = LLMFactory.get_provider(use_mock=True).inner
         assert isinstance(result, MockLLMAdapter)
 
     def test_use_mock_ignora_provider(self):
-        result = LLMFactory.get_provider(use_mock=True, provider="anthropic")
+        result = LLMFactory.get_provider(use_mock=True, provider="anthropic").inner
         assert isinstance(result, MockLLMAdapter)
 
     def test_provider_gemini_retorna_gemini_adapter(self):
-        result = LLMFactory.get_provider(provider="gemini")
+        result = LLMFactory.get_provider(provider="gemini").inner
         assert isinstance(result, GeminiCLIAdapter)
 
     def test_provider_ollama_retorna_ollama_adapter(self):
-        result = LLMFactory.get_provider(provider="ollama")
+        result = LLMFactory.get_provider(provider="ollama").inner
         assert isinstance(result, OllamaAdapter)
 
     def test_provider_default_retorna_ollama_adapter(self):
         with patch("src.infrastructure.factories.settings") as mock_settings:
             mock_settings.llm_provider = "ollama"
             mock_settings.llm_model = "mistral:latest"
-            result = LLMFactory.get_provider()
+            result = LLMFactory.get_provider().inner
         assert isinstance(result, OllamaAdapter)
 
     def test_provider_anthropic_retorna_anthropic_adapter(self):
@@ -47,7 +47,7 @@ class TestLLMFactory:
                 with patch(
                     "src.infrastructure.adapters.anthropic_adapter.anthropic.AsyncAnthropic"
                 ):
-                    result = LLMFactory.get_provider(provider="anthropic")
+                    result = LLMFactory.get_provider(provider="anthropic").inner
         assert isinstance(result, AnthropicAdapter)
 
 
@@ -76,7 +76,7 @@ class TestPerfilMixto:
 
     def test_un_solo_proveedor_devuelve_el_adapter_de_siempre(self, monkeypatch):
         self._profile(monkeypatch, None)
-        assert isinstance(LLMFactory.get_provider(), OllamaAdapter)
+        assert isinstance(LLMFactory.get_provider().inner, OllamaAdapter)
 
     def test_mixto_rutea_cada_rol_a_su_proveedor(self, monkeypatch):
         from src.infrastructure.adapters import RoleRoutingAdapter
@@ -88,7 +88,7 @@ class TestPerfilMixto:
         ):
             adapter_settings.anthropic_api_key = "test-key"  # sin requests reales
             adapter_settings.anthropic_model = "claude-sonnet-5"
-            router = LLMFactory.get_provider()
+            router = LLMFactory.get_provider().inner
 
         assert isinstance(router, RoleRoutingAdapter)
         assert isinstance(router.adapter_for("voz"), AnthropicAdapter)
@@ -123,7 +123,7 @@ class TestPerfilMixto:
         ):
             adapter_settings.anthropic_api_key = "test-key"
             adapter_settings.anthropic_model = "claude-sonnet-5-5"
-            router = LLMFactory.get_provider()
+            router = LLMFactory.get_provider().inner
 
         assert isinstance(router, RoleRoutingAdapter)
         assert isinstance(router.adapter_for("planificador"), AnthropicAdapter)
@@ -132,4 +132,4 @@ class TestPerfilMixto:
 
     def test_provider_explicito_ignora_el_ruteo(self, monkeypatch):
         self._profile(monkeypatch, "anthropic")
-        assert isinstance(LLMFactory.get_provider(provider="ollama"), OllamaAdapter)
+        assert isinstance(LLMFactory.get_provider(provider="ollama").inner, OllamaAdapter)

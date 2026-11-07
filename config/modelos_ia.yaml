@@ -1,0 +1,26 @@
+# Spec-740 C4: cómo se llama cada modelo en «El relato» («Lo escribió …»).
+# Se busca por parte del id, en orden: lo más específico primero. Un modelo que no está
+# se muestra con su id, sin la plataforma ni «:free»: un modelo nuevo nunca rompe la pantalla.
+modelos:
+  - { contiene: claude-sonnet-5-5, nombre: Claude Sonnet 5.5 }
+  - { contiene: claude-opus-5-5, nombre: Claude Opus 5.5 }
+  - { contiene: gemini-3.5-flash-lite, nombre: Gemini 3.5 Flash Lite }
+  - { contiene: gemini-3.1-flash-lite, nombre: Gemini 3.1 Flash Lite }
+  - { contiene: gemini-3.5-flash, nombre: Gemini 3.5 Flash }
+  - { contiene: qwen3.8-27b, nombre: Qwen 3.8 }
+  - { contiene: gpt-oss-120b, nombre: GPT-OSS 120B }
+  # Spec-740 Parte F: los de OpenAI (el modelo se elige en T8.6; sumar ahí el que se use).
+  - { contiene: gpt-5.6-sol, nombre: GPT-5.6 Sol }
+  - { contiene: gpt-5-mini, nombre: GPT-5 mini }
+  - { contiene: gpt-5-nano, nombre: GPT-5 nano }
+  - { contiene: gemma3:12b, nombre: Gemma 3 (en la compu) }
+  - { contiene: mock, nombre: IA de prueba }
+
+# Qué hizo cada rol, para «Ver qué IA hizo cada cosa» (en el orden del trabajo).
+tareas:
+  consultor: Las preguntas
+  revisor: Revisar tus respuestas
+  planificador: Armar los actos
+  verificador: Revisar los actos
+  journal: La memoria de cada acto
+  guion: El guion para el video
