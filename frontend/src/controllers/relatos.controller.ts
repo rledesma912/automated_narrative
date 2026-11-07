@@ -14,7 +14,7 @@ export const relatosPage = async (req: Request, res: Response) => {
 
     const relatos = (await getRelatosForStory(storyId)).map((r) => ({
       ...r,
-      otroLargo: deOtroLargo(r.content, story.structure), // Spec-650 D11
+      otroLargo: deOtroLargo(r.content, story.structure, r.structure), // Spec-650 D11, Spec-750
     }));
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -43,7 +43,7 @@ async function renderRelatoPanel(
   if (!story) return res.status(404).send("Historia no encontrada.");
   const found = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
   if (!found) return res.status(404).send("Relato no encontrado.");
-  const relato = { ...found, otroLargo: deOtroLargo(found.content, story.structure) }; // Spec-650 D11
+  const relato = { ...found, otroLargo: deOtroLargo(found.content, story.structure, found.structure) }; // Spec-650 D11, Spec-750
 
   res.render("partials/relato_panel", {
     story,
@@ -108,8 +108,8 @@ export const corregirRelatoPage = async (req: Request, res: Response) => {
     const relato = (await getRelatosForStory(storyId)).find((r) => r.id === narrativeId);
     if (!relato) return res.status(404).send("Relato no encontrado.");
     const actos = splitActs(relato.content);
-    const otroLargo = deOtroLargo(relato.content, story.structure); // Spec-650 D11
-    const lectura = await getReadingSettings(actos.length); // Spec-650: según el largo del relato
+    const otroLargo = deOtroLargo(relato.content, story.structure, relato.structure); // Spec-650 D11, Spec-750
+    const lectura = await getReadingSettings(actos.length, relato.structure); // Spec-650/750: según el largo del relato
     const acto = Math.min(Math.max(Number(req.query["acto"]) || 1, 1), Math.max(actos.length, 1));
 
     res.setHeader("Cache-Control", "no-store");
@@ -151,7 +151,7 @@ export const videoPage = async (req: Request, res: Response) => {
       relato,
       script,
       actos,
-      lectura: await getReadingSettings(actos.length), // Spec-650: según el largo del relato
+      lectura: await getReadingSettings(actos.length, relato.structure), // Spec-650/750: según el largo del relato
       title: `Para el video: «${story.title || "Sin título"}»`,
       activePage: "gallery",
     });

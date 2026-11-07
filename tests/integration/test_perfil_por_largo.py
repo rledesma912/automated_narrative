@@ -1,6 +1,6 @@
 """Spec-740 S2 (Parte D): un perfil por largo, y el largo deshabilitado con `off`.
 
-`LLM_PROFILE_<LARGO>` (p. ej. `LLM_PROFILE_LARGO`): vacío = el de siempre; `off` = ese
+`LLM_PROFILE_<MEDIO>` (p. ej. `LLM_PROFILE_MEDIO`): vacío = el de siempre; `off` = ese
 largo no se escribe; el nombre de un perfil = ese perfil, solo para los jobs de sus
 historias. Sin llamadas reales: el mock y dobles.
 """
@@ -22,7 +22,7 @@ CORE = yaml.safe_load(
     (Path(__file__).parents[2] / "config" / "llm_core_definitions.yaml").read_text("utf-8")
 )
 CORTO = "freellmapi-libre"
-LARGO = "hibrido-sonnet55"
+MEDIO = "hibrido-sonnet55"
 
 
 @pytest.fixture
@@ -34,11 +34,13 @@ def perfiles(monkeypatch):
     monkeypatch.setattr(settings, "freellmapi_api_key", "clave-de-prueba")
     monkeypatch.setattr(settings, "anthropic_api_key", "clave-de-prueba")
 
+    monkeypatch.delenv("LLM_PROFILE_LARGO", raising=False)  # Spec-750: solo se prueba la media
+
     def largo(value: str | None):
         if value is None:
-            monkeypatch.delenv("LLM_PROFILE_LARGO", raising=False)
+            monkeypatch.delenv("LLM_PROFILE_MEDIO", raising=False)
         else:
-            monkeypatch.setenv("LLM_PROFILE_LARGO", value)
+            monkeypatch.setenv("LLM_PROFILE_MEDIO", value)
 
     return largo
 
@@ -56,33 +58,33 @@ async def client():
 @pytest.mark.parametrize("value", [None, "", "  "])
 def test_sin_variable_el_largo_usa_el_de_siempre(perfiles, value):
     perfiles(value)
-    assert settings.profile_for("largo") == CORTO
+    assert settings.profile_for("medio") == CORTO
     assert settings.profile_for("corto") == CORTO
-    assert settings.structure_enabled("largo")
+    assert settings.structure_enabled("medio")
 
 
 @pytest.mark.parametrize("value", ["off", "OFF", " off "])
 def test_off_deshabilita_ese_largo(perfiles, value):
     perfiles(value)
-    assert settings.profile_for("largo") is None
-    assert not settings.structure_enabled("largo")
+    assert settings.profile_for("medio") is None
+    assert not settings.structure_enabled("medio")
     assert settings.structure_enabled("corto")
 
 
 def test_otro_perfil_solo_para_ese_largo(perfiles):
-    perfiles(LARGO)
-    assert settings.profile_for("largo") == LARGO
+    perfiles(MEDIO)
+    assert settings.profile_for("medio") == MEDIO
     assert settings.profile_for("corto") == CORTO
 
 
 def test_un_perfil_que_no_existe_no_arranca(perfiles):
     perfiles("no-existe")
-    with pytest.raises(ValueError, match="LLM_PROFILE_LARGO"):
+    with pytest.raises(ValueError, match="LLM_PROFILE_MEDIO"):
         config.check_structure_profiles()
 
 
 def test_off_y_vacio_y_perfiles_validos_arrancan(perfiles):
-    for value in (None, "", "off", LARGO):
+    for value in (None, "", "off", MEDIO):
         perfiles(value)
         config.check_structure_profiles()
 
@@ -91,7 +93,7 @@ def test_off_y_vacio_y_perfiles_validos_arrancan(perfiles):
 
 
 async def test_cada_tarea_lee_la_config_de_su_perfil(perfiles):
-    perfiles(LARGO)
+    perfiles(MEDIO)
     listos = asyncio.Barrier(2)
 
     async def job(profile: str):
@@ -104,14 +106,14 @@ async def test_cada_tarea_lee_la_config_de_su_perfil(perfiles):
         )
 
     corto, largo = await asyncio.gather(
-        asyncio.create_task(job(CORTO)), asyncio.create_task(job(LARGO))
+        asyncio.create_task(job(CORTO)), asyncio.create_task(job(MEDIO))
     )
     assert corto == (CORTO, "freellmapi", "auto:narrativa")
-    assert largo == (LARGO, "anthropic", "claude-sonnet-5-5")
+    assert largo == (MEDIO, "anthropic", "claude-sonnet-5-5")
 
 
 async def test_fuera_de_un_job_manda_el_de_siempre(perfiles):
-    perfiles(LARGO)
+    perfiles(MEDIO)
 
     async def tarea():
         return settings.active_profile_name
@@ -120,7 +122,7 @@ async def test_fuera_de_un_job_manda_el_de_siempre(perfiles):
 
 
 async def test_el_tope_de_espera_y_los_tiempos_son_del_perfil(perfiles):
-    perfiles(LARGO)
+    perfiles(MEDIO)
 
     async def job(profile: str):
         config.use_profile(profile)
@@ -129,7 +131,7 @@ async def test_el_tope_de_espera_y_los_tiempos_son_del_perfil(perfiles):
         )
 
     corto = await asyncio.create_task(job(CORTO))
-    largo = await asyncio.create_task(job(LARGO))
+    largo = await asyncio.create_task(job(MEDIO))
     assert corto[0] == {"max_espera_s": 120}
     assert largo[0] is None
     assert corto[1] != largo[1]
@@ -139,14 +141,14 @@ async def test_la_factory_arma_el_adapter_del_perfil_del_job(perfiles):
     from src.infrastructure.adapters import AnthropicAdapter, FreeLLMAPIAdapter
     from src.infrastructure.factories import LLMFactory
 
-    perfiles(LARGO)
+    perfiles(MEDIO)
 
     async def job(profile: str):
         config.use_profile(profile)
         return LLMFactory.get_provider().inner
 
     corto = await asyncio.create_task(job(CORTO))
-    largo = await asyncio.create_task(job(LARGO))
+    largo = await asyncio.create_task(job(MEDIO))
     assert isinstance(corto, FreeLLMAPIAdapter)
     assert isinstance(largo.adapter_for("voz"), AnthropicAdapter)
 
@@ -200,7 +202,7 @@ async def test_el_job_corre_con_el_perfil_de_su_historia(perfiles):
     from src.domain.jobs import JobKind
     from src.domain.streaming import StreamEvent, StreamEventType
 
-    perfiles(LARGO)
+    perfiles(MEDIO)
     jobs = _Jobs()
     manager = _manager(jobs)
     seen = {}
@@ -215,12 +217,12 @@ async def test_el_job_corre_con_el_perfil_de_su_historia(perfiles):
 
         return _run
 
-    for name, structure in (("corto", "corto"), ("largo", "largo")):
+    for name, structure in (("corto", "corto"), ("medio", "medio")):
         job = await manager.submit(_Story(structure), JobKind.CONSULT, runner(name))
         await manager.wait(job.id)
 
-    assert seen == {"corto": CORTO, "largo": LARGO}
-    assert [j.params["profile"] for j in jobs.created] == [CORTO, LARGO]
+    assert seen == {"corto": CORTO, "medio": MEDIO}
+    assert [j.params["profile"] for j in jobs.created] == [CORTO, MEDIO]
 
 
 @pytest.mark.parametrize("kind", ["full_generation", "regenerate_voz", "consult", "video_script"])
@@ -231,7 +233,7 @@ async def test_con_el_largo_off_ningun_job_arranca(perfiles, kind):
     perfiles("off")
     jobs = _Jobs()
     with pytest.raises(StructureDisabledError):
-        await _manager(jobs).submit(_Story("largo"), JobKind(kind), lambda: None)
+        await _manager(jobs).submit(_Story("medio"), JobKind(kind), lambda: None)
     assert jobs.created == []
 
 
@@ -247,8 +249,8 @@ async def test_options_dice_que_largo_esta_disponible(perfiles, client):
 
     assert by_id["corto"]["disponible"] is True
     assert by_id["corto"].get("nota") is None
-    assert by_id["largo"]["disponible"] is False
-    assert by_id["largo"]["nota"] == message("job.largo_deshabilitado")
+    assert by_id["medio"]["disponible"] is False
+    assert by_id["medio"]["nota"] == message("job.medio_deshabilitado")
 
 
 async def test_options_con_todo_disponible(perfiles, client):
@@ -258,7 +260,7 @@ async def test_options_con_todo_disponible(perfiles, client):
 
 
 async def test_health_y_perfil_activo_muestran_los_dos(perfiles, client, monkeypatch):
-    perfiles(LARGO)
+    perfiles(MEDIO)
     real = httpx.AsyncClient
     monkeypatch.setattr(
         httpx,
@@ -270,17 +272,17 @@ async def test_health_y_perfil_activo_muestran_los_dos(perfiles, client, monkeyp
 
     health = (await client.get("/api/v1/health")).json()
     assert set(health["checks"]["providers"]) == {"freellmapi", "anthropic", "ollama"}
-    assert health["profiles"] == {"corto": CORTO, "largo": LARGO}
+    assert health["profiles"] == {"corto": CORTO, "medio": MEDIO, "largo": CORTO}
 
     active = (await client.get("/api/v1/config/active-profile")).json()
     assert active["active_profile"] == CORTO
-    assert active["profiles"] == {"corto": CORTO, "largo": LARGO}
+    assert active["profiles"] == {"corto": CORTO, "medio": MEDIO, "largo": CORTO}
 
 
 async def test_health_con_el_largo_off(perfiles, client):
     perfiles("off")
     health = (await client.get("/api/v1/health")).json()
-    assert health["profiles"]["largo"] is None
+    assert health["profiles"]["medio"] is None
 
 
 # ── Crear, cambiar de largo y lanzar con el largo `off` ────────────────────
@@ -326,20 +328,20 @@ async def test_crear_un_largo_con_off_es_422(perfiles, api):
     from src.messages import message
 
     perfiles("off")
-    resp = await api.post(f"{API}/stories", json={**FORM, "structure": "largo"})
+    resp = await api.post(f"{API}/stories", json={**FORM, "structure": "medio"})
     assert resp.status_code == 422
-    assert resp.json()["detail"] == message("job.largo_deshabilitado")
+    assert resp.json()["detail"] == message("job.medio_deshabilitado")
     await _create(api, "corto")  # el corto, igual que siempre
 
 
 async def test_pasar_a_largo_con_off_es_422_y_a_corto_se_puede(perfiles, api):
     perfiles(None)
-    largo = await _create(api, "largo")
+    largo = await _create(api, "medio")
     corto = await _create(api, "corto")
 
     perfiles("off")
     resp = await api.put(
-        f"{API}/stories/{corto['story_id']}/structure", json={"structure": "largo"}
+        f"{API}/stories/{corto['story_id']}/structure", json={"structure": "medio"}
     )
     assert resp.status_code == 422
     # La salida de una historia larga: pasarla a corto (C6).
@@ -354,12 +356,12 @@ async def test_lanzar_ia_sobre_un_largo_con_off_es_409(perfiles, api):
     from src.messages import message
 
     perfiles(None)
-    largo = await _create(api, "largo")
+    largo = await _create(api, "medio")
 
     perfiles("off")
     resp = await api.post(f"/api/v1/stories/{largo['story_id']}/jobs", json={"kind": "consult"})
     assert resp.status_code == 409
-    assert resp.json()["detail"] == message("job.largo_deshabilitado")
+    assert resp.json()["detail"] == message("job.medio_deshabilitado")
     assert "X-Job-Id" not in resp.headers  # no hay un job en curso: es el largo
 
 
@@ -369,7 +371,7 @@ async def test_el_largo_off_va_antes_que_las_validaciones(perfiles, api):
     from src.messages import message
 
     perfiles(None)
-    largo = await _create(api, "largo")
+    largo = await _create(api, "medio")
     story = await SQLStoryRepository().get_by_id(uuid.UUID(largo["story_id"]))
     await SQLStoryRepository().update_direction(
         story.id, story.direction.model_copy(update={"premise": ""})
@@ -378,20 +380,20 @@ async def test_el_largo_off_va_antes_que_las_validaciones(perfiles, api):
     perfiles("off")
     resp = await api.post(f"/api/v1/stories/{largo['story_id']}/jobs", json={"kind": "consult"})
     assert resp.status_code == 409
-    assert resp.json()["detail"] == message("job.largo_deshabilitado")
+    assert resp.json()["detail"] == message("job.medio_deshabilitado")
 
 
 async def test_el_estado_y_la_historia_dicen_si_hay_ia(perfiles, api):
     from src.messages import message
 
     perfiles(None)
-    largo = await _create(api, "largo")
+    largo = await _create(api, "medio")
     corto = await _create(api, "corto")
     assert largo["ia_disponible"] is True
 
     perfiles("off")
     state = (await api.get(f"{API}/stories/{largo['story_id']}")).json()
-    assert (state["ia_disponible"], state["ia_nota"]) == (False, message("job.largo_deshabilitado"))
+    assert (state["ia_disponible"], state["ia_nota"]) == (False, message("job.medio_deshabilitado"))
     story = (await api.get(f"/api/v1/stories/{largo['story_id']}")).json()
-    assert (story["ia_disponible"], story["ia_nota"]) == (False, message("job.largo_deshabilitado"))
+    assert (story["ia_disponible"], story["ia_nota"]) == (False, message("job.medio_deshabilitado"))
     assert (await api.get(f"/api/v1/stories/{corto['story_id']}")).json()["ia_disponible"] is True

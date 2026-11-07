@@ -99,7 +99,7 @@ class StoryRunner:
         direction: dict | None = None,
         workshop: list[dict] | None = None,
         outline: list[dict] | None = None,
-        structure: str = "largo",
+        structure: str = "medio",
     ) -> Story:
         """Flujo completo: crear la historia, armar su escaleta y narrar sus actos."""
         from src.config import settings as cfg

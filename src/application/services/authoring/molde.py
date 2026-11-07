@@ -184,6 +184,7 @@ def catalogo() -> Catalogo:
             if sorted(por_acto) != numeros:
                 raise ValueError(f"{where}: los actos de «{sid}» tienen que ser {numeros}")
             actos[sid] = {int(n): str(v).strip() for n, v in por_acto.items()}
+        _prestados(actos, estructuras)  # Spec-750: la larga, los de la media
         if actos and set(actos) != set(estructuras.structure_ids):
             raise ValueError(
                 f"{where}: faltan los actos de {set(estructuras.structure_ids) - set(actos)}"
@@ -195,6 +196,7 @@ def catalogo() -> Catalogo:
             if r.get("criterio") not in ids:
                 raise ValueError(f"{where}: «revela» usa un criterio que la forma no tiene")
             acto = {str(k): int(v) for k, v in (r.get("acto") or {}).items()}
+            _prestados(acto, estructuras)
             for sid, n in acto.items():
                 if n not in estructuras.estructura(sid).numeros:
                     raise ValueError(f"{where}: «revela.acto» {n} no existe en «{sid}»")
@@ -243,3 +245,13 @@ def catalogo() -> Catalogo:
                 f"ingredientes.yaml, giro «{g.id}»: «no_con» con formas que no existen"
             )
     return Catalogo(base, tuple(formas), tuple(giros))
+
+
+def _prestados(por_estructura: dict, estructuras) -> None:
+    """Spec-750: una estructura con `textos_de` y sin textos propios toma los de aquella."""
+    if not por_estructura:
+        return
+    for sid in estructuras.structure_ids:
+        textos = estructuras.estructura(sid).textos
+        if sid not in por_estructura and textos in por_estructura:
+            por_estructura[sid] = por_estructura[textos]

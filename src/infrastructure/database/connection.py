@@ -104,26 +104,7 @@ async def init_db() -> None:
         genre_nature_rows(),
     )
 
-    # genero/subgenero vacíos se guardan NULL: la FK compuesta no se verifica con un NULL.
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS story (
-            id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            protagonista TEXT,
-            relator TEXT,
-            sinopsis TEXT,
-            genero TEXT,
-            subgenero TEXT,
-            narrator_config TEXT,
-            direction TEXT,
-            -- Spec-650: estructura del relato (llm_beats_definition.yaml → estructuras)
-            structure TEXT NOT NULL DEFAULT 'largo' CHECK (structure IN ('largo', 'corto')),
-            status TEXT DEFAULT 'pending',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (genero) REFERENCES genre(id),
-            FOREIGN KEY (genero, subgenero) REFERENCES subgenre(genre_id, id)
-        )
-    """)
+    await conn.execute(_STORY_TABLE.format(name="IF NOT EXISTS story"))
 
     # Spec-450 §1: entidades (máx. 3 por historia; order_index 0 = principal).
     await conn.execute("""
@@ -218,9 +199,14 @@ async def init_db() -> None:
             content TEXT NOT NULL,
             status TEXT DEFAULT 'completed',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            -- Spec-750: el largo con que se escribió (NULL en las viejas: se deduce)
+            structure TEXT,
             FOREIGN KEY (story_template_id) REFERENCES story(id) ON DELETE CASCADE
         )
     """)
+    # Spec-750: las bases de antes no tienen la columna (ALTER sin reconstruir).
+    if "structure" not in await _columns(conn, "generated_narrative"):
+        await conn.execute("ALTER TABLE generated_narrative ADD COLUMN structure TEXT")
 
     # Spec-530: taller del asistente. Una fila por criterio y nivel, con la pregunta
     # vigente, la respuesta y las preguntas de rondas anteriores (`asked`).
@@ -345,4 +331,76 @@ async def init_db() -> None:
     """)
 
     await conn.commit()
+    await _story_with_three_lengths(conn)
     await conn.close()
+
+
+# genero/subgenero vacíos se guardan NULL: la FK compuesta no se verifica con un NULL.
+_STORY_TABLE = """
+    CREATE TABLE {name} (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        protagonista TEXT,
+        relator TEXT,
+        sinopsis TEXT,
+        genero TEXT,
+        subgenero TEXT,
+        narrator_config TEXT,
+        direction TEXT,
+        -- Spec-650/750: estructura del relato (llm_beats_definition.yaml → estructuras)
+        structure TEXT NOT NULL DEFAULT 'medio' CHECK (structure IN ('corto', 'medio', 'largo')),
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (genero) REFERENCES genre(id),
+        FOREIGN KEY (genero, subgenero) REFERENCES subgenre(genre_id, id)
+    )
+"""
+
+
+async def _columns(conn: aiosqlite.Connection, table: str) -> set[str]:
+    return {r[1] for r in await (await conn.execute(f"PRAGMA table_info({table})")).fetchall()}
+
+
+_OLD_STRUCTURE_CHECK = "CHECK (structure IN ('largo', 'corto'))"
+
+
+async def _story_with_three_lengths(conn: aiosqlite.Connection) -> None:
+    """Spec-750 S1: `story` con el CHECK de dos largos pasa a tres; `largo` (5 actos) → `medio`.
+
+    SQLite no cambia un CHECK con ALTER: se reconstruye la tabla con su procedimiento
+    (https://sqlite.org/lang_altertable.html#otheralter). Las FK se apagan **antes** de la
+    transacción (adentro no tiene efecto): con ellas prendidas, `DROP TABLE story` borraría
+    en cascada todas las tablas hijas. Idempotente: con el CHECK nuevo no hace nada.
+    """
+    row = await (
+        await conn.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'story'")
+    ).fetchone()
+    if row is None or _OLD_STRUCTURE_CHECK not in row[0]:
+        return
+    await conn.execute("PRAGMA foreign_keys = OFF")
+    try:
+        await conn.execute("BEGIN")
+        await conn.execute(_STORY_TABLE.format(name="story_new"))
+        cols = [r[1] for r in await (await conn.execute("PRAGMA table_info(story)")).fetchall()]
+        listed = ", ".join(cols)
+        picked = ", ".join(
+            "CASE structure WHEN 'largo' THEN 'medio' ELSE structure END" if c == "structure" else c
+            for c in cols
+        )
+        await conn.execute(f"INSERT INTO story_new ({listed}) SELECT {picked} FROM story")
+        await conn.execute("DROP TABLE story")
+        await conn.execute("ALTER TABLE story_new RENAME TO story")
+        # El estimador de tiempos (Spec-510) separa por largo: los jobs viejos son de la Media.
+        await conn.execute(
+            "UPDATE generation_job SET params = json_set(params, '$.structure', 'medio') "
+            "WHERE json_valid(params) AND json_extract(params, '$.structure') = 'largo'"
+        )
+        broken = await (await conn.execute("PRAGMA foreign_key_check")).fetchall()
+        if broken:
+            raise RuntimeError(f"Spec-750: la reconstrucción de story rompe FK: {broken[:5]}")
+        await conn.commit()
+    except BaseException:
+        await conn.rollback()
+        raise
+    finally:
+        await conn.execute("PRAGMA foreign_keys = ON")

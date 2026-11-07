@@ -72,7 +72,7 @@ def test_cada_forma_esta_completa_en_los_dos_largos():
             assert all(f.actos[sid].values()), (f.id, sid)
 
 
-@pytest.mark.parametrize("sid", ["largo", "corto"])
+@pytest.mark.parametrize("sid", ["medio", "corto"])
 def test_tope_de_preguntas(sid):
     """D10: ninguna combinación del catálogo pasa de 9 preguntas sin giro ni de 10 con
     giro (hoy son 9 fijas): ampliar el catálogo no vuelve al formulario gigante."""
@@ -87,7 +87,7 @@ def test_los_criterios_del_molde_estan_en_el_banco_y_no_se_repiten():
     assert len(banco) == len(set(banco))
     cat = molde.catalogo()
     for forma, giro in product(cat.formas, (None, *cat.giros)):
-        ids = molde.Molde(forma, giro, "largo").ids
+        ids = molde.Molde(forma, giro, "medio").ids
         assert len(ids) == len(set(ids))
 
 
@@ -142,7 +142,7 @@ def _asedio() -> dict:
     largo_a = _con_forma(asistente._story(), "asedio", giro="regla_rara")
     largo_v = _con_forma(voz._story(), "asedio")
     return {
-        "largo": {"asistente": _asistente(largo_a), "voz": _voz(largo_v)},
+        "medio": {"asistente": _asistente(largo_a), "voz": _voz(largo_v)},
         "corto": {
             "asistente": _asistente(corto._corto(largo_a)),
             "voz": _voz(corto._corto(largo_v)),
@@ -158,7 +158,7 @@ def test_prompts_de_asedio_no_cambian():
     assert prompts == json.loads(file.read_text("utf-8"))
 
 
-@pytest.mark.parametrize("sid", ["largo", "corto"])
+@pytest.mark.parametrize("sid", ["medio", "corto"])
 def test_asedio_no_pide_romper_una_regla_ni_una_culpa(sid):
     p = _asedio()[sid]
     planificador = p["asistente"]["planificador"]
@@ -207,7 +207,7 @@ def _formas() -> dict:
         story = _con_forma(
             asistente._story(), forma, arco="Un micro que cada noche lleva un pasajero menos."
         )
-        for sid, s in (("largo", story), ("corto", corto._corto(story))):
+        for sid, s in (("medio", story), ("corto", corto._corto(story))):
             p = _asistente(s)
             out[f"{forma}/{sid}"] = {
                 k: p[k] for k in ("consultor", "planificador_system", "planificador")
@@ -223,7 +223,7 @@ def test_prompts_de_las_formas_nuevas_no_cambian():
     assert prompts == json.loads(file.read_text("utf-8"))
 
 
-@pytest.mark.parametrize("clave", [f"{f}/{s}" for f in NUEVAS for s in ("largo", "corto")])
+@pytest.mark.parametrize("clave", [f"{f}/{s}" for f in NUEVAS for s in ("medio", "corto")])
 def test_ninguna_forma_nueva_pide_romper_una_regla(clave):
     p = _formas()[clave]
     assert "romper la regla" not in p["planificador"]
@@ -236,8 +236,8 @@ def _linea_del_acto(planificador: str, n: int) -> str:
 
 
 def test_cada_forma_revela_en_su_acto():
-    """Ajuste de la S2: «Alguien que llega a casa» revela en el peor momento (acto 3 del
-    largo), no en el acto del secreto de siempre (4); «Un lugar…» usa el de siempre."""
+    """Ajuste de la S2: «Alguien que llega a casa» revela en el peor momento (acto 3 de la
+    media), no en el acto del secreto de siempre (4); «Un lugar…» usa el de siempre."""
     casa = _con_forma(asistente._story(), "casa")
     casa = casa.model_copy(
         update={

@@ -19,6 +19,8 @@ class NarrativeActs:
 
     preamble: str = ""
     acts: dict[int, str] = field(default_factory=dict)
+    # Spec-750: el largo de la versión ("" = se deduce de cuántos actos tiene).
+    structure: str = ""
 
     def numbers(self) -> list[int]:
         return list(self.acts)
@@ -72,10 +74,45 @@ def replace_act(content: str, number: int, text: str) -> str:
     return join(narrative)
 
 
-def same_structure(story, content: str) -> bool:
-    """Spec-650 D11: el relato guardado tiene los actos de la estructura actual de la
-    historia (si la historia cambió de largo, sus versiones viejas no se regeneran)."""
+def structure_by_count(cantidad: int) -> str:
+    """El largo de una versión sin el dato (anterior a la Spec-750), por cuántos actos tiene.
+
+    Hasta la Spec-750 no había larga: 5 actos es la media. Una cantidad rara se toma como
+    la de siempre.
+    """
+    from src.application.services.beat_spec_repository import BeatSpecRepository
+    from src.application.services.structure import DEFAULT_STRUCTURE
+
+    repo = BeatSpecRepository()
+    found = [sid for sid in repo.structure_ids if repo.estructura(sid).num_actos == cantidad]
+    return DEFAULT_STRUCTURE if DEFAULT_STRUCTURE in found or not found else found[0]
+
+
+def structure_of(narrative) -> str:
+    """Spec-750: el largo de una versión guardada (`GeneratedNarrative`)."""
+    return narrative.structure or structure_by_count(len(split(narrative.content).numbers()))
+
+
+def split_narrative(narrative) -> NarrativeActs:
+    """Los actos de una versión guardada, con su largo."""
+    acts = split(narrative.content)
+    acts.structure = structure_of(narrative)
+    return acts
+
+
+def structure_of_acts(acts: NarrativeActs) -> str:
+    """El largo de un relato partido: el suyo o, si no lo trae, por cuántos actos tiene."""
+    return acts.structure or structure_by_count(len(acts.numbers()))
+
+
+def same_structure(story, narrative) -> bool:
+    """Spec-650 D11: la versión se escribió con el largo actual de la historia (si la
+    historia cambió de largo, sus versiones viejas no se regeneran). Spec-750: la media y
+    la larga tienen los mismos actos: cuenta el largo guardado, no solo los actos."""
     from src.application.services.beat_spec_repository import BeatSpecRepository
 
     expected = BeatSpecRepository().estructura(story.structure).numeros
-    return split(content).numbers() == expected
+    return (
+        structure_of(narrative) == story.structure
+        and split(narrative.content).numbers() == expected
+    )

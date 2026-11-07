@@ -9,7 +9,7 @@
 # personaje, sin términos de oficio). `acto` (opcional) dice en qué acto va la
 # respuesta: el Planificador lo ve como «(va en el acto N)».
 #
-# Spec-650: `acto` dice en qué acto va según la estructura (largo / corto).
+# Spec-650: `acto` dice en qué acto va según la estructura (corto / medio / largo).
 # El orden es el orden en que se muestran y se evalúan: sigue a los actos.
 #
 # Spec-670: es el **banco** de criterios (ids únicos). Cuáles pregunta cada historia lo
@@ -20,14 +20,14 @@ direccion:
     nombre: Qué quiere {protagonista}
     pregunta: ¿Qué quiere el protagonista en esta historia, algo concreto que la amenaza pueda frustrar?
     por_que: "Llegar a casa, cobrar el viaje, cuidar a alguien. El miedo crece cuando algo se mete en el medio de lo que {protagonista} quiere."
-    acto: { largo: 1, corto: 1 }
+    acto: { medio: 1, corto: 1 }
     origen: Swain / McKee
 
   - id: inquietud
     nombre: Algo raro desde el principio
     pregunta: ¿Hay desde el comienzo un detalle raro o una advertencia que el protagonista no toma en serio?
     por_que: "Un ruido, un comentario, algo fuera de lugar. Al principio nadie le da importancia, pero quien escucha ya se queda con la duda."
-    acto: { largo: 1, corto: 1 }
+    acto: { medio: 1, corto: 1 }
     origen: Freytag (exposición) / inquietud sutil del acto 1
 
   # Spec-670: lo que abre cada forma (acto 1).
@@ -35,21 +35,21 @@ direccion:
     nombre: Por qué está ahí
     pregunta: "¿Por qué el protagonista llega o se queda en ese lugar (se le rompe algo, se pierde, va por trabajo, alguien lo lleva)?"
     por_que: "Nadie va a un lugar así porque sí: se rompe el camión, se pierden, hay que cumplir un trabajo. Eso deja a {protagonista} ahí, aunque no quiera."
-    acto: { largo: 1, corto: 1 }
+    acto: { medio: 1, corto: 1 }
     origen: "lugar maldito (llegar o quedar varado)"
 
   - id: casa_llegada
     nombre: Quién llega y cómo entra
     pregunta: "¿Quién o qué llega y cómo entra a la casa (pide dónde dormir, lo invitan, se hace pasar por alguien)?"
     por_que: "Muchas veces lo dejan entrar ellos mismos. Por eso da más miedo: el peligro está adentro y fue invitado."
-    acto: { largo: 1, corto: 1 }
+    acto: { medio: 1, corto: 1 }
     origen: "el visitante / el huésped (hospitalidad traicionada)"
 
   - id: senuelo_parece
     nombre: Qué parece
     pregunta: "¿Qué parece ser la amenaza cuando aparece (un chico perdido, una voz conocida, alguien que pide ayuda, un animal herido)?"
     por_que: "Lo que engaña tiene que parecer algo bueno, o algo que da pena dejar solo."
-    acto: { largo: 1, corto: 1 }
+    acto: { medio: 1, corto: 1 }
     origen: "el señuelo (folklore: la luz mala, el duende que llama)"
 
   - id: en_juego
@@ -68,7 +68,7 @@ direccion:
     nombre: Lo que {protagonista} no tendría que haber hecho
     pregunta: ¿Qué hace el protagonista (entrar, tocar, seguir, contestar, quedarse) que despierta a la amenaza y lo mete de lleno en el problema?
     por_que: "En los cuentos de miedo casi siempre alguien abre la puerta que no tenía que abrir. ¿Cuál es la de {protagonista}?"
-    acto: { largo: 2, corto: 2 }
+    acto: { medio: 2, corto: 2 }
     origen: Aristóteles (nudo) / Freytag (incidente incitador) / transgresión del acto 2
 
   # Spec-670: lo que complica cada forma (acto 2).
@@ -76,28 +76,28 @@ direccion:
     nombre: Qué tiene de raro el lugar
     pregunta: "¿Qué tiene ese lugar que no está bien (algo que se repite, algo que falta, una costumbre de los que viven cerca)?"
     por_que: "Un camino que vuelve al mismo lugar, árboles demasiado iguales, un silencio que no es normal. Es lo que hace que ese lugar no sea cualquiera."
-    acto: { largo: 2, corto: 2 }
+    acto: { medio: 2, corto: 2 }
     origen: "lugar maldito (las reglas del lugar)"
 
   - id: casa_detalle
     nombre: Qué no cuadra
     pregunta: "¿Qué detalle del que llegó no cuadra (algo de su cuerpo, de su forma de hablar, de lo que hace de noche)?"
     por_que: "Un detalle chico: no come, no se le oyen los pasos, el bebé llora toda la noche. Es lo primero que hace dudar a {protagonista}."
-    acto: { largo: 2, corto: 2 }
+    acto: { medio: 2, corto: 2 }
     origen: "el visitante (la señal en el cuerpo)"
 
   - id: senuelo_cebo
     nombre: Por qué {protagonista} le cree
     pregunta: "¿Por qué el protagonista le cree y lo sigue (quiere ayudar, extraña a alguien, necesita algo)?"
     por_que: "El engaño funciona porque toca algo bueno de {protagonista}. Por eso no es un error tonto: cualquiera habría caído."
-    acto: { largo: 2, corto: 2 }
+    acto: { medio: 2, corto: 2 }
     origen: "el señuelo (el cebo)"
 
   - id: senuelo_grieta
     nombre: Lo que no encaja
     pregunta: "¿Cuál es el primer detalle que no encaja con lo que parece (no tiene sombra, sabe un nombre que no podría saber, deja huellas raras)?"
     por_que: "Un detalle chico que quien escucha nota antes que {protagonista}. Ahí empieza el miedo."
-    acto: { largo: 2, corto: 2 }
+    acto: { medio: 2, corto: 2 }
     origen: "el señuelo (la primera grieta)"
 
   # Spec-670, forma «Algo viene por nosotros» (asedio).
@@ -105,14 +105,14 @@ direccion:
     nombre: Cómo se acerca
     pregunta: ¿Cómo se va acercando la amenaza, paso a paso (cada vez más cerca, cada vez más señales), hasta llegar al protagonista?
     por_que: "Primero lejos, después más cerca, después en la puerta. Cada paso tiene que dar más miedo que el anterior."
-    acto: { largo: 2, corto: 2 }
+    acto: { medio: 2, corto: 2 }
     origen: asedio / home invasion (escalada por proximidad)
 
   - id: asedio_refugio
     nombre: Dónde se refugian
     pregunta: ¿Dónde se esconde o se protege el protagonista cuando la amenaza llega, y por qué cree que ahí está a salvo?
     por_que: "El lugar donde {protagonista} se siente seguro. Cuando la amenaza llega hasta ahí, el miedo es más grande."
-    acto: { largo: 3, corto: 2 }
+    acto: { medio: 3, corto: 2 }
     origen: asedio (el refugio que se rompe)
 
   - id: historia_secreta
@@ -125,7 +125,7 @@ direccion:
     nombre: Qué la empuja a venir
     pregunta: ¿Qué empuja a la amenaza a acercarse (hambre, algo que cambió en su lugar, algo que la echó), sin que el protagonista la haya provocado?
     por_que: "En esta clase de historia nadie tiene la culpa: algo la empuja a venir. Saber qué es, aunque {protagonista} lo entienda tarde, le da sentido a todo."
-    acto: { largo: 4, corto: 2 }
+    acto: { medio: 4, corto: 2 }
     origen: asedio (la causa externa; horror ecológico)
 
   # Spec-670: lo que se revela en cada forma.
@@ -133,42 +133,42 @@ direccion:
     nombre: Qué pasó ahí antes
     pregunta: "¿Qué pasó en ese lugar antes, que explica lo que hay ahora (una tragedia, una leyenda, algo que se enterró)?"
     por_que: "Los lugares malditos tienen su historia. {protagonista} la entiende tarde, o nunca del todo."
-    acto: { largo: 4, corto: 2 }
+    acto: { medio: 4, corto: 2 }
     origen: "lugar maldito (la historia del lugar)"
 
   - id: casa_verdad
     nombre: Qué es en realidad
     pregunta: "¿Qué es en realidad el que llegó, y cómo se ve cuando se muestra?"
     por_que: "El momento en que {protagonista} lo ve como es. Todo lo raro de antes cobra sentido."
-    acto: { largo: 3, corto: 2 }
+    acto: { medio: 3, corto: 2 }
     origen: "el visitante (la revelación)"
 
   - id: senuelo_verdad
     nombre: Qué es en realidad
     pregunta: "¿Qué es en realidad, y qué quería del protagonista?"
     por_que: "Cuando se cae la máscara, se entiende todo lo anterior."
-    acto: { largo: 3, corto: 2 }
+    acto: { medio: 3, corto: 2 }
     origen: "el señuelo (se cae la máscara)"
 
   - id: descubrimiento
     nombre: Lo que descubre {protagonista}
     pregunta: ¿Qué ve, encuentra o se entera el protagonista que le hace entender de golpe qué está pasando?
     por_que: "Una foto, un nombre, un objeto: el momento en que {protagonista} entiende todo. Es el golpe más fuerte del cuento."
-    acto: { largo: 3, corto: 2 }
+    acto: { medio: 3, corto: 2 }
     origen: Anagnórisis (Aristóteles) / clímax del acto 3
 
   - id: reaccion
     nombre: Qué hace {protagonista} después
     pregunta: "¿Qué hace el protagonista después de entender lo que pasa: huye, enfrenta, niega, pide ayuda?"
     por_que: "Ya sabe lo que pasa. ¿Sale corriendo, lo enfrenta, hace como si nada? Lo que haga {protagonista} dice quién es."
-    acto: { largo: 4, corto: 3 }
+    acto: { medio: 4, corto: 3 }
     origen: Peripecia / caída (Freytag)
 
   - id: final
     nombre: Cómo termina
     pregunta: ¿El final deja una marca coherente con el efecto que busca el autor?
     por_que: "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
-    acto: { largo: 5, corto: 3 }
+    acto: { medio: 5, corto: 3 }
     origen: Poe (unidad de efecto) / residuo
 
   # Spec-670, giro «La amenaza tiene una regla rara».

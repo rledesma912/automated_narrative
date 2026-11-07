@@ -49,6 +49,8 @@ export interface Relato {
   content: string;
   status: string;
   created_at: string;
+  /** Spec-750: el largo de la versión (el Core lo deduce en las viejas). */
+  structure?: string;
   /** Spec-530 §8.3: frases repetidas entre actos y clichés (null si el Core no respondió). */
   repetition?: { acts: ActRepetition[] } | null;
   /** Spec-610: si la variante ya tiene su paquete para el video. */
@@ -158,12 +160,18 @@ export interface ReadingSettings {
 
 const DEFAULT_READING: ReadingSettings = { palabras_por_minuto: 150, episodio_minutos: { desde: 12, hasta: 17 } };
 
-/** Spec-650: con los actos del relato, el episodio es el de su largo (el corto, ~7 min). */
-export const getReadingSettings = async (actos?: number): Promise<ReadingSettings> => {
+/**
+ * Spec-650: con los actos del relato, el episodio es el de su largo (el corto, ~7 min).
+ * Spec-750: con el largo guardado de la versión manda ese (la media y la larga tienen 5).
+ */
+export const getReadingSettings = async (actos?: number, estructura?: string): Promise<ReadingSettings> => {
+  const params: Record<string, string | number> = {};
+  if (actos) params.actos = actos;
+  if (estructura) params.estructura = estructura;
   try {
     const resp = await axios.get<ReadingSettings>(`${CORE_API_URL}/api/v1/video/lectura`, {
       timeout: 3000,
-      params: actos ? { actos } : undefined,
+      params: Object.keys(params).length ? params : undefined,
     });
     return resp.data;
   } catch {

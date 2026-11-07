@@ -52,7 +52,7 @@ async def _generate(client, sid: str) -> dict:
     resp = await client.post(f"/api/v1/stories/{sid}/jobs", json={})
     assert resp.status_code == 202, resp.text
     # Spec-650 T1.7: el job nace sabiendo cuántos actos escribe.
-    assert resp.json()["total_beats"] == {"largo": 5, "corto": 3}[structure]
+    assert resp.json()["total_beats"] == {"medio": 5, "corto": 3, "largo": 5}[structure]
     await job_manager.wait(uuid.UUID(resp.json()["job_id"]))
     job = (await client.get(f"/api/v1/jobs/{resp.json()['job_id']}")).json()
     assert job["status"] == "done", job
@@ -66,9 +66,14 @@ async def _narrative(client, narrative_id: str) -> str:
 # ── Opciones y alta ──────────────────────────────────────────────────────────
 
 
-async def test_las_opciones_traen_los_dos_largos(client):
+async def test_las_opciones_traen_los_tres_largos(client):
     data = (await client.get(f"{API}/options")).json()
-    assert [(s["id"], s["acts"]) for s in data["structures"]] == [("largo", 5), ("corto", 3)]
+    # Spec-750: en el orden de la pantalla; la historia nueva arranca en la media.
+    assert [(s["id"], s["acts"], s["por_defecto"]) for s in data["structures"]] == [
+        ("corto", 3, False),
+        ("medio", 5, True),
+        ("largo", 5, False),
+    ]
 
 
 async def test_crear_un_corto(client):
@@ -86,9 +91,9 @@ async def test_crear_un_corto(client):
     assert [s["structure"] for s in listed] == ["corto"]
 
 
-async def test_sin_decir_el_largo_es_largo(client):
+async def test_sin_decir_el_largo_es_la_media(client):
     state = await _create(client)
-    assert state["structure"] == "largo"
+    assert state["structure"] == "medio"
     assert len(state["structure_acts"]) == 5
 
 
@@ -185,7 +190,7 @@ async def test_el_autoguardado_de_tu_idea_no_cambia_el_largo(client):
     sid = (await _create(client, structure="corto"))["story_id"]
 
     resp = await client.put(
-        f"{API}/stories/{sid}/direction", json={**FORM, "title": "Otra", "structure": "largo"}
+        f"{API}/stories/{sid}/direction", json={**FORM, "title": "Otra", "structure": "medio"}
     )
     assert resp.status_code == 200
     assert resp.json()["structure"] == "corto"
@@ -223,8 +228,8 @@ async def test_cambiar_el_largo_borra_los_actos_y_reubica_las_reglas(client):
         ("regla global", 0),
     ]
 
-    # Y de vuelta a largo: 1→1, 2→3, 3→5.
-    resp = await client.put(f"{API}/stories/{sid}/structure", json={"structure": "largo"})
+    # Y de vuelta a la media: 1→1, 2→3, 3→5.
+    resp = await client.put(f"{API}/stories/{sid}/structure", json={"structure": "medio"})
     story = await repo.get_by_id(uuid.UUID(sid))
     assert sorted((r.content, r.applies_to_beat or 0) for r in story.typed_rules) == [
         ("regla del 2", 3),

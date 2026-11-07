@@ -176,6 +176,9 @@ class GeneratedNarrative(BaseModel):
     content: str
     status: StoryStatus = StoryStatus.COMPLETED
     created_at: datetime = Field(default_factory=now_argentina)
+    # Spec-750: el largo de la historia cuando se escribió. None en las versiones de antes
+    # (se deduce de cuántos actos tiene: `narrative_acts.structure_of`).
+    structure: str | None = None
 
 
 # ── Spec-530: asistente de autoría ───────────────────────────────────────────
@@ -391,7 +394,7 @@ class ActOutline(BaseModel):
         return {k for w in self.warnings if w.dismissed for k in w.keys()}
 
 
-StructureId = Literal["largo", "corto"]  # Spec-650: largo = 5 actos, corto = 3
+StructureId = Literal["corto", "medio", "largo"]  # Spec-650/750: corto 3 actos, medio y largo 5
 
 
 class Story(BaseModel):
@@ -418,7 +421,7 @@ class Story(BaseModel):
 
     # Spec-650: estructura del relato (id de `estructuras` en llm_beats_definition.yaml;
     # un test verifica que estos valores y los del YAML son los mismos).
-    structure: StructureId = "largo"
+    structure: StructureId = "medio"
 
     # Spec-530: asistente de autoría (vacíos en las historias del wizard).
     direction: Optional[Direction] = None

@@ -82,9 +82,11 @@ def _video_script(prompt: str) -> dict:
         elif current and re.match(r"\[(\d+)\] ", line):
             acts[current] += 1
     bloques, momentos = [], []
-    # Momentos de a `grupo` párrafos (sin pasar de un acto a otro): entre 10 y 15
-    # para un relato largo, uno por párrafo para uno corto.
-    grupo = max(1, -(-sum(acts.values()) // 10))
+    # Momentos de a `grupo` párrafos (sin pasar de un acto a otro), según los que pide
+    # el prompt («entre N y M momentos»: Spec-650/750, cada largo tiene los suyos).
+    pedidos = re.search(r"entre (\d+) y (\d+) momentos", prompt)
+    total = sum(acts.values())
+    grupo = max(1, total // int(pedidos.group(1))) if pedidos else max(1, -(-total // 10))
     for acto, total in acts.items():
         for n in range(1, total + 1):
             bloques.append(

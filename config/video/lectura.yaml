@@ -7,6 +7,8 @@ palabras_por_minuto: 150
 # Un episodio del canal dura entre 12 y 17 minutos (D8).
 episodio_minutos: { desde: 12, hasta: 17 }
 
-# Spec-650: el relato corto (3 actos) dura unos 7 minutos.
+# Spec-650: el relato corto (3 actos) dura unos 7 minutos. Spec-750: la larga, unos 35
+# minutos, en un solo episodio (D4).
 episodio_por_estructura:
   corto: { desde: 6, hasta: 8 }
+  largo: { desde: 30, hasta: 38 }

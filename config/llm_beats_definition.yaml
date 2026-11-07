@@ -52,150 +52,11 @@ beats_spec:
       show: [name, nature, manifestations]
       guide: "Lo decide el EVENTO de este acto: si la identifica, se la nombra; si no, queda ambigua y solo se ve su rastro."
 
-  # Spec-650: estructuras del relato. Cada historia elige una (`story.structure`);
+  # Spec-650: estructuras del relato. Cada historia elige una (`story.structure`); el orden
+  # es el de «¿Qué tan largo?» (Spec-750: corto, media, larga; la nueva arranca en la media);
   # la cantidad de actos, sus nombres y su función salen de acá, nunca de una constante.
   # `revela_secreto`: el acto donde se revela la historia secreta del taller.
   estructuras:
-    largo:
-      label: "Largo · 5 actos · unos 15 minutos"
-      palabras_total: "2.500"  # lo que dice el objetivo del asistente (texto de siempre)
-      hechos_por_acto: "de 3 a 5 hechos"  # lo que pide el Planificador para cada acto
-      personajes_nuevos_max: 2  # Spec-730 D1: personajes que puede proponer la IA (con un para qué)
-      revela_secreto: 4
-      # D10: al pasar de otra estructura, la regla anclada al acto N va al acto M.
-      reubicar_desde:
-        corto: { 1: 1, 2: 3, 3: 5 }
-      actos:
-
-        - id: 1
-          name: "exposicion"
-          label: "Exposición"  # Spec-620: el nombre que ve la Voz
-          nombre_ui: "Cómo empieza"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
-          intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
-          intensity: baja
-          must:
-            - "presentar situacion base del narrador"
-            - "introducir una anomalia sutil"
-            - "incluir regla, advertencia o limite implicito"
-          must_not: []
-          # Spec-450 §2: reglas de revelación según el reveal_level de la entidad
-          # principal. `default` = sin entidades y niveles sin override.
-          reveal_rules:
-            must_not:
-              default: ["confirmar lo paranormal"]
-              explicita: []
-          state_change:
-            from: "estabilidad"
-            to: "incomodidad leve"
-          success_signal:
-            - "quien escucha el relato percibe que algo no encaja pero no sabe que"
-          entity_exposure:
-            nunca: senales
-            insinuada: senales
-            progresiva: senales
-            explicita: presencia
-
-        - id: 2
-          name: "accion_ascendente"
-          label: "Acción ascendente"  # Spec-620: el nombre que ve la Voz
-          nombre_ui: "Se complica"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
-          intent: "activar el conflicto mediante transgresion"
-          intensity: media
-          must:
-            - "romper la regla o ignorar la advertencia"
-            - "mostrar un evento anomalo concreto"
-            - "intentar explicacion racional"
-          must_not: []
-          reveal_rules:
-            must_not:
-              default: ["aceptar lo paranormal como hecho"]
-              explicita: []
-          state_change:
-            from: "incomodidad"
-            to: "inquietud concreta"
-          success_signal:
-            - "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
-          entity_exposure:
-            nunca: senales
-            insinuada: manifestacion_parcial
-            progresiva: manifestacion_parcial
-            explicita: presencia
-
-        - id: 3
-          name: "climax"
-          label: "Clímax"  # Spec-620: el nombre que ve la Voz
-          nombre_ui: "El peor momento"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
-          intent: "forzar reconocimiento del horror"
-          intensity: alta
-          must:
-            - "invalidar explicacion racional"
-          reveal_rules:
-            must:
-              default: ["mostrar amenaza o presencia directa"]
-              nunca: ["mostrar señales intensas de la amenaza sin confirmar qué es"]
-          must_not:
-            - "explicar origen o reglas completas del fenomeno"
-          state_change:
-            from: "negacion"
-            to: "reconocimiento"
-          success_signal:
-            - "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
-          entity_exposure:
-            nunca: senales_intensas
-            insinuada: revelacion
-            progresiva: presencia_directa
-            explicita: confrontacion
-
-        - id: 4
-          name: "accion_descendente"
-          label: "Acción descendente"  # Spec-620: el nombre que ve la Voz
-          nombre_ui: "Qué hace después"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
-          intent: "llevar al protagonista al colapso y reaccion"
-          intensity: media-alta
-          must:
-            - "perdida de control o desorientacion"
-            - "intento de escape o respuesta (instinto, fe, memoria)"
-          must_not:
-            - "resolución fácil del conflicto"
-          state_change:
-            from: "reconocimiento"
-            to: "desesperacion"
-          success_signal:
-            - "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
-          entity_exposure:
-            nunca: senales
-            insinuada: limites_consecuencias
-            progresiva: presencia_plena
-            explicita: consecuencias
-
-        - id: 5
-          name: "desenlace"
-          label: "Desenlace"  # Spec-620: el nombre que ve la Voz
-          nombre_ui: "Cómo termina"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 150 y 200 palabras (máxima brevedad emocional)"
-          intent: "cerrar con brevedad emocional, escape incompleto y secuela"
-          intensity: baja
-          must:
-            - "salida rapida o alejamiento del peligro"
-            - "marca persistente o evidencia ambigua"
-            - "reflexion final corta y contundente"
-          must_not:
-            - "cerrar completamente el misterio"
-          state_change:
-            from: "desesperacion"
-            to: "calma inestable"
-          success_signal:
-            - "quien escucha el relato queda con la sensacion de que el horror no termino"
-          entity_exposure:
-            nunca: segun_acto_5
-            insinuada: huella
-            progresiva: huella
-            explicita: huella
-
     # Spec-650: relato corto, ~7 minutos leído en voz alta (≈ 1 050 palabras a 150
     # palabras por minuto, config/video/lectura.yaml). El clímax cae al final del nudo
     # (D3). `palabras` fija el rango de cada acto (880–1 050 en total: S5 midió que Sonnet
@@ -208,6 +69,7 @@ beats_spec:
       personajes_nuevos_max: 1  # Spec-730 D1
       revela_secreto: 2
       reubicar_desde:
+        medio: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
         largo: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
       actos:
 
@@ -246,7 +108,7 @@ beats_spec:
           label: "Desenlace"
           nombre_ui: "Cómo termina"
           palabras: [190, 240]
-          hechos: "2 o 3"  # absorbe el «qué hace después» del largo (la salida) y el cierre
+          hechos: "2 o 3"  # absorbe el «qué hace después» de la media (la salida) y el cierre
           hechos_max: 3  # más que esto → aviso en «Los actos» (Verificador)
           intent: "salir o alejarse del peligro sin una resolución fácil y cerrar con brevedad emocional: una marca que queda y la sensación de que el horror no terminó"
           intensity: baja
@@ -255,3 +117,187 @@ beats_spec:
             insinuada: huella
             progresiva: huella
             explicita: huella
+
+    # Spec-750: la de 5 actos y ~15 min se llamaba `largo`; ahora `largo` es la de ~35 min.
+    medio:
+      label: "Media · 5 actos · unos 15 minutos"
+      palabras_total: "2.500"  # lo que dice el objetivo del asistente (texto de siempre)
+      hechos_por_acto: "de 3 a 5 hechos"  # lo que pide el Planificador para cada acto
+      personajes_nuevos_max: 2  # Spec-730 D1: personajes que puede proponer la IA (con un para qué)
+      revela_secreto: 4
+      # D10: al pasar de otra estructura, la regla anclada al acto N va al acto M.
+      reubicar_desde:
+        corto: { 1: 1, 2: 3, 3: 5 }
+        largo: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }
+      actos:
+
+        - &medio_1
+          id: 1
+          name: "exposicion"
+          label: "Exposición"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Cómo empieza"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
+          intensity: baja
+          must:
+            - "presentar situacion base del narrador"
+            - "introducir una anomalia sutil"
+            - "incluir regla, advertencia o limite implicito"
+          must_not: []
+          # Spec-450 §2: reglas de revelación según el reveal_level de la entidad
+          # principal. `default` = sin entidades y niveles sin override.
+          reveal_rules:
+            must_not:
+              default: ["confirmar lo paranormal"]
+              explicita: []
+          state_change:
+            from: "estabilidad"
+            to: "incomodidad leve"
+          success_signal:
+            - "quien escucha el relato percibe que algo no encaja pero no sabe que"
+          entity_exposure:
+            nunca: senales
+            insinuada: senales
+            progresiva: senales
+            explicita: presencia
+
+        - &medio_2
+          id: 2
+          name: "accion_ascendente"
+          label: "Acción ascendente"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Se complica"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          intent: "activar el conflicto mediante transgresion"
+          intensity: media
+          must:
+            - "romper la regla o ignorar la advertencia"
+            - "mostrar un evento anomalo concreto"
+            - "intentar explicacion racional"
+          must_not: []
+          reveal_rules:
+            must_not:
+              default: ["aceptar lo paranormal como hecho"]
+              explicita: []
+          state_change:
+            from: "incomodidad"
+            to: "inquietud concreta"
+          success_signal:
+            - "quien escucha el relato nota que el protagonista duda pero sigue dentro de una logica racional"
+          entity_exposure:
+            nunca: senales
+            insinuada: manifestacion_parcial
+            progresiva: manifestacion_parcial
+            explicita: presencia
+
+        - &medio_3
+          id: 3
+          name: "climax"
+          label: "Clímax"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "El peor momento"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          intent: "forzar reconocimiento del horror"
+          intensity: alta
+          must:
+            - "invalidar explicacion racional"
+          reveal_rules:
+            must:
+              default: ["mostrar amenaza o presencia directa"]
+              nunca: ["mostrar señales intensas de la amenaza sin confirmar qué es"]
+          must_not:
+            - "explicar origen o reglas completas del fenomeno"
+          state_change:
+            from: "negacion"
+            to: "reconocimiento"
+          success_signal:
+            - "quien escucha el relato siente que el protagonista ya no puede negar lo que enfrenta"
+          entity_exposure:
+            nunca: senales_intensas
+            insinuada: revelacion
+            progresiva: presencia_directa
+            explicita: confrontacion
+
+        - &medio_4
+          id: 4
+          name: "accion_descendente"
+          label: "Acción descendente"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Qué hace después"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          intent: "llevar al protagonista al colapso y reaccion"
+          intensity: media-alta
+          must:
+            - "perdida de control o desorientacion"
+            - "intento de escape o respuesta (instinto, fe, memoria)"
+          must_not:
+            - "resolución fácil del conflicto"
+          state_change:
+            from: "reconocimiento"
+            to: "desesperacion"
+          success_signal:
+            - "quien escucha el relato siente que la situacion empeora antes de cualquier mejora"
+          entity_exposure:
+            nunca: senales
+            insinuada: limites_consecuencias
+            progresiva: presencia_plena
+            explicita: consecuencias
+
+        - &medio_5
+          id: 5
+          name: "desenlace"
+          label: "Desenlace"  # Spec-620: el nombre que ve la Voz
+          nombre_ui: "Cómo termina"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
+          intent: "cerrar con brevedad emocional, escape incompleto y secuela"
+          intensity: baja
+          must:
+            - "salida rapida o alejamiento del peligro"
+            - "marca persistente o evidencia ambigua"
+            - "reflexion final corta y contundente"
+          must_not:
+            - "cerrar completamente el misterio"
+          state_change:
+            from: "desesperacion"
+            to: "calma inestable"
+          success_signal:
+            - "quien escucha el relato queda con la sensacion de que el horror no termino"
+          entity_exposure:
+            nunca: segun_acto_5
+            insinuada: huella
+            progresiva: huella
+            explicita: huella
+
+    # Spec-750: la larga, ~35 minutos leída en voz alta (≈ 5 250 palabras). Los actos son
+    # la dinámica del relato (Freytag), no su largo: son los mismos 5 de la media (`<<:` trae
+    # cada acto tal cual) y crecen los hechos y las palabras de cada uno. `textos_de`: las
+    # intenciones de los moldes, las recetas de los efectos y el acto de cada criterio son
+    # los de la media. Los modelos escriben cerca del techo de `palabras` (Spec-650 S5).
+    largo:
+      label: "Larga · 5 actos · unos 35 minutos"
+      palabras_total: "5.250"
+      hechos_por_acto: "los que pide cada acto arriba (es un relato de unos 35 minutos: cada hecho es algo distinto que pasa, no lo mismo contado de nuevo), hechos"
+      personajes_nuevos_max: 2  # Spec-730 D1, como la media
+      revela_secreto: 4
+      textos_de: medio
+      reubicar_desde:
+        medio: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }
+        corto: { 1: 1, 2: 3, 3: 5 }
+      actos:
+
+        - <<: *medio_1
+          palabras: [800, 950]
+          hechos: "5 o 6"
+          hechos_max: 6  # más que esto → aviso en «Los actos» (Verificador)
+
+        - <<: *medio_2
+          palabras: [1100, 1250]
+          hechos: "7 u 8"
+          hechos_max: 8
+
+        - <<: *medio_3
+          palabras: [1200, 1350]
+          hechos: "8 o 9"
+          hechos_max: 9
+
+        - <<: *medio_4
+          palabras: [1100, 1250]
+          hechos: "7 u 8"
+          hechos_max: 8
+
+        - <<: *medio_5
+          palabras: [450, 550]
+          hechos: "3 o 4"
+          hechos_max: 4

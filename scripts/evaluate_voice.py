@@ -85,8 +85,12 @@ PRICES = {
     "claude-sonnet-5": (2.0, 10.0),
     "claude-opus-5": (5.0, 25.0),
     "claude-haiku-4-5": (1.0, 5.0),
+    # Spec-750: lo publicado de GPT-5.6 Sol varía entre fuentes (2/10, 4/20, 5/30); se toma
+    # 4/20 hasta confirmarlo con la factura de OpenAI.
+    "gpt-5.6-sol": (4.0, 20.0),
 }
-PAID_PROVIDERS = {"anthropic"}
+# Spec-750: OpenAI también es pago (antes, con `openai-sol`, generaba sin pedir --yes).
+PAID_PROVIDERS = {"anthropic", "openai"}
 # Estimación por relato (Spec-480 §3): 5 actos de la Voz.
 _EST_INPUT, _EST_OUTPUT, _EST_THINKING = 16_200, 4_750, 5_000
 
@@ -131,16 +135,32 @@ def paid_roles() -> list[str]:
     ]
 
 
-def estimated_cost_per_story() -> float:
-    """Costo estimado de un relato con los roles pagos del perfil activo."""
+def estimated_cost_per_story(scale: float = 1.0) -> float:
+    """Costo estimado de un relato con los roles pagos del perfil activo.
+
+    Spec-750: `scale` = cuánto texto lleva el relato frente a la media (la larga, ~2,1).
+    """
     total = 0.0
     for role in paid_roles():
         cfg = settings.role_config(role)
         price_in, price_out = PRICES.get(cfg.get("model", ""), (0, 0))
-        thinks = cfg.get("thinking") not in ("disabled", "between_tools")
-        output = _EST_OUTPUT + (_EST_THINKING if thinks else 0)
-        total += (_EST_INPUT * price_in + output * price_out) / 1_000_000
+        if settings.role_provider(role) == "openai":
+            thinks = cfg.get("reasoning_effort") not in ("none", "minimal")
+        else:
+            thinks = cfg.get("thinking") not in ("disabled", "between_tools")
+        output = _EST_OUTPUT * scale + (_EST_THINKING if thinks else 0)
+        total += (_EST_INPUT * scale * price_in + output * price_out) / 1_000_000
     return round(total, 4)
+
+
+def text_scale(input_path: Path | None) -> float:
+    """Spec-750: palabras del largo de la historia / las de la media."""
+    from src.application.services.beat_spec_repository import BeatSpecRepository
+    from src.application.services.job_duration_estimator import _words
+
+    data = yaml.safe_load((input_path or STORY_FILE).read_text(encoding="utf-8"))
+    repo = BeatSpecRepository()
+    return _words(repo.estructura(data.get("estructura") or "medio")) / _words(repo.estructura())
 
 
 INPUT_VARIANT = "relato"
@@ -239,7 +259,7 @@ async def run(
 
     roles_pagos = paid_roles()
     if not mock and roles_pagos and not yes:
-        estimate = estimated_cost_per_story() * runs * len(variants)
+        estimate = estimated_cost_per_story(text_scale(input_path)) * runs * len(variants)
         config._profile, config._active_profile_name = saved_profile
         print(
             f"El perfil usa un proveedor pago para {roles_pagos}: costo estimado "

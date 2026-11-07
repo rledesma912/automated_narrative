@@ -7,7 +7,7 @@ pregunta a la estructura de la historia.
 
 from dataclasses import dataclass, field
 
-DEFAULT_STRUCTURE = "largo"
+DEFAULT_STRUCTURE = "medio"  # Spec-750: la de 5 actos y ~15 min
 
 
 @dataclass(frozen=True)
@@ -21,6 +21,14 @@ class Estructura:
     personajes_nuevos_max: int = 0  # Spec-730 D11: cuántos personajes puede proponer la IA
     # D10: {estructura de origen: {acto de allá: acto de acá}} para reubicar las reglas.
     reubicar_desde: dict[str, dict[int, int]] = field(default_factory=dict)
+    # Spec-750: la estructura cuyos textos por acto usa esta (moldes, efectos, criterios).
+    # La larga tiene los mismos actos que la media y toma los suyos; vacío = los propios.
+    textos_de: str = ""
+
+    @property
+    def textos(self) -> str:
+        """El id con el que se buscan sus textos en `config/` (el propio o `textos_de`)."""
+        return self.textos_de or self.id
 
     @property
     def num_actos(self) -> int:
@@ -92,7 +100,21 @@ def validate(estructura_id: str, data: dict, exposures: dict) -> Estructura:
             src: {int(k): int(v) for k, v in table.items()}
             for src, table in (data.get("reubicar_desde") or {}).items()
         },
+        textos_de=str(data.get("textos_de") or ""),
     )
+
+
+def validate_texts(structures: dict[str, Estructura]) -> None:
+    """Spec-750: `textos_de` apunta a una estructura con textos propios y los mismos actos."""
+    for e in structures.values():
+        if not e.textos_de:
+            continue
+        where = f"estructura «{e.id}»: textos_de «{e.textos_de}»"
+        source = structures.get(e.textos_de)
+        if source is None or source.textos_de:
+            raise ValueError(f"{where} tiene que ser una estructura con sus propios textos")
+        if source.numeros != e.numeros:
+            raise ValueError(f"{where} tiene otros actos ({source.numeros})")
 
 
 def validate_relocations(structures: dict[str, Estructura]) -> None:

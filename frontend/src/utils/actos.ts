@@ -3,12 +3,12 @@
  * `src/application/services/narrative_acts.py`: preámbulo opcional y un
  * `## Acto N` por acto, con los párrafos separados por una línea en blanco.
  *
- * Spec-650: hay dos largos. Esta es la única fuente de los nombres de los actos en
+ * Spec-650/750: hay tres largos (corto, medio, largo); la larga tiene los actos de la media. Esta es la única fuente de los nombres de los actos en
  * el front (la imagen de la UI no trae `config/`); un test los compara con
  * `nombre_ui` e `intensity` de `config/llm_beats_definition.yaml`.
  */
 
-export type Estructura = "largo" | "corto";
+export type Estructura = "medio" | "corto" | "largo";
 
 export interface ActoDeLaEstructura {
   number: number;
@@ -17,6 +17,13 @@ export interface ActoDeLaEstructura {
 }
 
 export const ESTRUCTURAS: Record<Estructura, ActoDeLaEstructura[]> = {
+  medio: [
+    { number: 1, name: "Cómo empieza", intensity: "baja" },
+    { number: 2, name: "Se complica", intensity: "media" },
+    { number: 3, name: "El peor momento", intensity: "alta" },
+    { number: 4, name: "Qué hace después", intensity: "media-alta" },
+    { number: 5, name: "Cómo termina", intensity: "baja" },
+  ],
   largo: [
     { number: 1, name: "Cómo empieza", intensity: "baja" },
     { number: 2, name: "Se complica", intensity: "media" },
@@ -31,9 +38,9 @@ export const ESTRUCTURAS: Record<Estructura, ActoDeLaEstructura[]> = {
   ],
 };
 
-/** Los actos de un largo (uno desconocido es el largo de siempre). */
+/** Los actos de un largo (uno desconocido es el de siempre, la media). */
 export function actosDe(estructura: string | undefined): ActoDeLaEstructura[] {
-  return ESTRUCTURAS[estructura as Estructura] ?? ESTRUCTURAS.largo;
+  return ESTRUCTURAS[estructura as Estructura] ?? ESTRUCTURAS.medio;
 }
 
 /**
@@ -45,11 +52,11 @@ export function estructuraPorCantidad(cantidad: number): Estructura | null {
   return found ?? null;
 }
 
-/** Spec-650: un estado del asistente sin el largo (Core viejo, dobles de prueba) es largo. */
+/** Spec-650: un estado del asistente sin el largo (Core viejo, dobles de prueba) es la media. */
 export function conLargo<T extends { structure?: string; structure_acts?: ActoDeLaEstructura[] }>(
   state: T,
 ): T & { structure: string; structure_acts: ActoDeLaEstructura[] } {
-  const structure = state.structure || "largo";
+  const structure = state.structure || "medio";
   const acts = state.structure_acts?.length ? state.structure_acts : actosDe(structure);
   return { ...state, structure, structure_acts: acts };
 }
@@ -67,7 +74,7 @@ export function splitActs(content: string): ActoDelRelato[] {
     raw.push({ number: Number(parts[i]), text: (parts[i + 1] || "").trim() });
   }
   // Una cantidad que no es de ningún largo (no debería pasar) conserva los nombres de siempre.
-  const nombres = ESTRUCTURAS[estructuraPorCantidad(raw.length) ?? "largo"];
+  const nombres = ESTRUCTURAS[estructuraPorCantidad(raw.length) ?? "medio"];
   return raw.map((a) => ({
     ...a,
     name: nombres.find((n) => n.number === a.number)?.name ?? `Acto ${a.number}`,
@@ -77,8 +84,12 @@ export function splitActs(content: string): ActoDelRelato[] {
 /**
  * Spec-650 D11: la versión se escribió con otro largo que el de la historia ahora. Se lee,
  * se corrige y se descarga, pero no se regenera por actos (el Core lo rechaza).
+ * Spec-750: la media y la larga tienen los mismos actos: cuenta el largo guardado de la versión
+ * (`delaVersion`, lo manda el Core); sin él, la cantidad de actos.
  */
-export function deOtroLargo(content: string, estructura: string | undefined): boolean {
+export function deOtroLargo(content: string, estructura: string | undefined, delaVersion?: string): boolean {
   const cantidad = splitActs(content).length;
-  return cantidad > 0 && cantidad !== actosDe(estructura).length;
+  if (cantidad === 0) return false;
+  if (delaVersion) return delaVersion !== (estructura || "medio");
+  return cantidad !== actosDe(estructura).length;
 }
