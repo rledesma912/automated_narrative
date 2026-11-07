@@ -249,3 +249,43 @@ def test_gestos_gastados_solo_si_se_los_pasan():
     r = check([text], gestures=recursos_gastados.gestos())[0]
     assert r.gestures == [("tomar mate, cebar mate, el termo", "un mate")]
     assert r.has_findings()
+
+
+# ── Spec-750: la tolerancia crece con el largo del acto ─────────────────────
+
+_RELLENO = "Caminamos un rato largo por el camino de tierra sin decir nada. "  # 12 palabras
+
+
+def _acto(palabras: int, *frases: str) -> str:
+    texto = " ".join(frases)
+    faltan = max(0, palabras - len(texto.split()))
+    return texto + " " + _RELLENO * (faltan // 12 + 1)
+
+
+def test_la_tolerancia_es_por_cada_500_palabras():
+    from src.application.services.repetition_check import tolerance
+
+    assert [tolerance(n) for n in (0, 200, 530, 749, 750, 1250, 1350)] == [1, 1, 1, 1, 2, 3, 3]
+
+
+def test_un_acto_largo_admite_mas_comparaciones():
+    dos = ("Juan bajó la linterna como si le pesara.", "Brillaba como una brasa.")
+    cuatro = (*dos, "El dedo me latía como si me lo hubieran pisado.", "Subía como una cortina.")
+    largo_dos, largo_cuatro = check([_acto(1200, *dos), _acto(1200, *cuatro)], [])
+    assert (largo_dos.comparison_count, largo_dos.too_literary) == (2, False)
+    assert (largo_cuatro.comparison_count, largo_cuatro.too_literary) == (4, True)
+    assert check([_acto(450, *dos)], [])[0].too_literary  # la media, como siempre
+
+
+def test_un_acto_largo_admite_mas_enumeraciones():
+    cinco = (
+        "Era alto, flaco y pálido.",
+        "Tenía frío, sueño y hambre.",
+        "Vi luces, sombras y humo.",
+        "Olía a tierra, barro y leña.",
+        "Oí pasos, golpes y gritos.",
+    )
+    assert check([_acto(1200, *cinco[:3])], [])[0].too_listy is False
+    assert check([_acto(1200, *cinco)], [])[0].too_listy is False
+    assert check([_acto(1200, *cinco, "Había ramas, piedras y huesos.")], [])[0].too_listy
+    assert check([_acto(450, *cinco[:3])], [])[0].too_listy  # la media, como siempre

@@ -62,6 +62,7 @@ class PromptBuilder:
                 narrador=narrator or fragment("voz/narrador_generico"),
                 habla=habla.prompt,
                 habla_voz=f"\n- {habla.voz}" if habla.voz else "",
+                comparaciones=fragment(self._comparisons(story)),
             ).strip(),
             "parentescos": self._format_kinship(story, narrator),
             # «Sos Irene…» en vez de «Sos Primera persona en pasado. Narrador: Irene…».
@@ -71,6 +72,14 @@ class PromptBuilder:
                 else fragment("voz/presentacion_sin_nombre", relator=story.relator)
             ),
         }
+
+    def _comparisons(self, story: Story) -> str:
+        """Spec-750: cuántas comparaciones admite un acto, como lo mide el control de
+        repetición: en la larga (actos de más de ~750 palabras), una cada unas 500."""
+        from src.application.services.repetition_check import tolerance
+
+        techo = max((a.get("palabras") or [0, 0])[1] for a in self.estructura(story).actos)
+        return "voz/comparaciones/" + ("por_palabras" if tolerance(techo) > 1 else "por_acto")
 
     def _format_kinship(self, story: Story, narrator: str) -> str:
         """«CÓMO LLAMÁS A CADA PERSONAJE»: el rol de cada uno, leído desde quien narra.

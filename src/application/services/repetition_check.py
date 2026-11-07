@@ -42,6 +42,9 @@ class ActRepetition:
     foreign_count: int = 0
     triads: list[str] = field(default_factory=list)
     triad_count: int = 0
+    # Spec-750: palabras del acto (la tolerancia de comparaciones y enumeraciones crece
+    # con el largo: un acto de la larga tiene el texto de dos o tres de la media).
+    words: int = 0
 
     @property
     def too_cut(self) -> bool:
@@ -50,13 +53,15 @@ class ActRepetition:
 
     @property
     def too_literary(self) -> bool:
-        """Spec-640 D2: una comparación por acto está bien; desde la segunda, se avisa."""
-        return self.comparison_count > COMPARISONS_PER_ACT
+        """Spec-640 D2: una comparación por acto está bien; desde la segunda, se avisa.
+        Spec-750: una cada ~500 palabras (en la media y el corto da lo mismo)."""
+        return self.comparison_count > COMPARISONS_PER_ACT * tolerance(self.words)
 
     @property
     def too_listy(self) -> bool:
-        """Spec-680 D4: una o dos enumeraciones de a tres son naturales; desde la tercera, se avisa."""
-        return self.triad_count >= TRIADS_WARNING
+        """Spec-680 D4: una o dos enumeraciones de a tres son naturales; desde la tercera, se avisa.
+        Spec-750: por cada ~500 palabras."""
+        return self.triad_count >= TRIADS_WARNING * tolerance(self.words)
 
     def has_findings(self) -> bool:
         return bool(
@@ -191,6 +196,17 @@ def dialogue_lines(text: str) -> list[str]:
 # «como yo» no son comparaciones de escritor y no cuentan.
 
 COMPARISONS_PER_ACT = 1  # Spec-640 D2: las que admite un acto sin aviso
+WORDS_PER_TOLERANCE = 500  # Spec-750: cada cuántas palabras se admite otra tanda
+
+
+def tolerance(words: int) -> int:
+    """Spec-750: cuántas veces la tolerancia de un acto de la media (≤ ~530 palabras = 1).
+
+    Redondeo común (no el bancario de `round`): 750 palabras ya son dos tandas.
+    """
+    return max(1, int(words / WORDS_PER_TOLERANCE + 0.5))
+
+
 _COMPARISON = re.compile(r"\bcomo (?:si|una?)\b(?:\s+[\wáéíóúñü]+){1,4}", re.I)
 
 
@@ -294,6 +310,7 @@ def check(
         found_triads = triads(acts[n])
         rep.triads = found_triads[:_MAX_EXAMPLES]
         rep.triad_count = len(found_triads)
+        rep.words = len(ws)
         result.append(rep)
     return result
 

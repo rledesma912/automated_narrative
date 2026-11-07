@@ -56,6 +56,9 @@ async def test_prompts_del_pipeline_largo(monkeypatch, tmp_path):
     voces = [call["prompt"] for call in llm.calls if call["role"] == "voz"]
     for n, (low, high) in PALABRAS.items():
         assert f"entre {low} y {high} palabras" in voces[n - 1], n
+    # S4: la guía de la Voz admite una comparación cada unas 500 palabras (como el control).
+    sistema = next(call["system"] for call in llm.calls if call["role"] == "voz")
+    assert "Como mucho una comparación cada unas 500 palabras" in sistema
 
     calls = [{**call, "prompt": _sin_ids(call["prompt"])} for call in llm.calls]
     if os.environ.get("SNAPSHOT_UPDATE"):

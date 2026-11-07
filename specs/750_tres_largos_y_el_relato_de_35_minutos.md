@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1, S2 y S3 hechos.
+**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 a S4 hechos.
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
@@ -281,12 +281,12 @@ Cada tarea dice cómo se verifica. ✅ = hecha.
 
 ### S4. Repetición por palabras
 
-- **T4.1 Tests (rojo primero).**
+- ✅ **T4.1 Tests (rojo primero).**
   - En un acto de ~1 200 palabras, 2 comparaciones no avisan y 4 sí; lo mismo con las enumeraciones.
   - Los casos de ~450 palabras quedan como hoy.
-- **T4.2 `repetition_check.py`.** El factor `max(1, round(palabras / 500))`.
-- **T4.3 La Voz.** `{comparaciones}` en `voice_craft.md` (o un fragmento), según el largo. Verifica: los snapshots de la Media y del corto sin cambios y el de la larga con «una cada unas 500 palabras».
-- **T4.4 Checkpoint.** Commit.
+- ✅ **T4.2 `repetition_check.py`.** El factor `tolerance(palabras)` = `max(1, int(palabras / 500 + 0.5))` (redondeo común: `round` de Python redondea 2,5 a 2).
+- ✅ **T4.3 La Voz.** Fragmentos `voz/comparaciones/por_acto` y `por_palabras`; `PromptBuilder._comparisons` elige con el techo de `palabras` de la estructura y la misma `tolerance`. Solo cambió el snapshot de la larga. `{comparaciones}` en `voice_craft.md` (o un fragmento), según el largo. Verifica: los snapshots de la Media y del corto sin cambios y el de la larga con «una cada unas 500 palabras».
+- ✅ **T4.4 Checkpoint.** Commit.
 
 ### S5. La pantalla
 
