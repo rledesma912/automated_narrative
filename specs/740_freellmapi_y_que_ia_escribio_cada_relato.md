@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-05
 **Tipo:** SDD: proveedores LLM (adapter + perfil), registro de llamadas, «El relato» (UI)
-**Estado:** S1 hecho (af75ffe). **Enfoque cambiado el 2026-11-06** (§0): FreeLLMAPI para el relato corto. Plan y tareas reescritos (§9, §10), con OK del usuario (2026-11-06). Hechas S1, S2, S4, S5 y S6; S3 midiendo. **Parte F (OpenAI, D9) sumada el 2026-11-06**; S8 hecha salvo T8.6 (con clave).
+**Estado:** S1 hecho (af75ffe). **Enfoque cambiado el 2026-11-06** (§0): FreeLLMAPI para el relato corto. Plan y tareas reescritos (§9, §10), con OK del usuario (2026-11-06). Hechas S1, S2, S4, S5 y S6; S3 midiendo. **Parte F (OpenAI, D9) sumada el 2026-11-06**; S8 hecha; **prod con `openai-sol` (D10)**. FreeLLMAPI queda en la spec como opción para el corto gratis (S3, S4b en pausa).
 **Rama:** `feat/spec-740-freellmapi` (desde `origin/development`)
 **Extiende:** Spec-480 (proveedor por rol), Spec-530 (salida estructurada), Spec-600 D3 (la Voz sin respaldo), Spec-620 (mensajes fuera del código), Spec-720 D6 (`respaldo`, `respaldos`).
 
@@ -159,6 +159,7 @@ Tomadas por el usuario el 2026-11-05.
 | D8 | Límite diario (2026-11-06) | **Sí: con FreeLLMAPI, un tope de relatos por día (1 o 2), con el número que sostenga S3** (Parte E) | Mejor un relato menos que uno que se corta a la mitad gastando la cuota. Ojo: las chicas escriben 2 o 3 por día |
 | D7 | Qué se mide (2026-11-06) | **Solo cortos.** Primero 2 cortos más para confirmar T1.9; después capacidad por día y lectura a ciegas | Es el uso real y lo que va a correr en FreeLLMAPI |
 | D9 | La API de OpenAI (2026-11-06) | **Sí, como parte nueva (F):** un `OpenAIAdapter` propio, hecho como el de Claude. El modelo, el perfil y la activación se deciden después, con precios y una medición | Pago como Claude: falla enseguida y responde el modelo pedido. Juntarlo con FreeLLMAPI metería las esperas del gateway en un proveedor pago |
+| D10 | Qué va a prod (2026-11-06) | **`openai-sol`: todo en GPT-5.6 Sol, los dos largos**, sin relato de prueba antes (pedido del usuario: «preparalo para que las chicas empiecen»). La Voz y el Guion con `reasoning_effort: low`, el resto `none` | Pago y sin cupo diario: el largo vuelve y no hace falta el tope de S4b. Precio publicado ~US$ 4 / 20 por millón (entrada / salida), a confirmar en la factura; ~US$ 0,15–0,30 por relato estimado. Probado solo con llamadas chicas: voseo y JSON estricto |
 
 ---
 
