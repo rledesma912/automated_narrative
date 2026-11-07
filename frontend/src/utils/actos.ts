@@ -3,12 +3,12 @@
  * `src/application/services/narrative_acts.py`: preámbulo opcional y un
  * `## Acto N` por acto, con los párrafos separados por una línea en blanco.
  *
- * Spec-650/750: hay varios largos (corto, medio). Esta es la única fuente de los nombres de los actos en
+ * Spec-650/750: hay tres largos (corto, medio, largo); la larga tiene los actos de la media. Esta es la única fuente de los nombres de los actos en
  * el front (la imagen de la UI no trae `config/`); un test los compara con
  * `nombre_ui` e `intensity` de `config/llm_beats_definition.yaml`.
  */
 
-export type Estructura = "medio" | "corto";
+export type Estructura = "medio" | "corto" | "largo";
 
 export interface ActoDeLaEstructura {
   number: number;
@@ -18,6 +18,13 @@ export interface ActoDeLaEstructura {
 
 export const ESTRUCTURAS: Record<Estructura, ActoDeLaEstructura[]> = {
   medio: [
+    { number: 1, name: "Cómo empieza", intensity: "baja" },
+    { number: 2, name: "Se complica", intensity: "media" },
+    { number: 3, name: "El peor momento", intensity: "alta" },
+    { number: 4, name: "Qué hace después", intensity: "media-alta" },
+    { number: 5, name: "Cómo termina", intensity: "baja" },
+  ],
+  largo: [
     { number: 1, name: "Cómo empieza", intensity: "baja" },
     { number: 2, name: "Se complica", intensity: "media" },
     { number: 3, name: "El peor momento", intensity: "alta" },

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 hecho.
+**Estado:** IMPLEMENT (OK del usuario el 2026-11-06). S1 y S2 hechos.
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
@@ -259,12 +259,12 @@ Cada tarea dice cómo se verifica. ✅ = hecha.
 
 ### S2. La larga en config y pipeline
 
-- **T2.1 `textos_de` (rojo primero).** Tests de `Estructura.textos`, del error en `validate()` si apunta a una estructura que no existe o con otra cantidad de actos, y de `catalog` y `molde` resolviendo los textos de la larga desde `medio`.
-- **T2.2 Código.** `structure.py` (campo y validación), `catalog.py` y `molde.py` (las búsquedas por `textos`; completitud contra los ids de `textos`). Verifica: T2.1 y `test_moldes` en verde.
-- **T2.3 Config de la larga.** `estructuras.largo` según §3 y `reubicar_desde` en las tres estructuras. Verifica: `test_estructuras_config` y `test_beat_spec_repository`, con tres estructuras y la larga con los mismos `intent`, `intensity` y `entity_exposure` que la Media.
-- **T2.4 Perfiles.** Planificador en 9 000 en `openai-sol` y `hibrido-sonnet55`; el comentario de gemma. Verifica: `test_el_perfil_de_sol_carga_con_todos_sus_roles`.
-- **T2.5 Snapshots de la larga.** La Voz del acto 2 con «entre 1 100 y 1 250 palabras» y el Planificador con los hechos por acto y las intenciones de la forma (`asedio`). Verifica: los tests de que aparece cada sección.
-- **T2.6 Checkpoint.** En dev, crear una Larga y armar los actos con el mock. Commit.
+- ✅ **T2.1 `textos_de` (rojo primero).** Tests de `Estructura.textos`, del error en `validate()` si apunta a una estructura que no existe o con otra cantidad de actos, y de `catalog` y `molde` resolviendo los textos de la larga desde `medio`.
+- ✅ **T2.2 Código.** `structure.py` (campo y validación), `catalog.py` y `molde.py` (las búsquedas por `textos`; completitud contra los ids de `textos`). Verifica: T2.1 y `test_moldes` en verde.
+- ✅ **T2.3 Config de la larga.** Los actos con anclas YAML (`<<: *medio_N`): la larga trae cada acto de la media tal cual y suma `palabras`, `hechos` y `hechos_max`. Se sacó `word_limit`, que nadie leía (y en la larga habría dicho 450–530). El video (`lectura.yaml` 30–38 min, `biblia_visual.yaml` 20–28 momentos) y `job.largo_deshabilitado` entran acá porque la config se valida por largo al arrancar. `estructuras.largo` según §3 y `reubicar_desde` en las tres estructuras. Verifica: `test_estructuras_config` y `test_beat_spec_repository`, con tres estructuras y la larga con los mismos `intent`, `intensity` y `entity_exposure` que la Media.
+- ✅ **T2.4 Perfiles.** Planificador en 9 000 en `openai-sol` y `hibrido-sonnet55`; el comentario de gemma. Verifica: `test_el_perfil_de_sol_carga_con_todos_sus_roles`.
+- ✅ **T2.5 Snapshots de la larga.** La Voz del acto 2 con «entre 1 100 y 1 250 palabras» y el Planificador con los hechos por acto y las intenciones de la forma (`asedio`). Verifica: los tests de que aparece cada sección.
+- ✅ **T2.6 Checkpoint.** En dev, «Tu idea» ofrece la Larga. Armar los actos en dev usaría Sol (pago): con el mock lo cubre `test_la_larga_pipeline.py`. Hasta S3, una versión de una larga se ve como Media (se deduce por la cantidad de actos). Commit.
 
 ### S3. Cada versión guarda su largo
 

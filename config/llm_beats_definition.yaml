@@ -66,13 +66,14 @@ beats_spec:
       # D10: al pasar de otra estructura, la regla anclada al acto N va al acto M.
       reubicar_desde:
         corto: { 1: 1, 2: 3, 3: 5 }
+        largo: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }
       actos:
 
-        - id: 1
+        - &medio_1
+          id: 1
           name: "exposicion"
           label: "Exposición"  # Spec-620: el nombre que ve la Voz
           nombre_ui: "Cómo empieza"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
           intent: "establecer normalidad y como cliffhanger para siguiente beat sembrar una inquietud sutil"
           intensity: baja
           must:
@@ -97,11 +98,11 @@ beats_spec:
             progresiva: senales
             explicita: presencia
 
-        - id: 2
+        - &medio_2
+          id: 2
           name: "accion_ascendente"
           label: "Acción ascendente"  # Spec-620: el nombre que ve la Voz
           nombre_ui: "Se complica"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
           intent: "activar el conflicto mediante transgresion"
           intensity: media
           must:
@@ -124,11 +125,11 @@ beats_spec:
             progresiva: manifestacion_parcial
             explicita: presencia
 
-        - id: 3
+        - &medio_3
+          id: 3
           name: "climax"
           label: "Clímax"  # Spec-620: el nombre que ve la Voz
           nombre_ui: "El peor momento"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
           intent: "forzar reconocimiento del horror"
           intensity: alta
           must:
@@ -150,11 +151,11 @@ beats_spec:
             progresiva: presencia_directa
             explicita: confrontacion
 
-        - id: 4
+        - &medio_4
+          id: 4
           name: "accion_descendente"
           label: "Acción descendente"  # Spec-620: el nombre que ve la Voz
           nombre_ui: "Qué hace después"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 450 y 530 palabras"
           intent: "llevar al protagonista al colapso y reaccion"
           intensity: media-alta
           must:
@@ -173,11 +174,11 @@ beats_spec:
             progresiva: presencia_plena
             explicita: consecuencias
 
-        - id: 5
+        - &medio_5
+          id: 5
           name: "desenlace"
           label: "Desenlace"  # Spec-620: el nombre que ve la Voz
           nombre_ui: "Cómo termina"  # Spec-650: el nombre que ve la persona (= frontend/src/utils/actos.ts)
-          word_limit: "entre 150 y 200 palabras (máxima brevedad emocional)"
           intent: "cerrar con brevedad emocional, escape incompleto y secuela"
           intensity: baja
           must:
@@ -210,6 +211,7 @@ beats_spec:
       revela_secreto: 2
       reubicar_desde:
         medio: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
+        largo: { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3 }
       actos:
 
         - id: 1
@@ -256,3 +258,45 @@ beats_spec:
             insinuada: huella
             progresiva: huella
             explicita: huella
+
+    # Spec-750: la larga, ~35 minutos leída en voz alta (≈ 5 250 palabras). Los actos son
+    # la dinámica del relato (Freytag), no su largo: son los mismos 5 de la media (`<<:` trae
+    # cada acto tal cual) y crecen los hechos y las palabras de cada uno. `textos_de`: las
+    # intenciones de los moldes, las recetas de los efectos y el acto de cada criterio son
+    # los de la media. Los modelos escriben cerca del techo de `palabras` (Spec-650 S5).
+    largo:
+      label: "Larga · 5 actos · unos 35 minutos"
+      palabras_total: "5.250"
+      hechos_por_acto: "los que pide cada acto arriba (es un relato de unos 35 minutos: cada hecho es algo distinto que pasa, no lo mismo contado de nuevo), hechos"
+      personajes_nuevos_max: 2  # Spec-730 D1, como la media
+      revela_secreto: 4
+      textos_de: medio
+      reubicar_desde:
+        medio: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }
+        corto: { 1: 1, 2: 3, 3: 5 }
+      actos:
+
+        - <<: *medio_1
+          palabras: [800, 950]
+          hechos: "5 o 6"
+          hechos_max: 6  # más que esto → aviso en «Los actos» (Verificador)
+
+        - <<: *medio_2
+          palabras: [1100, 1250]
+          hechos: "7 u 8"
+          hechos_max: 8
+
+        - <<: *medio_3
+          palabras: [1200, 1350]
+          hechos: "8 o 9"
+          hechos_max: 9
+
+        - <<: *medio_4
+          palabras: [1100, 1250]
+          hechos: "7 u 8"
+          hechos_max: 8
+
+        - <<: *medio_5
+          palabras: [450, 550]
+          hechos: "3 o 4"
+          hechos_max: 4

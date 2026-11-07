@@ -391,7 +391,7 @@ class ActOutline(BaseModel):
         return {k for w in self.warnings if w.dismissed for k in w.keys()}
 
 
-StructureId = Literal["corto", "medio"]  # Spec-650/750: corto 3 actos, medio 5
+StructureId = Literal["corto", "medio", "largo"]  # Spec-650/750: corto 3 actos, medio y largo 5
 
 
 class Story(BaseModel):

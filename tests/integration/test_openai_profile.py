@@ -30,7 +30,7 @@ def perfil(monkeypatch):
     monkeypatch.setattr(config, "_profile", PERFIL)
     monkeypatch.setattr(config, "_active_profile_name", "openai-prueba")
     monkeypatch.setattr(settings, "openai_api_key", "clave-de-prueba")
-    for structure in ("LARGO", "CORTO"):
+    for structure in ("CORTO", "MEDIO", "LARGO"):
         monkeypatch.delenv(f"LLM_PROFILE_{structure}", raising=False)
 
 

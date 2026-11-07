@@ -52,7 +52,7 @@ async def _generate(client, sid: str) -> dict:
     resp = await client.post(f"/api/v1/stories/{sid}/jobs", json={})
     assert resp.status_code == 202, resp.text
     # Spec-650 T1.7: el job nace sabiendo cuántos actos escribe.
-    assert resp.json()["total_beats"] == {"medio": 5, "corto": 3}[structure]
+    assert resp.json()["total_beats"] == {"medio": 5, "corto": 3, "largo": 5}[structure]
     await job_manager.wait(uuid.UUID(resp.json()["job_id"]))
     job = (await client.get(f"/api/v1/jobs/{resp.json()['job_id']}")).json()
     assert job["status"] == "done", job
@@ -66,9 +66,13 @@ async def _narrative(client, narrative_id: str) -> str:
 # ── Opciones y alta ──────────────────────────────────────────────────────────
 
 
-async def test_las_opciones_traen_los_dos_largos(client):
+async def test_las_opciones_traen_los_tres_largos(client):
     data = (await client.get(f"{API}/options")).json()
-    assert [(s["id"], s["acts"]) for s in data["structures"]] == [("medio", 5), ("corto", 3)]
+    assert [(s["id"], s["acts"]) for s in data["structures"]] == [
+        ("medio", 5),
+        ("corto", 3),
+        ("largo", 5),
+    ]
 
 
 async def test_crear_un_corto(client):

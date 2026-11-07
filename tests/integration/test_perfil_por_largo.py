@@ -34,6 +34,8 @@ def perfiles(monkeypatch):
     monkeypatch.setattr(settings, "freellmapi_api_key", "clave-de-prueba")
     monkeypatch.setattr(settings, "anthropic_api_key", "clave-de-prueba")
 
+    monkeypatch.delenv("LLM_PROFILE_LARGO", raising=False)  # Spec-750: solo se prueba la media
+
     def largo(value: str | None):
         if value is None:
             monkeypatch.delenv("LLM_PROFILE_MEDIO", raising=False)
@@ -270,11 +272,11 @@ async def test_health_y_perfil_activo_muestran_los_dos(perfiles, client, monkeyp
 
     health = (await client.get("/api/v1/health")).json()
     assert set(health["checks"]["providers"]) == {"freellmapi", "anthropic", "ollama"}
-    assert health["profiles"] == {"corto": CORTO, "medio": MEDIO}
+    assert health["profiles"] == {"corto": CORTO, "medio": MEDIO, "largo": CORTO}
 
     active = (await client.get("/api/v1/config/active-profile")).json()
     assert active["active_profile"] == CORTO
-    assert active["profiles"] == {"corto": CORTO, "medio": MEDIO}
+    assert active["profiles"] == {"corto": CORTO, "medio": MEDIO, "largo": CORTO}
 
 
 async def test_health_con_el_largo_off(perfiles, client):

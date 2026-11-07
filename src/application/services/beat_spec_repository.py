@@ -10,6 +10,7 @@ from src.application.services.structure import (
     Estructura,
     validate,
     validate_relocations,
+    validate_texts,
 )
 from src.config import settings
 
@@ -41,6 +42,7 @@ class BeatSpecRepository:
             sid: validate(sid, data, self._exposures) for sid, data in raw.items()
         }
         validate_relocations(self._structures)
+        validate_texts(self._structures)
 
     def _load(self) -> dict:
         if not self._path.exists():
@@ -90,13 +92,6 @@ class BeatSpecRepository:
             extra = variants.get(_level_key(reveal_level), variants["default"])
             resolved[key] = [*beat.get(key, []), *extra]
         return resolved
-
-    def get_word_limit(
-        self, beat_id: int, default: str = "", structure: str = DEFAULT_STRUCTURE
-    ) -> str:
-        """Retorna el word_limit configurado en el YAML para este beat."""
-        beat = self.get_by_id(beat_id, structure=structure)
-        return beat.get("word_limit", default)
 
 
 def _level_key(reveal_level) -> str:
