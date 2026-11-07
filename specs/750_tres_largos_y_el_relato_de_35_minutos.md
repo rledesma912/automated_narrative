@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-06
 **Tipo:** SDD: estructuras del relato (config), dominio y base, asistente (UI), video
-**Estado:** PLAN (SPECIFY cerrada: D1–D4 decididas por el usuario el 2026-11-06). Falta el OK para TASKS. Sin código.
+**Estado:** TASKS (SPECIFY y PLAN aprobados el 2026-11-06). Falta el OK para IMPLEMENT. Sin código.
 **Rama:** `feat/spec-750-tres-largos` (desde `origin/development`)
 **Extiende:** Spec-650 (relato corto; las estructuras salen de config), Spec-670 (moldes: intenciones por largo), Spec-610 (duración del episodio), Spec-740 D1 (un perfil por largo).
 
@@ -229,3 +229,75 @@ Al terminar, todo se ve y funciona igual que hoy, salvo que en pantalla la de 5 
 | El Planificador no llega a 8–9 hechos distintos por acto | Lo avisa el Verificador (hechos repetidos). Se ve en S6 |
 | La Voz se estira o se repite dentro de un acto largo | S4 lo mide sin castigar el largo. Se ve en S6 |
 | Un perfil sin tokens suficientes (gemma) | Se documenta. `LLM_PROFILE_LARGO` permite poner la larga en otro perfil, u `off` |
+
+---
+
+## 9. TASKS
+
+Cada tarea dice cómo se verifica. ✅ = hecha.
+
+### S1. `largo` → `medio`
+
+- **T1.1 Test de la reconstrucción (rojo primero).** `tests/integration/test_tres_largos_db.py`: una base con el esquema viejo (CHECK `largo|corto`), con una historia de cada largo y filas en todas las tablas hijas (personajes, reglas, actos, escaleta, taller, entidades, journal, relatos, paquete de video, `llm_call`, jobs). Después de `init_db()`:
+  - Mismos conteos por tabla.
+  - `largo` pasa a `medio` y `corto` queda igual.
+  - Los `params` de los jobs dicen `medio`.
+  - `foreign_key_check` vacío.
+  - Una segunda corrida no cambia nada.
+  - Una base nueva ya nace con el CHECK de tres valores.
+- **T1.2 `init_db()`.** Detecta el CHECK viejo en `sqlite_master` y reconstruye `story` con las FK apagadas fuera de la transacción. Vuelve a crear sus índices y actualiza `generation_job.params`. Verifica: T1.1 en verde.
+- **T1.3 Dominio, API y YAML.** `StructureId`, `DEFAULT_STRUCTURE = "medio"`, los defaults de los esquemas, el router y el orquestador, la lectura en `story_repository`, el exportador (omite `medio`) y el importador (sin la clave = `medio`; `estructura: largo` = larga). Verifica: tests de ida y vuelta del YAML con `medio` y `corto`.
+- **T1.4 Config.** `largo` pasa a `medio` en `llm_beats_definition.yaml` (label «Media · 5 actos · unos 15 minutos»), `moldes/formas.yaml`, `authoring_options.yaml`, `workshop_criteria.yaml` y `video/*.yaml`. `LLM_PROFILE_MEDIO` en el comentario de `.env` y en `CLAUDE.md`. Verifica: el validador de la config al arrancar.
+- **T1.5 Front.** `Estructura` en `actos.ts`, `asistente.js` y `direccion.ejs`; fixtures del asistente (`UPDATE_FIXTURES=1`); E2E `relato-corto` y `largo-apagado`. Verifica: `npm test`.
+- **T1.6 Tests existentes.** El renombre en los 22 archivos, a mano y sin `sed` a ciegas: en `timing.py` y `tiempos.js` «largo» es el estado del episodio y no se toca. Snapshots solo si cambia el id, con `SNAPSHOT_UPDATE=1` y revisando el diff. Verifica: `make test` en verde.
+- **T1.7 Copia de prod.** `init_db()` sobre una copia de `data/prod/stories.db` en el scratchpad: conteos antes y después iguales y 5 historias en `medio`. Verifica: la salida del script.
+- **T1.8 Checkpoint.**
+  1. Respaldar `data/dev/stories.db`.
+  2. Abrir dev: `make dev-status` en verde.
+  3. Ver que las historias de 5 actos digan «Media» y que «Tu idea» ofrezca Corto y Media.
+  4. Commit.
+
+### S2. La larga en config y pipeline
+
+- **T2.1 `textos_de` (rojo primero).** Tests de `Estructura.textos`, del error en `validate()` si apunta a una estructura que no existe o con otra cantidad de actos, y de `catalog` y `molde` resolviendo los textos de la larga desde `medio`.
+- **T2.2 Código.** `structure.py` (campo y validación), `catalog.py` y `molde.py` (las búsquedas por `textos`; completitud contra los ids de `textos`). Verifica: T2.1 y `test_moldes` en verde.
+- **T2.3 Config de la larga.** `estructuras.largo` según §3 y `reubicar_desde` en las tres estructuras. Verifica: `test_estructuras_config` y `test_beat_spec_repository`, con tres estructuras y la larga con los mismos `intent`, `intensity` y `entity_exposure` que la Media.
+- **T2.4 Perfiles.** Planificador en 9 000 en `openai-sol` y `hibrido-sonnet55`; el comentario de gemma. Verifica: `test_el_perfil_de_sol_carga_con_todos_sus_roles`.
+- **T2.5 Snapshots de la larga.** La Voz del acto 2 con «entre 1 100 y 1 250 palabras» y el Planificador con los hechos por acto y las intenciones de la forma (`asedio`). Verifica: los tests de que aparece cada sección.
+- **T2.6 Checkpoint.** En dev, crear una Larga y armar los actos con el mock. Commit.
+
+### S3. Cada versión guarda su largo
+
+- **T3.1 Tests (rojo primero).**
+  - La versión nueva guarda su largo y la API lo devuelve.
+  - La vieja (`NULL`) se deduce: 3 actos = `corto`, 5 = `medio`.
+  - Regenerar un acto de una versión Media en una historia Larga → `version_de_otro_largo`.
+  - El video de una larga usa 30–38 min y 20–28 momentos.
+- **T3.2 Base y repo.** La columna con `ALTER TABLE` idempotente en `init_db()`, `GeneratedNarrative.structure` y el UPSERT de `save()`.
+- **T3.3 Guardar y leer.** `consolidate_and_save()` guarda el largo y `largo_de_la_version()` lo lee. Lo usan `video_router`, `narrative_acts` y la respuesta de las versiones.
+- **T3.4 Video.** `lectura.yaml` y `biblia_visual.yaml` con `largo`, y un caso compartido nuevo en `tests/fixtures/video/` (Vitest y pytest).
+- **T3.5 Front.** `actos.ts` toma el largo de la versión y cuenta los actos solo de respaldo (`actos.test.ts`).
+- **T3.6 Checkpoint.** En dev, «Para el video» de una versión vieja se ve igual. Commit.
+
+### S4. Repetición por palabras
+
+- **T4.1 Tests (rojo primero).**
+  - En un acto de ~1 200 palabras, 2 comparaciones no avisan y 4 sí; lo mismo con las enumeraciones.
+  - Los casos de ~450 palabras quedan como hoy.
+- **T4.2 `repetition_check.py`.** El factor `max(1, round(palabras / 500))`.
+- **T4.3 La Voz.** `{comparaciones}` en `voice_craft.md` (o un fragmento), según el largo. Verifica: los snapshots de la Media y del corto sin cambios y el de la larga con «una cada unas 500 palabras».
+- **T4.4 Checkpoint.** Commit.
+
+### S5. La pantalla
+
+- **T5.1 «Tu idea».** Tres opciones desde la config. Verifica: test de vista y E2E.
+- **T5.2 Chips.** «Larga» en la galería y en «El relato». Verifica: tests de vista; `sin-jerga` y `gramatica-visual`.
+- **T5.3 Tiempo estimado.** El valor inicial de la larga y `BY_STRUCTURE` con `largo`. Verifica: test de `JobDurationEstimator`.
+- **T5.4 E2E en Firefox.** Crear una Larga, armar los actos con el mock y ver el chip.
+- **T5.5 Checkpoint.** Recorrido en `https://storymaker.test`; `CLAUDE.md` con los tres largos. Commit.
+
+### S6. Medición (solo con OK)
+
+- **T6.1** Estimar sin `--yes` y pasarle al usuario el costo y el tiempo.
+- **T6.2** Con el OK, dos largas de «El monte prohibido» con `openai-sol`.
+- **T6.3** Resultados en §5: minutos, repetición cada mil palabras, costo y tiempo. Ajustar `palabras` y `hechos_max` y proponer D5.
