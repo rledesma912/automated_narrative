@@ -725,7 +725,7 @@ class SQLStoryRepository:
             subgenero=(row["subgenero"] if "subgenero" in keys else "") or "",
             narrator_config=json.loads(raw_cfg) if raw_cfg else None,
             direction=Direction.model_validate_json(raw_direction) if raw_direction else None,
-            structure=(row["structure"] if "structure" in keys else None) or "largo",
+            structure=(row["structure"] if "structure" in keys else None) or "medio",
             status=StoryStatus(row["status"])
             if row["status"] in [s.value for s in StoryStatus]
             else StoryStatus.DRAFT,

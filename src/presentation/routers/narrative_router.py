@@ -55,6 +55,7 @@ async def generate_narrative(
             content=narrative.content,
             status=narrative.status.value,
             created_at=narrative.created_at.isoformat(),
+            structure=narrative_acts.structure_of(narrative),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -86,6 +87,7 @@ async def list_narratives(
             content=n.content,
             status=n.status.value,
             created_at=n.created_at.isoformat(),
+            structure=narrative_acts.structure_of(n),
         )
         for n in narratives
     ]
@@ -116,6 +118,7 @@ async def get_narrative(
         content=narrative.content,
         status=narrative.status.value,
         created_at=narrative.created_at.isoformat(),
+        structure=narrative_acts.structure_of(narrative),
     )
 
 

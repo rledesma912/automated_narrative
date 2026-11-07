@@ -79,8 +79,8 @@ def _problemas_de_cantidad(n: int) -> list[str]:
 
 def test_el_largo_del_relato_sale_de_cuantos_actos_tiene():
     assert estructura_del_relato(3) == "corto"
-    assert estructura_del_relato(5) == "largo"
-    assert estructura_del_relato(2) == "largo"  # cantidad rara: la de siempre
+    assert estructura_del_relato(5) == "medio"
+    assert estructura_del_relato(2) == "medio"  # cantidad rara: la de siempre
 
 
 def test_el_corto_pide_entre_6_y_9_momentos():
@@ -109,7 +109,7 @@ def test_los_videos_del_corto_entran():
 def test_el_episodio_del_corto():
     lectura = video_config().lectura
     assert lectura.episodio("corto").model_dump() == {"desde": 6, "hasta": 8}
-    assert lectura.episodio("largo").model_dump() == {"desde": 12, "hasta": 17}
+    assert lectura.episodio("medio").model_dump() == {"desde": 12, "hasta": 17}
 
 
 async def test_con_el_mock_sale_un_paquete_corto_valido():

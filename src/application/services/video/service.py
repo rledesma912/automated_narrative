@@ -31,7 +31,7 @@ class VideoScriptService:
         self.builder = VideoScriptBuilder(self.config, self.prompts.templates)
 
     async def generate(self, story: Story, narrative: GeneratedNarrative) -> VideoScript:
-        acts = narrative_acts.split(narrative.content)
+        acts = narrative_acts.split_narrative(narrative)  # Spec-750: con su largo
         if not acts.acts:
             raise VideoScriptError(message("video.relato_sin_actos"))
         problems: list[str] = []

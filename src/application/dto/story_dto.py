@@ -28,7 +28,7 @@ class StoryCreateDTO(BaseModel):
     entities: list[dict] = []
     # Spec-530: asistente de autoría (formato de `Direction`, `WorkshopItem`, `ActOutline`).
     direction: Optional[dict] = None
-    structure: StructureId = "largo"  # Spec-650
+    structure: StructureId = "medio"  # Spec-650/750
     workshop: list[dict] = []
     outline: list[dict] = []
 

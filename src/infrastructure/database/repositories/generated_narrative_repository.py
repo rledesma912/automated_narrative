@@ -20,14 +20,15 @@ class SQLGeneratedNarrativeRepository:
                 # Spec-610: UPSERT y no `INSERT OR REPLACE`: REPLACE borra la fila y el
                 # borrado en cascada se llevaba el paquete para el video (video_script).
                 """INSERT INTO generated_narrative
-                (id, story_template_id, title, content, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (id, story_template_id, title, content, status, created_at, structure)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     story_template_id = excluded.story_template_id,
                     title = excluded.title,
                     content = excluded.content,
                     status = excluded.status,
-                    created_at = excluded.created_at""",
+                    created_at = excluded.created_at,
+                    structure = excluded.structure""",
                 (
                     str(narrative.id),
                     str(narrative.story_template_id),
@@ -35,6 +36,7 @@ class SQLGeneratedNarrativeRepository:
                     narrative.content,
                     narrative.status.value,
                     narrative.created_at.isoformat(),
+                    narrative.structure,
                 ),
             )
             await conn.commit()
@@ -60,6 +62,7 @@ class SQLGeneratedNarrativeRepository:
             content=row["content"],
             status=StoryStatus(row["status"]),
             created_at=datetime.fromisoformat(row["created_at"]),
+            structure=_structure(row),
         )
 
     async def get_by_story_template_id(self, story_template_id: UUID) -> list[GeneratedNarrative]:
@@ -81,6 +84,7 @@ class SQLGeneratedNarrativeRepository:
                     content=row["content"],
                     status=StoryStatus(row["status"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
+                    structure=_structure(row),
                 )
             )
         return narratives
@@ -104,3 +108,8 @@ class SQLGeneratedNarrativeRepository:
             )
             await conn.commit()
         logger.debug(f"[GENERATED_NARRATIVE] Deleted all for story_template: {story_template_id}")
+
+
+def _structure(row) -> str | None:
+    """Spec-750: la columna (una base sin `init_db()` nuevo no la tiene)."""
+    return row["structure"] if "structure" in row.keys() else None

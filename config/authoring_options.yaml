@@ -4,7 +4,7 @@
 # `planificador` (en «efectos», Spec-560 A5) es la receta con la que el efecto pesa en
 # la escaleta: la recibe el Planificador y la controla el Verificador (no la Voz).
 # Spec-650: `planificador` es un texto (vale para todo largo) o uno por estructura
-# (`largo` / `corto`) cuando nombra actos.
+# (`corto` / `medio` / `largo`) cuando nombra actos.
 # Spec-680 C1: `hablas` = cómo habla quien narra. La primera es la de siempre (una historia
 # sin habla elegida, o con una que ya no existe, usa esa). `prompt` reemplaza a «español
 # rioplatense» en los prompts de la Voz, la Memoria y el Planificador; `voz` es una línea
@@ -19,13 +19,13 @@ efectos:
     label: Pavor creciente
     ayuda: La inquietud sube acto a acto hasta el clímax.
     planificador:
-      largo: "La amenaza se acerca de a poco: en cada acto está un paso más cerca y es más concreta que en el anterior. El acto 1 solo insinúa; nada se muestra entero antes del acto 3."
+      medio: "La amenaza se acerca de a poco: en cada acto está un paso más cerca y es más concreta que en el anterior. El acto 1 solo insinúa; nada se muestra entero antes del acto 3."
       corto: "La amenaza se acerca de a poco: en el acto 1 solo se insinúa; en el acto 2 se vuelve concreta, paso a paso, hasta el enfrentamiento. Nada se muestra entero antes del final del acto 2."
   - id: susto
     label: Susto
     ayuda: "Golpes de sorpresa: el miedo llega de repente."
     planificador:
-      largo: "Al menos dos irrupciones bruscas de la amenaza (en los actos 2 y 3), cada una después de un momento de calma. Hechos cortos y concretos: el golpe llega sin aviso."
+      medio: "Al menos dos irrupciones bruscas de la amenaza (en los actos 2 y 3), cada una después de un momento de calma. Hechos cortos y concretos: el golpe llega sin aviso."
       corto: "Al menos dos irrupciones bruscas de la amenaza en el acto 2, cada una después de un momento de calma. Hechos cortos y concretos: el golpe llega sin aviso."
   - id: melancolia
     label: Melancolía inquietante
@@ -35,7 +35,7 @@ efectos:
     label: Horror que se revela
     ayuda: Lo peor se entiende recién al final.
     planificador:
-      largo: "Lo que se guarda en los actos 1 a 3 apunta a una verdad que se revela en el acto 4 y cambia el sentido de todo lo anterior. Las siembras se cobran en esa revelación."
+      medio: "Lo que se guarda en los actos 1 a 3 apunta a una verdad que se revela en el acto 4 y cambia el sentido de todo lo anterior. Las siembras se cobran en esa revelación."
       corto: "Lo que se guarda en el acto 1 apunta a una verdad que se revela al final del acto 2 y cambia el sentido de todo lo anterior. Las siembras se cobran en esa revelación."
   - id: otro
     label: Otro

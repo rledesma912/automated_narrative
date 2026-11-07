@@ -141,7 +141,7 @@ async def _validate_regenerate_voz(story, request: JobCreateRequest) -> None:
     # Spec-650 D11: una versión escrita con el otro largo no se regenera por actos (la
     # escaleta de ahora no se corresponde con su prosa). Va antes que «acto sin narrar»:
     # cambiar el largo borra la prosa de la última generación y ese aviso no diría por qué.
-    if mine and not same_structure(story, narrative.content):
+    if mine and not same_structure(story, narrative):
         # 422, no 409: en el front un 409 es «la IA ya está trabajando» (Spec-460).
         raise HTTPException(status_code=422, detail=message("api.version_de_otro_largo"))
     beat = next((b for b in story.beats if b.number == request.beat), None)
@@ -168,7 +168,7 @@ async def get_active_job(story_id: str):
 # Declarada antes de /jobs/{job_id}: si no, "estimates" se toma como un id.
 @router.get("/jobs/estimates")
 async def get_estimates(
-    structure: StructureId = "largo", story_id: str | None = None
+    structure: StructureId = "medio", story_id: str | None = None
 ) -> dict[str, dict]:
     """Duración estimada de cada tipo de job con el perfil activo (Spec-510), para una
     historia de ese largo (Spec-650: `?structure=corto`, o `?story_id=` y el largo sale

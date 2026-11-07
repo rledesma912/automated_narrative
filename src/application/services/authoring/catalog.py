@@ -69,12 +69,22 @@ def criterion(criterion_id: str, structure: str = DEFAULT_STRUCTURE) -> Criterio
 
 
 def _for(value, structure: str):
-    """Spec-650: un valor del YAML que puede venir por estructura (`{largo: …, corto: …}`)."""
+    """Spec-650: un valor del YAML que puede venir por estructura (`{medio: …, corto: …}`).
+
+    Spec-750: una estructura sin variante propia usa la de `textos_de` (la larga, la media).
+    """
     if isinstance(value, dict):
-        if structure not in value:
+        key = structure if structure in value else _textos(structure)
+        if key not in value:
             raise KeyError(f"falta la variante «{structure}» en {value}")
-        return value[structure]
+        return value[key]
     return value
+
+
+def _textos(structure: str) -> str:
+    from src.application.services.beat_spec_repository import BeatSpecRepository
+
+    return BeatSpecRepository().estructura(structure).textos
 
 
 @lru_cache

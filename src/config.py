@@ -94,7 +94,7 @@ _llm_core: dict = _load_llm_core()
 _active_profile_name, _profile = _resolve_active_profile(_llm_core, os.getenv("LLM_PROFILE"))
 
 # ── Spec-740 Parte D: un perfil por largo ────────────────────────────────────
-# `LLM_PROFILE_<LARGO>` (p. ej. `LLM_PROFILE_LARGO`): vacío = el de siempre; `off` = ese
+# `LLM_PROFILE_<LARGO>` (p. ej. `LLM_PROFILE_MEDIO`, `LLM_PROFILE_LARGO`): vacío = el de siempre; `off` = ese
 # largo no se escribe; el nombre de un perfil = ese perfil para los jobs de sus historias.
 _STRUCTURE_ENV = "LLM_PROFILE_"
 _OFF = "off"

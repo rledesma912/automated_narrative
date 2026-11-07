@@ -5,11 +5,11 @@ números de párrafo y no con texto. Por acto van el lugar (de la escaleta) y cu
 muestra de la amenaza: las imágenes no adelantan lo que todavía no pasó.
 """
 
-from src.application.services.narrative_acts import NarrativeActs
+from src.application.services.narrative_acts import NarrativeActs, structure_of_acts
 from src.application.services.prompt_builder import PromptBuilder
 from src.application.services.template_loader import TemplateLoader
 from src.application.services.video import timing
-from src.application.services.video.config import VideoConfig, estructura_del_relato
+from src.application.services.video.config import VideoConfig
 from src.domain.models import Story
 
 SYSTEM_TEMPLATE = "video_script_system.md"
@@ -33,8 +33,8 @@ class VideoScriptPrompts:
         total = sum(len(narrative.paragraphs(n)) for n in narrative.numbers())
         words = sum(timing.palabras(narrative.acts[n]) for n in narrative.numbers())
         ppm = cfg.lectura.palabras_por_minuto
-        # Spec-650: los momentos según el largo del relato (por cuántos actos tiene).
-        biblia = cfg.biblia.para(estructura_del_relato(len(narrative.numbers())))
+        # Spec-650/750: los momentos según el largo del relato.
+        biblia = cfg.biblia.para(structure_of_acts(narrative))
         user = self.templates.load(USER_TEMPLATE).format(
             titulo=story.title,
             relato="\n".join(self._act(n, narrative) for n in narrative.numbers()),

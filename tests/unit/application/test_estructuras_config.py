@@ -46,6 +46,6 @@ def test_el_final_y_la_historia_secreta_caen_en_su_acto():
 
 
 def test_personajes_que_puede_proponer_la_ia():
-    """Spec-730 D1: 2 en el largo, 1 en el corto."""
-    assert REPO.estructura("largo").personajes_nuevos_max == 2
+    """Spec-730 D1: 2 en la media, 1 en el corto."""
+    assert REPO.estructura("medio").personajes_nuevos_max == 2
     assert REPO.estructura("corto").personajes_nuevos_max == 1

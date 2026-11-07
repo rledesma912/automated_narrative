@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
 import yaml from "js-yaml";
-import { splitActs, ESTRUCTURAS, actosDe, estructuraPorCantidad } from "../../../src/utils/actos";
+import { splitActs, ESTRUCTURAS, actosDe, estructuraPorCantidad, deOtroLargo } from "../../../src/utils/actos";
 
 /** Spec-610 T1.4: los actos de un relato guardado (mismo formato que narrative_acts.py). */
 describe("splitActs", () => {
@@ -24,7 +24,7 @@ describe("splitActs", () => {
     expect(splitActs(content).map((a) => a.name)).toEqual(["Cómo empieza", "Qué pasa", "Cómo termina"]);
   });
 
-  it("Spec-650: un relato de 5 actos lleva los nombres del largo", () => {
+  it("Spec-650: un relato de 5 actos lleva los nombres de la media", () => {
     const content = [1, 2, 3, 4, 5].map((n) => `## Acto ${n}\n\nTexto ${n}.`).join("\n\n");
     expect(splitActs(content).map((a) => a.name)).toEqual([
       "Cómo empieza",
@@ -38,14 +38,14 @@ describe("splitActs", () => {
 
 describe("Spec-650: estructuras", () => {
   it("el largo por cantidad de actos", () => {
-    expect(estructuraPorCantidad(5)).toBe("largo");
+    expect(estructuraPorCantidad(5)).toBe("medio");
     expect(estructuraPorCantidad(3)).toBe("corto");
     expect(estructuraPorCantidad(4)).toBeNull();
   });
 
   it("un largo desconocido es el de siempre", () => {
-    expect(actosDe(undefined)).toBe(ESTRUCTURAS.largo);
-    expect(actosDe("mediano")).toBe(ESTRUCTURAS.largo);
+    expect(actosDe(undefined)).toBe(ESTRUCTURAS.medio);
+    expect(actosDe("mediano")).toBe(ESTRUCTURAS.medio);
     expect(actosDe("corto")).toBe(ESTRUCTURAS.corto);
   });
 
@@ -62,5 +62,26 @@ describe("Spec-650: estructuras", () => {
         data.actos.map((a) => ({ number: a.id, name: a.nombre_ui, intensity: a.intensity })),
       );
     }
+  });
+});
+
+describe("Spec-750: el largo de la versión", () => {
+  const cinco = [1, 2, 3, 4, 5].map((n) => `## Acto ${n}\n\nTexto ${n}.`).join("\n\n");
+  const tres = [1, 2, 3].map((n) => `## Acto ${n}\n\nTexto ${n}.`).join("\n\n");
+
+  it("una versión media en una historia que pasó a larga es de otro largo (mismos 5 actos)", () => {
+    expect(deOtroLargo(cinco, "largo", "medio")).toBe(true);
+    expect(deOtroLargo(cinco, "largo", "largo")).toBe(false);
+    expect(deOtroLargo(cinco, "medio", "medio")).toBe(false);
+  });
+
+  it("sin el largo guardado (Core viejo), cuenta los actos", () => {
+    expect(deOtroLargo(cinco, "medio")).toBe(false);
+    expect(deOtroLargo(tres, "medio")).toBe(true);
+    expect(deOtroLargo("", "medio", "largo")).toBe(false);
+  });
+
+  it("la larga lleva los nombres de la media", () => {
+    expect(ESTRUCTURAS.largo).toEqual(ESTRUCTURAS.medio);
   });
 });

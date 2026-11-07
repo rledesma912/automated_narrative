@@ -157,16 +157,12 @@ class VideoConfig(BaseModel):
 
 
 def estructura_del_relato(cantidad_de_actos: int) -> str:
-    """Spec-650: el largo de un relato guardado, por cuántos actos tiene (una versión puede
-    ser de cuando la historia tenía otro largo). Una cantidad rara se toma como larga."""
-    from src.application.services.beat_spec_repository import BeatSpecRepository
-    from src.application.services.structure import DEFAULT_STRUCTURE
+    """Spec-650: el largo de un relato guardado sin el dato, por cuántos actos tiene (una
+    versión puede ser de cuando la historia tenía otro largo). Spec-750: las versiones
+    nuevas lo guardan (`narrative_acts.structure_of_acts`); 5 actos sin el dato = media."""
+    from src.application.services.narrative_acts import structure_by_count
 
-    repo = BeatSpecRepository()
-    for sid in repo.structure_ids:
-        if repo.estructura(sid).num_actos == cantidad_de_actos:
-            return sid
-    return DEFAULT_STRUCTURE
+    return structure_by_count(cantidad_de_actos)
 
 
 def _yaml(path: Path) -> dict:

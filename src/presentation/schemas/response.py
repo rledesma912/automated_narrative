@@ -26,7 +26,7 @@ class StoryResponse(BaseModel):
     personajes_full: list | None = None
     # Spec-530: la historia se armó con el asistente (se edita ahí, no en el wizard).
     authoring: bool = False
-    structure: str = "largo"  # Spec-650: largo | corto (la galería marca los cortos)
+    structure: str = "medio"  # Spec-650/750: corto | medio | largo (la galería marca corto y largo)
     # Spec-740 C6: con el largo deshabilitado, sin IA y con la nota (solo en GET /stories/{id}).
     ia_disponible: bool = True
     ia_nota: str | None = None
@@ -55,6 +55,8 @@ class GeneratedNarrativeResponse(BaseModel):
     content: str
     status: str
     created_at: datetime
+    # Spec-750: el largo de la versión (guardado o, en las viejas, por cuántos actos tiene).
+    structure: str = "medio"
 
     model_config = ConfigDict(from_attributes=True)
 

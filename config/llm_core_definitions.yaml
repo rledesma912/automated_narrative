@@ -41,7 +41,9 @@ profiles:
         model: gemma3:12b
         temperature: 0.6
         num_ctx: 8192
-        num_predict: 1800  # Spec-590 D: hasta 900 palabras (~1,6 tokens por palabra)
+        # Spec-590 D: hasta 900 palabras (~1,6 tokens por palabra). Spec-750: no alcanza para
+        # la larga (hasta 1 350 palabras por acto): con este perfil, la larga no sirve.
+        num_predict: 1800
         stop: []
       journal:
         model: gemma3:12b
@@ -119,10 +121,11 @@ profiles:
       # mejoró en la medición, §11). Si la nube no atiende, responde gemma (`respaldo`,
       # la config de antes tal cual) y «Los actos» lo dicen. Medido: ~20 s el Planificador
       # (hasta 3 850 tokens de salida, por eso 6000) y ~8 s el Verificador; ~US$ 0,055.
+      # Spec-750: 9000 para la larga (unos 35 hechos, el doble que la media); es un tope.
       planificador:
         provider: anthropic
         model: claude-sonnet-5-5
-        num_predict: 6000
+        num_predict: 9000
         thinking: between_tools
         respaldo:
           provider: ollama
@@ -278,7 +281,7 @@ profiles:
       planificador:
         model: gpt-5.6-sol
         reasoning_effort: none
-        num_predict: 6000
+        num_predict: 9000  # Spec-750: la larga lleva el doble de hechos; es un tope
       verificador:
         model: gpt-5.6-sol
         reasoning_effort: none
