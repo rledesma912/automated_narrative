@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), molde y prompts (config), guía de oficio de la Voz
-**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 hecho.
+**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 y S2 hechos.
 **Rama:** `feat/spec-780-tu-idea-mas-simple` (desde `development`)
 **Extiende / deshace en parte:** Spec-670 (moldes: el giro), Spec-560 A5 (la receta del efecto), Spec-530 (quién lo cuenta, cómo lo cuenta), Spec-640 (la Voz como anécdota).
 
@@ -151,7 +151,12 @@ Para comparar las dos versiones de «Culpable» se miden comparaciones, clichés
   - Snapshot `moldes_asedio` regenerado: el diff es solo la regla y la pregunta del giro.
   - Resultado: pytest 1 313 · Vitest 493 · E2E de moldes y asistente 22, todo en verde.
   - Plan original: config, molde, API, pantalla, tests y snapshots.
-- **S2. Sacar el efecto (B):** pantalla, prompts del Planificador, del Verificador y del Consultor, `story_block`, config y snapshots.
+- **S2. Sacar el efecto (B). Hecho (2026-11-21).**
+  - Config y prompts: salen las `efectos` de `authoring_options.yaml` (y su tope), los fragmentos `asistente/efecto/*` y `asistente/historia/efecto`, `{efecto}` del Verificador (con su punto de control) y la receta del Planificador (`{efecto}` queda solo para el arco de «Otra»). El Consultor pide opciones «coherentes con la idea del autor y con su final», y la pregunta de «Cómo termina» ya no nombra el efecto.
+  - Lo guardado: la API ya no lo pide ni lo devuelve, y conserva el de una historia vieja (D5).
+  - Pantalla: sale la sección de «Tu idea».
+  - Tests: una historia vieja con efecto (susto, revelación u otro) arma el mismo prompt que una sin efecto. 7 snapshots regenerados: el diff es solo lo del efecto. pytest 1 310 · Vitest 493 · E2E de asistente, corto y moldes 27, todo en verde.
+  - Plan original: pantalla, prompts del Planificador, del Verificador y del Consultor, `story_block`, config y snapshots.
 - **S3. Sacar «Quién lo cuenta» (C):** pantalla y API.
 - **S4. Dos formas de contarlo (D):** las opciones, el bloque escrito en `voice_craft` (el de anécdota solo con `caso`), cómo se leen `confesion` y `cronica`, y snapshots de la Voz.
 - **S5. Medición (§6)** y, si hace falta, un ajuste del bloque escrito.

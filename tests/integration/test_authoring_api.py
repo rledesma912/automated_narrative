@@ -66,7 +66,7 @@ async def _run_job(client, story_id: str, kind: str) -> dict:
 
 async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
-    assert [e["id"] for e in data["effects"]][:2] == ["pavor", "susto"]
+    assert "effects" not in data  # Spec-780 D2: sin «¿Qué querés que sienta…?»
     assert data["criteria"][0]["nombre"] == "Qué quiere el protagonista"
     # Spec-680 C1: la de siempre primero, sin los patrones (son del control).
     assert [h["id"] for h in data["hablas"]] == ["rioplatense", "mexicano", "neutro", "espana"]
@@ -88,9 +88,10 @@ async def test_habla_se_guarda_y_vuelve(client):
 async def test_crear_desde_la_direccion(client):
     state = await _create(client)
 
-    assert state["direction"] == FORM | {
+    # Spec-780 D2: el efecto ya no se guarda ni vuelve (FORM lo sigue mandando, como una
+    # pestaña vieja).
+    assert state["direction"] == {k: v for k, v in FORM.items() if k != "effect"} | {
         "narrator": "José",
-        "effect_other": "",
         "threat": None,
         # Spec-670: sin forma = la forma de siempre (Spec-780: sin giro).
         "form": "",

@@ -5,7 +5,7 @@
 */%>
 <%
   const d = state ? state.direction : {
-    title: '', genero: '', subgenero: '', premise: '', effect: '', effect_other: '', ending: '',
+    title: '', genero: '', subgenero: '', premise: '', ending: '',
     ending_intentional: false, telling: '', protagonist_name: '', protagonist_role: '', narrator: '', threat: null,
     form: '', form_other: '', form_suggested: '', form_reason: '', habla: '',
   };
@@ -157,28 +157,7 @@
 
     <% } %>
 
-    <section class="bg-forge-surface border border-forge-border p-6">
-      <h3 class="font-serif text-xl mb-1">¿Qué querés que sienta quien lo escuche?</h3>
-      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Todo lo que sigue apunta a esto: las preguntas y los actos.</p>
-      <div class="grid sm:grid-cols-2 gap-3">
-        <% options.effects.forEach(e => { %>
-          <label class="opcion-forge h-full">
-            <input type="radio" name="effect" value="<%= e.id %>" class="peer sr-only" <%= e.id === d.effect ? 'checked' : '' %>>
-            <span class="opcion-forge__caja h-full">
-              <span>
-                <span class="block font-semibold"><%= e.label %></span>
-                <span class="block text-sm text-forge-muted"><%= e.detail %></span>
-              </span>
-            </span>
-          </label>
-        <% }) %>
-      </div>
-      <input type="text" name="effect_other" data-tope="<%= T.effect_other %>" value="<%= d.effect_other %>" data-solo-si-efecto="otro"
-             placeholder="Contá qué efecto buscás"
-             class="<%= d.effect === 'otro' ? '' : 'hidden' %> mt-3 w-full bg-forge-bg border border-forge-border px-3 py-2">
-    </section>
-
+    <%/* Spec-780 D2: sin «¿Qué querés que sienta quien lo escuche?» (imponía una forma a toda la historia). */%>
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-4">¿A quién le pasa y quién lo cuenta?</h3>
       <div class="grid sm:grid-cols-2 gap-4 mb-4">

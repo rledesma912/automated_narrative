@@ -200,6 +200,8 @@ class Direction(BaseModel):
     """
 
     premise: str = ""  # «¿De qué trata?»
+    # Spec-780 D2/D5: «¿Qué querés que sienta quien escucha?» salió; lo de una historia
+    # vieja queda guardado y no lo lee ningún prompt.
     effect: str = ""  # pavor | susto | melancolia | revelacion | otro
     effect_other: str = ""  # texto libre cuando effect == "otro"
     ending: str = ""

@@ -71,9 +71,9 @@ Contexto común (`context.py`), que reciben los tres roles:
 | Hueco | Sale de |
 |---|---|
 | `{objetivo}` | `asistente/objetivo` |
-| `{historia}` | `asistente/historia/*`: `titulo`, `tipo`, `de_que_trata`, `protagonista`, `quien_lo_cuenta`, `efecto`, `como_lo_cuenta`, `como_termina` (+ `final_decidido`), `personajes` — cada línea si hay dato |
+| `{historia}` | `asistente/historia/*`: `titulo`, `tipo`, `de_que_trata`, `protagonista`, `quien_lo_cuenta`, `como_lo_cuenta`, `como_termina` (+ `final_decidido`), `personajes` — cada línea si hay dato |
 | `{decisiones}` | por decisión del taller: `asistente/decisiones/intencional`, `con_pregunta` o `respondida` (+ `va_en_acto`); o `asistente/decisiones/vacio` |
-| `{efecto}` | `asistente/efecto/planificador` o `asistente/efecto/verificador` (solo si el efecto tiene receta) |
+| `{efecto}` | Solo el Planificador: con «Otra», `asistente/planificador/arco` (Spec-780 D2: la receta del efecto salió) |
 
 **Consultor** — `authoring_consultant.md`: además `{pendientes}` (una
 `asistente/pendientes/pendiente` por pregunta sin responder, o `asistente/pendientes/vacio`).

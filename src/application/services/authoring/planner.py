@@ -138,7 +138,7 @@ class OutlinePlanner:
             problemas=self._problems_block(story),
             reglas=self._rules_block(story),
             gastados=self._worn_block(story),
-            efecto=self._arc_block(story) + context.effect_block(story, t),
+            efecto=self._arc_block(story),  # Spec-780 D2: sin la receta del efecto
             escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
             ultimo=self.prompt_builder.estructura(story).ultimo,

@@ -263,7 +263,7 @@ beats_spec:
     # Spec-750: la larga, ~35 minutos leída en voz alta (≈ 5 250 palabras). Los actos son
     # la dinámica del relato (Freytag), no su largo: son los mismos 5 de la media (`<<:` trae
     # cada acto tal cual) y crecen los hechos y las palabras de cada uno. `textos_de`: las
-    # intenciones de los moldes, las recetas de los efectos y el acto de cada criterio son
+    # intenciones de los moldes y el acto de cada criterio son
     # los de la media. Los modelos escriben cerca del techo de `palabras` (Spec-650 S5).
     largo:
       label: "Larga · 5 actos · unos 35 minutos"

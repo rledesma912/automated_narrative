@@ -34,8 +34,6 @@ class DirectionForm(BaseModel):
     genero: str = ""
     subgenero: str = ""
     premise: str = Field("", max_length=_T["premise"])  # «¿De qué trata?» (Spec-760)
-    effect: str = ""
-    effect_other: str = Field("", max_length=_T["effect_other"])
     ending: str = Field("", max_length=_T["ending"])
     ending_intentional: bool = False
     telling: str = ""

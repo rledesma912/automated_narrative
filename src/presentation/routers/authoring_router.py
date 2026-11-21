@@ -72,7 +72,6 @@ router = APIRouter(prefix="/authoring", tags=["authoring"])
 async def get_options() -> dict:
     """Efectos, «cómo lo cuenta» y criterios del taller (fuente única: `config/`)."""
     return {
-        "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
         # Spec-680 C1: cómo habla quien narra (para la UI, sin los patrones).
         "hablas": [{"id": h.id, "label": h.label, "detail": h.ayuda} for h in catalog.hablas()],
@@ -559,8 +558,9 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         raise InvalidStoryInputError(message("api.habla_desconocida", habla=form.habla))
     return Direction(
         premise=form.premise.strip(),
-        effect=form.effect,
-        effect_other=form.effect_other.strip(),
+        # Spec-780 D2/D5: el efecto salió de «Tu idea»; el de una historia vieja queda guardado.
+        effect=existing.effect if existing else "",
+        effect_other=existing.effect_other if existing else "",
         # Spec-690: «Tu idea» ya no trae «¿Cómo termina?»: se conserva el guardado.
         ending=form.ending.strip() or (existing.ending if existing else ""),
         ending_intentional=form.ending_intentional,
@@ -631,8 +631,6 @@ def _form(story: Story) -> dict:
         "subgenero": story.subgenero,
         # Sin dirección (historia importada): la sinopsis es su «¿de qué trata?».
         "premise": d.premise if story.direction else story.sinopsis,
-        "effect": d.effect,
-        "effect_other": d.effect_other,
         "ending": d.ending,
         "ending_intentional": d.ending_intentional,
         "telling": d.telling,

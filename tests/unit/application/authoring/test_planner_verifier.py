@@ -324,7 +324,7 @@ async def test_al_rearmar_recibe_los_avisos_visibles_y_no_los_ignorados(story):
     assert "Aviso ignorado." not in prompt
 
 
-# ── Spec-560 A5: el efecto pesa en la escaleta ──────────────────────────────
+# ── Spec-780 D2: el efecto ya no pesa en la escaleta ─────────────────────────
 
 
 def _with_effect(story, effect, other=""):
@@ -332,34 +332,18 @@ def _with_effect(story, effect, other=""):
     return story.model_copy(update={"direction": direction})
 
 
-async def test_el_planificador_recibe_la_receta_del_efecto(story):
-    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
-    await OutlinePlanner(llm).plan(_with_effect(story, "susto"))
-    prompt = llm.calls[0]["prompt"]
-    assert "CÓMO TIENE QUE PEGAR (el efecto que busca el autor: Susto)" in prompt
-    assert "dos irrupciones bruscas" in prompt
-
-
-async def test_otro_usa_el_texto_del_autor(story):
-    llm = ScriptedLLM({"actos": [_acto(n) for n in range(1, 6)]})
-    await OutlinePlanner(llm).plan(_with_effect(story, "otro", "Que dé asco más que miedo"))
-    assert "Que dé asco más que miedo" in llm.calls[0]["prompt"]
-
-
-async def test_el_verificador_controla_la_receta(story):
+@pytest.mark.parametrize("effect", ["susto", "revelacion", "otro"])
+async def test_el_efecto_de_una_historia_vieja_no_llega_a_la_ia(story, effect):
+    """El efecto imponía una forma a toda la historia: se saca de los prompts (no queda
+    escondido mandando). Una historia vieja con efecto se arma igual que una sin efecto."""
+    con, sin = _with_effect(story, effect, "Que dé asco"), _with_effect(story, "")
+    planner = OutlinePlanner(llm=None)
+    assert planner._prompt(con) == planner._prompt(sin)
     outline = [ActOutline(number=n, bridge="sigue", events=["x"]) for n in range(1, 6)]
     llm = ScriptedLLM({"decisiones": [], "avisos": []})
-    await OutlineVerifier(llm).verify(_with_effect(story, "revelacion"), outline)
+    await OutlineVerifier(llm).verify(con, outline)
     prompt = llm.calls[0]["prompt"]
-    assert "EFECTO QUE BUSCA EL AUTOR: Horror que se revela" in prompt
-    assert "se revela en el acto 4" in prompt
-
-
-def test_sin_efecto_no_hay_receta(story):
-    from src.application.services.authoring import context
-    from src.application.services.template_loader import TemplateLoader
-
-    assert context.effect_block(_with_effect(story, ""), TemplateLoader()) == ""
+    assert "EFECTO QUE BUSCA EL AUTOR" not in prompt and "Que dé asco" not in prompt
 
 
 # ── Spec-630 B11: lo que se edita en «Los actos» llega a la IA ───────────────

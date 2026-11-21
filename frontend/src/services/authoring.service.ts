@@ -16,7 +16,6 @@ export interface AuthoringOption {
 }
 
 export interface AuthoringOptions {
-  effects: AuthoringOption[];
   tellings: AuthoringOption[];
   /** Spec-680 C1: cómo habla quien narra (la primera es la de siempre). */
   hablas?: AuthoringOption[];

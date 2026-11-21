@@ -48,7 +48,6 @@ test.describe("Capturas del tema", () => {
         // Spec-690: el final va en la idea (sale a «Preguntas» con la IA).
         premise:
           "José, chofer de micros, ve por el espejo a una mujer que murió en su micro. Le deja flores y el alma descansa en paz.",
-        effect: "pavor",
         telling: "caso",
         protagonist_name: "José",
         protagonist_role: "Chofer de micros de larga distancia",

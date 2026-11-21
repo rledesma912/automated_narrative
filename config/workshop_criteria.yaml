@@ -166,7 +166,7 @@ direccion:
 
   - id: final
     nombre: Cómo termina
-    pregunta: ¿El final deja una marca coherente con el efecto que busca el autor?
-    por_que: "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
+    pregunta: ¿El final deja una marca (algo que le queda al protagonista o a quien escucha)?
+    por_que: "Lo que le queda a quien escucha cuando termina el cuento."
     acto: { medio: 5, corto: 3 }
     origen: Poe (unidad de efecto) / residuo

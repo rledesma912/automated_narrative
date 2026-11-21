@@ -12,7 +12,7 @@ const VIEWS = path.join(process.cwd(), "src/views");
 const FIX = path.join(process.cwd(), "tests/fixtures/asistente");
 const state = JSON.parse(fs.readFileSync(path.join(FIX, "estado.json"), "utf8"));
 const TOPES = { premise: 20000, final: 20000, answer: 2000, event: 800, rule: 300, title: 120 };
-const locals = { state, estimateLabels: {}, assetVersion: "v", topes: TOPES, options: { effects: [], tellings: [], structures: [] }, genres: [] };
+const locals = { state, estimateLabels: {}, assetVersion: "v", topes: TOPES, options: { tellings: [], structures: [] }, genres: [] };
 
 const render = (paso: string, extra = {}) =>
   ejs.renderFile(path.join(VIEWS, "asistente", `${paso}.ejs`), { ...locals, pasoActual: paso, ...extra });

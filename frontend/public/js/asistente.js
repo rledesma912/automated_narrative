@@ -394,8 +394,6 @@
       genero: value(form, "genero"),
       subgenero: value(form, "subgenero"),
       premise: value(form, "premise"),
-      effect: value(form, "effect"),
-      effect_other: value(form, "effect_other"),
       telling: value(form, "telling"),
       habla: value(form, "habla"), // Spec-680 C1
       // Spec-670: la clase de historia y, con «Otra», cómo la cuenta (Spec-780: sin giro).
@@ -821,9 +819,6 @@
       return;
     }
     if (e.target.name === "genero") onGenreChange(form);
-    if (e.target.name === "effect") {
-      $$("[data-solo-si-efecto]", form).forEach((el) => el.classList.toggle("hidden", el.dataset.soloSiEfecto !== e.target.value));
-    }
     if (e.target.name === "form") onFormChange(form, e.target.value);
     if (e.target.matches("[data-p-tipo]")) return; // del formulario de personaje, no del acto
     if (e.target.matches("[data-lugar-hecho]") && e.target.value === "__nuevo__") {
