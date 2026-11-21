@@ -144,6 +144,8 @@ class OutlinePlanner:
             ultimo=self.prompt_builder.estructura(story).ultimo,
             num_actos=self.prompt_builder.estructura(story).num_actos,
             hechos_por_acto=self.prompt_builder.estructura(story).hechos_por_acto,
+            # Spec-770 A2: lo que entra en un hecho (el mismo tope que la pantalla, Spec-760).
+            tope_hecho=catalog.topes()["event"],
             personajes_nuevos=self._new_cast_block(story),
         )
 

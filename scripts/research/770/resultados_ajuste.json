@@ -1,0 +1,132 @@
+{
+  "perfil": "openai-sol",
+  "eco_min": 0.4,
+  "resultados": [
+    {
+      "historia": "idea 1",
+      "antes": {
+        "estructura": "corto",
+        "idea_palabras": 279,
+        "hechos_por_acto": [
+          4,
+          6,
+          4
+        ],
+        "palabras_de_hechos": 152,
+        "eco": 0.118,
+        "oraciones_con_eco": "2/17",
+        "avisos_visibles": 5,
+        "final_en_el_ultimo": false,
+        "hecho_mas_largo": 105,
+        "palabras_nuevas": 0.581
+      },
+      "ia_corto": {
+        "estructura": "corto",
+        "idea_palabras": 279,
+        "hechos_por_acto": [
+          3,
+          4,
+          3
+        ],
+        "palabras_de_hechos": 498,
+        "eco": 0.882,
+        "oraciones_con_eco": "15/17",
+        "avisos_visibles": 4,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 373,
+        "palabras_nuevas": 0.465
+      }
+    },
+    {
+      "historia": "idea 2",
+      "antes": {
+        "estructura": "corto",
+        "idea_palabras": 284,
+        "hechos_por_acto": [
+          4,
+          5,
+          5
+        ],
+        "palabras_de_hechos": 302,
+        "eco": 0.588,
+        "oraciones_con_eco": "10/17",
+        "avisos_visibles": 5,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 170,
+        "palabras_nuevas": 0.6
+      },
+      "ia_corto": {
+        "estructura": "corto",
+        "idea_palabras": 284,
+        "hechos_por_acto": [
+          3,
+          5,
+          3
+        ],
+        "palabras_de_hechos": 384,
+        "eco": 1.0,
+        "oraciones_con_eco": "17/17",
+        "avisos_visibles": 1,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 338,
+        "palabras_nuevas": 0.349
+      }
+    },
+    {
+      "historia": "idea 3",
+      "antes": {
+        "estructura": "corto",
+        "idea_palabras": 917,
+        "hechos_por_acto": [
+          3,
+          5,
+          2
+        ],
+        "palabras_de_hechos": 565,
+        "eco": 0.717,
+        "oraciones_con_eco": "43/60",
+        "avisos_visibles": 0,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 396,
+        "palabras_nuevas": 0.24
+      },
+      "ia_corto": {
+        "estructura": "corto",
+        "idea_palabras": 917,
+        "hechos_por_acto": [
+          3,
+          5,
+          3
+        ],
+        "palabras_de_hechos": 703,
+        "eco": 0.933,
+        "oraciones_con_eco": "56/60",
+        "avisos_visibles": 2,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 449,
+        "palabras_nuevas": 0.074
+      }
+    }
+  ],
+  "costo": {
+    "usd_total": 0.169,
+    "por_rol": {
+      "planificador": {
+        "modelo": "gpt-5.6-sol",
+        "llamadas": 3,
+        "tokens_entrada": 9983,
+        "tokens_salida": 4111,
+        "segundos": 33.1,
+        "usd": 0.1222
+      },
+      "verificador": {
+        "modelo": "gpt-5.6-sol",
+        "llamadas": 3,
+        "tokens_entrada": 9520,
+        "tokens_salida": 450,
+        "segundos": 6.5,
+        "usd": 0.0471
+      }
+    }
+  }
+}
