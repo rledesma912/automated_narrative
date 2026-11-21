@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), molde y prompts (config), guía de oficio de la Voz
-**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 a S4 hechos.
+**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 a S6 hechos. En prod el 2026-11-21.
 **Rama:** `feat/spec-780-tu-idea-mas-simple` (desde `development`)
 **Extiende / deshace en parte:** Spec-670 (moldes: el giro), Spec-560 A5 (la receta del efecto), Spec-530 (quién lo cuenta, cómo lo cuenta), Spec-640 (la Voz como anécdota).
 
@@ -170,5 +170,9 @@ Para comparar las dos versiones de «Culpable» se miden comparaciones, clichés
   - Tests: `test_como_lo_cuenta.py` y `test_catalog_criteria.py` (las dos opciones y los ids viejos), más API. pytest 1 322 · Vitest 496 · E2E 27, en verde.
   - Nota: el front guarda en memoria `/authoring/options`. En dev, un cambio de opciones en `config/` necesita reiniciar `narrative-ui-dev` (en prod lo hace el deploy).
   - Plan original: las opciones, el bloque escrito en `voice_craft` (el de anécdota solo con `caso`), cómo se leen `confesion` y `cronica`, y snapshots de la Voz.
-- **S5. Medición (§6)** y, si hace falta, un ajuste del bloque escrito.
+- **S5. Medición (§6). Hecha (2026-11-21).** Informe en `scripts/research/780/informe.md` (US$ 0,354).
+  - Sin efecto, la estructura no empeora: el final queda en el último acto en las dos historias y los avisos van de 7 → 7 y de 9 → 1, ninguno del efecto.
+  - Las dos formas se distinguen al leerlas: la escrita tiene cero marcas orales y es más descriptiva, sin exagerar. Le falta algo de «narrativa más compleja» (16,4 contra 15,1 palabras por oración).
+  - No se ajustó, por falta de presupuesto. El ajuste, si Yael lo pide, es el bloque `voz/contar/escrito.md`.
+  - Plan original: medición y, si hace falta, un ajuste del bloque escrito.
 - **S6. Cierre:** dev al día, PR y, con OK, deploy.

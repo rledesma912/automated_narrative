@@ -1,0 +1,20 @@
+{
+  "caso": {
+    "palabras": 1133,
+    "oracion_media": 15.1,
+    "comparaciones_x1000": 1.8,
+    "marcas_orales_x1000": 0.9,
+    "cliches": 0,
+    "dialogo": 0,
+    "usd": 0.107
+  },
+  "escrito": {
+    "palabras": 1184,
+    "oracion_media": 16.4,
+    "comparaciones_x1000": 1.7,
+    "marcas_orales_x1000": 0.0,
+    "cliches": 0,
+    "dialogo": 0,
+    "usd": 0.106
+  }
+}

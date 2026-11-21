@@ -1,0 +1,105 @@
+{
+  "perfil": "openai-sol",
+  "eco_min": 0.4,
+  "resultados": [
+    {
+      "historia": "idea 1",
+      "antes": {
+        "estructura": "medio",
+        "idea_palabras": 725,
+        "hechos_por_acto": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "palabras_de_hechos": 316,
+        "eco": 0.231,
+        "oraciones_con_eco": "9/39",
+        "avisos_visibles": 7,
+        "final_en_el_ultimo": false,
+        "hecho_mas_largo": 117,
+        "palabras_nuevas": 0.5
+      },
+      "ia_medio": {
+        "estructura": "medio",
+        "idea_palabras": 725,
+        "hechos_por_acto": [
+          4,
+          5,
+          4,
+          4,
+          3
+        ],
+        "palabras_de_hechos": 769,
+        "eco": 0.795,
+        "oraciones_con_eco": "31/39",
+        "avisos_visibles": 7,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 316,
+        "palabras_nuevas": 0.435
+      }
+    },
+    {
+      "historia": "idea 2",
+      "antes": {
+        "estructura": "medio",
+        "idea_palabras": 232,
+        "hechos_por_acto": [
+          5,
+          5,
+          5,
+          4,
+          5
+        ],
+        "palabras_de_hechos": 357,
+        "eco": 0.455,
+        "oraciones_con_eco": "5/11",
+        "avisos_visibles": 9,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 126,
+        "palabras_nuevas": 0.656
+      },
+      "ia_medio": {
+        "estructura": "medio",
+        "idea_palabras": 232,
+        "hechos_por_acto": [
+          4,
+          4,
+          4,
+          4,
+          3
+        ],
+        "palabras_de_hechos": 480,
+        "eco": 1.0,
+        "oraciones_con_eco": "11/11",
+        "avisos_visibles": 1,
+        "final_en_el_ultimo": true,
+        "hecho_mas_largo": 217,
+        "palabras_nuevas": 0.46
+      }
+    }
+  ],
+  "costo": {
+    "usd_total": 0.141,
+    "por_rol": {
+      "planificador": {
+        "modelo": "gpt-5.6-sol",
+        "llamadas": 2,
+        "tokens_entrada": 6574,
+        "tokens_salida": 4041,
+        "segundos": 138.5,
+        "usd": 0.1071
+      },
+      "verificador": {
+        "modelo": "gpt-5.6-sol",
+        "llamadas": 2,
+        "tokens_entrada": 7188,
+        "tokens_salida": 246,
+        "segundos": 5.7,
+        "usd": 0.0337
+      }
+    }
+  }
+}
