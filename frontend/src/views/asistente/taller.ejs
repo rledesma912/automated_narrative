@@ -51,4 +51,5 @@
 <%- include('_guardado') %>
 <%- include('_analizando') %>
 <script type="application/json" id="asistente-datos"><%- JSON.stringify({ state }).replace(/</g, '\\u003c') %></script>
+<script src="/js/tope.js?v=<%= locals.assetVersion || '' %>"></script>
 <script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

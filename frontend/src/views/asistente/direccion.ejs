@@ -10,6 +10,8 @@
     form: '', ingredient: '', form_other: '', form_suggested: '', form_reason: '', habla: '',
   };
   const t = d.threat || { name: '', nature: '', description: '', manifestations: '', limits: '', reveal_level: 'insinuada' };
+  /* Spec-760: cuántas letras entran en cada campo (los topes de config; avisa, no corta). */
+  const T = locals.topes || {};
   const genre = genres.find(g => g.id === d.genero);
   const others = state ? state.characters.slice(1).filter(c => c.kind === 'persona') : [];
   const est = (locals.estimateLabels && estimateLabels.consult) || '';
@@ -61,7 +63,7 @@
     <section class="bg-forge-surface border border-forge-border p-6">
       <h3 class="font-serif text-xl mb-4">El título y el tipo de horror</h3>
       <label class="block text-sm text-forge-muted mb-1" for="a-title">Título</label>
-      <input id="a-title" name="title" type="text" required maxlength="120" value="<%= d.title %>"
+      <input id="a-title" name="title" type="text" required data-tope="<%= T.title %>" value="<%= d.title %>"
              placeholder="Por ejemplo: la pena del colectivo"
              class="w-full bg-forge-bg border border-forge-border px-3 py-2 mb-4 focus:outline-none focus:border-forge-accent">
       <% if (!state) { %><p class="pista-forge -mt-2 mb-4" data-pista-titulo><i data-lucide="info"></i>Se guarda solo cuando escribas el título.</p><% } %>
@@ -111,8 +113,8 @@
       <h3 class="font-serif text-xl mb-1"><label for="a-premise">¿De qué trata?</label></h3>
       <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
         Contalo como se lo contarías a alguien, de punta a punta: qué pasa y cómo termina, si ya lo sabés. No hace falta ordenarlo en actos: eso lo hacemos después.</p>
-      <textarea id="a-premise" name="premise" rows="4" maxlength="6000"
-                class="w-full [field-sizing:content] min-h-[6rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= d.premise %></textarea>
+      <textarea id="a-premise" name="premise" rows="4" data-tope="<%= T.premise %>"
+                class="w-full [field-sizing:content] min-h-[6rem] max-h-[70vh] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= d.premise %></textarea>
     </section>
 
     <% if (formas.length) { %>
@@ -149,7 +151,7 @@
       </div>
       <div class="<%= (formas.find(f => f.id === d.form) || {}).otra ? '' : 'hidden' %> mt-3" data-solo-si-forma="otra">
         <label class="pista-forge mb-1 block" for="a-form-other">Contá en una o dos frases cómo es tu historia: qué pasa al principio, qué cambia y cómo queda.</label>
-        <textarea id="a-form-other" name="form_other" rows="2" maxlength="600"
+        <textarea id="a-form-other" name="form_other" rows="2" data-tope="<%= T.form_other %>"
                   class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 focus:outline-none focus:border-forge-accent"><%= d.form_other %></textarea>
       </div>
       <% if (!d.form) { %><p class="pista-forge mt-3" data-sin-forma><i data-lucide="info"></i>Si no elegís ninguna, te pregunta como en «<%= formas[0].nombre %>».</p><% } %>
@@ -202,7 +204,7 @@
           </label>
         <% }) %>
       </div>
-      <input type="text" name="effect_other" maxlength="200" value="<%= d.effect_other %>" data-solo-si-efecto="otro"
+      <input type="text" name="effect_other" data-tope="<%= T.effect_other %>" value="<%= d.effect_other %>" data-solo-si-efecto="otro"
              placeholder="Contá qué efecto buscás"
              class="<%= d.effect === 'otro' ? '' : 'hidden' %> mt-3 w-full bg-forge-bg border border-forge-border px-3 py-2">
     </section>
@@ -212,12 +214,12 @@
       <div class="grid sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label class="block text-sm text-forge-muted mb-1" for="a-prota">Protagonista</label>
-          <input id="a-prota" name="protagonist_name" type="text" maxlength="60" value="<%= d.protagonist_name %>" placeholder="Nombre"
+          <input id="a-prota" name="protagonist_name" type="text" data-tope="<%= T.protagonist_name %>" value="<%= d.protagonist_name %>" placeholder="Nombre"
                  class="w-full bg-forge-bg border border-forge-border px-3 py-2">
         </div>
         <div>
           <label class="block text-sm text-forge-muted mb-1" for="a-quehace">¿Qué hace?</label>
-          <input id="a-quehace" name="protagonist_role" type="text" maxlength="160" value="<%= d.protagonist_role %>"
+          <input id="a-quehace" name="protagonist_role" type="text" data-tope="<%= T.protagonist_role %>" value="<%= d.protagonist_role %>"
                  placeholder="Por ejemplo: chofer de micros, turno noche"
                  class="w-full bg-forge-bg border border-forge-border px-3 py-2">
         </div>
@@ -292,15 +294,15 @@
         </div>
         <div>
           <label class="block text-sm text-forge-muted mb-1" for="a-t-name">Nombre <span class="text-xs">(si tiene)</span></label>
-          <input id="a-t-name" name="threat_name" type="text" maxlength="60" value="<%= t.name %>" class="w-full bg-forge-bg border border-forge-border px-3 py-2">
+          <input id="a-t-name" name="threat_name" type="text" data-tope="<%= T.threat_name %>" value="<%= t.name %>" class="w-full bg-forge-bg border border-forge-border px-3 py-2">
         </div>
       </div>
       <label class="block text-sm text-forge-muted mb-1" for="a-t-desc">Qué quiere</label>
-      <textarea id="a-t-desc" name="threat_description" rows="2" maxlength="400" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.description %></textarea>
+      <textarea id="a-t-desc" name="threat_description" rows="2" data-tope="<%= T.threat_description %>" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.description %></textarea>
       <label class="block text-sm text-forge-muted mb-1" for="a-t-man">Cómo se percibe</label>
-      <textarea id="a-t-man" name="threat_manifestations" rows="2" maxlength="300" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.manifestations %></textarea>
+      <textarea id="a-t-man" name="threat_manifestations" rows="2" data-tope="<%= T.threat_manifestations %>" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.manifestations %></textarea>
       <label class="block text-sm text-forge-muted mb-1" for="a-t-lim">Qué no puede hacer</label>
-      <textarea id="a-t-lim" name="threat_limits" rows="2" maxlength="300" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.limits %></textarea>
+      <textarea id="a-t-lim" name="threat_limits" rows="2" data-tope="<%= T.threat_limits %>" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= t.limits %></textarea>
       <label class="block text-sm text-forge-muted mb-1" for="a-t-reveal">Cuánto se muestra</label>
       <select id="a-t-reveal" name="threat_reveal_level" class="w-full sm:w-1/2 bg-forge-bg border border-forge-border px-3 py-2">
         <% REVEAL.forEach(([id, label]) => { %><option value="<%= id %>" <%= id === t.reveal_level ? 'selected' : '' %>><%= label %></option><% }) %>
@@ -314,4 +316,5 @@
 <%- include('_guardado') %>
 <%- include('_analizando') %>
 <script type="application/json" id="asistente-datos"><%- JSON.stringify({ state, genres }).replace(/</g, '\\u003c') %></script>
+<script src="/js/tope.js?v=<%= locals.assetVersion || '' %>"></script>
 <script src="/js/asistente.js?v=<%= locals.assetVersion || '' %>"></script>

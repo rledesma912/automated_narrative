@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), API (validación), config de las estructuras
-**Estado:** IMPLEMENT (OK al plan del usuario el 2026-11-21). S1 hecho. Enfoque: sin cortes en silencio y una nota cuando la idea no entra en el largo; el mapa de Freytag queda descartado por ahora (D6).
+**Estado:** IMPLEMENT (OK al plan del usuario el 2026-11-21). S1 y S2 hechos. Enfoque: sin cortes en silencio y una nota cuando la idea no entra en el largo; el mapa de Freytag queda descartado por ahora (D6).
 **Rama:** `feat/spec-760-ideas-largas` (desde `development`)
 **Extiende:** Spec-530 (asistente), Spec-690 (el final sale de la idea), Spec-750 (tres largos).
 
@@ -138,7 +138,8 @@ El eco es una cuenta gruesa: proporción de las palabras de 5 letras o más de c
 
 - **S1. Topes y API (A3, A4). Hecho (2026-11-21).** `topes` en `config/authoring_options.yaml` (lo lee `catalog.topes()`), el schema sin números fijos, el final por criterio en el router, `src/presentation/validation.py` (handler de `RequestValidationError` solo para texto o lista de más; el resto sigue igual) y `topes` en `/authoring/options`. Tests: `tests/unit/test_topes.py`, `tests/integration/test_topes_api.py`; suite completa en verde (1 311). La pantalla todavía tiene sus `maxlength`: los saca S2.
   - Plan original: Sección `topes` en config, la API los lee, tope por hecho, cantidad de hechos según las estructuras, el final a 20 000 en el router, mensajes de `core_messages.yaml`, y `topes` en `/authoring/options`. Tests: pytest de cada tope (20 000 entra, 20 001 da 422 con el mensaje), un acto de la Larga con 9 hechos que se guarda y un final de 5 000.
-- **S2. El contador y el guardado (A1, A2, A5).** `tope.js`, `data-tope` en todas las vistas del asistente y en `asistente.js`, el autoguardado que no manda un campo pasado y el alto máximo. Tests:
+- **S2. El contador y el guardado (A1, A2, A5). Hecho (2026-11-21).** `public/js/tope.js` (`ForgeTope`), los textos en `asistente/_tope.ejs` (dentro de `_cabecera.ejs`, con los topes en `data-topes` para los hechos y reglas que suma el JS), `data-tope` en todos los campos del asistente y `topes` en los locals (también en el fragmento). El autoguardado, «Guardar» de una respuesta, «+ Lugar» y «+ Personaje» no mandan un campo pasado; el aviso de guardado muestra lo que sobra. Alto máximo `max-h-[70vh]` en la idea y en las respuestas. Tests: `tests/unit/public/tope.test.ts`, `tests/unit/views/topes.view.test.ts` (sin `maxlength` en el asistente), `tests/e2e/ideas-largas.spec.ts`; fixtures de `asistente-partials` regenerados (solo `maxlength` → `data-tope` y el `<template>`). Vitest 493, E2E 97, en verde.
+  - Plan original: `tope.js`, `data-tope` en todas las vistas del asistente y en `asistente.js`, el autoguardado que no manda un campo pasado y el alto máximo. Tests:
   - Vitest de `tope.js` (80 %, pasado del tope, cuenta de letras).
   - Un test que falla si queda un `maxlength` en el asistente.
   - E2E en Firefox:

@@ -5,6 +5,8 @@
 */%>
 <%
   const w = state.workshop;
+  /* Spec-760: cuántas letras entran en cada campo (los topes de config; avisa, no corta). */
+  const T = locals.topes || {};
   /* Spec-550 H9: el estado de cada criterio es un chip (no se toca). */
   const SEMAFORO = {
     cumple:      { label: 'Listo',       chip: 'chip-forge chip-forge--cumple' },
@@ -124,8 +126,8 @@
                 <input type="radio" name="op-<%= p.criterion %>" value="" data-mia class="peer sr-only">
                 <span class="opcion-forge__caja">Escribir la mía…</span>
               </label>
-              <textarea data-texto-mia rows="2" maxlength="600" placeholder="Tu respuesta"
-                        class="hidden w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2"></textarea>
+              <textarea data-texto-mia rows="2" data-tope="<%= T.answer %>" placeholder="Tu respuesta"
+                        class="hidden w-full [field-sizing:content] max-h-[70vh] bg-forge-bg border border-forge-border px-3 py-2"></textarea>
             </fieldset>
             <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
             <div class="flex flex-wrap items-center gap-3">
@@ -183,7 +185,7 @@
               <button type="button" class="btn-forge-outline-sm shrink-0" data-cambiar>Cambiar</button>
             </div>
             <div class="hidden mt-4 pl-6" data-cambio>
-              <textarea data-texto-mia rows="2" maxlength="2000" class="w-full [field-sizing:content] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= p.answer %></textarea>
+              <textarea data-texto-mia rows="2" data-tope="<%= p.criterion === 'final' ? T.final : T.answer %>" class="w-full [field-sizing:content] max-h-[70vh] bg-forge-bg border border-forge-border px-3 py-2 mb-3"><%= p.answer %></textarea>
               <p class="hidden text-sm text-forge-error mb-3" data-error role="alert"></p>
               <div class="flex flex-wrap gap-3">
                 <button type="button" class="btn-forge-sm" data-taller="answer">Guardar</button>
