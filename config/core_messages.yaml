@@ -105,6 +105,9 @@ validacion:
   al_genero: "al género '{genero}'"
   a_ningun_genero: "a ninguna del catálogo"
   muy_largo: "{campo} supera los {maximo} caracteres"
+  # Spec-760: un campo del asistente pasado de su tope (la pantalla lo avisa antes de mandar).
+  texto_largo: "Este texto tiene {largo} letras y entran hasta {maximo}: acortalo un poco para que se guarde."
+  lista_larga: "Acá entran hasta {maximo} y hay {llegaron}: sacá alguno para que se guarde."
   falta: "falta {campo}"
   opcion_invalida: "{campo} no es válido (opciones: {opciones})"
   campo: "{campo}: {motivo}"
