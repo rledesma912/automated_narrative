@@ -113,7 +113,7 @@ class OutlinePlanner:
         return elenco.con_nota(acts, self.propuestos), elapsed
 
     def system_prompt(self, story: Story) -> str:
-        """Las reglas de siempre y, al final, las de la forma y el giro (Spec-670)."""
+        """Las reglas de siempre y, al final, las de la forma (Spec-670)."""
         habla = catalog.habla_de(story).prompt  # Spec-680 C1
         base = self.templates.load("authoring_planner_system.md").format(
             num_actos=self.prompt_builder.estructura(story).num_actos,
@@ -138,7 +138,7 @@ class OutlinePlanner:
             problemas=self._problems_block(story),
             reglas=self._rules_block(story),
             gastados=self._worn_block(story),
-            efecto=self._arc_block(story) + context.effect_block(story, t),
+            efecto=self._arc_block(story),  # Spec-780 D2: sin la receta del efecto
             escenarios=scenarios or t.fragment("asistente/planificador/escenarios_vacio"),
             actos=self._acts_block(story),
             ultimo=self.prompt_builder.estructura(story).ultimo,

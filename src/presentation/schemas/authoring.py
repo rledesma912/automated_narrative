@@ -34,19 +34,15 @@ class DirectionForm(BaseModel):
     genero: str = ""
     subgenero: str = ""
     premise: str = Field("", max_length=_T["premise"])  # «¿De qué trata?» (Spec-760)
-    effect: str = ""
-    effect_other: str = Field("", max_length=_T["effect_other"])
     ending: str = Field("", max_length=_T["ending"])
     ending_intentional: bool = False
     telling: str = ""
-    # Spec-670: la clase de historia, el giro y, con «Otra», cómo la cuenta el autor.
+    # Spec-670: la clase de historia y, con «Otra», cómo la cuenta el autor (Spec-780: sin giro).
     form: str = ""
-    ingredient: str = ""
     form_other: str = Field("", max_length=_T["form_other"])
     habla: str = ""  # Spec-680 C1: cómo habla quien narra ("" = la de siempre)
     protagonist_name: str = Field("", max_length=_T["protagonist_name"])
     protagonist_role: str = Field("", max_length=_T["protagonist_role"])
-    narrator: str = Field("", max_length=_T["narrator"])  # "" = el protagonista
     threat: ThreatForm | None = None  # sin naturaleza = sin amenaza
     # Spec-650 D9: solo al crear (POST). El autoguardado (PUT) la ignora: el largo se
     # cambia únicamente con PUT …/structure, que confirma y rearma.

@@ -116,7 +116,6 @@ class OutlineVerifier:
             escaleta="\n\n".join(
                 self._act_text(a, protagonist, _act_rules(story, a.number)) for a in outline
             ),
-            efecto=context.effect_block(story, t, verifier=True),
             descartados="\n".join(
                 t.fragment("asistente/aviso_de_acto", numero=a.number, aviso=w.text)
                 for a in outline

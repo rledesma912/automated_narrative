@@ -99,8 +99,7 @@ class OutlineNarrator:
         narrator = context.narrator(story)
         scene = self._scene_story(story, act, narrator)
         extras = self.prompt_builder._voice_extras(scene)
-        telling = story.direction.telling if story.direction else ""
-        voice = next((t.voice for t in catalog.tellings() if t.id == telling), "")
+        voice = catalog.telling_de(story).voice  # Spec-780 D4
         system = self.templates.load("outline_voice_system.md").format(
             presentacion=extras["presentacion"],
             como_lo_cuenta=voice,

@@ -159,8 +159,6 @@ def test_el_snapshot_cubre_todas_las_secciones():
         "(va en el acto 1)",
         "(DECIDIDO POR EL AUTOR: no se discute)",
         "- [inquietud] «¿Qué es lo primero raro que nota José?»",
-        "CÓMO TIENE QUE PEGAR",
-        "EFECTO QUE BUSCA EL AUTOR",
         "LO QUE EL AUTOR ESCRIBIÓ PARA CADA ACTO",
         "PROBLEMAS QUE MARCÓ LA REVISIÓN",
         "cerrar la historia con el final que decidió el autor",

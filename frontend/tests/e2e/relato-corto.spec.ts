@@ -31,7 +31,7 @@ test("crear un corto, armar sus 3 actos y escribirlo", async ({ page, request })
   expect(story.structure).toBe("corto");
 
   // Lo que se guarda solo en «Tu idea» no cambia el largo (D9).
-  await page.getByText("Pavor creciente").click();
+  await page.getByLabel("Protagonista").fill("Ana");
   await guardadoListo(page);
   await page.reload();
   await expect(page.getByRole("radio", { name: /Corto/ })).toBeChecked();

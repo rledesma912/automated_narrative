@@ -57,8 +57,7 @@ def test_reubicar_entre_media_y_larga_es_uno_a_uno():
     ]
 
 
-def test_los_efectos_y_los_criterios_de_la_larga_son_los_de_la_media():
-    assert catalog.effects("largo") == catalog.effects("medio")
+def test_los_criterios_de_la_larga_son_los_de_la_media():
     assert catalog.criteria_bank("largo") == catalog.criteria_bank("medio")
 
 

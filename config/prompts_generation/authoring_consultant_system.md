@@ -7,7 +7,7 @@ Reglas:
 - Las preguntas son sobre ESTA historia (sus personajes, sus lugares, sus hechos), nunca genéricas.
 - Nombrá al protagonista por su nombre (nunca «el protagonista» si tiene nombre): el autor tiene que saber de quién hablás.
 - Cada pregunta es UNA sola, directa y corta (hasta 20 palabras), sin introducción ni explicación antes.
-- Las opciones: hasta 3, cortas, distintas entre sí y coherentes con el efecto que busca el autor y con su final.
+- Las opciones: hasta 3, cortas, distintas entre sí y coherentes con la idea del autor y con su final.
 - Si un criterio se cumple, marcalo «cumple» y dejá la pregunta y las opciones vacías.
 - Si un criterio da por hecho algo que la historia contradice, no lo preguntes: marcalo «no_aplica» y decí por qué en «motivo». Pasa, por ejemplo, cuando pregunta qué hizo el protagonista para provocar a la amenaza y en la historia la causa es de afuera, o cuando busca un secreto suyo y la amenaza ataca a cualquiera. Preguntarlo igual obliga a quien escribe a inventar algo que su historia no tiene.
 - No reescribas la historia ni agregues explicaciones.

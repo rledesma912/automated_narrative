@@ -140,16 +140,10 @@ def story_block(story: Story, templates: TemplateLoader) -> str:
     lines.append(t("asistente/historia/protagonista", protagonista=story.protagonista))
     lines.append(t("asistente/historia/quien_lo_cuenta", narrador=narrator(story)))
     if d:
-        if d.effect:
-            effect = (
-                d.effect_other
-                if d.effect == "otro"
-                else catalog.label_of(catalog.effects(), d.effect)
+        if d.telling:  # Spec-780 D4: un id viejo se lee como el que lo reemplazó
+            lines.append(
+                t("asistente/historia/como_lo_cuenta", como=catalog.telling_de(story).label)
             )
-            lines.append(t("asistente/historia/efecto", efecto=effect))
-        if d.telling:
-            telling = catalog.label_of(catalog.tellings(), d.telling)
-            lines.append(t("asistente/historia/como_lo_cuenta", como=telling))
         if ending := author_ending(story):  # Spec-690: decidido, venga de donde venga
             fixed = t("asistente/historia/final_decidido")
             lines.append(t("asistente/historia/como_termina", final=ending, decidido=fixed))
@@ -239,22 +233,3 @@ def _direction_items(story: Story) -> list[WorkshopItem]:
     forma quedan guardadas (vuelven si se vuelve a esa forma) pero no llegan a la IA."""
     ids = set(molde.for_story(story).ids)
     return [w for w in story.workshop if w.level == WorkshopLevel.DIRECCION and w.criterion in ids]
-
-
-def effect_recipe(story: Story) -> tuple[str, str]:
-    """Spec-560 A5: (nombre del efecto, receta para la escaleta). «Otro» usa el texto del autor."""
-    d = story.direction
-    if not d or not d.effect:
-        return "", ""
-    if d.effect == "otro":
-        return (d.effect_other, d.effect_other) if d.effect_other.strip() else ("", "")
-    option = next((o for o in catalog.effects(story.structure) if o.id == d.effect), None)
-    return (option.label, option.planner) if option and option.planner else ("", "")
-
-
-def effect_block(story: Story, templates: TemplateLoader, verifier: bool = False) -> str:
-    name, recipe = effect_recipe(story)
-    if not recipe:
-        return ""
-    role = "verificador" if verifier else "planificador"
-    return templates.fragment(f"asistente/efecto/{role}", nombre=name, receta=recipe) + "\n\n"

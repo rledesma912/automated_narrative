@@ -14,7 +14,6 @@ import { getAuthoringOptions, getAuthoringState } from "../../../src/services/au
 import { getGenreCatalog } from "../../../src/services/catalog.service";
 
 const OPTIONS = {
-  effects: [{ id: "pavor", label: "Pavor creciente", detail: "Sube." }],
   tellings: [{ id: "caso", label: "Como un caso", detail: "«Mirá…»" }],
   criteria: [],
 };
@@ -22,8 +21,8 @@ const STATE = {
   story_id: "s-1",
   status: "draft",
   direction: {
-    title: "La pena", genero: "", subgenero: "", premise: "Algo pasa.", effect: "pavor",
-    effect_other: "", ending: "", ending_intentional: false, telling: "caso",
+    title: "La pena", genero: "", subgenero: "", premise: "Algo pasa.",
+    ending: "", ending_intentional: false, telling: "caso",
     protagonist_name: "José", protagonist_role: "Chofer", narrator: "José", threat: null,
   },
   workshop: { round: 0, max_rounds: 5, finish: { kind: "sin_analizar", text: "", open_questions: 0 }, items: [] },

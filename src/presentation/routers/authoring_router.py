@@ -72,19 +72,14 @@ router = APIRouter(prefix="/authoring", tags=["authoring"])
 async def get_options() -> dict:
     """Efectos, «cómo lo cuenta» y criterios del taller (fuente única: `config/`)."""
     return {
-        "effects": [o.__dict__ for o in catalog.effects()],
         "tellings": [o.__dict__ for o in catalog.tellings()],
         # Spec-680 C1: cómo habla quien narra (para la UI, sin los patrones).
         "hablas": [{"id": h.id, "label": h.label, "detail": h.ayuda} for h in catalog.hablas()],
         "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
-        # Spec-670: las clases de historia y los giros («Tu idea»).
+        # Spec-670: las clases de historia («Tu idea»; Spec-780: sin giros).
         "forms": [
             {"id": f.id, "nombre": f.nombre, "ayuda": f.ayuda, "otra": f.arco_del_autor}
             for f in molde.catalogo().formas
-        ],
-        "ingredients": [
-            {"id": g.id, "nombre": g.nombre, "ayuda": g.ayuda, "no_con": list(g.no_con)}
-            for g in molde.catalogo().giros
         ],
         # Spec-760: cuántos caracteres entran en cada campo (la pantalla avisa, no corta).
         "topes": catalog.topes(),
@@ -553,26 +548,34 @@ def _unprocessable(e: Exception) -> HTTPException:
     return HTTPException(status_code=422, detail=text)
 
 
+def _otro_narrador(existing: Story | None) -> str:
+    """El narrador de una historia que lo cuenta otro que el protagonista ("" si no)."""
+    if existing is None:
+        return ""
+    narrador = (existing.narrator_config or {}).get("storyteller_name", "")
+    return narrador if narrador and not _same(narrador, context.protagonist(existing)) else ""
+
+
 def _direction(form: DirectionForm, existing: Direction | None = None) -> Direction:
     """La dirección del formulario. Lo que sugirió la IA no viene en el formulario: se
     conserva de la guardada (Spec-670 D13; si no, cada autoguardado lo borraría)."""
     cat = molde.catalogo()
     if form.form and cat.forma(form.form) is None:
         raise InvalidStoryInputError(message("api.forma_desconocida", forma=form.form))
-    if form.ingredient and cat.giro(form.ingredient) is None:
-        raise InvalidStoryInputError(message("api.giro_desconocido", giro=form.ingredient))
     if form.habla and catalog.habla(form.habla) is None:
         raise InvalidStoryInputError(message("api.habla_desconocida", habla=form.habla))
     return Direction(
         premise=form.premise.strip(),
-        effect=form.effect,
-        effect_other=form.effect_other.strip(),
+        # Spec-780 D2/D5: el efecto salió de «Tu idea»; el de una historia vieja queda guardado.
+        effect=existing.effect if existing else "",
+        effect_other=existing.effect_other if existing else "",
         # Spec-690: «Tu idea» ya no trae «¿Cómo termina?»: se conserva el guardado.
         ending=form.ending.strip() or (existing.ending if existing else ""),
         ending_intentional=form.ending_intentional,
         telling=form.telling,
         form=form.form,
-        ingredient=form.ingredient,
+        # Spec-780 D5: los giros salieron; el de una historia vieja queda guardado.
+        ingredient=existing.ingredient if existing else "",
         form_other=form.form_other.strip(),
         habla=form.habla,
         form_suggested=existing.form_suggested if existing else "",
@@ -601,7 +604,9 @@ def _story_fields(form: DirectionForm, existing: Story | None) -> dict:
     """Campos de `Story` que se derivan de la Dirección (el resto del dominio no cambia)."""
     name = form.protagonist_name.strip() or "Protagonista"
     role = form.protagonist_role.strip()
-    narrator = form.narrator.strip() or name
+    # Spec-780 D3: «Tu idea» ya no elige quién lo cuenta: el protagonista. Una historia
+    # importada con otro narrador (YAML) lo conserva.
+    narrator = _otro_narrador(existing) or name
     cast = [dict(p) for p in (existing.personajes_full if existing else [])]
     lead = {"id": "P1", "name": name, "role": role, "kind": CharacterKind.PERSONA.value}
     cast = [{**(cast[0] if cast else {}), **lead}, *cast[1:]]
@@ -636,14 +641,12 @@ def _form(story: Story) -> dict:
         "subgenero": story.subgenero,
         # Sin dirección (historia importada): la sinopsis es su «¿de qué trata?».
         "premise": d.premise if story.direction else story.sinopsis,
-        "effect": d.effect,
-        "effect_other": d.effect_other,
         "ending": d.ending,
         "ending_intentional": d.ending_intentional,
-        "telling": d.telling,
-        # Spec-670: el molde ("" = la forma de siempre / sin giro).
+        # Spec-780 D4: «confesión» o «crónica» de una historia vieja, como la que la reemplazó.
+        "telling": catalog.telling_de(story).id if d.telling else "",
+        # Spec-670: el molde ("" = la forma de siempre).
         "form": d.form,
-        "ingredient": d.ingredient,
         "form_other": d.form_other,
         "form_suggested": d.form_suggested,
         "form_reason": d.form_reason,
@@ -711,7 +714,7 @@ async def _state(story: Story) -> dict:
                     **w.model_dump(mode="json"),
                     "nombre": c.nombre,
                     "por_que": c.por_que,
-                    "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
+                    "grupo": _grupo(m, c.id),  # Spec-670: de toda historia o de la forma
                     # Spec-690: el final que la IA sacó de «¿De qué trata?».
                     "de_la_idea": workshop_rules.DE_LA_IDEA in w.asked,
                     # Spec-700 D18: por qué ya no coincide con la idea nueva («» si coincide).
@@ -727,9 +730,7 @@ async def _state(story: Story) -> dict:
             "molde": {
                 "form": m.forma.id,
                 "form_name": m.forma.nombre,
-                "ingredient": m.giro.id if m.giro else "",
-                "ingredient_name": m.giro.nombre if m.giro else "",
-                "default": m.forma.id == molde.catalogo().por_defecto.id and not m.giro,
+                "default": m.forma.id == molde.catalogo().por_defecto.id,
             },
             "hidden_answers": sum(1 for w in items if w.answer and w.criterion not in set(m.ids)),
         },
@@ -784,14 +785,10 @@ async def _state(story: Story) -> dict:
             )
         ],
         "active_job": await job_manager.payload(active) if active else None,
-        # Spec-670 D6: cuántas historias usan cada giro («Sorprendeme»).
-        "ingredient_usage": await SQLStoryRepository().ingredient_usage(),
     }
 
 
 def _grupo(m: molde.Molde, criterion: str) -> str:
-    if m.giro and criterion in m.giro.criterios:
-        return "giro"
     return "forma" if criterion in m.forma.criterios else "base"
 
 

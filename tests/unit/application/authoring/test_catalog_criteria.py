@@ -1,5 +1,7 @@
 """Spec-550 H7: los criterios del taller dicen de quién hablan y para qué sirven."""
 
+import pytest
+
 from src.application.services.authoring import catalog
 
 
@@ -62,9 +64,33 @@ def test_sin_protagonista_dice_el_protagonista():
     )
 
 
-def test_ninguna_forma_de_contarlo_pide_prosa_literaria():
-    """Spec-640: la guía de oficio pide una anécdota (sin metáforas); ninguna opción de
-    «¿Cómo lo cuenta?» puede pedir lo contrario."""
-    assert [t.id for t in catalog.tellings()] == ["caso", "confesion", "cronica"]
-    for t in catalog.tellings():
-        assert "literari" not in t.voice.lower() and "imágenes" not in t.voice.lower(), t.id
+def test_dos_formas_de_contarlo():
+    """Spec-780 D4: «Como a un amigo» (la anécdota de la Spec-640, la de siempre) y «Como si
+    lo escribieras» (relato escrito, sin exagerar). Confesión y crónica se leen como estas."""
+    t = {o.id: o for o in catalog.tellings()}
+    assert list(t) == ["caso", "escrito"]
+    assert (t["caso"].label, t["caso"].guia, t["caso"].antes) == (
+        "Como a un amigo",
+        "anecdota",
+        ("confesion",),
+    )
+    assert (t["escrito"].label, t["escrito"].guia) == ("Como si lo escribieras", "escrito")
+    assert "sin adornos" in t["escrito"].voice
+
+
+@pytest.mark.parametrize(
+    "guardado, se_lee",
+    [
+        ("caso", "caso"),
+        ("confesion", "caso"),
+        ("cronica", "escrito"),
+        ("escrito", "escrito"),
+        ("", "caso"),
+        ("x", "caso"),
+    ],
+)
+def test_un_id_viejo_se_lee_como_el_que_lo_reemplazo(guardado, se_lee):
+    from types import SimpleNamespace
+
+    story = SimpleNamespace(direction=SimpleNamespace(telling=guardado))
+    assert catalog.telling_de(story).id == se_lee
