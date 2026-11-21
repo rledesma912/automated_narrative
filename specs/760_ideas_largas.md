@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), API (validación), config de las estructuras
-**Estado:** IMPLEMENT (OK al plan del usuario el 2026-11-21). S1 y S2 hechos. Enfoque: sin cortes en silencio y una nota cuando la idea no entra en el largo; el mapa de Freytag queda descartado por ahora (D6).
+**Estado:** IMPLEMENT (OK al plan del usuario el 2026-11-21). S1, S2 y S3 hechos; la Parte B queda descartada por la medición (D7, §4). Enfoque: sin cortes en silencio y una nota cuando la idea no entra en el largo; el mapa de Freytag queda descartado por ahora (D6).
 **Rama:** `feat/spec-760-ideas-largas` (desde `development`)
 **Extiende:** Spec-530 (asistente), Spec-690 (el final sale de la idea), Spec-750 (tres largos).
 
@@ -88,7 +88,9 @@ El eco es una cuenta gruesa: proporción de las palabras de 5 letras o más de c
 - **A4. La API responde en el tono del sitio.** Un 422 por largo responde `validacion.texto_largo` de `core_messages.yaml` («Este texto tiene 21.300 letras y entran hasta 20.000: acortalo un poco para que se guarde.»; para una lista, `validacion.lista_larga`). Los números van con punto de miles, como en el resto del sitio, y `errorText` muestra el `detail` tal cual cuando es texto.
 - **A5. El alto del cuadro.** Los textareas que crecen con el texto (`[field-sizing:content]`) llegan como mucho a `max-h-[70vh]` y después hacen scroll.
 
-## 3. Parte B: la nota «tu idea no entra en este largo»
+## 3. Parte B: la nota «tu idea no entra en este largo» (descartada, D7)
+
+> Descartada después de la medición de S3: la Media no hace entrar más de la idea que el Corto. Lo de abajo queda como registro.
 
 - **B1. La regla, sin IA.** Las palabras de la idea se comparan con un umbral **por estructura**: `idea_palabras_max` en `estructuras.<largo>` de `config/llm_beats_definition.yaml`. El valor de partida es el 70 % de `palabras_total`: ~735 en el corto, ~1 750 en la media y ~3 675 en la larga. Lo ajusta la medición (§4).
 - **B2. Dónde se ve.** En «Tu idea», debajo de «¿Qué tan largo?», con una nota de info: «Tu idea es larga para un relato corto: es probable que algunas partes no entren y que el relato salga más largo. Si querés que entre todo, probá con Media.»
@@ -126,7 +128,8 @@ El eco es una cuenta gruesa: proporción de las palabras de 5 letras o más de c
 | D4 | La medición la corre Claude; la calidad la juzgan las autoras con el uso | Usuario, 2026-11-21 |
 | D5 | Sin pasos nuevos en la UI: todo con los componentes de hoy | Usuario, 2026-11-21 |
 | D6 | El mapa de Freytag queda descartado por ahora (§5) | Usuario, 2026-11-21 |
-| D7 | La nota del largo es sin IA, con un umbral por estructura en config | Usuario, 2026-11-21 (enfoque) |
+| D7 | ~~La nota del largo~~ **descartada**: con la IA, la Media deja 62 % de la idea y el Corto 56 % (informe de S3). Lo que decide es cuánto resume el Planificador, y eso es otra spec | Medición, 2026-11-21 |
+| D8 | Lo que se perdía en los actos lo recuperaba la autora a mano, hasta el tope de 400 por hecho. S2 lo resuelve (hechos de 800, sin corte) | Medición y la autora, 2026-11-21 |
 
 ## 7. Boundaries
 
@@ -146,8 +149,10 @@ El eco es una cuenta gruesa: proporción de las palabras de 5 letras o más de c
     - Pegar 20 000 caracteres en la idea y encontrarlos guardados.
     - Pegar 20 500 y ver el aviso sin perder el texto.
     - Un hecho de 700 caracteres que se guarda.
-- **S3. Medición (§4).** Script, corrida e informe, y con eso `idea_palabras_max` en las tres estructuras.
-- **S4. La nota del largo (B).** Config, la cuenta de palabras compartida Python/TS, la nota en «Tu idea» y en «Los actos» con «Cambiar el largo». Tests: unidad de la regla (qué largo sugiere, con largos apagados), casos compartidos y vista.
+- **S3. Medición (§4). Hecha (2026-11-21).** Informe en `scripts/research/760/informe.md`. El Corto armado por la IA deja el 56 % de la idea y la Media el 62 %, con mucha variación entre ideas. El Corto editado por la autora llega al 72 %, porque volvía a meter su texto en los hechos hasta el tope de 400 (Yael lo confirmó). La Media no hace entrar la idea: la IA resume igual en los dos largos. Costo US$ 0,48: se pasó del tope y el usuario aprobó la segunda corrida.
+  - Plan original: Script, corrida e informe, y con eso `idea_palabras_max` en las tres estructuras.
+- **S4. La nota del largo (B). Descartada (D7, 2026-11-21):** la medición mostró que la Media no hace entrar la idea; la nota prometería algo que no pasa.
+  - Plan original: Config, la cuenta de palabras compartida Python/TS, la nota en «Tu idea» y en «Los actos» con «Cambiar el largo». Tests: unidad de la regla (qué largo sugiere, con largos apagados), casos compartidos y vista.
 - **S5. Cierre.** `make dev-status` en verde, informe al usuario y, con su OK, `make deploy`.
 
 **Riesgos:**
