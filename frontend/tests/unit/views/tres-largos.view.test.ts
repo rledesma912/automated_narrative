@@ -22,7 +22,7 @@ const LARGOS = [
 const direccion = (structures: object[]) =>
   ejs.renderFile(path.join(VIEWS, "asistente", "direccion.ejs"), {
     state: null,
-    options: { effects: [], tellings: [], criteria: [], structures, forms: [], ingredients: [], hablas: [] },
+    options: { effects: [], tellings: [], criteria: [], structures, forms: [], hablas: [] },
     genres: [],
     estimateLabels: {},
     pasoActual: "direccion",

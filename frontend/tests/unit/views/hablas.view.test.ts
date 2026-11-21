@@ -11,7 +11,7 @@ const HABLAS = [
   { id: "rioplatense", label: "Rioplatense", detail: "Como en Argentina y Uruguay." },
   { id: "mexicano", label: "De México", detail: "Como en México." },
 ];
-const options = { effects: [], tellings: [], criteria: [], structures: [], forms: [], ingredients: [], hablas: HABLAS };
+const options = { effects: [], tellings: [], criteria: [], structures: [], forms: [], hablas: HABLAS };
 
 const render = (habla: string | undefined) =>
   ejs.renderFile(path.join(VIEWS, "asistente", "direccion.ejs"), {

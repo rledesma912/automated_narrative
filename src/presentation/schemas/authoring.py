@@ -39,9 +39,8 @@ class DirectionForm(BaseModel):
     ending: str = Field("", max_length=_T["ending"])
     ending_intentional: bool = False
     telling: str = ""
-    # Spec-670: la clase de historia, el giro y, con «Otra», cómo la cuenta el autor.
+    # Spec-670: la clase de historia y, con «Otra», cómo la cuenta el autor (Spec-780: sin giro).
     form: str = ""
-    ingredient: str = ""
     form_other: str = Field("", max_length=_T["form_other"])
     habla: str = ""  # Spec-680 C1: cómo habla quien narra ("" = la de siempre)
     protagonist_name: str = Field("", max_length=_T["protagonist_name"])

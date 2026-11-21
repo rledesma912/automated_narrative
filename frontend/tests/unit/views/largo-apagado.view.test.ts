@@ -14,7 +14,7 @@ const LARGOS = [
   { id: "medio", label: "Media · 5 actos · unos 15 minutos", acts: 5, disponible: false, nota: NOTA },
   { id: "corto", label: "Corto · 3 actos · unos 7 minutos", acts: 3, disponible: true, nota: null },
 ];
-const options = { effects: [], tellings: [], criteria: [], structures: LARGOS, forms: [], ingredients: [], hablas: [] };
+const options = { effects: [], tellings: [], criteria: [], structures: LARGOS, forms: [], hablas: [] };
 
 const asistente = (paso: string, state: object | null) =>
   ejs.renderFile(path.join(VIEWS, "asistente", `${paso}.ejs`), {

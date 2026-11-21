@@ -7,7 +7,7 @@
   const d = state ? state.direction : {
     title: '', genero: '', subgenero: '', premise: '', effect: '', effect_other: '', ending: '',
     ending_intentional: false, telling: '', protagonist_name: '', protagonist_role: '', narrator: '', threat: null,
-    form: '', ingredient: '', form_other: '', form_suggested: '', form_reason: '', habla: '',
+    form: '', form_other: '', form_suggested: '', form_reason: '', habla: '',
   };
   const t = d.threat || { name: '', nature: '', description: '', manifestations: '', limits: '', reveal_level: 'insinuada' };
   /* Spec-760: cuántas letras entran en cada campo (los topes de config; avisa, no corta). */
@@ -23,14 +23,12 @@
   const disponibles = largos.filter(l => l.disponible !== false);
   const primerLargo = (disponibles.find(l => l.por_defecto) || disponibles[0] || largos[0] || { id: 'medio' }).id;
   const largo = state ? state.structure : primerLargo;
-  /* Spec-670: la clase de historia y el giro. Sin forma elegida, la de siempre (la primera). */
+  /* Spec-670: la clase de historia. Sin forma elegida, la de siempre (la primera). Spec-780: sin giros. */
   const formas = options.forms || [];
-  const giros = options.ingredients || [];
   /* Spec-680 C1: cómo habla quien narra. Sin elegir (historias viejas), la de siempre. */
   const hablas = options.hablas || [];
   const habla = d.habla || (hablas[0] && hablas[0].id);
   const sugerida = formas.find(f => f.id === d.form_suggested);
-  const uso = (state && state.ingredient_usage) || {};
   const estForma = (locals.estimateLabels && estimateLabels.suggest_form) || '';
   const REVEAL = [
     ['nunca', 'Nunca se muestra'], ['insinuada', 'Se insinúa'],
@@ -157,34 +155,6 @@
       <% if (!d.form) { %><p class="pista-forge mt-3" data-sin-forma><i data-lucide="info"></i>Si no elegís ninguna, te pregunta como en «<%= formas[0].nombre %>».</p><% } %>
     </section>
 
-    <%/* Spec-670: el giro (opcional). «Sorprendeme» sortea entre los menos usados (asistente.js). */%>
-    <section class="bg-forge-surface border border-forge-border p-6" data-giros data-uso='<%- JSON.stringify(uso).replace(/'/g, "&#39;") %>'>
-      <h3 class="font-serif text-xl mb-1">¿Le sumamos un giro?</h3>
-      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>
-        Es opcional. Un giro es un detalle que le da algo propio a tu historia y suma una sola pregunta.
-        Elegí uno, dejá que lo sorteemos («Sorprendeme» elige entre los que menos usaste) o seguí sin giro.</p>
-      <div class="flex flex-wrap items-center gap-3 mb-3">
-        <button type="button" class="btn-forge-outline-sm" data-sorprendeme><i data-lucide="shuffle" class="w-4 h-4"></i> Sorprendeme</button>
-      </div>
-      <p class="text-sm mb-3 hidden" data-giro-salio aria-live="polite"></p>
-      <div class="grid sm:grid-cols-2 gap-3">
-        <label class="opcion-forge h-full">
-          <input type="radio" name="ingredient" value="" class="peer sr-only" <%= d.ingredient ? '' : 'checked' %>>
-          <span class="opcion-forge__caja h-full"><span><span class="block font-semibold">Sin giro</span><span class="block text-sm text-forge-muted">Como viene.</span></span></span>
-        </label>
-        <% giros.forEach(g => { const fuera = g.no_con.includes(d.form); %>
-          <label class="opcion-forge h-full<%= fuera ? ' hidden' : '' %>" data-giro="<%= g.id %>" data-no-con="<%= g.no_con.join(',') %>">
-            <input type="radio" name="ingredient" value="<%= g.id %>" class="peer sr-only" <%= g.id === d.ingredient ? 'checked' : '' %>>
-            <span class="opcion-forge__caja h-full">
-              <span>
-                <span class="block font-semibold"><%= g.nombre %></span>
-                <span class="block text-sm text-forge-muted"><%= g.ayuda %></span>
-              </span>
-            </span>
-          </label>
-        <% }) %>
-      </div>
-    </section>
     <% } %>
 
     <section class="bg-forge-surface border border-forge-border p-6">

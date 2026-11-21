@@ -56,7 +56,7 @@ def criteria_bank(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, ...]:
 
 
 def direction_criteria(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, ...]:
-    """Los criterios del molde de siempre (la primera forma, sin giro). Para lo que no
+    """Los criterios del molde de siempre (la primera forma). Para lo que no
     tiene una historia a mano (`/options`); lo de cada historia es `molde.for_story`."""
     from src.application.services.authoring import molde  # molde importa este módulo
 
@@ -64,7 +64,7 @@ def direction_criteria(structure: str = DEFAULT_STRUCTURE) -> tuple[Criterion, .
 
 
 def criterion(criterion_id: str, structure: str = DEFAULT_STRUCTURE) -> Criterion | None:
-    """Un criterio del banco (de cualquier forma o giro)."""
+    """Un criterio del banco (de cualquier forma)."""
     return next((c for c in criteria_bank(structure) if c.id == criterion_id), None)
 
 

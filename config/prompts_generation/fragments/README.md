@@ -88,7 +88,7 @@ Spec-670: la intención sale del molde (`molde.py`) y en el acto `revela_secreto
 dice cuántos hechos lleva). Spec-650: `{num_actos}`, `{ultimo}` y `{hechos_por_acto}` salen de
 la estructura de la historia (Spec-770: `{tope_hecho}` = `topes.event` de `authoring_options.yaml`, lo que entra en un hecho); el system prompt (`authoring_planner_system.md`) y el del
 Verificador reciben `{num_actos}` (Spec-670: al system prompt del Planificador se le suma una
-`asistente/planificador/regla_de_la_forma` por regla de la forma y del giro; con «Otra», `{efecto}`
+`asistente/planificador/regla_de_la_forma` por regla de la forma; con «Otra», `{efecto}`
 empieza con `asistente/planificador/arco`, cómo contó el autor su historia), y `asistente/objetivo` recibe `{num_actos}` y `{palabras}`.
 
 **Verificador** — `authoring_verifier.md`: además `{elenco}` (o

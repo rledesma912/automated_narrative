@@ -92,9 +92,8 @@ async def test_crear_desde_la_direccion(client):
         "narrator": "José",
         "effect_other": "",
         "threat": None,
-        # Spec-670: sin forma ni giro = la forma de siempre.
+        # Spec-670: sin forma = la forma de siempre (Spec-780: sin giro).
         "form": "",
-        "ingredient": "",
         "form_other": "",
         "form_suggested": "",
         "form_reason": "",
@@ -639,17 +638,26 @@ async def test_el_autoguardado_conserva_lo_que_sugirio_la_ia(client):
     )
 
 
-@pytest.mark.parametrize("campo", ["form", "ingredient"])
-async def test_forma_o_giro_desconocido_422(client, campo):
+async def test_forma_desconocida_422(client):
     sid = (await _create(client))["story_id"]
-    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, campo: "no-existe"})
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "form": "no-existe"})
     assert resp.status_code == 422
     assert "no-existe" in resp.json()["detail"]
 
 
+async def test_un_giro_que_manda_una_pestana_vieja_se_ignora(client):
+    """Spec-780 D1: los giros salieron; «Tu idea» ya no los manda y la API no los guarda."""
+    sid = (await _create(client, ingredient="regla_rara"))["story_id"]
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "ingredient": "x"})
+    assert resp.status_code == 200
+    assert "ingredient" not in resp.json()["direction"]
+    assert "ingredients" not in (await client.get(f"{API}/options")).json()
+
+
 async def test_yaml_ida_y_vuelta_conserva_la_forma_y_el_giro(client):
-    """Spec-670 D3: `export-yaml` / `import-yaml` llevan la forma y el giro (dentro de la
-    dirección); un YAML sin forma es la de siempre."""
+    """Spec-670 D3: `export-yaml` / `import-yaml` llevan la forma (dentro de la dirección);
+    un YAML sin forma es la de siempre. Spec-780 D5: el giro de una historia vieja se
+    conserva en el YAML (no se pierde el dato), aunque ya no se use."""
     import uuid
 
     import yaml
@@ -660,8 +668,9 @@ async def test_yaml_ida_y_vuelta_conserva_la_forma_y_el_giro(client):
     from src.infrastructure.exporters import YamlStoryExporter
     from src.infrastructure.loaders import YamlStoryLoader
 
-    sid = (await _create(client, form="asedio", ingredient="regla_rara"))["story_id"]
+    sid = (await _create(client, form="asedio"))["story_id"]
     story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    story.direction = story.direction.model_copy(update={"ingredient": "regla_rara"})  # una vieja
     text = YamlStoryExporter().export(story)
     data = yaml.safe_load(text)
     assert (data["direction"]["form"], data["direction"]["ingredient"]) == ("asedio", "regla_rara")

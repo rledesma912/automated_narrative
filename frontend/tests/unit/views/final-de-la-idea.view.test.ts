@@ -22,7 +22,7 @@ const final = (html: string) => html.match(/<li[^>]*data-pregunta="final"[\s\S]*
 
 describe("Tu idea sin «¿Cómo termina?» (Spec-690)", () => {
   it("no tiene el campo y la ayuda de «¿De qué trata?» invita a contar el final", async () => {
-    const options = { effects: [], tellings: [], criteria: [], structures: [], forms: [], ingredients: [], hablas: [] };
+    const options = { effects: [], tellings: [], criteria: [], structures: [], forms: [], hablas: [] };
     const html = await ejs.renderFile(path.join(VIEWS, "asistente", "direccion.ejs"), {
       state,
       options,

@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), molde y prompts (config), guía de oficio de la Voz
-**Estado:** SPECIFY aprobado (2026-11-21: alcance y D1–D6). PLAN a confirmar.
+**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 hecho.
 **Rama:** `feat/spec-780-tu-idea-mas-simple` (desde `development`)
 **Extiende / deshace en parte:** Spec-670 (moldes: el giro), Spec-560 A5 (la receta del efecto), Spec-530 (quién lo cuenta, cómo lo cuenta), Spec-640 (la Voz como anécdota).
 
@@ -76,7 +76,7 @@ Que «Tu idea» pregunte solo lo que las autoras usan y entienden, y que «¿Có
 - **Pantalla:** sale la sección del giro de «Tu idea» (con «Sorprendeme» y su JS).
 - **Config:** sale `config/moldes/ingredientes.yaml` y, del banco (`workshop_criteria.yaml`), los 6 criterios de los giros.
 - **Código:** `molde.py` sin giros (`Molde` = base + forma + largo); `/authoring/options` sin `ingredients`; el schema y el router sin `ingredient`.
-- **Historias viejas:** `direction.ingredient` se conserva y se ignora. Exportar YAML no lo escribe e importar lo ignora.
+- **Historias viejas:** `direction.ingredient` se conserva y se ignora. El YAML (export/import) lo sigue llevando dentro de la dirección, para no perder el dato (D5); el molde no lo lee.
 - **Tests:** el tope de preguntas vuelve a 9 en todas las combinaciones (`test_moldes.py`), y se regeneran los snapshots `moldes_*`.
 
 ## 3. Parte B: sacar el efecto
@@ -146,7 +146,11 @@ Para comparar las dos versiones de «Culpable» se miden comparaciones, clichés
 
 ## 9. PLAN (borrador, a confirmar)
 
-- **S1. Sacar los giros (A):** config, molde, API, pantalla, tests y snapshots.
+- **S1. Sacar los giros (A). Hecho (2026-11-21).** Sale `config/moldes/ingredientes.yaml` y los 6 criterios de los giros del banco. `Molde` queda en forma + largo. La API deja de ofrecer `ingredients`, de validar y de devolver el giro, y conserva el guardado. En «Tu idea» sale la sección (con «Sorprendeme») y en «Preguntas» el grupo del giro («Son 9 como mucho»).
+  - Tests: una historia vieja con giro se arma igual que una sin giro (`test_moldes.py`); un giro que manda una pestaña vieja se ignora.
+  - Snapshot `moldes_asedio` regenerado: el diff es solo la regla y la pregunta del giro.
+  - Resultado: pytest 1 313 · Vitest 493 · E2E de moldes y asistente 22, todo en verde.
+  - Plan original: config, molde, API, pantalla, tests y snapshots.
 - **S2. Sacar el efecto (B):** pantalla, prompts del Planificador, del Verificador y del Consultor, `story_block`, config y snapshots.
 - **S3. Sacar «Quién lo cuenta» (C):** pantalla y API.
 - **S4. Dos formas de contarlo (D):** las opciones, el bloque escrito en `voice_craft` (el de anécdota solo con `caso`), cómo se leen `confesion` y `cronica`, y snapshots de la Voz.

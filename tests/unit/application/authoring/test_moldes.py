@@ -1,4 +1,4 @@
-"""Spec-670: moldes de historia (base + forma + giro + largo).
+"""Spec-670: moldes de historia (base + forma + largo; Spec-780: sin giros).
 
 Usa las mismas historias que los snapshots de siempre (`test_assistant_prompts_snapshot`,
 `test_voice_prompts_snapshot`) con otra forma: así se ve qué cambia y, de paso, que las
@@ -10,7 +10,6 @@ Para regenerar los snapshots a propósito:
 
 import json
 import os
-from itertools import product
 from pathlib import Path
 
 import pytest
@@ -74,28 +73,35 @@ def test_cada_forma_esta_completa_en_los_dos_largos():
 
 @pytest.mark.parametrize("sid", ["medio", "corto"])
 def test_tope_de_preguntas(sid):
-    """D10: ninguna combinación del catálogo pasa de 9 preguntas sin giro ni de 10 con
-    giro (hoy son 9 fijas): ampliar el catálogo no vuelve al formulario gigante."""
-    cat = molde.catalogo()
-    for forma, giro in product(cat.formas, (None, *cat.giros)):
-        n = len(molde.Molde(forma, giro, sid).criterios)
-        assert n <= (10 if giro else 9), (forma.id, giro and giro.id, n)
+    """D10: ninguna forma del catálogo pasa de 9 preguntas: ampliar el catálogo no vuelve
+    al formulario gigante (Spec-780: sin giros, el tope es 9 para todas)."""
+    for forma in molde.catalogo().formas:
+        n = len(molde.Molde(forma, sid).criterios)
+        assert n <= 9, (forma.id, n)
 
 
 def test_los_criterios_del_molde_estan_en_el_banco_y_no_se_repiten():
     banco = [c.id for c in catalog.criteria_bank()]
     assert len(banco) == len(set(banco))
-    cat = molde.catalogo()
-    for forma, giro in product(cat.formas, (None, *cat.giros)):
-        ids = molde.Molde(forma, giro, "medio").ids
+    for forma in molde.catalogo().formas:
+        ids = molde.Molde(forma, "medio").ids
         assert len(ids) == len(set(ids))
 
 
-def test_forma_o_giro_que_ya_no_existe_cae_a_la_de_siempre():
+def test_forma_que_ya_no_existe_cae_a_la_de_siempre():
     """D16."""
-    story = _con_forma(asistente._story(), "una-que-se-borro", giro="otro-que-no-esta")
-    m = molde.for_story(story)
-    assert (m.forma.id, m.giro) == ("regla", None)
+    story = _con_forma(asistente._story(), "una-que-se-borro")
+    assert molde.for_story(story).forma.id == "regla"
+
+
+def test_una_historia_vieja_con_giro_se_arma_como_sin_giro():
+    """Spec-780 D1/D5: el giro guardado queda en la dirección, pero ni pregunta ni regla."""
+    con = _con_forma(asistente._story(), "asedio", giro="regla_rara")
+    sin = _con_forma(asistente._story(), "asedio")
+    assert molde.for_story(con).ids == molde.for_story(sin).ids
+    planner = OutlinePlanner(llm=None)
+    assert planner.system_prompt(con) == planner.system_prompt(sin)
+    assert planner._prompt(con) == planner._prompt(sin)
 
 
 # ── D11: solo los criterios del molde llegan a la IA ──────────────────────────
@@ -171,15 +177,13 @@ def test_asedio_no_pide_romper_una_regla_ni_una_culpa(sid):
     # D15: lo que se revela es la causa, en el acto `revela_secreto` de la estructura.
     assert "acá se entiende qué empuja a la amenaza a venir" in planificador
     assert "historia secreta" not in planificador
-    # Las reglas de la forma y del giro, al final de las de siempre.
+    # Las reglas de la forma, al final de las de siempre (Spec-780: sin la del giro).
     system = p["asistente"]["planificador_system"]
-    assert system.endswith(
-        "- La regla rara de la amenaza aparece en un hecho antes del último acto y decide cómo termina."
-    )
     assert "- Nadie provoca a la amenaza: viene por una causa de afuera." in system
-    # Las preguntas: las de la forma y la del giro, no las de la forma de siempre.
+    assert "regla rara" not in system
+    # Las preguntas: las de la forma, no las de la forma de siempre.
     consultor = p["asistente"]["consultor"]
-    assert "- asedio_acercamiento:" in consultor and "- regla_de_la_amenaza:" in consultor
+    assert "- asedio_acercamiento:" in consultor and "- regla_de_la_amenaza:" not in consultor
     assert "- vulnerabilidad:" not in consultor
 
 
@@ -196,7 +200,7 @@ def test_otra_lleva_el_arco_del_autor_y_ninguna_pregunta_de_forma():
     assert "romper la regla" not in planificador and "transgresi" not in planificador
 
 
-# ── S2: las formas y los giros nuevos ─────────────────────────────────────────
+# ── S2: las formas nuevas ─────────────────────────────────────────────────────
 
 NUEVAS = ["lugar", "casa", "senuelo", "otra"]
 
@@ -270,16 +274,6 @@ def test_cada_forma_revela_en_su_acto():
     )
     plan = OutlinePlanner(llm=None)._prompt(lugar)
     assert "acá se entiende qué pasó en ese lugar antes" in _linea_del_acto(plan, 4)
-
-
-def test_un_giro_no_va_con_la_forma_que_ya_pregunta_lo_mismo():
-    """Ajuste de la S2: «El lugar tiene su propia historia» no se ofrece con «Un lugar que no
-    hay que pisar» (repetiría «Qué pasó ahí antes»); si llega igual, se ignora."""
-    cat = molde.catalogo()
-    assert "lugar_historia" not in {g.id for g in cat.giros_para("lugar")}
-    assert "lugar_historia" in {g.id for g in cat.giros_para("casa")}
-    story = _con_forma(asistente._story(), "lugar", giro="lugar_historia")
-    assert molde.for_story(story).giro is None
 
 
 # ── S4: la IA sugiere la forma ────────────────────────────────────────────────

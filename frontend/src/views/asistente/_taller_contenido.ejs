@@ -21,12 +21,11 @@
   const abiertas = w.items.filter(i => (i.status === 'falta' || i.status === 'parcial') && i.question);
   const noVan = w.items.filter(i => i.status === 'no_aplica');
   const resueltas = w.items.filter(i => !abiertas.includes(i) && !noVan.includes(i));
-  /* Spec-670: las preguntas por grupo (de toda historia, de la forma, del giro). */
+  /* Spec-670: las preguntas por grupo (de toda historia, de la forma). */
   const m = w.molde || {};
   const GRUPOS = [
     ['base', 'De toda historia'],
     ['forma', m.form_name ? `De «${m.form_name}»` : 'De tu clase de historia'],
-    ['giro', m.ingredient_name ? `Del giro · ${m.ingredient_name}` : 'Del giro'],
   ].map(([id, titulo]) => ({ titulo, items: w.items.filter(i => (i.grupo || 'base') === id) })).filter(g => g.items.length);
   const est = locals.estimateLabels || {};
   const analizado = w.items.length > 0;
@@ -78,7 +77,7 @@
     <% } %>
     <section class="bg-forge-surface border border-forge-border p-6 mb-8">
       <h3 class="text-xs uppercase tracking-widest text-forge-muted mb-2">Cómo viene tu historia</h3>
-      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>Unas preguntas son de toda historia; otras, de la clase de historia que elegiste en «Tu idea», y una del giro si elegiste uno. Son 10 como mucho y ninguna es obligatoria.</p>
+      <p class="pista-forge mb-4"><i data-lucide="lightbulb"></i>Unas preguntas son de toda historia; otras, de la clase de historia que elegiste en «Tu idea». Son 9 como mucho y ninguna es obligatoria.</p>
       <div class="space-y-3 mb-5">
         <% GRUPOS.forEach(g => { %>
           <div data-grupo>

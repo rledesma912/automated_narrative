@@ -77,14 +77,10 @@ async def get_options() -> dict:
         # Spec-680 C1: cómo habla quien narra (para la UI, sin los patrones).
         "hablas": [{"id": h.id, "label": h.label, "detail": h.ayuda} for h in catalog.hablas()],
         "criteria": [c.for_story("").__dict__ for c in catalog.direction_criteria()],
-        # Spec-670: las clases de historia y los giros («Tu idea»).
+        # Spec-670: las clases de historia («Tu idea»; Spec-780: sin giros).
         "forms": [
             {"id": f.id, "nombre": f.nombre, "ayuda": f.ayuda, "otra": f.arco_del_autor}
             for f in molde.catalogo().formas
-        ],
-        "ingredients": [
-            {"id": g.id, "nombre": g.nombre, "ayuda": g.ayuda, "no_con": list(g.no_con)}
-            for g in molde.catalogo().giros
         ],
         # Spec-760: cuántos caracteres entran en cada campo (la pantalla avisa, no corta).
         "topes": catalog.topes(),
@@ -559,8 +555,6 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
     cat = molde.catalogo()
     if form.form and cat.forma(form.form) is None:
         raise InvalidStoryInputError(message("api.forma_desconocida", forma=form.form))
-    if form.ingredient and cat.giro(form.ingredient) is None:
-        raise InvalidStoryInputError(message("api.giro_desconocido", giro=form.ingredient))
     if form.habla and catalog.habla(form.habla) is None:
         raise InvalidStoryInputError(message("api.habla_desconocida", habla=form.habla))
     return Direction(
@@ -572,7 +566,8 @@ def _direction(form: DirectionForm, existing: Direction | None = None) -> Direct
         ending_intentional=form.ending_intentional,
         telling=form.telling,
         form=form.form,
-        ingredient=form.ingredient,
+        # Spec-780 D5: los giros salieron; el de una historia vieja queda guardado.
+        ingredient=existing.ingredient if existing else "",
         form_other=form.form_other.strip(),
         habla=form.habla,
         form_suggested=existing.form_suggested if existing else "",
@@ -641,9 +636,8 @@ def _form(story: Story) -> dict:
         "ending": d.ending,
         "ending_intentional": d.ending_intentional,
         "telling": d.telling,
-        # Spec-670: el molde ("" = la forma de siempre / sin giro).
+        # Spec-670: el molde ("" = la forma de siempre).
         "form": d.form,
-        "ingredient": d.ingredient,
         "form_other": d.form_other,
         "form_suggested": d.form_suggested,
         "form_reason": d.form_reason,
@@ -711,7 +705,7 @@ async def _state(story: Story) -> dict:
                     **w.model_dump(mode="json"),
                     "nombre": c.nombre,
                     "por_que": c.por_que,
-                    "grupo": _grupo(m, c.id),  # Spec-670: de toda historia, de la forma o del giro
+                    "grupo": _grupo(m, c.id),  # Spec-670: de toda historia o de la forma
                     # Spec-690: el final que la IA sacó de «¿De qué trata?».
                     "de_la_idea": workshop_rules.DE_LA_IDEA in w.asked,
                     # Spec-700 D18: por qué ya no coincide con la idea nueva («» si coincide).
@@ -727,9 +721,7 @@ async def _state(story: Story) -> dict:
             "molde": {
                 "form": m.forma.id,
                 "form_name": m.forma.nombre,
-                "ingredient": m.giro.id if m.giro else "",
-                "ingredient_name": m.giro.nombre if m.giro else "",
-                "default": m.forma.id == molde.catalogo().por_defecto.id and not m.giro,
+                "default": m.forma.id == molde.catalogo().por_defecto.id,
             },
             "hidden_answers": sum(1 for w in items if w.answer and w.criterion not in set(m.ids)),
         },
@@ -784,14 +776,10 @@ async def _state(story: Story) -> dict:
             )
         ],
         "active_job": await job_manager.payload(active) if active else None,
-        # Spec-670 D6: cuántas historias usan cada giro («Sorprendeme»).
-        "ingredient_usage": await SQLStoryRepository().ingredient_usage(),
     }
 
 
 def _grupo(m: molde.Molde, criterion: str) -> str:
-    if m.giro and criterion in m.giro.criterios:
-        return "giro"
     return "forma" if criterion in m.forma.criterios else "base"
 
 

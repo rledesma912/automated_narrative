@@ -207,8 +207,9 @@ class Direction(BaseModel):
     # llegue se ignora): con texto, el final es del autor y la IA no lo cambia.
     ending_intentional: bool = False
     telling: str = ""  # «¿Cómo lo cuenta?»: caso | confesion | cronica (Spec-640: sin literario)
-    # Spec-670: el molde. `form` e `ingredient` son ids de `config/moldes/` ("" = la forma
-    # de siempre / sin giro); `form_other` es cómo contó el autor su historia («Otra», D14).
+    # Spec-670: el molde. `form` es un id de `config/moldes/` ("" = la forma de siempre);
+    # `form_other` es cómo contó el autor su historia («Otra», D14). `ingredient` era el giro:
+    # Spec-780 D1 lo sacó; el de una historia vieja queda guardado y no se usa (D5).
     form: str = ""
     ingredient: str = ""
     form_other: str = ""

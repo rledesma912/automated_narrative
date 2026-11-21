@@ -1,4 +1,4 @@
-"""Molde de la historia (Spec-670): base + forma + giro + largo, desde `config/moldes/`.
+"""Molde de la historia (Spec-670): base + forma + largo, desde `config/moldes/`.
 
 El molde decide qué se pregunta (criterios), qué pide cada acto (intenciones) y qué
 reglas sigue el Planificador. Todo lo que lee el taller pasa por `Molde.criterios`
@@ -6,7 +6,10 @@ reglas sigue el Planificador. Todo lo que lee el taller pasa por `Molde.criterio
 anterior) no llegan a ningún prompt.
 
 Una historia sin forma (vieja, importada) usa la primera forma del catálogo, la de
-siempre; una forma o un giro que ya no existe cae ahí también (D16).
+siempre; una forma que ya no existe cae ahí también (D16).
+
+Spec-780 D1: los giros salieron (las autoras no los usaban). Una historia vieja con
+`direction.ingredient` lo conserva guardado y se arma sin él.
 """
 
 import logging
@@ -24,8 +27,7 @@ from src.domain.models import Story
 logger = logging.getLogger(__name__)
 
 _DIR = Path(__file__).resolve().parents[4] / "config" / "moldes"
-MAX_CRITERIOS_FORMA = 4  # D10: base (5) + forma (≤ 4) = 9 como hoy; el giro suma 1
-MAX_CRITERIOS_GIRO = 1
+MAX_CRITERIOS_FORMA = 4  # D10: base (5) + forma (≤ 4) = 9 preguntas como mucho
 
 
 @dataclass(frozen=True)
@@ -49,20 +51,9 @@ class Forma:
 
 
 @dataclass(frozen=True)
-class Giro:
-    id: str
-    nombre: str
-    ayuda: str
-    criterios: tuple[str, ...]
-    reglas: tuple[str, ...] = ()
-    no_con: tuple[str, ...] = ()  # formas que ya preguntan lo mismo: con ellas no va
-
-
-@dataclass(frozen=True)
 class Catalogo:
     base: tuple[str, ...]
     formas: tuple[Forma, ...]
-    giros: tuple[Giro, ...]
 
     @property
     def por_defecto(self) -> Forma:
@@ -71,29 +62,17 @@ class Catalogo:
     def forma(self, forma_id: str) -> Forma | None:
         return next((f for f in self.formas if f.id == forma_id), None)
 
-    def giro(self, giro_id: str) -> Giro | None:
-        return next((g for g in self.giros if g.id == giro_id), None)
-
-    def giros_para(self, forma_id: str) -> tuple[Giro, ...]:
-        """Los giros que se pueden sumar a la forma (los de `no_con` no)."""
-        return tuple(g for g in self.giros if forma_id not in g.no_con)
-
 
 @dataclass(frozen=True)
 class Molde:
     forma: Forma
-    giro: Giro | None
     structure: str
     arco: str = ""  # D14: cómo contó el autor su historia («Otra»)
 
     @property
     def ids(self) -> tuple[str, ...]:
         """Los criterios del molde, en el orden del banco (el de los actos)."""
-        wanted = {
-            *catalogo().base,
-            *self.forma.criterios,
-            *(self.giro.criterios if self.giro else ()),
-        }
+        wanted = {*catalogo().base, *self.forma.criterios}
         return tuple(c.id for c in catalog.criteria_bank() if c.id in wanted)
 
     @property
@@ -107,7 +86,7 @@ class Molde:
 
     @property
     def reglas(self) -> tuple[str, ...]:
-        return (*self.forma.reglas, *(self.giro.reglas if self.giro else ()))
+        return self.forma.reglas
 
     @property
     def revela(self) -> Revela | None:
@@ -128,32 +107,19 @@ def for_story(story: Story) -> Molde:
             "Forma desconocida «%s» en la historia %s: uso la de siempre", forma_id, story.id
         )
         forma = cat.por_defecto
-    giro = None
-    if d and d.ingredient:
-        giro = cat.giro(d.ingredient)
-        if giro is None:
-            logger.warning(
-                "Giro desconocido «%s» en la historia %s: sin giro", d.ingredient, story.id
-            )
-        elif forma.id in giro.no_con:
-            logger.warning(
-                "El giro «%s» no va con «%s» (historia %s): sin giro", giro.id, forma.id, story.id
-            )
-            giro = None
     arco = d.form_other.strip() if d and forma.arco_del_autor else ""
-    return Molde(forma, giro, story.structure or DEFAULT_STRUCTURE, arco)
+    return Molde(forma, story.structure or DEFAULT_STRUCTURE, arco)
 
 
 def default(structure: str = DEFAULT_STRUCTURE) -> Molde:
-    """El molde de siempre: la primera forma, sin giro."""
-    return Molde(catalogo().por_defecto, None, structure)
+    """El molde de siempre: la primera forma."""
+    return Molde(catalogo().por_defecto, structure)
 
 
 @lru_cache
 def catalogo() -> Catalogo:
     """Carga y valida `config/moldes/` (falla al arrancar, no en medio de un job)."""
     formas_yaml = yaml.safe_load((_DIR / "formas.yaml").read_text(encoding="utf-8"))
-    giros_yaml = yaml.safe_load((_DIR / "ingredientes.yaml").read_text(encoding="utf-8"))
     banco = {c.id for c in catalog.criteria_bank()}
     estructuras = BeatSpecRepository()
 
@@ -216,35 +182,16 @@ def catalogo() -> Catalogo:
                 arco_del_autor=bool(f.get("arco_del_autor")),
             )
         )
-    giros = []
-    for g in giros_yaml.get("ingredientes") or []:
-        where = f"ingredientes.yaml, giro «{g.get('id')}»"
-        giros.append(
-            Giro(
-                id=texto(where, g, "id"),
-                nombre=texto(where, g, "nombre"),
-                ayuda=texto(where, g, "ayuda"),
-                criterios=criterios(where, g.get("criterios"), MAX_CRITERIOS_GIRO),
-                reglas=tuple(str(x).strip() for x in g.get("reglas") or ()),
-                no_con=tuple(g.get("no_con") or ()),
-            )
-        )
     if not formas:
         raise ValueError("formas.yaml: no hay formas")
     if formas[0].actos or formas[0].reglas:
         raise ValueError(
             "formas.yaml: la primera forma es la de siempre (sin actos ni reglas propias)"
         )
-    ids = [f.id for f in formas] + [g.id for g in giros]
+    ids = [f.id for f in formas]
     if len(ids) != len(set(ids)):
         raise ValueError("config/moldes: ids repetidos")
-    formas_ids = {f.id for f in formas}
-    for g in giros:
-        if set(g.no_con) - formas_ids:
-            raise ValueError(
-                f"ingredientes.yaml, giro «{g.id}»: «no_con» con formas que no existen"
-            )
-    return Catalogo(base, tuple(formas), tuple(giros))
+    return Catalogo(base, tuple(formas))
 
 
 def _prestados(por_estructura: dict, estructuras) -> None:

@@ -13,7 +13,7 @@
 # El orden es el orden en que se muestran y se evalúan: sigue a los actos.
 #
 # Spec-670: es el **banco** de criterios (ids únicos). Cuáles pregunta cada historia lo
-# dice su molde (`config/moldes/`): la base, los de su forma y el de su giro.
+# dice su molde (`config/moldes/`): la base y los de su forma (Spec-780: sin giros).
 
 direccion:
   - id: meta
@@ -170,40 +170,3 @@ direccion:
     por_que: "Lo que le queda a quien escucha cuando termina el cuento. Tiene que ir con lo que querés que sienta."
     acto: { medio: 5, corto: 3 }
     origen: Poe (unidad de efecto) / residuo
-
-  # Spec-670, giro «La amenaza tiene una regla rara».
-  - id: regla_de_la_amenaza
-    nombre: La regla de la amenaza
-    pregunta: ¿Qué regla extraña sigue la amenaza (no cruza el agua, solo sale de a uno, contesta si la nombran)? Tiene que poder decidir el final.
-    por_que: "Una regla rara hace que la amenaza sea de esta historia y no de cualquiera. Y si {protagonista} la descubre, la puede usar."
-    origen: "folklore (las reglas del ser: umbral, nombre, sal, agua)"
-
-  - id: historia_del_lugar
-    nombre: Lo que pasó ahí antes
-    pregunta: "¿Qué pasó antes en el lugar donde ocurre la historia (una muerte, una leyenda, algo que se construyó encima)?"
-    por_que: "Un lugar con historia asusta más: lo que pasó ahí antes se asoma en lo que pasa ahora."
-    origen: "giro: el lugar tiene su propia historia"
-
-  - id: objeto_cotidiano
-    nombre: El objeto de todos los días
-    pregunta: "¿Qué objeto o costumbre común se vuelve raro en esta historia (la radio, el espejo del baño, el reloj de la cocina, el teléfono)?"
-    por_que: "Lo que da más miedo es lo que usamos todos los días: después del cuento, quien escucha lo mira distinto."
-    origen: "giro: lo cotidiano que se vuelve raro (unheimlich)"
-
-  - id: lo_que_cree
-    nombre: Lo que cree quien cuenta
-    pregunta: "¿Qué cree quien cuenta que en realidad no es así?"
-    por_que: "Quien escucha se da cuenta antes que {protagonista}: ese escalofrío de saber más que el que cuenta."
-    origen: "giro: el narrador que se equivoca"
-
-  - id: victima_real
-    nombre: A quién le pasa de verdad
-    pregunta: "¿A quién le está pasando esto de verdad (no al protagonista, sino a alguien cercano)?"
-    por_que: "Parece que el peligro es para {protagonista}, pero era para otro. Cuando se entiende, todo lo anterior se ve distinto."
-    origen: "giro: la víctima equivocada"
-
-  - id: lo_que_se_lleva
-    nombre: Lo que le queda
-    pregunta: "¿Qué objeto o marca le queda al protagonista después (algo que trajo sin querer, una cicatriz, un olor que no se va)?"
-    por_que: "Algo que {protagonista} se lleva y que prueba que pasó. El miedo sigue después del cuento."
-    origen: "giro: el souvenir / la marca"

@@ -1,4 +1,4 @@
-# Spec-670: moldes de historia. El molde de una historia = base + forma + giro + largo.
+# Spec-670: moldes de historia. El molde de una historia = base + forma + largo (Spec-780: sin giros).
 #
 # - `base`: los criterios que toda historia lleva (ids del banco `config/workshop_criteria.yaml`).
 # - `formas`: la clase de historia. Cada una suma sus criterios (como mucho 4: con la
