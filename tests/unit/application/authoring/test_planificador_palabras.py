@@ -21,4 +21,6 @@ def test_el_sistema_pide_las_palabras_del_autor_y_no_inventar():
 def test_cada_hecho_trae_su_detalle_con_el_tope_de_la_pantalla():
     prompt = OutlinePlanner(llm=None)._prompt(_story())
     assert "dos como mucho, si van seguidos" in prompt
-    assert f"de 2 a 4 oraciones y hasta {catalog.topes()['event']} caracteres" in prompt
+    # El largo sigue a lo que contó el autor: con poco, no se rellena (S2: inventaba).
+    assert "si lo contó en pocas palabras, una o dos oraciones" in prompt
+    assert f"Nunca más de {catalog.topes()['event']} caracteres" in prompt

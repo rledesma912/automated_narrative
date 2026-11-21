@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: prompt del Planificador (config), medición
-**Estado:** IMPLEMENT (OK al alcance del usuario el 2026-11-21). S1 hecho.
+**Estado:** IMPLEMENT (OK al alcance del usuario el 2026-11-21). S1, S2 y S4 hechos: la Parte A cumple (con las ideas cortas, con el criterio de D5) y la Parte B no hace falta. En prod el 2026-11-21.
 **Rama:** `feat/spec-770-palabras-de-la-autora` (desde `development`)
 **Extiende:** Spec-530 (escaleta), Spec-720 (el Planificador en la nube), Spec-760 (ideas largas; la medición de S3).
 
@@ -62,7 +62,7 @@ En `config/prompts_generation/authoring_planner*.md`:
 Cambios en el prompt del Planificador (`authoring_planner_system.md` y `authoring_planner.md`), para todos los largos:
 
 - **A1. Las palabras de la autora.** Cuando un hecho cuenta algo que está en la historia, usa las palabras y los detalles de la autora: lo que se ve, se oye y se siente, las imágenes y lo que piensa el personaje. No lo resume ni lo cambia por sinónimos. Puede pasarlo a tercera persona y ordenarlo.
-- **A2. Uno o dos momentos por hecho.** Si un acto tiene más momentos de la historia que hechos, se juntan los que van seguidos, pero cada uno con su detalle. Un hecho puede tener de 2 a 4 oraciones y hasta {tope_hecho} caracteres (el tope de `topes.event`, que llega por config).
+- **A2. Uno o dos momentos por hecho.** Si un acto tiene más momentos de la historia que hechos, se juntan los que van seguidos, pero cada uno con su detalle. El largo de cada hecho sigue a cuánto contó el autor de ese momento: con detalle, de 2 a 4 oraciones; con poco, una o dos (ajuste de S2). Nunca más de {tope_hecho} caracteres (el tope de `topes.event`, que llega por config).
 - **A3. No inventar para llenar.** Lo que la autora no contó se escribe breve, como hoy: la IA no le agrega imágenes propias.
 - **A4. «Frases simples» se queda,** pero sobre la forma: oraciones completas y claras, no resúmenes.
 
@@ -105,6 +105,7 @@ Con `scripts/research/760/medir_ideas_largas.py` (exportando el `.env`), sobre c
 | D2 | No cambia la cantidad de hechos por acto: cambia cuánto detalle trae cada uno | Propuesta |
 | D3 | La Parte B (texto de la autora por hecho) solo si la A no llega al 70 % | Propuesta |
 | D4 | La medición la corre Claude, tope US$ 0,60 | Propuesta (siguiendo la Spec-760 D4) |
+| D5 | Con una idea corta, el criterio «los hechos no suman más palabras que la idea» no se puede cumplir: un Corto pide 10 u 11 hechos. Propuesta: medirlo como **«no inventa más que antes»** (palabras nuevas: 46 % y 35 %, contra 58 % y 60 % en prod) | Usuario, 2026-11-21 |
 
 ## 7. Boundaries
 
@@ -118,6 +119,10 @@ Con `scripts/research/760/medir_ideas_largas.py` (exportando el `.env`), sobre c
   - Plan original: Los textos de A1–A4 en las plantillas del Planificador, `{tope_hecho}` desde los topes, y snapshots regenerados. Tests:
   - El snapshot de `assistant_prompts.json` trae las líneas nuevas, con un test que falla si desaparecen.
   - Un test que verifica que `{tope_hecho}` es el `topes.event` de config.
-- **S2. Medición (§4)** e informe. Si el eco llega a ≥ 70 % sin inventar, sigue S4. Si no, se ajusta el texto una vez y se vuelve a medir, dentro del tope de gasto. Si sigue sin llegar, se propone la Parte B (S3).
+- **S2. Medición (§4). Hecha (2026-11-21).** Informe en `scripts/research/770/informe.md` (US$ 0,576).
+  - Ideas largas: eco del **85–96 %** (antes 56 %), 5–8 % de palabras nuevas (antes 30–41 %) y ningún hecho de más de 657 caracteres.
+  - Relato «Culpable»: 1.192 palabras (13 % arriba de la meta, contra 30–45 % con los hechos de Yael), con su detalle en la prosa.
+  - Ideas cortas: con «de 2 a 4 oraciones» la IA rellenaba. Se ajustó una vez: el largo de cada hecho sigue a cuánto contó el autor. Los hechos igual suman más palabras que la idea (D5).
+  - Plan original: Si el eco llega a ≥ 70 % sin inventar, sigue S4. Si no, se ajusta el texto una vez y se vuelve a medir, dentro del tope de gasto. Si sigue sin llegar, se propone la Parte B (S3).
 - **S3. Parte B** (solo con OK del usuario).
 - **S4. Cierre:** dev al día, informe al usuario y, con su OK, deploy.
