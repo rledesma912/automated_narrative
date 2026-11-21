@@ -1,10 +1,9 @@
 # Spec-530: opciones de la vista Dirección (fuente única para la UI y los prompts).
 # `voz` (en «como_lo_cuenta») es la única instrucción de estilo que recibe la Voz:
 # reemplaza al perfil del narrador del wizard, que no movía la prosa (§1.4).
-# `planificador` (en «efectos», Spec-560 A5) es la receta con la que el efecto pesa en
-# la escaleta: la recibe el Planificador y la controla el Verificador (no la Voz).
-# Spec-650: `planificador` es un texto (vale para todo largo) o uno por estructura
-# (`corto` / `medio` / `largo`) cuando nombra actos.
+# Spec-780 D2: «efectos» (qué querés que sienta quien escucha, con su receta para la
+# escaleta, Spec-560 A5) salió: imponía una forma a toda la historia. El `effect` de una
+# historia vieja queda guardado y no lo lee ningún prompt.
 # Spec-680 C1: `hablas` = cómo habla quien narra. La primera es la de siempre (una historia
 # sin habla elegida, o con una que ya no existe, usa esa). `prompt` reemplaza a «español
 # rioplatense» en los prompts de la Voz, la Memoria y el Planificador; `voz` es una línea
@@ -14,46 +13,23 @@
 # Spec-640: sin «Literario»: todas las formas de contarlo son de anécdota, como pide
 # la guía de oficio (`voice_craft.md`, «CONTALO COMO UNA ANÉCDOTA»).
 
-efectos:
-  - id: pavor
-    label: Pavor creciente
-    ayuda: La inquietud sube acto a acto hasta el clímax.
-    planificador:
-      medio: "La amenaza se acerca de a poco: en cada acto está un paso más cerca y es más concreta que en el anterior. El acto 1 solo insinúa; nada se muestra entero antes del acto 3."
-      corto: "La amenaza se acerca de a poco: en el acto 1 solo se insinúa; en el acto 2 se vuelve concreta, paso a paso, hasta el enfrentamiento. Nada se muestra entero antes del final del acto 2."
-  - id: susto
-    label: Susto
-    ayuda: "Golpes de sorpresa: el miedo llega de repente."
-    planificador:
-      medio: "Al menos dos irrupciones bruscas de la amenaza (en los actos 2 y 3), cada una después de un momento de calma. Hechos cortos y concretos: el golpe llega sin aviso."
-      corto: "Al menos dos irrupciones bruscas de la amenaza en el acto 2, cada una después de un momento de calma. Hechos cortos y concretos: el golpe llega sin aviso."
-  - id: melancolia
-    label: Melancolía inquietante
-    ayuda: "Más pena que miedo: algo queda doliendo."
-    planificador: "El miedo nace de una pérdida o de una culpa; la amenaza tiene algo humano o triste. El final deja una pena que no se cierra (si el autor decidió el final, manda el suyo)."
-  - id: revelacion
-    label: Horror que se revela
-    ayuda: Lo peor se entiende recién al final.
-    planificador:
-      medio: "Lo que se guarda en los actos 1 a 3 apunta a una verdad que se revela en el acto 4 y cambia el sentido de todo lo anterior. Las siembras se cobran en esa revelación."
-      corto: "Lo que se guarda en el acto 1 apunta a una verdad que se revela al final del acto 2 y cambia el sentido de todo lo anterior. Las siembras se cobran en esa revelación."
-  - id: otro
-    label: Otro
-    ayuda: Contalo con tus palabras.
-
+# Spec-780 D4: dos formas de contarlo. `guia` elige el bloque de la guía de oficio de la
+# Voz (`fragments/voz/contar/<guia>*.md`): con `anecdota` la Voz recibe lo de siempre.
+# `antes`: ids que se leen como esta (las historias viejas con «confesión» o «crónica»).
+# Sin elegir, o con un id que no está, la primera.
 como_lo_cuenta:
   - id: caso
-    label: Como un caso entre amigos
+    label: Como a un amigo
     ejemplo: "«Mirá, yo no creía en nada de eso, pero esa noche…»"
     voz: "Contalo como un caso que le contás a unos amigos: habla coloquial, con las marcas orales de alguien que cuenta algo en una sobremesa, sin abusar, sin apurarte."
-  - id: confesion
-    label: Como una confesión
-    ejemplo: "«Nunca se lo conté a nadie. Ni a mi mujer.»"
-    voz: "Contalo como una confesión íntima: tono bajo, en voz de alguien que carga algo y por fin se anima a contarlo todo, con sus dudas y sus razones."
-  - id: cronica
-    label: Como una crónica seca
-    ejemplo: "«Eran las tres y diez. La terminal estaba vacía.»"
-    voz: "Contalo como una crónica seca: hechos precisos, horas y lugares concretos, casi sin adjetivos ni comparaciones."
+    guia: anecdota
+    antes: [confesion]
+  - id: escrito
+    label: Como si lo escribieras
+    ejemplo: "«Cuando bajé del micro, la terminal estaba vacía y las luces del andén titilaban sobre los bancos mojados.»"
+    voz: "Contalo como un relato escrito: cuidá cada oración, describí con precisión y mantené un tono parejo, sin las marcas de una charla y sin adornos."
+    guia: escrito
+    antes: [cronica]
 
 hablas:
   - id: rioplatense
@@ -98,12 +74,10 @@ topes:
   # Tu idea
   title: 120
   premise: 20000  # «¿De qué trata?» (D1: hay ideas de miles de palabras)
-  effect_other: 200
   ending: 600  # el final de las historias viejas (Spec-690)
   form_other: 600
   protagonist_name: 60
   protagonist_role: 160
-  narrator: 60
   threat_name: 60  # la amenaza: los mismos que la entidad del dominio (Spec-450)
   threat_description: 400
   threat_manifestations: 300

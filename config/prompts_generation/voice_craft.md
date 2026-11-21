@@ -1,5 +1,5 @@
 OFICIO DE HORROR:
-- Contalo como alguien que se lo cuenta a otra persona: oraciones completas, cada una con su verbo («escuché un ruido», no «Un ruido.»). Uní lo que pasa con palabras como «después», «entonces», «pero», «porque», «mientras», «hasta que».
+- {oficio_inicio}oraciones completas, cada una con su verbo («escuché un ruido», no «Un ruido.»). Uní lo que pasa con palabras como «después», «entonces», «pero», «porque», «mientras», «hasta que».
 - Contá por qué hacés lo que hacés y qué pensás de lo que pasa: tus razones, tus dudas, tu opinión.
 - La tensión se marca con el largo de los párrafos (más cortos cuando algo aprieta), no cortando las oraciones: nada de oraciones sueltas de una o dos palabras ni de frases que quedan por la mitad con puntos suspensivos.
 - Sugerí antes de mostrar. El miedo se provoca con un detalle concreto y fuera de lugar (un sonido que no corresponde, algo que no está donde debería), no se nombra: no escribas «tenía miedo» ni «me aterré».
@@ -7,12 +7,7 @@ OFICIO DE HORROR:
 - Clichés prohibidos (no los uses nunca; en su lugar, una sensación física concreta y propia de esta escena):
 {cliches}
 
-CONTALO COMO UNA ANÉCDOTA:
-- Es algo que te pasó y se lo contás a alguien en una sobremesa, no un cuento escrito. Decí lo que se veía, lo que se escuchaba y lo que hiciste, con las palabras de todos los días.
-- Sin metáforas ni imágenes de escritor: las cosas no hacen lo que no pueden hacer (la luz no tiembla, el silencio no pesa, nada se traga a nadie) y los colores no tienen sentimientos.
-- Como mucho {comparaciones} («como si…», «como una…»), y con algo de todos los días.
-- No describas ni enumeres siempre de a tres: a veces una cosa, a veces dos; tres solo cuando de verdad son tres.
-- No anuncies lo que viene: contá directamente lo que pasó.
+{forma_de_contar}
 
 ASÍ NO Y ASÍ SÍ (son ejemplos de la forma; no uses estas palabras en tu relato):
 - Así no: «La puerta. Abierta. Un olor raro. Me acerqué. Nada. Solo el silencio.»

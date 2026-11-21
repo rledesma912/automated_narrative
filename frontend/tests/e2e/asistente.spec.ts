@@ -34,14 +34,15 @@ test("flujo completo: dirección → taller → escaleta → generar", async ({ 
     "José ve a una mujer muerta en el espejo del micro. Al final le deja flores y descansa en paz.",
   );
   await expect(page.getByLabel("¿Cómo termina?")).toHaveCount(0);
-  await page.getByText("Pavor creciente").click();
+  // Spec-780 D2: sin «¿Qué querés que sienta quien lo escuche?».
+  await expect(page.getByText("¿Qué querés que sienta quien lo escuche?")).toHaveCount(0);
   await page.getByLabel("Protagonista").fill("José");
   await guardadoListo(page);
 
   // Lo guardado sobrevive a recargar.
   await page.reload();
   await expect(page.getByLabel("¿De qué trata?")).toHaveValue(/Al final le deja flores/);
-  await expect(page.getByRole("radio", { name: /Pavor creciente/ })).toBeChecked();
+  await expect(page.getByLabel("Protagonista")).toHaveValue("José");
 
   // La IA solo con el comando explícito, con el modal.
   await page.getByRole("button", { name: /Que la IA me pregunte/ }).click();
@@ -161,7 +162,7 @@ test("género → estilo y la amenaza dependen del catálogo y se guardan", asyn
   await expect(page.getByLabel("Qué quiere")).toHaveValue("Que José se detenga.");
 });
 
-// Bug (2026-09-27): con Tab desde «¿De qué trata?» a las tarjetas de efecto, la
+// Bug (2026-09-27): con Tab desde «¿De qué trata?» a las tarjetas de opción, la
 // página quedaba en blanco. Los radios `sr-only` (absolutos) escapaban de su tarjeta
 // y el navegador desplazaba el <body> (overflow-hidden) para mostrarlos. Solo debe
 // scrollear <main>; la barra lateral y el formulario siguen a la vista.

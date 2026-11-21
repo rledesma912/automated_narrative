@@ -66,7 +66,12 @@ async def _run_job(client, story_id: str, kind: str) -> dict:
 
 async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
-    assert [e["id"] for e in data["effects"]][:2] == ["pavor", "susto"]
+    assert "effects" not in data  # Spec-780 D2: sin «¿Qué querés que sienta…?»
+    # Spec-780 D4: dos formas de contarlo.
+    assert [(t["id"], t["label"]) for t in data["tellings"]] == [
+        ("caso", "Como a un amigo"),
+        ("escrito", "Como si lo escribieras"),
+    ]
     assert data["criteria"][0]["nombre"] == "Qué quiere el protagonista"
     # Spec-680 C1: la de siempre primero, sin los patrones (son del control).
     assert [h["id"] for h in data["hablas"]] == ["rioplatense", "mexicano", "neutro", "espana"]
@@ -88,13 +93,13 @@ async def test_habla_se_guarda_y_vuelve(client):
 async def test_crear_desde_la_direccion(client):
     state = await _create(client)
 
-    assert state["direction"] == FORM | {
+    # Spec-780 D2: el efecto ya no se guarda ni vuelve (FORM lo sigue mandando, como una
+    # pestaña vieja).
+    assert state["direction"] == {k: v for k, v in FORM.items() if k != "effect"} | {
         "narrator": "José",
-        "effect_other": "",
         "threat": None,
-        # Spec-670: sin forma ni giro = la forma de siempre.
+        # Spec-670: sin forma = la forma de siempre (Spec-780: sin giro).
         "form": "",
-        "ingredient": "",
         "form_other": "",
         "form_suggested": "",
         "form_reason": "",
@@ -469,6 +474,40 @@ async def test_una_historia_importada_se_abre_en_el_asistente(client):
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
 
 
+async def test_una_confesion_vieja_se_ve_como_a_un_amigo(client):
+    """Spec-780 D4: «confesión» se lee como «Como a un amigo» (y se guarda así al tocar)."""
+    sid = (await _create(client, telling="confesion"))["story_id"]
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["direction"]["telling"] == "caso"
+
+
+async def test_lo_cuenta_el_protagonista_y_una_importada_conserva_su_narrador(client):
+    """Spec-780 D3: «Tu idea» ya no elige quién lo cuenta (una pestaña vieja que lo manda
+    se ignora); una historia importada con otro narrador lo conserva al guardar."""
+    import uuid
+
+    from src.infrastructure.database.repositories import SQLStoryRepository
+
+    sid = (await _create(client, narrator="Marta"))["story_id"]
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["direction"]["narrator"] == "José"
+
+    repo = SQLStoryRepository()
+    story = await repo.get_by_id(uuid.UUID(sid))
+    story.narrator_config = {**story.narrator_config, "storyteller_name": "Marta"}
+    story.personajes_full = [*story.personajes_full, {"id": "P2", "name": "Marta"}]
+    await repo.save(story)
+    put = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "title": "Otra"})
+    assert put.status_code == 200
+    assert put.json()["direction"]["narrator"] == "Marta"
+    # Si cambia el nombre del protagonista, quien narra (si era él) lo sigue.
+    sid2 = (await _create(client))["story_id"]
+    put = await client.put(
+        f"{API}/stories/{sid2}/direction", json={**FORM, "protagonist_name": "Pepe"}
+    )
+    assert put.json()["direction"]["narrator"] == "Pepe"
+
+
 # ── Spec-630 S3: personajes, lugares y avisos desde «Los actos» ──────────────
 
 
@@ -639,17 +678,26 @@ async def test_el_autoguardado_conserva_lo_que_sugirio_la_ia(client):
     )
 
 
-@pytest.mark.parametrize("campo", ["form", "ingredient"])
-async def test_forma_o_giro_desconocido_422(client, campo):
+async def test_forma_desconocida_422(client):
     sid = (await _create(client))["story_id"]
-    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, campo: "no-existe"})
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "form": "no-existe"})
     assert resp.status_code == 422
     assert "no-existe" in resp.json()["detail"]
 
 
+async def test_un_giro_que_manda_una_pestana_vieja_se_ignora(client):
+    """Spec-780 D1: los giros salieron; «Tu idea» ya no los manda y la API no los guarda."""
+    sid = (await _create(client, ingredient="regla_rara"))["story_id"]
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "ingredient": "x"})
+    assert resp.status_code == 200
+    assert "ingredient" not in resp.json()["direction"]
+    assert "ingredients" not in (await client.get(f"{API}/options")).json()
+
+
 async def test_yaml_ida_y_vuelta_conserva_la_forma_y_el_giro(client):
-    """Spec-670 D3: `export-yaml` / `import-yaml` llevan la forma y el giro (dentro de la
-    dirección); un YAML sin forma es la de siempre."""
+    """Spec-670 D3: `export-yaml` / `import-yaml` llevan la forma (dentro de la dirección);
+    un YAML sin forma es la de siempre. Spec-780 D5: el giro de una historia vieja se
+    conserva en el YAML (no se pierde el dato), aunque ya no se use."""
     import uuid
 
     import yaml
@@ -660,8 +708,9 @@ async def test_yaml_ida_y_vuelta_conserva_la_forma_y_el_giro(client):
     from src.infrastructure.exporters import YamlStoryExporter
     from src.infrastructure.loaders import YamlStoryLoader
 
-    sid = (await _create(client, form="asedio", ingredient="regla_rara"))["story_id"]
+    sid = (await _create(client, form="asedio"))["story_id"]
     story = await SQLStoryRepository().get_by_id(uuid.UUID(sid))
+    story.direction = story.direction.model_copy(update={"ingredient": "regla_rara"})  # una vieja
     text = YamlStoryExporter().export(story)
     data = yaml.safe_load(text)
     assert (data["direction"]["form"], data["direction"]["ingredient"]) == ("asedio", "regla_rara")

@@ -118,7 +118,6 @@ def test_el_asistente_del_corto_habla_de_tres_actos():
     assert "historia secreta" in nudo
     final = next(line for line in p["planificador"].splitlines() if line.startswith("3. Desenlace"))
     assert "final que decidió el autor" in final
-    # Receta del efecto del corto y acto de la decisión según el corto.
-    assert "al final del acto 2" in p["planificador"]
+    # Acto de la decisión según el corto (Spec-780: sin la receta del efecto).
     assert '("" en el acto 3)' in p["planificador"]
     assert "(va en el acto 2)" in p["planificador"]  # transgresión: acto 2 en los dos

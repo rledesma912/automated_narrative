@@ -55,9 +55,8 @@ verifier:
   gastado: "«{texto}»: {recurso} ya se vio en muchos cuentos. ¿Hay una señal más propia de este lugar o de estos personajes?"
 
 api:
-  # Spec-670: una forma o un giro que no está en config/moldes/.
+  # Spec-670: una forma que no está en config/moldes/.
   forma_desconocida: "No conozco la clase de historia «{forma}»."
-  giro_desconocido: "No conozco el giro «{giro}»."
   habla_desconocida: "No conozco esa forma de hablar («{habla}»)."
   # Spec-650 D11: regenerar un acto de una versión escrita con el otro largo.
   version_de_otro_largo: "Esta versión se escribió cuando la historia tenía otro largo: para regenerar actos, escribí la historia de nuevo."

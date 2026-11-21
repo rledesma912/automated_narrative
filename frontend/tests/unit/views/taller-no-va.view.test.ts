@@ -35,14 +35,15 @@ describe("Preguntas (Spec-670)", () => {
     expect(html).toContain("No van en tu historia");
   });
 
-  it("los chips van por grupo: de toda historia, de la forma y del giro", async () => {
+  it("los chips van por grupo: de toda historia y de la forma (Spec-780: sin giro)", async () => {
     const html = await render({
       items: items(),
-      molde: { form: "regla", form_name: "Alguien rompe una regla", ingredient: "", ingredient_name: "" },
+      molde: { form: "regla", form_name: "Alguien rompe una regla" },
     });
     expect(html).toContain("De toda historia");
     expect(html).toContain("De «Alguien rompe una regla»");
-    expect(html).toContain("Son 10 como mucho y ninguna es obligatoria.");
+    expect(html).toContain("Son 9 como mucho y ninguna es obligatoria.");
+    expect(html).not.toContain("giro");
   });
 
   it("forma mal elegida: aviso con el link a «Tu idea»", async () => {

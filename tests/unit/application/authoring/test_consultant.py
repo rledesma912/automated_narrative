@@ -44,7 +44,7 @@ async def test_primera_ronda_evalua_todo_menos_el_final_intencional(story):
     assert items["final"].status == S.INTENCIONAL
     assert r.finish.kind == "abierto"
     prompt = llm.calls[0]["prompt"]
-    assert "Efecto que busca el autor: Pavor creciente" in prompt
+    assert "Efecto que busca el autor" not in prompt  # Spec-780 D2
     assert "Cómo termina: Descansa en paz. (DECIDIDO POR EL AUTOR" in prompt
     assert "Hamartia" not in prompt  # la teoría no va al prompt
 
