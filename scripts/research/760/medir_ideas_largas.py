@@ -1,4 +1,4 @@
-"""Spec-760 S3: ¿cuánto de una idea larga llega a los actos que arma la IA, según el largo?
+"""Spec-760 S3 y Spec-770 S2: ¿cuánto de una idea larga llega a los actos que arma la IA, según el largo?
 
 Trabaja sobre una **copia** de la base (nunca la de prod). La copia ya trae los actos
 del Corto de cada historia. Para cada una mide ese Corto, la pasa a Media
@@ -70,7 +70,23 @@ def medir(state: dict) -> dict:
         "oraciones_con_eco": f"{con}/{total}",
         "avisos_visibles": sum(1 for a in acts for w in a["warnings"] if not w["dismissed"]),
         "final_en_el_ultimo": _final_en_el_ultimo(state),
+        # Spec-770: el hecho más largo y cuánto de los hechos no sale de la autora.
+        "hecho_mas_largo": max((len(h) for h in hechos), default=0),
+        "palabras_nuevas": _nuevas(state, hechos),
     }
+
+
+def _nuevas(state: dict, hechos: list[str]) -> float | None:
+    """Spec-770 A3: palabras (de 5 letras o más) de los hechos que no están en nada de lo
+    que escribió la autora (idea, respuestas, personajes, lugares). Cuánto inventa."""
+    autora = [state["direction"]["premise"]]
+    autora += [i.get("answer") or "" for i in state["workshop"]["items"]]
+    autora += [c["name"] + " " + (c.get("relation") or "") for c in state["characters"]]
+    autora += [s["name"] for s in state["scenarios"]]
+    en_hechos = palabras(" ".join(hechos))
+    if not en_hechos:
+        return None
+    return round(len(en_hechos - palabras(" ".join(autora))) / len(en_hechos), 3)
 
 
 def _final_en_el_ultimo(state: dict) -> bool | None:

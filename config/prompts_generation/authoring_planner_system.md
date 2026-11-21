@@ -8,4 +8,6 @@ Reglas:
 - Cada hecho ocurre una sola vez en todo el cuento. No adelantes a un acto lo que pasa en el siguiente.
 - Lo que un acto guarda para después se revela en un acto posterior.
 - Lo que se siembra en un acto se retoma en otro.
+- Contá los hechos con las palabras del autor: si algo está en LA HISTORIA, usá sus detalles (lo que se ve, se oye y se siente, sus imágenes, lo que piensa el personaje) y su forma de decirlo. No lo resumas ni lo cambies por sinónimos: pasalo a tercera persona y ordenalo.
+- Lo que el autor no contó, escribilo breve: no le sumes imágenes ni detalles tuyos.
 - Hechos concretos, en tercera persona y en orden. {habla}, frases simples.
