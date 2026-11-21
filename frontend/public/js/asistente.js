@@ -63,6 +63,14 @@
     return data;
   }
 
+  // Spec-760: los campos de «+ Lugar» y «+ Personaje» de un acto se mandan aparte.
+  const FUERA_DEL_ACTO = "[data-lugar-nombre], [data-p-nombre], [data-p-relacion]";
+
+  /** public/js/tope.js (si no cargó, nada tiene tope: la API igual valida). */
+  function tope() {
+    return window.ForgeTope || { todos() {}, excedido: () => "", de: () => "" };
+  }
+
   function errorText(data) {
     if (!data || !data.detail) return "";
     if (typeof data.detail === "string") return data.detail;
@@ -192,6 +200,7 @@
     }
     if (mostrar && $(mostrar)) $(mostrar).classList.remove("hidden");
     icons();
+    tope().todos(); // Spec-760: el contador de lo que vuelve a la pantalla
 
     const i = anclas.findIndex((sel, n) => before[n] !== null && $(sel));
     if (i >= 0 && main) main.scrollTop += $(anclas[i]).getBoundingClientRect().top - before[i];
@@ -275,6 +284,12 @@
 
   async function save(form) {
     const kind = form.dataset.autosave;
+    // Spec-760 A2: un campo pasado de su tope no se manda (el texto queda en el cuadro).
+    const sobra = tope().excedido(form, FUERA_DEL_ACTO);
+    if (sobra) {
+      status("error", sobra);
+      return;
+    }
     try {
       status("saving", "Guardando…");
       if (kind === "direction") await saveDirection(form);
@@ -473,7 +488,7 @@
       name === "events"
         ? '<button type="button" class="mt-2 text-forge-muted hover:text-forge-accent" data-subir title="Subir"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>'
         : "";
-    li.innerHTML = `${upBtn}<div class="flex-1 min-w-0"><textarea name="${name}" rows="1" maxlength="400" class="w-full [field-sizing:content] resize-none bg-forge-bg border border-forge-border px-3 py-2"></textarea></div><button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>`;
+    li.innerHTML = `${upBtn}<div class="flex-1 min-w-0"><textarea name="${name}" rows="1" data-tope="${tope().de(name === "events" ? "event" : "rule")}" class="w-full [field-sizing:content] resize-none bg-forge-bg border border-forge-border px-3 py-2"></textarea></div><button type="button" class="mt-2 text-forge-muted hover:text-forge-error" data-quitar title="Quitar"><i data-lucide="x" class="w-4 h-4"></i></button>`;
     // Spec-710 D13: un hecho nuevo trae su lugar, debajo («Donde el anterior»).
     const modelo = name === "events" && $("[data-lugar-de-hecho]", form);
     if (modelo) {
@@ -495,7 +510,7 @@
   function agregarLugar(form) {
     const input = $("[data-lugar-nombre]", form);
     const name = input.value.trim();
-    if (!name) return input.focus();
+    if (!name || tope().excedido(input.parentNode)) return input.focus(); // Spec-760: el aviso queda a la vista
     const n = Number(form.dataset.number);
     const acto = `[data-acto="${n}"]`;
     // Spec-710 D13: desde el selector de un hecho, queda elegido en ese hecho; con lugar por
@@ -589,9 +604,10 @@
       const checked = $("input[type=radio]:checked", box);
       const own = $("[data-texto-mia]", box);
       body.text = checked && checked.value ? checked.value : own ? own.value.trim() : "";
-      if (!body.text) {
+      const sobra = !(checked && checked.value) && tope().excedido(box); // Spec-760
+      if (!body.text || sobra) {
         const err = $("[data-error]", box);
-        err.textContent = "Elegí una opción o escribí tu respuesta.";
+        err.textContent = sobra || "Elegí una opción o escribí tu respuesta.";
         err.classList.remove("hidden");
         return;
       }
@@ -806,7 +822,7 @@
   document.addEventListener("input", (e) => {
     const form = e.target.closest && e.target.closest("form[data-autosave]");
     if (!form || !page) return;
-    if (e.target.matches("[data-lugar-nombre], [data-p-nombre], [data-p-relacion]")) return; // no son del acto
+    if (e.target.matches(FUERA_DEL_ACTO)) return; // no son del acto
     if (e.target.name === "structure") return; // Spec-650: el largo no es del guardado automático
     schedule(form);
   });
@@ -909,6 +925,7 @@
     if (t.matches("[data-personaje-guardar]") && form) {
       const name = $("[data-p-nombre]", form).value.trim();
       if (!name) return $("[data-p-nombre]", form).focus();
+      if (tope().excedido($("[data-personaje-form]", form))) return; // Spec-760: el aviso queda a la vista
       const n = Number(form.dataset.number);
       const character = { name, kind: $("[data-p-tipo]", form).value, relation: $("[data-p-relacion]", form).value.trim(), act: n };
       return run(() => api("POST", `/authoring/stories/${page.storyId}/characters`, character), enActo(n, { todos: true }));

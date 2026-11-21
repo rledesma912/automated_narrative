@@ -90,3 +90,42 @@ hablas:
       - "\\b(?:la|mucha|poca|sin) plata\\b"
       - "\\bveredas?\\b"
       - "\\b(?:celulares?|manej(?:ar|aba|é|ó|ando)|carros?)\\b"
+
+# Spec-760: cuántos caracteres entran en cada campo del asistente (fuente única: la API los
+# valida y la pantalla los recibe en `/authoring/options`). La pantalla nunca corta en
+# silencio: pasado el tope avisa cuánto sobra y no guarda ese campo.
+topes:
+  # Tu idea
+  title: 120
+  premise: 20000  # «¿De qué trata?» (D1: hay ideas de miles de palabras)
+  effect_other: 200
+  ending: 600  # el final de las historias viejas (Spec-690)
+  form_other: 600
+  protagonist_name: 60
+  protagonist_role: 160
+  narrator: 60
+  threat_name: 60  # la amenaza: los mismos que la entidad del dominio (Spec-450)
+  threat_description: 400
+  threat_manifestations: 300
+  threat_limits: 300
+  # Preguntas
+  answer: 2000  # una respuesta del taller
+  final: 20000  # «Cómo termina» sale recortado de la idea (Spec-690): entra lo que entra en ella
+  # Los actos
+  bridge: 300
+  goal: 300
+  event: 800  # cada hecho (antes 400: se cortaban a mitad de frase)
+  change_from: 200
+  change_to: 200
+  scenario: 120  # el nombre de un lugar
+  held_back: 300
+  rule: 300
+  character_name: 60
+  character_relation: 160
+  # Cuántos entran en un acto. `hechos_max` de `estructuras` es solo un aviso: el
+  # Planificador y la autora pueden pasarlo (en prod hay actos de un corto con 9 hechos, y
+  # con el tope de 8 de antes no se podían editar). `events` alcanza al mayor `hechos_max`
+  # con margen: lo controla test_topes.py.
+  events: 15
+  on_stage: 12
+  rules: 6

@@ -1,0 +1,126 @@
+{
+  "perfil": "openai-sol",
+  "eco_min": 0.4,
+  "resultados": [
+    {
+      "historia": "idea 1",
+      "corto": {
+        "estructura": "corto",
+        "idea_palabras": 868,
+        "hechos_por_acto": [
+          4,
+          5,
+          3
+        ],
+        "palabras_de_hechos": 739,
+        "eco": 0.782,
+        "oraciones_con_eco": "43/55",
+        "avisos_visibles": 1,
+        "final_en_el_ultimo": true
+      },
+      "medio": {
+        "estructura": "medio",
+        "idea_palabras": 868,
+        "hechos_por_acto": [
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "palabras_de_hechos": 545,
+        "eco": 0.673,
+        "oraciones_con_eco": "37/55",
+        "avisos_visibles": 2,
+        "final_en_el_ultimo": true
+      }
+    },
+    {
+      "historia": "idea 2",
+      "corto": {
+        "estructura": "corto",
+        "idea_palabras": 950,
+        "hechos_por_acto": [
+          3,
+          5,
+          3
+        ],
+        "palabras_de_hechos": 663,
+        "eco": 0.651,
+        "oraciones_con_eco": "41/63",
+        "avisos_visibles": 1,
+        "final_en_el_ultimo": true
+      },
+      "medio": {
+        "estructura": "medio",
+        "idea_palabras": 950,
+        "hechos_por_acto": [
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "palabras_de_hechos": 466,
+        "eco": 0.413,
+        "oraciones_con_eco": "26/63",
+        "avisos_visibles": 0,
+        "final_en_el_ultimo": true
+      }
+    },
+    {
+      "historia": "idea 3",
+      "corto": {
+        "estructura": "corto",
+        "idea_palabras": 917,
+        "hechos_por_acto": [
+          3,
+          5,
+          2
+        ],
+        "palabras_de_hechos": 565,
+        "eco": 0.717,
+        "oraciones_con_eco": "43/60",
+        "avisos_visibles": 0,
+        "final_en_el_ultimo": true
+      },
+      "medio": {
+        "estructura": "medio",
+        "idea_palabras": 917,
+        "hechos_por_acto": [
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "palabras_de_hechos": 665,
+        "eco": 0.767,
+        "oraciones_con_eco": "46/60",
+        "avisos_visibles": 1,
+        "final_en_el_ultimo": true
+      }
+    }
+  ],
+  "costo": {
+    "usd_total": 0.264,
+    "por_rol": {
+      "planificador": {
+        "modelo": "gpt-5.6-sol",
+        "llamadas": 3,
+        "tokens_entrada": 10636,
+        "tokens_salida": 5551,
+        "segundos": 48.9,
+        "usd": 0.1536
+      },
+      "verificador": {
+        "modelo": "gpt-5.6-sol",
+        "llamadas": 6,
+        "tokens_entrada": 24216,
+        "tokens_salida": 659,
+        "segundos": 13.2,
+        "usd": 0.11
+      }
+    }
+  }
+}

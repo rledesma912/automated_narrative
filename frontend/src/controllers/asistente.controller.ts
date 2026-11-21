@@ -29,6 +29,7 @@ export async function nuevoPage(_req: Request, res: Response): Promise<void> {
     pasoActual: "direccion",
     state: null,
     options,
+    topes: options.topes ?? {}, // Spec-760
     genres: genres ?? [],
   });
 }
@@ -57,6 +58,7 @@ export async function asistentePage(req: Request, res: Response): Promise<void> 
     pasoActual: paso,
     state,
     options,
+    topes: options.topes ?? {}, // Spec-760
     genres: genres ?? [],
   });
 }
@@ -80,8 +82,10 @@ export async function fragmentoAsistente(req: Request, res: Response): Promise<v
     return;
   }
   let state;
+  let topes: Record<string, number> = {};
   try {
     state = conLargo(await getAuthoringState(storyId)); // Spec-650
+    topes = (await getAuthoringOptions()).topes ?? {}; // Spec-760: los campos del fragmento
   } catch (err) {
     const notFound = axios.isAxiosError(err) && err.response?.status === 404;
     res.status(notFound ? 404 : 502).send(notFound ? "Historia inexistente" : "El Core no responde");
@@ -91,6 +95,7 @@ export async function fragmentoAsistente(req: Request, res: Response): Promise<v
     ...(res.app?.locals ?? {}),
     ...res.locals,
     state,
+    topes,
   });
   res.setHeader("Cache-Control", "no-store");
   res.type("html").send(html);
