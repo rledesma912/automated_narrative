@@ -140,9 +140,10 @@ def story_block(story: Story, templates: TemplateLoader) -> str:
     lines.append(t("asistente/historia/protagonista", protagonista=story.protagonista))
     lines.append(t("asistente/historia/quien_lo_cuenta", narrador=narrator(story)))
     if d:
-        if d.telling:
-            telling = catalog.label_of(catalog.tellings(), d.telling)
-            lines.append(t("asistente/historia/como_lo_cuenta", como=telling))
+        if d.telling:  # Spec-780 D4: un id viejo se lee como el que lo reemplazó
+            lines.append(
+                t("asistente/historia/como_lo_cuenta", como=catalog.telling_de(story).label)
+            )
         if ending := author_ending(story):  # Spec-690: decidido, venga de donde venga
             fixed = t("asistente/historia/final_decidido")
             lines.append(t("asistente/historia/como_termina", final=ending, decidido=fixed))

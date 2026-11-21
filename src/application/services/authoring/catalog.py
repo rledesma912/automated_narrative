@@ -39,6 +39,8 @@ class Option:
     label: str
     detail: str = ""  # `ayuda` o `ejemplo`
     voice: str = ""  # instrucción de estilo para la Voz («cómo lo cuenta»)
+    guia: str = ""  # Spec-780 D4: el bloque de la guía de oficio (`voz/contar/<guia>`)
+    antes: tuple[str, ...] = ()  # ids viejos que se leen como este (confesión, crónica)
 
 
 @lru_cache
@@ -93,9 +95,24 @@ def _options() -> dict:
 
 def tellings() -> tuple[Option, ...]:
     return tuple(
-        Option(t["id"], t["label"], t.get("ejemplo", ""), t.get("voz", ""))
+        Option(
+            t["id"],
+            t["label"],
+            t.get("ejemplo", ""),
+            t.get("voz", ""),
+            t["guia"],
+            tuple(t.get("antes") or ()),
+        )
         for t in _options()["como_lo_cuenta"]
     )
+
+
+def telling_de(story) -> Option:
+    """Spec-780 D4: cómo lo cuenta la historia. Un id viejo («confesión», «crónica») se lee
+    como la opción que lo reemplazó; sin elegir o uno que no está, la primera."""
+    telling = story.direction.telling if story.direction else ""
+    options = tellings()
+    return next((t for t in options if telling == t.id or telling in t.antes), options[0])
 
 
 @dataclass(frozen=True)

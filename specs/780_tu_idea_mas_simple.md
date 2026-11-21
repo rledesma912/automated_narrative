@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), molde y prompts (config), guía de oficio de la Voz
-**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1, S2 y S3 hechos.
+**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 a S4 hechos.
 **Rama:** `feat/spec-780-tu-idea-mas-simple` (desde `development`)
 **Extiende / deshace en parte:** Spec-670 (moldes: el giro), Spec-560 A5 (la receta del efecto), Spec-530 (quién lo cuenta, cómo lo cuenta), Spec-640 (la Voz como anécdota).
 
@@ -162,6 +162,13 @@ Para comparar las dos versiones de «Culpable» se miden comparaciones, clichés
   - API: `narrator` sale del formulario (y su tope). Al guardar, quien narra es el protagonista, salvo una historia que ya tenía otro narrador (importada), que lo conserva (`_otro_narrador`). Si cambia el nombre del protagonista, quien narra lo sigue.
   - Tests: `test_lo_cuenta_el_protagonista_y_una_importada_conserva_su_narrador`, y `tu-idea-simple.view.test.ts` (sin giros, sin efecto, sin narrador). pytest 1 311 · Vitest 496 · E2E del asistente 18, en verde.
   - Plan original: pantalla y API.
-- **S4. Dos formas de contarlo (D):** las opciones, el bloque escrito en `voice_craft` (el de anécdota solo con `caso`), cómo se leen `confesion` y `cronica`, y snapshots de la Voz.
+- **S4. Dos formas de contarlo (D). Hecho (2026-11-21).**
+  - Config: `como_lo_cuenta` con `caso` («Como a un amigo», `guia: anecdota`, `antes: [confesion]`) y `escrito` («Como si lo escribieras», `guia: escrito`, `antes: [cronica]`).
+  - Guía de oficio: `voice_craft.md` recibe `{oficio_inicio}` y `{forma_de_contar}` de `fragments/voz/contar/`. Con `caso`, la Voz recibe **el mismo texto que antes** (`voice_prompts.json` no cambió).
+  - Código: `catalog.telling_de(story)` resuelve los ids viejos y, sin elegir, la primera. Lo usan la Voz, `story_block` y el estado de la API.
+  - Snapshots: el nombre de la opción en lo que leen las IA y, en las historias sin elegir, la línea de «Como a un amigo».
+  - Tests: `test_como_lo_cuenta.py` y `test_catalog_criteria.py` (las dos opciones y los ids viejos), más API. pytest 1 322 · Vitest 496 · E2E 27, en verde.
+  - Nota: el front guarda en memoria `/authoring/options`. En dev, un cambio de opciones en `config/` necesita reiniciar `narrative-ui-dev` (en prod lo hace el deploy).
+  - Plan original: las opciones, el bloque escrito en `voice_craft` (el de anécdota solo con `caso`), cómo se leen `confesion` y `cronica`, y snapshots de la Voz.
 - **S5. Medición (§6)** y, si hace falta, un ajuste del bloque escrito.
 - **S6. Cierre:** dev al día, PR y, con OK, deploy.

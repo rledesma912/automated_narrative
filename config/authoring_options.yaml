@@ -13,19 +13,23 @@
 # Spec-640: sin «Literario»: todas las formas de contarlo son de anécdota, como pide
 # la guía de oficio (`voice_craft.md`, «CONTALO COMO UNA ANÉCDOTA»).
 
+# Spec-780 D4: dos formas de contarlo. `guia` elige el bloque de la guía de oficio de la
+# Voz (`fragments/voz/contar/<guia>*.md`): con `anecdota` la Voz recibe lo de siempre.
+# `antes`: ids que se leen como esta (las historias viejas con «confesión» o «crónica»).
+# Sin elegir, o con un id que no está, la primera.
 como_lo_cuenta:
   - id: caso
-    label: Como un caso entre amigos
+    label: Como a un amigo
     ejemplo: "«Mirá, yo no creía en nada de eso, pero esa noche…»"
     voz: "Contalo como un caso que le contás a unos amigos: habla coloquial, con las marcas orales de alguien que cuenta algo en una sobremesa, sin abusar, sin apurarte."
-  - id: confesion
-    label: Como una confesión
-    ejemplo: "«Nunca se lo conté a nadie. Ni a mi mujer.»"
-    voz: "Contalo como una confesión íntima: tono bajo, en voz de alguien que carga algo y por fin se anima a contarlo todo, con sus dudas y sus razones."
-  - id: cronica
-    label: Como una crónica seca
-    ejemplo: "«Eran las tres y diez. La terminal estaba vacía.»"
-    voz: "Contalo como una crónica seca: hechos precisos, horas y lugares concretos, casi sin adjetivos ni comparaciones."
+    guia: anecdota
+    antes: [confesion]
+  - id: escrito
+    label: Como si lo escribieras
+    ejemplo: "«Cuando bajé del micro, la terminal estaba vacía y las luces del andén titilaban sobre los bancos mojados.»"
+    voz: "Contalo como un relato escrito: cuidá cada oración, describí con precisión y mantené un tono parejo, sin las marcas de una charla y sin adornos."
+    guia: escrito
+    antes: [cronica]
 
 hablas:
   - id: rioplatense

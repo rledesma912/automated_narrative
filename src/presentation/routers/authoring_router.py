@@ -643,7 +643,8 @@ def _form(story: Story) -> dict:
         "premise": d.premise if story.direction else story.sinopsis,
         "ending": d.ending,
         "ending_intentional": d.ending_intentional,
-        "telling": d.telling,
+        # Spec-780 D4: «confesión» o «crónica» de una historia vieja, como la que la reemplazó.
+        "telling": catalog.telling_de(story).id if d.telling else "",
         # Spec-670: el molde ("" = la forma de siempre).
         "form": d.form,
         "form_other": d.form_other,

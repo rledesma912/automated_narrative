@@ -67,6 +67,11 @@ async def _run_job(client, story_id: str, kind: str) -> dict:
 async def test_opciones(client):
     data = (await client.get(f"{API}/options")).json()
     assert "effects" not in data  # Spec-780 D2: sin «¿Qué querés que sienta…?»
+    # Spec-780 D4: dos formas de contarlo.
+    assert [(t["id"], t["label"]) for t in data["tellings"]] == [
+        ("caso", "Como a un amigo"),
+        ("escrito", "Como si lo escribieras"),
+    ]
     assert data["criteria"][0]["nombre"] == "Qué quiere el protagonista"
     # Spec-680 C1: la de siempre primero, sin los patrones (son del control).
     assert [h["id"] for h in data["hablas"]] == ["rioplatense", "mexicano", "neutro", "espana"]
@@ -467,6 +472,13 @@ async def test_una_historia_importada_se_abre_en_el_asistente(client):
     assert state["direction"]["premise"] == "Irene cruza el monte de noche."
     assert state["direction"]["protagonist_name"] == "Irene"
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
+
+
+async def test_una_confesion_vieja_se_ve_como_a_un_amigo(client):
+    """Spec-780 D4: «confesión» se lee como «Como a un amigo» (y se guarda así al tocar)."""
+    sid = (await _create(client, telling="confesion"))["story_id"]
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["direction"]["telling"] == "caso"
 
 
 async def test_lo_cuenta_el_protagonista_y_una_importada_conserva_su_narrador(client):

@@ -56,13 +56,16 @@ class PromptBuilder:
         craft = self._loader.load(VOICE_CRAFT_FILE) or ""
         fragment = self._loader.fragment
         habla = catalog.habla_de(story)  # Spec-680 C1
+        guia = catalog.telling_de(story).guia  # Spec-780 D4: anécdota o relato escrito
+        comparaciones = fragment(self._comparisons(story))
         return {
             "guia_oficio": craft.format(
+                oficio_inicio=fragment(f"voz/contar/{guia}_inicio"),
+                forma_de_contar=fragment(f"voz/contar/{guia}", comparaciones=comparaciones),
                 cliches=cliches,
                 narrador=narrator or fragment("voz/narrador_generico"),
                 habla=habla.prompt,
                 habla_voz=f"\n- {habla.voz}" if habla.voz else "",
-                comparaciones=fragment(self._comparisons(story)),
             ).strip(),
             "parentescos": self._format_kinship(story, narrator),
             # «Sos Irene…» en vez de «Sos Primera persona en pasado. Narrador: Irene…».
