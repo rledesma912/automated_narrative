@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.infrastructure.database.connection import init_db
@@ -21,6 +22,7 @@ from src.presentation.routers import (
     video_router,
 )
 from src.presentation.runtime import job_manager
+from src.presentation.validation import validation_handler
 
 
 @asynccontextmanager
@@ -38,6 +40,9 @@ app = FastAPI(
     description="Sistema de generación granular de relatos de terror",
     lifespan=lifespan,
 )
+
+# Spec-760 A4: un texto o una lista de más se rechaza con un mensaje que se entiende.
+app.add_exception_handler(RequestValidationError, validation_handler)
 
 app.add_middleware(
     CORSMiddleware,

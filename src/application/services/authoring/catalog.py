@@ -148,3 +148,8 @@ def habla_de(story) -> Habla:
 
 def label_of(options: tuple[Option, ...], option_id: str) -> str:
     return next((o.label for o in options if o.id == option_id), option_id)
+
+
+def topes() -> dict[str, int]:
+    """Spec-760: cuántos caracteres (o elementos) entran en cada campo del asistente."""
+    return dict(_options()["topes"])

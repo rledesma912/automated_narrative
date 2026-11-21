@@ -1,0 +1,9 @@
+<%/*
+  Spec-760 A1: los textos del contador de letras y los topes de config, para
+  public/js/tope.js (los campos llevan data-tope; ninguno corta en silencio).
+  Entrada: topes (de /authoring/options; vacío = sin contador).
+*/%>
+<template id="tope-textos"
+          data-cuenta="{n} de {tope} letras"
+          data-sobra="Sobran {sobra} letras: acortalo un poco para que se guarde."
+          data-topes="<%= JSON.stringify(locals.topes || {}) %>"></template>

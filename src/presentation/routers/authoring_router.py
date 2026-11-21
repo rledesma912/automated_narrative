@@ -60,6 +60,7 @@ from src.presentation.schemas.authoring import (
     WarningDismiss,
     WorkshopAction,
 )
+from src.presentation.validation import miles
 
 router = APIRouter(prefix="/authoring", tags=["authoring"])
 
@@ -85,6 +86,8 @@ async def get_options() -> dict:
             {"id": g.id, "nombre": g.nombre, "ayuda": g.ayuda, "no_con": list(g.no_con)}
             for g in molde.catalogo().giros
         ],
+        # Spec-760: cuántos caracteres entran en cada campo (la pantalla avisa, no corta).
+        "topes": catalog.topes(),
         # Spec-650: largos posibles («¿Qué tan largo?»).
         "structures": [
             {
@@ -217,6 +220,16 @@ async def act_on_criterion(story_id: str, criterion: str, body: WorkshopAction) 
         raise HTTPException(status_code=404, detail=f"Criterio desconocido: {criterion}")
     if item is None:
         item = WorkshopItem(criterion=criterion)
+    # Spec-760 A3: el final sale recortado de la idea y entra lo que entra en ella; una
+    # respuesta común tiene su tope (el schema acepta el más grande).
+    tope = catalog.topes()["final" if criterion == "final" else "answer"]
+    if len(body.text) > tope:
+        raise HTTPException(
+            status_code=422,
+            detail=message(
+                "validacion.texto_largo", largo=miles(len(body.text)), maximo=miles(tope)
+            ),
+        )
     try:
         updated = _apply(item, body)
     except ValueError as e:

@@ -443,10 +443,10 @@ async def test_control_de_repeticion_del_relato(client):
 async def test_una_historia_con_sinopsis_larga_se_lee_y_se_guarda(client):
     sid = (await _create(client, premise="x" * 5000))["story_id"]
     assert (await client.get(f"{API}/stories/{sid}")).status_code == 200
-    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "y" * 5500})
+    resp = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "y" * 7000})
     assert resp.status_code == 200
     assert (
-        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "z" * 7000})
+        await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "premise": "z" * 20001})
     ).status_code == 422
 
 

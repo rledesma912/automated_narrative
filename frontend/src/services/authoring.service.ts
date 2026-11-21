@@ -23,6 +23,8 @@ export interface AuthoringOptions {
   criteria: Array<{ id: string; nombre: string; pregunta: string; por_que: string }>;
   /** Spec-650: los largos posibles («¿Qué tan largo?»). */
   structures?: Array<{ id: string; label: string; acts: number }>;
+  /** Spec-760: cuántas letras entran en cada campo (`data-tope`; la pantalla avisa, no corta). */
+  topes?: Record<string, number>;
 }
 
 export interface WorkshopItem {
