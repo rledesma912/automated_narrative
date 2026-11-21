@@ -74,7 +74,6 @@ topes:
   form_other: 600
   protagonist_name: 60
   protagonist_role: 160
-  narrator: 60
   threat_name: 60  # la amenaza: los mismos que la entidad del dominio (Spec-450)
   threat_description: 400
   threat_manifestations: 300

@@ -401,7 +401,6 @@
       form_other: value(form, "form_other"),
       protagonist_name: value(form, "protagonist_name"),
       protagonist_role: value(form, "protagonist_role"),
-      narrator: value(form, "narrator"),
       threat: nature
         ? {
             nature,

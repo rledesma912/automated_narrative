@@ -548,6 +548,14 @@ def _unprocessable(e: Exception) -> HTTPException:
     return HTTPException(status_code=422, detail=text)
 
 
+def _otro_narrador(existing: Story | None) -> str:
+    """El narrador de una historia que lo cuenta otro que el protagonista ("" si no)."""
+    if existing is None:
+        return ""
+    narrador = (existing.narrator_config or {}).get("storyteller_name", "")
+    return narrador if narrador and not _same(narrador, context.protagonist(existing)) else ""
+
+
 def _direction(form: DirectionForm, existing: Direction | None = None) -> Direction:
     """La dirección del formulario. Lo que sugirió la IA no viene en el formulario: se
     conserva de la guardada (Spec-670 D13; si no, cada autoguardado lo borraría)."""
@@ -596,7 +604,9 @@ def _story_fields(form: DirectionForm, existing: Story | None) -> dict:
     """Campos de `Story` que se derivan de la Dirección (el resto del dominio no cambia)."""
     name = form.protagonist_name.strip() or "Protagonista"
     role = form.protagonist_role.strip()
-    narrator = form.narrator.strip() or name
+    # Spec-780 D3: «Tu idea» ya no elige quién lo cuenta: el protagonista. Una historia
+    # importada con otro narrador (YAML) lo conserva.
+    narrator = _otro_narrador(existing) or name
     cast = [dict(p) for p in (existing.personajes_full if existing else [])]
     lead = {"id": "P1", "name": name, "role": role, "kind": CharacterKind.PERSONA.value}
     cast = [{**(cast[0] if cast else {}), **lead}, *cast[1:]]

@@ -469,6 +469,33 @@ async def test_una_historia_importada_se_abre_en_el_asistente(client):
     assert state["workshop"]["finish"]["kind"] == "sin_analizar"
 
 
+async def test_lo_cuenta_el_protagonista_y_una_importada_conserva_su_narrador(client):
+    """Spec-780 D3: «Tu idea» ya no elige quién lo cuenta (una pestaña vieja que lo manda
+    se ignora); una historia importada con otro narrador lo conserva al guardar."""
+    import uuid
+
+    from src.infrastructure.database.repositories import SQLStoryRepository
+
+    sid = (await _create(client, narrator="Marta"))["story_id"]
+    state = (await client.get(f"{API}/stories/{sid}")).json()
+    assert state["direction"]["narrator"] == "José"
+
+    repo = SQLStoryRepository()
+    story = await repo.get_by_id(uuid.UUID(sid))
+    story.narrator_config = {**story.narrator_config, "storyteller_name": "Marta"}
+    story.personajes_full = [*story.personajes_full, {"id": "P2", "name": "Marta"}]
+    await repo.save(story)
+    put = await client.put(f"{API}/stories/{sid}/direction", json={**FORM, "title": "Otra"})
+    assert put.status_code == 200
+    assert put.json()["direction"]["narrator"] == "Marta"
+    # Si cambia el nombre del protagonista, quien narra (si era él) lo sigue.
+    sid2 = (await _create(client))["story_id"]
+    put = await client.put(
+        f"{API}/stories/{sid2}/direction", json={**FORM, "protagonist_name": "Pepe"}
+    )
+    assert put.json()["direction"]["narrator"] == "Pepe"
+
+
 # ── Spec-630 S3: personajes, lugares y avisos desde «Los actos» ──────────────
 
 

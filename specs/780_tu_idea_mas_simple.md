@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-21
 **Tipo:** SDD: asistente (UI), molde y prompts (config), guía de oficio de la Voz
-**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1 y S2 hechos.
+**Estado:** IMPLEMENT (OK al plan el 2026-11-21). S1, S2 y S3 hechos.
 **Rama:** `feat/spec-780-tu-idea-mas-simple` (desde `development`)
 **Extiende / deshace en parte:** Spec-670 (moldes: el giro), Spec-560 A5 (la receta del efecto), Spec-530 (quién lo cuenta, cómo lo cuenta), Spec-640 (la Voz como anécdota).
 
@@ -157,7 +157,11 @@ Para comparar las dos versiones de «Culpable» se miden comparaciones, clichés
   - Pantalla: sale la sección de «Tu idea».
   - Tests: una historia vieja con efecto (susto, revelación u otro) arma el mismo prompt que una sin efecto. 7 snapshots regenerados: el diff es solo lo del efecto. pytest 1 310 · Vitest 493 · E2E de asistente, corto y moldes 27, todo en verde.
   - Plan original: pantalla, prompts del Planificador, del Verificador y del Consultor, `story_block`, config y snapshots.
-- **S3. Sacar «Quién lo cuenta» (C):** pantalla y API.
+- **S3. Sacar «Quién lo cuenta» (C). Hecho (2026-11-21).**
+  - Pantalla: sale el selector. La sección se llama «¿A quién le pasa?» y aclara «Lo cuenta el protagonista, en primera persona».
+  - API: `narrator` sale del formulario (y su tope). Al guardar, quien narra es el protagonista, salvo una historia que ya tenía otro narrador (importada), que lo conserva (`_otro_narrador`). Si cambia el nombre del protagonista, quien narra lo sigue.
+  - Tests: `test_lo_cuenta_el_protagonista_y_una_importada_conserva_su_narrador`, y `tu-idea-simple.view.test.ts` (sin giros, sin efecto, sin narrador). pytest 1 311 · Vitest 496 · E2E del asistente 18, en verde.
+  - Plan original: pantalla y API.
 - **S4. Dos formas de contarlo (D):** las opciones, el bloque escrito en `voice_craft` (el de anécdota solo con `caso`), cómo se leen `confesion` y `cronica`, y snapshots de la Voz.
 - **S5. Medición (§6)** y, si hace falta, un ajuste del bloque escrito.
 - **S6. Cierre:** dev al día, PR y, con OK, deploy.

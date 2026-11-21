@@ -13,7 +13,6 @@
   /* Spec-760: cuántas letras entran en cada campo (los topes de config; avisa, no corta). */
   const T = locals.topes || {};
   const genre = genres.find(g => g.id === d.genero);
-  const others = state ? state.characters.slice(1).filter(c => c.kind === 'persona') : [];
   const est = (locals.estimateLabels && estimateLabels.consult) || '';
   /* Spec-650: el largo no viaja con el guardado automático (D9): se manda al crear y se
      cambia aparte, con confirmación si ya hay actos (public/js/asistente.js). */
@@ -159,7 +158,8 @@
 
     <%/* Spec-780 D2: sin «¿Qué querés que sienta quien lo escuche?» (imponía una forma a toda la historia). */%>
     <section class="bg-forge-surface border border-forge-border p-6">
-      <h3 class="font-serif text-xl mb-4">¿A quién le pasa y quién lo cuenta?</h3>
+      <%/* Spec-780 D3: sin «Quién lo cuenta»: lo cuenta siempre el protagonista. */%>
+      <h3 class="font-serif text-xl mb-4">¿A quién le pasa?</h3>
       <div class="grid sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label class="block text-sm text-forge-muted mb-1" for="a-prota">Protagonista</label>
@@ -173,12 +173,7 @@
                  class="w-full bg-forge-bg border border-forge-border px-3 py-2">
         </div>
       </div>
-      <label class="block text-sm text-forge-muted mb-1" for="a-narra">Quién lo cuenta</label>
-      <select id="a-narra" name="narrator" class="w-full sm:w-1/2 bg-forge-bg border border-forge-border px-3 py-2">
-        <option value="">El protagonista</option>
-        <% others.forEach(c => { %><option value="<%= c.name %>" <%= c.name === d.narrator ? 'selected' : '' %>><%= c.name %></option><% }) %>
-      </select>
-      <p class="text-xs text-forge-muted mt-2">Los demás personajes los sumás en el acto donde aparecen.</p>
+      <p class="text-xs text-forge-muted mt-2">Lo cuenta el protagonista, en primera persona. Los demás personajes los sumás en el acto donde aparecen.</p>
     </section>
 
     <section class="bg-forge-surface border border-forge-border p-6">

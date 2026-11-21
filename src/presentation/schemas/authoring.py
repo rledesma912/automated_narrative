@@ -43,7 +43,6 @@ class DirectionForm(BaseModel):
     habla: str = ""  # Spec-680 C1: cómo habla quien narra ("" = la de siempre)
     protagonist_name: str = Field("", max_length=_T["protagonist_name"])
     protagonist_role: str = Field("", max_length=_T["protagonist_role"])
-    narrator: str = Field("", max_length=_T["narrator"])  # "" = el protagonista
     threat: ThreatForm | None = None  # sin naturaleza = sin amenaza
     # Spec-650 D9: solo al crear (POST). El autoguardado (PUT) la ignora: el largo se
     # cambia únicamente con PUT …/structure, que confirma y rearma.
