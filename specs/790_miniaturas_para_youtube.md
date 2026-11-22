@@ -935,25 +935,28 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 
 ### S0a — Base de los spikes
 
-- [ ] **T0.1 — Rama y spec**
+- [x] **T0.1 — Rama y spec**
   - Acepta: rama `feat/spec-790-miniaturas` desde `development`, con la spec commiteada.
   - Verifica: `git log -1` en la rama.
-- [ ] **T0.2 — Herramientas comunes de los spikes** (`scripts/research/790/comun.py`)
+- [x] **T0.2 — Herramientas comunes de los spikes** (`scripts/research/790/comun.py`)
   - Acepta:
     - un cliente mínimo de ComfyUI (subir, encolar, esperar, bajar, `/free`, `/system_stats`), descartable y sin importar `src/`;
     - medición de segundos y VRAM pico (`/system_stats` + muestreo de `nvidia-smi`);
     - grilla de resultados con Pillow (variante × semilla, etiquetada, más una fila a 120 px);
     - plantilla de `informe.md`.
   - Verifica: corre contra el ComfyUI de la casa con un workflow trivial (cargar y guardar) y arma una grilla.
-- [ ] **T0.3 — Lugar de los insumos**
+- [x] **T0.3 — Lugar de los insumos**
   - Acepta:
     - `scripts/research/790/insumos/` en `.gitignore`, con un README de qué va: las 5 miniaturas, la fuente, los bocetos de personaje y escenario, y la calabaza;
     - `data/dev/miniaturas/_arte/` creada.
   - Verifica: `git status` no muestra imágenes.
+  - **Hecho (2026-11-22):**
+    - las 8 miniaturas están en `insumos/miniaturas_canal/`;
+    - la fuente Noto Serif SC ExtraBold quedó en `insumos/fuentes/`: instancia de peso 800 sacada de la variable de Google Fonts (OFL), con el español verificado.
 
 ### S0b — Spikes (§10.0)
 
-- [ ] **T0.E0 — Conexión** (no necesita insumos)
+- [x] **T0.E0 — Conexión** (no necesita insumos)
   - Acepta:
     - desde `narrative-api-dev`, ida y vuelta con un workflow trivial vía `host.docker.internal:8188`;
     - avance por WebSocket, y por *polling* de `/history` si el WebSocket se corta;
@@ -962,11 +965,20 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - se mide cuánto suma la ida y vuelta por llamada;
     - se confirman en la 0.28.3 los nodos de Qwen-Image-Layered y de FLUX.2 klein.
   - Verifica: `scripts/research/790/e0/informe.md` y checkpoint.
-- [ ] **T0.A — `arte.yaml` borrador** (necesita las 5 miniaturas)
+  - **Hecho (2026-11-22):**
+    - todo anda igual desde el host y desde `narrative-api-dev`;
+    - WebSocket 0,02 s por ida y vuelta, *polling* 1 s como respaldo;
+    - los tres errores llegan legibles;
+    - el lock serializa;
+    - Z-Image en frío llega a 10,9 GB de VRAM (justo), y `/free` la devuelve toda;
+    - están todos los nodos, también `ZImageFunControlnet`, nuevo candidato para E1/E3;
+    - `websockets` ya está en el contenedor (transitiva).
+- [x] **T0.A — `arte.yaml` borrador** (necesita las 5 miniaturas)
   - Acepta:
     - Claude describe las 5 (estilo, luz, paleta, sentidos, textura, encuadres, ubicación y estilo del título) y escribe el borrador de §2.2, con 4 variaciones y reglas de máscara iniciales;
     - el usuario lo corrige.
   - Verifica: OK del usuario al borrador.
+  - **Hecho (2026-11-22):** 8 miniaturas analizadas (§1.7) y borrador en §2.2, con Q11–Q14 respondidas.
 - [ ] **T0.E1 — Ilustrar el personaje**
   - Acepta:
     - variantes (a) Qwen-Edit 2511 con instrucción, (b) xinsir Union SDXL, (c) Qwen-Image + InstantX Union y (d) Z-Image como control;
