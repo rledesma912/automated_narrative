@@ -23,16 +23,37 @@ PROMPT = (
 
 def grafo_zimage(semilla: int, ancho: int = 1344, alto: int = 768) -> dict:
     return {
-        "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "z-image-turbo-fp8-aio.safetensors"}},
+        "1": {
+            "class_type": "CheckpointLoaderSimple",
+            "inputs": {"ckpt_name": "z-image-turbo-fp8-aio.safetensors"},
+        },
         "2": {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": ["1", 0], "shift": 3}},
         "3": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": PROMPT}},
         "4": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["3", 0]}},
-        "5": {"class_type": "EmptySD3LatentImage", "inputs": {"width": ancho, "height": alto, "batch_size": 1}},
-        "6": {"class_type": "KSampler", "inputs": {
-            "model": ["2", 0], "positive": ["3", 0], "negative": ["4", 0], "latent_image": ["5", 0],
-            "seed": semilla, "steps": 5, "cfg": 1, "sampler_name": "dpmpp_sde", "scheduler": "beta", "denoise": 1}},
+        "5": {
+            "class_type": "EmptySD3LatentImage",
+            "inputs": {"width": ancho, "height": alto, "batch_size": 1},
+        },
+        "6": {
+            "class_type": "KSampler",
+            "inputs": {
+                "model": ["2", 0],
+                "positive": ["3", 0],
+                "negative": ["4", 0],
+                "latent_image": ["5", 0],
+                "seed": semilla,
+                "steps": 5,
+                "cfg": 1,
+                "sampler_name": "dpmpp_sde",
+                "scheduler": "beta",
+                "denoise": 1,
+            },
+        },
         "7": {"class_type": "VAEDecode", "inputs": {"samples": ["6", 0], "vae": ["1", 2]}},
-        "8": {"class_type": "SaveImage", "inputs": {"images": ["7", 0], "filename_prefix": f"spec790/e0_zimage_{semilla}"}},
+        "8": {
+            "class_type": "SaveImage",
+            "inputs": {"images": ["7", 0], "filename_prefix": f"spec790/e0_zimage_{semilla}"},
+        },
     }
 
 

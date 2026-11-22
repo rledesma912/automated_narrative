@@ -41,9 +41,9 @@ class ComfyError(RuntimeError):
 class Resultado:
     prompt_id: str
     segundos: float
-    imagenes: list[dict]                      # [{"filename", "subfolder", "type"}]
+    imagenes: list[dict]  # [{"filename", "subfolder", "type"}]
     eventos: list[str] = field(default_factory=list)
-    via: str = "websocket"                    # o "polling" si se cortó el WebSocket
+    via: str = "websocket"  # o "polling" si se cortó el WebSocket
     vram_pico_mb: float | None = None
 
 
@@ -114,7 +114,9 @@ class Comfy:
         await self.http.post("/interrupt")
 
     # ── correr un grafo y esperar ────────────────────────────────────────────
-    async def correr(self, grafo: dict, *, usar_ws: bool = True, medir_vram: bool = True) -> Resultado:
+    async def correr(
+        self, grafo: dict, *, usar_ws: bool = True, medir_vram: bool = True
+    ) -> Resultado:
         """Encola y espera. Sigue el avance por WebSocket; si se corta, cae a /history."""
         medidor = MedidorVram(self) if medir_vram else None
         inicio = time.monotonic()
@@ -128,7 +130,9 @@ class Comfy:
 
                     # Conectar ANTES de encolar, para no perder los primeros eventos.
                     async with websockets.connect(
-                        f"{self.ws_url}/ws?clientId={self.client_id}", max_size=None, open_timeout=10
+                        f"{self.ws_url}/ws?clientId={self.client_id}",
+                        max_size=None,
+                        open_timeout=10,
                     ) as ws:
                         prompt_id = await self.encolar(grafo)
                         await self._esperar_ws(ws, prompt_id, eventos, inicio)
@@ -146,7 +150,11 @@ class Comfy:
         estado = entrada.get("status", {})
         if estado.get("status_str") == "error":
             raise ComfyError("ComfyUI falló al hacer la imagen", json.dumps(estado)[:3000])
-        imagenes = [img for salida in entrada.get("outputs", {}).values() for img in salida.get("images", [])]
+        imagenes = [
+            img
+            for salida in entrada.get("outputs", {}).values()
+            for img in salida.get("images", [])
+        ]
         return Resultado(
             prompt_id=prompt_id,
             segundos=round(time.monotonic() - inicio, 2),
@@ -177,7 +185,11 @@ class Comfy:
                     "ComfyUI falló al hacer la imagen",
                     f"{data.get('node_type')}: {data.get('exception_message', '')}"[:3000],
                 )
-            elif tipo == "executing" and data.get("node") is None and data.get("prompt_id") == prompt_id:
+            elif (
+                tipo == "executing"
+                and data.get("node") is None
+                and data.get("prompt_id") == prompt_id
+            ):
                 eventos.append("fin")
                 return
 
@@ -232,12 +244,17 @@ def grafo_trivial(imagen_subida: str, prefijo: str = "spec790/e0") -> dict:
     """Cargar una imagen y guardarla: lo mínimo para probar la ida y vuelta."""
     return {
         "1": {"class_type": "LoadImage", "inputs": {"image": imagen_subida}},
-        "2": {"class_type": "SaveImage", "inputs": {"images": ["1", 0], "filename_prefix": prefijo}},
+        "2": {
+            "class_type": "SaveImage",
+            "inputs": {"images": ["1", 0], "filename_prefix": prefijo},
+        },
     }
 
 
 # ── grilla y informe ─────────────────────────────────────────────────────────
-def grilla(filas: list[tuple[str, list[tuple[str, Path]]]], destino: Path, ancho_celda: int = 384) -> Path:
+def grilla(
+    filas: list[tuple[str, list[tuple[str, Path]]]], destino: Path, ancho_celda: int = 384
+) -> Path:
     """Hoja de contacto: una fila por variante, una celda por semilla, y debajo de cada
     fila la misma fila a 120 px de ancho (el tamaño de la miniatura en el celular)."""
     from PIL import Image, ImageDraw, ImageFont
@@ -247,7 +264,11 @@ def grilla(filas: list[tuple[str, list[tuple[str, Path]]]], destino: Path, ancho
     cols = max(len(c) for _, c in filas)
     margen, rotulo = 8, 170
     alto_fila = alto_celda + 24 + 68 + margen
-    hoja = Image.new("RGB", (rotulo + cols * (ancho_celda + margen), len(filas) * alto_fila + margen), (24, 24, 24))
+    hoja = Image.new(
+        "RGB",
+        (rotulo + cols * (ancho_celda + margen), len(filas) * alto_fila + margen),
+        (24, 24, 24),
+    )
     d = ImageDraw.Draw(hoja)
     for i, (nombre, celdas) in enumerate(filas):
         y = margen + i * alto_fila

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import io
 import json
 import statistics
 import sys
@@ -25,10 +24,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comun import Comfy, ComfyError, grafo_trivial  # noqa: E402
 
 NODOS = [
-    "LoadImage", "SaveImage", "EmptyQwenImageLayeredLatentImage", "EmptyFlux2LatentImage",
-    "TextEncodeQwenImageEditPlus", "LoadBackgroundRemovalModel", "RemoveBackground",
-    "ZImageFunControlnet", "InpaintModelConditioning", "ControlNetApplyAdvanced",
-    "LoraLoaderModelOnly", "ModelSamplingAuraFlow", "IPAdapterAdvanced", "ImageStitch",
+    "LoadImage",
+    "SaveImage",
+    "EmptyQwenImageLayeredLatentImage",
+    "EmptyFlux2LatentImage",
+    "TextEncodeQwenImageEditPlus",
+    "LoadBackgroundRemovalModel",
+    "RemoveBackground",
+    "ZImageFunControlnet",
+    "InpaintModelConditioning",
+    "ControlNetApplyAdvanced",
+    "LoraLoaderModelOnly",
+    "ModelSamplingAuraFlow",
+    "IPAdapterAdvanced",
+    "ImageStitch",
 ]
 
 
@@ -54,7 +63,11 @@ async def ida_y_vuelta(url: str, usar_ws: bool, veces: int = 5) -> dict:
         nombre = await c.subir(png_de_prueba())
         for i in range(veces):
             # Un prefijo distinto cada vez evita que ComfyUI devuelva todo desde su caché.
-            r = await c.correr(grafo_trivial(nombre, f"spec790/e0_{int(time.time()*1000)}_{i}"), usar_ws=usar_ws, medir_vram=False)
+            r = await c.correr(
+                grafo_trivial(nombre, f"spec790/e0_{int(time.time() * 1000)}_{i}"),
+                usar_ws=usar_ws,
+                medir_vram=False,
+            )
             tiempos.append(r.segundos)
             vias.append(r.via)
     return {"segundos": tiempos, "mediana": statistics.median(tiempos), "vias": sorted(set(vias))}
@@ -67,7 +80,9 @@ async def subir_y_bajar(url: str) -> dict:
         t = time.monotonic()
         nombre = await c.subir(src)
         t_subir = time.monotonic() - t
-        r = await c.correr(grafo_trivial(nombre, f"spec790/e0_bajar_{int(time.time())}"), medir_vram=False)
+        r = await c.correr(
+            grafo_trivial(nombre, f"spec790/e0_bajar_{int(time.time())}"), medir_vram=False
+        )
         t = time.monotonic()
         await c.bajar(r.imagenes[0], Path("/tmp/e790_bajada.png"))
         return {"subir_s": round(t_subir, 3), "bajar_s": round(time.monotonic() - t, 3)}
@@ -91,7 +106,10 @@ async def error_al_ejecutar(url: str) -> dict:
             "1": {"class_type": "LoadImage", "inputs": {"image": nombre}},
             "2": {"class_type": "ImageToMask", "inputs": {"image": ["1", 0], "channel": "alpha"}},
             "3": {"class_type": "MaskToImage", "inputs": {"mask": ["2", 0]}},
-            "4": {"class_type": "SaveImage", "inputs": {"images": ["3", 0], "filename_prefix": f"spec790/e0_err_{time.time()}"}},
+            "4": {
+                "class_type": "SaveImage",
+                "inputs": {"images": ["3", 0], "filename_prefix": f"spec790/e0_err_{time.time()}"},
+            },
         }
         try:
             r = await c.correr(grafo, medir_vram=False)
@@ -112,7 +130,9 @@ async def apagado() -> dict:
 async def websocket_cortado(url: str) -> dict:
     async with ComfyConCorte(url) as c:
         nombre = await c.subir(png_de_prueba())
-        r = await c.correr(grafo_trivial(nombre, f"spec790/e0_corte_{int(time.time())}"), medir_vram=False)
+        r = await c.correr(
+            grafo_trivial(nombre, f"spec790/e0_corte_{int(time.time())}"), medir_vram=False
+        )
         return {"via": r.via, "eventos": r.eventos, "imagenes": len(r.imagenes)}
 
 
@@ -120,7 +140,9 @@ async def websocket_sin_conexion(url: str) -> dict:
     async with Comfy(url) as c:
         c.ws_url = "ws://127.0.0.1:8199"  # el WebSocket no conecta; el HTTP sí
         nombre = await c.subir(png_de_prueba())
-        r = await c.correr(grafo_trivial(nombre, f"spec790/e0_sinws_{int(time.time())}"), medir_vram=False)
+        r = await c.correr(
+            grafo_trivial(nombre, f"spec790/e0_sinws_{int(time.time())}"), medir_vram=False
+        )
         return {"via": r.via, "eventos": r.eventos, "imagenes": len(r.imagenes)}
 
 
@@ -136,7 +158,10 @@ async def dos_a_la_vez(url: str, con_lock: bool) -> dict:
             async with Comfy(url) as c:
                 nombre = await c.subir(png_de_prueba())
                 marcas.append((nombre_tarea, "empieza", round(time.monotonic() - t0, 2)))
-                await c.correr(grafo_trivial(nombre, f"spec790/e0_{nombre_tarea}_{time.time()}"), medir_vram=False)
+                await c.correr(
+                    grafo_trivial(nombre, f"spec790/e0_{nombre_tarea}_{time.time()}"),
+                    medir_vram=False,
+                )
                 marcas.append((nombre_tarea, "termina", round(time.monotonic() - t0, 2)))
 
         if con_lock:
@@ -156,7 +181,10 @@ async def liberar(url: str) -> dict:
         antes = await c.vram_libre_mb()
         await c.liberar()
         await asyncio.sleep(1)
-        return {"vram_libre_antes_mb": round(antes), "vram_libre_despues_mb": round(await c.vram_libre_mb())}
+        return {
+            "vram_libre_antes_mb": round(antes),
+            "vram_libre_despues_mb": round(await c.vram_libre_mb()),
+        }
 
 
 async def nodos(url: str) -> dict:
