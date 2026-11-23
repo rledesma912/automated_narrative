@@ -1074,6 +1074,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T0.C5 — Color desaturado o blanco y negro** (D23)
   - Acepta: piezas en color desaturado; las 4 plantillas sin título (D22) en desaturado y en blanco y negro; la saturación se mide contra las recientes de Yael.
   - Verifica: informe `c5/` y checkpoint con Yael.
+  - **C5b (2026-11-23, pedido de Yael: «el color es el que busca», pero en su #5 el personaje entero va en naranja):** medido en la #5, la figura tiene S 142 y tono ~15°, y el fondo S 1. Es un **tinte en dos partes**, hecho por Python con el alfa de la figura: el fondo gris o desaturado y la figura teñida por luminancia (naranja, rojo o frío, fuerza 0,85), con los acentos tal cual. Sin GPU, ~1 s por imagen. Se propone que el tono sea una opción por miniatura (`c5b_tinte.py`, hojas en `c5/salidas/tinte/`).
   - **Corrido (2026-11-23), esperando el checkpoint:** Qwen y Z-Image salen con un teal fuerte (saturación 97–197/255) aunque se les pida desaturado, así que **Python desatura hasta 40/255 respetando los acentos cálidos** (la calabaza y las velas quedan naranjas). El blanco y negro sale de esa misma imagen. El prompt del personaje nombraba una vela y una calabaza de ejemplo y Qwen las agregó: ya quedó corregido. Informe en `scripts/research/790/c5/informe.md`.
 - [ ] **T0.C4 — El juez local** (opcional)
   - Acepta: `gemma3:12b` ordena las 4 de C3; se mide la coincidencia con Yael.
