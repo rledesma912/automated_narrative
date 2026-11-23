@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3. Sigue: E2. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0 y E1; E3 corrido, esperando el checkpoint. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -994,13 +994,13 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - bordes vistos a 100 % y a 120 px;
     - el ganador exportado.
   - Verifica: informe `e2/` y checkpoint.
-- [x] **T0.E3 — Ilustrar el escenario**
+- [ ] **T0.E3 — Ilustrar el escenario**
   - Acepta:
     - las variantes de E1 que pasaron, a 1344 × 768 y a 1024 × 576 + `agrandar`;
     - 2 bocetos × 3 semillas;
     - el ganador exportado, con la resolución elegida.
   - Verifica: informe `e3/` y checkpoint.
-  - **Corrido (2026-11-23):** gana `qwen_b` a su resolución (~1392 × 752, ~57 s), el más fiel al boceto; a 1024 × 576 Qwen cambia el encuadre y no hace falta agrandar. El ControlNet lite de Z-Image pierde detalle: fuera. Mismo grafo que el personaje (`boceto_a_imagen`, dos recetas). Informe en `scripts/research/790/e3/informe.md`.
+  - **Corrido (2026-11-23), falta el checkpoint:** gana `qwen_b` a su resolución (~1392 × 752, ~57 s), el más fiel al boceto; a 1024 × 576 Qwen cambia el encuadre y no hace falta agrandar. El ControlNet lite de Z-Image pierde detalle: fuera. Mismo grafo que el personaje (`boceto_a_imagen`, dos recetas). Informe en `scripts/research/790/e3/informe.md`.
 - [ ] **T0.E4/E5 — Fundir y la máscara**
   - Acepta:
     - composición tosca en Python;
