@@ -1082,6 +1082,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
   - Acepta: `gemma3:12b` ordena las 4 de C3; se mide la coincidencia con Yael.
   - Verifica: informe `c4/`.
 - [ ] **T0.E6 — Las 4 variaciones**
+  - **Rehecho como «la luz» (2026-11-23, `e6_luz.py`), solo Python, esperando el checkpoint:** sobre el fondo se levantan los medios tonos (gamma), se agrega niebla (más densa abajo y en el horizonte) y una zona clara detrás de la figura; además, un borde de luz en la silueta. Después va el tono (C5c) o el blanco y negro. El brillo medio sube de 12–20 a 37–41 (suave) y 52–57 (fuerte); Yael tiene una mediana de 49 en las recientes (p25 38, p75 59). La figura queda recortada contra la niebla y se lee a 120 px. Pendiente: el borde fuerte deja un contorno blanco «de calcomanía» en la coneja, y la niebla es pareja (no pasa por delante de los árboles cercanos). Si hace falta, Qwen reiluminando solo el escenario.
   - Acepta:
     - (a) reiluminar el escenario con Qwen-Edit, por instrucción, o con LoRA o AnyLight si pasan la licencia;
     - (b) color en Python;
