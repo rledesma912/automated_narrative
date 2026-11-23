@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0 y E1; E3 corrido, esperando el checkpoint. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). En curso: E2. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -84,9 +84,10 @@ Ningún workflow encadena tareas adentro. Es la «composición o collage en paso
 ```
 PERSONAJE                                   ESCENARIO
  boceto ─▶ [ilustrar_personaje] ─▶ revisión  boceto ─▶ [ilustrar_escenario] ─▶ revisión
-           (sobre fondo liso)       Python             (16:9)                  Python
-        ─▶ [recortar] ─▶ revisión                  ─▶ [agrandar] (si hace falta)
-        ─▶ [agrandar] (si hace falta)
+           (sobre fondo liso)       Python             (16:9, qué va y dónde)  Python
+        ─▶ [recortar] ─▶ revisión                  ─▶ Python: curva de oscuridad
+        ─▶ [agrandar] (si hace falta)              ─▶ [fotografiar_escenario] ─▶ revisión
+                                                      (foto real, oscura, con niebla; E3b/E3c)
 
 POR CADA UNA DE LAS 4 VARIACIONES
  [reiluminar_escenario] (la luz de la variación, solo el escenario; o Python si alcanza, E6)
@@ -96,7 +97,7 @@ POR CADA UNA DE LAS 4 VARIACIONES
  Python: volver a pegar el fondo original fuera de la máscara ─▶ revisión ─▶ título ─▶ chequeos ─▶ JPG
 ```
 
-Son unas **11 a 15 llamadas por tanda** (2–3 del personaje, 1–2 del escenario, y 4 × reiluminar + fundir). En «Armar otras 4», solo las de la parte de abajo. El camino viene del video del compositor de ILM (§1.5): fundir con máscara en lugar de armonizar toda la imagen.
+Son unas **11 a 15 llamadas por tanda** (2–3 del personaje, 2 del escenario, y 4 × reiluminar + fundir). En «Armar otras 4», solo las de la parte de abajo. El camino viene del video del compositor de ILM (§1.5): fundir con máscara en lugar de armonizar toda la imagen.
 
 ### 1.3 Herramientas evaluadas
 
@@ -291,7 +292,7 @@ Es lo que **comparten todas** las miniaturas, sin importar la historia: paleta y
 
 **Un prompt por paso (D17, 2026-11-23).** El **estilo** no es común: cada paso tiene su plantilla en `config/miniatura/prompts/<paso>.md` y toma de `arte.yaml` **solo los campos que le sirven** (`{luz}`, `{sentidos}`…). El personaje y el escenario se ven distintos a propósito:
 - **personaje** (`personaje.md`): el texto de `qwen_b` (E1) tal como les gustó al usuario y a Yael: **no se toca**;
-- **escenario** (`escenario.md`): **foto real** de un lugar real (una mansión real, árboles reales, una caseta real; nada de «cartoon lúgubre» ni render). El boceto solo guía qué va y dónde. Pedido de Yael tras E3; el texto sale del set E3b;
+- **escenario** (`escenario.md` + `fotografiar_escenario.md`): **foto real** de un lugar real, oscura y con niebla (una mansión real, árboles reales, una caseta real; nada de «cartoon lúgubre» ni render). El boceto solo guía qué va y dónde. Pedido de Yael tras E3: Qwen arma la escena, Python la oscurece y Z-Image la vuelve foto (E3b/E3c);
 - más adelante `fundir.md` y `reiluminar.md`, cada uno con lo suyo.
 
 ```
@@ -376,7 +377,8 @@ calabaza: { archivo: calabaza.png, lado: abajo_izquierda, alto: 0.35 }
 | Plantilla | Huecos | Estado |
 |---|---|---|
 | `personaje.md` | `{descripcion}` (la luz y la textura de E1 quedan escritas en la plantilla, tal como se aprobaron) | **Hecho:** el de `qwen_b` (E1), aprobado: fiel al boceto, fondo liso |
-| `escenario.md` | `{descripcion}`, `{luz}`, `{sentidos}` | Foto real; sale del set E3b |
+| `escenario.md` | `{descripcion}` (el arte de E3 queda escrito en la plantilla) | **Hecho:** el de Qwen en E3, qué va y dónde |
+| `fotografiar_escenario.md` | `{descripcion}` | **Hecho:** foto real muy oscura, niebla espesa, sin luces encendidas ni objetos de más (E3c, `previo_45`) |
 | `fundir.md`, `reiluminar.md` | los que pidan E4 y E6 | Pendientes |
 
 Los textos de ejemplo del borrador viejo (`personaje.entidad`, `personaje.protagonista`, `escenario`) se van: la descripción la propone la IA desde el relato (paso 1), y no usa palabras que cambian el material salvo que vengan del relato (E1).
@@ -575,8 +577,10 @@ frontend/src/controllers/miniaturas.controller.ts
 |---|---|---|---|---|
 | `ilustrar_personaje` | el boceto del personaje → ilustración con el arte, **sobre fondo liso** | PNG boceto + prompt → PNG | ControlNet scribble/lineart SDXL; Qwen-Edit 2511 + Lightning | E1 |
 | `recortar` | separar la figura del fondo | PNG → PNG con alfa | BiRefNet; Qwen-Image-Layered si BiRefNet no alcanza | E2 |
-| `ilustrar_escenario` | el boceto del escenario → ilustración 16:9 con el arte | PNG boceto + prompt → PNG | Ídem E1 | E3 |
-| `agrandar` | subir resolución sin cambiar nada | PNG → PNG ×2 | RealESRGAN | E3 |
+| `ilustrar_escenario` | el boceto del escenario → imagen 16:9: **qué va y dónde** | PNG boceto + prompt → PNG | **Qwen-Edit 2511 + Lightning** (workflow `boceto_a_imagen`, el mismo que el personaje) | E3 ✅ |
+| *(Python)* `oscurecer` | curva de oscuridad (gamma 1,6, techo 75 %), sin IA | PNG → PNG | — | E3c ✅ |
+| `fotografiar_escenario` | el escenario oscurecido → **foto real** de noche, oscura y con niebla, cambiando poco | PNG + prompt → PNG | **Z-Image Turbo img2img, denoise 0,45** (workflow `foto_img2img`) | E3b/E3c ✅ |
+| `agrandar` | subir resolución sin cambiar nada | PNG → PNG ×2 | RealESRGAN | E3: **no hace falta para el escenario** (sale de ~1344 × 768); queda por si el personaje lo pide |
 | `reiluminar_escenario` | cambiar la luz del escenario a la de la variación, sin tocar su composición | PNG + luz → PNG | Qwen-Edit 2511 (+ LoRA de reiluminado si su licencia es clara); o ajuste de color en Python | E6 |
 | `fundir` | integrar el personaje pegado: luz, perspectiva y sombra de contacto, **solo dentro de una máscara** que arma Python; afuera se vuelve a pegar el original | PNG compuesto + máscara + prompt → PNG | Qwen-Edit 2511 + Lightning (+ LoRA Fusion si su licencia se confirma); IC-Light como alternativa | E4 |
 | `personaje_texto` / `escenario_texto` | emergencia sin boceto: ilustrar desde la descripción | prompt → PNG | Z-Image Turbo | E1/E3 |
@@ -998,13 +1002,14 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - bordes vistos a 100 % y a 120 px;
     - el ganador exportado.
   - Verifica: informe `e2/` y checkpoint.
-- [ ] **T0.E3 — Ilustrar el escenario**
+- [x] **T0.E3 — Ilustrar el escenario**
   - Acepta:
     - las variantes de E1 que pasaron, a 1344 × 768 y a 1024 × 576 + `agrandar`;
     - 2 bocetos × 3 semillas;
     - el ganador exportado, con la resolución elegida.
   - Verifica: informe `e3/` y checkpoint.
-  - **Corrido (2026-11-23), falta el checkpoint:** gana `qwen_b` a su resolución (~1392 × 752, ~57 s), el más fiel al boceto; a 1024 × 576 Qwen cambia el encuadre y no hace falta agrandar. El ControlNet lite de Z-Image pierde detalle: fuera. Mismo grafo que el personaje (`boceto_a_imagen`, dos recetas). Informe en `scripts/research/790/e3/informe.md`.
+  - **Hecho (2026-11-23, OK del usuario y Yael):** gana `qwen_b` a su resolución (~1392 × 752, ~57 s), el más fiel al boceto; a 1024 × 576 Qwen cambia el encuadre y no hace falta agrandar. El ControlNet lite de Z-Image pierde detalle: fuera. Mismo grafo que el personaje (`boceto_a_imagen`, dos recetas). Informe en `scripts/research/790/e3/informe.md`.
+  - **E3b/E3c (pedido de Yael: foto real, oscura, con niebla):** Qwen-Edit no sale del estilo del boceto aunque se le pida foto. Gana `previo_45`: Qwen → **curva de oscuridad en Python** → **Z-Image img2img 0,45** con prompt de foto oscura (~1 min 40 s por escenario). Al 45 % Z-Image sigue el brillo de lo que recibe: por eso se oscurece antes. Workflow `config/miniatura/workflows/foto_img2img/`; plantillas `prompts/escenario.md` y `prompts/fotografiar_escenario.md`. Informe en `scripts/research/790/e3b/informe.md`.
 - [ ] **T0.E4/E5 — Fundir y la máscara**
   - Acepta:
     - composición tosca en Python;
