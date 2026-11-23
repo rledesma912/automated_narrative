@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). En curso: E4/E5 (ronda 1 no pasó). `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). E4/E5 ✅ (ronda 2, OK del usuario y Yael). **Nuevo (2026-11-23): el compositor que aprende de las miniaturas recientes de Yael** (§1.8, §2.11, spikes C1–C4); en curso C1. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -121,6 +121,16 @@ Son unas **11 a 15 llamadas por tanda** (2–3 del personaje, 2 del escenario, y
 | Krita + krita-ai-diffusion | Pintar con IA en vivo | **Fuera del flujo**: Yael dibuja en SAI y sube el boceto. |
 | n8n | Orquestación visual | No: el proyecto ya tiene jobs, bus y modal. |
 | Flux Kontext dev (instalado) | Ediciones por instrucción | **No:** licencia no comercial y el canal va a monetizar (D9). |
+
+### 1.8 Las 124 miniaturas del canal (2026-11-23)
+
+Se bajaron las 124 miniaturas públicas del canal (`yt-dlp` + `i.ytimg.com`, 121 a 1280 × 720) a `scripts/research/790/insumos/canal_yt/` (fuera de git; `ids.txt` va de la más nueva a la más vieja). A ojo, con hojas de contacto:
+
+- **Pocas plantillas, repetidas:** (A) figura grande de un lado y el título del otro, la más común; (B) figura chica y lejos, y el lugar manda (torre, ruta, mar); (C) primer plano de una cara; (D) título en dos alturas: el tema arriba y una frase gancho abajo, en la esquina opuesta; (E) título grande al centro con la figura atrás (las más viejas).
+- **El título va por niveles:** un rótulo chico («HISTORIAS DE TERROR», «RECOPILACIÓN», el sello torcido «MÉXICO»), la frase con las palabras fuertes grandes y las de enlace chicas, **una palabra de acento en color** y los números («3», «5») gigantes, ocupando dos líneas.
+- **El texto de la miniatura es un gancho, no el título del video** («SIGUE ESTAS REGLAS PARA SOBREVIVIR» en el video de la torre de vigilancia).
+- **Evolución:** el acento pasó de rojo a naranja; las más nuevas tienen la figura más grande, el título más grande y más color (luces cálidas).
+- **Yael quiere como patrón las más recientes** (2026-11-23): las plantillas salen de esas y las viejas quedan solo para ver la evolución.
 
 ### 1.4 Tendencias de miniaturas en 2026
 
@@ -527,6 +537,19 @@ class Thumbnail:                          # una por historia
 - **Prompts y fragmentos** en `config/miniatura/prompts/` (Spec-620), con su snapshot `thumbnail_prompts.json`.
 - **Costo:** ~US$ 0,02 por miniatura, una llamada por botón.
 
+### 2.11 El compositor (2026-11-23, pedido de Yael)
+
+Yael sube sus bocetos y el gancho, y el sistema **compone como ella**, con **4 composiciones distintas**. No se entrena ningún modelo: el «conocimiento de compositor» sale de **medir su catálogo**.
+
+1. **El catálogo** (`config/miniatura/catalogo.yaml`, generado por un script y revisado a mano): cada plantilla de Yael (§1.8), con los rangos medidos en las recientes. Para la figura: lado, alto, si va cortada. Para el título: zona, cantidad de líneas, alto de cada nivel. Además, el rótulo y el acento, y las miniaturas de ejemplo. Se mide sin IA de texto: BiRefNet para la figura (E2), OCR para las letras (Tesseract `spa`) y Pillow para los colores. Si Yael sube miniaturas nuevas, se vuelve a medir.
+2. **El título por niveles:** qué palabra va de acento, cuáles chicas, dónde cortar las líneas, el rótulo y el número. Lo decide la IA de texto que ya lee el relato (§2.9) o reglas, según C2. Lo dibuja Pillow.
+3. **Lo que no se tapa:** el alfa de la figura, **lo importante del escenario** (BiRefNet sobre el escenario armado: la torre, la mansión) y la esquina de la duración.
+4. **Las 4 opciones (D21):** una por cada plantilla de hoy (`A_der`, `A_izq`, `C_primer_plano`, `B_lugar`). Python ajusta cada una al caso (dónde va el título para no tapar lo importante, el tamaño exacto de la figura). Las 4 miniaturas varían **la composición**; la luz y la semilla, como segunda variación.
+5. **Juez local** (opcional, según C4): `gemma3:12b`, con visión, ordena las candidatas al lado de 3 o 4 miniaturas de Yael.
+6. **Plan B:** si ninguna de las 4 es la que imaginaba Yael, un **boceto de composición** con dos colores (rojo = figura, azul = título) que Python lee. Se suma solo si hace falta después de C3.
+
+**Qué no:** entrenar una LoRA con las miniaturas. Tienen texto, rehace la imagen entera y pierde los bocetos de Yael (D15), y en la 3060 no entra. Queda para el estilo, más adelante, si E7 no alcanza.
+
 ### 2.10 Producción y dev
 
 - **ComfyUI no es parte del deploy.** `make deploy-check` avisa, sin bloquear, si no responde.
@@ -686,6 +709,10 @@ El de la casa: Clean Architecture, sin textos en Python (Spec-620), dataclasses 
 | D-Q8 | `arte.yaml` se edita solo en el repo | **Usuario, 2026-11-22** |
 | D-Q9 | Campo «Cómo es el lugar», precargado y editable | **Usuario, 2026-11-22** |
 | D-Q11–Q14 | Solo la serif (Noto Serif SC ExtraBold); franja de serie opcional, apagada, texto fijo, abajo a la izquierda; una sola figura (segundo boceto si Yael lo pide); acento único naranja con brillo | **Usuario, 2026-11-22** |
+| D18 | **El compositor aprende del catálogo de Yael** (sus miniaturas medidas, sin entrenar modelos) y propone **4 composiciones distintas** con las plantillas que mejor encajan. Reemplaza a D-Q2 y D-Q5: las 4 varían la composición (plantilla, lado, encuadre) y, en segundo lugar, la luz | **Usuario y Yael, 2026-11-23** |
+| D19 | **El patrón son las miniaturas más recientes** | **Yael, 2026-11-23** |
+| D20 | El título es parte de la composición: va por niveles (rótulo, frase, acento, número) y no tapa la figura ni lo importante del escenario | **Usuario, 2026-11-23** |
+| D21 | **Las 4 opciones son las 4 plantillas de hoy**, una cada una: `A_der` (figura grande a la derecha, título a la izquierda), `A_izq` (el espejo), `C_primer_plano` y `B_lugar` (figura chica, manda el lugar). La de dos bloques (junio y julio) queda afuera. Sale de C1 | **Usuario, 2026-11-23** |
 | D-Q10 | Las miniaturas sirven para el texto del YAML y, si mejoran en el spike E7, como referencia visual | **Usuario, 2026-11-22** |
 
 **D-Q5:** la opción simple «¿De qué lado va?» quedó como posibilidad si Yael dibuja el escenario con el hueco pensado. No entra de inicio; se suma solo si lo pide en la prueba.
@@ -727,8 +754,12 @@ Cada parte del flujo que pasa por ComfyUI se valida **sola**, con su propio spik
 | **E5. La máscara** (sin ComfyUI) | ¿Qué máscara da mejores sombras sin pisar el fondo? | Dilatación del alfa (3 tamaños) × franja de sombra (según el lado de la luz de la variación: abajo, abajo-izquierda, abajo-derecha) | Se elige una regla de máscara por variación, para `arte.yaml`. Va junto con E4 | Salidas de E4 |
 | **E6. Las 4 variaciones** | ¿Las 4 luces de `arte.yaml` dan 4 imágenes **distintas y de la misma serie**? Como el fondo ya no se toca al fundir, ¿la luz se cambia antes, en el escenario? | (a) `reiluminar_escenario` con Qwen-Edit por variación (con instrucción, o con la LoRA de reiluminado o AnyLight si pasan el control de licencia, usando una imagen de referencia de luz), después fundir; (b) solo ajuste de color en Python sobre el escenario, después fundir; (c) una sola luz y que varíen encuadre y lado | Las 4 se distinguen a 120 px y las 4 parecen del canal al lado de las 5 actuales. Se elige (a), (b) o (c) | Salidas de E4 y las 5 miniaturas |
 | **E7. Estilo del canal** | ¿Sumar 1–2 de las 5 miniaturas como **referencia visual** mejora el parecido sin copiar la composición? | E1, E3 y E4 ganadores, con y sin referencia (IP-Adapter en SDXL; imagen de referencia en Qwen-Edit), con 2 pesos | Mejora el parecido a ojo del usuario y de Yael, sin copiar encuadres ni figuras de las referencias. Si no mejora, solo queda el texto de `arte.yaml` | Las 5 miniaturas |
-| **E8. Título** (sin ComfyUI) | ¿El título con la fuente del canal se lee a 120 px sobre las imágenes de E6? ¿Alcanza Pillow o hace falta SVG? | `pillow` con contorno y sombra; `svg` si el estilo de las 5 lo pide | Se lee a 120 px sobre las 4. Decide T8 (resvg en la imagen, sí o no) | La fuente y las salidas de E6 |
-| **E9. La cadena por Python** | ¿Encadenadas por un script de Python (E1 → E2 → E3 → componer → E4 ×4 → E8), las partes andan juntas, dentro de la VRAM, en un tiempo razonable y por turnos con audiogen? | La cadena completa con los ganadores, en tres condiciones: GPU libre, audiogen cargado sin generar y audiogen generando | Sin errores de memoria. Tiempo total medido (da `estimated_seconds`). `/free` entre pasos alcanza. Con audiogen generando, el script espera y retoma | Todos los anteriores |
+| ~~**E8. Título**~~ → lo reemplaza **C2** (2026-11-23) | ¿El título con la fuente del canal se lee a 120 px sobre las imágenes de E6? ¿Alcanza Pillow o hace falta SVG? | `pillow` con contorno y sombra; `svg` si el estilo de las 5 lo pide | Se lee a 120 px sobre las 4. Decide T8 (resvg en la imagen, sí o no) | La fuente y las salidas de E6 |
+| **C1. El catálogo de Yael** (sin ComfyUI; BiRefNet sí) | ¿Se pueden medir sus miniaturas y sacar sus plantillas con rangos? | Figura: BiRefNet (caja, lado, alto, cortada). Texto: Tesseract `spa` (cajas por línea, alto) más heurística de brillo y color para el acento. Agrupar en plantillas, solo con las recientes | Una hoja por plantilla con sus ejemplos y rangos. Yael dice «sí, así compongo». Las medidas, revisadas a ojo en una muestra, no fallan en más de 1 de cada 5 | Las 124 miniaturas (§1.8) |
+| **C2. El título a la Yael** (sin ComfyUI) | ¿El sistema arma el título por niveles como ella? | Reglas (palabras de enlace chicas, la última fuerte de acento, números gigantes) contra la IA de texto con ejemplos de sus títulos; dibujado con Pillow y Noto Serif SC ExtraBold | Con los ganchos reales de sus miniaturas recientes, coincide con lo que hizo ella en el acento y en los cortes de línea en la mayoría. Se lee a 120 px | C1 y la fuente |
+| **C3. El compositor** | Con las piezas de la torre y de la coneja, ¿4 plantillas distintas dan 4 miniaturas que parecen del canal? | Puntaje de las plantillas (lo que no se tapa con BiRefNet sobre el escenario, el tamaño de la figura, el largo del gancho) → componer → fundir (E4 ronda 2) → título (C2) | Yael las pone **al lado de sus miniaturas reales de esas dos historias**: las 4 parecen suyas y son distintas entre sí | C1, C2, E4 |
+| **C4. El juez local** (opcional) | ¿`gemma3:12b` con visión elige la misma que Yael? | Ordenar las 4 de C3, con y sin miniaturas de ejemplo | Coincide con Yael en la primera o la segunda. Si no, queda fuera | C3 |
+| **E9. La cadena por Python** | ¿Encadenadas por un script de Python (E1 → E2 → E3 → compositor ×4 → E4 ×4 → título), las partes andan juntas, dentro de la VRAM, en un tiempo razonable y por turnos con audiogen? | La cadena completa con los ganadores, en tres condiciones: GPU libre, audiogen cargado sin generar y audiogen generando | Sin errores de memoria. Tiempo total medido (da `estimated_seconds`). `/free` entre pasos alcanza. Con audiogen generando, el script espera y retoma | Todos los anteriores |
 | **E10. Layout multirreferencia** (comparación) | ¿Gana una sola llamada que pinta todo desde un layout armado por Python (escenario + personaje ubicado + notas), como el lienzo del video de GeekatPlay? | Qwen-Edit 2511 con 3 referencias (1 = layout, 2 = personaje de E1, 3 = una miniatura del canal como estilo); FLUX.2 klein 4B destilado con las mismas referencias (preguntar antes de bajarlo; en `cw2d-art` se descartó por calidad) | Solo se adopta si gana con claridad a la cadena de E9 en parecido a los bocetos **y** al arte, sin perder control. Si no, queda descartado y anotado (D15) | E1, E3 y E9 |
 
 **Orden:**
@@ -738,6 +769,8 @@ E0 ─────────────────────────�
 E1 ─▶ E2 ─┐                                       │
 E3 ───────┴─▶ E4+E5 ─▶ E6 ─▶ E7 ─▶ E8 ─▶ E9 ─▶ (E10) ─┴─▶ S1…
 ```
+
+**Desde el 2026-11-23** (D18): `C1 ─▶ C2 ─▶ C3 ─▶ (C4)`, después de E4. E8 lo reemplaza C2. **E6 cambia:** las 4 ya varían la composición; E6 solo decide si además varía la luz (opciones (b) o (c)).
 
 - **E0** no depende de nada.
 - **E1 y E3** son independientes entre sí.
@@ -1021,6 +1054,20 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - se proponen la regla de máscara y el umbral del fundido.
   - Verifica: informe `e4/` y checkpoint (¿la figura está «dentro» del lugar, con sombra?).
   - **Ronda 1 (2026-11-23), no pasa:** el pegado con máscara deja el fondo idéntico (diferencia 0,0 fuera de la máscara; el control global lo corre 23–33/255), pero Qwen aclara toda la zona y queda un halo con la forma de la máscara, y la «sombra» sale como un círculo de luz. Próxima ronda: igualar la exposición en Python antes de pegar, instrucción más acotada, oscurecer la figura antes de componer. Informe en `scripts/research/790/e4/informe.md`.
+  - **Ronda 2 (2026-11-23), ✅ OK del usuario y Yael:** Python oscurece la figura antes de componer (gamma con techo de 0,80, media en 1,7 × la del lugar, con piso de 30), grano σ 4 y sombra dibujada si pisa el piso → Qwen con una instrucción acotada → **igualar la exposición** en el anillo fuera de la máscara → pegar con d1 y un borde de 16 px. Halo de 0,2–1,1/255 (antes se veía a ojo), fondo idéntico y la figura cambia la mitad que en la ronda 1. d2 redibuja de más. Informe en `scripts/research/790/e4b/informe.md`.
+- [x] **T0.C1 — El catálogo de Yael**
+  - Acepta: las miniaturas medidas (figura con BiRefNet, texto con Tesseract `spa`, colores); plantillas agrupadas **con las recientes** (D19) y sus rangos; una hoja por plantilla; el borrador de `catalogo.yaml`.
+  - Verifica: informe `c1/` y checkpoint con Yael («¿así compongo?»).
+  - **Hecho (2026-11-23):** la medición automática no pasa (BiRefNet sobre miniaturas terminadas marca la escena o la calabaza; el OCR lee mal), así que las 36 recientes se anotaron a ojo (`c1/anotacion.yaml`). Desde agosto domina la figura grande a la derecha con el título a la izquierda, y el acento es naranja desde septiembre. El usuario elige las 4 plantillas sin la de dos bloques (D21). Informe en `scripts/research/790/c1/informe.md`.
+- [ ] **T0.C2 — El título a la Yael**
+  - Acepta: reglas contra la IA de texto, comparadas con los ganchos reales de las recientes (acento y cortes de línea); dibujado con Pillow y la ExtraBold; se lee a 120 px.
+  - Verifica: informe `c2/` y checkpoint.
+- [ ] **T0.C3 — El compositor**
+  - Acepta: 4 composiciones distintas para la torre y la coneja (plantilla + lo que no se tapa + fundido de E4 + título de C2), al lado de las miniaturas reales de esas historias.
+  - Verifica: informe `c3/` y checkpoint con Yael.
+- [ ] **T0.C4 — El juez local** (opcional)
+  - Acepta: `gemma3:12b` ordena las 4 de C3; se mide la coincidencia con Yael.
+  - Verifica: informe `c4/`.
 - [ ] **T0.E6 — Las 4 variaciones**
   - Acepta:
     - (a) reiluminar el escenario con Qwen-Edit, por instrucción, o con LoRA o AnyLight si pasan la licencia;
@@ -1034,7 +1081,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - E1, E3 y E4 ganadores, con y sin 1–2 miniaturas de referencia (IP-Adapter en SDXL, o referencia en Qwen-Edit), con 2 pesos;
     - se decide si quedan, y con qué peso, en `arte.yaml`.
   - Verifica: informe `e7/` y checkpoint.
-- [ ] **T0.E8 — Título** (necesita la fuente)
+- [ ] ~~**T0.E8 — Título**~~ → lo reemplaza T0.C2 (2026-11-23). Lo que sigue queda como referencia:
   - Acepta:
     - `pillow` con contorno y sombra sobre las 4 de E6, y `svg` si el estilo de las 5 lo pide;
     - se lee a 120 px;
