@@ -97,12 +97,15 @@ const api = `/api/v1/stories/${story.id}/thumbnail`;
   <section class="bg-forge-surface border border-forge-border p-6 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h3 class="font-serif text-xl">5. Las 4 miniaturas</h3>
-      <button type="button" class="btn-forge-sm" data-armar
+      <button type="button" class="btn-forge-sm disabled:opacity-40 disabled:cursor-not-allowed" data-armar <%= thumb.comfy_disponible === false ? 'disabled' : '' %>
               data-detalle="<%= estimado ? `Tarda ${estimado}. ` : '' %>La compu arma el personaje y el escenario desde tus bocetos y después las 4 opciones. Si no cambiaste nada, reusa lo que ya armó.">
         <i data-lucide="images" class="w-4 h-4"></i>
         <%= tanda ? 'Armar otras 4' : 'Armar las 4' %>
       </button>
     </div>
+    <% if (thumb.comfy_disponible === false) { %>
+      <p class="nota-forge nota-forge--warning" data-comfy-apagada><i data-lucide="power"></i><span>La compu que hace las imágenes está apagada. Prendela y volvé a abrir esta página. Lo que cargaste queda guardado.</span></p>
+    <% } %>
     <p class="hidden text-sm text-forge-error" data-armar-error role="alert"></p>
     <% if (tanda) { %>
       <div class="grid sm:grid-cols-2 gap-4" data-tanda="<%= tanda.n %>">

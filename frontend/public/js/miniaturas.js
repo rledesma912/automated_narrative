@@ -14,6 +14,18 @@
   const root = () => document.querySelector("[data-miniatura]");
   const api = () => `/api/v1/stories/${root().dataset.storyId}/thumbnail`;
   const timers = {};
+  const pendientes = {}; // textos escritos que todavía no se guardaron
+
+  /** Guarda lo pendiente antes de recargar (si no, lo último que se escribió se pierde). */
+  async function flush() {
+    const campos = Object.keys(pendientes);
+    for (const campo of campos) {
+      clearTimeout(timers[campo]);
+      const valor = pendientes[campo];
+      delete pendientes[campo];
+      await guardar(campo, valor);
+    }
+  }
 
   async function guardar(campo, valor) {
     const resp = await fetch(api(), {
@@ -31,6 +43,7 @@
       const tono = root().querySelector("[data-tono]");
       if (tono) tono.classList.toggle("hidden", valor === "byn");
     }
+    await flush();
     const vista = await guardar(campo, valor);
     // con una tanda armada, el color y el tono se rehacen en el Core: recargar para verlas
     if (vista && vista.batches && vista.batches.length && ["color", "tone", "place_description"].includes(campo)) {
@@ -43,6 +56,7 @@
     const error = root().querySelector(`[data-boceto-error="${tipo}"]`);
     const file = input.files && input.files[0];
     if (!file) return;
+    await flush();
     if (error) error.classList.add("hidden");
     const form = new FormData();
     form.append("file", file);
@@ -78,6 +92,7 @@
       confirmLabel: "Armar",
     });
     if (!ok) return;
+    await flush();
     if (error) error.classList.add("hidden");
     const storyId = root().dataset.storyId;
     const resp = await fetch(`/api/v1/stories/${storyId}/jobs`, {
@@ -123,13 +138,18 @@
       const el = e.target;
       if (!el.matches("textarea[data-campo]")) return;
       clearTimeout(timers[el.name]);
-      timers[el.name] = setTimeout(() => guardar(el.name, el.value), 600);
+      pendientes[el.name] = el.value;
+      timers[el.name] = setTimeout(() => {
+        delete pendientes[el.name];
+        guardar(el.name, el.value);
+      }, 600);
     });
     document.addEventListener("focusout", (e) => {
       if (!root()) return;
       const el = e.target;
       if (el.matches("textarea[data-campo]") && el.name === "place_description") {
         clearTimeout(timers[el.name]);
+        delete pendientes[el.name];
         onCampo(el);
       }
     });
@@ -139,6 +159,18 @@
       if (b && !b.disabled) armar(b);
     });
     document.addEventListener("htmx:load", reenganchar);
+    // irse de la página justo después de escribir: se guarda igual (keepalive)
+    window.addEventListener("pagehide", () => {
+      if (!root()) return;
+      for (const [campo, valor] of Object.entries(pendientes)) {
+        fetch(api(), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [campo]: valor }),
+          keepalive: true,
+        });
+      }
+    });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", reenganchar);
   else reenganchar();

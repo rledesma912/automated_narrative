@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 from typing import Literal
 from uuid import UUID
@@ -28,6 +29,7 @@ from src.infrastructure.database.repositories import (
     SQLThumbnailRepository,
 )
 from src.messages import message
+from src.presentation import thumbnail_jobs
 
 router = APIRouter(tags=["thumbnail"])
 
@@ -86,10 +88,21 @@ def _vista(thumb: Thumbnail) -> dict:
     return data
 
 
+async def _comfy_disponible() -> bool:
+    """§2.6: si la compu que hace las imágenes no responde, la página lo avisa antes."""
+    try:
+        await asyncio.wait_for(thumbnail_jobs.comfy_client().vram_libre_mb(), timeout=3)
+        return True
+    except Exception:  # noqa: BLE001 — apagada, sin red o respuesta rara: no está disponible
+        return False
+
+
 @router.get("/stories/{story_id}/thumbnail")
 async def get_thumbnail(story_id: str):
     story = await _story_or_404(story_id)
-    return _vista(await _thumb(story))
+    vista = _vista(await _thumb(story))
+    vista["comfy_disponible"] = await _comfy_disponible()
+    return vista
 
 
 @router.put("/stories/{story_id}/thumbnail")

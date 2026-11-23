@@ -15,6 +15,8 @@ class FakeComfy:
         self.llamadas: list[str] = []
 
     async def vram_libre_mb(self) -> float:
+        if self.vram <= 0:
+            raise ConnectionError("apagada")
         return self.vram
 
     async def liberar(self) -> None:

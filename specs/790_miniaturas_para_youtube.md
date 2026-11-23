@@ -984,6 +984,26 @@ Lo que cambió en los spikes deja un camino más corto que los slices S1–S9 de
 
 ## 11. TASKS
 
+### 11.0 Estado real al 2026-11-23 (manda sobre los tildes de abajo)
+
+Las tareas S1–S9 de abajo son el plan largo de antes de los spikes C y de D18–D26. La versión que se construyó es la de §10.7.
+
+| Tarea | Estado |
+|---|---|
+| Spikes E0–E4/E5, E9, C1, C2, C3, C5 (+ C5b, C5c) | ✅ hechos, con informes en `scripts/research/790/` |
+| E6 (la luz) | descartado por ahora (D26) |
+| T1.1 `arte.yaml` y `arte.py` · T1.2 dominio y tabla · T1.3 archivos · T1.4 compositor (`imagen.py`) | ✅ (§10.7) |
+| T2.1 config y mensajes · T2.2 cliente · T2.3/T2.4 workflows y recetas · T2.5 turno de la GPU · T2.6 ComfyUI de mentira (`tests/support/fake_comfy.py`) | ✅ |
+| T2.7 avisar si ComfyUI está apagado | ✅ en la página (`comfy_disponible`, nota y botón apagado) y en `deploy-check` (aviso sin bloquear); `/health` no lo mira, a propósito: no tiene que fallar por ComfyUI |
+| T4.2 las partes (con reuso por hash) · T4.3 las 4 · T4.4 job · T4.5 API · T4.6 tanda real en dev («La conejita», 672 s) | ✅ |
+| T5.1 lista y menú · T5.2/T5.3 secciones · T5.4 desde «El relato» · T5.5 guardianes · T5.6 E2E (`tests/e2e/miniaturas.spec.ts`) | ✅ |
+| T8.1 respaldo de `data/prod/miniaturas/` en el deploy · T8.2 `COMFY_URL` en prod · T8.3 docs (`CLAUDE.md`) | ✅ |
+| T5.7 checkpoint con Yael | **en curso** (prueba en dev, por IP) |
+| T9.2 PR · T9.3 deploy | después del OK de Yael |
+| T1.5/T1.6 título y sus chequeos · T7 título con estilo · T3 IA que lee el relato · elegir 1 a 3 y el zip · C4 juez local · E7 referencias · E10 multirreferencia · T6.2 sin boceto y la calabaza | **para después** (fuera de esta versión, D22 y §10.7) |
+
+
+
 Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasar) y su **Verifica** (cómo se comprueba).
 
 **Al cierre de cada slice:**

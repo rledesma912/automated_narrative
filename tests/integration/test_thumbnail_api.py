@@ -140,3 +140,11 @@ async def test_armar_las_4_y_recolorear(client):
     assert (await _wait_job(c, resp.json()["job_id"]))["status"] == "done"
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4 + 4
     assert fake.llamadas.count("foto_img2img") == 1
+
+
+async def test_avisa_si_la_compu_de_las_imagenes_esta_apagada(client):
+    c, fake = client
+    sid = await _story(c)
+    assert (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["comfy_disponible"] is True
+    fake.vram = 0
+    assert (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["comfy_disponible"] is False
