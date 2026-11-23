@@ -717,6 +717,7 @@ El de la casa: Clean Architecture, sin textos en Python (Spec-620), dataclasses 
 | D23 | **Opción de color en el formulario:** «Color desaturado» o «Blanco y negro». Las piezas se generan siempre en color desaturado; el blanco y negro lo hace Python al final (sin volver a generar) | **Yael, 2026-11-23** (cómo: propuesta de Claude) |
 | D24 | Se descarga **solo la imagen compuesta** (sin piezas sueltas) | **Usuario y Yael, 2026-11-23** |
 | D25 | **El tono sale del lugar, siempre frío y desaturado:** bosque → verde, mar o agua → azul, y así (toda la imagen, no solo la figura). **Halloween es la excepción:** el personaje en naranja y el fondo gris (C5b). La IA que lee el relato propone el tono según el lugar y Yael lo confirma | **Yael, 2026-11-23** |
+| D26 | **Sin el paso de luz de E6, por ahora:** queda «muy lavado» y pierde profundidad. La salida es la composición (C3) + el fundido (E4) + el tono del lugar (C5c) o el blanco y negro, como la primera columna de `e6/salidas/hoja_luz.jpg` | **Usuario y Yael, 2026-11-23** |
 | D-Q10 | Las miniaturas sirven para el texto del YAML y, si mejoran en el spike E7, como referencia visual | **Usuario, 2026-11-22** |
 
 **D-Q5:** la opción simple «¿De qué lado va?» quedó como posibilidad si Yael dibuja el escenario con el hueco pensado. No entra de inicio; se suma solo si lo pide en la prueba.
@@ -1082,7 +1083,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
   - Acepta: `gemma3:12b` ordena las 4 de C3; se mide la coincidencia con Yael.
   - Verifica: informe `c4/`.
 - [ ] **T0.E6 — Las 4 variaciones**
-  - **Rehecho como «la luz» (2026-11-23, `e6_luz.py`), solo Python, esperando el checkpoint:** sobre el fondo se levantan los medios tonos (gamma), se agrega niebla (más densa abajo y en el horizonte) y una zona clara detrás de la figura; además, un borde de luz en la silueta. Después va el tono (C5c) o el blanco y negro. El brillo medio sube de 12–20 a 37–41 (suave) y 52–57 (fuerte); Yael tiene una mediana de 49 en las recientes (p25 38, p75 59). La figura queda recortada contra la niebla y se lee a 120 px. Pendiente: el borde fuerte deja un contorno blanco «de calcomanía» en la coneja, y la niebla es pareja (no pasa por delante de los árboles cercanos). Si hace falta, Qwen reiluminando solo el escenario.
+  - **Descartado por ahora (D26): «muy lavado», pierde profundidad.** Rehecho como «la luz» (2026-11-23, `e6_luz.py`), solo Python: sobre el fondo se levantan los medios tonos (gamma), se agrega niebla (más densa abajo y en el horizonte) y una zona clara detrás de la figura; además, un borde de luz en la silueta. Después va el tono (C5c) o el blanco y negro. El brillo medio sube de 12–20 a 37–41 (suave) y 52–57 (fuerte); Yael tiene una mediana de 49 en las recientes (p25 38, p75 59). La figura queda recortada contra la niebla y se lee a 120 px. Pendiente: el borde fuerte deja un contorno blanco «de calcomanía» en la coneja, y la niebla es pareja (no pasa por delante de los árboles cercanos). Si hace falta, Qwen reiluminando solo el escenario.
   - Acepta:
     - (a) reiluminar el escenario con Qwen-Edit, por instrucción, o con LoRA o AnyLight si pasan la licencia;
     - (b) color en Python;
