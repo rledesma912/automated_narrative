@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). En curso: S0a (T0.1–T0.3) y el spike E0. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y el spike E0; E1 corrido, esperando el checkpoint. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -778,7 +778,7 @@ E3 ───────┴─▶ E4+E5 ─▶ E6 ─▶ E7 ─▶ E8 ─▶ E9 
 | T4 | **El reuso de partes es por hash** de lo que las define: boceto (sha256 del archivo) + descripción + prompt final + receta + hash del workflow + la parte de `arte.yaml` que usan. El archivo es `partes/<hash>.png` | «Armar otras 4» y «cambiar un boceto rehace esa parte» salen solos, sin banderas |
 | T5 | **Las 4 composiciones se arman en Python** (Pillow), con encuadre y lado de la variación; **por imagen, la GPU solo reilumina el escenario (si E6 lo pide) y funde la zona del personaje** | Menos tiempo de GPU por tanda: 2 partes + 4 × (reiluminar + fundir); armonizados |
 | T6 | **Los archivos se sirven desde la API** (`FileResponse`) y el front los pide por el proxy `/api` | Sin carpeta pública nueva en Express; los permisos y las rutas quedan en un solo lugar |
-| T7 | **Subida de bocetos:** `UploadFile` de FastAPI (`python-multipart`, ya está). Solo PNG/JPG (se valida con Pillow, no por extensión), hasta 20 MB. Se guarda normalizado a PNG RGBA, con el lado mayor en 2048 px como máximo | El proxy de Express ya pasa el cuerpo sin parsear; Pillow descarta archivos que no son imágenes |
+| T7 | **Subida de bocetos:** `UploadFile` de FastAPI (`python-multipart`, ya está). Solo PNG/JPG (se valida con Pillow, no por extensión), hasta 20 MB, **con o sin fondo** (E1: Yael exporta con fondo gris y sin transparencia; Qwen-Edit no la necesita). Se guarda normalizado a PNG RGBA, con el lado mayor en 2048 px como máximo | El proxy de Express ya pasa el cuerpo sin parsear; Pillow descarta archivos que no son imágenes |
 | T8 | **resvg entra en el Dockerfile** (binario estático de la release oficial, con la versión fija) solo si el spike E8 confirma que el título necesita `svg`. Si alcanza con `pillow`, `svg` pasa a S7 | No sumar dependencias que no se usan |
 | T9 | **`MockComfy`** devuelve PNG fijos por receta (`tests/fixtures/miniatura/comfy/`) con una demora configurable. Lo usan los tests, el E2E y dev con `COMFY_MOCK=1` | E2E y CI sin GPU; también sirve para probar la pantalla en dev con la GPU ocupada |
 | T10 | **Los workflows se exportan desde la interfaz de ComfyUI en formato API** y se versionan con su `params.yaml` y un README (qué hace, modelos, de qué plantilla sale), como en `cw2d` | Mantenerlos es reexportar y correr el test que valida `params.yaml` |
@@ -987,6 +987,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - grilla, tiempos y VRAM;
     - el ganador exportado en formato API con su `params.yaml` y README.
   - Verifica: informe `e1/` y checkpoint (¿se reconoce el boceto y sirve la terminación?).
+  - **Corrido (2026-11-22), falta el checkpoint:** 2 bocetos de Yael × 3 semillas × 9 variantes (+ la criatura con otra descripción). Gana `qwen_b` (Qwen-Edit 2511 + Lightning con el arte completo, ~56 s, ~10,5 GB): el único que respeta los detalles del boceto. Z-Image (texto, img2img) y su Fun ControlNet Union 2.1 (bajado con OK, Apache-2.0) siguen la silueta pero pierden los detalles: fuera. No hace falta bajar xinsir ni InstantX. La descripción evita palabras que cambian el material («skeletal» → esqueleto). Informe en `scripts/research/790/e1/informe.md`.
 - [ ] **T0.E2 — Recortar**
   - Acepta:
     - BiRefNet, BiRefNet + refinado en Python, y Qwen-Image-Layered solo si los dos primeros fallan;
