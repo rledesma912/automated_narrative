@@ -1066,6 +1066,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T0.C3 — El compositor**
   - Acepta: 4 composiciones distintas para la torre y la coneja (plantilla + lo que no se tapa + fundido de E4 + título de C2), al lado de las miniaturas reales de esas historias.
   - Verifica: informe `c3/` y checkpoint con Yael.
+  - **Corrido (2026-11-23), esperando el checkpoint:** salen 4 composiciones distintas por historia. El título va siempre a una esquina, sin tapar la cara, la figura ni lo importante (BiRefNet sobre el escenario), y nunca bajo la duración. El escenario se espeja cuando la figura taparía lo importante. Fundido: ~80 s por opción (~5,5 min por tanda). **Falta:** la luz (Yael tiene una zona clara detrás y un acento cálido encendido; las nuestras quedan oscuras de punta a punta → E6 pasa a ser lo principal), el título más grande y con contorno, y un recorte de primer plano según la figura. Informe en `scripts/research/790/c3/informe.md`.
 - [ ] **T0.C4 — El juez local** (opcional)
   - Acepta: `gemma3:12b` ordena las 4 de C3; se mide la coincidencia con Yael.
   - Verifica: informe `c4/`.

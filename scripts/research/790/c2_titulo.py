@@ -97,8 +97,9 @@ def reglas(gancho: str) -> list[str]:
     for ln in mejor or []:
         solo = len(ln) == 1
         lineas.append(" ".join(("*" if w["acento"] else "~" if w["chica"] and not solo else "") + w["t"] for w in ln))
-    if numero:  # el número va pegado a la primera línea (abarca dos líneas), como en #7, #9, #10, #19
-        lineas = [f"{numero} {lineas[0]}"] + lineas[1:]
+    if numero:  # pegado a la primera línea (abarca dos), como en #7, #9, #10; con 2 líneas o menos,
+        # solo arriba (#5): así el bloque gana alto y no ancho
+        lineas = [numero] + lineas if len(lineas) <= 2 else [f"{numero} {lineas[0]}"] + lineas[1:]
     return lineas
 
 
@@ -184,12 +185,13 @@ def medir_ancho(lineas: list[str], G: int) -> float:
     return mayor
 
 
-def dibujar(lineas: list[str], ancho_c: int = 620, alto_c: int = 560, G: int | None = None) -> Image.Image:
+def dibujar(lineas: list[str], ancho_c: int = 620, alto_c: int = 560, G: int | None = None,
+            alinear: str = "izquierda") -> Image.Image:
     """El bloque del título en el estilo del canal: serif blanca, chicas al 55 %, acento naranja con
     brillo, número gigante, sombra negra difusa. Alineado a la izquierda. El tamaño se ajusta para
     que la línea más ancha entre en el bloque y el alto también."""
     if G is None:
-        G = 120
+        G = 170
         while G > 30 and (medir_ancho(lineas, G) > ancho_c - 40 or len(lineas) * G * 0.98 + 40 > alto_c):
             G -= 2
     lienzo = Image.new("RGBA", (ancho_c, alto_c), (0, 0, 0, 0))
@@ -205,13 +207,28 @@ def dibujar(lineas: list[str], ancho_c: int = 620, alto_c: int = 560, G: int | N
         tok = ls[0].split()[0]
         numero_al_lado = (tok.lstrip("*"), tok.startswith("*"))
         ls[0] = " ".join(ls[0].split()[1:])
+    def ancho_linea(ln: str) -> float:
+        if ln.strip().lstrip("*").isdigit():
+            return d.textlength(ln.strip().lstrip("*"), font=f_n)
+        return sum(d.textlength(p["t"] + " ", font=f_c if p["chica"] else f_g) - (2 if p["chica"] else 4)
+                   for p in palabras(ln)) - d.textlength(" ", font=f_g) + 4
+
+    derecha = ancho_c - 20
     xi = x0
+    ancho_num = 0.0
     if numero_al_lado:
         t, acento = numero_al_lado
-        d.text((x0, y - 0.25 * G), t, font=f_n, fill=NARANJA if acento else (255, 255, 255))
-        xi = x0 + d.textlength(t, font=f_n) + 8
+        ancho_num = d.textlength(t, font=f_n) + 8
+        if alinear == "derecha":
+            xn = derecha - max(ancho_linea(ln) for ln in ls[:2]) - ancho_num
+        else:
+            xn = x0
+        d.text((xn, y - 0.25 * G), t, font=f_n, fill=NARANJA if acento else (255, 255, 255))
+        xi = x0 + ancho_num
     for k, ln in enumerate(ls):
         x = xi if (numero_al_lado and k < 2) else x0
+        if alinear == "derecha":
+            x = derecha - ancho_linea(ln)
         if ln.strip().lstrip("*").isdigit():
             d.text((x, y - 0.3 * G), ln.strip().lstrip("*"), font=f_n, fill=NARANJA if ln.startswith("*") else (255, 255, 255))
             y += round(1.75 * G)
