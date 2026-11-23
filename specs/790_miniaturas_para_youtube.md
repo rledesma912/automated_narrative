@@ -287,14 +287,18 @@ El usuario dejó **8 miniaturas actuales** en `imagenes/` (movidas a `scripts/re
 
 ### 2.2 El arte del canal: `config/miniatura/arte.yaml`
 
-Es la parte del prompt que **define el arte** y que comparten **todas** las miniaturas, sin importar la historia. Cada paso de ComfyUI arma su prompt así:
+Es lo que **comparten todas** las miniaturas, sin importar la historia: paleta y acento, luz, sentidos, textura, negativos comunes, composición, las 4 variaciones y el título. Aunque cambien la historia y los bocetos, eso se mantiene: es lo que hace que las miniaturas parezcan de la misma serie.
+
+**Un prompt por paso (D17, 2026-11-23).** El **estilo** no es común: cada paso tiene su plantilla en `config/miniatura/prompts/<paso>.md` y toma de `arte.yaml` **solo los campos que le sirven** (`{luz}`, `{sentidos}`…). El personaje y el escenario se ven distintos a propósito:
+- **personaje** (`personaje.md`): el texto de `qwen_b` (E1) tal como les gustó al usuario y a Yael: **no se toca**;
+- **escenario** (`escenario.md`): **foto real** de un lugar real (una mansión real, árboles reales, una caseta real; nada de «cartoon lúgubre» ni render). El boceto solo guía qué va y dónde. Pedido de Yael tras E3; el texto sale del set E3b;
+- más adelante `fundir.md` y `reiluminar.md`, cada uno con lo suyo.
 
 ```
-[arte: estilo + luz + paleta + sentidos + textura]  +  [lo del paso: personaje con su descripción | escenario con la suya]
-  + [la variación de esta imagen]  +  negativos del arte
+prompts/<paso>.md  ←  {descripción de la historia} + campos de arte.yaml que pide el paso + {variación}
 ```
 
-Aunque cambien la historia y los bocetos, el arte se mantiene: es lo que hace que las miniaturas parezcan de la misma serie.
+Así, ajustar el realismo del fondo no puede romper al personaje aprobado, y lo común (acento, título, variaciones) sigue en un solo lugar. Como en el relato (Spec-620), el texto que lee la IA vive en `config/` y no en Python.
 
 **Las miniaturas actuales** (8, en §1.7) sirven **dos veces** (D-Q10):
 - para escribir los textos del YAML;
@@ -312,9 +316,7 @@ referencias_visuales:          # D-Q10 / E7: archivos en data/<env>/miniaturas/_
   - { archivo: nunca_rompas_las_reglas.jpg, peso: 0.3 }
   - { archivo: no_te_duermas_durante_la_guardia.jpg, peso: 0.3 }
 
-estilo: >-
-  Dark horror night photograph, photorealistic, black and white or heavily desaturated,
-  cinematic, looks like a real photo taken at night, not a painting, not a cartoon.
+# El estilo NO va acá: cada paso lo pone en su plantilla de prompts/ (D17).
 luz: >-
   A single hard light source (moonlight, a flashlight beam, a camera flash or a backlit
   window), deep crushed blacks, most of the frame in shadow, the figure partly lit.
@@ -330,16 +332,6 @@ textura: >-
   Heavy film grain, strong dark vignette on all edges, dirty scratched texture,
   slight blur in the background.
 
-personaje:
-  entidad: >-
-    A gaunt, emaciated humanoid creature with unnaturally long thin limbs, pale or
-    shadowed skin, glowing white eyes, standing or crouching, menacing, partly in shadow.
-  protagonista: >-
-    A person seen from behind or in profile, holding a flashlight, tense posture,
-    face mostly hidden, lit by their own light.
-escenario: >-
-  An empty, desolate place at night (forest, tall grass field, abandoned corridor,
-  dirt road in a small town, roadside), depth with fog layers, nobody else around.
 negativos: >-
   text, letters, watermark, logo, color, saturated colors, gore, blood, extra limbs,
   extra fingers, cartoon, painting, illustration, bright daylight, people in the background.
@@ -379,10 +371,21 @@ titulo:                        # §2.4
 calabaza: { archivo: calabaza.png, lado: abajo_izquierda, alto: 0.35 }
 ```
 
-**Reglas del archivo:**
-- Lo valida un esquema al arrancar (como los moldes, Spec-670): textos no vacíos, exactamente 4 variaciones, encuadres y lados conocidos, y la fuente en `assets/fonts/`.
-- Un test verifica que cada paso de ComfyUI recibe el arte completo y su variación.
-- Cambiar el arte es cambiar este archivo, no el código. Viaja en la imagen de Docker, como los prompts.
+**Las plantillas de cada paso** (`config/miniatura/prompts/`, en inglés, con huecos `str.format` como los fragmentos del relato):
+
+| Plantilla | Huecos | Estado |
+|---|---|---|
+| `personaje.md` | `{descripcion}` (la luz y la textura de E1 quedan escritas en la plantilla, tal como se aprobaron) | **Hecho:** el de `qwen_b` (E1), aprobado: fiel al boceto, fondo liso |
+| `escenario.md` | `{descripcion}`, `{luz}`, `{sentidos}` | Foto real; sale del set E3b |
+| `fundir.md`, `reiluminar.md` | los que pidan E4 y E6 | Pendientes |
+
+Los textos de ejemplo del borrador viejo (`personaje.entidad`, `personaje.protagonista`, `escenario`) se van: la descripción la propone la IA desde el relato (paso 1), y no usa palabras que cambian el material salvo que vengan del relato (E1).
+
+**Reglas de los archivos:**
+- `arte.yaml` lo valida un esquema al arrancar (como los moldes, Spec-670): textos no vacíos, exactamente 4 variaciones, encuadres y lados conocidos, y la fuente en `assets/fonts/`.
+- Cada plantilla de `prompts/` se carga con su lista de huecos; un hueco que no está en `arte.yaml` ni en lo de la historia falla al arrancar.
+- Un test verifica que cada paso de ComfyUI recibe **su** plantilla con los campos del arte que pide y su variación.
+- Cambiar el arte o un prompt es cambiar estos archivos, no el código. Viajan en la imagen de Docker, como los prompts del relato.
 
 ### 2.3 La pantalla (componentes del sitio, sin editor)
 
@@ -552,7 +555,7 @@ src/domain/thumbnail.py
 src/application/services/miniatura/
   arte.py            → carga y valida arte.yaml
   lectura.py         → thumbnail_read (figura, descripciones, título corto)
-  prompts.py         → los prompts de imagen: arte + lo de la historia + variación
+  prompts.py         → los prompts de imagen: plantilla del paso (prompts/<paso>.md) + campos de arte.yaml + lo de la historia + variación
   arnes.py           → la tanda: partes (con reuso por hash) → 4 × (reiluminar → componer + máscara → fundir → paste-back) → título → chequeos
   compositor.py      → compone (Pillow, puro)
   titulo/            → contrato + motores pillow, svg (blender, comfy más adelante)
@@ -668,6 +671,7 @@ El de la casa: Clean Architecture, sin textos en Python (Spec-620), dataclasses 
 | D14 | Se descarta el dato de caras (otros nichos) | **Usuario, 2026-11-22** |
 | D15 | **Divide y triunfarás:** cada llamada a ComfyUI hace una sola tarea; la secuencia, las entradas, las revisiones entre pasos y qué hacer si algo falla los decide Python, por código. Ningún workflow encadena tareas | **Usuario, 2026-11-22** |
 | D16 | Un spike por cada parte del flujo (E0–E9), con su checkpoint, antes de construir | **Usuario, 2026-11-22** |
+| D17 | **Un prompt por paso** en `config/miniatura/prompts/<paso>.md`; `arte.yaml` guarda solo lo común (paleta, luz, sentidos, textura, negativos, composición, variaciones, título). El personaje sigue como en E1; los escenarios y fondos son **foto real** | **Usuario y Yael, 2026-11-23** |
 | D-Q1 | Botón «Que la IA lea el relato» (job corto); sin tocarlo, todo se completa a mano | **Usuario, 2026-11-22** |
 | D-Q2 | Entre las 4 cambian la semilla y una variación del arte (luz, encuadre, lado), de `arte.yaml` | **Usuario, 2026-11-22** |
 | D-Q3 | Todo corre en un job; «Armar otras 4» reusa personaje y escenario; cambiar un boceto rehace esa parte | **Usuario, 2026-11-22** |
@@ -830,7 +834,7 @@ Cada slice cierra con `make test` + `make lint` + `npm test` en verde, `make dev
 - **Qué se construye:**
   - el rol `miniatura` en los perfiles (T11);
   - `lectura.py`: el esquema de §2.9 y el prompt en `config/miniatura/prompts/leer_relato.md`, que lee la historia, la entidad y la última versión del relato;
-  - `prompts.py`: arma el prompt de cada paso como **arte (código) + lo de la historia (IA) + variación (código)**; la llamada de texto devuelve `personaje`, `escenario` y las 4 `luces` en inglés;
+  - `prompts.py`: arma el prompt de cada paso con **su plantilla de `prompts/` (D17) + los campos de arte que pide + lo de la historia (IA) + variación (código)**; la llamada de texto devuelve `personaje`, `escenario` y las 4 `luces` en inglés;
   - `mock_structured.py`, con las respuestas de los dos esquemas.
 - **Tests:**
   - los snapshots `thumbnail_prompts.json` (leer el relato y los prompts de imagen de una historia de fixture, con las 4 variaciones);
@@ -1132,7 +1136,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
   - Verifica: snapshot y test de la instrucción.
 - [ ] **T3.3 — Prompts de imagen**
   - Acepta:
-    - `prompts.py`: arte (código) + lo de la historia (una llamada de texto: personaje, escenario y las 4 luces en inglés) + variación (código), más los negativos;
+    - `prompts.py`: la plantilla del paso (`config/miniatura/prompts/<paso>.md`, D17) + los campos de arte que pide + lo de la historia (una llamada de texto: personaje, escenario y las 4 luces en inglés) + variación (código), más los negativos;
     - prompts en `config/miniatura/prompts/`.
   - Verifica:
     - snapshot `thumbnail_prompts.json`;
