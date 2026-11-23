@@ -61,6 +61,12 @@
       titulo: "Armando las 4 miniaturas…",
       detalle: "La compu arma el personaje y el escenario desde tus bocetos, y después las 4 opciones.",
       onDone: () => location.reload(),
+      etapas: {
+        esperando_gpu: "Esperando que se libere la compu que hace las imágenes…",
+        personaje: "Paso 1: el personaje desde tu boceto",
+        escenario: "Paso 2: el escenario desde tu boceto",
+        componiendo: "Paso 3: la miniatura {n} de {total}",
+      },
     });
   }
 

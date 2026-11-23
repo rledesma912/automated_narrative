@@ -109,24 +109,7 @@ class ComfyClient:
         except httpx.HTTPError:
             pass
 
-    async def correr(
-        self, receta: str, valores: dict, entradas: dict[str, Path], destino: Path
-    ) -> Path:
-        """Corre una receta: sube las entradas (imágenes), llena el grafo, espera y baja la
-        primera imagen de salida en `destino`."""
-        grafo, params = cargar_workflow(receta)
-        for nombre, ruta in entradas.items():
-            valores[nombre] = await self.subir(ruta)
-        valores.setdefault("prefijo", f"spec790/{receta}")
-        g = llenar(grafo, params, valores)
-        try:
-            async with self._http() as h:
-                r = await h.post("/prompt", json={"prompt": g, "client_id": self.client_id})
-        except httpx.HTTPError as e:
-            raise ComfyError(message("miniatura.sin_comfy"), repr(e)) from None
-        if r.status_code != 200:
-            raise ComfyError(message("miniatura.error_comfy", detalle=receta), r.text[:800])
-        prompt_id = r.json()["prompt_id"]
+    async def _esperar(self, receta: str, prompt_id: str) -> dict:
         inicio = time.monotonic()
         while True:
             hist = (await self._get(f"/history/{prompt_id}")).json().get(prompt_id)
@@ -146,6 +129,42 @@ class ComfyClient:
                     )
                 )
             await asyncio.sleep(1.0)
+        return hist
+
+    async def cancelar(self, prompt_id: str) -> None:
+        """Saca el pedido de la cola y, si ya estaba corriendo, lo interrumpe."""
+        try:
+            async with self._http() as h:
+                await h.post("/queue", json={"delete": [prompt_id]})
+                cola = (await h.get("/queue")).json()
+                if any(item[1] == prompt_id for item in cola.get("queue_running", [])):
+                    await h.post("/interrupt")
+        except httpx.HTTPError:
+            pass
+
+    async def correr(
+        self, receta: str, valores: dict, entradas: dict[str, Path], destino: Path
+    ) -> Path:
+        """Corre una receta: sube las entradas (imágenes), llena el grafo, espera y baja la
+        primera imagen de salida en `destino`."""
+        grafo, params = cargar_workflow(receta)
+        for nombre, ruta in entradas.items():
+            valores[nombre] = await self.subir(ruta)
+        valores.setdefault("prefijo", f"spec790/{receta}")
+        g = llenar(grafo, params, valores)
+        try:
+            async with self._http() as h:
+                r = await h.post("/prompt", json={"prompt": g, "client_id": self.client_id})
+        except httpx.HTTPError as e:
+            raise ComfyError(message("miniatura.sin_comfy"), repr(e)) from None
+        if r.status_code != 200:
+            raise ComfyError(message("miniatura.error_comfy", detalle=receta), r.text[:800])
+        prompt_id = r.json()["prompt_id"]
+        try:
+            hist = await self._esperar(receta, prompt_id)
+        except asyncio.CancelledError:
+            await self.cancelar(prompt_id)  # «Cancelar» corta también lo que hace ComfyUI
+            raise
         imagenes = [im for out in hist.get("outputs", {}).values() for im in out.get("images", [])]
         if not imagenes:
             raise ComfyError(message("miniatura.error_comfy", detalle=f"{receta}: sin imagen"))
