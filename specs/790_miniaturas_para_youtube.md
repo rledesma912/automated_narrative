@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 corrido, esperando el checkpoint. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). En curso: E4/E5 (ronda 1 no pasó). `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -996,13 +996,13 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - el ganador exportado en formato API con su `params.yaml` y README.
   - Verifica: informe `e1/` y checkpoint (¿se reconoce el boceto y sirve la terminación?).
   - **Hecho (2026-11-23, OK del usuario y Yael a `qwen_b`):** 2 bocetos de Yael × 3 semillas × 9 variantes (+ la criatura con otra descripción). Gana `qwen_b` (Qwen-Edit 2511 + Lightning con el arte completo, ~56 s, ~10,5 GB): el único que respeta los detalles del boceto. Z-Image (texto, img2img) y su Fun ControlNet Union 2.1 (bajado con OK, Apache-2.0) siguen la silueta pero pierden los detalles: fuera. No hace falta bajar xinsir ni InstantX. La descripción evita palabras que cambian el material («skeletal» → esqueleto). Informe en `scripts/research/790/e1/informe.md`; el grafo en `config/miniatura/workflows/boceto_a_imagen/` (lo comparte con E3).
-- [ ] **T0.E2 — Recortar**
+- [x] **T0.E2 — Recortar**
   - Acepta:
     - BiRefNet, BiRefNet + refinado en Python, y Qwen-Image-Layered solo si los dos primeros fallan;
     - bordes vistos a 100 % y a 120 px;
     - el ganador exportado.
   - Verifica: informe `e2/` y checkpoint.
-  - **Corrido (2026-11-23), falta el checkpoint:** BiRefNet solo sale limpio en los 6 personajes de E1 (dedos con sus puntas, orejas, pelo; sin la sombra del piso ni halo), ~0,8 s y ~1,9 GB. El refinado en Python corta la punta de los dedos: fuera. Qwen-Image-Layered no hace falta. Workflow `config/miniatura/workflows/recortar/`; informe en `scripts/research/790/e2/informe.md`.
+  - **Hecho (2026-11-23, OK del usuario y Yael):** BiRefNet solo sale limpio en los 6 personajes de E1 (dedos con sus puntas, orejas, pelo; sin la sombra del piso ni halo), ~0,8 s y ~1,9 GB. El refinado en Python corta la punta de los dedos: fuera. Qwen-Image-Layered no hace falta. Workflow `config/miniatura/workflows/recortar/`; informe en `scripts/research/790/e2/informe.md`.
 - [x] **T0.E3 — Ilustrar el escenario**
   - Acepta:
     - las variantes de E1 que pasaron, a 1344 × 768 y a 1024 × 576 + `agrandar`;
@@ -1020,6 +1020,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - la diferencia de píxeles fuera de la máscara es ≈ 0;
     - se proponen la regla de máscara y el umbral del fundido.
   - Verifica: informe `e4/` y checkpoint (¿la figura está «dentro» del lugar, con sombra?).
+  - **Ronda 1 (2026-11-23), no pasa:** el pegado con máscara deja el fondo idéntico (diferencia 0,0 fuera de la máscara; el control global lo corre 23–33/255), pero Qwen aclara toda la zona y queda un halo con la forma de la máscara, y la «sombra» sale como un círculo de luz. Próxima ronda: igualar la exposición en Python antes de pegar, instrucción más acotada, oscurecer la figura antes de componer. Informe en `scripts/research/790/e4/informe.md`.
 - [ ] **T0.E6 — Las 4 variaciones**
   - Acepta:
     - (a) reiluminar el escenario con Qwen-Edit, por instrucción, o con LoRA o AnyLight si pasan la licencia;
