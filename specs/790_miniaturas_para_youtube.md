@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y el spike E0; E1 corrido, esperando el checkpoint. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3. Sigue: E2. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -979,7 +979,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - el usuario lo corrige.
   - Verifica: OK del usuario al borrador.
   - **Hecho (2026-11-22):** 8 miniaturas analizadas (§1.7) y borrador en §2.2, con Q11–Q14 respondidas.
-- [ ] **T0.E1 — Ilustrar el personaje**
+- [x] **T0.E1 — Ilustrar el personaje**
   - Acepta:
     - variantes (a) Qwen-Edit 2511 con instrucción, (b) xinsir Union SDXL, (c) Qwen-Image + InstantX Union y (d) Z-Image como control;
     - (b) y (c) se bajan solo con OK y licencia verificada;
@@ -987,19 +987,20 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - grilla, tiempos y VRAM;
     - el ganador exportado en formato API con su `params.yaml` y README.
   - Verifica: informe `e1/` y checkpoint (¿se reconoce el boceto y sirve la terminación?).
-  - **Corrido (2026-11-22), falta el checkpoint:** 2 bocetos de Yael × 3 semillas × 9 variantes (+ la criatura con otra descripción). Gana `qwen_b` (Qwen-Edit 2511 + Lightning con el arte completo, ~56 s, ~10,5 GB): el único que respeta los detalles del boceto. Z-Image (texto, img2img) y su Fun ControlNet Union 2.1 (bajado con OK, Apache-2.0) siguen la silueta pero pierden los detalles: fuera. No hace falta bajar xinsir ni InstantX. La descripción evita palabras que cambian el material («skeletal» → esqueleto). Informe en `scripts/research/790/e1/informe.md`.
+  - **Hecho (2026-11-23, OK del usuario y Yael a `qwen_b`):** 2 bocetos de Yael × 3 semillas × 9 variantes (+ la criatura con otra descripción). Gana `qwen_b` (Qwen-Edit 2511 + Lightning con el arte completo, ~56 s, ~10,5 GB): el único que respeta los detalles del boceto. Z-Image (texto, img2img) y su Fun ControlNet Union 2.1 (bajado con OK, Apache-2.0) siguen la silueta pero pierden los detalles: fuera. No hace falta bajar xinsir ni InstantX. La descripción evita palabras que cambian el material («skeletal» → esqueleto). Informe en `scripts/research/790/e1/informe.md`; el grafo en `config/miniatura/workflows/boceto_a_imagen/` (lo comparte con E3).
 - [ ] **T0.E2 — Recortar**
   - Acepta:
     - BiRefNet, BiRefNet + refinado en Python, y Qwen-Image-Layered solo si los dos primeros fallan;
     - bordes vistos a 100 % y a 120 px;
     - el ganador exportado.
   - Verifica: informe `e2/` y checkpoint.
-- [ ] **T0.E3 — Ilustrar el escenario**
+- [x] **T0.E3 — Ilustrar el escenario**
   - Acepta:
     - las variantes de E1 que pasaron, a 1344 × 768 y a 1024 × 576 + `agrandar`;
     - 2 bocetos × 3 semillas;
     - el ganador exportado, con la resolución elegida.
   - Verifica: informe `e3/` y checkpoint.
+  - **Corrido (2026-11-23):** gana `qwen_b` a su resolución (~1392 × 752, ~57 s), el más fiel al boceto; a 1024 × 576 Qwen cambia el encuadre y no hace falta agrandar. El ControlNet lite de Z-Image pierde detalle: fuera. Mismo grafo que el personaje (`boceto_a_imagen`, dos recetas). Informe en `scripts/research/790/e3/informe.md`.
 - [ ] **T0.E4/E5 — Fundir y la máscara**
   - Acepta:
     - composición tosca en Python;
