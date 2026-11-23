@@ -239,7 +239,7 @@ async def importantes(c: Comfy) -> dict[str, Image.Image]:
     return out
 
 
-async def main(semilla: int, con_qwen: bool) -> dict:
+async def main(semilla: int, con_qwen: bool, con_titulo: bool = True) -> dict:
     SALIDAS.mkdir(parents=True, exist_ok=True)
     medidas: dict = {}
     async with Comfy() as c:
@@ -289,8 +289,10 @@ async def main(semilla: int, con_qwen: bool) -> dict:
                     if r_t and (mejor is None or r_t[0] < mejor[0][0]):
                         mejor = (r_t, b)
                 (costo, esquina, (tx, ty)), b = mejor
+                # D22: sin título, la esquina igual queda libre (se calcula y se anota)
                 out = final.convert("RGBA")
-                out.alpha_composite(b, (tx, ty))
+                if con_titulo:
+                    out.alpha_composite(b, (tx, ty))
                 out = out.convert("RGB")
                 out.save(SALIDAS / f"{clave}.png")
                 medidas.setdefault(clave, {}).update({
