@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). E4/E5 ✅ (ronda 2, OK del usuario y Yael). **Nuevo (2026-11-23): el compositor que aprende de las miniaturas recientes de Yael** (§1.8, §2.11, spikes C1–C4); en curso C1. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). **2026-11-23: la versión de hoy (§10.7) construida en la rama**, en dev; falta el OK para el deploy. Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). E4/E5 ✅ (ronda 2, OK del usuario y Yael). **Nuevo (2026-11-23): el compositor que aprende de las miniaturas recientes de Yael** (§1.8, §2.11, spikes C1–C4); en curso C1. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -965,6 +965,23 @@ Cada slice cierra con `make test` + `make lint` + `npm test` en verde, `make dev
 4. Después de **S6**: si hace falta S7.
 5. **Deploy** (S9).
 
+### 10.7 Plan revisado (2026-11-23, con D18–D26): la versión de hoy
+
+Lo que cambió en los spikes deja un camino más corto que los slices S1–S9 de arriba: **no hay título, ni chequeos de título, ni reiluminado, ni IA de texto obligatoria.** La versión de hoy:
+
+| Pieza | Qué hace | Dónde |
+|---|---|---|
+| `arte.yaml` | las 4 plantillas (D21), los tonos con sus lugares (D25: verde, azul, gris frío y la excepción Halloween), el tope de desaturado (40), los parámetros de la figura y del fundido | `config/miniatura/arte.yaml` |
+| Prompts | personaje, escenario y foto **en color desaturado** (C5) y `fundir.md` (E4 ronda 2) | `config/miniatura/prompts/` |
+| Cliente de ComfyUI | subir, encolar, esperar por *polling* de `/history`, bajar, liberar; los 3 workflows exportados (`boceto_a_imagen`, `foto_img2img`, `recortar`) con sus `params.yaml` | `src/infrastructure/adapters/comfy/` |
+| Arnés | personaje → recorte → escenario (Qwen → curva → Z-Image) → lo importante (BiRefNet) → 4 × (componer + fundir) → color (tono del lugar, Halloween o blanco y negro) → 4 JPG. **Reusa** el personaje y el escenario si no cambiaron el boceto ni la descripción (hash). Espera la GPU si está ocupada (D10) | `src/application/services/miniatura/` |
+| Datos | tabla `thumbnail` (una por historia, JSON) y archivos en `data/<env>/miniaturas/<story_id>/` | `init_db()` (tabla nueva, sin borrar nada) |
+| Job | `thumbnail_build` con etapas `personaje`, `escenario`, `componiendo` (1 a 4) y `esperando_gpu`; ~10 min por tanda (E9) | `JobManager` |
+| API | `GET`/`PUT /stories/{id}/thumbnail`, `POST /stories/{id}/thumbnail/sketches/{personaje|escenario}`, las imágenes (`…/sketches/{tipo}.png`, `…/images/{tanda}/{n}.jpg`) | `thumbnail_router.py` |
+| Pantalla | «Miniaturas» en el menú (la lista de historias) y `/miniaturas/{id}`: ¿quién va? (entidad o protagonista, y cómo es), los dos bocetos, cómo es el lugar, el color (desaturado o blanco y negro) y el tono (propuesto según el lugar, editable), «Armar las 4» con el modal de la IA y las 4 opciones con «Descargar». Acción «Armar la miniatura» en «El relato» | `frontend/` |
+
+**Queda para después:** que la IA lea el relato y proponga (`thumbnail_read`), el título (C2), «Armar otras 4» con otra semilla sin rehacer las piezas (sale gratis del reuso por hash: se puede sumar si alcanza el tiempo), elegir 1 a 3 y el zip, el juez local (C4), el paso de luz (E6/D26) y el deploy (con OK del usuario).
+
 ## 11. TASKS
 
 Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasar) y su **Verifica** (cómo se comprueba).
@@ -1102,7 +1119,8 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - se lee a 120 px;
     - se decide T8 (resvg en la imagen, sí o no).
   - Verifica: informe `e8/` y checkpoint.
-- [ ] **T0.E9 — La cadena por Python**
+- [x] **T0.E9 — La cadena por Python**
+  - **Hecho (2026-11-23):** la coneja de punta a punta en **677 s (~11 min)**: 298 s las piezas, 378 s las 4 composiciones con fundido y 0,9 s el color. Pico de **11,5 GB de VRAM** en la placa de 12, así que no entra audiogen al mismo tiempo: el arnés espera la GPU (`esperando_gpu`). `estimated_seconds` inicial: 680. Informe en `scripts/research/790/e9/informe.md`.
   - Acepta:
     - un script encadena los ganadores (personaje → recorte → escenario → 4 × (reiluminar → componer + máscara → fundir → pegar) → título → JPG) con `/free` entre pasos;
     - se corre en tres condiciones: GPU libre, audiogen cargado y audiogen generando;

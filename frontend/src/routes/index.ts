@@ -8,6 +8,7 @@ import { relatosPage, regenerarActoAction, relatoPanelFragment, corregirRelatoPa
 import { loadEstimates } from "../middleware/estimates.middleware";
 import { nuevoPage, asistentePage, fragmentoAsistente } from "../controllers/asistente.controller";
 import { editarHref } from "../utils/rutas";
+import { miniaturasPage, miniaturaPage } from "../controllers/miniaturas.controller";
 
 const router = Router();
 
@@ -52,5 +53,9 @@ router.get("/historia/:storyId/relatos/:narrativeId/panel", loadEstimates, relat
 // Spec-610: corregir el relato en la web.
 router.get("/historia/:storyId/relatos/:narrativeId/corregir", loadEstimates, corregirRelatoPage);
 router.get("/historia/:storyId/relatos/:narrativeId/video", loadEstimates, videoPage);
+
+// Spec-790: las miniaturas para YouTube.
+router.get("/miniaturas", miniaturasPage);
+router.get("/miniaturas/:storyId", loadEstimates, miniaturaPage);
 
 export default router;

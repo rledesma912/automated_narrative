@@ -1,0 +1,129 @@
+<%
+/*
+ * Spec-790 §10.7: la miniatura de una historia. Un formulario en orden (¿quién va?, el
+ * personaje, el escenario, el color) que se guarda solo, «Armar las 4» (job con el modal de
+ * la IA) y las 4 opciones con «Descargar». Sin título (D22): el texto lo pone Yael.
+ * Lo maneja public/js/miniaturas.js.
+ *
+ * Variables: story, thumb (GET /stories/{id}/thumbnail), bust.
+ */
+const i = thumb.input;
+const tanda = thumb.batches.length ? thumb.batches[thumb.batches.length - 1] : null;
+const estimado = locals.estimateLabels ? (locals.estimateLabels.thumbnail_build || '') : '';
+const tonoNombre = (id) => (thumb.tonos.find(t => t.id === id) || {}).nombre || id;
+const plantillaNombre = (id) => (thumb.plantillas.find(p => p.id === id) || {}).nombre || id;
+const api = `/api/v1/stories/${story.id}/thumbnail`;
+%>
+<div class="max-w-5xl mx-auto flex flex-col gap-6" data-miniatura data-story-id="<%= story.id %>">
+  <div class="flex flex-col gap-2">
+    <a href="/miniaturas" class="text-sm text-forge-muted hover:text-forge-accent flex items-center gap-2 w-fit">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver a las miniaturas
+    </a>
+    <h2 class="heading-forge-lg">Miniatura: «<%= story.title || 'Sin título' %>»</h2>
+    <p class="pista-forge"><i data-lucide="info"></i><span>Lo que cambies se guarda solo. Salen 4 opciones sin texto: el título lo ponés vos.</span></p>
+  </div>
+
+  <section class="bg-forge-surface border border-forge-border p-6">
+    <h3 class="font-serif text-xl mb-4">1. ¿Quién va en la miniatura?</h3>
+    <div class="grid sm:grid-cols-2 gap-3 mb-4">
+      <% [['entidad', 'La entidad', 'Lo que da miedo en la historia'], ['protagonista', 'El protagonista', 'Quien cuenta o vive la historia']].forEach(([v, nombre, ayuda]) => { %>
+        <label class="opcion-forge h-full">
+          <input type="radio" name="figure" value="<%= v %>" class="peer sr-only" <%= i.figure === v ? 'checked' : '' %> data-campo>
+          <span class="opcion-forge__caja h-full"><span>
+            <span class="block font-semibold"><%= nombre %></span>
+            <span class="block text-sm text-forge-muted"><%= ayuda %></span>
+          </span></span>
+        </label>
+      <% }) %>
+    </div>
+    <label class="block text-sm text-forge-muted mb-1" for="m-figura">Cómo es</label>
+    <textarea id="m-figura" name="figure_description" rows="3" data-campo
+              placeholder="Por ejemplo: una criatura altísima y flaca, de piel gris, con los ojos blancos que brillan"
+              class="w-full [field-sizing:content] min-h-[5rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= i.figure_description %></textarea>
+    <p class="pista-forge mt-1"><i data-lucide="lightbulb"></i>Contá cómo se ve, no lo que hace.</p>
+  </section>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <% [['personaje', '2. El personaje', 'Dibujalo solo, sin fondo: después se suma al escenario.', i.character_sketch], ['escenario', '3. El escenario', 'Dibujá todo el lugar: qué va y dónde.', i.scene_sketch]].forEach(([tipo, titulo, ayuda, archivo]) => { %>
+      <section class="bg-forge-surface border border-forge-border p-6 flex flex-col gap-3" data-boceto="<%= tipo %>">
+        <h3 class="font-serif text-xl"><%= titulo %></h3>
+        <p class="pista-forge"><i data-lucide="pencil"></i><%= ayuda %></p>
+        <div class="aspect-video bg-forge-bg border border-dashed border-forge-border flex items-center justify-center overflow-hidden">
+          <% if (archivo) { %>
+            <img src="<%= api %>/sketches/<%= tipo %>.png?v=<%= bust %>" alt="El boceto del <%= tipo %>" class="max-h-full max-w-full object-contain" data-boceto-img>
+          <% } else { %>
+            <span class="text-forge-muted text-sm" data-boceto-vacio>Todavía no subiste el boceto</span>
+          <% } %>
+        </div>
+        <label class="btn-forge-outline-sm cursor-pointer w-fit">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          <span><%= archivo ? 'Cambiar el boceto' : 'Subir el boceto' %></span>
+          <input type="file" accept="image/png,image/jpeg" class="sr-only" data-subir-boceto="<%= tipo %>">
+        </label>
+        <p class="hidden text-sm text-forge-error" data-boceto-error="<%= tipo %>" role="alert"></p>
+        <% if (tipo === 'escenario') { %>
+          <label class="block text-sm text-forge-muted mt-2" for="m-lugar">Cómo es el lugar</label>
+          <textarea id="m-lugar" name="place_description" rows="3" data-campo
+                    class="w-full [field-sizing:content] min-h-[5rem] bg-forge-bg border border-forge-border px-3 py-2 leading-relaxed focus:outline-none focus:border-forge-accent"><%= i.place_description %></textarea>
+        <% } %>
+      </section>
+    <% }) %>
+  </div>
+
+  <section class="bg-forge-surface border border-forge-border p-6">
+    <h3 class="font-serif text-xl mb-4">4. El color</h3>
+    <div class="grid sm:grid-cols-2 gap-3 mb-4">
+      <% [['desaturado', 'Color desaturado', 'Apagado y frío, con el tono del lugar'], ['byn', 'Blanco y negro', 'Sin color']].forEach(([v, nombre, ayuda]) => { %>
+        <label class="opcion-forge h-full">
+          <input type="radio" name="color" value="<%= v %>" class="peer sr-only" <%= i.color === v ? 'checked' : '' %> data-campo>
+          <span class="opcion-forge__caja h-full"><span>
+            <span class="block font-semibold"><%= nombre %></span>
+            <span class="block text-sm text-forge-muted"><%= ayuda %></span>
+          </span></span>
+        </label>
+      <% }) %>
+    </div>
+    <div data-tono class="<%= i.color === 'byn' ? 'hidden' : '' %>">
+      <label class="block text-sm text-forge-muted mb-1" for="m-tono">El tono</label>
+      <select id="m-tono" name="tone" data-campo class="w-full sm:w-auto bg-forge-bg border border-forge-border px-3 py-2">
+        <option value="" <%= i.tone ? '' : 'selected' %>>Según el lugar: <%= tonoNombre(thumb.tono_propuesto) %></option>
+        <% thumb.tonos.forEach(t => { %><option value="<%= t.id %>" <%= i.tone === t.id ? 'selected' : '' %>><%= t.nombre %></option><% }) %>
+      </select>
+      <p class="pista-forge mt-1"><i data-lucide="lightbulb"></i>Sale del lugar: bosque en verde, mar en azul. Halloween pone a la figura en naranja.</p>
+    </div>
+    <% if (tanda) { %><p class="pista-forge mt-3"><i data-lucide="info"></i>Cambiar el color o el tono rehace las 4 al instante, sin armarlas de nuevo.</p><% } %>
+  </section>
+
+  <section class="bg-forge-surface border border-forge-border p-6 flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h3 class="font-serif text-xl">5. Las 4 miniaturas</h3>
+      <button type="button" class="btn-forge-sm" data-armar
+              data-detalle="<%= estimado ? `Tarda ${estimado}. ` : '' %>La compu arma el personaje y el escenario desde tus bocetos y después las 4 opciones. Si no cambiaste nada, reusa lo que ya armó.">
+        <i data-lucide="images" class="w-4 h-4"></i>
+        <%= tanda ? 'Armar otras 4' : 'Armar las 4' %>
+      </button>
+    </div>
+    <p class="hidden text-sm text-forge-error" data-armar-error role="alert"></p>
+    <% if (tanda) { %>
+      <div class="grid sm:grid-cols-2 gap-4" data-tanda="<%= tanda.n %>">
+        <% tanda.images.forEach(img => { const src = `${api}/images/${tanda.n}/${img.template}.jpg?v=${bust}`; %>
+          <figure class="flex flex-col gap-2" data-opcion="<%= img.template %>">
+            <img src="<%= src %>" alt="Miniatura: <%= plantillaNombre(img.template) %>" class="w-full border border-forge-border" loading="lazy">
+            <figcaption class="flex items-center justify-between gap-2">
+              <span class="text-sm text-forge-muted"><%= plantillaNombre(img.template) %></span>
+              <a href="<%= src %>" download="miniatura_<%= img.template %>.jpg" hx-boost="false" class="btn-forge-outline-sm">
+                <i data-lucide="download" class="w-4 h-4"></i> Descargar
+              </a>
+            </figcaption>
+          </figure>
+        <% }) %>
+      </div>
+      <p class="pista-forge"><i data-lucide="info"></i>Tanda <%= tanda.n %> · <%= tanda.color === 'byn' ? 'Blanco y negro' : tonoNombre(tanda.tone) %></p>
+    <% } else { %>
+      <p class="text-forge-muted text-sm">Cuando subas los dos bocetos, tocá «Armar las 4».</p>
+    <% } %>
+  </section>
+</div>
+<%- include('../partials/ia_modal') %>
+<script src="/js/ia-modal.js?v=<%= locals.assetVersion || '' %>" defer></script>
+<script src="/js/miniaturas.js?v=<%= locals.assetVersion || '' %>" defer></script>

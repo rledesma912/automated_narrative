@@ -18,6 +18,7 @@ dependencies = [
     "sse-starlette>=3.4.1",
     "weasyprint>=63",
     "openai>=1.60",
+    "pillow>=11",  # Spec-790: las miniaturas (ya venía con weasyprint)
 ]
 
 [dependency-groups]

@@ -21,6 +21,8 @@ export interface EstimateLabels {
   verify_outline?: string;
   // Spec-610: el guion para el video.
   video_script?: string;
+  // Spec-790: las 4 miniaturas.
+  thumbnail_build?: string;
 }
 
 export function createLoadEstimates(
@@ -46,6 +48,7 @@ export function createLoadEstimates(
         plan_outline: formatShortEstimate(estimates?.plan_outline?.seconds),
         verify_outline: formatShortEstimate(estimates?.verify_outline?.seconds),
         video_script: formatShortEstimate(estimates?.video_script?.seconds),
+        thumbnail_build: formatShortEstimate(estimates?.thumbnail_build?.seconds),
       };
       if (labels.full_generation || labels.regenerate_voz) res.locals.estimateLabels = labels;
     } catch {
