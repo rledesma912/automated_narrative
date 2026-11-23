@@ -133,7 +133,10 @@ def oscurecer_figura(
             lo = k
         else:
             hi = k
+    original = rgb
     rgb = rgb.point(tabla * 3)
+    # las luces cálidas que trae la figura (una calabaza encendida, una vela) no se apagan
+    rgb = Image.composite(original, rgb, acentos(original))
     if fa.grano > 0:
         rgb = ImageChops.add(rgb, Image.effect_noise(rgb.size, fa.grano).convert("RGB"), 1.0, -128)
     out = rgb.convert("RGBA")

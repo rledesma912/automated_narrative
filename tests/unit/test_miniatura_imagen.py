@@ -66,3 +66,15 @@ def test_apoyo_detecta_si_pisa_el_piso_o_va_cortada():
     ImageDraw.Draw(cortada).rectangle((20, 0, 180, 399), fill=(255, 255, 255, 255))
     assert im_.apoyo(parada) == "piso"
     assert im_.apoyo(cortada) == "borde"
+
+
+def test_oscurecer_la_figura_respeta_la_calabaza_encendida():
+    a = arte()
+    f = Image.new("RGBA", (200, 400), (200, 200, 200, 255))
+    ImageDraw.Draw(f).rectangle((60, 200, 140, 280), fill=(255, 120, 20, 255))  # la calabaza
+    fondo = Image.new("RGB", (a.lienzo.ancho, a.lienzo.alto), (15, 15, 18))
+    alfa = im_.alfa_en_cuadro(f, (500, 200), a)
+    out = im_.oscurecer_figura(f, fondo, alfa, a)
+    assert out.getpixel((10, 10))[0] < 150  # el cuerpo se oscurece
+    r, g, b, _ = out.getpixel((100, 240))
+    assert r > 200 and b < 80  # la calabaza sigue encendida
