@@ -35,3 +35,18 @@ VRAM pico: 9–11,2 GB en todas.
 - Plantillas (D17): `prompts/escenario.md` (el de E3) y `prompts/fotografiar_escenario.md` (el de foto real de este set).
 - Descartados: `qwen_foto`, `qwen_x2`, `zcn_gris`, `zimg_60`. El ControlNet de Z-Image ya no hace falta en ningún paso.
 - El personaje sigue con `qwen_b` (E1), sin el paso de foto.
+
+## E3c — Menos luces, más oscuro y con niebla (`e3c_oscuro.py`, 2026-11-23)
+
+El usuario y Yael aprobaron `zimg_45`, pero piden **menos luces, lugares más oscuros y con niebla**. Cada variante parte de `qwen_b` (E3), con 2 bocetos × 3 semillas, ~44 s cada una:
+
+| Variante | Qué hace | Resultado |
+|---|---|---|
+| `oscuro_45` | Prompt de noche muy oscura, niebla espesa, sin luces ni objetos de más; descripción sin «lit». Z-Image 0,45 | Casi igual a E3b: **al 45 % manda el brillo de la imagen de Qwen**, no el prompt |
+| `oscuro_55` | ídem, 0,55 | Un poco más oscuro, pero se aleja del boceto (cambia la casa, mete abedules) |
+| **`previo_45`** | **Python oscurece la imagen de Qwen antes** (curva: gamma 1,6, techo 75 %) + prompt oscuro, Z-Image 0,45 | **Oscuro, con niebla que se traga el fondo, la luna velada y casi sin luces**; sigue fiel al boceto y real. Quedan las velas y las ventanas de la cabina, chicas |
+| `oscuro_45_curva` | `oscuro_45` + curva de oscuridad en Python después (sin GPU) | Más oscuro, pero las luces siguen igual de marcadas: la curva baja todo parejo, no saca luces |
+
+**Lo que se ve:** la luz se decide antes, en la imagen que recibe Z-Image. Oscurecer en Python **antes** del paso de foto funciona; pedirlo en el prompt o oscurecer después, no. Las luces que quedan vienen de Qwen (velas encendidas y luz en la cabina, que el boceto y la descripción piden).
+
+**Propuesta:** `ilustrar_escenario` (Qwen) → **curva de oscuridad en Python** → `fotografiar_escenario` (Z-Image 0,45, prompt oscuro). Si quedan luces de más, el siguiente ajuste es la descripción del paso de Qwen (velas apagadas, cabina sin luz), no el paso de foto.
