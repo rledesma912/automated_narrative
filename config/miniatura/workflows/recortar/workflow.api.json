@@ -1,0 +1,61 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "spec790/personaje.png"
+    },
+    "_meta": {
+      "title": "Personaje (fondo liso)"
+    }
+  },
+  "2": {
+    "class_type": "LoadBackgroundRemovalModel",
+    "inputs": {
+      "bg_removal_name": "birefnet.safetensors"
+    },
+    "_meta": {
+      "title": "BiRefNet"
+    }
+  },
+  "3": {
+    "class_type": "RemoveBackground",
+    "inputs": {
+      "bg_removal_model": [
+        "2",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Sacar el fondo"
+    }
+  },
+  "4": {
+    "class_type": "MaskToImage",
+    "inputs": {
+      "mask": [
+        "3",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Máscara a imagen"
+    }
+  },
+  "5": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "4",
+        0
+      ],
+      "filename_prefix": "miniaturas/mascara"
+    },
+    "_meta": {
+      "title": "Guardar la máscara"
+    }
+  }
+}

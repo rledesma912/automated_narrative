@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). En curso: E2. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 corrido, esperando el checkpoint. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -576,7 +576,7 @@ frontend/src/controllers/miniaturas.controller.ts
 | Receta | Una sola tarea | Entra → sale | Candidatos | Spike |
 |---|---|---|---|---|
 | `ilustrar_personaje` | el boceto del personaje → ilustración con el arte, **sobre fondo liso** | PNG boceto + prompt → PNG | ControlNet scribble/lineart SDXL; Qwen-Edit 2511 + Lightning | E1 |
-| `recortar` | separar la figura del fondo | PNG → PNG con alfa | BiRefNet; Qwen-Image-Layered si BiRefNet no alcanza | E2 |
+| `recortar` | separar la figura del fondo | PNG → máscara (Python arma el PNG con alfa) | **BiRefNet solo**, sin refinar (workflow `recortar`) | E2 |
 | `ilustrar_escenario` | el boceto del escenario → imagen 16:9: **qué va y dónde** | PNG boceto + prompt → PNG | **Qwen-Edit 2511 + Lightning** (workflow `boceto_a_imagen`, el mismo que el personaje) | E3 ✅ |
 | *(Python)* `oscurecer` | curva de oscuridad (gamma 1,6, techo 75 %), sin IA | PNG → PNG | — | E3c ✅ |
 | `fotografiar_escenario` | el escenario oscurecido → **foto real** de noche, oscura y con niebla, cambiando poco | PNG + prompt → PNG | **Z-Image Turbo img2img, denoise 0,45** (workflow `foto_img2img`) | E3b/E3c ✅ |
@@ -1002,6 +1002,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - bordes vistos a 100 % y a 120 px;
     - el ganador exportado.
   - Verifica: informe `e2/` y checkpoint.
+  - **Corrido (2026-11-23), falta el checkpoint:** BiRefNet solo sale limpio en los 6 personajes de E1 (dedos con sus puntas, orejas, pelo; sin la sombra del piso ni halo), ~0,8 s y ~1,9 GB. El refinado en Python corta la punta de los dedos: fuera. Qwen-Image-Layered no hace falta. Workflow `config/miniatura/workflows/recortar/`; informe en `scripts/research/790/e2/informe.md`.
 - [x] **T0.E3 — Ilustrar el escenario**
   - Acepta:
     - las variantes de E1 que pasaron, a 1344 × 768 y a 1024 × 576 + `agrandar`;

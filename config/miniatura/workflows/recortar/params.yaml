@@ -1,0 +1,4 @@
+# Lo único que el código cambia del grafo (T10). Un nodo que no existe falla al cargar.
+params:
+  imagen:   { node: "1", input: image }            # el personaje de ilustrar_personaje
+  prefijo:  { node: "5", input: filename_prefix }
