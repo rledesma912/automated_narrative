@@ -1062,6 +1062,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T0.C2 — El título a la Yael**
   - Acepta: reglas contra la IA de texto, comparadas con los ganchos reales de las recientes (acento y cortes de línea); dibujado con Pillow y la ExtraBold; se lee a 120 px.
   - Verifica: informe `c2/` y checkpoint.
+  - **Corrido (2026-11-23), esperando el checkpoint:** las **reglas** ganan a qwen2.5:14b y a gemma3:12b locales en todo: acento 10/13, chicas 0,76/0,85, cortes idénticos 8/23 y todos a una línea de distancia como mucho; nunca cambian palabras. Se lee a 120 px. La fuente quedó en ExtraBold y solo con los caracteres latinos (`assets/fonts/NotoSerifSC-ExtraBold.ttf`, 116 KB, OFL). El tamaño del bloque y la bajada van en C3. Informe en `scripts/research/790/c2/informe.md`.
 - [ ] **T0.C3 — El compositor**
   - Acepta: 4 composiciones distintas para la torre y la coneja (plantilla + lo que no se tapa + fundido de E4 + título de C2), al lado de las miniaturas reales de esas historias.
   - Verifica: informe `c3/` y checkpoint con Yael.
