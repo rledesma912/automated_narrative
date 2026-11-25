@@ -294,7 +294,7 @@ El usuario dejó **8 miniaturas actuales** en `imagenes/` (movidas a `scripts/re
 - las variaciones;
 - los chequeos (§2.7).
 
-**Camino de emergencia** (D-Q4): si falta un boceto, el botón avisa («Falta el boceto del escenario») y ofrece «Armarlo sin boceto». Esa parte se hace desde su descripción, con el arte del canal.
+**Sin camino de emergencia** (D-Q4, D29): si falta un boceto, el botón avisa («Falta el boceto del escenario») y no arma. ~~«Armarlo sin boceto»~~ quedó descartado el 2026-11-25.
 
 ### 2.2 El arte del canal: `config/miniatura/arte.yaml`
 
@@ -606,7 +606,7 @@ frontend/src/controllers/miniaturas.controller.ts
 | `agrandar` | subir resolución sin cambiar nada | PNG → PNG ×2 | RealESRGAN | E3: **no hace falta para el escenario** (sale de ~1344 × 768); queda por si el personaje lo pide |
 | `reiluminar_escenario` | cambiar la luz del escenario a la de la variación, sin tocar su composición | PNG + luz → PNG | Qwen-Edit 2511 (+ LoRA de reiluminado si su licencia es clara); o ajuste de color en Python | E6 |
 | `fundir` | integrar el personaje pegado: luz, perspectiva y sombra de contacto, **solo dentro de una máscara** que arma Python; afuera se vuelve a pegar el original | PNG compuesto + máscara + prompt → PNG | Qwen-Edit 2511 + Lightning (+ LoRA Fusion si su licencia se confirma); IC-Light como alternativa | E4 |
-| `personaje_texto` / `escenario_texto` | emergencia sin boceto: ilustrar desde la descripción | prompt → PNG | Z-Image Turbo | E1/E3 |
+| ~~`personaje_texto` / `escenario_texto`~~ | ~~emergencia sin boceto~~: descartado (D29) | — | — | — |
 
 **API (prefijo `/api/v1`):**
 
@@ -702,7 +702,8 @@ El de la casa: Clean Architecture, sin textos en Python (Spec-620), dataclasses 
 | D-Q1 | Botón «Que la IA lea el relato» (job corto); sin tocarlo, todo se completa a mano | **Usuario, 2026-11-22** |
 | D-Q2 | Entre las 4 cambian la semilla y una variación del arte (luz, encuadre, lado), de `arte.yaml` | **Usuario, 2026-11-22** |
 | D-Q3 | Todo corre en un job; «Armar otras 4» reusa personaje y escenario; cambiar un boceto rehace esa parte | **Usuario, 2026-11-22** |
-| D-Q4 | Los dos bocetos son obligatorios; sin boceto, «Armarlo sin boceto» como emergencia | **Usuario, 2026-11-22** |
+| D-Q4 | Los dos bocetos son obligatorios; sin boceto, «Armarlo sin boceto» como emergencia (lo de la emergencia lo reemplaza D29) | **Usuario, 2026-11-22** |
+| D29 | **Sin «Armarlo sin boceto».** Los dos bocetos son obligatorios y no hay camino de emergencia: lo que hace reconocible la miniatura es lo que dibuja Yael | **Usuario, 2026-11-25** |
 | D-Q5 | El lado del personaje lo deciden las variaciones de `arte.yaml` | **Usuario, 2026-11-22** |
 | D-Q6 | Título precargado con el de la historia, editable, aviso desde 6 palabras | **Usuario, 2026-11-22** |
 | D-Q7 | Yael elige de 1 a 3 de las 4 | **Usuario, 2026-11-22** |
@@ -892,13 +893,13 @@ Cada slice cierra con `make test` + `make lint` + `npm test` en verde, `make dev
   - `leer(story)` → `ThumbnailInput` propuesto;
   - `armar(thumbnail, solo_composicion)`:
     1. prompts (IA de texto);
-    2. partes (reuso por hash, T4; si falta un boceto y Yael eligió «sin boceto», la receta `_texto`);
+    2. partes (reuso por hash, T4);
     3. 4 × (reiluminar el escenario → componer + máscara → fundir → paste-back → revisión con umbral → título → chequeos y arreglos → JPG);
     4. guarda la tanda.
   - Publica etapas y «Imagen n de 4».
 - **Jobs:**
   - `JobKind.THUMBNAIL_READ` y `THUMBNAIL_BUILD`, más las `JobStage` (`leyendo`, `prompts`, `personaje`, `escenario`, `componiendo`, `esperando_gpu`);
-  - `thumbnail_jobs.py` (como `video_jobs.py`), con el despacho en `job_router` y la validación (sin bocetos y sin «sin boceto» → 422 con mensaje);
+  - `thumbnail_jobs.py` (como `video_jobs.py`), con el despacho en `job_router` y la validación (sin los dos bocetos → 422 con mensaje);
   - T1, y `DEFAULT_ESTIMATED_SECONDS` con los valores de E9.
 - **API:** el router de §4 (leer y guardar campos, subir y quitar bocetos, elegir, imágenes y zip), con 409 y `X-Job-Id` si hay un job activo, como en el asistente.
 - **Tests:**
@@ -925,7 +926,7 @@ Cada slice cierra con `make test` + `make lint` + `npm test` en verde, `make dev
 
 #### S6. Afinar con Yael
 - Ajustar `arte.yaml` (textos, variaciones, encuadres, pesos de referencia) mirando las tandas reales al lado de las 5 actuales. Solo config, salvo bugs.
-- El camino «Armarlo sin boceto» y la calabaza, con su imagen en `_arte/`.
+- La calabaza, con su imagen en `_arte/` («Armarlo sin boceto» se descartó, D29).
 - **Tests:** snapshots regenerados a propósito, con el diff revisado.
 
 #### S7. Título con estilo (solo si S6 lo pide)
@@ -1002,7 +1003,7 @@ Las tareas S1–S9 de abajo son el plan largo de antes de los spikes C y de D18�
 | T8.1 respaldo de `data/prod/miniaturas/` en el deploy · T8.2 `COMFY_URL` en prod · T8.3 docs (`CLAUDE.md`) | ✅ |
 | T5.7 checkpoint con Yael | **en curso** (prueba en dev, por IP) |
 | T9.2 PR · T9.3 deploy | después del OK de Yael |
-| T1.5/T1.6 título y sus chequeos · T7 título con estilo · T3 IA que lee el relato · elegir 1 a 3 y el zip · C4 juez local · E7 referencias · E10 multirreferencia · T6.2 sin boceto y la calabaza | **para después** (fuera de esta versión, D22 y §10.7) |
+| T1.5/T1.6 título y sus chequeos · T7 título con estilo · T3 IA que lee el relato · elegir 1 a 3 y el zip · C4 juez local · E7 referencias · E10 multirreferencia · T6.2 la calabaza (sin boceto: descartado, D29) | **para después** (fuera de esta versión, D22 y §10.7) |
 
 
 
@@ -1204,7 +1205,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T2.1 — Configuración y mensajes**
   - Acepta:
     - `COMFY_URL` y `COMFY_MOCK` en `config.py`, `.env` y `.env.example`;
-    - mensajes `miniatura.*` en `core_messages.yaml` (apagado, falló, esperando la GPU, sin boceto).
+    - mensajes `miniatura.*` en `core_messages.yaml` (apagado, falló, esperando la GPU, falta un boceto).
   - Verifica: `test_prompts_fuera_del_codigo` en verde.
 - [ ] **T2.2 — Cliente**
   - Acepta:
@@ -1270,7 +1271,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T4.2 — Las partes**
   - Acepta:
     - personaje (ilustrar → recortar → agrandar si hace falta) y escenario (ilustrar → agrandar), con reuso por hash (T4);
-    - camino «sin boceto» con las recetas `_texto`.
+    - ~~camino «sin boceto» con las recetas `_texto`~~ (descartado, D29).
   - Verifica: con `MockComfy`, una segunda corrida no llama a las recetas de partes, y cambiar un boceto rehace solo esa parte.
 - [ ] **T4.3 — Las 4 imágenes**
   - Acepta:
@@ -1280,7 +1281,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T4.4 — Jobs**
   - Acepta:
     - `JobKind.THUMBNAIL_READ/BUILD`, las `JobStage` nuevas y `thumbnail_jobs.py`;
-    - el despacho y la validación en `job_router` (sin bocetos y sin «sin boceto» → 422) y la excepción de `structure_enabled` (T1);
+    - el despacho y la validación en `job_router` (sin los dos bocetos → 422) y la excepción de `structure_enabled` (T1);
     - `DEFAULT_ESTIMATED_SECONDS` con los valores de E9, y 409 con un job activo.
   - Verifica: tests del router y del job con mocks.
 - [ ] **T4.5 — API**
@@ -1326,8 +1327,8 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T6.1 — Ajustar el arte**
   - Acepta: `arte.yaml` (textos, variaciones, encuadres, máscara, pesos) ajustado mirando tandas reales al lado de las 5 actuales.
   - Verifica: snapshots regenerados a propósito y OK de Yael.
-- [ ] **T6.2 — Sin boceto y la calabaza**
-  - Acepta: «Armarlo sin boceto» de punta a punta; calabaza con su imagen en `_arte/`.
+- [ ] **T6.2 — La calabaza** (para después)
+  - Acepta: casilla «¿Aparece la calabaza?» (apagada) y la calabaza con su imagen en `_arte/`. «Armarlo sin boceto» se descartó el 2026-11-25 (D29).
   - Verifica: tests del arnés y prueba en dev.
 - [~] **T6.3 — E11: la figura parece un render, no una foto** (2026-11-24, pedido de Yael con «El halloween de Peter» en dev)
   - Qué se vio: el escenario sale foto (E3b/E3c), pero el personaje de `qwen_b` sale como render 3D de videojuego (piel lisa y plástica, sombreado limpio, cara de máscara, ojos con *bloom*). Las del canal parecen fotos de cámara trampa o de flash: grano, carne flaca y deforme, borde sin definir. El personaje nunca pasa por un paso de «foto» (el fundido solo trabaja en la máscara y no cambia el material). Además, en la imagen final queda un halo claro alrededor de la figura.
