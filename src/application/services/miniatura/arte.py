@@ -41,12 +41,20 @@ class PersonajeArte(BaseModel):
     cambio_foto: float = Field(default=0.50, ge=0, le=1)  # E11: Z-Image sobre el personaje
 
 
+class MedioVer(BaseModel):
+    desde: float = Field(ge=0, le=1)  # desde qué altura de la figura empieza a perderse
+    queda: float = Field(ge=0, le=1)  # cuánto se ve en los pies
+
+
 class FiguraArte(BaseModel):
     veces_el_lugar: float = 1.7
     techo: float = 0.80
     piso: float = 30
     grano: float = 4
     anillo: float = 0.04
+    # T6.4: la figura se pierde en la sombra del lugar según `relacion.a_medio_ver` (T3.3)
+    sombra: float = 0.35
+    medio_ver: dict[str, MedioVer] = Field(default_factory=dict)
 
 
 class Fundido(BaseModel):
@@ -113,6 +121,14 @@ def arte() -> Arte:
 @lru_cache(maxsize=8)
 def _plantilla_prompt(paso: str) -> str:
     return (CONFIG / "prompts" / f"{paso}.md").read_text(encoding="utf-8").strip()
+
+
+def texto(paso: str, **datos: str) -> str:
+    """Una plantilla de `prompts/` con sus huecos `{clave}` llenos (T3.3)."""
+    out = _plantilla_prompt(paso)
+    for clave, valor in datos.items():
+        out = out.replace("{" + clave + "}", valor.strip())
+    return out
 
 
 def prompt(paso: str, descripcion: str = "") -> str:

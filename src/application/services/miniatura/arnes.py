@@ -1,5 +1,6 @@
 """El arnés de las miniaturas (Spec-790 D15, §10.7): Python ordena, ComfyUI hace una cosa por vez.
 
+  textos      la IA separa lo que escribió Yael: personaje solo, lugar vacío y relación (T3.3)
   personaje   boceto → `boceto_a_imagen` (prompts/personaje.md) → `recortar` → PNG con alfa
   escenario   boceto → `boceto_a_imagen` (prompts/escenario.md) → curva en Python →
               `foto_img2img` (prompts/fotografiar_escenario.md) → `recortar` (lo importante)
@@ -25,11 +26,13 @@ from pathlib import Path
 from PIL import Image
 
 from src.application.services.miniatura import imagen as im_
+from src.application.services.miniatura import textos as textos_
 from src.application.services.miniatura.arte import Arte, prompt
 from src.application.services.miniatura.arte import arte as cargar_arte
 from src.config import settings
+from src.domain.interfaces import LLMProvider
 from src.domain.jobs import JobStage
-from src.domain.thumbnail import Batch, Part, Thumbnail, ThumbnailImage
+from src.domain.thumbnail import Batch, ImageTexts, Part, Thumbnail, ThumbnailImage
 from src.infrastructure.adapters.comfy.client import ComfyError, ComfyPort
 from src.messages import message
 
@@ -72,10 +75,32 @@ def validar(thumb: Thumbnail, carpeta: Path) -> None:
 
 
 class Arnes:
-    def __init__(self, comfy: ComfyPort, carpeta: Path, arte: Arte | None = None):
+    def __init__(
+        self,
+        comfy: ComfyPort,
+        carpeta: Path,
+        arte: Arte | None = None,
+        llm: LLMProvider | None = None,
+    ):
         self.comfy = comfy
         self.carpeta = carpeta
         self.arte = arte or cargar_arte()
+        self.llm = llm
+
+    # ── los textos (T3.3) ────────────────────────────────────────────────────────
+    async def textos(self, thumb: Thumbnail) -> ImageTexts:
+        """Lo que la IA separó de las descripciones; se reusa mientras no cambien. Sin IA (los
+        spikes) van las descripciones tal cual."""
+        i = thumb.input
+        h = _hash(i.figure_description, i.place_description, "textos-v1")
+        if thumb.texts and thumb.texts.input_hash == h:
+            return thumb.texts
+        if self.llm is None:
+            return ImageTexts(
+                personaje=i.figure_description, escenario=i.place_description, input_hash=h
+            )
+        thumb.texts = await textos_.separar(self.llm, i, h)
+        return thumb.texts
 
     # ── la GPU por turnos (D10) ──────────────────────────────────────────────────
     async def esperar_gpu(self) -> AsyncIterator[Etapa]:
@@ -92,14 +117,14 @@ class Arnes:
             await self.comfy.liberar()  # ComfyUI descarga sus modelos recién cuando queda libre
 
     # ── las piezas ───────────────────────────────────────────────────────────────
-    async def personaje(self, thumb: Thumbnail, semilla: int) -> Path:
+    async def personaje(self, thumb: Thumbnail, semilla: int, desc: str) -> Path:
         i = thumb.input
         boceto = self.carpeta / i.character_sketch
         cambio = self.arte.personaje.cambio_foto
         h = _hash(
             boceto.read_bytes(),
-            prompt("personaje", i.figure_description),
-            prompt("fotografiar_personaje", i.figure_description),
+            prompt("personaje", desc),
+            prompt("fotografiar_personaje", desc),
             f"personaje-v2-{cambio}",
         )
         previo = thumb.parts.get("personaje")
@@ -109,7 +134,7 @@ class Arnes:
         piezas = self.carpeta / "piezas"
         qwen = await self.comfy.correr(
             "boceto_a_imagen",
-            {"prompt": prompt("personaje", i.figure_description), "semilla": semilla},
+            {"prompt": prompt("personaje", desc), "semilla": semilla},
             {"boceto": boceto},
             piezas / "personaje_qwen.png",
         )
@@ -117,7 +142,7 @@ class Arnes:
         crudo = await self.comfy.correr(
             "foto_img2img",
             {
-                "prompt": prompt("fotografiar_personaje", i.figure_description),
+                "prompt": prompt("fotografiar_personaje", desc),
                 "semilla": semilla,
                 "cambio": cambio,
             },
@@ -136,13 +161,13 @@ class Arnes:
         )
         return destino
 
-    async def escenario(self, thumb: Thumbnail, semilla: int) -> tuple[Path, Path]:
+    async def escenario(self, thumb: Thumbnail, semilla: int, desc: str) -> tuple[Path, Path]:
         i = thumb.input
         boceto = self.carpeta / i.scene_sketch
         h = _hash(
             boceto.read_bytes(),
-            prompt("escenario", i.place_description),
-            prompt("fotografiar_escenario", i.place_description),
+            prompt("escenario", desc),
+            prompt("fotografiar_escenario", desc),
             "escenario-v1",
         )
         previo, imp = thumb.parts.get("escenario"), thumb.parts.get("importante")
@@ -158,7 +183,7 @@ class Arnes:
         piezas = self.carpeta / "piezas"
         qwen = await self.comfy.correr(
             "boceto_a_imagen",
-            {"prompt": prompt("escenario", i.place_description), "semilla": semilla},
+            {"prompt": prompt("escenario", desc), "semilla": semilla},
             {"boceto": boceto},
             piezas / "escenario_crudo.png",
         )
@@ -167,7 +192,7 @@ class Arnes:
         foto = await self.comfy.correr(
             "foto_img2img",
             {
-                "prompt": prompt("fotografiar_escenario", i.place_description),
+                "prompt": prompt("fotografiar_escenario", desc),
                 "semilla": semilla,
                 "cambio": self.arte.escenario.cambio_foto,
             },
@@ -194,15 +219,16 @@ class Arnes:
         """Arma una tanda de 4. Va avisando las etapas y al final entrega la tanda."""
         validar(thumb, self.carpeta)
         t0 = time.monotonic()
+        txt = await self.textos(thumb)  # antes de la GPU: si la IA no atiende, falla ya
         async for e in self.esperar_gpu():
             yield e
         semilla_piezas = (
             int(_hash(thumb.story_id), 16) % 1_000_000
         )  # la misma mientras no cambie nada
         yield Etapa(JobStage.PERSONAJE)
-        fig_path = await self.personaje(thumb, semilla_piezas)
+        fig_path = await self.personaje(thumb, semilla_piezas, txt.personaje)
         yield Etapa(JobStage.ESCENARIO)
-        esc_path, imp_path = await self.escenario(thumb, semilla_piezas)
+        esc_path, imp_path = await self.escenario(thumb, semilla_piezas, txt.escenario)
 
         n = (thumb.last_batch.n + 1) if thumb.last_batch else 1
         semilla = random.randint(1, 1_000_000)
@@ -235,6 +261,9 @@ class Arnes:
                 carpeta_tanda / f"{clave}_fundido.png",
             )
             final = im_.pegar_fundido(comp, Image.open(editado), caja, m, self.arte)
+            final = im_.restaurar_luces(comp, final)  # T6.4: el fundido les cambiaba el tono
+            if p.recorte == 1:
+                final = im_.a_medio_ver(final, fondo, alfa, txt.a_medio_ver, self.arte)
             final.save(carpeta_tanda / f"{clave}_sin_color.png")
             alfa.save(carpeta_tanda / f"{clave}_alfa.png")
             jpg = carpeta_tanda / f"{clave}.jpg"

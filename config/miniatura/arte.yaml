@@ -21,7 +21,18 @@ escenario: { gamma: 1.6, techo: 0.75, cambio_foto: 0.45 }
 personaje: { cambio_foto: 0.50 }
 
 # E4 ronda 2: la figura se oscurece según el lugar, se funde en una zona y se pega con máscara.
-figura: { veces_el_lugar: 1.7, techo: 0.80, piso: 30, grano: 4, anillo: 0.04 }
+figura:
+  veces_el_lugar: 1.7
+  techo: 0.80
+  piso: 30
+  grano: 4
+  anillo: 0.04
+  # T6.4: con la figura entera, de la cintura para abajo se pierde en la sombra del lugar
+  # (el fondo multiplicado por `sombra`). Cuánto, según lo que dijo Yael (T3.3, a_medio_ver).
+  sombra: 0.35
+  medio_ver:
+    poco:  { desde: 0.55, queda: 0.35 }
+    mucho: { desde: 0.45, queda: 0.15 }
 fundido: { dilatacion: 0.01, borde: 16, margen: 0.12 }
 
 # C5 / D23: el color. «desaturado» = la saturación media (de lo que no es negro) hasta `tope`

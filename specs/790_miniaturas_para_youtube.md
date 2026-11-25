@@ -718,6 +718,8 @@ El de la casa: Clean Architecture, sin textos en Python (Spec-620), dataclasses 
 | D24 | Se descarga **solo la imagen compuesta** (sin piezas sueltas) | **Usuario y Yael, 2026-11-23** |
 | D25 | **El tono sale del lugar, siempre frío y desaturado:** bosque → verde, mar o agua → azul, y así (toda la imagen, no solo la figura). **Halloween es la excepción:** el personaje en naranja y el fondo gris (C5b). La IA que lee el relato propone el tono según el lugar y Yael lo confirma | **Yael, 2026-11-23** |
 | D26 | **Sin el paso de luz de E6, por ahora:** queda «muy lavado» y pierde profundidad. La salida es la composición (C3) + el fundido (E4) + el tono del lugar (C5c) o el blanco y negro, como la primera columna de `e6/salidas/hoja_luz.jpg` | **Usuario y Yael, 2026-11-23** |
+| D27 | **Sin prompt negativo.** Qwen con Lightning y Z-Image Turbo corren con cfg 1: el negativo no entra al cálculo, y nombrar algo con «no» lo trae («no lit windows» puso ventanas encendidas). Activarlo (cfg 1,5 y 2, E11c) siguió con casas y tardó el doble. Todo se pide **en positivo**: lo que hay | **Usuario, 2026-11-24** (cómo: E11c) |
+| D28 | **Yael escribe como le sale; la IA separa.** De «Cómo es» y «Cómo es el lugar» la IA de texto saca el **personaje solo**, el **lugar solo (vacío)** y la **relación** entre los dos («a medio ver detrás de un árbol», «resalta contra la niebla»). La relación no va a ningún modelo de imagen: la usa la composición. Los campos llevan pistas más claras, sin un tercer campo (sin pasos nuevos) | **Usuario, 2026-11-24** (cómo: propuesta de Claude) |
 | D-Q10 | Las miniaturas sirven para el texto del YAML y, si mejoran en el spike E7, como referencia visual | **Usuario, 2026-11-22** |
 
 **D-Q5:** la opción simple «¿De qué lado va?» quedó como posibilidad si Yael dibuja el escenario con el hueco pensado. No entra de inicio; se suma solo si lo pide en la prueba.
@@ -1232,7 +1234,7 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 
 ### S3 — IA de texto
 
-- [ ] **T3.1 — Rol `miniatura`**
+- [x] **T3.1 — Rol `miniatura`** (2026-11-25: en los 5 perfiles; `openai-sol` GPT-5.6 Sol sin razonar, los de Claude Sonnet 5.5 sin pensar)
   - Acepta: declarado en los perfiles (T11) y `has_role` funciona.
   - Verifica: test de configuración; `/config/active-profile` lo muestra.
 - [ ] **T3.2 — Leer el relato**
@@ -1241,13 +1243,24 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
     - lee la historia, la entidad y la última versión del relato, con la instrucción de describir el aspecto y no los hechos;
     - respuesta en `mock_structured.py`.
   - Verifica: snapshot y test de la instrucción.
-- [ ] **T3.3 — Prompts de imagen**
+- [x] **T3.3 — Prompts de imagen** (rehecha el 2026-11-24 con E11c, D27, D28; hecha el 2026-11-25: `miniatura/textos.py`, `prompts/ia_sistema.md` + `ia_pedido.md`, `Thumbnail.texts`. Pendiente: el snapshot `thumbnail_prompts.json` y la nota de «detrás del árbol» en la pantalla)
+  - Por qué: hoy la descripción de Yael llega cruda y en castellano a Qwen y a Z-Image. En «El halloween de Peter», «…que hace que el personaje resalte del fondo» hizo que Qwen dibujara una mujer en el escenario (3 de 3 semillas), y el prompt de «fotografiar» (ajustado en E3c con una mansión) nombraba tejas y madera y Z-Image puso una caseta. Escrito en positivo, el mismo escenario sale limpio (E11c, fila `llm`).
   - Acepta:
-    - `prompts.py`: la plantilla del paso (`config/miniatura/prompts/<paso>.md`, D17) + los campos de arte que pide + lo de la historia (una llamada de texto: personaje, escenario y las 4 luces en inglés) + variación (código), más los negativos;
-    - prompts en `config/miniatura/prompts/`.
+    - una llamada de texto (rol `miniatura`, salida estructurada) al empezar `thumbnail_build`, antes de las piezas: lee «Cómo es» y «Cómo es el lugar» y devuelve, en inglés:
+      - `personaje`: solo cómo se ve la figura (cuerpo, cabeza, piel, lo que lleva, lo que brilla), sin el lugar;
+      - `escenario`: solo lo que se ve del lugar, vacío, nombrando lo que hay en cada parte y qué hay en el fondo («only more trees fading into the fog»), sin nombrar al personaje;
+      - `relacion`: en castellano, corta, lo que Yael dijo de cómo están juntos (o vacía), y `a_medio_ver` (`no` | `poco` | `mucho`);
+    - las reglas del prompt de la IA: **todo en positivo, sin negaciones** (D27); no inventar objetos ni materiales que Yael no nombró; conservar sus detalles y palabras de forma (orejas, garras, «hiperrealista»);
+    - las plantillas de los pasos (`personaje.md`, `escenario.md`, `fotografiar_personaje.md`, `fotografiar_escenario.md`) reciben la salida de la IA en vez del texto crudo, y quedan **en positivo**: sin «no people / no lamps / no lit windows», sin la lista de materiales de E3c («weathered wood, old stone, roof tiles»), con «an empty, lonely place»;
+    - la salida se guarda en el documento de la miniatura con el hash de las dos descripciones: mientras no cambien, se reusa (no se vuelve a llamar ni cambian las piezas). El hash de cada pieza incluye su prompt;
+    - si la IA no atiende, el job falla con un mensaje claro (`core_messages.yaml`), sin usar el texto crudo (daría lo de hoy);
+    - `relacion.a_medio_ver` decide cuánto se pierde la figura en la sombra (T6.4); si la relación pide algo que todavía no se hace (estar detrás de un árbol), «Miniaturas» lo dice en una nota («Lo de detrás del árbol todavía no lo hacemos»);
+    - pistas nuevas en los campos (D28): «Cómo es» → «Contá solo cómo es; dónde está lo ponemos con el lugar»; «Cómo es el lugar» → «Contá el lugar vacío: al personaje lo sumamos después».
   - Verifica:
-    - snapshot `thumbnail_prompts.json`;
-    - un test que falla si a un paso le falta el arte o su variación.
+    - snapshot `thumbnail_prompts.json` (el prompt de la IA y las 4 plantillas con una salida del mock);
+    - un test que falla si una plantilla de imagen vuelve a tener una negación («no », «without», «nobody»);
+    - respuesta en `mock_structured.py`; test del arnés: una llamada de texto por tanda nueva, cero si no cambiaron las descripciones;
+    - en dev, la tanda 4 de Peter: sin gente ni casas en el escenario.
 
 ### S4 — La tanda: arnés, jobs y API
 
@@ -1329,6 +1342,20 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
   - Verifica: grilla e informe en `scripts/research/790/e11/`; si se adopta, el paso entra al arnés con su prompt en `config/miniatura/prompts/` y su número en `arte.yaml`.
   - **Corrido (2026-11-24):** no humaniza en ninguna variante. A 0,55 lo animaliza y pierde el boceto (Peter con hocico de perro y sin la sonrisa; la criatura alta, esqueleto). Todas pasan de «render de videojuego» a «foto de figura o muñeco de látex»; sobre fondo gris el modelo lo lee como foto de producto. Yael y el usuario eligieron `foto_45` y `foto_55` → **se adopta 0,50** (OK del usuario). Informe en `scripts/research/790/e11/informe.md`.
   - **Hecho:** el arnés pasa el personaje de Qwen (`piezas/personaje_qwen.png`) por `foto_img2img` con `prompts/fotografiar_personaje.md` y `arte.yaml` → `personaje.cambio_foto: 0.50` antes de recortarlo (~45 s más; el hash `personaje-v2` incluye el prompt y el número, así que las historias con personaje viejo lo rehacen en la próxima tanda). Pendiente: que Yael vea la tanda de Peter en el bosque.
+  - **E11c (2026-11-24): el escenario inventa gente y casas.** En la tanda 3 de Peter Yael vio una caseta que no está en su boceto. Análisis (`scripts/research/790/e11c/`): no es contaminación: rehecho desde cero con las mismas entradas da la misma imagen (diferencia media 2/255). Las causas son el texto: la descripción cruda nombra «el personaje» (Qwen dibuja una mujer) y el prompt de «fotografiar» nombra materiales de edificios; Z-Image no ve el boceto y rellena la oscuridad con lo que sugiere el texto. Las negaciones lo empeoran y el negativo real no sirve (D27). Un prompt en positivo, como lo escribiría la IA, da el bosque limpio en 3 de 3. → T3.3.
+- [ ] **T6.5 — La IA mira los bocetos** (lo próximo, 2026-11-25)
+  - Qué se vio en la tanda 4 de Peter (con T3.3 y T6.4): sin caseta, ojos amarillos y la figura perdida en la sombra, pero una **persona sentada** en el escenario. La causa está antes de la foto: la planta del centro del boceto (un tallo con hojas redondas apiladas) Qwen la copia fiel como una pila de manchas negras planas, y Z-Image la «fotografía» como una persona. Nadie en la cadena entiende qué dibujó Yael: Qwen copia formas, Z-Image no ve el boceto y la IA de texto solo leía las descripciones («plants and stretches of grass»).
+  - **E11d** (`scripts/research/790/e11d/`): menos libertad en Z-Image (0,35 / 0,30) y el boceto como guía con el ControlNet Union de Z-Image (0,5 / 0,7, ~20 s más) → la persona sigue en todas: el boceto confirma la forma ambigua. Descartados.
+  - **E11e** (`scripts/research/790/e11e/`): GPT-5.6 Sol recibe además los **dos bocetos** (`e11e/ia_sistema_con_bocetos.md`: nombrar cada cosa dibujada como lo que es de verdad y dónde está; si una forma es ambigua, decir qué planta real es). Escribió «tall grasses and leafy woodland plants with thin stems and broad lobed leaves rise on the left, center, and right» y el árbol del medio «with a split trunk»; Qwen dibuja plantas y la foto sale **sin persona ni casas** en 2 de 2 semillas. ~3 000 tokens de entrada (centavos).
+  - Acepta:
+    - `LLMProvider.generate(…, images=[…])`: imágenes de entrada en `OpenAIAdapter` (`image_url` con data URI) y `AnthropicAdapter` (bloque `image`), el mock las ignora; un rol sin soporte falla claro;
+    - `textos.separar` manda los dos bocetos (primero el personaje, después el lugar) y el párrafo de `ia_sistema_con_bocetos.md` pasa a `config/miniatura/prompts/ia_sistema.md`;
+    - el hash de `Thumbnail.texts` incluye los dos bocetos (cambiar un boceto vuelve a leer).
+  - Verifica: tests de los dos adaptadores con la imagen (fakes, sin llamadas), test del arnés (cambiar un boceto vuelve a llamar a la IA) y la tanda 5 de Peter en dev para Yael.
+- [x] **T6.4 — Los ojos y «a medio ver»** (hecha el 2026-11-25: `imagen.restaurar_luces`, `imagen.a_medio_ver`, `arte.yaml` → `figura.medio_ver`) (2026-11-24, probado sin GPU sobre la tanda 3 de Peter)
+  - Los ojos: el fundido de Qwen les cambia el tono (amarillo → verdoso) y el color los desatura: quedan discos blancos. Las luces cálidas se toman de la composición **antes** del fundido, y el amarillo muy brillante cuenta como luz (`acentos`: tono hasta ~63°, brillo > 150 para lo que se restaura).
+  - «A medio ver»: con la figura entera, de la cintura para abajo se pierde de a poco en la **sombra** del lugar (no transparente: se veían los árboles a través). Cuánto, según `relacion.a_medio_ver` (T3.3) y `arte.yaml`.
+  - Verifica: tests de `imagen.py` (los ojos amarillos sobreviven al fundido y al color; la rampa no toca el primer plano) y la tanda 4 de Peter.
 
 ### S7 — Título con estilo (solo si S6 lo pide)
 

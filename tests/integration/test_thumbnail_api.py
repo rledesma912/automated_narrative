@@ -51,7 +51,7 @@ async def _story(c) -> str:
 
 
 async def _wait_job(c, job_id: str) -> dict:
-    for _ in range(400):
+    for _ in range(1200):  # el arnés suma la llamada de texto (T3.3)
         job = (await c.get(f"/api/v1/jobs/{job_id}")).json()
         if job["status"] in ("done", "failed"):
             return job
@@ -123,6 +123,9 @@ async def test_armar_las_4_y_recolorear(client):
     # una llamada por pieza y una por fundido (D15)
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4
     assert fake.llamadas.count("foto_img2img") == 2  # el escenario y el personaje (E11)
+    # T3.3: la IA separó las descripciones y quedó guardado
+    textos = (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["texts"]
+    assert textos["personaje"] and textos["escenario"] and textos["input_hash"]
 
     # cambiar a blanco y negro recolorea sin GPU
     antes = len(fake.llamadas)
@@ -140,6 +143,7 @@ async def test_armar_las_4_y_recolorear(client):
     assert (await _wait_job(c, resp.json()["job_id"]))["status"] == "done"
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4 + 4
     assert fake.llamadas.count("foto_img2img") == 2  # reusa las dos piezas: ninguna foto nueva
+    assert (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["texts"] == textos
 
 
 async def test_avisa_si_la_compu_de_las_imagenes_esta_apagada(client):

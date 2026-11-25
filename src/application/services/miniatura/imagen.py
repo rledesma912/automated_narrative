@@ -226,14 +226,47 @@ def saturacion(im: Image.Image) -> float:
 
 
 def acentos(im: Image.Image) -> Image.Image:
-    """Las luces cálidas reales (llama, calabaza encendida): rojo-naranja, saturado y brillante."""
-    h, s, v = im.convert("HSV").split()
-    m = ImageChops.multiply(
-        h.point(lambda x: 255 if (x <= 32 or x >= 240) else 0),
-        s.point(lambda x: 255 if x > 90 else 0),
+    """Las luces cálidas reales (llama, calabaza encendida): rojo-naranja, saturado y brillante.
+    T6.4: también el amarillo muy brillante (ojos que brillan)."""
+    return ImageChops.lighter(_calidos(im, 0, 32, 80), _calidos(im, 33, 45, 150)).filter(
+        ImageFilter.GaussianBlur(2)
     )
-    m = ImageChops.multiply(m, v.point(lambda x: 255 if x > 80 else 0))
-    return m.filter(ImageFilter.GaussianBlur(2))
+
+
+def _calidos(im: Image.Image, h0: int, h1: int, brillo: int) -> Image.Image:
+    h, s, v = im.convert("HSV").split()
+    tono = h.point(lambda x: 255 if (h0 <= x <= h1 or (h0 == 0 and x >= 240)) else 0)
+    m = ImageChops.multiply(tono, s.point(lambda x: 255 if x > 90 else 0))
+    return ImageChops.multiply(m, v.point(lambda x: 255 if x > brillo else 0))
+
+
+def restaurar_luces(antes: Image.Image, despues: Image.Image) -> Image.Image:
+    """T6.4: el fundido de Qwen cambia el tono de las luces (ojos amarillos → verdosos) y el
+    color después las apaga. Las luces muy brillantes se toman de antes del fundido."""
+    luces = ImageChops.lighter(_calidos(antes, 0, 32, 150), _calidos(antes, 33, 45, 150))
+    return Image.composite(antes, despues, luces.filter(ImageFilter.GaussianBlur(2)))
+
+
+def a_medio_ver(
+    final: Image.Image, fondo: Image.Image, alfa: Image.Image, nivel: str, arte: Arte
+) -> Image.Image:
+    """T6.4: de la cintura para abajo la figura se pierde en la sombra del lugar (no se vuelve
+    transparente: se verían los árboles a través)."""
+    mv = arte.figura.medio_ver.get(nivel)
+    caja = alfa.point(lambda v: 255 if v > 32 else 0).getbbox()
+    if mv is None or caja is None:
+        return final
+    x0, y0, x1, y1 = caja
+    tabla = [
+        0
+        if t / 255 < mv.desde
+        else round(255 * (1 - mv.queda) * min(1, (t / 255 - mv.desde) / (1 - mv.desde)) ** 1.3)
+        for t in range(256)
+    ]
+    rampa = Image.new("L", final.size, 0)
+    rampa.paste(Image.linear_gradient("L").resize((x1 - x0, y1 - y0)).point(tabla), (x0, y0))
+    sombra = fondo.convert("RGB").point(lambda v: round(v * arte.figura.sombra))
+    return Image.composite(sombra, final, ImageChops.multiply(rampa, alfa))
 
 
 def desaturar(im: Image.Image, tope: float) -> Image.Image:

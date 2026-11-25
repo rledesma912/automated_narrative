@@ -21,7 +21,9 @@ def test_el_tono_sale_del_lugar():  # D25
     assert a.tono_del_lugar("Un bosque de pinos y una torre") == "verde"
     assert a.tono_del_lugar("El muelle del puerto, de noche") == "azul"
     assert a.tono_del_lugar("Una casa vieja en un pueblo") == a.tono_por_defecto
-    assert a.tono_del_lugar("Una mansión en el bosque. Es Halloween.") == "halloween"  # la excepción gana
+    assert (
+        a.tono_del_lugar("Una mansión en el bosque. Es Halloween.") == "halloween"
+    )  # la excepción gana
     assert a.tono_valido("halloween", "bosque") == "halloween"  # lo elegido manda
     assert a.tono_valido("no_existe", "mar") == "azul"
 
@@ -78,3 +80,41 @@ def test_oscurecer_la_figura_respeta_la_calabaza_encendida():
     assert out.getpixel((10, 10))[0] < 150  # el cuerpo se oscurece
     r, g, b, _ = out.getpixel((100, 240))
     assert r > 200 and b < 80  # la calabaza sigue encendida
+
+
+# ── T6.4 y T3.3 ──────────────────────────────────────────────────────────────────
+def test_los_ojos_amarillos_sobreviven_al_fundido():
+    from src.application.services.miniatura import imagen as im_
+
+    antes = Image.new("RGB", (40, 40), (20, 20, 20))
+    antes.paste((230, 190, 40), (10, 10, 20, 20))  # un ojo amarillo que brilla
+    despues = Image.new("RGB", (40, 40), (20, 20, 20))
+    despues.paste((170, 200, 120), (10, 10, 20, 20))  # el fundido lo dejó verdoso
+    r, g, b = im_.restaurar_luces(antes, despues).getpixel((15, 15))
+    assert r > g > b  # vuelve a ser amarillo
+    assert im_.restaurar_luces(antes, despues).getpixel((35, 35)) == (20, 20, 20)
+
+
+def test_a_medio_ver_oscurece_abajo_y_no_arriba():
+    from src.application.services.miniatura import imagen as im_
+    from src.application.services.miniatura.arte import arte
+
+    final = Image.new("RGB", (100, 100), (200, 200, 200))
+    fondo = Image.new("RGB", (100, 100), (100, 100, 100))
+    alfa = Image.new("L", (100, 100), 0)
+    alfa.paste(255, (30, 0, 70, 100))
+    out = im_.a_medio_ver(final, fondo, alfa, "mucho", arte())
+    assert out.getpixel((50, 5)) == (200, 200, 200)  # la cabeza, igual
+    assert out.getpixel((50, 98))[0] < 80  # los pies, en la sombra del lugar
+    assert out.getpixel((5, 98)) == (200, 200, 200)  # fuera de la figura no toca
+    assert im_.a_medio_ver(final, fondo, alfa, "no", arte()) is final
+
+
+def test_la_foto_del_escenario_se_pide_en_positivo():
+    """D27: con cfg 1 nombrar algo con «no» lo trae (E11c: ventanas y casas)."""
+    import re
+
+    from src.application.services.miniatura.arte import texto
+
+    plantilla = texto("fotografiar_escenario", descripcion="")
+    assert not re.search(r"\b(no|not|without|nobody|never)\b", plantilla, re.I), plantilla

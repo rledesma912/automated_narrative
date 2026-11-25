@@ -16,6 +16,7 @@ from src.domain.streaming import StreamEvent, StreamEventType
 from src.domain.thumbnail import Batch
 from src.infrastructure.adapters.comfy.client import ComfyClient, ComfyPort
 from src.infrastructure.database.repositories import SQLThumbnailRepository
+from src.infrastructure.factories import LLMFactory
 from src.messages import message
 from src.presentation.runtime import job_manager
 
@@ -32,7 +33,7 @@ def thumbnail_runner(story_id: UUID) -> JobRunner:
             thumb = await repo.get(story_id)
             if thumb is None:
                 raise ValueError(message("miniatura.no_existe"))
-            arnes = Arnes(comfy_client(), carpeta_de(str(story_id)))
+            arnes = Arnes(comfy_client(), carpeta_de(str(story_id)), llm=LLMFactory.get_provider())
             async for paso in arnes.armar(thumb):
                 if isinstance(paso, Etapa):
                     yield stage_event(paso.stage, paso.beat, paso.total)

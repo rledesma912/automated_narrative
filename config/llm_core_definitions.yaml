@@ -79,6 +79,13 @@ profiles:
         num_ctx: 16384
         num_predict: 5000
         stop: []
+      # Spec-790 T3.3: los prompts de imagen de las miniaturas (JSON).
+      miniatura:
+        model: gemma3:12b
+        temperature: 0.3
+        num_ctx: 8192
+        num_predict: 1500
+        stop: []
 
   # Spec-600: la Voz en Claude Sonnet 5.5 y el resto en gemma3:12b (ruteo por rol,
   # Spec-480). Los roles locales son los de `ollama-gemma3-12b`, tal cual.
@@ -159,6 +166,12 @@ profiles:
         model: claude-sonnet-5-5
         num_predict: 3000
         thinking: between_tools
+      # Spec-790 T3.3: los prompts de imagen de las miniaturas (JSON, sin pensar).
+      miniatura:
+        provider: anthropic
+        model: claude-sonnet-5-5
+        num_predict: 2000
+        thinking: between_tools
 
   # Todo en Claude Sonnet 5.5 (Spec-480; Spec-600). NO está activo: sirve para comparar y
   # como palanca si hiciera falta mover otro rol (p. ej. el Planificador).
@@ -205,6 +218,11 @@ profiles:
         num_predict: 6000
         thinking: adaptive
         effort: low
+      # Spec-790 T3.3: los prompts de imagen de las miniaturas (JSON, sin pensar).
+      miniatura:
+        model: claude-sonnet-5-5
+        num_predict: 2000
+        thinking: between_tools
 
   # Spec-740: todo en FreeLLMAPI, el gateway local de capas gratuitas. Los modelos los eligen
   # dos cadenas del gateway: `narrativa` (la Voz) y `estructura` (lo que devuelve JSON; sin
@@ -251,6 +269,11 @@ profiles:
         model: auto:estructura
         temperature: 0.2
         num_predict: 3000
+      # Spec-790 T3.3: los prompts de imagen de las miniaturas (JSON).
+      miniatura:
+        model: auto:estructura
+        temperature: 0.2
+        num_predict: 2000
 
   # Spec-740 Parte F: todo en GPT-5.6 Sol (API de OpenAI, paga). Como `hibrido-sonnet55`:
   # la Voz y el Guion razonan poco (`low`; con razonamiento el adapter reserva 16 000
@@ -296,6 +319,11 @@ profiles:
         num_predict: 3000
 
 # ── Filtros de respuesta (transversales a todos los perfiles) ────────────────
+      # Spec-790 T3.3: los prompts de imagen de las miniaturas (JSON, sin razonar).
+      miniatura:
+        model: gpt-5.6-sol
+        reasoning_effort: none
+        num_predict: 2000
 
 response_filters:
   thinking_tags:

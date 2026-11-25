@@ -37,6 +37,16 @@ class Part(BaseModel):
     seconds: float = 0.0
 
 
+class ImageTexts(BaseModel):
+    """T3.3 (D28): lo que la IA separa de las dos descripciones de Yael, en inglés y en positivo."""
+
+    personaje: str
+    escenario: str
+    relacion: str = ""
+    a_medio_ver: Literal["no", "poco", "mucho"] = "no"
+    input_hash: str = ""
+
+
 class ThumbnailImage(BaseModel):
     """Una de las 4 opciones."""
 
@@ -63,6 +73,7 @@ class Thumbnail(BaseModel):
     story_id: str
     input: ThumbnailInput = Field(default_factory=ThumbnailInput)
     parts: dict[str, Part] = Field(default_factory=dict)  # "personaje" | "escenario" | "importante"
+    texts: ImageTexts | None = None  # T3.3: se reusa mientras no cambien las descripciones
     batches: list[Batch] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=now_argentina)
 
