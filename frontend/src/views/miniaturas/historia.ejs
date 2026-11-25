@@ -124,7 +124,7 @@ const api = `/api/v1/stories/${story.id}/thumbnail`;
       </div>
       <p class="pista-forge"><i data-lucide="info"></i>Tanda <%= tanda.n %> · <%= tanda.color === 'byn' ? 'Blanco y negro' : tonoNombre(tanda.tone) %></p>
       <% if (thumb.texts && thumb.texts.a_medio_ver === 'mucho') { %>
-        <p class="nota-forge nota-forge--info" data-a-medio-ver><i data-lucide="info"></i><span>Contaste que está escondido<%= thumb.texts.relacion ? ` («${thumb.texts.relacion}»)` : '' %>. Esconderlo detrás de algo, como un árbol, todavía no lo hacemos: por ahora se pierde en la sombra del lugar.</span></p>
+        <p class="nota-forge nota-forge--info" data-a-medio-ver><i data-lucide="info"></i><span>Contaste que está escondido<%= thumb.texts.relacion ? ` («${thumb.texts.relacion}»)` : '' %>. En la que tiene la figura a la derecha queda detrás de lo que lo tapa; en las otras se pierde en la sombra del lugar.</span></p>
       <% } %>
     <% } else { %>
       <p class="text-forge-muted text-sm">Cuando subas los dos bocetos, tocá «Armar las 4».</p>

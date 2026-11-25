@@ -118,3 +118,86 @@ def test_la_foto_del_escenario_se_pide_en_positivo():
 
     plantilla = texto("fotografiar_escenario", descripcion="")
     assert not re.search(r"\b(no|not|without|nobody|never)\b", plantilla, re.I), plantilla
+
+
+def test_a_medio_ver_no_deja_ver_las_formas_del_fondo():
+    """Tanda 5 de Peter: el tronco detrás de la figura se veía a través de las piernas."""
+    from src.application.services.miniatura import imagen as im_
+    from src.application.services.miniatura.arte import arte
+
+    final = Image.new("RGB", (200, 200), (200, 200, 200))
+    fondo = Image.new("RGB", (200, 200), (20, 20, 20))
+    fondo.paste((240, 240, 240), (95, 0, 105, 200))  # un tronco claro y fino detrás
+    alfa = Image.new("L", (200, 200), 0)
+    alfa.paste(255, (60, 0, 140, 200))
+    out = im_.a_medio_ver(final, fondo, alfa, "mucho", arte())
+    tronco, al_lado = out.getpixel((100, 195))[0], out.getpixel((75, 195))[0]
+    assert abs(tronco - al_lado) < 15  # sin el borde del tronco: solo el tono
+
+
+def test_scribble_lineas_blancas_sobre_negro():
+    from src.application.services.miniatura import imagen as im_
+
+    boceto = Image.new("RGB", (100, 100), (200, 200, 200))  # papel gris
+    boceto.paste((20, 20, 20), (40, 0, 45, 100))  # una línea de lápiz
+    s = im_.scribble(boceto)
+    assert s.getpixel((10, 10)) == (0, 0, 0)
+    assert s.getpixel((42, 50))[0] > 240
+
+
+def test_detras_se_pega_el_recorte_entero_con_borde_suave():
+    """T6.7: el tronco que Qwen pone delante sigue más allá de la silueta de la figura."""
+    from src.application.services.miniatura import imagen as im_
+    from src.application.services.miniatura.arte import arte
+
+    a = arte()
+    gradiente = Image.linear_gradient("L").resize((a.lienzo.ancho, a.lienzo.alto))
+    comp = gradiente.point(lambda v: 30 + v // 4).convert("RGB")  # un fondo con variación
+    caja = (200, 100, 700, 700)
+    m = Image.new("L", comp.size, 0)
+    m.paste(255, (400, 300, 500, 600))  # la figura, angosta
+    editado = comp.crop(caja)
+    editado.paste((200, 200, 200), (100, 0, 160, 600))  # un tronco a la izquierda de la figura
+    pegar = im_.mascara_zona(caja, comp.size, a)
+    final = im_.pegar_fundido(comp, editado, caja, m, a, pegar)
+    fondo = comp.getpixel((330, 400))[0]
+    assert final.getpixel((330, 400))[0] > fondo + 60  # el tronco, fuera de la figura, entra
+    assert final.getpixel((205, 400)) == comp.getpixel((205, 400))  # el borde no se nota
+    assert final.getpixel((100, 400)) == comp.getpixel((100, 400))  # fuera del recorte no toca
+    # sin `pegar`, como siempre: solo dentro de la figura
+    sin = im_.pegar_fundido(comp, editado, caja, m, a)
+    assert sin.getpixel((330, 400)) == comp.getpixel((330, 400))
+
+
+def test_detras_las_luces_tapadas_no_vuelven():
+    from src.application.services.miniatura import imagen as im_
+
+    antes = Image.new("RGB", (60, 60), (20, 20, 20))
+    antes.paste((255, 220, 40), (10, 10, 20, 20))  # un ojo
+    antes.paste((255, 220, 40), (40, 10, 50, 20))  # el otro
+    despues = antes.copy()
+    despues.paste((30, 25, 20), (5, 0, 25, 60))  # un tronco tapa el primero
+    out = im_.restaurar_luces(antes, despues, solo_visibles=True)
+    assert out.getpixel((15, 15))[0] < 60  # el tapado sigue tapado
+    assert out.getpixel((45, 15)) == (255, 220, 40)  # el que se ve, con su color
+
+
+def test_detras_el_recorte_va_de_arriba_a_abajo_sin_borde_en_el_cuadro():
+    """Tanda 6: el tronco se cortaba en el borde de arriba del recorte."""
+    from src.application.services.miniatura import imagen as im_
+    from src.application.services.miniatura.arte import arte
+
+    a = arte()
+    m = Image.new("L", (a.lienzo.ancho, a.lienzo.alto), 0)
+    m.paste(255, (500, 200, 700, 600))
+    caja = im_.zona_detras(m, a)
+    assert caja[1] == 0 and caja[3] == a.lienzo.alto
+    pegar = im_.mascara_zona(caja, m.size, a)
+    assert pegar.getpixel((600, 0)) >= 245 and pegar.getpixel((600, a.lienzo.alto - 1)) >= 245
+    assert pegar.getpixel((caja[0] + 1, 300)) < 40  # a los costados sí se difumina
+
+
+def test_detras_solo_en_las_plantillas_de_arte():
+    from src.application.services.miniatura.arte import arte
+
+    assert arte().fundido.detras_en == ["A_der"]  # una sola: las 4 tienen que ser distintas

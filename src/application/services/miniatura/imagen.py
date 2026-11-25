@@ -43,6 +43,16 @@ def cuanto(m: Image.Image, area: Image.Image) -> float:
 
 
 # ── escenario (E3c) ───────────────────────────────────────────────────────────────
+def scribble(boceto: Image.Image) -> Image.Image:
+    """T6.6: el boceto de Yael (líneas oscuras sobre un fondo cualquiera) → líneas blancas sobre
+    negro, como espera el ControlNet. El fondo es la mediana (casi todo el lienzo)."""
+    gris = ImageOps.grayscale(boceto)
+    fondo = ImageStat.Stat(gris).median[0]
+    return gris.point(
+        lambda v: max(0, min(255, int((fondo - v) * 255 / max(fondo - 20, 1))))
+    ).convert("RGB")
+
+
 def oscurecer_escenario(im: Image.Image, arte: Arte) -> Image.Image:
     """La curva antes de «fotografiarlo»: medios tonos hacia abajo y luces recortadas."""
     g, t = arte.escenario.gamma, arte.escenario.techo
@@ -201,10 +211,39 @@ def igualar(editado: Image.Image, original: Image.Image, ref: Image.Image) -> Im
     return editado.point(tablas)
 
 
+def zona_detras(m: Image.Image, arte: Arte) -> tuple[int, int, int, int]:
+    """T6.7: el recorte de la figura de arriba a abajo del cuadro: lo que Qwen pone delante (un
+    tronco) entra entero y no se corta en el borde del recorte (tanda 6)."""
+    x0, _, x1, _ = zona(m, arte)
+    return x0, 0, x1, arte.lienzo.alto
+
+
+def mascara_zona(caja, tam: tuple[int, int], arte: Arte) -> Image.Image:
+    """T6.7: todo el recorte, con el borde difuminado hacia adentro (la mitad del margen) salvo
+    donde toca el borde del cuadro. Lo que Qwen pone delante de la figura (un tronco) sigue más
+    allá de su silueta."""
+    x0, y0, x1, y1 = caja
+    w, h = tam
+    r = max(4, round(arte.fundido.margen * arte.lienzo.alto / 2))
+    lados = [x0 + r if x0 > 0 else -r, y0 + r if y0 > 0 else -r]
+    lados += [x1 - r if x1 < w else w + r, y1 - r if y1 < h else h + r]
+    m = Image.new("L", (w + 4 * r, h + 4 * r), 0)  # con lugar afuera para difuminar sin borde
+    m.paste(255, tuple(v + 2 * r for v in lados))
+    m = m.filter(ImageFilter.GaussianBlur(r / 2))
+    return m.crop((2 * r, 2 * r, 2 * r + w, 2 * r + h))
+
+
 def pegar_fundido(
-    comp: Image.Image, editado: Image.Image, caja, m: Image.Image, arte: Arte
+    comp: Image.Image,
+    editado: Image.Image,
+    caja,
+    m: Image.Image,
+    arte: Arte,
+    pegar: Image.Image | None = None,
 ) -> Image.Image:
-    """Lo editado entra solo dentro de la máscara, con el borde difuminado hacia adentro."""
+    """Lo editado entra solo dentro de la máscara, con el borde difuminado hacia adentro. Con
+    `pegar` (T6.7) entra donde dice esa máscara; la exposición se iguala igual alrededor de la
+    figura."""
     x0, y0, x1, y1 = caja
     ed_zona = editado.convert("RGB").resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS)
     m_zona = m.crop(caja)
@@ -213,6 +252,8 @@ def pegar_fundido(
     )
     ed = comp.copy()
     ed.paste(ed_zona, (x0, y0))
+    if pegar is not None:
+        return Image.composite(ed, comp, pegar)
     b = arte.fundido.borde
     suave = ImageChops.multiply(erosionar(m, b).filter(ImageFilter.GaussianBlur(b / 2)), m)
     return Image.composite(ed, comp, suave)
@@ -240,10 +281,18 @@ def _calidos(im: Image.Image, h0: int, h1: int, brillo: int) -> Image.Image:
     return ImageChops.multiply(m, v.point(lambda x: 255 if x > brillo else 0))
 
 
-def restaurar_luces(antes: Image.Image, despues: Image.Image) -> Image.Image:
+def restaurar_luces(
+    antes: Image.Image, despues: Image.Image, solo_visibles: bool = False
+) -> Image.Image:
     """T6.4: el fundido de Qwen cambia el tono de las luces (ojos amarillos → verdosos) y el
-    color después las apaga. Las luces muy brillantes se toman de antes del fundido."""
+    color después las apaga. Las luces muy brillantes se toman de antes del fundido.
+    T6.7 (`solo_visibles`): solo donde siguen brillando después; si el fundido puso algo delante
+    (un tronco), la luz no va por encima."""
     luces = ImageChops.lighter(_calidos(antes, 0, 32, 150), _calidos(antes, 33, 45, 150))
+    if solo_visibles:
+        luces = ImageChops.multiply(
+            luces, despues.convert("L").point(lambda v: 255 if v > 100 else 0)
+        )
     return Image.composite(antes, despues, luces.filter(ImageFilter.GaussianBlur(2)))
 
 
@@ -265,7 +314,14 @@ def a_medio_ver(
     ]
     rampa = Image.new("L", final.size, 0)
     rampa.paste(Image.linear_gradient("L").resize((x1 - x0, y1 - y0)).point(tabla), (x0, y0))
-    sombra = fondo.convert("RGB").point(lambda v: round(v * arte.figura.sombra))
+    # El fondo muy difuminado: el tono del lugar sin sus formas. Con el fondo nítido, el tronco
+    # que está detrás se veía a través de las piernas (tanda 5 de Peter).
+    radio = max(8, round(max(x1 - x0, y1 - y0) * arte.figura.sombra_difuminado))
+    sombra = (
+        fondo.convert("RGB")
+        .filter(ImageFilter.GaussianBlur(radio))
+        .point(lambda v: round(v * arte.figura.sombra))
+    )
     return Image.composite(sombra, final, ImageChops.multiply(rampa, alfa))
 
 

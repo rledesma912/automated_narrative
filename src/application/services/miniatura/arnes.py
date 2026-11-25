@@ -3,7 +3,8 @@
   textos      la IA separa lo que escribió Yael: personaje solo, lugar vacío y relación (T3.3)
   personaje   boceto → `boceto_a_imagen` (prompts/personaje.md) → `recortar` → PNG con alfa
   escenario   boceto → `boceto_a_imagen` (prompts/escenario.md) → curva en Python →
-              `foto_img2img` (prompts/fotografiar_escenario.md) → `recortar` (lo importante)
+              `foto_controlnet` con el boceto de guía (prompts/fotografiar_escenario.md, T6.6)
+              → `recortar` (lo importante)
   4 opciones  por plantilla: ubicar → espejar si tapa lo importante → oscurecer la figura →
               componer → `boceto_a_imagen` sobre la zona (prompts/fundir.md) → igualar y pegar
               con máscara → color (tono del lugar, Halloween o blanco y negro) → JPG
@@ -176,7 +177,7 @@ class Arnes:
             boceto.read_bytes(),
             prompt("escenario", desc),
             prompt("fotografiar_escenario", desc),
-            "escenario-v1",
+            f"escenario-v2-{self.arte.escenario.cambio_foto}-{self.arte.escenario.guia}",
         )
         previo, imp = thumb.parts.get("escenario"), thumb.parts.get("importante")
         if (
@@ -197,14 +198,17 @@ class Arnes:
         )
         oscuro = piezas / "escenario_oscurecido.png"
         im_.oscurecer_escenario(Image.open(qwen), self.arte).save(oscuro)
+        guia = piezas / "escenario_guia.png"
+        im_.scribble(Image.open(boceto)).save(guia)
         foto = await self.comfy.correr(
-            "foto_img2img",
+            "foto_controlnet",
             {
                 "prompt": prompt("fotografiar_escenario", desc),
                 "semilla": semilla,
                 "cambio": self.arte.escenario.cambio_foto,
+                "fuerza": self.arte.escenario.guia,
             },
-            {"imagen": oscuro},
+            {"imagen": oscuro, "guia": guia},
             piezas / "escenario.png",
         )
         en_lienzo = piezas / "escenario_lienzo.png"
@@ -250,7 +254,11 @@ class Arnes:
         importante = Image.open(imp_path)
         batch = Batch(n=n, seed=semilla, color=i.color, tone=tono)
         total = len(self.arte.plantillas)
+        # T6.7: escondido (detrás de un árbol, asomándose): Qwen pone delante lo que lo tapa y
+        # se pega el recorte entero; Python solo podía oscurecerle las piernas.
+        escondida = txt.a_medio_ver == "mucho"
         for k, (clave, p) in enumerate(self.arte.plantillas.items(), start=1):
+            detras = escondida and clave in self.arte.fundido.detras_en
             yield Etapa(JobStage.COMPONIENDO, k, total)
             f, pos = im_.ubicar(im_.figura_recortada(figura, p.recorte), p, apoyo, self.arte)
             alfa = im_.alfa_en_cuadro(f, pos, self.arte)
@@ -259,18 +267,20 @@ class Arnes:
             f2 = im_.oscurecer_figura(f, fondo, alfa, self.arte)
             comp = im_.componer(fondo, f2, pos, apoyo, p, self.arte)
             m = im_.mascara_fundir(alfa, self.arte)
-            caja = im_.zona(m, self.arte)
+            caja = im_.zona_detras(m, self.arte) if detras else im_.zona(m, self.arte)
             zona_png = carpeta_tanda / f"{clave}_zona.png"
             comp.crop(caja).save(zona_png)
             editado = await self.comfy.correr(
                 "boceto_a_imagen",
-                {"prompt": prompt("fundir"), "semilla": semilla + k},
+                {"prompt": prompt("fundir_detras" if detras else "fundir"), "semilla": semilla + k},
                 {"boceto": zona_png},
                 carpeta_tanda / f"{clave}_fundido.png",
             )
-            final = im_.pegar_fundido(comp, Image.open(editado), caja, m, self.arte)
-            final = im_.restaurar_luces(comp, final)  # T6.4: el fundido les cambiaba el tono
-            if p.recorte == 1:
+            pegar = im_.mascara_zona(caja, comp.size, self.arte) if detras else None
+            final = im_.pegar_fundido(comp, Image.open(editado), caja, m, self.arte, pegar)
+            # T6.4: el fundido les cambiaba el tono; si algo la tapa, solo las luces que se ven
+            final = im_.restaurar_luces(comp, final, solo_visibles=detras)
+            if p.recorte == 1 and not detras:
                 final = im_.a_medio_ver(final, fondo, alfa, txt.a_medio_ver, self.arte)
             final.save(carpeta_tanda / f"{clave}_sin_color.png")
             alfa.save(carpeta_tanda / f"{clave}_alfa.png")

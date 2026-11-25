@@ -14,7 +14,9 @@ plantillas:
   B_lugar:        { nombre: "Manda el lugar", cx: 0.46, alto: 0.50, recorte: 1.0 }
 
 # E3c: la curva de oscuridad del escenario antes de «fotografiarlo».
-escenario: { gamma: 1.6, techo: 0.75, cambio_foto: 0.45 }
+# T6.6 (E11i): la foto lleva el boceto de guía (ControlNet a `guia`), así Z-Image puede cambiar
+# mucho (`cambio_foto`) sin perder el lugar; a 0,45 sin guía conservaba las hojas dibujadas.
+escenario: { gamma: 1.6, techo: 0.75, cambio_foto: 0.75, guia: 0.6 }
 
 # E11 (T6.3): el personaje de Qwen sale como render de videojuego; Z-Image lo «fotografía».
 # 0,45–0,55 les gustaron a Yael y al usuario; a 0,55 se pierde el boceto (hocico, esqueleto).
@@ -28,12 +30,17 @@ figura:
   grano: 4
   anillo: 0.04
   # T6.4: con la figura entera, de la cintura para abajo se pierde en la sombra del lugar
-  # (el fondo multiplicado por `sombra`). Cuánto, según lo que dijo Yael (T3.3, a_medio_ver).
+  # (el fondo difuminado y multiplicado por `sombra`: el tono del lugar sin sus formas, para
+  # que no se vea el tronco a través de las piernas). Cuánto, según lo que dijo Yael (T3.3).
   sombra: 0.35
+  sombra_difuminado: 0.15
   medio_ver:
     poco:  { desde: 0.55, queda: 0.35 }
     mucho: { desde: 0.45, queda: 0.15 }
-fundido: { dilatacion: 0.01, borde: 16, margen: 0.12 }
+# T6.7: con la figura escondida, en estas plantillas Qwen pone delante lo que la tapa (un tronco)
+# y el recorte va de arriba a abajo del cuadro; en las otras, el fundido de siempre y la sombra.
+# Una sola: con las dos A detrás del árbol las opciones se parecían (tanda 7, el usuario).
+fundido: { dilatacion: 0.01, borde: 16, margen: 0.12, detras_en: [A_der] }
 
 # C5 / D23: el color. «desaturado» = la saturación media (de lo que no es negro) hasta `tope`
 # (la mediana de las 36 recientes de Yael), sin tocar los acentos cálidos.

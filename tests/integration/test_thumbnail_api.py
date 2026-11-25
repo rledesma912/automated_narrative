@@ -9,6 +9,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from src.config import settings
+from src.infrastructure.adapters.mock_llm_adapter import MockLLMAdapter
 from src.infrastructure.database.connection import init_db
 from src.main import app
 from src.presentation import thumbnail_jobs
@@ -29,6 +30,11 @@ async def client(monkeypatch, tmp_path) -> AsyncIterator[tuple[httpx.AsyncClient
     monkeypatch.setattr(settings, "miniaturas_dir", str(tmp_path / "miniaturas"))
     fake = FakeComfy()
     monkeypatch.setattr(thumbnail_jobs, "comfy_client", lambda: fake)
+    # La IA de los textos, de mentira: sin esto el job llamaba al Ollama real y cargaba gemma3
+    # en la GPU por 30 minutos.
+    monkeypatch.setattr(
+        thumbnail_jobs.LLMFactory, "get_provider", staticmethod(lambda *_a, **_k: MockLLMAdapter())
+    )
     await init_db()
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
@@ -122,7 +128,8 @@ async def test_armar_las_4_y_recolorear(client):
     assert Image.open(io.BytesIO(img.content)).size == (1280, 720)
     # una llamada por pieza y una por fundido (D15)
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4
-    assert fake.llamadas.count("foto_img2img") == 2  # el escenario y el personaje (E11)
+    assert fake.llamadas.count("foto_img2img") == 1  # el personaje (E11)
+    assert fake.llamadas.count("foto_controlnet") == 1  # el escenario, con el boceto (T6.6)
     # T3.3: la IA separó las descripciones y quedó guardado
     textos = (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["texts"]
     assert textos["personaje"] and textos["escenario"] and textos["input_hash"]
@@ -142,7 +149,8 @@ async def test_armar_las_4_y_recolorear(client):
     resp = await c.post(f"/api/v1/stories/{sid}/jobs", json={"kind": "thumbnail_build"})
     assert (await _wait_job(c, resp.json()["job_id"]))["status"] == "done"
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4 + 4
-    assert fake.llamadas.count("foto_img2img") == 2  # reusa las dos piezas: ninguna foto nueva
+    assert fake.llamadas.count("foto_img2img") == 1  # reusa las dos piezas: ninguna foto nueva
+    assert fake.llamadas.count("foto_controlnet") == 1
     assert (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["texts"] == textos
 
 

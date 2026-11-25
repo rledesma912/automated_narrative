@@ -34,7 +34,8 @@ class Plantilla(BaseModel):
 class Escenario(BaseModel):
     gamma: float = 1.6
     techo: float = 0.75
-    cambio_foto: float = 0.45
+    cambio_foto: float = 0.75  # T6.6 (E11i): con el boceto de guía, Z-Image reinterpreta todo
+    guia: float = Field(default=0.6, ge=0, le=1)  # fuerza del ControlNet; a 0,8 vuelven las manchas
 
 
 class PersonajeArte(BaseModel):
@@ -54,6 +55,7 @@ class FiguraArte(BaseModel):
     anillo: float = 0.04
     # T6.4: la figura se pierde en la sombra del lugar según `relacion.a_medio_ver` (T3.3)
     sombra: float = 0.35
+    sombra_difuminado: float = 0.15  # radio, en proporción al alto de la figura
     medio_ver: dict[str, MedioVer] = Field(default_factory=dict)
 
 
@@ -61,6 +63,9 @@ class Fundido(BaseModel):
     dilatacion: float = 0.01
     borde: int = 16
     margen: float = 0.12
+    # T6.7: las plantillas donde la figura escondida se funde con algo delante (tanda 6: en el
+    # primer plano el tronco le tapaba la cara y en la chica Qwen duplicaba la cabeza)
+    detras_en: list[str] = Field(default_factory=list)
 
 
 class ColorArte(BaseModel):
