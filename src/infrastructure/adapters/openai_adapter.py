@@ -14,7 +14,7 @@ import openai
 
 from src.config import settings
 from src.domain.exceptions import LLMRefusalError, LLMResponseError, LLMUnavailableError
-from src.domain.interfaces import LLMResponse
+from src.domain.interfaces import ImagenEntrada, LLMResponse
 from src.messages import message
 
 logger = logging.getLogger(__name__)
@@ -182,6 +182,7 @@ class OpenAIAdapter:
         role: str | None,
         num_predict: int | None,
         response_schema: dict | None = None,
+        images: list[ImagenEntrada] | None = None,
     ) -> dict:
         role_cfg = settings.role_config(role) if role else {}
         model_name = model or role_cfg.get("model") or self.default_model
@@ -196,7 +197,14 @@ class OpenAIAdapter:
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
+        if images:
+            # Spec-790 T6.5: las imágenes primero, en orden, y después el pedido.
+            content: str | list = [
+                {"type": "image_url", "image_url": {"url": i.data_uri()}} for i in images
+            ] + [{"type": "text", "text": prompt}]
+        else:
+            content = prompt
+        messages.append({"role": "user", "content": content})
 
         request: dict = {
             "model": model_name,
@@ -229,11 +237,12 @@ class OpenAIAdapter:
         num_ctx: int | None = None,  # Ollama; sin efecto acá
         num_predict: int | None = None,
         response_schema: dict | None = None,
+        images: list[ImagenEntrada] | None = None,
         **kwargs,
     ) -> LLMResponse:
         """Genera texto con la API de OpenAI."""
         request = self._request(
-            prompt, system_prompt, model, temperature, role, num_predict, response_schema
+            prompt, system_prompt, model, temperature, role, num_predict, response_schema, images
         )
         logger.debug(
             f"[OPENAI] model={request['model']} max={request['max_completion_tokens']} "

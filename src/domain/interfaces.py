@@ -1,10 +1,25 @@
 """Ports (interfaces) for the domain."""
 
+import base64
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from src.domain.models import ActText, EntityNature, Genre, Story
+
+
+@dataclass(frozen=True)
+class ImagenEntrada:
+    """Una imagen que la IA mira junto con el pedido (Spec-790 T6.5: los bocetos)."""
+
+    data: bytes
+    media_type: str  # "image/png" | "image/jpeg"
+
+    def base64(self) -> str:
+        return base64.b64encode(self.data).decode("ascii")
+
+    def data_uri(self) -> str:
+        return f"data:{self.media_type};base64,{self.base64()}"
 
 
 @dataclass
@@ -71,11 +86,15 @@ class LLMProvider(Protocol):
         num_ctx: int | None = None,
         num_predict: int | None = None,
         response_schema: dict | None = None,
+        images: list[ImagenEntrada] | None = None,
     ) -> LLMResponse:
         """Generate text with LLM. `role` permite al adapter leer config específica del rol.
 
         `response_schema` (JSON Schema, Spec-530): pide salida JSON que lo cumpla. Los
         adapters que no pueden forzarlo lo ignoran; quien llama valida igual.
+        `images` (Spec-790 T6.5): imágenes que la IA mira con el pedido, en orden. Un adapter
+        que no puede mirarlas falla con `LLMUnavailableError` (`sin_imagenes`); el mock las
+        ignora.
         """
         ...
 

@@ -248,3 +248,32 @@ async def test_sin_response_schema_no_hay_format(role_config):
     adapter, client = _adapter()
     await adapter.generate("p", role="voz")
     assert "output_config" not in client.messages.calls[0]
+
+
+# ── Imágenes de entrada (Spec-790 T6.5) ──────────────────────────────────────
+
+
+async def test_las_imagenes_van_como_bloques_image_antes_del_pedido():
+    import base64
+
+    from src.domain.interfaces import ImagenEntrada
+
+    adapter, client = _adapter()
+    a = ImagenEntrada(data=b"\xff\xd8uno", media_type="image/jpeg")
+    b = ImagenEntrada(data=b"\x89PNGdos", media_type="image/png")
+    await adapter.generate("pedido", images=[a, b])
+    content = client.messages.calls[0]["messages"][0]["content"]
+    assert [c["type"] for c in content] == ["image", "image", "text"]
+    assert content[0]["source"] == {
+        "type": "base64",
+        "media_type": "image/jpeg",
+        "data": base64.b64encode(b"\xff\xd8uno").decode(),
+    }
+    assert content[1]["source"]["media_type"] == "image/png"
+    assert content[2] == {"type": "text", "text": "pedido"}
+
+
+async def test_sin_imagenes_el_contenido_sigue_siendo_texto():
+    adapter, client = _adapter()
+    await adapter.generate("pedido")
+    assert client.messages.calls[0]["messages"][0]["content"] == "pedido"

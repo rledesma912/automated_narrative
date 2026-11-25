@@ -320,3 +320,27 @@ def test_cada_rol_pasa_por_el_modo_estricto_y_vuelve_valido(role, output, prompt
         mock_structured(role, schema, prompt), strict, strict.get("$defs", {})
     )
     output.model_validate(drop_added_nulls(answer, schema))
+
+
+# ── Imágenes de entrada (Spec-790 T6.5) ──────────────────────────────────────
+
+
+async def test_las_imagenes_van_antes_del_pedido_como_data_uri():
+    from src.domain.interfaces import ImagenEntrada
+
+    adapter, client = _adapter()
+    a = ImagenEntrada(data=b"\xff\xd8uno", media_type="image/jpeg")
+    b = ImagenEntrada(data=b"\x89PNGdos", media_type="image/png")
+    await adapter.generate("pedido", system_prompt="sistema", images=[a, b])
+    content = _sent(client)["messages"][1]["content"]
+    assert [c["type"] for c in content] == ["image_url", "image_url", "text"]
+    assert content[0]["image_url"]["url"] == a.data_uri()
+    assert content[0]["image_url"]["url"].startswith("data:image/jpeg;base64,")
+    assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+    assert content[2]["text"] == "pedido"
+
+
+async def test_sin_imagenes_el_pedido_sigue_siendo_texto():
+    adapter, client = _adapter()
+    await adapter.generate("pedido")
+    assert _sent(client)["messages"][0]["content"] == "pedido"

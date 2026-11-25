@@ -132,6 +132,8 @@ llm:
   error: "La IA que escribe el relato respondió con un error. Probá de nuevo más tarde."
   # Spec-740: el gateway de capas gratuitas se quedó sin modelos o sin cuota del mes.
   sin_modelos: "La IA que escribe el relato no tiene modelos disponibles ahora. Avisá a quien administra el sitio."
+  # Spec-790 T6.5: el perfil de la miniatura no puede mirar los bocetos.
+  sin_imagenes: "La IA que arma las miniaturas no puede mirar los bocetos. Avisá a quien administra el sitio."
   sin_cuota_hoy: "Por hoy se terminó lo gratis de la IA que escribe el relato. Probá de nuevo mañana; lo que ya armaste queda guardado."
 
 stage:

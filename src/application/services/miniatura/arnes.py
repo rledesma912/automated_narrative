@@ -27,7 +27,7 @@ from PIL import Image
 
 from src.application.services.miniatura import imagen as im_
 from src.application.services.miniatura import textos as textos_
-from src.application.services.miniatura.arte import Arte, prompt
+from src.application.services.miniatura.arte import Arte, prompt, texto
 from src.application.services.miniatura.arte import arte as cargar_arte
 from src.config import settings
 from src.domain.interfaces import LLMProvider
@@ -92,14 +92,22 @@ class Arnes:
         """Lo que la IA separó de las descripciones; se reusa mientras no cambien. Sin IA (los
         spikes) van las descripciones tal cual."""
         i = thumb.input
-        h = _hash(i.figure_description, i.place_description, "textos-v1")
+        # T6.5: la IA mira los bocetos, así que cambiar uno vuelve a leer.
+        bocetos = [self.carpeta / i.character_sketch, self.carpeta / i.scene_sketch]
+        h = _hash(
+            i.figure_description,
+            i.place_description,
+            *(b.read_bytes() for b in bocetos),
+            texto("ia_sistema"),
+            "textos-v2",
+        )
         if thumb.texts and thumb.texts.input_hash == h:
             return thumb.texts
         if self.llm is None:
             return ImageTexts(
                 personaje=i.figure_description, escenario=i.place_description, input_hash=h
             )
-        thumb.texts = await textos_.separar(self.llm, i, h)
+        thumb.texts = await textos_.separar(self.llm, i, h, bocetos)
         return thumb.texts
 
     # ── la GPU por turnos (D10) ──────────────────────────────────────────────────

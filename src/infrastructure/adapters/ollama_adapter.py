@@ -6,7 +6,7 @@ import time
 import httpx
 
 from src.config import settings
-from src.domain.interfaces import LLMResponse
+from src.domain.interfaces import ImagenEntrada, LLMResponse
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,8 @@ class OllamaAdapter:
         num_ctx: int | None = None,
         num_predict: int | None = None,
         response_schema: dict | None = None,
+        images: list[ImagenEntrada] | None = None,
+        **kwargs,
     ) -> LLMResponse:
         """Generate text with Ollama.
 
@@ -58,6 +60,10 @@ class OllamaAdapter:
             "options": options,
             "keep_alive": "30m",
         }
+
+        if images:
+            # Spec-790 T6.5: los modelos que miran imágenes (gemma3) las reciben en base64.
+            payload["images"] = [i.base64() for i in images]
 
         if response_schema:
             # Spec-530: Ollama restringe la salida al esquema (structured outputs).
