@@ -1,7 +1,7 @@
 # Lo único que el código cambia del grafo (T10). Un nodo que no existe falla al cargar.
 params:
-  imagen:   { node: "9",  input: image }            # el escenario de Qwen, ya oscurecido en Python
-  prompt:   { node: "3",  input: text }             # prompts/fotografiar_escenario.md
+  imagen:   { node: "9",  input: image }            # el escenario oscurecido o el personaje de Qwen
+  prompt:   { node: "3",  input: text }             # prompts/fotografiar_{escenario,personaje}.md
   semilla:  { node: "6",  input: seed }
-  cambio:   { node: "6",  input: denoise }          # 0,45 (E3b/E3c): más se aleja del boceto
+  cambio:   { node: "6",  input: denoise }          # 0,45 escenario (E3c), 0,50 personaje (E11)
   prefijo:  { node: "8",  input: filename_prefix }

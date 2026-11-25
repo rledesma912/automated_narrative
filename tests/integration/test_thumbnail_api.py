@@ -122,7 +122,7 @@ async def test_armar_las_4_y_recolorear(client):
     assert Image.open(io.BytesIO(img.content)).size == (1280, 720)
     # una llamada por pieza y una por fundido (D15)
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4
-    assert fake.llamadas.count("foto_img2img") == 1
+    assert fake.llamadas.count("foto_img2img") == 2  # el escenario y el personaje (E11)
 
     # cambiar a blanco y negro recolorea sin GPU
     antes = len(fake.llamadas)
@@ -139,7 +139,7 @@ async def test_armar_las_4_y_recolorear(client):
     resp = await c.post(f"/api/v1/stories/{sid}/jobs", json={"kind": "thumbnail_build"})
     assert (await _wait_job(c, resp.json()["job_id"]))["status"] == "done"
     assert fake.llamadas.count("boceto_a_imagen") == 2 + 4 + 4
-    assert fake.llamadas.count("foto_img2img") == 1
+    assert fake.llamadas.count("foto_img2img") == 2  # reusa las dos piezas: ninguna foto nueva
 
 
 async def test_avisa_si_la_compu_de_las_imagenes_esta_apagada(client):

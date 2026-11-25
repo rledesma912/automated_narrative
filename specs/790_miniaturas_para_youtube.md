@@ -1316,6 +1316,19 @@ Cada tarea se completa en una sesión y tiene su **Acepta** (qué tiene que pasa
 - [ ] **T6.2 — Sin boceto y la calabaza**
   - Acepta: «Armarlo sin boceto» de punta a punta; calabaza con su imagen en `_arte/`.
   - Verifica: tests del arnés y prueba en dev.
+- [~] **T6.3 — E11: la figura parece un render, no una foto** (2026-11-24, pedido de Yael con «El halloween de Peter» en dev)
+  - Qué se vio: el escenario sale foto (E3b/E3c), pero el personaje de `qwen_b` sale como render 3D de videojuego (piel lisa y plástica, sombreado limpio, cara de máscara, ojos con *bloom*). Las del canal parecen fotos de cámara trampa o de flash: grano, carne flaca y deforme, borde sin definir. El personaje nunca pasa por un paso de «foto» (el fundido solo trabaja en la máscara y no cambia el material). Además, en la imagen final queda un halo claro alrededor de la figura.
+  - Pregunta: ¿se puede llevar al personaje a foto **sin perder la forma no humana del boceto** (orejas, sonrisa, garras, proporciones)? Riesgo que marca el usuario: que el modelo lo lleve a una morfología humana.
+  - Variantes, sobre fondo gris (boceto de Peter + la criatura de E1), 3 semillas:
+    - `base`: `qwen_b` como hoy (referencia);
+    - `foto_35` / `foto_45` / `foto_55`: `base` → Z-Image img2img (`foto_img2img`, el paso del escenario) con un prompt de foto con flash de criatura real, a 0,35 / 0,45 / 0,55;
+    - `qwen_foto`: el prompt de Qwen en clave foto (flash de frente, sin «cinematic» ni luz dura de estudio), con Lightning;
+    - `qwen_foto_z45`: `qwen_foto` → Z-Image 0,45;
+    - después, solo si ninguna alcanza: una LoRA de realismo o de cámara trampa para Qwen-Edit 2511 o Z-Image, con licencia comercial clara (D9), preguntando antes de bajarla.
+  - Acepta: Yael elige, al lado de las del canal, una variante que parece foto y en la que reconoce su boceto (forma no humana intacta); se mide el tiempo extra.
+  - Verifica: grilla e informe en `scripts/research/790/e11/`; si se adopta, el paso entra al arnés con su prompt en `config/miniatura/prompts/` y su número en `arte.yaml`.
+  - **Corrido (2026-11-24):** no humaniza en ninguna variante. A 0,55 lo animaliza y pierde el boceto (Peter con hocico de perro y sin la sonrisa; la criatura alta, esqueleto). Todas pasan de «render de videojuego» a «foto de figura o muñeco de látex»; sobre fondo gris el modelo lo lee como foto de producto. Yael y el usuario eligieron `foto_45` y `foto_55` → **se adopta 0,50** (OK del usuario). Informe en `scripts/research/790/e11/informe.md`.
+  - **Hecho:** el arnés pasa el personaje de Qwen (`piezas/personaje_qwen.png`) por `foto_img2img` con `prompts/fotografiar_personaje.md` y `arte.yaml` → `personaje.cambio_foto: 0.50` antes de recortarlo (~45 s más; el hash `personaje-v2` incluye el prompt y el número, así que las historias con personaje viejo lo rehacen en la próxima tanda). Pendiente: que Yael vea la tanda de Peter en el bosque.
 
 ### S7 — Título con estilo (solo si S6 lo pide)
 

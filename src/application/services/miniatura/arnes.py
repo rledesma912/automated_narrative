@@ -95,16 +95,34 @@ class Arnes:
     async def personaje(self, thumb: Thumbnail, semilla: int) -> Path:
         i = thumb.input
         boceto = self.carpeta / i.character_sketch
-        h = _hash(boceto.read_bytes(), prompt("personaje", i.figure_description), "personaje-v1")
+        cambio = self.arte.personaje.cambio_foto
+        h = _hash(
+            boceto.read_bytes(),
+            prompt("personaje", i.figure_description),
+            prompt("fotografiar_personaje", i.figure_description),
+            f"personaje-v2-{cambio}",
+        )
         previo = thumb.parts.get("personaje")
         if previo and previo.input_hash == h and (self.carpeta / previo.file).exists():
             return self.carpeta / previo.file
         t0 = time.monotonic()
-        crudo = await self.comfy.correr(
+        piezas = self.carpeta / "piezas"
+        qwen = await self.comfy.correr(
             "boceto_a_imagen",
             {"prompt": prompt("personaje", i.figure_description), "semilla": semilla},
             {"boceto": boceto},
-            self.carpeta / "piezas" / "personaje_crudo.png",
+            piezas / "personaje_qwen.png",
+        )
+        # E11: Qwen respeta el boceto pero lo deja como render; Z-Image lo vuelve foto.
+        crudo = await self.comfy.correr(
+            "foto_img2img",
+            {
+                "prompt": prompt("fotografiar_personaje", i.figure_description),
+                "semilla": semilla,
+                "cambio": cambio,
+            },
+            {"imagen": qwen},
+            piezas / "personaje_crudo.png",
         )
         mascara = await self.comfy.correr(
             "recortar", {}, {"imagen": crudo}, self.carpeta / "piezas" / "personaje_mascara.png"

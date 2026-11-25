@@ -16,6 +16,10 @@ plantillas:
 # E3c: la curva de oscuridad del escenario antes de «fotografiarlo».
 escenario: { gamma: 1.6, techo: 0.75, cambio_foto: 0.45 }
 
+# E11 (T6.3): el personaje de Qwen sale como render de videojuego; Z-Image lo «fotografía».
+# 0,45–0,55 les gustaron a Yael y al usuario; a 0,55 se pierde el boceto (hocico, esqueleto).
+personaje: { cambio_foto: 0.50 }
+
 # E4 ronda 2: la figura se oscurece según el lugar, se funde en una zona y se pega con máscara.
 figura: { veces_el_lugar: 1.7, techo: 0.80, piso: 30, grano: 4, anillo: 0.04 }
 fundido: { dilatacion: 0.01, borde: 16, margen: 0.12 }

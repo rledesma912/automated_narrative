@@ -37,6 +37,10 @@ class Escenario(BaseModel):
     cambio_foto: float = 0.45
 
 
+class PersonajeArte(BaseModel):
+    cambio_foto: float = Field(default=0.50, ge=0, le=1)  # E11: Z-Image sobre el personaje
+
+
 class FiguraArte(BaseModel):
     veces_el_lugar: float = 1.7
     techo: float = 0.80
@@ -67,6 +71,7 @@ class Arte(BaseModel):
     lienzo: Lienzo = Field(default_factory=Lienzo)
     plantillas: dict[str, Plantilla]
     escenario: Escenario = Field(default_factory=Escenario)
+    personaje: PersonajeArte = Field(default_factory=PersonajeArte)
     figura: FiguraArte = Field(default_factory=FiguraArte)
     fundido: Fundido = Field(default_factory=Fundido)
     color: ColorArte = Field(default_factory=ColorArte)
