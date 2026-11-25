@@ -9,6 +9,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from src.application.services.event_bus import job_channel
 from src.application.services.job_manager import JobAlreadyActiveError, StructureDisabledError
+from src.application.services.miniatura.arnes import carpeta_de, validar
 from src.application.services.narrative_acts import same_structure
 from src.config import settings
 from src.domain.jobs import Job, JobKind, JobStatus
@@ -19,6 +20,7 @@ from src.infrastructure.database.repositories import (
     SQLGeneratedNarrativeRepository,
     SQLJobRepository,
     SQLStoryRepository,
+    SQLThumbnailRepository,
 )
 from src.messages import message
 from src.presentation.authoring_jobs import AUTHORING_KINDS, submit_authoring
@@ -26,6 +28,7 @@ from src.presentation.generation import submit_full_generation, submit_regenerat
 from src.presentation.runtime import event_bus, job_manager
 from src.presentation.schemas.request import JobCreateRequest
 from src.presentation.schemas.response import JobResponse
+from src.presentation.thumbnail_jobs import submit_thumbnail
 from src.presentation.video_jobs import submit_video_script
 
 router = APIRouter(tags=["Jobs"])
@@ -91,6 +94,13 @@ async def create_job(story_id: str, request: JobCreateRequest):
     active = await SQLJobRepository().get_active_for_story(story.id)
     if active is not None:
         return _already_active(active.id)
+    if request.kind == JobKind.THUMBNAIL_BUILD:
+        # Spec-790: las miniaturas no dependen del largo ni de la IA de texto.
+        await _validate_thumbnail(story)
+        try:
+            return _to_response(await submit_thumbnail(story))
+        except JobAlreadyActiveError as exc:
+            return _already_active(exc.job_id)
     if not settings.structure_enabled(story.structure):
         # Spec-740 D3: antes que las validaciones, el motivo de fondo (el largo no se escribe).
         return _structure_disabled(StructureDisabledError(story.structure))
@@ -111,6 +121,17 @@ async def create_job(story_id: str, request: JobCreateRequest):
     except StructureDisabledError as exc:
         return _structure_disabled(exc)
     return _to_response(job)
+
+
+async def _validate_thumbnail(story) -> None:
+    """Spec-790: faltan los bocetos o cómo es el personaje → 422 al instante."""
+    thumb = await SQLThumbnailRepository().get(story.id)
+    if thumb is None:
+        raise HTTPException(status_code=422, detail=message("miniatura.falta_boceto_personaje"))
+    try:
+        validar(thumb, carpeta_de(str(story.id)))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
 def _validate_authoring(story, kind: JobKind) -> None:

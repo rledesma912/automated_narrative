@@ -7,7 +7,7 @@ import anthropic
 
 from src.config import settings
 from src.domain.exceptions import LLMRefusalError, LLMResponseError, LLMUnavailableError
-from src.domain.interfaces import LLMResponse
+from src.domain.interfaces import ImagenEntrada, LLMResponse
 from src.messages import message
 
 logger = logging.getLogger(__name__)
@@ -81,6 +81,19 @@ def _unavailable(cause: str, e: Exception) -> LLMUnavailableError:
     return LLMUnavailableError(cause, message(f"llm.{cause}"), detail=str(e))
 
 
+def _content(prompt: str, images: list[ImagenEntrada] | None) -> str | list[dict]:
+    """Spec-790 T6.5: con imágenes, un bloque `image` por cada una (en orden) y el pedido."""
+    if not images:
+        return prompt
+    return [
+        {
+            "type": "image",
+            "source": {"type": "base64", "media_type": i.media_type, "data": i.base64()},
+        }
+        for i in images
+    ] + [{"type": "text", "text": prompt}]
+
+
 class AnthropicAdapter:
     """Adapter para la API de Anthropic.
 
@@ -116,6 +129,7 @@ class AnthropicAdapter:
         role: str | None,
         num_predict: int | None,
         response_schema: dict | None = None,
+        images: list[ImagenEntrada] | None = None,
     ) -> dict:
         role_cfg = settings.role_config(role) if role else {}
         model_name = model or role_cfg.get("model") or self.default_model
@@ -129,7 +143,7 @@ class AnthropicAdapter:
         request: dict = {
             "model": model_name,
             "max_tokens": max_tokens,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": _content(prompt, images)}],
         }
         if system_prompt:
             request["system"] = system_prompt
@@ -161,11 +175,12 @@ class AnthropicAdapter:
         num_ctx: int | None = None,  # Ollama; sin efecto acá
         num_predict: int | None = None,
         response_schema: dict | None = None,
+        images: list[ImagenEntrada] | None = None,
         **kwargs,
     ) -> LLMResponse:
         """Genera texto con la API de Anthropic."""
         request = self._request(
-            prompt, system_prompt, model, temperature, role, num_predict, response_schema
+            prompt, system_prompt, model, temperature, role, num_predict, response_schema, images
         )
         logger.debug(
             f"[ANTHROPIC] model={request['model']} max_tokens={request['max_tokens']} "

@@ -35,6 +35,7 @@ describe("loadEstimates", () => {
       verify_outline: "",
       suggest_form: "",
       video_script: "", // Spec-610
+      thumbnail_build: "", // Spec-790
     });
   });
 

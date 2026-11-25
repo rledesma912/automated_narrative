@@ -4,7 +4,9 @@ import asyncio
 import logging
 
 from src.config import settings
+from src.domain.exceptions import LLMUnavailableError
 from src.domain.interfaces import LLMResponse
+from src.messages import message
 
 logger = logging.getLogger("gemini_cli")
 
@@ -29,6 +31,8 @@ class GeminiCLIAdapter:
         """
         Genera texto ejecutando el comando CLI de Gemini.
         """
+        if kwargs.get("images"):
+            raise LLMUnavailableError("sin_imagenes", message("llm.sin_imagenes"))
         # Si el modelo pasado es de Ollama (contiene ":") o es None, usamos el de Gemini
         # Gemini CLI solo acepta modelos de Google, no de Ollama
         if model and ":" not in model:

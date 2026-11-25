@@ -2,7 +2,10 @@
  * Modal que bloquea la página mientras la IA trabaja (Spec-610; el mismo diseño y
  * comportamiento que el del asistente, Spec-530 decisión 12).
  *
- *   ForgeIaModal.open(job, { titulo, detalle, onDone })
+ *   ForgeIaModal.open(job, { titulo, detalle, onDone, etapas })
+ *
+ * `etapas` (Spec-790, opcional): { <stage del job>: "texto" } para mostrar en qué paso va;
+ * admite `{n}` (el número del paso) y `{total}`.
  *
  * Deja el resto de la página `inert`, muestra el tiempo que falta (params del job,
  * Spec-510), sigue el job por el bus (`forge:job-*`) y además consulta cada 5 s.
@@ -32,6 +35,14 @@
     const estimate = job.params && job.params.estimated_seconds;
     const base = typeof job.elapsed_seconds === "number" ? job.elapsed_seconds : 0;
     const elapsed = base + (Date.now() - (job.received_at || Date.now())) / 1000;
+    // Spec-790: en qué paso va (si la página pasó los textos de cada etapa)
+    const etapa = $("[data-ia-modal-etapa]", el());
+    const texto = state.opts.etapas && state.opts.etapas[job.stage];
+    if (etapa) {
+      etapa.textContent = texto
+        ? texto.replace("{n}", job.beat || "").replace("{total}", job.total_beats || "")
+        : "";
+    }
     const eta = $("[data-ia-modal-eta]", el());
     if (!estimate) eta.textContent = "";
     else if (elapsed >= estimate) eta.textContent = "Está tardando un poco más de lo habitual…";

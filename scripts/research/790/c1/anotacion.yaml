@@ -1,0 +1,42 @@
+# C1: las 36 miniaturas recientes (junio–noviembre 2026), anotadas a ojo por Claude sobre las
+# hojas de contacto, con las cajas del OCR como ayuda. # = orden en el canal (1 = la más nueva).
+# plantilla: A figura de un lado y título del otro · B la figura chica, manda el lugar o un
+#   vehículo · C primer plano (cara o mano) · D título en dos bloques (tema y gancho en dos alturas)
+# figura: lado, tamaño (chica < 45 % del alto · media · grande ≥ 75 % o cortada abajo · primer_plano)
+# titulo: lado y alto (arriba | medio | abajo | todo); numero = «3»/«5» gigante; acento = color
+- {n: 1,  plantilla: D, figura: [derecha, grande],        titulo: [izquierda, abajo], rotulo: "3 Relatos de TERROR", acento: naranja}
+- {n: 2,  plantilla: B, figura: [centro, media],          titulo: [izquierda, todo],  bajada: true, acento: rojo}
+- {n: 3,  plantilla: C, figura: [derecha, primer_plano],  titulo: [izquierda, abajo], acento: naranja}
+- {n: 4,  plantilla: A, figura: [derecha, media],         titulo: [izquierda, arriba], acento: rojo}
+- {n: 5,  plantilla: A, figura: [izquierda, grande],      titulo: [derecha, medio],   numero: true, bajada: true, acento: naranja}
+- {n: 6,  plantilla: A, figura: [derecha, grande],        titulo: [izquierda, todo],  bajada: true, acento: naranja}
+- {n: 7,  plantilla: A, figura: [derecha, grande],        titulo: [izquierda, abajo], numero: true, acento: naranja}
+- {n: 8,  plantilla: C, figura: [centro, primer_plano],   titulo: [derecha, abajo]}
+- {n: 9,  plantilla: A, figura: [derecha, grande],        titulo: [izquierda, abajo], numero: true}
+- {n: 10, plantilla: A, figura: [izquierda, media],       titulo: [derecha, arriba],  numero: true, acento: naranja}
+- {n: 11, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, todo],  acento: naranja}
+- {n: 12, plantilla: A, figura: [izquierda, grande],      titulo: [derecha, arriba],  acento: naranja}
+- {n: 13, plantilla: C, figura: [derecha, primer_plano],  titulo: [izquierda, medio], acento: rojo}
+- {n: 14, plantilla: B, figura: [centro, chica],          titulo: [derecha, arriba],  acento: rojo}
+- {n: 15, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, abajo], acento: naranja}
+- {n: 16, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, medio]}
+- {n: 17, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, arriba]}
+- {n: 18, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, abajo]}
+- {n: 19, plantilla: A, figura: [izquierda, grande],      titulo: [derecha, arriba],  numero: true, franja: true, acento: rojo}
+- {n: 20, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, arriba]}
+- {n: 21, plantilla: D, figura: [derecha, grande],        titulo: [izquierda, todo],  acento: rojo}
+- {n: 22, plantilla: A, figura: [izquierda, grande],      titulo: [derecha, medio]}
+- {n: 23, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, abajo]}
+- {n: 24, plantilla: A, figura: [derecha, grande],        titulo: [izquierda, medio], numero: true, acento: rojo}
+- {n: 25, plantilla: D, figura: [derecha, grande],        titulo: [izquierda, abajo], rotulo: "RELATOS DE TERROR"}
+- {n: 26, plantilla: A, figura: [derecha, media],         titulo: [izquierda, abajo], sello: MÉXICO}
+- {n: 27, plantilla: A, figura: [izquierda, media],       titulo: [derecha, arriba],  rotulo: "RELATOS DE TERROR", acento: rojo}
+- {n: 28, plantilla: D, figura: [centro, chica],          titulo: [derecha, arriba],  rotulo: "RELATOS DE TERROR", acento: rojo}
+- {n: 29, plantilla: D, figura: [derecha, media],         titulo: [izquierda, arriba], numero: true, acento: rojo}
+- {n: 30, plantilla: D, figura: [derecha, chica],         titulo: [izquierda, arriba], rotulo: "RELATOS DE TERROR", acento: rojo}
+- {n: 31, plantilla: D, figura: [centro, chica],          titulo: [izquierda, todo],  acento: rojo}
+- {n: 32, plantilla: D, figura: [derecha, media],         titulo: [izquierda, todo],  rotulo: "RELATOS DE TERROR", acento: rojo}
+- {n: 33, plantilla: D, figura: [izquierda, media],       titulo: [derecha, todo],    rotulo: "RELATOS DE TERROR", acento: rojo}
+- {n: 34, plantilla: D, figura: [centro, chica],          titulo: [derecha, todo],    rotulo: "RELATOS DE TERROR", acento: rojo}
+- {n: 35, plantilla: D, figura: [izquierda, grande],      titulo: [derecha, todo]}
+- {n: 36, plantilla: D, figura: [derecha, grande],        titulo: [izquierda, todo],  acento: rojo}

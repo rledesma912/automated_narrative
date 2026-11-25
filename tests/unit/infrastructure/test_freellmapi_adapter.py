@@ -357,3 +357,17 @@ def test_sin_clave_no_arranca(monkeypatch):
     monkeypatch.setattr(settings, "freellmapi_api_key", "")
     with pytest.raises(ValueError, match="FREELLMAPI_API_KEY"):
         FreeLLMAPIAdapter()
+
+
+async def test_con_imagenes_falla_claro_sin_llamar():
+    """Spec-790 T6.5: las cadenas del gateway no garantizan un modelo que mire imágenes."""
+    from src.domain.interfaces import ImagenEntrada
+
+    gateway = Gateway()
+    with pytest.raises(LLMUnavailableError) as e:
+        await gateway.adapter().generate(
+            "p", model="auto:estructura", images=[ImagenEntrada(b"x", "image/png")]
+        )
+    assert e.value.cause == "sin_imagenes"
+    assert str(e.value) == message("llm.sin_imagenes")
+    assert gateway.requests == []

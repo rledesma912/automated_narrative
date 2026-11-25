@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — asistente: «Tu idea» ↔ «Preguntas» ↔ «Los actos» (Consultor, Verificador, UI)
-**Estado:** TASKS (2026-10-28) — falta el OK para pasar a IMPLEMENT
+**Estado:** En prod el 2026-10-29 (con las 710, 720 y 730).
 **Rama:** a crear desde `development` (`8e06077`)
 **Extiende:** Spec-530 (asistente), Spec-550 H10 (avisos), Spec-630 B2/B7 (personajes por acto), Spec-670 (molde), Spec-690 (final desde la idea).
 

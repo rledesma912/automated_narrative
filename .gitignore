@@ -78,3 +78,8 @@ frontend/public/styles.css.map
 frontend/test-results/
 frontend/capturas/
 frontend/playwright-report/
+
+# Spec-790: insumos y salidas de los spikes de miniaturas (imágenes del canal, bocetos, resultados)
+scripts/research/790/insumos/*
+!scripts/research/790/insumos/README.md
+scripts/research/790/**/salidas/

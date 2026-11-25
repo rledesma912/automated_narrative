@@ -444,6 +444,7 @@ async def test_estimates_sin_historial_usa_el_valor_inicial(client):
         "verify_outline",
         "video_script",  # Spec-610
         "suggest_form",  # Spec-670
+        "thumbnail_build",  # Spec-790
     }
     assert body["full_generation"] == {
         "seconds": settings.estimated_seconds("full_generation"),

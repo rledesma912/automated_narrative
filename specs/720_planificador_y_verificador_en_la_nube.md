@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-29
 **Tipo:** SDD: configuración de la IA por rol y prompts del asistente («Los actos»)
-**Estado:** IMPLEMENT terminado (2026-10-29): S1–S4 hechos; falta el PR. Los personajes que propone la IA siguen en la Spec-730.
+**Estado:** IMPLEMENT terminado: S1–S4 hechos. En prod el 2026-10-29. Los personajes que propone la IA siguen en la Spec-730.
 **Rama:** `feat/spec-720-actos-en-la-nube` (desde `development`, `b4e9e4e`)
 **Extiende:** Spec-480 (proveedor por rol), Spec-530 (asistente), Spec-600 (la Voz en Claude), Spec-650 (relato corto), Spec-680 (recursos gastados), Spec-700 §12 (el próximo paso). Va **antes** de la Spec-710 (lugar por hecho).
 

@@ -27,6 +27,7 @@ services:
       - HOME=/tmp
       - DATABASE_URL=sqlite+aiosqlite:///data/dev/stories.db
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - COMFY_URL=http://host.docker.internal:8188  # Spec-790: la compu que hace las imágenes
     volumes:
       - ./src:/app/src
       - ./config:/app/config
