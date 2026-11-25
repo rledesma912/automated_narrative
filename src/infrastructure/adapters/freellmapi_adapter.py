@@ -204,6 +204,9 @@ class FreeLLMAPIAdapter:
         **kwargs,
     ) -> LLMResponse:
         """Genera texto con el gateway."""
+        if kwargs.get("images"):
+            # Spec-790 T6.5: las cadenas del gateway no garantizan un modelo que mire imágenes.
+            raise LLMUnavailableError("sin_imagenes", message("llm.sin_imagenes"))
         request = self._request(
             prompt, system_prompt, model, temperature, role, num_predict, response_schema
         )

@@ -25,6 +25,8 @@ class JobKind(str, Enum):
     SUGGEST_FORM = "suggest_form"  # Spec-670: sugerir la clase de historia
     # Spec-610: el paquete para el video (guion, la calabaza y el mapa).
     VIDEO_SCRIPT = "video_script"
+    # Spec-790: las 4 miniaturas para YouTube.
+    THUMBNAIL_BUILD = "thumbnail_build"
 
 
 class JobStatus(str, Enum):
@@ -54,6 +56,11 @@ class JobStage(str, Enum):
     VERIFICADOR = "verificador"
     # Spec-610: el paquete para el video.
     GUIONISTA = "guionista"
+    # Spec-790: las miniaturas.
+    ESPERANDO_GPU = "esperando_gpu"
+    PERSONAJE = "personaje"
+    ESCENARIO = "escenario"
+    COMPONIENDO = "componiendo"
 
 
 class Job(BaseModel):

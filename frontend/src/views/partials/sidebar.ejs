@@ -1,7 +1,7 @@
 <%
 /*
  * Variables de entrada:
- *   activePage:  string — 'home' | 'generate' | 'gallery' | 'debug' | 'components'
+ *   activePage:  string — 'home' | 'generate' | 'gallery' | 'miniaturas' | 'debug' | 'components'
  *   environment: (opcional) Spec-540 — { isDev, branch, commit }; sin él, prod.
  */
 const environment = locals.environment || { isDev: false };
@@ -9,6 +9,7 @@ const navItems = [
   { page: 'home',       href: '/',           icon: 'home',         label: 'Inicio'      },
   { page: 'generate',   href: '/nuevo',      icon: 'pen-line',     label: 'Nuevo relato'     },
   { page: 'gallery',    href: '/galeria',    icon: 'library',      label: 'Mis historias' },
+  { page: 'miniaturas', href: '/miniaturas', icon: 'image',        label: 'Miniaturas' },
   ];
 %>
 <aside class="w-[var(--sidebar-width)] flex-shrink-0 flex flex-col border-r border-forge-border bg-forge-surface overflow-hidden transition-[width] duration-200">

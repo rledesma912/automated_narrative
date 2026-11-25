@@ -54,6 +54,8 @@ DEFAULT_ESTIMATED_SECONDS = {
     "suggest_form": 15,
     # Spec-610: el paquete para el video.
     "video_script": 90,
+    # Spec-790: las 4 miniaturas (E9: personaje + escenario + 4 fundidos).
+    "thumbnail_build": 680,
 }
 
 
@@ -164,6 +166,11 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "sqlite+aiosqlite:///data/dev/stories.db"
+
+    # Spec-790: ComfyUI (la compu que hace las imágenes) y dónde se guardan las miniaturas
+    # (vacío = `miniaturas/` al lado de la base de datos: data/dev/ o data/prod/).
+    comfy_url: str = "http://localhost:8188"
+    miniaturas_dir: str = ""
 
     # Paths
     output_dir: str = "frontend/public/output_stories"

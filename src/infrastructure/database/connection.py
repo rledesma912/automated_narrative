@@ -285,6 +285,17 @@ async def init_db() -> None:
         ON generation_job(story_id) WHERE status IN ('queued', 'running')
     """)
 
+    # Spec-790: la miniatura de cada historia (lo que cargó Yael, las piezas y las tandas), en
+    # JSON. Tabla nueva: aparece sola al arrancar. Los archivos viven en `miniaturas/<story_id>/`.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS thumbnail (
+            story_id TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (story_id) REFERENCES story(id) ON DELETE CASCADE
+        )
+    """)
+
     # Spec-740 Parte B: cada llamada a la IA de un job, con quién respondió de verdad. Tabla
     # nueva: aparece sola al arrancar (sin ALTER). Se borra con la historia o el relato.
     await conn.execute("""

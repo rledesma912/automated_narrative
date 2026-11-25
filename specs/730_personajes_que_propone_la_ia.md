@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-29
 **Tipo:** SDD: Planificador, Verificador y «Los actos» (avisos de personajes)
-**Estado:** IMPLEMENT terminado (2026-10-29): S1–S4 hechos; falta el PR.
+**Estado:** IMPLEMENT terminado: S1–S4 hechos. En prod el 2026-10-29.
 **Rama:** a crear desde `feat/spec-720-actos-en-la-nube` (la 720 todavía no entró a `development`)
 **Extiende:** Spec-700 B (personajes de la autora), Spec-720 (el Planificador en Claude), Spec-630 B2/B7 (personajes por acto), Spec-530 §445 (nombres inventados en la prosa).
 

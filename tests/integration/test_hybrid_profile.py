@@ -89,7 +89,7 @@ def test_el_hibrido_manda_a_claude_la_voz_el_guion_el_revisor_y_los_actos():
     assert hybrid["roles"]["guion"]["provider"] == "anthropic"
     assert hybrid["roles"]["revisor"]["provider"] == "anthropic"
     assert "revisor" not in local["roles"]
-    nube = ("voz", "guion", "revisor", "planificador", "verificador")
+    nube = ("voz", "guion", "revisor", "planificador", "verificador", "miniatura")  # Spec-790 T3.3
     for role in ("planificador", "verificador"):
         cfg = hybrid["roles"][role]
         assert (cfg["provider"], cfg["model"]) == ("anthropic", "claude-sonnet-5-5")

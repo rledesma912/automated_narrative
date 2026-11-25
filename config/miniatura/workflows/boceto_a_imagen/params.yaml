@@ -1,0 +1,6 @@
+# Lo único que el código cambia del grafo (T10). Un nodo que no existe falla al cargar.
+params:
+  boceto:   { node: "7",  input: image }            # nombre del archivo subido a ComfyUI
+  prompt:   { node: "9",  input: prompt }           # arte.yaml + la descripción + fondo liso (personaje) o «nobody» (escenario)
+  semilla:  { node: "14", input: seed }
+  prefijo:  { node: "16", input: filename_prefix }

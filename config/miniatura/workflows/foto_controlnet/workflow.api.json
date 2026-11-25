@@ -1,0 +1,219 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "z-image-turbo-fp8-aio.safetensors"
+    },
+    "_meta": {
+      "title": "Z-Image Turbo (AIO fp8)"
+    }
+  },
+  "2": {
+    "class_type": "ModelSamplingAuraFlow",
+    "inputs": {
+      "model": [
+        "23",
+        0
+      ],
+      "shift": 3
+    },
+    "_meta": {
+      "title": "Shift"
+    }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "1",
+        1
+      ],
+      "text": "PROMPT"
+    },
+    "_meta": {
+      "title": "Prompt"
+    }
+  },
+  "4": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": [
+        "3",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Negativo vacío"
+    }
+  },
+  "5": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": {
+      "width": 1344,
+      "height": 768,
+      "batch_size": 1
+    },
+    "_meta": {
+      "title": "Latente vacío (no se usa en img2img)"
+    }
+  },
+  "6": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "positive": [
+        "3",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "latent_image": [
+        "11",
+        0
+      ],
+      "seed": 11,
+      "steps": 8,
+      "cfg": 1,
+      "sampler_name": "dpmpp_sde",
+      "scheduler": "beta",
+      "denoise": 0.75
+    },
+    "_meta": {
+      "title": "Muestreo"
+    }
+  },
+  "7": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "6",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "_meta": {
+      "title": "Decodificar"
+    }
+  },
+  "8": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "7",
+        0
+      ],
+      "filename_prefix": "miniaturas/escenario_foto"
+    },
+    "_meta": {
+      "title": "Guardar"
+    }
+  },
+  "9": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "spec790/escenario_oscurecido.png"
+    },
+    "_meta": {
+      "title": "Escenario oscurecido"
+    }
+  },
+  "10": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": [
+        "9",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "width": 1344,
+      "height": 768,
+      "crop": "center"
+    },
+    "_meta": {
+      "title": "Escala a 1344 × 768"
+    }
+  },
+  "11": {
+    "class_type": "VAEEncode",
+    "inputs": {
+      "pixels": [
+        "10",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "_meta": {
+      "title": "Latente del escenario"
+    }
+  },
+  "20": {
+    "class_type": "ModelPatchLoader",
+    "inputs": {
+      "name": "Z-Image-Turbo-Fun-Controlnet-Union-2.1-2602-8steps.safetensors"
+    },
+    "_meta": {
+      "title": "ControlNet Union de Z-Image"
+    }
+  },
+  "21": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "GUIA.png"
+    },
+    "_meta": {
+      "title": "El boceto como scribble (líneas blancas sobre negro)"
+    }
+  },
+  "22": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": [
+        "21",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "width": 1344,
+      "height": 768,
+      "crop": "center"
+    },
+    "_meta": {
+      "title": "La guía al tamaño"
+    }
+  },
+  "23": {
+    "class_type": "ZImageFunControlnet",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "model_patch": [
+        "20",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "strength": 0.6,
+      "image": [
+        "22",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "ControlNet (fuerza)"
+    }
+  }
+}

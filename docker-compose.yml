@@ -12,6 +12,7 @@ services:
     env_file: .env.prod
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - COMFY_URL=http://host.docker.internal:8188  # Spec-790: la compu que hace las imágenes
     volumes:
       - ./data/prod:/app/data/prod                              # SQLite DB en prod
       - ./frontend/public/output_stories/prod:/app/output_stories/prod # Relatos en prod

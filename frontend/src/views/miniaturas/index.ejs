@@ -1,0 +1,24 @@
+<%
+/*
+ * Spec-790: «Miniaturas». Las historias, con un chip si ya tienen miniatura.
+ * Variables: stories, conMiniatura (ids).
+ */
+%>
+<div class="max-w-5xl mx-auto flex flex-col gap-6">
+  <div class="flex flex-col gap-2">
+    <h2 class="heading-forge-lg">Miniaturas</h2>
+    <p class="pista-forge"><i data-lucide="info"></i><span>Elegí una historia para armar las miniaturas de su video: subís los bocetos y salen 4 opciones.</span></p>
+  </div>
+  <% if (!stories.length) { %>
+    <div class="card-forge !p-12 text-center text-forge-muted">Todavía no hay historias.</div>
+  <% } else { %>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <% stories.forEach(s => { const tiene = conMiniatura.includes(s.id); %>
+        <a href="/miniaturas/<%= s.id %>" class="card-forge hover:!border-forge-accent/50 flex items-center justify-between gap-3" data-miniatura-historia="<%= s.id %>">
+          <span class="font-serif text-lg"><%= s.title || 'Sin título' %></span>
+          <span class="chip-forge <%= tiene ? 'chip-forge--cumple' : 'chip-forge--info' %>"><%= tiene ? 'Con miniaturas' : 'Sin miniatura' %></span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

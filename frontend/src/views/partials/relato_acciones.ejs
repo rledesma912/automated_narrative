@@ -38,6 +38,11 @@ const off = 'opacity-40 cursor-not-allowed';
       Armar el guion para el video
     </button>
   <% } %>
+  <%/* Spec-790: las miniaturas de la historia. */%>
+  <a href="/miniaturas/<%= story.id %>" class="btn-forge-outline-sm cursor-pointer" data-armar-miniatura="<%= story.id %>">
+    <i data-lucide="image" class="w-4 h-4"></i>
+    Armar la miniatura
+  </a>
   <%/* Spec-490: .md para el TTS; sin hx-boost (htmx convertiría la descarga en un swap). Se deshabilita mientras se regenera un acto. */%>
   <a
     <% if (regen) { %>aria-disabled="true"<% } else { %>href="/api/v1/generated-narratives/<%= relato.id %>/export.md" download<% } %>

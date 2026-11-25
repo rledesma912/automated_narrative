@@ -67,6 +67,13 @@ case $code in
   *) fail "No se pudo consultar la DB de prod ($PROD_DB)." ;;
 esac
 
+# Spec-790: aviso (sin bloquear) si la compu que hace las imágenes no responde.
+if curl -fsS -m 3 "${COMFY_HOST_URL:-http://localhost:8188}/system_stats" >/dev/null 2>&1; then
+  ok "ComfyUI responde (las miniaturas andan)"
+else
+  echo "  ⚠ ComfyUI no responde: el resto anda, pero «Armar las 4» va a avisar que la compu está apagada."
+fi
+
 if [[ $CHECK_ONLY -eq 1 ]]; then
   echo "✅ Listo para desplegar (deploy-check: no se tocó nada)."
   exit 0
@@ -79,6 +86,14 @@ backup_path="$(python3 scripts/prod_db.py backup "$PROD_DB" \
   "$BACKUP_ROOT/backup_$(date +%F)" "$(date +%H%M)-$commit")" \
   || fail "El backup falló: no se desplegó nada."
 ok "$backup_path"
+# Spec-790 T8.1: las miniaturas (bocetos, piezas y tandas) viven fuera de la DB.
+MINIATURAS_DIR="$(dirname "$PROD_DB")/miniaturas"
+if [[ -d "$MINIATURAS_DIR" ]]; then
+  miniaturas_tar="$(dirname "$backup_path")/miniaturas-pre-deploy-$(date +%H%M)-$commit.tar.gz"
+  tar -czf "$miniaturas_tar" -C "$(dirname "$MINIATURAS_DIR")" miniaturas \
+    || fail "El backup de las miniaturas falló: no se desplegó nada."
+  ok "$miniaturas_tar"
+fi
 
 step "6. Build y arranque (docker compose up -d --build backend frontend)"
 docker compose up -d --build backend frontend \

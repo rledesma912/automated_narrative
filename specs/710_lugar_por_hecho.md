@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-28
 **Tipo:** SDD — escaleta (Planificador, Verificador, Voz) + tarjeta del acto
-**Estado:** IMPLEMENT terminado (2026-10-29): S1–S5 hechos; falta el PR.
+**Estado:** IMPLEMENT terminado: S1–S5 hechos. En prod el 2026-10-29.
 **Rama:** a crear desde `development`
 **Extiende:** Spec-530 (escaleta), Spec-630 B6/B7 (lugares de la historia), Spec-590 (lo que recibe la Voz).
 **Hermana:** Spec-700 (salió de la misma revisión del uso de Vale).

@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from src.config import settings
 from src.domain.exceptions import LLMStructuredOutputError
-from src.domain.interfaces import LLMProvider
+from src.domain.interfaces import ImagenEntrada, LLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ async def generate_structured(
     output: type[T],
     retries: int = 1,
     min_predict: int | None = None,
+    images: list[ImagenEntrada] | None = None,
 ) -> tuple[T, float]:
     """Pide al LLM un JSON que cumpla el esquema de `output` y lo valida.
 
@@ -45,6 +46,7 @@ async def generate_structured(
             num_ctx=role_cfg.get("num_ctx"),
             num_predict=max(role_cfg.get("num_predict") or 0, min_predict or 0) or None,
             response_schema=schema,
+            **({"images": images} if images else {}),
         )
         elapsed += response.elapsed_s or 0.0
         try:

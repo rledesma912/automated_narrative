@@ -1,0 +1,9 @@
+# Lo único que el código cambia del grafo (T10). Un nodo que no existe falla al cargar.
+params:
+  imagen:   { node: "9",  input: image }            # el escenario oscurecido
+  guia:     { node: "21", input: image }            # el boceto de Yael como scribble (Python)
+  prompt:   { node: "3",  input: text }             # prompts/fotografiar_escenario.md
+  semilla:  { node: "6",  input: seed }
+  cambio:   { node: "6",  input: denoise }          # 0,75 (E11i)
+  fuerza:   { node: "23", input: strength }         # 0,6 (E11i; a 0,8 vuelven las manchas)
+  prefijo:  { node: "8",  input: filename_prefix }

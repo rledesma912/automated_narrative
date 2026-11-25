@@ -26,8 +26,9 @@
   // Spec-530: los jobs del asistente (taller, escaleta, revisión) se siguen con el
   // modal de su propia vista; no son generaciones de relato.
   // Spec-610: el guion para el video también tiene su modal (en la página del relato).
+  // Spec-790: las miniaturas, en la suya.
   // Spec-670: sugerir la clase de historia también es del asistente.
-  const AUTHORING_KINDS = ["consult", "suggest_form", "plan_outline", "verify_outline", "video_script"];
+  const AUTHORING_KINDS = ["consult", "suggest_form", "plan_outline", "verify_outline", "video_script", "thumbnail_build"];
   const isGeneration = (job) => !AUTHORING_KINDS.includes(job.kind);
 
   function stepText(job) {

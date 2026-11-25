@@ -132,6 +132,8 @@ llm:
   error: "La IA que escribe el relato respondió con un error. Probá de nuevo más tarde."
   # Spec-740: el gateway de capas gratuitas se quedó sin modelos o sin cuota del mes.
   sin_modelos: "La IA que escribe el relato no tiene modelos disponibles ahora. Avisá a quien administra el sitio."
+  # Spec-790 T6.5: el perfil de la miniatura no puede mirar los bocetos.
+  sin_imagenes: "La IA que arma las miniaturas no puede mirar los bocetos. Avisá a quien administra el sitio."
   sin_cuota_hoy: "Por hoy se terminó lo gratis de la IA que escribe el relato. Probá de nuevo mañana; lo que ya armaste queda guardado."
 
 stage:
@@ -144,6 +146,27 @@ stage:
   planificador: "Armando los actos…"
   verificador: "Revisando los actos…"
   guionista: "Armando el guion para el video…"
+  # Spec-790: las miniaturas.
+  esperando_gpu: "Esperando que se libere la compu que hace las imágenes…"
+  personaje: "Armando el personaje desde el boceto…"
+  escenario: "Armando el escenario desde el boceto…"
+  componiendo: "Armando la miniatura {beat} de {total}…"
+
+miniatura:
+  # Spec-790: los mensajes de la sección «Miniaturas».
+  falta_boceto_personaje: "Falta el boceto del personaje."
+  falta_boceto_escenario: "Falta el boceto del escenario."
+  falta_como_es: "Falta contar cómo es el personaje."
+  boceto_invalido: "El boceto tiene que ser una imagen PNG o JPG de hasta 20 MB."
+  sin_comfy: "La compu que hace las imágenes está apagada. Prendela y probá de nuevo."
+  error_comfy: "La compu que hace las imágenes no pudo terminar: {detalle}"
+  gpu_ocupada: "La compu que hace las imágenes está ocupada con otra cosa. Probá de nuevo en un rato."
+  no_existe: "Todavía no hay miniatura para esta historia."
+  historia_no_encontrada: "Historia no encontrada: {story_id}"
+  falta_nodo: "{receta}: falta el nodo {nodo} ({nombre})"
+  tardo_demasiado: "{receta}: tardó demasiado"
+  arte_cuatro_plantillas: "arte.yaml: tienen que ser exactamente 4 plantillas (D21)"
+  arte_tono_inexistente: "arte.yaml: el tono por defecto «{tono}» no existe"
 
 job:
   # Spec-740 D3: con `LLM_PROFILE_MEDIO=off` (sin crédito para la IA de la media).
