@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-22 (tercera versión, con el flujo que armaron el usuario y Yael)
 **Tipo:** SDD (super spec): investigación, dominio nuevo, orquestación de ComfyUI y sección nueva del sitio
-**Estado:** IMPLEMENT (OK el 2026-11-22). **2026-11-23: la versión de hoy (§10.7) construida en la rama**, en dev; falta el OK para el deploy. Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). E4/E5 ✅ (ronda 2, OK del usuario y Yael). **Nuevo (2026-11-23): el compositor que aprende de las miniaturas recientes de Yael** (§1.8, §2.11, spikes C1–C4); en curso C1. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
+**Estado:** IMPLEMENT (OK el 2026-11-22). **2026-11-23: la versión de hoy (§10.7) construida en la rama**, en dev; falta el OK para el deploy. **2026-11-25: T6.5–T6.7 hechas y S8 al día (estado real en §11.0); falta el OK de Yael (T5.7) y el PR y el deploy (T9.2, T9.3).** Hechos: S0a (T0.1–T0.3) y los spikes E0, E1 y E3 (con E3b/E3c). E2 ✅ (OK al recorte). E4/E5 ✅ (ronda 2, OK del usuario y Yael). **Nuevo (2026-11-23): el compositor que aprende de las miniaturas recientes de Yael** (§1.8, §2.11, spikes C1–C4); en curso C1. `arte.yaml` borrador en §2.2 (T0.A), con Q11–Q14 respondidas.
 **Rama propuesta:** `feat/spec-790-miniaturas` (desde `development`)
 **Extiende:** Spec-610 (del relato al video), Spec-450 (la amenaza), Spec-460 (jobs y bus), Spec-510 (tiempo estimado), Spec-620 (textos en `config/`), Spec-540 (dev siempre publicado).
 **Antecedente fuera del repo:** `cw2d-art` (pipeline de arte del juego con ComfyUI, archivado el 2026-11-15 en el commit `55c08f9`).
@@ -987,7 +987,7 @@ Lo que cambió en los spikes deja un camino más corto que los slices S1–S9 de
 
 ## 11. TASKS
 
-### 11.0 Estado real al 2026-11-23 (manda sobre los tildes de abajo)
+### 11.0 Estado real al 2026-11-25 (manda sobre los tildes de abajo)
 
 Las tareas S1–S9 de abajo son el plan largo de antes de los spikes C y de D18–D26. La versión que se construyó es la de §10.7.
 
@@ -1000,8 +1000,9 @@ Las tareas S1–S9 de abajo son el plan largo de antes de los spikes C y de D18�
 | T2.7 avisar si ComfyUI está apagado | ✅ en la página (`comfy_disponible`, nota y botón apagado) y en `deploy-check` (aviso sin bloquear); `/health` no lo mira, a propósito: no tiene que fallar por ComfyUI |
 | T4.2 las partes (con reuso por hash) · T4.3 las 4 · T4.4 job · T4.5 API · T4.6 tanda real en dev («La conejita», 672 s) | ✅ |
 | T5.1 lista y menú · T5.2/T5.3 secciones · T5.4 desde «El relato» · T5.5 guardianes · T5.6 E2E (`tests/e2e/miniaturas.spec.ts`) | ✅ |
-| T8.1 respaldo de `data/prod/miniaturas/` en el deploy · T8.2 `COMFY_URL` en prod · T8.3 docs (`CLAUDE.md`) | ✅ |
-| T5.7 checkpoint con Yael | **en curso** (prueba en dev, por IP) |
+| T3.1 rol `miniatura` · T3.3 la IA separa los textos · T6.3 el personaje pasa por una foto (E11) · T6.4 los ojos y «a medio ver» · T6.5 la IA mira los bocetos · T6.6 el escenario con el ControlNet · T6.7 detrás del árbol | ✅ (tanda 8 de Peter, OK del usuario el 2026-11-25) |
+| T8.1 respaldo de `data/prod/miniaturas/` en el deploy · T8.2 `COMFY_URL` en prod (en `docker-compose.yml`; la tabla `thumbnail` la crea `init_db()` al arrancar: probado sobre una copia de la DB de prod el 2026-11-25) · T8.3 docs (`CLAUDE.md` y `config/miniatura/README.md`) | ✅ |
+| T5.7 checkpoint con Yael · T6.1 ajustar el arte | **en curso** (prueba en dev, por IP; falta la tanda 8 y otro lugar que no sea bosque) |
 | T9.2 PR · T9.3 deploy | después del OK de Yael |
 | T1.5/T1.6 título y sus chequeos · T7 título con estilo · T3 IA que lee el relato · elegir 1 a 3 y el zip · C4 juez local · E7 referencias · E10 multirreferencia · T6.2 la calabaza (sin boceto: descartado, D29) | **para después** (fuera de esta versión, D22 y §10.7) |
 
