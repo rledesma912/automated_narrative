@@ -95,6 +95,15 @@ if [[ -d "$MINIATURAS_DIR" ]]; then
   ok "$miniaturas_tar"
 fi
 
+# Spec-795: el tablero (las entregas; las opiniones ya van en la DB).
+TABLERO_DIR="$(dirname "$PROD_DB")/tablero"
+if [[ -d "$TABLERO_DIR" ]]; then
+  tablero_tar="$(dirname "$backup_path")/tablero-pre-deploy-$(date +%H%M)-$commit.tar.gz"
+  tar -czf "$tablero_tar" -C "$(dirname "$TABLERO_DIR")" tablero \
+    || fail "El backup del tablero falló: no se desplegó nada."
+  ok "$tablero_tar"
+fi
+
 step "6. Build y arranque (docker compose up -d --build backend frontend)"
 docker compose up -d --build backend frontend \
   || fail "Falló el build o el arranque." "Prod puede haber quedado con la versión anterior; revisá 'docker compose ps'. Backup: $backup_path"

@@ -19,6 +19,7 @@ from src.presentation.routers import (
     narrative_router,
     story_router,
     stream_router,
+    tablero_router,
     thumbnail_router,
     video_router,
 )
@@ -63,6 +64,7 @@ app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(authoring_router, prefix="/api/v1")
 app.include_router(video_router, prefix="/api/v1")
 app.include_router(thumbnail_router, prefix="/api/v1")
+app.include_router(tablero_router, prefix="/api/v1")
 
 
 @app.get("/")

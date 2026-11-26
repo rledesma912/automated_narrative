@@ -1,0 +1,14 @@
+# Spec-795: el tablero, la bitácora visual del proyecto.
+# Las entregas son carpetas en data/<env>/tablero/ (las publica Claude con
+# `uv run python -m src tablero publicar <carpeta> --env prod`); acá solo va lo común.
+
+# slug → nombre visible. Un proyecto que no está acá se muestra con su slug.
+proyectos:
+  calabaza: La calabaza de la cripta
+  miniaturas: Miniaturas
+  reels: Reels
+
+tope_mb_por_archivo: 20
+
+# Imágenes y diagramas, y audio o video corto (D2).
+extensiones: [png, jpg, jpeg, webp, svg, gif, mp4, mp3, wav]
