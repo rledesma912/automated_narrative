@@ -49,7 +49,7 @@ describe("tablero: una entrega", () => {
   const entrega = {
     id: "e1", titulo: "La hoja", proyecto: "calabaza", proyecto_nombre: "La calabaza de la cripta", fecha: "2026-11-26",
     filas: [{ titulo: "Maestra", archivos: [archivo("a.png", {
-      me_gusta: 2, no_va: 1,
+      me_gusta: 2, no_va: 1, mi_voto: "me_gusta",
       opiniones: [
         { id: 1, tipo: "me_gusta", texto: "", created_at: "2026-11-26T10:00:00" },
         { id: 2, tipo: "me_gusta", texto: "", created_at: "2026-11-26T10:01:00" },
@@ -72,12 +72,15 @@ describe("tablero: una entrega", () => {
     expect(html).toContain("<script src=\"/js/tablero.js");
   });
 
-  it("cuentas como chips, la × saca la última de su tipo y la nota escapada", async () => {
+  it("cada botón con su contador; el voto propio va lleno y la nota escapada", async () => {
     const html = await render();
-    expect(html).toContain("Me gusta · 2");
-    expect(html).toContain("No va · 1");
-    expect(html).toContain('data-sacar="2" aria-label="Sacar un me gusta"');
-    expect(html).toContain('data-sacar="3" aria-label="Sacar un no va"');
+    expect(html).toMatch(/class="btn-forge-sm !px-3" data-opinar="me_gusta" aria-pressed="true"/);
+    expect(html).toMatch(/class="btn-forge-outline-sm !px-3" data-opinar="no_va" aria-pressed="false"/);
+    expect(html).toContain('<span data-cuenta="me_gusta">2</span>');
+    expect(html).toContain('<span data-cuenta="no_va">1</span>');
+    expect(html).toContain("Sacar tu «Me gusta»");
+    expect(html).not.toContain("Sacar un me gusta");
+    expect(html).toContain('data-sacar="4" aria-label="Sacar la nota"');
     expect(html).toContain("&lt;b&gt;más&lt;/b&gt; oscura");
     expect(html).toContain("26/11/2026 10:03");
   });

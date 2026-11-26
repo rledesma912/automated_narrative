@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-26
 **Tipo:** SDD: sección nueva (UI + API + datos), sin IA
-**Estado:** IMPLEMENT (OK al plan el 2026-11-26). S1–S3 hechos; checkpoint en dev (`https://storymaker.test/tablero`).
+**Estado:** HECHO. En prod el 2026-11-26 (8c02e83, PR #94 y #95).
 **Rama:** `feat/spec-795-tablero` (desde `development`)
 **Sirve a:** Spec-790 (miniaturas), Spec-800 (la calabaza de la cripta: hoja de personaje, voz, reels; por escribir).
 
@@ -239,8 +239,8 @@ Sin FK (las entregas viven en disco). `CREATE IF NOT EXISTS`: prod la crea sola 
 - [x] T5 vistas, controlador, menú, `que_mirar.ts` (S3)
 - [x] T6 `tablero.js` (visor, opinar, sacar) + Vitest (S3)
 - [x] T7 E2E + `make dev-status` + entrega de prueba en dev (checkpoint con el usuario en `https://storymaker.test/tablero`) (S3)
-- [ ] T8 backup del tablero en `deploy_prod.sh` y CLAUDE.md (hechos), merge y `make deploy` (con OK) (S4)
-- [ ] T9 primera entrega real en prod (S4)
+- [x] T8 backup del tablero en `deploy_prod.sh` y CLAUDE.md, merge y `make deploy` (con OK) (S4)
+- [x] T9 primera entrega real en prod (S4): Peter tandas 4→8 y la calabaza, punto de partida
 
 ### 10.7 Notas de la implementación (2026-11-26)
 - Los botones de opinar son **solo íconos** (👍 👎 💬, con `title` y `aria-label`): con 4 opciones lado a lado, el texto los apilaba.
@@ -249,3 +249,12 @@ Sin FK (las entregas viven en disco). `CREATE IF NOT EXISTS`: prod la crea sola 
 - Filtro por proyecto: `.opcion-forge__caja--elegida` (la opción elegida que es un link, sin input).
 - El E2E usa una entrega que publica `run_api_mock.py` en la carpeta descartable.
 - En el celular, el menú lateral del sitio no se colapsa solo y aprieta el contenido: es de todo el sitio, no del tablero (queda anotado, fuera de esta spec).
+
+## 11. Evolutivo: un voto por navegador (2026-11-26)
+
+Pedido del usuario: «permití un contador de likes; cualquiera puede poner like, tomá algún valor único del navegador para que se pueda votar una vez; no importa si se puede hackear».
+
+- **D6 Un voto por navegador.** La página pone la cookie `forge_navegador` (un UUID, 10 años, `SameSite=Lax`) la primera vez que se abre una entrega. «Me gusta» y «No va» son **un voto por navegador y archivo**: tocar el propio de nuevo lo saca, tocar el otro lo cambia. Cada botón muestra su **contador** y el voto propio va lleno (`aria-pressed`). Las notas siguen como antes (varias, cualquiera las saca); los votos ya no tienen «×».
+- **Datos:** columna `navegador` en `tablero_opinion` (`''` en las de antes, que cuentan pero no son de nadie), sumada con `ALTER` en `init_db()` si falta, e índice único parcial `(entrega, archivo, navegador)` para los votos. El id no sale por la API: `GET …/entregas/{id}?navegador=` devuelve `mi_voto` por archivo.
+- **API:** `POST …/opiniones` con `me_gusta|no_va` pide `navegador` (422 si falta) y responde 200 `{mi_voto}`; las notas siguen con 201.
+- **Sin las miniaturas** (usuario, 2026-11-26: «no quiero opiniones para las miniaturas, ya no hace falta»): la entrega de Peter salió del tablero (movida a `data/<env>/tablero_retirado/`, no borrada).

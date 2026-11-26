@@ -73,26 +73,75 @@ async def test_ver_y_servir_archivos(client):
     assert (await c.get("/api/v1/tablero/entregas/2026-01-01-no-esta")).status_code == 404
 
 
-async def test_opinar_contar_y_sacar(client):
+async def test_votar_uno_por_navegador(client):
     c, base = client
     entrega(base, ID)
     url = f"/api/v1/tablero/entregas/{ID}/opiniones"
-    for tipo in ("me_gusta", "me_gusta", "no_va"):
-        assert (await c.post(url, json={"archivo": "a.png", "tipo": tipo})).status_code == 201
+
+    async def votar(nav, tipo, archivo="a.png"):
+        r = await c.post(url, json={"archivo": archivo, "tipo": tipo, "navegador": nav})
+        assert r.status_code == 200, r.text
+        return r.json()["mi_voto"]
+
+    async def vista(nav=""):
+        e = (await c.get(f"/api/v1/tablero/entregas/{ID}", params={"navegador": nav})).json()
+        return e["filas"][0]["archivos"][0]
+
+    assert await votar("nav-aaaa1", "me_gusta") == "me_gusta"
+    assert await votar("nav-bbbb2", "me_gusta") == "me_gusta"
+    a = await vista("nav-aaaa1")
+    assert (a["me_gusta"], a["no_va"], a["mi_voto"]) == (2, 0, "me_gusta")
+    assert (await vista("otro-nav-9"))["mi_voto"] is None
+    assert "navegador" not in a["opiniones"][0]  # el id no sale por la API
+    # el mismo voto de nuevo lo saca; el otro lo cambia
+    assert await votar("nav-aaaa1", "me_gusta") is None
+    assert await votar("nav-bbbb2", "no_va") == "no_va"
+    a = await vista("nav-bbbb2")
+    assert (a["me_gusta"], a["no_va"], a["mi_voto"]) == (0, 1, "no_va")
+    # sin id de navegador no se vota
+    r = await c.post(url, json={"archivo": "a.png", "tipo": "me_gusta"})
+    assert r.status_code == 422
+
+
+async def test_notas_y_sacar(client):
+    c, base = client
+    entrega(base, ID)
+    url = f"/api/v1/tablero/entregas/{ID}/opiniones"
     nota = (
         await c.post(url, json={"archivo": "a.png", "tipo": "nota", "texto": "  Más oscura  "})
     ).json()
     assert nota["texto"] == "Más oscura"
-    assert (
-        await c.post(url, json={"archivo": "a.png", "tipo": "nota", "texto": " "})
-    ).status_code == 422
-    assert (await c.post(url, json={"archivo": "otro.png", "tipo": "me_gusta"})).status_code == 422
+    vacia = await c.post(url, json={"archivo": "a.png", "tipo": "nota", "texto": " "})
+    assert vacia.status_code == 422
+    ajeno = await c.post(url, json={"archivo": "otro.png", "tipo": "nota", "texto": "x"})
+    assert ajeno.status_code == 422
     assert (await c.post(url, json={"archivo": "a.png", "tipo": "voto"})).status_code == 422
-    a = (await c.get(f"/api/v1/tablero/entregas/{ID}")).json()["filas"][0]["archivos"][0]
-    assert (a["me_gusta"], a["no_va"]) == (2, 1)
-    assert [o["texto"] for o in a["opiniones"] if o["tipo"] == "nota"] == ["Más oscura"]
-    assert (await c.get("/api/v1/tablero/entregas")).json()["entregas"][0]["opiniones"] == 4
+    await c.post(url, json={"archivo": "a.png", "tipo": "me_gusta", "navegador": "nav-aaaa1"})
+    assert (await c.get("/api/v1/tablero/entregas")).json()["entregas"][0]["opiniones"] == 2
     assert (await c.delete(f"/api/v1/tablero/opiniones/{nota['id']}")).status_code == 204
     assert (await c.delete(f"/api/v1/tablero/opiniones/{nota['id']}")).status_code == 404
-    a = (await c.get(f"/api/v1/tablero/entregas/{ID}")).json()["filas"][0]["archivos"][0]
-    assert len(a["opiniones"]) == 3
+
+
+async def test_la_tabla_vieja_suma_la_columna(monkeypatch, tmp_path):
+    """Prod tiene la tabla sin `navegador`: init_db la suma sin perder lo que había."""
+    import sqlite3
+
+    db = tmp_path / "vieja.db"
+    conn = sqlite3.connect(db)
+    conn.execute(
+        "CREATE TABLE tablero_opinion (id INTEGER PRIMARY KEY AUTOINCREMENT, entrega TEXT NOT NULL,"
+        " archivo TEXT NOT NULL, tipo TEXT NOT NULL, texto TEXT NOT NULL DEFAULT '',"
+        " created_at TEXT NOT NULL)"
+    )
+    conn.execute(
+        "INSERT INTO tablero_opinion (entrega, archivo, tipo, created_at)"
+        " VALUES ('e', 'a.png', 'me_gusta', '2026-11-26T10:00:00')"
+    )
+    conn.commit()
+    conn.close()
+    monkeypatch.setattr(settings, "database_url", f"sqlite+aiosqlite:///{db}")
+    await init_db()
+    conn = sqlite3.connect(db)
+    filas = conn.execute("SELECT tipo, navegador FROM tablero_opinion").fetchall()
+    conn.close()
+    assert filas == [("me_gusta", "")]

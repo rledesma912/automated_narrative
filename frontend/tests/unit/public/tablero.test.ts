@@ -13,11 +13,24 @@ describe("tablero.js (Spec-795)", () => {
     expect(tablero.mover(0, 1, 0)).toBe(0);
   });
 
-  it("me gusta y no va van sin texto; la nota, recortada y nunca vacía", () => {
-    expect(tablero.cuerpoOpinion("a.png", "me_gusta", "ignorado")).toEqual({ archivo: "a.png", tipo: "me_gusta" });
-    expect(tablero.cuerpoOpinion("a.png", "nota", "  más oscura ")).toEqual({ archivo: "a.png", tipo: "nota", texto: "más oscura" });
-    expect(tablero.cuerpoOpinion("a.png", "nota", "   ")).toBeNull();
-    expect(tablero.cuerpoOpinion("a.png", "voto")).toBeNull();
-    expect(tablero.cuerpoOpinion("", "me_gusta")).toBeNull();
+  it("votar necesita el id del navegador; la nota, recortada y nunca vacía", () => {
+    expect(tablero.cuerpoOpinion("a.png", "me_gusta", "ignorado", "nav-12345678")).toEqual({
+      archivo: "a.png", tipo: "me_gusta", navegador: "nav-12345678",
+    });
+    expect(tablero.cuerpoOpinion("a.png", "me_gusta", "", "")).toBeNull();
+    expect(tablero.cuerpoOpinion("a.png", "nota", "  más oscura ", "nav-12345678")).toEqual({
+      archivo: "a.png", tipo: "nota", texto: "más oscura", navegador: "nav-12345678",
+    });
+    expect(tablero.cuerpoOpinion("a.png", "nota", "   ", "x")).toBeNull();
+    expect(tablero.cuerpoOpinion("a.png", "voto", "", "nav-12345678")).toBeNull();
+    expect(tablero.cuerpoOpinion("", "me_gusta", "", "nav-12345678")).toBeNull();
+  });
+
+  it("lee el id del navegador de la cookie (y descarta uno raro)", () => {
+    expect(tablero.navegador("a=1; forge_navegador=0f3c9a2e-1111-4222-8333-444455556666; b=2")).toBe(
+      "0f3c9a2e-1111-4222-8333-444455556666",
+    );
+    expect(tablero.navegador("forge_navegador=<script>")).toBe("");
+    expect(tablero.navegador("")).toBe("");
   });
 });

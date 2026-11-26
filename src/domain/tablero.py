@@ -50,3 +50,4 @@ class Opinion(BaseModel):
     tipo: TipoOpinion
     texto: str = ""
     created_at: datetime
+    navegador: str = ""  # D6: el id que guarda cada navegador ("" en las de antes)
