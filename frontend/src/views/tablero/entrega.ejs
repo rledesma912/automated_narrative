@@ -1,0 +1,56 @@
+<%
+/*
+ * Spec-795: una entrega del tablero. Variables: entrega ({id, titulo, proyecto, proyecto_nombre,
+ * fecha, filas [{titulo, archivos}], sueltas}), queMirar (HTML ya escapado, utils/que_mirar.ts).
+ * Lo maneja /js/tablero.js (visor, opinar, sacar).
+ */
+const fecha = (f) => f.split('-').reverse().join('/');
+%>
+<div class="max-w-6xl mx-auto flex flex-col gap-6" data-tablero-detalle data-entrega="<%= entrega.id %>">
+  <div class="flex flex-col gap-2">
+    <a href="/tablero?proyecto=<%= encodeURIComponent(entrega.proyecto) %>" class="text-sm text-forge-muted hover:text-forge-accent inline-flex items-center gap-1"><i data-lucide="arrow-left" class="w-4 h-4"></i> Tablero</a>
+    <h2 class="heading-forge-lg"><%= entrega.titulo %></h2>
+    <span class="flex items-center gap-2 text-sm text-forge-muted">
+      <span class="chip-forge chip-forge--info"><%= entrega.proyecto_nombre %></span>
+      <span><%= fecha(entrega.fecha) %></span>
+    </span>
+  </div>
+
+  <% if (queMirar) { %>
+    <div class="nota-forge nota-forge--info" data-que-mirar>
+      <i data-lucide="eye" class="nota-forge__icono"></i>
+      <div class="que-mirar-forge leading-relaxed"><%- queMirar %></div>
+    </div>
+  <% } %>
+
+  <% entrega.filas.forEach(f => { %>
+    <section class="flex flex-col gap-3" data-fila>
+      <% if (f.titulo) { %><h3 class="font-serif text-xl"><%= f.titulo %></h3><% } %>
+      <div class="flex gap-4 overflow-x-auto snap-x pb-2 md:grid md:overflow-visible" style="grid-template-columns: repeat(<%= f.archivos.length %>, minmax(0, 1fr));">
+        <% f.archivos.forEach(a => { %>
+          <div class="snap-start shrink-0 w-[80vw] max-w-sm md:w-auto md:max-w-none"><%- include('_archivo', { entrega, a }) %></div>
+        <% }) %>
+      </div>
+    </section>
+  <% }) %>
+
+  <% if (entrega.sueltas.length) { %>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+      <% entrega.sueltas.forEach(a => { %><%- include('_archivo', { entrega, a }) %><% }) %>
+    </div>
+  <% } %>
+</div>
+
+<dialog class="visor-forge" data-visor aria-label="Imagen grande">
+  <figure class="flex flex-col gap-3 h-full">
+    <img data-visor-img alt="" class="flex-1 min-h-0 w-full object-contain">
+    <figcaption class="flex items-center justify-between gap-3">
+      <button type="button" class="btn-forge-outline-sm" data-visor-anterior aria-label="Anterior"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+      <span class="text-sm text-center flex-1" data-visor-leyenda></span>
+      <button type="button" class="btn-forge-outline-sm" data-visor-siguiente aria-label="Siguiente"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+      <button type="button" class="btn-forge-outline-sm" data-visor-cerrar aria-label="Cerrar"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </figcaption>
+  </figure>
+</dialog>
+
+<script src="/js/tablero.js?v=<%= locals.assetVersion || '' %>" defer></script>

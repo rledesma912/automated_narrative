@@ -171,6 +171,8 @@ class Settings(BaseSettings):
     # (vacío = `miniaturas/` al lado de la base de datos: data/dev/ o data/prod/).
     comfy_url: str = "http://localhost:8188"
     miniaturas_dir: str = ""
+    # Spec-795: las entregas del tablero (vacío = `tablero/` al lado de la base de datos).
+    tablero_dir: str = ""
 
     # Paths
     output_dir: str = "frontend/public/output_stories"

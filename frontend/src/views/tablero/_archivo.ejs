@@ -1,0 +1,60 @@
+<%
+/*
+ * Spec-795: un archivo de la entrega con sus opiniones. Variables: entrega (id), a (archivo:
+ * archivo, leyenda, url, tipo_medio, me_gusta, no_va, opiniones). Lo maneja /js/tablero.js;
+ * después de opinar, el bloque [data-opiniones] se reemplaza con el de la página recargada.
+ */
+const notas = a.opiniones.filter(o => o.tipo === 'nota');
+const ultima = (tipo) => { const l = a.opiniones.filter(o => o.tipo === tipo); return l.length ? l[l.length - 1].id : ''; };
+const fechaHora = (s) => { const [f, h] = s.split('T'); return `${f.split('-').reverse().join('/')} ${h.slice(0, 5)}`; };
+%>
+<figure class="card-forge !p-3 flex flex-col gap-3 min-w-0" data-archivo="<%= a.archivo %>">
+  <% if (a.tipo_medio === 'imagen') { %>
+    <button type="button" class="block w-full cursor-zoom-in" data-visor-item data-src="<%= a.url %>" data-leyenda="<%= a.leyenda %>" aria-label="Ver grande<%= a.leyenda ? `: ${a.leyenda}` : '' %>">
+      <img src="<%= a.url %>" alt="<%= a.leyenda %>" loading="lazy" class="w-full h-auto max-h-[28rem] object-contain bg-forge-bg rounded-sm">
+    </button>
+  <% } else if (a.tipo_medio === 'audio') { %>
+    <audio controls preload="metadata" src="<%= a.url %>" class="w-full"></audio>
+  <% } else { %>
+    <video controls preload="metadata" src="<%= a.url %>" class="w-full rounded-sm bg-forge-bg"></video>
+  <% } %>
+  <% if (a.leyenda) { %><figcaption class="text-sm"><%= a.leyenda %></figcaption><% } %>
+
+  <div class="flex flex-col gap-2" data-opiniones>
+    <div class="flex flex-wrap items-center gap-2">
+      <%/* Solo íconos: con 4 opciones lado a lado, el texto no entra (el nombre va en title). */%>
+      <button type="button" class="btn-forge-outline-sm !px-3" data-opinar="me_gusta" title="Me gusta" aria-label="Me gusta"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+      <button type="button" class="btn-forge-outline-sm !px-3" data-opinar="no_va" title="No va" aria-label="No va"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+      <button type="button" class="btn-forge-outline-sm !px-3" data-nota-abrir title="Dejar una nota" aria-label="Dejar una nota"><i data-lucide="message-square" class="w-4 h-4"></i></button>
+    </div>
+    <% if (a.me_gusta || a.no_va) { %>
+      <div class="flex flex-wrap items-center gap-3">
+        <% if (a.me_gusta) { %>
+          <span class="inline-flex items-center gap-1"><span class="chip-forge chip-forge--cumple" data-cuenta="me_gusta">Me gusta · <%= a.me_gusta %></span>
+            <button type="button" class="text-forge-muted hover:text-forge-error" data-sacar="<%= ultima('me_gusta') %>" aria-label="Sacar un me gusta"><i data-lucide="x" class="w-4 h-4"></i></button></span>
+        <% } %>
+        <% if (a.no_va) { %>
+          <span class="inline-flex items-center gap-1"><span class="chip-forge chip-forge--falta" data-cuenta="no_va">No va · <%= a.no_va %></span>
+            <button type="button" class="text-forge-muted hover:text-forge-error" data-sacar="<%= ultima('no_va') %>" aria-label="Sacar un no va"><i data-lucide="x" class="w-4 h-4"></i></button></span>
+        <% } %>
+      </div>
+    <% } %>
+    <% if (notas.length) { %>
+      <ul class="flex flex-col gap-1 text-sm">
+        <% notas.forEach(n => { %>
+          <li class="flex items-start gap-2" data-nota="<%= n.id %>">
+            <span class="flex-1 whitespace-pre-line"><%= n.texto %> <span class="text-forge-muted">· <%= fechaHora(n.created_at) %></span></span>
+            <button type="button" class="text-forge-muted hover:text-forge-error" data-sacar="<%= n.id %>" aria-label="Sacar la nota"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <form class="flex flex-col gap-2" data-nota-form hidden>
+      <textarea name="texto" rows="2" maxlength="2000" placeholder="¿Qué te parece?" class="w-full bg-forge-bg border border-forge-border px-3 py-2 text-sm leading-relaxed focus:outline-none focus:border-forge-accent"></textarea>
+      <div class="flex gap-2 justify-end">
+        <button type="button" class="btn-forge-outline-sm" data-nota-cancelar>Cancelar</button>
+        <button type="submit" class="btn-forge-sm">Guardar la nota</button>
+      </div>
+    </form>
+  </div>
+</figure>

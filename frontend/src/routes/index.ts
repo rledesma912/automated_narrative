@@ -9,6 +9,7 @@ import { loadEstimates } from "../middleware/estimates.middleware";
 import { nuevoPage, asistentePage, fragmentoAsistente } from "../controllers/asistente.controller";
 import { editarHref } from "../utils/rutas";
 import { miniaturasPage, miniaturaPage } from "../controllers/miniaturas.controller";
+import { tableroPage, entregaPage } from "../controllers/tablero.controller";
 
 const router = Router();
 
@@ -57,5 +58,9 @@ router.get("/historia/:storyId/relatos/:narrativeId/video", loadEstimates, video
 // Spec-790: las miniaturas para YouTube.
 router.get("/miniaturas", miniaturasPage);
 router.get("/miniaturas/:storyId", loadEstimates, miniaturaPage);
+
+// Spec-795: el tablero, la bitácora visual del proyecto.
+router.get("/tablero", tableroPage);
+router.get("/tablero/:id", entregaPage);
 
 export default router;

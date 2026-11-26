@@ -113,6 +113,19 @@ def main() -> None:
         help="Si el subgénero no corresponde al género, importar sin subgénero (con aviso)",
     )
 
+    # Spec-795: el tablero (lo usa Claude para publicar entregas y leer opiniones).
+    tablero_parser = subparsers.add_parser("tablero", help="Tablero: publicar y leer opiniones")
+    tablero_sub = tablero_parser.add_subparsers(dest="tablero_cmd", required=True)
+    for nombre in ("publicar", "opiniones", "lista"):
+        sp = tablero_sub.add_parser(nombre)
+        sp.add_argument("--env", choices=["dev", "prod"], default="dev")
+        if nombre == "publicar":
+            sp.add_argument("carpeta", type=Path)
+            sp.add_argument("--reemplazar", action="store_true")
+        if nombre == "opiniones":
+            sp.add_argument("--entrega")
+            sp.add_argument("--desde", help="AAAA-MM-DD")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -192,6 +205,15 @@ def main() -> None:
                 export_yaml_parser.error("indicá un story_id o --all")
         elif args.command == "import-yaml":
             commands.import_yaml(args.files, args.descartar_subgenero_invalido)
+        elif args.command == "tablero":
+            from src.cli import tablero
+
+            if args.tablero_cmd == "publicar":
+                print(tablero.cmd_publicar(args.carpeta, args.env, args.reemplazar))
+            elif args.tablero_cmd == "lista":
+                print(tablero.cmd_lista(args.env))
+            else:
+                print(tablero.cmd_opiniones(args.env, args.entrega, args.desde))
     except CLIError as e:
         logger.error(f"[CLI] {e.message}")
         print(f"Error: {e.message}", file=sys.stderr)
