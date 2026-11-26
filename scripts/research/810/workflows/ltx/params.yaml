@@ -1,0 +1,13 @@
+# Spec-810 V2: LTX-2.3 22B fp8 (imagen + audio → video), armado a mano desde la plantilla
+# oficial `video_ltx2_3_ia2v`: dos pasadas (la mitad del tamaño + agrandar ×2 en el latente), LoRA
+# destilada a 0,5, el audio fijo (máscara de ruido en 0), sin el mejorador de prompt de gemma.
+params:
+  imagen:   { node: "13", input: image }
+  audio:    { node: "8",  input: audio }
+  segundos: { node: "9",  input: duration }
+  prompt:   { node: "4",  input: text }
+  ancho_1:  { node: "15", input: width }     # la primera pasada: la mitad del final
+  alto_1:   { node: "15", input: height }
+  cuadros:  { node: "15", input: length }    # 8k + 1, a 24 cuadros por segundo
+  semilla:  { node: "21", input: noise_seed }
+  prefijo:  { node: "38", input: filename_prefix }
