@@ -46,6 +46,24 @@ from src.infrastructure.factories import LLMFactory  # noqa: E402
 
 settings.database_url = os.environ["DATABASE_URL"]
 
+# Spec-795: una entrega de prueba en el tablero (carpeta descartable, al lado de la DB).
+_tablero = db_path.parent / "tablero"
+import shutil  # noqa: E402
+
+from PIL import Image  # noqa: E402
+
+shutil.rmtree(_tablero, ignore_errors=True)
+_entrega = _tablero / "2026-11-26-calabaza-prueba-e2e"
+_entrega.mkdir(parents=True)
+for _nombre, _color in (("a.png", (90, 60, 120)), ("b.png", (30, 30, 30))):
+    Image.new("RGB", (80, 60), _color).save(_entrega / _nombre)
+(_entrega / "entrega.yaml").write_text(
+    "titulo: Prueba del tablero\nproyecto: calabaza\nque_mirar: Elegí **una**.\n"
+    "filas:\n  - titulo: Maestra\n    imagenes:\n"
+    "      - {archivo: a.png, leyenda: Opción A}\n      - {archivo: b.png, leyenda: Opción B}\n",
+    encoding="utf-8",
+)
+
 
 class SlowMockLLM(MockLLMAdapter):
     def __init__(self):

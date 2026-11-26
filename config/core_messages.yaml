@@ -152,6 +152,23 @@ stage:
   escenario: "Armando el escenario desde el boceto…"
   componiendo: "Armando la miniatura {beat} de {total}…"
 
+tablero:
+  # Spec-795: el tablero. Los de la carpeta los lee Claude (CLI y /debug); los de opinar, la página.
+  id_invalido: "«{id}» no es el nombre de una entrega: tiene que ser AAAA-MM-DD-algo (minúsculas, números y guiones)."
+  sin_yaml: "A «{id}» le falta entrega.yaml."
+  yaml_roto: "El entrega.yaml de «{id}» no se puede leer: {error}"
+  sin_archivos: "«{id}» no tiene ningún archivo para mostrar."
+  nombre_invalido: "«{archivo}» no es un nombre de archivo válido (sin carpetas ni punto adelante)."
+  repetido: "«{archivo}» aparece dos veces en la entrega."
+  extension: "«{archivo}» no es de un tipo que el tablero muestre."
+  falta_archivo: "Falta «{archivo}» en la carpeta."
+  muy_grande: "«{archivo}» pesa más de {mb} MB."
+  ya_existe: "Ya hay una entrega «{id}». Para pisarla, usá --reemplazar."
+  no_encontrada: "No encontramos esa entrega."
+  archivo_no_encontrado: "Ese archivo no está en la entrega."
+  nota_vacia: "Escribí algo en la nota."
+  opinion_no_encontrada: "Esa opinión ya no está."
+
 miniatura:
   # Spec-790: los mensajes de la sección «Miniaturas».
   falta_boceto_personaje: "Falta el boceto del personaje."

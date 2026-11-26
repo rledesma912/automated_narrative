@@ -1,0 +1,54 @@
+<%
+/*
+ * Spec-795: el tablero. Las entregas que publica Claude, la más nueva arriba.
+ * Variables: proyectos [{slug, nombre}], entregas [{id, titulo, proyecto_nombre, fecha,
+ * archivos (hasta 4), total_archivos, opiniones}], proyecto (el filtro elegido o '').
+ */
+const fecha = (f) => f.split('-').reverse().join('/');
+%>
+<div class="max-w-5xl mx-auto flex flex-col gap-6" data-tablero>
+  <div class="flex flex-col gap-2">
+    <h2 class="heading-forge-lg">Tablero</h2>
+    <p class="pista-forge"><i data-lucide="info"></i><span>Lo que va saliendo del proyecto: pruebas, bocetos, ideas y dibujos para entender cómo funciona. Abrí una entrega para mirarla de cerca y decir qué te parece.</span></p>
+  </div>
+
+  <% if (proyectos.length > 1) { %>
+    <nav class="flex flex-wrap gap-2" aria-label="Proyectos" data-tablero-proyectos>
+      <a href="/tablero" class="opcion-forge opcion-forge--compacta"><span class="opcion-forge__caja <%= !proyecto ? 'opcion-forge__caja--elegida' : '' %>">Todos</span></a>
+      <% proyectos.forEach(p => { %>
+        <a href="/tablero?proyecto=<%= encodeURIComponent(p.slug) %>" class="opcion-forge opcion-forge--compacta"><span class="opcion-forge__caja <%= proyecto === p.slug ? 'opcion-forge__caja--elegida' : '' %>"><%= p.nombre %></span></a>
+      <% }) %>
+    </nav>
+  <% } %>
+
+  <% if (!entregas.length) { %>
+    <div class="card-forge !p-12 text-center text-forge-muted">Todavía no hay nada en el tablero.</div>
+  <% } else { %>
+    <div class="flex flex-col gap-4">
+      <% entregas.forEach(e => { %>
+        <a href="/tablero/<%= encodeURIComponent(e.id) %>" class="card-forge hover:!border-forge-accent/50 flex flex-col gap-3" data-tablero-entrega="<%= e.id %>">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="font-serif text-lg"><%= e.titulo %></span>
+            <span class="flex items-center gap-2 text-sm text-forge-muted">
+              <span class="chip-forge chip-forge--info"><%= e.proyecto_nombre %></span>
+              <span><%= fecha(e.fecha) %></span>
+            </span>
+          </div>
+          <div class="flex gap-2 overflow-hidden">
+            <% e.archivos.forEach(a => { %>
+              <% if (a.tipo_medio === 'imagen') { %>
+                <img src="<%= a.url %>" alt="<%= a.leyenda %>" loading="lazy" class="h-24 w-auto max-w-[10rem] object-cover rounded-sm border border-forge-border bg-forge-bg">
+              <% } else { %>
+                <span class="h-24 w-24 flex items-center justify-center rounded-sm border border-forge-border bg-forge-bg text-forge-muted" title="<%= a.leyenda %>"><i data-lucide="<%= a.tipo_medio === 'audio' ? 'audio-lines' : 'film' %>" class="w-6 h-6"></i></span>
+              <% } %>
+            <% }) %>
+            <% if (e.total_archivos > e.archivos.length) { %>
+              <span class="h-24 px-3 flex items-center text-sm text-forge-muted">y <%= e.total_archivos - e.archivos.length %> más</span>
+            <% } %>
+          </div>
+          <span class="text-sm text-forge-muted"><%= e.opiniones === 0 ? 'Sin opiniones todavía' : (e.opiniones === 1 ? '1 opinión' : `${e.opiniones} opiniones`) %></span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

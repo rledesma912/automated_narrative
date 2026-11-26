@@ -190,11 +190,12 @@
   .opcion-forge--compacta .opcion-forge__caja::before { @apply w-3 h-3 mt-0; }
   .opcion-forge--mia .opcion-forge__caja { @apply border-dashed text-forge-muted; }
 
-  .peer:checked ~ .opcion-forge__caja {
+  /* Spec-795: la opción elegida que es un link (el filtro del tablero), sin input. */
+  .peer:checked ~ .opcion-forge__caja, .opcion-forge__caja--elegida {
     @apply bg-forge-accent border-forge-accent text-forge-on-accent;
   }
-  .peer:checked ~ .opcion-forge__caja * { @apply text-forge-on-accent; }
-  .peer:checked ~ .opcion-forge__caja::before {
+  .peer:checked ~ .opcion-forge__caja *, .opcion-forge__caja--elegida * { @apply text-forge-on-accent; }
+  .peer:checked ~ .opcion-forge__caja::before, .opcion-forge__caja--elegida::before {
     @apply border-forge-on-accent;
     background: radial-gradient(var(--forge-on-accent) 45%, transparent 50%);
   }
@@ -216,6 +217,14 @@
   /* Spec-660: escribir el relato (pluma) y borrar de la historia (tacho). */
   .confirm-forge__icono--escribir { @apply bg-forge-accent/10 text-forge-accent; }
   .confirm-forge__icono--borrar { @apply bg-forge-error-bg text-forge-error; }
+
+  /* Spec-795: el tablero. El visor de imágenes grandes y el texto de «Qué mirar». */
+  .visor-forge {
+    @apply w-[calc(100%-2rem)] h-[calc(100%-2rem)] max-w-none max-h-none rounded-md border border-forge-border bg-forge-surface text-forge-text p-4;
+  }
+  .visor-forge::backdrop { background: var(--forge-overlay); }
+  .que-mirar-forge p + p, .que-mirar-forge p + ul, .que-mirar-forge ul + p { @apply mt-2; }
+  .que-mirar-forge ul { @apply list-disc pl-5; }
 
   /* ── Barra del asistente (Spec-530) ─────────────────────────────────── */
 

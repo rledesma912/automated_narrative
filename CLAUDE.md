@@ -226,6 +226,16 @@ Templates Markdown en `config/prompts_generation/`, cargados por `TemplateLoader
 - **Config:** `config/miniatura/arte.yaml` (plantillas, tonos, parámetros; lo valida `arte.py`) y un prompt por paso (`prompts/<paso>.md`, D17). Datos: tabla `thumbnail` (JSON por historia) y archivos en `data/<env>/miniaturas/<story_id>/` (bocetos, piezas, `tanda_N/`). Tests: `tests/integration/test_thumbnail_api.py` con `tests/support/fake_comfy.py` (sin GPU) y la IA de mentira (sin ella el job llamaba al Ollama real y dejaba gemma3 ocupando la GPU); snapshot `thumbnail_prompts.json`. Los spikes corren en el host: `set -a; . ./.env; set +a; COMFY_URL=http://localhost:8188 uv run python scripts/research/790/<spike>.py` (sin el `.env`, el perfil es el local y llama a Ollama).
 - **Spikes y evidencia:** `scripts/research/790/` (E0–E9, C1–C5, informes por carpeta). Quedan para después: que la IA lea el relato y proponga, el título (C2), elegir 1 a 3 y el zip, y la luz (E6, descartada por ahora, D26).
 
+## Tablero (Spec-795)
+
+«Tablero» en el menú → `/tablero`: la bitácora visual del proyecto (pruebas, bocetos, comparaciones, diagramas) para el usuario, Yael y Lucas. **Vive en prod.** Cada entrega es una carpeta `data/<env>/tablero/AAAA-MM-DD-slug/` con `entrega.yaml` (`titulo`, `proyecto`, `que_mirar` con párrafos, `- ` y `**negrita**`, `filas` para comparar lado a lado, `imagenes` sueltas) y sus archivos (PNG, JPG, WebP, SVG, GIF, MP4, MP3, WAV; tope en `config/tablero.yaml`). Solo se sirve lo que lista el `entrega.yaml`; una carpeta inválida se saltea (`GET /tablero/invalidas`). Opiniones anónimas por archivo («Me gusta», «No va», notas; cualquiera las saca), en `tablero_opinion`.
+```bash
+uv run python -m src tablero publicar <carpeta> [--env prod] [--reemplazar]  # por defecto dev
+uv run python -m src tablero opiniones [--env prod] [--entrega <id>] [--desde AAAA-MM-DD]
+uv run python -m src tablero lista [--env prod]
+```
+Publicar no es desplegar: copia la carpeta a `data/prod/tablero/` (montado en el contenedor) y aparece al instante. **Al retomar un checkpoint, leer `tablero opiniones --env prod`.** Nunca publicar muestras crudas de la voz de Lucas.
+
 ## Environment Variables
 
 ```
@@ -243,7 +253,7 @@ BEATS_DEFINITION_FILE=config/llm_beats_definition.yaml
 
 ## Database
 
-SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Dieciocho tablas:**
+SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.py` define el esquema. **Diecinueve tablas:**
 
 - `genre`: id, label, order_index — catálogo sembrado por `init_db()` desde `src/infrastructure/database/seeds/genre_catalog.py` (idempotente)
 - `subgenre`: genre_id, id, label, order_index — PK compuesta (`otro` existe en cada género)
@@ -261,6 +271,7 @@ SQLite vía `aiosqlite`. `init_db()` en `src/infrastructure/database/connection.
 - `act_outline`: la escaleta, entrada de cada acto (separada de `macro_beat`, que es la salida): story_id, number 1–5, goal, events, event_places (Spec-710: el lugar de cada hecho, JSON paralelo a `events`; "" = el del anterior; vacía en las escaletas viejas), change_from/to, scenario (el lugar del acto en las viejas; en las nuevas, el del primer hecho) y on_stage (por nombre), held_back («lo que todavía no se cuenta») y reveal_act, seeds, payoffs, decisions, warnings (JSON de `{text, key, source, dismissed}`, Spec-550 H10), bridge («cómo llega acá», Spec-560 A1), draft y synopsis (sinopsis por acto de un YAML viejo, Spec-570 D2)
 - `llm_call` (Spec-740 B): una fila por llamada a la IA dentro de un job — story_id, job_id, role, act, profile, provider, model (el que respondió), via, fallback_attempts/trail, respaldo, tokens, elapsed_s, narrative_id (se enlaza al terminar; FK en cascada)
 - `thumbnail` (Spec-790): story_id (PK, FK en cascada), data (JSON: lo cargado, las piezas con su hash y las tandas), updated_at
+- `tablero_opinion` (Spec-795): id, entrega (el nombre de la carpeta), archivo, tipo (`me_gusta`|`no_va`|`nota`), texto, created_at — anónimas, sin FK (las entregas viven en disco)
 - `generation_job`: id, story_id, kind (`full_generation`|`regenerate_voz`|`consult`|`suggest_form`|`plan_outline`|`verify_outline`|`video_script`|`thumbnail_build`), status, stage, beat, total_beats, params (JSON), error, narrative_id, created_at, started_at, finished_at — índice único parcial: 1 job activo por historia
 
 Repos en `src/infrastructure/database/repositories/`: `SQLStoryRepository`, `SQLBeatRepository`, `SQLGeneratedNarrativeRepository`, `SQLJobRepository`, `SQLGenreRepository`.

@@ -296,6 +296,22 @@ async def init_db() -> None:
         )
     """)
 
+    # Spec-795: las opiniones del tablero. Las entregas viven en disco (`tablero/`), por eso no
+    # hay FK. Tabla nueva: aparece sola al arrancar.
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS tablero_opinion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entrega TEXT NOT NULL,
+            archivo TEXT NOT NULL,
+            tipo TEXT NOT NULL CHECK (tipo IN ('me_gusta', 'no_va', 'nota')),
+            texto TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+    """)
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_tablero_opinion_entrega ON tablero_opinion(entrega)"
+    )
+
     # Spec-740 Parte B: cada llamada a la IA de un job, con quién respondió de verdad. Tabla
     # nueva: aparece sola al arrancar (sin ALTER). Se borra con la historia o el relato.
     await conn.execute("""

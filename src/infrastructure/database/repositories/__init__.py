@@ -8,6 +8,7 @@ from src.infrastructure.database.repositories.genre_repository import SQLGenreRe
 from src.infrastructure.database.repositories.job_repository import SQLJobRepository
 from src.infrastructure.database.repositories.llm_call_repository import SQLLLMCallRepository
 from src.infrastructure.database.repositories.story_repository import SQLStoryRepository
+from src.infrastructure.database.repositories.tablero_repository import SQLTableroRepository
 from src.infrastructure.database.repositories.thumbnail_repository import SQLThumbnailRepository
 from src.infrastructure.database.repositories.video_script_repository import (
     SQLVideoScriptRepository,
@@ -22,4 +23,5 @@ __all__ = [
     "SQLGenreRepository",
     "SQLVideoScriptRepository",
     "SQLThumbnailRepository",
+    "SQLTableroRepository",
 ]
