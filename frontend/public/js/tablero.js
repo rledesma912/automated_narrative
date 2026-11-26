@@ -2,7 +2,8 @@
  * Spec-795: una entrega del tablero.
  *
  * - Visor: tocar una imagen la abre grande en un <dialog>; ← → pasan, Esc cierra.
- * - Opinar: «Me gusta» / «No va» suman uno; «Dejar una nota» abre un campo. Sin nombres (D1).
+ * - Votar: «Me gusta» / «No va», uno por navegador (D6: la cookie `forge_navegador`); tocar el
+ *   propio de nuevo lo saca. «Dejar una nota» abre un campo. Sin nombres (D1).
  * - Sacar: la «×» de una opinión pregunta con ForgeConfirm y la borra.
  * Después de opinar o sacar, se pide la página de nuevo y se reemplaza solo el bloque de
  * opiniones de ese archivo (el HTML sale de la misma vista que al cargar).
@@ -25,12 +26,18 @@
     return (((i + paso) % total) + total) % total;
   }
 
+  /** D6: el id de este navegador, de la cookie que pone la página (o "" si no hay). */
+  function navegador(cookies) {
+    const par = (cookies || "").split(";").map((c) => c.trim().split("=")).find(([k]) => k === "forge_navegador");
+    return par && /^[A-Za-z0-9-]{8,64}$/.test(par[1]) ? par[1] : "";
+  }
+
   /** El cuerpo del POST de una opinión, o null si no hay nada que mandar. */
-  function cuerpoOpinion(archivo, tipo, texto) {
+  function cuerpoOpinion(archivo, tipo, texto, nav) {
     if (!archivo || !["me_gusta", "no_va", "nota"].includes(tipo)) return null;
-    if (tipo !== "nota") return { archivo, tipo };
+    if (tipo !== "nota") return nav ? { archivo, tipo, navegador: nav } : null;
     const t = (texto || "").trim();
-    return t ? { archivo, tipo, texto: t } : null;
+    return t ? { archivo, tipo, texto: t, navegador: nav || "" } : null;
   }
 
   function enganchar(doc) {
@@ -72,7 +79,7 @@
     }
 
     async function opinar(archivo, tipo, texto) {
-      const cuerpo = cuerpoOpinion(archivo, tipo, texto);
+      const cuerpo = cuerpoOpinion(archivo, tipo, texto, navegador(doc.cookie));
       if (!cuerpo) return false;
       const r = await fetch(`${base()}/opiniones`, {
         method: "POST",
@@ -145,5 +152,5 @@
     });
   }
 
-  return { mover, cuerpoOpinion, enganchar };
+  return { mover, cuerpoOpinion, navegador, enganchar };
 });

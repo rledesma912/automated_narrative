@@ -167,6 +167,7 @@ tablero:
   no_encontrada: "No encontramos esa entrega."
   archivo_no_encontrado: "Ese archivo no está en la entrega."
   nota_vacia: "Escribí algo en la nota."
+  sin_navegador: "No pudimos reconocer este navegador para contar tu voto. Recargá la página."
   opinion_no_encontrada: "Esa opinión ya no está."
 
 miniatura:

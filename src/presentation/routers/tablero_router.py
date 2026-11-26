@@ -13,7 +13,7 @@ import asyncio
 import mimetypes
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -32,13 +32,16 @@ class OpinionNueva(BaseModel):
     archivo: str
     tipo: TipoOpinion
     texto: str = Field("", max_length=2000)
+    navegador: str = Field("", max_length=64)  # D6: el id de este navegador (cookie)
 
 
 def _url(entrega_id: str, archivo: str) -> str:
     return f"/api/v1/tablero/entregas/{quote(entrega_id)}/archivos/{quote(archivo)}"
 
 
-def _archivo(e: Entrega, a: Archivo, opiniones: list[Opinion] | None = None) -> dict:
+def _archivo(
+    e: Entrega, a: Archivo, opiniones: list[Opinion] | None = None, navegador: str = ""
+) -> dict:
     vista: dict = {
         "archivo": a.archivo,
         "leyenda": a.leyenda,
@@ -46,11 +49,21 @@ def _archivo(e: Entrega, a: Archivo, opiniones: list[Opinion] | None = None) -> 
         "tipo_medio": tipo_medio(a.archivo),
     }
     if opiniones is not None:
-        mias = [o for o in opiniones if o.archivo == a.archivo]
-        vista["me_gusta"] = sum(o.tipo == "me_gusta" for o in mias)
-        vista["no_va"] = sum(o.tipo == "no_va" for o in mias)
+        del_archivo = [o for o in opiniones if o.archivo == a.archivo]
+        vista["me_gusta"] = sum(o.tipo == "me_gusta" for o in del_archivo)
+        vista["no_va"] = sum(o.tipo == "no_va" for o in del_archivo)
+        # D6: el voto de este navegador (para marcar el botón), si tiene.
+        vista["mi_voto"] = next(
+            (
+                o.tipo
+                for o in del_archivo
+                if navegador and o.navegador == navegador and o.tipo != "nota"
+            ),
+            None,
+        )
         vista["opiniones"] = [
-            o.model_dump(mode="json", exclude={"entrega", "archivo"}) for o in mias
+            o.model_dump(mode="json", exclude={"entrega", "archivo", "navegador"})
+            for o in del_archivo
         ]
     return vista
 
@@ -102,16 +115,19 @@ async def invalidas() -> list[dict]:
 
 
 @router.get("/tablero/entregas/{entrega_id}")
-async def ver(entrega_id: str) -> dict:
+async def ver(entrega_id: str, navegador: str = "") -> dict:
     e = await _entrega_or_404(entrega_id)
     opiniones = await SQLTableroRepository().de_entrega(e.id)
     return {
         **_cabecera(e),
         "filas": [
-            {"titulo": f.titulo, "archivos": [_archivo(e, a, opiniones) for a in f.imagenes]}
+            {
+                "titulo": f.titulo,
+                "archivos": [_archivo(e, a, opiniones, navegador) for a in f.imagenes],
+            }
             for f in e.filas
         ],
-        "sueltas": [_archivo(e, a, opiniones) for a in e.imagenes],
+        "sueltas": [_archivo(e, a, opiniones, navegador) for a in e.imagenes],
     }
 
 
@@ -130,15 +146,23 @@ async def archivo(entrega_id: str, archivo: str) -> FileResponse:
 
 
 @router.post("/tablero/entregas/{entrega_id}/opiniones", status_code=201)
-async def opinar(entrega_id: str, body: OpinionNueva) -> dict:
+async def opinar(entrega_id: str, body: OpinionNueva, response: Response) -> dict:
     e = await _entrega_or_404(entrega_id)
     if not e.tiene(body.archivo):
         raise HTTPException(status_code=422, detail=message("tablero.archivo_no_encontrado"))
-    texto = body.texto.strip() if body.tipo == "nota" else ""
-    if body.tipo == "nota" and not texto:
+    repo = SQLTableroRepository()
+    navegador = body.navegador.strip()
+    if body.tipo != "nota":
+        # D6: un voto por navegador; sin id no se vota.
+        if not navegador:
+            raise HTTPException(status_code=422, detail=message("tablero.sin_navegador"))
+        response.status_code = 200
+        return {"mi_voto": await repo.votar(e.id, body.archivo, navegador, body.tipo)}
+    texto = body.texto.strip()
+    if not texto:
         raise HTTPException(status_code=422, detail=message("tablero.nota_vacia"))
-    o = await SQLTableroRepository().agregar(e.id, body.archivo, body.tipo, texto)
-    return o.model_dump(mode="json")
+    o = await repo.agregar(e.id, body.archivo, "nota", texto, navegador)
+    return o.model_dump(mode="json", exclude={"navegador"})
 
 
 @router.delete("/tablero/opiniones/{opinion_id}", status_code=204)
