@@ -83,3 +83,6 @@ frontend/playwright-report/
 scripts/research/790/insumos/*
 !scripts/research/790/insumos/README.md
 scripts/research/790/**/salidas/
+# Spec-800: salidas de los spikes de la hoja de la calabaza
+scripts/research/800/**/salidas/
+scripts/research/800/**/20??-??-??-*/

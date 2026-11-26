@@ -5,7 +5,6 @@
  * después de opinar, el bloque [data-opiniones] se reemplaza con el de la página recargada.
  */
 const notas = a.opiniones.filter(o => o.tipo === 'nota');
-const ultima = (tipo) => { const l = a.opiniones.filter(o => o.tipo === tipo); return l.length ? l[l.length - 1].id : ''; };
 const fechaHora = (s) => { const [f, h] = s.split('T'); return `${f.split('-').reverse().join('/')} ${h.slice(0, 5)}`; };
 %>
 <figure class="card-forge !p-3 flex flex-col gap-3 min-w-0" data-archivo="<%= a.archivo %>">
@@ -22,23 +21,15 @@ const fechaHora = (s) => { const [f, h] = s.split('T'); return `${f.split('-').r
 
   <div class="flex flex-col gap-2" data-opiniones>
     <div class="flex flex-wrap items-center gap-2">
-      <%/* Solo íconos: con 4 opciones lado a lado, el texto no entra (el nombre va en title). */%>
-      <button type="button" class="btn-forge-outline-sm !px-3" data-opinar="me_gusta" title="Me gusta" aria-label="Me gusta"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
-      <button type="button" class="btn-forge-outline-sm !px-3" data-opinar="no_va" title="No va" aria-label="No va"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+      <%/* Spec-795 D6: un voto por navegador. El botón con el voto propio va lleno; tocarlo de nuevo lo saca. */%>
+      <% [['me_gusta', 'thumbs-up', 'Me gusta'], ['no_va', 'thumbs-down', 'No va']].forEach(([tipo, icono, nombre]) => { const mio = a.mi_voto === tipo; %>
+        <button type="button" class="<%= mio ? 'btn-forge-sm' : 'btn-forge-outline-sm' %> !px-3" data-opinar="<%= tipo %>" aria-pressed="<%= mio %>"
+                title="<%= mio ? `Sacar tu «${nombre}»` : nombre %>" aria-label="<%= nombre %>: <%= a[tipo] %>">
+          <i data-lucide="<%= icono %>" class="w-4 h-4"></i><span data-cuenta="<%= tipo %>"><%= a[tipo] %></span>
+        </button>
+      <% }) %>
       <button type="button" class="btn-forge-outline-sm !px-3" data-nota-abrir title="Dejar una nota" aria-label="Dejar una nota"><i data-lucide="message-square" class="w-4 h-4"></i></button>
     </div>
-    <% if (a.me_gusta || a.no_va) { %>
-      <div class="flex flex-wrap items-center gap-3">
-        <% if (a.me_gusta) { %>
-          <span class="inline-flex items-center gap-1"><span class="chip-forge chip-forge--cumple" data-cuenta="me_gusta">Me gusta · <%= a.me_gusta %></span>
-            <button type="button" class="text-forge-muted hover:text-forge-error" data-sacar="<%= ultima('me_gusta') %>" aria-label="Sacar un me gusta"><i data-lucide="x" class="w-4 h-4"></i></button></span>
-        <% } %>
-        <% if (a.no_va) { %>
-          <span class="inline-flex items-center gap-1"><span class="chip-forge chip-forge--falta" data-cuenta="no_va">No va · <%= a.no_va %></span>
-            <button type="button" class="text-forge-muted hover:text-forge-error" data-sacar="<%= ultima('no_va') %>" aria-label="Sacar un no va"><i data-lucide="x" class="w-4 h-4"></i></button></span>
-        <% } %>
-      </div>
-    <% } %>
     <% if (notas.length) { %>
       <ul class="flex flex-col gap-1 text-sm">
         <% notas.forEach(n => { %>

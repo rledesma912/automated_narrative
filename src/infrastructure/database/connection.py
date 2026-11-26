@@ -305,12 +305,24 @@ async def init_db() -> None:
             archivo TEXT NOT NULL,
             tipo TEXT NOT NULL CHECK (tipo IN ('me_gusta', 'no_va', 'nota')),
             texto TEXT NOT NULL DEFAULT '',
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            navegador TEXT NOT NULL DEFAULT ''
         )
     """)
+    # Spec-795 D6: un voto por navegador. La tabla de antes no tiene la columna (ALTER sin
+    # reconstruir; las opiniones viejas quedan con '' y no son de nadie).
+    if "navegador" not in await _columns(conn, "tablero_opinion"):
+        await conn.execute(
+            "ALTER TABLE tablero_opinion ADD COLUMN navegador TEXT NOT NULL DEFAULT ''"
+        )
     await conn.execute(
         "CREATE INDEX IF NOT EXISTS ix_tablero_opinion_entrega ON tablero_opinion(entrega)"
     )
+    await conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_tablero_voto
+        ON tablero_opinion(entrega, archivo, navegador)
+        WHERE tipo IN ('me_gusta', 'no_va') AND navegador != ''
+    """)
 
     # Spec-740 Parte B: cada llamada a la IA de un job, con quién respondió de verdad. Tabla
     # nueva: aparece sola al arrancar (sin ALTER). Se borra con la historia o el relato.
