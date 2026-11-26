@@ -1,0 +1,13 @@
+# Spec-800: la calabaza de la cripta, el presentador del canal.
+# `fijo` es lo que nunca cambia, en inglés y en positivo (lo leen los prompts; D27 de la 790:
+# con cfg 1 un «no» trae lo negado).
+nombre: La calabaza de la cripta
+referencias:
+  avatar: scripts/research/790/insumos/calabaza/calabaza_de_la_cripta.png        # 130 × 131, el avatar del canal
+  video: scripts/research/790/insumos/calabaza/captura_video_sitio.png           # cuadro de un video (captura)
+fijo: >-
+  His head is a real carved orange pumpkin with a curved green-brown stem on top, a menacing
+  carved face with angry slanted carved eye holes and a wide grin of sharp jagged carved teeth.
+  His eyes glow bright violet purple from inside the pumpkin. He wears black over-ear studio
+  headphones on the pumpkin head, a black hooded sweatshirt, black gloves, dark trousers and
+  black boots, and holds a black studio microphone in his right hand.
