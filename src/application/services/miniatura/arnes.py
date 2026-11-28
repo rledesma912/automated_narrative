@@ -5,9 +5,12 @@
   escenario   boceto → `boceto_a_imagen` (prompts/escenario.md) → curva en Python →
               `foto_controlnet` con el boceto de guía (prompts/fotografiar_escenario.md, T6.6)
               → `recortar` (lo importante)
-  4 opciones  por plantilla: ubicar → espejar si tapa lo importante → oscurecer la figura →
-              componer → `boceto_a_imagen` sobre la zona (prompts/fundir.md) → igualar y pegar
-              con máscara → color (tono del lugar, Halloween o blanco y negro) → JPG
+  fotos       Spec-820 S2: la IA escribe el prompt de la foto de cada plantilla mirando los
+              bocetos y las referencias de luz (`referencias/`); sin IA, el fijo
+  4 opciones  Spec-820, por plantilla: ubicar → espejar si tapa lo importante → la composición
+              con la luz de Yael (niebla clara, figura en silueta, halo, ojos; el tronco delante
+              si está escondida) → guía de profundidad → `foto_controlnet` (una sola foto) →
+              niveles → `recortar` la figura → despegar y mate → color → JPG
 
 El personaje y el escenario se reusan mientras no cambien su boceto ni su descripción (hash).
 La composición sin color y el alfa de cada opción quedan guardados: cambiar el color o el tono
@@ -28,7 +31,7 @@ from PIL import Image
 
 from src.application.services.miniatura import imagen as im_
 from src.application.services.miniatura import textos as textos_
-from src.application.services.miniatura.arte import Arte, prompt, texto
+from src.application.services.miniatura.arte import CONFIG, Arte, prompt, texto
 from src.application.services.miniatura.arte import arte as cargar_arte
 from src.config import settings
 from src.domain.interfaces import LLMProvider
@@ -37,6 +40,7 @@ from src.domain.thumbnail import Batch, ImageTexts, Part, Thumbnail, ThumbnailIm
 from src.infrastructure.adapters.comfy.client import ComfyError, ComfyPort
 from src.messages import message
 
+REFERENCIAS = CONFIG / "referencias"  # Spec-820 S2: miniaturas de Yael, solo para la luz
 VRAM_NECESARIA_MB = 9500  # Qwen-Edit 2511: ~10,5 GB de pico en la 3060 de 12 (E1, E4)
 ESPERA_GPU_S = 30 * 60
 CADA_S = 15
@@ -110,6 +114,35 @@ class Arnes:
             )
         thumb.texts = await textos_.separar(self.llm, i, h, bocetos)
         return thumb.texts
+
+    # ── los prompts de la foto (Spec-820 S2) ─────────────────────────────────────
+    async def fotos(self, thumb: Thumbnail, txt: ImageTexts) -> dict[str, str]:
+        """Uno por plantilla; se reusan mientras no cambien los textos, la guía ni las
+        referencias. Sin IA, el fijo."""
+        i = thumb.input
+        bocetos = [self.carpeta / i.character_sketch, self.carpeta / i.scene_sketch]
+        refs = textos_.referencias(REFERENCIAS)
+        h = _hash(
+            txt.input_hash,
+            texto("ia_foto_sistema"),
+            texto("ia_foto_pedido"),
+            texto("una_foto"),
+            *self.arte.plantillas,
+            *(r.read_bytes() for r in refs),
+            "fotos-v1",
+        )
+        if txt.fotos and txt.fotos_hash == h:
+            return txt.fotos
+        if self.llm is None:
+            escondida = txt.a_medio_ver == "mucho"
+            txt.fotos = {
+                k: textos_.foto_fija(txt, escondida and k in self.arte.fundido.detras_en)
+                for k in self.arte.plantillas
+            }
+        else:
+            txt.fotos = await textos_.prompts_de_foto(self.llm, i, txt, bocetos, refs, self.arte)
+        txt.fotos_hash = h
+        return txt.fotos
 
     # ── la GPU por turnos (D10) ──────────────────────────────────────────────────
     async def esperar_gpu(self) -> AsyncIterator[Etapa]:
@@ -232,6 +265,7 @@ class Arnes:
         validar(thumb, self.carpeta)
         t0 = time.monotonic()
         txt = await self.textos(thumb)  # antes de la GPU: si la IA no atiende, falla ya
+        fotos = await self.fotos(thumb, txt)
         async for e in self.esperar_gpu():
             yield e
         semilla_piezas = (
@@ -254,8 +288,8 @@ class Arnes:
         importante = Image.open(imp_path)
         batch = Batch(n=n, seed=semilla, color=i.color, tone=tono)
         total = len(self.arte.plantillas)
-        # T6.7: escondido (detrás de un árbol, asomándose): Qwen pone delante lo que lo tapa y
-        # se pega el recorte entero; Python solo podía oscurecerle las piernas.
+        # T6.7 → Spec-820: escondida (detrás de un árbol, asomándose): en `detras_en` Python pone
+        # un tronco delante y la guía lo marca como lo más cercano.
         escondida = txt.a_medio_ver == "mucho"
         for k, (clave, p) in enumerate(self.arte.plantillas.items(), start=1):
             detras = escondida and clave in self.arte.fundido.detras_en
@@ -264,30 +298,51 @@ class Arnes:
             alfa = im_.alfa_en_cuadro(f, pos, self.arte)
             espejo = im_.espejo_conviene(alfa, importante)
             fondo = im_.lienzo(escenario, self.arte, espejo)
-            f2 = im_.oscurecer_figura(f, fondo, alfa, self.arte)
-            comp = im_.componer(fondo, f2, pos, apoyo, p, self.arte)
-            m = im_.mascara_fundir(alfa, self.arte)
-            caja = im_.zona_detras(m, self.arte) if detras else im_.zona(m, self.arte)
-            zona_png = carpeta_tanda / f"{clave}_zona.png"
-            comp.crop(caja).save(zona_png)
-            editado = await self.comfy.correr(
-                "boceto_a_imagen",
-                {"prompt": prompt("fundir_detras" if detras else "fundir"), "semilla": semilla + k},
-                {"boceto": zona_png},
-                carpeta_tanda / f"{clave}_fundido.png",
+            comp = im_.componer_con_luz(fondo, f, pos, alfa, self.arte)
+            tronco = im_.mascara_tronco(alfa, self.arte) if detras else None
+            if tronco is not None:
+                comp = im_.pegar_tronco(comp, tronco, semilla + k, self.arte)
+            comp_png, guia_png = (
+                carpeta_tanda / f"{clave}_comp.png",
+                carpeta_tanda / f"{clave}_guia.png",
             )
-            pegar = im_.mascara_zona(caja, comp.size, self.arte) if detras else None
-            final = im_.pegar_fundido(comp, Image.open(editado), caja, m, self.arte, pegar)
-            # T6.4: el fundido les cambiaba el tono; si algo la tapa, solo las luces que se ven
-            final = im_.restaurar_luces(comp, final, solo_visibles=detras)
-            if p.recorte == 1 and not detras:
-                final = im_.a_medio_ver(final, fondo, alfa, txt.a_medio_ver, self.arte)
+            comp.save(comp_png)
+            im_.profundidad(comp, alfa, self.arte, tronco).save(guia_png)
+            cambio, fuerza = self.arte.foto(clave)
+            # Tanda 18: a veces la foto inventa una cabeza de más (dos pares de ojos). Se nota
+            # sin IA y se rehace una vez con otra semilla; si insiste, queda la segunda.
+            for intento in range(2):
+                foto = await self.comfy.correr(
+                    "foto_controlnet",
+                    {
+                        "prompt": fotos[clave],
+                        "semilla": semilla + k + 1000 * intento,
+                        "cambio": cambio,
+                        "fuerza": fuerza,
+                    },
+                    {"imagen": comp_png, "guia": guia_png},
+                    carpeta_tanda / f"{clave}_foto.png",
+                )
+                if intento or im_.contar_ojos(Image.open(foto)) < 4:  # dos pares = otra cabeza
+                    break
+            control = im_.controlar_luz(Image.open(foto).convert("RGB"), self.arte)
+            control_png = carpeta_tanda / f"{clave}_control.png"
+            control.save(control_png)
+            # la figura donde quedó en la foto (la foto la mueve un poco al reinterpretar)
+            mascara = await self.comfy.correr(
+                "recortar", {}, {"imagen": control_png}, carpeta_tanda / f"{clave}_figura.png"
+            )
+            figura_foto = Image.open(mascara).convert("L").resize(control.size)
+            final = im_.mate(im_.despegar(control, figura_foto, self.arte), figura_foto, self.arte)
+            if p.modo == "respeta":  # al reinterpretar la figura se mueve (tanda 17)
+                final = im_.devolver_ojos(final, comp, figura_foto, self.arte)
             final.save(carpeta_tanda / f"{clave}_sin_color.png")
-            alfa.save(carpeta_tanda / f"{clave}_alfa.png")
+            figura_foto.save(carpeta_tanda / f"{clave}_alfa.png")
             jpg = carpeta_tanda / f"{clave}.jpg"
-            im_.colorear(final, alfa, i.color, tono, self.arte).save(
+            im_.colorear(final, figura_foto, i.color, tono, self.arte).save(
                 jpg, quality=self.arte.lienzo.calidad_jpg
             )
+            batch.luz[clave] = im_.medir_luz(Image.open(jpg))
             batch.images.append(
                 ThumbnailImage(template=clave, file=str(jpg.relative_to(self.carpeta)))
             )

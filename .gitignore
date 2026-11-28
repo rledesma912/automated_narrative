@@ -86,3 +86,9 @@ scripts/research/790/**/salidas/
 # Spec-800: salidas de los spikes de la hoja de la calabaza
 scripts/research/800/**/salidas/
 scripts/research/800/**/20??-??-??-*/
+# Spec-810: salidas y entregas de los spikes de la calabaza que habla
+scripts/research/810/**/salidas/
+scripts/research/810/**/20??-??-??-*/
+scripts/research/810/audio/
+scripts/research/810/v3/viejo/
+scripts/research/820/**/salidas/

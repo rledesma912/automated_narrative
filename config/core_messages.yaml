@@ -185,6 +185,7 @@ miniatura:
   tardo_demasiado: "{receta}: tardó demasiado"
   arte_cuatro_plantillas: "arte.yaml: tienen que ser exactamente 4 plantillas (D21)"
   arte_tono_inexistente: "arte.yaml: el tono por defecto «{tono}» no existe"
+  arte_modo_inexistente: "arte.yaml: el modo «{modo}» de una plantilla no existe en `modos`"
 
 job:
   # Spec-740 D3: con `LLM_PROFILE_MEDIO=off` (sin crédito para la IA de la media).

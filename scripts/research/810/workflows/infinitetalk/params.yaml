@@ -1,0 +1,13 @@
+# Spec-810 V1: InfiniteTalk (Wan 2.1 I2V 14B fp8 + InfiniteTalk single + lightx2v 6 pasos).
+# Armado a mano desde la plantilla oficial `video_wan2_1_infinitetalk` (un solo hablante, sin extender:
+# los tramos largos los corta Python). Lo único que el arnés cambia del grafo:
+params:
+  imagen:  { node: "11", input: image }
+  audio:   { node: "9",  input: audio }
+  prompt:  { node: "5",  input: text }
+  ancho:   { node: "12", input: width }
+  alto:    { node: "12", input: height }
+  cuadros: { node: "12", input: length }      # 4k + 1, a 25 cuadros por segundo
+  semilla: { node: "16", input: noise_seed }
+  pasos:   { node: "14", input: steps }
+  prefijo: { node: "20", input: filename_prefix }
