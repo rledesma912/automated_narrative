@@ -5,6 +5,11 @@ Todo lo que decide cómo se ven las miniaturas vive acá, fuera del código (D17
 - `arte.yaml`: las 4 plantillas, los tonos por lugar y los números de cada paso. Lo valida `src/application/services/miniatura/arte.py` al arrancar.
 - `prompts/<paso>.md`: un prompt por paso. `{descripcion}` lo llena el arnés con lo que separó la IA (en inglés y en positivo: con cfg 1 el «no» trae lo que se niega, D27).
 - `workflows/<receta>/`: los grafos de ComfyUI, uno por tarea (D15).
+- `referencias/`: miniaturas de Yael que la IA mira **solo para la luz** cuando escribe los prompts de la foto (Spec-820 S2).
+
+## Cómo se arman las 4 (Spec-820)
+
+Por plantilla, Python compone con la luz de Yael (la niebla clara, la figura en silueta, el halo detrás, los ojos y, si está escondida, un tronco delante) y arma una **guía de profundidad** (figura cerca, halo lejos, tronco lo más cerca). Z-Image saca **una sola foto** con `foto_controlnet` (`modos` de `arte.yaml`: respeta en las A, reinterpreta en C y B). Después Python ajusta niveles, `recortar` marca la figura en la foto y Python la despega (anillo de niebla) y le aplasta los reflejos (mate). El prompt de cada foto lo escribe la IA (`prompts/ia_foto_sistema.md`); sin IA o si nombra algo que se dibuja (`se_dibujan`), va `prompts/una_foto.md`.
 
 ## Cambiar el arte
 
@@ -24,7 +29,7 @@ Para reexportar: abrir `workflow.api.json` en ComfyUI, cambiar, «Export (API)»
 
 | Receta | Qué hace | Modelo |
 |---|---|---|
-| `boceto_a_imagen` | boceto → personaje o escenario; también el fundido sobre el recorte | Qwen-Image-Edit 2511 + Lightning |
+| `boceto_a_imagen` | boceto → personaje o escenario | Qwen-Image-Edit 2511 + Lightning |
 | `foto_img2img` | el personaje de Qwen → foto con flash (0,50) | Z-Image Turbo |
-| `foto_controlnet` | el escenario de Qwen → foto de noche (0,75, con el boceto de guía a 0,6) | Z-Image Turbo + Fun ControlNet Union |
-| `recortar` | la figura o lo importante del escenario → máscara | BiRefNet |
+| `foto_controlnet` | el escenario de Qwen → foto de noche (0,75, con el boceto de guía a 0,6); y la foto única de cada opción (Spec-820: la composición + la guía de profundidad) | Z-Image Turbo + Fun ControlNet Union |
+| `recortar` | la figura, lo importante del escenario o la figura en la foto final → máscara | BiRefNet |

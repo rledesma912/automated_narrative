@@ -1,1 +1,0 @@
-Make the figure look photographed in this place. Only adjust the figure itself: its edges, its shading and how the faint light of the scene falls on it, and keep the dark contact shadow under it dark. Do not change the background, do not make anything brighter, do not add fog, glow or light. Keep the figure's shape, pose, face and details exactly the same.

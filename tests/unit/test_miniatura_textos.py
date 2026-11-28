@@ -95,8 +95,9 @@ def test_el_prompt_de_sistema_habla_de_los_bocetos():
     assert "bocetos" in sistema and "primero el del personaje" in sistema
 
 
-def test_el_fundido_de_escondido_esta_en_positivo_y_pide_que_asome():
-    from src.application.services.miniatura.arte import prompt
+def test_el_tronco_de_escondido_esta_en_positivo_y_pide_que_asome():
+    """Spec-820: lo que se suma a la foto única cuando la figura va detrás del tronco."""
+    from src.application.services.miniatura.arte import texto
 
-    p = prompt("fundir_detras")
-    assert "in front of" in p and "peeks out" in p
+    p = texto("detras")
+    assert "in front of" in p and "peek out" in p

@@ -1,6 +1,6 @@
 """Spec-790: lo que hace Python con las imágenes (arte, color, fundido, apoyo)."""
 
-from PIL import Image, ImageChops, ImageDraw
+from PIL import Image, ImageDraw
 
 from src.application.services.miniatura import imagen as im_
 from src.application.services.miniatura.arte import arte
@@ -13,12 +13,13 @@ def _color(w=320, h=180, rgb=(30, 120, 140)) -> Image.Image:
 def test_arte_tiene_las_4_plantillas_y_los_tonos():
     a = arte()
     assert list(a.plantillas) == ["A_der", "A_izq", "C_primer_plano", "B_lugar"]  # D21
-    assert {"verde", "azul", "gris_frio", "halloween"} <= set(a.tonos)
+    assert {"gris_azul", "verde", "azul", "gris_frio", "halloween"} <= set(a.tonos)
 
 
 def test_el_tono_sale_del_lugar():  # D25
     a = arte()
-    assert a.tono_del_lugar("Un bosque de pinos y una torre") == "verde"
+    assert a.tono_del_lugar("Un bosque de pinos y una torre") == "gris_azul"  # Spec-820 D4
+    assert a.tono_del_lugar("Un campo con un maizal") == "verde"
     assert a.tono_del_lugar("El muelle del puerto, de noche") == "azul"
     assert a.tono_del_lugar("Una casa vieja en un pueblo") == a.tono_por_defecto
     assert (
@@ -44,20 +45,6 @@ def test_desaturar_respeta_los_acentos_calidos():
     assert out.getpixel((35, 35))[0] > 200 and out.getpixel((35, 35))[2] < 60
 
 
-def test_el_fundido_no_toca_nada_fuera_de_la_mascara():
-    a = arte()
-    comp = Image.effect_noise((a.lienzo.ancho, a.lienzo.alto), 40).convert("RGB")
-    alfa = Image.new("L", comp.size, 0)
-    ImageDraw.Draw(alfa).ellipse((500, 100, 700, 650), fill=255)
-    m = im_.mascara_fundir(alfa, a)
-    caja = im_.zona(m, a)
-    editado = Image.new("RGB", (caja[2] - caja[0], caja[3] - caja[1]), (250, 250, 250))
-    out = im_.pegar_fundido(comp, editado, caja, m, a)
-    afuera = ImageChops.invert(m.point(lambda v: 255 if v > 0 else 0))
-    dif = ImageChops.difference(out, comp).convert("L")
-    assert ImageChops.multiply(dif, afuera).getbbox() is None
-
-
 def test_apoyo_detecta_si_pisa_el_piso_o_va_cortada():
     parada = Image.new("RGBA", (200, 400), (0, 0, 0, 0))
     d = ImageDraw.Draw(parada)
@@ -70,46 +57,6 @@ def test_apoyo_detecta_si_pisa_el_piso_o_va_cortada():
     assert im_.apoyo(cortada) == "borde"
 
 
-def test_oscurecer_la_figura_respeta_la_calabaza_encendida():
-    a = arte()
-    f = Image.new("RGBA", (200, 400), (200, 200, 200, 255))
-    ImageDraw.Draw(f).rectangle((60, 200, 140, 280), fill=(255, 120, 20, 255))  # la calabaza
-    fondo = Image.new("RGB", (a.lienzo.ancho, a.lienzo.alto), (15, 15, 18))
-    alfa = im_.alfa_en_cuadro(f, (500, 200), a)
-    out = im_.oscurecer_figura(f, fondo, alfa, a)
-    assert out.getpixel((10, 10))[0] < 150  # el cuerpo se oscurece
-    r, g, b, _ = out.getpixel((100, 240))
-    assert r > 200 and b < 80  # la calabaza sigue encendida
-
-
-# ── T6.4 y T3.3 ──────────────────────────────────────────────────────────────────
-def test_los_ojos_amarillos_sobreviven_al_fundido():
-    from src.application.services.miniatura import imagen as im_
-
-    antes = Image.new("RGB", (40, 40), (20, 20, 20))
-    antes.paste((230, 190, 40), (10, 10, 20, 20))  # un ojo amarillo que brilla
-    despues = Image.new("RGB", (40, 40), (20, 20, 20))
-    despues.paste((170, 200, 120), (10, 10, 20, 20))  # el fundido lo dejó verdoso
-    r, g, b = im_.restaurar_luces(antes, despues).getpixel((15, 15))
-    assert r > g > b  # vuelve a ser amarillo
-    assert im_.restaurar_luces(antes, despues).getpixel((35, 35)) == (20, 20, 20)
-
-
-def test_a_medio_ver_oscurece_abajo_y_no_arriba():
-    from src.application.services.miniatura import imagen as im_
-    from src.application.services.miniatura.arte import arte
-
-    final = Image.new("RGB", (100, 100), (200, 200, 200))
-    fondo = Image.new("RGB", (100, 100), (100, 100, 100))
-    alfa = Image.new("L", (100, 100), 0)
-    alfa.paste(255, (30, 0, 70, 100))
-    out = im_.a_medio_ver(final, fondo, alfa, "mucho", arte())
-    assert out.getpixel((50, 5)) == (200, 200, 200)  # la cabeza, igual
-    assert out.getpixel((50, 98))[0] < 80  # los pies, en la sombra del lugar
-    assert out.getpixel((5, 98)) == (200, 200, 200)  # fuera de la figura no toca
-    assert im_.a_medio_ver(final, fondo, alfa, "no", arte()) is final
-
-
 def test_la_foto_del_escenario_se_pide_en_positivo():
     """D27: con cfg 1 nombrar algo con «no» lo trae (E11c: ventanas y casas)."""
     import re
@@ -118,21 +65,6 @@ def test_la_foto_del_escenario_se_pide_en_positivo():
 
     plantilla = texto("fotografiar_escenario", descripcion="")
     assert not re.search(r"\b(no|not|without|nobody|never)\b", plantilla, re.I), plantilla
-
-
-def test_a_medio_ver_no_deja_ver_las_formas_del_fondo():
-    """Tanda 5 de Peter: el tronco detrás de la figura se veía a través de las piernas."""
-    from src.application.services.miniatura import imagen as im_
-    from src.application.services.miniatura.arte import arte
-
-    final = Image.new("RGB", (200, 200), (200, 200, 200))
-    fondo = Image.new("RGB", (200, 200), (20, 20, 20))
-    fondo.paste((240, 240, 240), (95, 0, 105, 200))  # un tronco claro y fino detrás
-    alfa = Image.new("L", (200, 200), 0)
-    alfa.paste(255, (60, 0, 140, 200))
-    out = im_.a_medio_ver(final, fondo, alfa, "mucho", arte())
-    tronco, al_lado = out.getpixel((100, 195))[0], out.getpixel((75, 195))[0]
-    assert abs(tronco - al_lado) < 15  # sin el borde del tronco: solo el tono
 
 
 def test_scribble_lineas_blancas_sobre_negro():
@@ -145,59 +77,149 @@ def test_scribble_lineas_blancas_sobre_negro():
     assert s.getpixel((42, 50))[0] > 240
 
 
-def test_detras_se_pega_el_recorte_entero_con_borde_suave():
-    """T6.7: el tronco que Qwen pone delante sigue más allá de la silueta de la figura."""
-    from src.application.services.miniatura import imagen as im_
-    from src.application.services.miniatura.arte import arte
-
-    a = arte()
-    gradiente = Image.linear_gradient("L").resize((a.lienzo.ancho, a.lienzo.alto))
-    comp = gradiente.point(lambda v: 30 + v // 4).convert("RGB")  # un fondo con variación
-    caja = (200, 100, 700, 700)
-    m = Image.new("L", comp.size, 0)
-    m.paste(255, (400, 300, 500, 600))  # la figura, angosta
-    editado = comp.crop(caja)
-    editado.paste((200, 200, 200), (100, 0, 160, 600))  # un tronco a la izquierda de la figura
-    pegar = im_.mascara_zona(caja, comp.size, a)
-    final = im_.pegar_fundido(comp, editado, caja, m, a, pegar)
-    fondo = comp.getpixel((330, 400))[0]
-    assert final.getpixel((330, 400))[0] > fondo + 60  # el tronco, fuera de la figura, entra
-    assert final.getpixel((205, 400)) == comp.getpixel((205, 400))  # el borde no se nota
-    assert final.getpixel((100, 400)) == comp.getpixel((100, 400))  # fuera del recorte no toca
-    # sin `pegar`, como siempre: solo dentro de la figura
-    sin = im_.pegar_fundido(comp, editado, caja, m, a)
-    assert sin.getpixel((330, 400)) == comp.getpixel((330, 400))
-
-
-def test_detras_las_luces_tapadas_no_vuelven():
-    from src.application.services.miniatura import imagen as im_
-
-    antes = Image.new("RGB", (60, 60), (20, 20, 20))
-    antes.paste((255, 220, 40), (10, 10, 20, 20))  # un ojo
-    antes.paste((255, 220, 40), (40, 10, 50, 20))  # el otro
-    despues = antes.copy()
-    despues.paste((30, 25, 20), (5, 0, 25, 60))  # un tronco tapa el primero
-    out = im_.restaurar_luces(antes, despues, solo_visibles=True)
-    assert out.getpixel((15, 15))[0] < 60  # el tapado sigue tapado
-    assert out.getpixel((45, 15)) == (255, 220, 40)  # el que se ve, con su color
-
-
-def test_detras_el_recorte_va_de_arriba_a_abajo_sin_borde_en_el_cuadro():
-    """Tanda 6: el tronco se cortaba en el borde de arriba del recorte."""
-    from src.application.services.miniatura import imagen as im_
-    from src.application.services.miniatura.arte import arte
-
-    a = arte()
-    m = Image.new("L", (a.lienzo.ancho, a.lienzo.alto), 0)
-    m.paste(255, (500, 200, 700, 600))
-    caja = im_.zona_detras(m, a)
-    assert caja[1] == 0 and caja[3] == a.lienzo.alto
-    pegar = im_.mascara_zona(caja, m.size, a)
-    assert pegar.getpixel((600, 0)) >= 245 and pegar.getpixel((600, a.lienzo.alto - 1)) >= 245
-    assert pegar.getpixel((caja[0] + 1, 300)) < 40  # a los costados sí se difumina
-
-
 def test_detras_solo_en_las_plantillas_de_arte():
     from src.application.services.miniatura.arte import arte
 
     assert arte().fundido.detras_en == ["A_der"]  # una sola: las 4 tienen que ser distintas
+
+
+# ── Spec-820: la luz de Yael ──────────────────────────────────────────────────────
+def _figura_en_cuadro(a):
+    alfa = Image.new("L", (a.lienzo.ancho, a.lienzo.alto), 0)
+    ImageDraw.Draw(alfa).rectangle((700, 150, 1000, 700), fill=255)
+    return alfa
+
+
+def test_los_modos_salen_de_la_plantilla():  # D3
+    a = arte()
+    assert a.plantillas["A_der"].modo == a.plantillas["A_izq"].modo == "respeta"
+    assert a.plantillas["C_primer_plano"].modo == a.plantillas["B_lugar"].modo == "reinterpreta"
+    assert a.foto("A_der") == (a.modos["respeta"].cambio, a.modos["respeta"].fuerza)
+    assert a.foto("B_lugar")[1] == a.plantillas["B_lugar"].fuerza  # la de la plantilla manda
+
+
+def test_un_modo_que_no_existe_no_carga():
+    import pytest
+
+    from src.application.services.miniatura.arte import Arte
+
+    datos = arte().model_dump()
+    datos["plantillas"]["A_der"]["modo"] = "otro"
+    with pytest.raises(ValueError):
+        Arte.model_validate(datos)
+
+
+def test_iluminar_el_fondo_aclara_lo_lejano_y_deja_oscuro_lo_cercano():
+    a = arte()
+    fondo = Image.new("RGB", (a.lienzo.ancho, a.lienzo.alto), (20, 20, 20))
+    fondo.paste((110, 110, 110), (0, 0, 640, 300))  # niebla tenue arriba a la izquierda
+    out = im_.iluminar_fondo(fondo, a)
+    assert out.getpixel((300, 120))[0] > 150  # la niebla, clara
+    assert out.getpixel((1000, 600))[0] < 40  # lo oscuro sigue oscuro
+
+
+def test_la_composicion_pone_la_figura_en_silueta_con_halo_y_ojos():
+    a = arte()
+    fondo = Image.new("RGB", (a.lienzo.ancho, a.lienzo.alto), (60, 60, 60))
+    f = Image.new("RGBA", (300, 550), (180, 180, 180, 255))
+    ImageDraw.Draw(f).rectangle((200, 60, 230, 90), fill=(255, 230, 60, 255))  # un ojo
+    alfa = im_.alfa_en_cuadro(f, (700, 150), a)
+    comp = im_.componer_con_luz(fondo, f, (700, 150), alfa, a)
+    assert comp.getpixel((750, 500))[0] <= a.luz.silueta_techo  # la figura, oscura
+    junto = 1000 + round(a.luz.halo.radio * a.lienzo.alto / 3)
+    assert comp.getpixel((junto, 400))[0] > 100  # el halo, pegado a la figura y tenue
+    assert comp.getpixel((1000 + round(a.luz.halo.radio * a.lienzo.alto * 3), 400))[0] < 75
+    r, g, b = comp.getpixel((915, 225))
+    assert r > 200 and b < 120  # el ojo, amarillo
+
+
+def test_la_guia_pone_la_figura_cerca_el_halo_lejos_y_el_tronco_mas_cerca():
+    a = arte()
+    alfa = _figura_en_cuadro(a)
+    comp = Image.new("RGB", alfa.size, (30, 30, 30))
+    sin = im_.profundidad(comp, alfa, a)
+    assert sin.getpixel((850, 400))[0] == 255  # la figura, cerca
+    junto = 1000 + round(a.luz.profundidad_anillo * a.lienzo.alto / 3)
+    assert sin.getpixel((junto, 400))[0] < 60  # el halo, lejos
+    tronco = im_.mascara_tronco(alfa, a)
+    con = im_.profundidad(comp, alfa, a, tronco)
+    x = round(700 + a.luz.tronco.centro * 300)
+    assert con.getpixel((x, 400))[0] == 255 > con.getpixel((960, 400))[0]  # el tronco tapa
+
+
+def test_el_tronco_va_de_arriba_a_abajo_y_deja_ver_la_cabeza():
+    a = arte()
+    alfa = _figura_en_cuadro(a)
+    t = im_.mascara_tronco(alfa, a)
+    x = round(700 + a.luz.tronco.centro * 300)
+    assert t.getpixel((x, 0)) > 200 and t.getpixel((x, a.lienzo.alto - 1)) > 200
+    assert t.getpixel((990, 200)) == 0  # el costado de la cabeza queda a la vista
+    assert im_.mascara_tronco(Image.new("L", alfa.size, 0), a) is None
+
+
+def test_despegar_aclara_alrededor_y_no_la_figura():
+    a = arte()
+    foto = Image.new("RGB", (a.lienzo.ancho, a.lienzo.alto), (60, 60, 60))
+    figura = _figura_en_cuadro(a)
+    out = im_.despegar(foto, figura, a)
+    junto = 1000 + round(a.luz.despegar.anillo * a.lienzo.alto / 3)
+    assert out.getpixel((junto, 400))[0] > 70  # el anillo
+    assert out.getpixel((850, 400)) == (60, 60, 60)  # la figura, igual
+    assert out.getpixel((100, 400)) == (60, 60, 60)  # lejos, igual
+
+
+def test_mate_aplasta_los_reflejos_y_deja_los_ojos():  # D7
+    a = arte()
+    foto = Image.new("RGB", (a.lienzo.ancho, a.lienzo.alto), (20, 20, 20))
+    foto.paste((200, 200, 200), (800, 400, 860, 460))  # un brillo de plástico en el cuerpo
+    foto.paste((255, 210, 40), (900, 250, 930, 280))  # un ojo
+    out = im_.mate(foto, _figura_en_cuadro(a), a)
+    assert out.getpixel((830, 430))[0] < 120
+    r, g, b = out.getpixel((915, 265))
+    assert r > 230 and b < 80
+
+
+def test_controlar_y_medir_la_luz():
+    a = arte()
+    foto = Image.linear_gradient("L").rotate(90).resize((1344, 768)).point(lambda v: 40 + v // 3)
+    out = im_.controlar_luz(foto.convert("RGB"), a)
+    assert out.size == (a.lienzo.ancho, a.lienzo.alto)
+    luz = im_.medir_luz(out)
+    assert out.convert("L").getextrema() == (0, 255)  # negro y blanco de verdad
+    assert set(luz) == {"media", "p5", "p95"} and luz["p5"] < luz["media"] < luz["p95"]
+
+
+def test_si_la_foto_apago_los_ojos_vuelven_y_si_no_no_se_toca():
+    a = arte()
+    figura = _figura_en_cuadro(a)
+    comp = Image.new("RGB", figura.size, (20, 20, 20))
+    comp.paste((255, 215, 70), (900, 250, 930, 280))  # el ojo de la composición
+    apagada = Image.new("RGB", figura.size, (20, 20, 20))
+    r, g, b = im_.devolver_ojos(apagada, comp, figura, a).getpixel((915, 265))
+    assert r > 200 and b < 120
+    con_ojos = apagada.copy()
+    con_ojos.paste((255, 210, 40), (850, 250, 870, 270))  # la foto puso los ojos en otro lado
+    assert im_.devolver_ojos(con_ojos, comp, figura, a) is con_ojos
+    afuera = Image.new("L", figura.size, 0)  # la cabeza ya no está ahí: no se pinta
+    assert im_.devolver_ojos(apagada, comp, afuera, a) is apagada
+
+
+def test_la_corteza_es_oscura_y_con_vetas():
+    a = arte()
+    alfa = _figura_en_cuadro(a)
+    tronco = im_.mascara_tronco(alfa, a)
+    out = im_.pegar_tronco(Image.new("RGB", alfa.size, (200, 200, 200)), tronco, 7, a)
+    x = round(700 + a.luz.tronco.centro * 300)
+    columna = [out.getpixel((x, y))[0] for y in range(0, a.lienzo.alto, 10)]
+    assert max(columna) <= a.luz.tronco.oscuro[1] and max(columna) - min(columna) > 20
+
+
+def test_contar_ojos_nota_una_cabeza_de_mas():  # tanda 18
+    im = Image.new("RGB", (1280, 720), (30, 30, 30))
+    d = ImageDraw.Draw(im)
+    for x in (900, 980):
+        d.ellipse((x, 200, x + 30, 230), fill=(255, 210, 40))
+    assert im_.contar_ojos(im) == 2
+    for x in (200, 280):
+        d.ellipse((x, 150, x + 30, 180), fill=(255, 210, 40))
+    assert im_.contar_ojos(im) == 4
