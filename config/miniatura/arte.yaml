@@ -7,11 +7,43 @@ lienzo: { ancho: 1280, alto: 720, calidad_jpg: 90 }
 # D21 / C1: las 4 opciones, una por plantilla, en este orden.
 #   cx = centro de la figura (0–1 del ancho); alto = fracción del alto del cuadro;
 #   recorte = qué parte de arriba de la figura se usa (1 = entera; < 1 = primer plano).
+#   modo = Spec-820 D3: «respeta» el boceto (las dos A) o lo «reinterpreta» (C y B).
+#   B_lugar (D6): chica y a un costado, para que quede lugar al texto y los árboles la superen.
 plantillas:
-  A_der:          { nombre: "Figura a la derecha", cx: 0.70, alto: 0.92, recorte: 1.0 }
-  A_izq:          { nombre: "Figura a la izquierda", cx: 0.30, alto: 0.92, recorte: 1.0 }
-  C_primer_plano: { nombre: "Primer plano", cx: 0.68, alto: 1.0, recorte: 0.70 }
-  B_lugar:        { nombre: "Manda el lugar", cx: 0.46, alto: 0.50, recorte: 1.0 }
+  A_der:          { nombre: "Figura a la derecha", cx: 0.70, alto: 0.92, recorte: 1.0, modo: respeta }
+  A_izq:          { nombre: "Figura a la izquierda", cx: 0.30, alto: 0.92, recorte: 1.0, modo: respeta }
+  C_primer_plano: { nombre: "Primer plano", cx: 0.68, alto: 1.0, recorte: 0.70, modo: reinterpreta, fuerza: 0.58 }
+  B_lugar:        { nombre: "Manda el lugar", cx: 0.70, alto: 0.40, recorte: 1.0, modo: reinterpreta, fuerza: 0.55 }
+
+# Spec-820: la foto única (Z-Image + ControlNet con la guía de profundidad) sobre la composición.
+# Tandas 11–14 de Peter: respeta = 0,62 / 0,60; reinterpreta = 0,80 / 0,50.
+modos:
+  respeta:      { cambio: 0.62, fuerza: 0.60 }
+  reinterpreta: { cambio: 0.80, fuerza: 0.50 }
+
+# Spec-820: la luz de Yael. Lo que no está acá toma el valor de los spikes (arte.py → Luz).
+#   niebla: lo claro y difuso del fondo → blanco; lo demás en silueta. halo: detrás de la figura
+#   (la despega, D5). tronco: el que tapa a la figura escondida (en `fundido.detras_en`).
+#   control/despegar/mate: después de la foto (niveles, el anillo de niebla, sin reflejos, D7).
+luz:
+  niebla: { gris: 200, fuerza: 0.85 }
+  # tanda 16 (el usuario): el halo, más chico, ceñido al personaje y más transparente
+  halo: { radio: 0.05, difuminado: 0.03, fuerza: 0.45, color: [232, 236, 240] }
+  profundidad_anillo: 0.04
+  tronco: { centro: 0.42, ancho: 0.36, oscuro: [12, 70] }
+  despegar: { anillo: 0.03, difuminado: 0.02, fuerza: 0.4 }
+  mate: { techo: 42, compresion: 0.25 }
+
+# D8: lo que la IA no puede nombrar en un prompt de foto (el modelo lo dibuja), salvo que el
+# lugar de Yael lo traiga (la lista de la derecha).
+se_dibujan:
+  camera: []
+  tripod: []
+  photographer: []
+  lens flare: []
+  halo: []          # tanda 17: dibujó un aro de ángel sobre la cabeza
+  moon: [luna, moon]
+  lantern: [farol, linterna, lámpara, lantern]
 
 # E3c: la curva de oscuridad del escenario antes de «fotografiarlo».
 # T6.6 (E11i): la foto lleva el boceto de guía (ControlNet a `guia`), así Z-Image puede cambiar
@@ -22,39 +54,30 @@ escenario: { gamma: 1.6, techo: 0.75, cambio_foto: 0.75, guia: 0.6 }
 # 0,45–0,55 les gustaron a Yael y al usuario; a 0,55 se pierde el boceto (hocico, esqueleto).
 personaje: { cambio_foto: 0.50 }
 
-# E4 ronda 2: la figura se oscurece según el lugar, se funde en una zona y se pega con máscara.
-figura:
-  veces_el_lugar: 1.7
-  techo: 0.80
-  piso: 30
-  grano: 4
-  anillo: 0.04
-  # T6.4: con la figura entera, de la cintura para abajo se pierde en la sombra del lugar
-  # (el fondo difuminado y multiplicado por `sombra`: el tono del lugar sin sus formas, para
-  # que no se vea el tronco a través de las piernas). Cuánto, según lo que dijo Yael (T3.3).
-  sombra: 0.35
-  sombra_difuminado: 0.15
-  medio_ver:
-    poco:  { desde: 0.55, queda: 0.35 }
-    mucho: { desde: 0.45, queda: 0.15 }
-# T6.7: con la figura escondida, en estas plantillas Qwen pone delante lo que la tapa (un tronco)
-# y el recorte va de arriba a abajo del cuadro; en las otras, el fundido de siempre y la sombra.
-# Una sola: con las dos A detrás del árbol las opciones se parecían (tanda 7, el usuario).
-fundido: { dilatacion: 0.01, borde: 16, margen: 0.12, detras_en: [A_der] }
+# T6.7 → Spec-820: con la figura escondida, en estas plantillas Python pone un tronco delante
+# (y la guía lo marca como lo más cercano). Una sola: con las dos A detrás del árbol las opciones
+# se parecían (tanda 7, el usuario).
+fundido: { detras_en: [A_der] }
 
 # C5 / D23: el color. «desaturado» = la saturación media (de lo que no es negro) hasta `tope`
 # (la mediana de las 36 recientes de Yael), sin tocar los acentos cálidos.
 color: { tope_desaturado: 40 }
 
-# D25: el tono sale del lugar, frío y desaturado, en toda la imagen. `lugares` = palabras que,
+# D25: el tono sale del lugar, frío y desaturado, en toda la imagen. Spec-820 D4: el bosque y la
+# niebla van en gris frío azulado (como la de Peter de Yael); el verde queda para elegirlo. `lugares` = palabras que,
 # si aparecen en «Cómo es el lugar», proponen ese tono. Halloween es la excepción (C5b): la
 # figura en naranja y el fondo gris.
 tonos:
+  gris_azul:
+    nombre: "Gris frío azulado (bosque, niebla)"
+    colores: [[3, 5, 8], [86, 98, 108], [222, 230, 237]]
+    fuerza: 0.6
+    lugares: [bosque, niebla, selva, monte, pinos, cerro, sierra, montaña]
   verde:
-    nombre: "Verde (bosque, campo)"
+    nombre: "Verde (campo)"
     colores: [[4, 10, 6], [70, 92, 74], [205, 225, 208]]
     fuerza: 0.55
-    lugares: [bosque, campo, selva, monte, maizal, pinos, cerro, sierra, montaña, granja, estancia]
+    lugares: [campo, maizal, granja, estancia]
   azul:
     nombre: "Azul (mar, agua)"
     colores: [[3, 6, 14], [62, 80, 108], [200, 214, 235]]

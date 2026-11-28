@@ -29,6 +29,16 @@ class Plantilla(BaseModel):
     cx: float = Field(ge=0, le=1)
     alto: float = Field(gt=0, le=1.5)
     recorte: float = Field(gt=0, le=1)
+    # Spec-820 D3: «respeta» el boceto o lo «reinterpreta» (cuánto cambia la foto única)
+    modo: str = "respeta"
+    fuerza: float | None = Field(default=None, ge=0, le=1)  # pisa la del modo
+
+
+class Modo(BaseModel):
+    """Spec-820: la pasada única de Z-Image (`foto_controlnet`) sobre la composición."""
+
+    cambio: float = Field(ge=0, le=1)  # denoise
+    fuerza: float = Field(ge=0, le=1)  # el ControlNet con la guía de profundidad
 
 
 class Escenario(BaseModel):
@@ -42,29 +52,12 @@ class PersonajeArte(BaseModel):
     cambio_foto: float = Field(default=0.50, ge=0, le=1)  # E11: Z-Image sobre el personaje
 
 
-class MedioVer(BaseModel):
-    desde: float = Field(ge=0, le=1)  # desde qué altura de la figura empieza a perderse
-    queda: float = Field(ge=0, le=1)  # cuánto se ve en los pies
-
-
-class FiguraArte(BaseModel):
-    veces_el_lugar: float = 1.7
-    techo: float = 0.80
-    piso: float = 30
-    grano: float = 4
-    anillo: float = 0.04
-    # T6.4: la figura se pierde en la sombra del lugar según `relacion.a_medio_ver` (T3.3)
-    sombra: float = 0.35
-    sombra_difuminado: float = 0.15  # radio, en proporción al alto de la figura
-    medio_ver: dict[str, MedioVer] = Field(default_factory=dict)
-
-
 class Fundido(BaseModel):
     dilatacion: float = 0.01
     borde: int = 16
     margen: float = 0.12
-    # T6.7: las plantillas donde la figura escondida se funde con algo delante (tanda 6: en el
-    # primer plano el tronco le tapaba la cara y en la chica Qwen duplicaba la cabeza)
+    # T6.7 → Spec-820: las plantillas donde la figura escondida va detrás de un tronco (tanda 6:
+    # en el primer plano el tronco le tapaba la cara y en la chica se duplicaba la cabeza)
     detras_en: list[str] = Field(default_factory=list)
 
 
@@ -80,14 +73,89 @@ class Tono(BaseModel):
     lugares: list[str] = Field(default_factory=list)
 
 
+class Niebla(BaseModel):
+    """S0: lo que ya es claro y difuso del fondo (lo lejano) se vuelve niebla blanca."""
+
+    gris: int = 200
+    desde: int = 30
+    rango: int = 90
+    fuerza: float = 0.85
+    difuminado: int = 40
+    piso_abajo: float = 0.25  # abajo (lo cercano) entra menos niebla
+    oscuro: float = 0.55  # lo que no es niebla se oscurece (troncos cercanos en silueta)
+
+
+class Halo(BaseModel):
+    radio: float = 0.10  # del alto del cuadro
+    difuminado: float = 0.06
+    fuerza: float = 0.75
+    color: Rgb = Field(default_factory=lambda: [232, 236, 240])
+
+
+class Tronco(BaseModel):
+    """S1c: el tronco que tapa a la figura escondida, en proporción a la caja de la figura."""
+
+    centro: float = 0.42
+    ancho: float = 0.36
+    abajo: float = 1.15  # cuánto se ensancha hacia abajo
+    oscuro: list[int] = Field(default_factory=lambda: [22, 58], min_length=2, max_length=2)
+
+
+class Control(BaseModel):
+    """Después de la foto: niveles y niebla (Python controla, no pinta)."""
+
+    negro: float = 1.0  # % que se recorta en el negro
+    blanco: float = 0.3
+    niebla_desde: int = 50
+    niebla_rango: int = 80
+    niebla_fuerza: float = 0.7
+    niebla_color: Rgb = Field(default_factory=lambda: [150, 158, 165])
+
+
+class Despegar(BaseModel):
+    anillo: float = 0.05
+    difuminado: float = 0.04
+    fuerza: float = 0.6
+    color: Rgb = Field(default_factory=lambda: [90, 95, 100])
+
+
+class Mate(BaseModel):
+    """D7: dentro de la figura las luces se aplastan (salvo los ojos y el borde)."""
+
+    techo: int = 42
+    compresion: float = 0.25
+    nucleo: float = 0.012
+
+
+class Luz(BaseModel):
+    """Spec-820: la luz de Yael (figura oscura contra niebla clara, despegada)."""
+
+    niebla: Niebla = Field(default_factory=Niebla)
+    silueta_techo: int = 55
+    silueta_factor: float = 0.3
+    ojos_umbral: int = 170
+    ojos_color: Rgb = Field(default_factory=lambda: [255, 215, 70])
+    halo: Halo = Field(default_factory=Halo)
+    profundidad_gamma: float = 2.2
+    profundidad_anillo: float = 0.07
+    tronco: Tronco = Field(default_factory=Tronco)
+    control: Control = Field(default_factory=Control)
+    despegar: Despegar = Field(default_factory=Despegar)
+    mate: Mate = Field(default_factory=Mate)
+
+
 class Arte(BaseModel):
     lienzo: Lienzo = Field(default_factory=Lienzo)
     plantillas: dict[str, Plantilla]
     escenario: Escenario = Field(default_factory=Escenario)
     personaje: PersonajeArte = Field(default_factory=PersonajeArte)
-    figura: FiguraArte = Field(default_factory=FiguraArte)
     fundido: Fundido = Field(default_factory=Fundido)
     color: ColorArte = Field(default_factory=ColorArte)
+    modos: dict[str, Modo] = Field(default_factory=dict)
+    luz: Luz = Field(default_factory=Luz)
+    # D8: palabras que, si aparecen en un prompt de la IA, se dibujan (la cámara, una luna que no
+    # está en el lugar). La clave es la palabra; el valor, las del lugar que la permiten.
+    se_dibujan: dict[str, list[str]] = Field(default_factory=dict)
     tonos: dict[str, Tono]
     tono_por_defecto: str
 
@@ -102,7 +170,16 @@ class Arte(BaseModel):
     def _tono(self) -> "Arte":
         if self.tono_por_defecto not in self.tonos:
             raise ValueError(message("miniatura.arte_tono_inexistente", tono=self.tono_por_defecto))
+        for p in self.plantillas.values():
+            if p.modo not in self.modos:
+                raise ValueError(message("miniatura.arte_modo_inexistente", modo=p.modo))
         return self
+
+    def foto(self, clave: str) -> tuple[float, float]:
+        """Spec-820: (cambio, fuerza) de la pasada única de una plantilla."""
+        p = self.plantillas[clave]
+        m = self.modos[p.modo]
+        return m.cambio, p.fuerza if p.fuerza is not None else m.fuerza
 
     def tono_del_lugar(self, descripcion: str) -> str:
         """D25: el tono que propone el lugar (la primera palabra del catálogo que aparece)."""

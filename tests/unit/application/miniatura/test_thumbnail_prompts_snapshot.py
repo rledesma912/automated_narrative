@@ -31,6 +31,10 @@ async def _prompts() -> dict:
     return {
         "ia_sistema": texto("ia_sistema"),
         "ia_pedido": textos.pedido(_INPUT),
+        # Spec-820 S2: la guía de la IA que escribe la foto única y la foto fija
+        "ia_foto_sistema": texto("ia_foto_sistema"),
+        "una_foto": textos.foto_fija(txt, detras=False),
+        "una_foto_detras": textos.foto_fija(txt, detras=True),
         **{
             paso: prompt(paso, txt.personaje if "personaje" in paso else txt.escenario)
             for paso in _PASOS

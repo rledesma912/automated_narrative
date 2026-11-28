@@ -26,7 +26,7 @@ describe("«a medio ver» en Miniaturas (Spec-790 T3.3)", () => {
   it("escondido: lo dice con lo que contó y que por ahora se pierde en la sombra", async () => {
     const html = await render({ a_medio_ver: "mucho", relacion: "se esconde detrás del árbol" });
     expect(nota(html)).toContain("(«se esconde detrás del árbol»)");
-    expect(nota(html)).toContain("En la que tiene la figura a la derecha queda detrás de lo que lo tapa; en las otras se pierde en la sombra del lugar.");
+    expect(nota(html)).toContain("En la que tiene la figura a la derecha queda detrás de un tronco; en las otras se recorta contra la niebla.");
   });
 
   it("sin relación contada, la nota va igual sin la cita", async () => {

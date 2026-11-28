@@ -1,0 +1,1 @@
+It is half-hidden behind the thick dark tree trunk in the foreground: the trunk passes in front of its body, one clawed hand grips the bark, and its head and glowing eyes peek out from behind the trunk.

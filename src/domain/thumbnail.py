@@ -45,6 +45,9 @@ class ImageTexts(BaseModel):
     relacion: str = ""
     a_medio_ver: Literal["no", "poco", "mucho"] = "no"
     input_hash: str = ""
+    # Spec-820 S2: el prompt de la foto única de cada plantilla, escrito por la IA (o el fijo)
+    fotos: dict[str, str] = Field(default_factory=dict)
+    fotos_hash: str = ""
 
 
 class ThumbnailImage(BaseModel):
@@ -65,6 +68,7 @@ class Batch(BaseModel):
     images: list[ThumbnailImage] = Field(default_factory=list)
     seconds: float = 0.0
     created_at: datetime = Field(default_factory=now_argentina)
+    luz: dict[str, dict[str, int]] = Field(default_factory=dict)  # Spec-820: p5/p95/media
 
 
 class Thumbnail(BaseModel):

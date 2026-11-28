@@ -76,7 +76,7 @@ async def test_sin_bocetos_no_arma(client):
             json={"place_description": "Una torre en un bosque de pinos"},
         )
     ).json()
-    assert vista["tono_propuesto"] == "verde"  # D25: «bosque»
+    assert vista["tono_propuesto"] == "gris_azul"  # D25: «bosque» (Spec-820 D4)
     resp = await c.post(f"/api/v1/stories/{sid}/jobs", json={"kind": "thumbnail_build"})
     assert resp.status_code == 422
 
@@ -122,17 +122,21 @@ async def test_armar_las_4_y_recolorear(client):
         "C_primer_plano",
         "B_lugar",
     ]
-    assert tanda["tone"] == "verde"
+    assert tanda["tone"] == "gris_azul"
     img = await c.get(f"/api/v1/stories/{sid}/thumbnail/images/1/A_der.jpg")
     assert img.status_code == 200
     assert Image.open(io.BytesIO(img.content)).size == (1280, 720)
-    # una llamada por pieza y una por fundido (D15)
-    assert fake.llamadas.count("boceto_a_imagen") == 2 + 4
+    # D15: una llamada por pieza; Spec-820: una foto única y un recorte por opción, sin fundido
+    assert fake.llamadas.count("boceto_a_imagen") == 2
     assert fake.llamadas.count("foto_img2img") == 1  # el personaje (E11)
-    assert fake.llamadas.count("foto_controlnet") == 1  # el escenario, con el boceto (T6.6)
-    # T3.3: la IA separó las descripciones y quedó guardado
+    assert fake.llamadas.count("foto_controlnet") == 1 + 4  # el escenario (T6.6) + las 4 fotos
+    assert fake.llamadas.count("recortar") == 2 + 4  # las piezas + la figura en cada foto
+    # T3.3: la IA separó las descripciones; S2: escribió un prompt por plantilla
     textos = (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["texts"]
     assert textos["personaje"] and textos["escenario"] and textos["input_hash"]
+    assert set(textos["fotos"]) == {"A_der", "A_izq", "C_primer_plano", "B_lugar"}
+    assert all(textos["fotos"].values()) and textos["fotos_hash"]
+    assert set(tanda["luz"]) == set(textos["fotos"])  # la luz de cada opción, registrada
 
     # cambiar a blanco y negro recolorea sin GPU
     antes = len(fake.llamadas)
@@ -148,9 +152,9 @@ async def test_armar_las_4_y_recolorear(client):
     # otra tanda reusa el personaje y el escenario (no cambió nada)
     resp = await c.post(f"/api/v1/stories/{sid}/jobs", json={"kind": "thumbnail_build"})
     assert (await _wait_job(c, resp.json()["job_id"]))["status"] == "done"
-    assert fake.llamadas.count("boceto_a_imagen") == 2 + 4 + 4
-    assert fake.llamadas.count("foto_img2img") == 1  # reusa las dos piezas: ninguna foto nueva
-    assert fake.llamadas.count("foto_controlnet") == 1
+    assert fake.llamadas.count("boceto_a_imagen") == 2  # reusa las dos piezas
+    assert fake.llamadas.count("foto_img2img") == 1
+    assert fake.llamadas.count("foto_controlnet") == 1 + 4 + 4  # solo las 4 fotos nuevas
     assert (await c.get(f"/api/v1/stories/{sid}/thumbnail")).json()["texts"] == textos
 
 
